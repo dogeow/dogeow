@@ -1,8 +1,6 @@
-### Hi, I'm PHP engineer! <img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50">
+### Hi, I'm PHP engineer! <img src="https://media.giphy.com/media/mGcNjsfWAjY5AEZNw6/giphy.gif" width="50"><img src="https://media.giphy.com/media/WUlplcMpOCEmTGBtBW/giphy.gif" width="30"> 
 
 <img align='right' src="https://camo.githubusercontent.com/a5c7c7397871b9348b88302ac5cd56ddbf8774b3/68747470733a2f2f63646e2e6a7364656c6976722e6e65742f67682f73792d7265636f7264732f73746174696366696c65406d61737465722f696d616765732f3230323030372f6875616a692e676966">
-<p><em>PHP Engineer <img src="https://media.giphy.com/media/fYSnHlufseco8Fh93Z/giphy.gif" width="30"></br>My Homepage: <a href="https://dogeow.com">DogeOW</a><img src="https://media.giphy.com/media/WUlplcMpOCEmTGBtBW/giphy.gif" width="30"> 
-</em></p>
 
 <img src="https://media.giphy.com/media/LnQjpWaON8nhr21vNW/giphy.gif" width="60"> <em>I like group programming, if you are too, I am very happy that we can lift the friendship <del>🚢big ship</del> boat together and set sail.</em>
 
