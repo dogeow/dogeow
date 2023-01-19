@@ -33,12 +33,5 @@ I am currently studying Laravel and Next.js <img src="https://media.giphy.com/me
 
 | Nicolas Cage | Michael Jackson | Aragaki Yui | Music | OverWath(Blizzard) | 宮﨑 駿 | The Legend of Zelda | Summer Triangle |
 |---|---|---|---|---|---|---|---|
-
-### GitGub Stats
-
-![likunyan's github stats](https://github-readme-stats.vercel.app/api?username=dogeow&show_icons=true&line_height=30)
-
- <!-- waka-box start -->
- <!-- waka-box end -->
  
 https://user-images.githubusercontent.com/7204604/169273285-91426f84-ae02-49f1-9a90-aea1662a7428.mp4
