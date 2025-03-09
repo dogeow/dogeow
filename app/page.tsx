@@ -1,5 +1,7 @@
+import { ModeToggle } from "@/components/ModeToggle";
+
 export default function Home() {
   return (
-    <div>233</div>
+    <div className="min-h-screen"><ModeToggle /></div>
   );
 }

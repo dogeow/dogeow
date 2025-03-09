@@ -1,11 +1,11 @@
 "use client"
 
-import ProtectedRoute from '../components/ProtectedRoute';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { useState } from 'react';
-import useAuthStore from '../stores/authStore';
+import useAuthStore from '@/stores/authStore';
 
 export default function Dashboard() {
-  const [loading, setLoading] = useState(true);
+  const [loading, ] = useState(true);
   const { user, isAuthenticated } = useAuthStore();
 
   // 显示加载状态，直到确认用户已加载
