@@ -15,7 +15,7 @@ export const useMusicStore = create<MusicState>()(
   persist(
     (set) => ({
       isPlaying: false,
-      currentTrack: '/music/example.mp3',
+      currentTrack: '/musics/和楽器バンド - 東風破.mp3',
       volume: 0.5,
       setIsPlaying: (isPlaying: boolean) => set({ isPlaying }),
       setCurrentTrack: (track: string) => set({ currentTrack: track }),

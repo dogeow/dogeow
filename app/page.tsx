@@ -1,10 +1,9 @@
-import { ModeToggle } from "@/components/ModeToggle";
-import { SettingsToggle } from "@/components/SettingsToggle";
 import Link from "next/link";
 import Image from "next/image";
 import config from '@/configs/app';
 import type { Tile } from '@/types/app';
 import { BackgroundWrapper } from "@/components/BackgroundWrapper";
+import { TopIcons } from "@/components/TopIcons";
 import { cn } from "@/lib/utils";
 
 export default function Home() {
@@ -16,10 +15,7 @@ export default function Home() {
         
         <div className="flex items-center justify-between">
           <h1 className="text-4xl font-light mb-8 mt-8 ml-2">我的应用</h1>
-          <div className="flex items-center gap-2">
-            <SettingsToggle />
-            <ModeToggle />
-          </div>
+          <TopIcons />
         </div>
         
         <div className="grid grid-cols-3 auto-rows-[8rem] gap-4">
