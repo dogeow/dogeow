@@ -236,3 +236,20 @@
   --error-border: hsl(var(--destructive));
   --error-text: hsl(var(--destructive-foreground));
 }
+
+/* 添加滚动文本动画 */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-100%); }
+}
+
+.scrolling-text {
+  display: inline-block;
+  animation: marquee 15s linear infinite;
+  animation-play-state: running;
+  padding-right: 100%;
+}
+
+.scrolling-text:hover {
+  animation-play-state: paused;
+}

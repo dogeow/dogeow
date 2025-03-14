@@ -3,7 +3,6 @@ import Image from "next/image";
 import config from '@/configs/app';
 import type { Tile } from '@/types/app';
 import { BackgroundWrapper } from "@/components/BackgroundWrapper";
-import { TopIcons } from "@/components/TopIcons";
 
 export default function Home() {
   const tiles = config.tiles as Tile[];
@@ -11,12 +10,6 @@ export default function Home() {
   return (
     <BackgroundWrapper>
       <div className="min-h-screen container mx-auto p-4">
-        
-        <div className="flex items-center justify-between">
-          <h1 className="text-4xl font-light mb-8 mt-8 ml-2">我的应用</h1>
-          <TopIcons />
-        </div>
-        
         <div className="grid grid-cols-3 auto-rows-[8rem] gap-4">
           {tiles.map((tile: Tile, index: number) => (
             <Link 
