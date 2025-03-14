@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/provider/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
-import { MusicPlayerBar } from "@/components/MusicPlayerBar"
+import { AppLauncher } from "@/components/AppLauncher"
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,7 +36,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-              <MusicPlayerBar />
+              <AppLauncher />
               <div className="pt-12 transition-all duration-300" id="main-content">
                 {children}
               </div>

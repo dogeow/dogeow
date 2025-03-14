@@ -1,0 +1,213 @@
+"use client"
+
+import React from 'react'
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { motion } from 'framer-motion'
+
+type DisplayMode = 'music' | 'apps' | 'settings';
+
+// 音乐播放器组件的属性接口
+export interface MusicPlayerProps {
+  isPlaying: boolean
+  audioError: string | null
+  currentTime: number
+  duration: number
+  volume: number
+  isMuted: boolean
+  isVolumeControlVisible: boolean
+  toggleVolumeControl: () => void
+  toggleMute: () => void
+  handleVolumeChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  switchToPrevTrack: () => void
+  switchToNextTrack: () => void
+  togglePlay: () => void
+  handleProgressChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  getCurrentTrackName: () => string | undefined
+  formatTime: (time: number) => string
+  toggleDisplayMode: (mode: DisplayMode) => void
+}
+
+export function MusicPlayer({
+  isPlaying,
+  audioError,
+  currentTime,
+  duration,
+  volume,
+  isMuted,
+  isVolumeControlVisible,
+  toggleVolumeControl,
+  toggleMute,
+  handleVolumeChange,
+  switchToPrevTrack,
+  switchToNextTrack,
+  togglePlay,
+  handleProgressChange,
+  getCurrentTrackName,
+  formatTime,
+  toggleDisplayMode
+}: MusicPlayerProps) {
+  // 计算进度条百分比
+  const progressPercentage = ((currentTime / (duration || 1)) * 100).toFixed(2)
+  
+  return (
+    <>
+      <div className="w-full flex items-center justify-between">
+        {/* 左侧：应用切换按钮 */}
+        <div className="flex items-center shrink-0 mr-2">
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={() => toggleDisplayMode('apps')}
+              title="切换到应用选择"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><rect width="6" height="6" x="3" y="3" rx="1" /><rect width="6" height="6" x="15" y="3" rx="1" /><rect width="6" height="6" x="3" y="15" rx="1" /><rect width="6" height="6" x="15" y="15" rx="1" /></svg>
+              <span className="sr-only">切换到应用选择</span>
+            </Button>
+          </motion.div>
+        </div>
+        
+        {/* 中间：歌曲信息 */}
+        <div className="flex-1 overflow-hidden mx-1">
+          <div className="overflow-hidden">
+            {isPlaying ? (
+              <div className="whitespace-nowrap overflow-hidden">
+                <span className="scrolling-text text-sm font-medium">
+                  {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              </div>
+            ) : (
+              <span className="text-sm font-medium truncate block">
+                {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            )}
+          </div>
+          
+          {audioError && (
+            <div className="text-xs text-red-500 truncate">
+              {audioError}
+            </div>
+          )}
+        </div>
+        
+        {/* 右侧：播放控制和音量 */}
+        <div className="flex items-center gap-1 ml-2 shrink-0">
+          {/* 音量控制 */}
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="relative"
+          >
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={toggleVolumeControl}
+              title="音量控制"
+            >
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              <span className="sr-only">音量控制</span>
+            </Button>
+            
+            {isVolumeControlVisible && (
+              <div className="absolute right-0 top-full mt-2 p-2 bg-background border rounded-md shadow-md z-50">
+                <div className="flex flex-col items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={toggleMute}
+                  >
+                    {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                    <span className="sr-only">{isMuted ? '取消静音' : '静音'}</span>
+                  </Button>
+                  
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={volume * 100}
+                    onChange={handleVolumeChange}
+                    className="w-20 h-1.5 bg-primary/20 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      backgroundSize: `${volume * 100}% 100%`,
+                      backgroundImage: 'linear-gradient(var(--primary), var(--primary))',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                    disabled={!!audioError}
+                  />
+                </div>
+              </div>
+            )}
+          </motion.div>
+          
+          {/* 播放控制 */}
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={switchToPrevTrack}
+              disabled={!!audioError}
+              title="上一首"
+            >
+              <SkipBack className="h-4 w-4" />
+              <span className="sr-only">上一首</span>
+            </Button>
+          </motion.div>
+          
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8" 
+              onClick={togglePlay}
+              disabled={!!audioError}
+            >
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              <span className="sr-only">{isPlaying ? '暂停' : '播放'}</span>
+            </Button>
+          </motion.div>
+          
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={switchToNextTrack}
+              disabled={!!audioError}
+              title="下一首"
+            >
+              <SkipForward className="h-4 w-4" />
+              <span className="sr-only">下一首</span>
+            </Button>
+          </motion.div>
+        </div>
+      </div>
+      
+      {/* 进度条 */}
+      <div 
+        className="absolute bottom-0 left-0 h-1 bg-primary/30 w-full"
+      >
+        <div 
+          className="h-full bg-primary transition-all duration-100"
+          style={{ width: `${progressPercentage}%` }}
+        />
+      </div>
+      
+      {/* 可拖动进度条 */}
+      <input
+        type="range"
+        min={0}
+        max={duration || 100}
+        step={0.1}
+        value={currentTime}
+        onChange={handleProgressChange}
+        className="absolute bottom-0 left-0 w-full h-1 opacity-0 cursor-pointer"
+      />
+    </>
+  )
+} 
