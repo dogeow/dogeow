@@ -1,14 +1,31 @@
 "use client"
 
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { Music } from 'lucide-react'
-import { useMusicStore } from '@/stores/musicStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 
+// 创建一个自定义事件名称
+export const MUSIC_PLAYING_EVENT = 'music-playing-state-changed'
+
 export function MusicPlayer() {
-  const { isPlaying } = useMusicStore()
+  const [isPlaying, setIsPlaying] = useState(false)
+  
+  // 监听自定义事件来更新播放状态
+  useEffect(() => {
+    const handlePlayingStateChange = (event: CustomEvent) => {
+      setIsPlaying(event.detail.isPlaying)
+    }
+    
+    // 添加事件监听器
+    window.addEventListener(MUSIC_PLAYING_EVENT, handlePlayingStateChange as EventListener)
+    
+    // 清理函数
+    return () => {
+      window.removeEventListener(MUSIC_PLAYING_EVENT, handlePlayingStateChange as EventListener)
+    }
+  }, [])
   
   // 切换到音乐播放器模式
   const showMusicPlayer = () => {

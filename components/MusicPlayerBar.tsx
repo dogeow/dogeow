@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ModeToggle } from './ModeToggle'
 import { SettingsToggle } from './SettingsToggle'
+import { MUSIC_PLAYING_EVENT } from './MusicPlayer'
 
 // 可用的音频文件列表
 const availableTracks = [
@@ -18,15 +19,12 @@ const availableTracks = [
 
 export function MusicPlayerBar() {
   const { 
-    isPlaying, 
     currentTrack, 
     volume, 
-    setIsPlaying, 
     setVolume, 
-    togglePlay,
     setCurrentTrack
   } = useMusicStore()
-  
+  const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -139,16 +137,6 @@ export function MusicPlayerBar() {
       const handleCanPlay = () => {
         console.log("新音轨可以播放，设置准备播放状态")
         setReadyToPlay(true)
-        
-        // 如果用户已经交互过，且状态是播放中，则尝试播放
-        if (userInteracted && isPlaying) {
-          audioRef.current?.play().catch(error => {
-            console.error("自动播放失败:", error)
-            setIsPlaying(false)
-            setReadyToPlay(false)
-            setAudioError(`自动播放失败: ${error.message}`)
-          })
-        }
         
         // 移除一次性事件监听器
         audioRef.current?.removeEventListener('canplay', handleCanPlay)
@@ -284,6 +272,11 @@ export function MusicPlayerBar() {
     setUserInteracted(true)
   }
   
+  // 切换播放/暂停状态的本地方法
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying)
+  }
+  
   // 手动播放/暂停，确保用户交互
   const handlePlayPause = () => {
     // 如果当前是暂停状态，点击后设置为播放状态，但不立即播放
@@ -336,6 +329,17 @@ export function MusicPlayerBar() {
     }
   }, [])
   
+  // 监听播放状态变化并触发自定义事件
+  useEffect(() => {
+    // 创建自定义事件
+    const event = new CustomEvent(MUSIC_PLAYING_EVENT, {
+      detail: { isPlaying }
+    })
+    
+    // 触发事件
+    window.dispatchEvent(event)
+  }, [isPlaying])
+  
   // 渲染音乐播放器
   const renderMusicPlayer = () => {
     return (
@@ -379,14 +383,6 @@ export function MusicPlayerBar() {
             <div className="text-xs text-muted-foreground truncate">
               {audioError && (
                 <span className="text-red-500 truncate">{audioError}</span>
-              )}
-              
-              {isPlaying && !userInteracted && (
-                <span className="text-yellow-500 truncate">请点击播放按钮以启动音频播放</span>
-              )}
-              
-              {isPlaying && userInteracted && !readyToPlay && (
-                <span className="text-blue-500 truncate">音频正在准备中...</span>
               )}
             </div>
           </div>
