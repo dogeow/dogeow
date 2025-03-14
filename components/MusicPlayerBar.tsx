@@ -6,7 +6,7 @@ import { useMusicStore } from '@/stores/musicStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { ModeToggle } from './ModeToggle'
 import { MUSIC_PLAYING_EVENT } from './MusicPlayer'
 import Image from 'next/image'
@@ -65,7 +65,6 @@ export function MusicPlayerBar() {
         if (!response.ok) {
           throw new Error(`音频文件不存在 (${response.status})`)
         }
-        return response
       })
       .catch(error => {
         console.error("音频文件检查失败:", error)
@@ -94,13 +93,12 @@ export function MusicPlayerBar() {
           })
         })
       } else {
-        // 如果用户尚未交互，则不尝试播放，但保持isPlaying状态
         console.log("等待用户交互后再播放")
       }
     } else if (!isPlaying && audioRef.current) {
       audioRef.current.pause()
     }
-  }, [isPlaying, currentTrack, setIsPlaying, userInteracted, readyToPlay])
+  }, [isPlaying, currentTrack, userInteracted, readyToPlay])
   
   // 处理音量变化
   useEffect(() => {
@@ -129,46 +127,36 @@ export function MusicPlayerBar() {
     }
     
     // 添加各种用户交互事件监听器
-    document.addEventListener('click', handleUserInteraction)
-    document.addEventListener('keydown', handleUserInteraction)
-    document.addEventListener('touchstart', handleUserInteraction)
+    const events = ['click', 'keydown', 'touchstart']
+    events.forEach(event => document.addEventListener(event, handleUserInteraction))
     
     return () => {
-      // 清理事件监听器
-      document.removeEventListener('click', handleUserInteraction)
-      document.removeEventListener('keydown', handleUserInteraction)
-      document.removeEventListener('touchstart', handleUserInteraction)
+      events.forEach(event => document.removeEventListener(event, handleUserInteraction))
     }
   }, [isPlaying, userInteracted, readyToPlay])
   
   // 监听音轨变化，在元数据加载后准备播放
   useEffect(() => {
-    if (isTrackChanging && audioRef.current && userInteracted) {
-      // 监听元数据加载完成事件
-      const handleCanPlay = () => {
-        console.log("新音轨可以播放，设置准备播放状态")
-        setReadyToPlay(true)
-        
-        // 移除一次性事件监听器
-        audioRef.current?.removeEventListener('canplay', handleCanPlay)
-        setIsTrackChanging(false)
-      }
-      
-      audioRef.current.addEventListener('canplay', handleCanPlay)
-      
-      return () => {
-        audioRef.current?.removeEventListener('canplay', handleCanPlay)
-      }
+    if (!isTrackChanging || !audioRef.current || !userInteracted) return
+    
+    const handleCanPlay = () => {
+      console.log("新音轨可以播放，设置准备播放状态")
+      setReadyToPlay(true)
+      setIsTrackChanging(false)
+      audioRef.current?.removeEventListener('canplay', handleCanPlay)
     }
-  }, [isTrackChanging, userInteracted, isPlaying])
+    
+    audioRef.current.addEventListener('canplay', handleCanPlay)
+    return () => audioRef.current?.removeEventListener('canplay', handleCanPlay)
+  }, [isTrackChanging, userInteracted])
   
   // 加载音频元数据
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration)
       console.log("音频元数据加载成功，时长:", audioRef.current.duration)
-      setAudioError(null) // 清除错误状态
-      setReadyToPlay(true) // 设置准备好播放
+      setAudioError(null)
+      setReadyToPlay(true)
     }
   }
   
@@ -191,12 +179,6 @@ export function MusicPlayerBar() {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime)
     }
-  }
-  
-  // 处理音频播放结束
-  const handleEnded = () => {
-    // 播放结束后自动切换到下一首
-    switchToNextTrack()
   }
   
   // 格式化时间显示
@@ -222,84 +204,37 @@ export function MusicPlayerBar() {
   }
   
   // 切换静音
-  const toggleMute = () => {
-    setIsMuted(!isMuted)
-  }
+  const toggleMute = () => setIsMuted(!isMuted)
   
   // 切换音量控制显示
-  const toggleVolumeControl = () => {
-    setIsVolumeControlVisible(!isVolumeControlVisible)
-  }
+  const toggleVolumeControl = () => setIsVolumeControlVisible(!isVolumeControlVisible)
   
-  // 切换到下一个音频文件
-  const switchToNextTrack = () => {
+  // 切换到下一个或上一个音频文件
+  const switchTrack = (direction: 'next' | 'prev') => {
     const currentIndex = availableTracks.findIndex(track => track.path === currentTrack)
-    const nextIndex = (currentIndex + 1) % availableTracks.length
+    const newIndex = direction === 'next'
+      ? (currentIndex + 1) % availableTracks.length
+      : (currentIndex - 1 + availableTracks.length) % availableTracks.length
     
-    // 设置正在切换音轨标志
     setIsTrackChanging(true)
-    
-    // 重置播放时间
     setCurrentTime(0)
-    
-    // 重置准备播放状态
     setReadyToPlay(false)
-    
-    // 设置新的音轨
-    setCurrentTrack(availableTracks[nextIndex].path)
-    
-    // 设置为播放状态，但不立即播放
+    setCurrentTrack(availableTracks[newIndex].path)
     setIsPlaying(true)
-    
-    toast.info(`已切换到: ${availableTracks[nextIndex].name}`)
-    
-    // 标记用户已交互
     setUserInteracted(true)
+    
+    toast.info(`已切换到: ${availableTracks[newIndex].name}`)
   }
   
-  // 切换到上一个音频文件
-  const switchToPrevTrack = () => {
-    const currentIndex = availableTracks.findIndex(track => track.path === currentTrack)
-    const prevIndex = (currentIndex - 1 + availableTracks.length) % availableTracks.length
-    
-    // 设置正在切换音轨标志
-    setIsTrackChanging(true)
-    
-    // 重置播放时间
-    setCurrentTime(0)
-    
-    // 重置准备播放状态
-    setReadyToPlay(false)
-    
-    // 设置新的音轨
-    setCurrentTrack(availableTracks[prevIndex].path)
-    
-    // 设置为播放状态，但不立即播放
-    setIsPlaying(true)
-    
-    toast.info(`已切换到: ${availableTracks[prevIndex].name}`)
-    
-    // 标记用户已交互
-    setUserInteracted(true)
-  }
+  const switchToNextTrack = () => switchTrack('next')
+  const switchToPrevTrack = () => switchTrack('prev')
   
-  // 切换播放/暂停状态的本地方法
+  // 切换播放/暂停状态
   const togglePlay = () => {
     setIsPlaying(!isPlaying)
-  }
-  
-  // 手动播放/暂停，确保用户交互
-  const handlePlayPause = () => {
-    // 如果当前是暂停状态，点击后设置为播放状态，但不立即播放
-    // 如果当前是播放状态，点击后设置为暂停状态
-    togglePlay()
-    
-    // 如果切换到播放状态，设置准备播放标志
     if (!isPlaying) {
       setReadyToPlay(true)
     }
-    
-    // 标记用户已交互
     setUserInteracted(true)
   }
   
@@ -347,386 +282,295 @@ export function MusicPlayerBar() {
     }
   }
   
-  // 监听窗口大小变化
+  // 监听窗口大小变化和显示模式变化，更新内边距
   useEffect(() => {
-    const handleResize = () => {
+    const updatePadding = () => {
       const mainContent = document.getElementById('main-content')
-      if (mainContent && displayMode !== 'music') {
-        mainContent.style.paddingTop = window.innerWidth >= 640 ? '6rem' : '7rem'
-      }
-    }
-    
-    window.addEventListener('resize', handleResize)
-    return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [displayMode])
-  
-  // 初始化内边距，确保顶部栏的独立性
-  useEffect(() => {
-    const mainContent = document.getElementById('main-content')
-    if (mainContent) {
-      mainContent.style.paddingTop = '3rem' // 默认音乐模式高度
-    }
-    
-    // 添加CSS变量到:root，方便其他组件使用
-    document.documentElement.style.setProperty('--music-player-height', '3rem')
-  }, [])
-  
-  // 监听显示模式变化，更新内边距
-  useEffect(() => {
-    const mainContent = document.getElementById('main-content')
-    if (mainContent) {
-      const height = displayMode === 'music' ? '3rem' : '3rem'
+      if (!mainContent) return
+      
+      const height = '3rem'
       mainContent.style.paddingTop = height
       document.documentElement.style.setProperty('--music-player-height', height)
     }
+    
+    updatePadding()
+    window.addEventListener('resize', updatePadding)
+    
+    return () => window.removeEventListener('resize', updatePadding)
   }, [displayMode])
   
   // 监听播放状态变化并触发自定义事件
   useEffect(() => {
-    // 创建自定义事件
-    const event = new CustomEvent(MUSIC_PLAYING_EVENT, {
-      detail: { isPlaying }
-    })
-    
-    // 触发事件
-    window.dispatchEvent(event)
+    window.dispatchEvent(new CustomEvent(MUSIC_PLAYING_EVENT, { detail: { isPlaying } }))
   }, [isPlaying])
   
   // 渲染音乐播放器
-  const renderMusicPlayer = () => {
-    return (
-      <>
-        <div className="w-full flex items-center justify-between">
-          {/* 左侧：应用切换按钮 */}
-          <div className="flex items-center shrink-0 mr-2">
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+  const renderMusicPlayer = () => (
+    <>
+      <div className="w-full flex items-center justify-between">
+        {/* 左侧：应用切换按钮 */}
+        <div className="flex items-center shrink-0 mr-2">
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={() => toggleDisplayMode('apps')}
+              title="切换到应用选择"
             >
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7" 
-                onClick={() => toggleDisplayMode('apps')}
-                title="切换到应用选择"
-              >
-                <Grid className="h-4 w-4" />
-                <span className="sr-only">切换到应用选择</span>
-              </Button>
-            </motion.div>
-          </div>
-          
-          {/* 中间：歌曲信息 */}
-          <div className="flex-1 overflow-hidden mx-1">
-            <div className="overflow-hidden">
-              {isPlaying ? (
-                <div className="whitespace-nowrap overflow-hidden">
-                  <span className="scrolling-text text-sm font-medium">
-                    {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-sm font-medium truncate block">
+              <Grid className="h-4 w-4" />
+              <span className="sr-only">切换到应用选择</span>
+            </Button>
+          </motion.div>
+        </div>
+        
+        {/* 中间：歌曲信息 */}
+        <div className="flex-1 overflow-hidden mx-1">
+          <div className="overflow-hidden">
+            {isPlaying ? (
+              <div className="whitespace-nowrap overflow-hidden">
+                <span className="scrolling-text text-sm font-medium">
                   {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
-              )}
-            </div>
-            
-            <div className="text-xs text-muted-foreground truncate">
-              {audioError && (
-                <span className="text-red-500 truncate">{audioError}</span>
-              )}
-            </div>
+              </div>
+            ) : (
+              <span className="text-sm font-medium truncate block">
+                {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
+            )}
           </div>
           
-          {/* 右侧：播放控制和音量 */}
-          <div className="flex items-center gap-1 ml-2 shrink-0">
-            
-            
-            {/* 音量控制 */}
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              className="relative"
+          {audioError && (
+            <div className="text-xs text-red-500 truncate">
+              {audioError}
+            </div>
+          )}
+        </div>
+        
+        {/* 右侧：播放控制和音量 */}
+        <div className="flex items-center gap-1 ml-2 shrink-0">
+          {/* 音量控制 */}
+          <motion.div
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            className="relative"
+          >
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={toggleVolumeControl}
+              title="音量控制"
             >
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7" 
-                onClick={toggleVolumeControl}
-                title="音量控制"
-              >
-                {isMuted ? (
-                  <VolumeX className="h-4 w-4" />
-                ) : (
-                  <Volume2 className="h-4 w-4" />
-                )}
-                <span className="sr-only">音量控制</span>
-              </Button>
-              
-              {isVolumeControlVisible && (
-                <div className="absolute right-0 top-full mt-2 p-2 bg-background border rounded-md shadow-md z-50">
-                  <div className="flex flex-col items-center gap-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-6 w-6" 
-                      onClick={toggleMute}
-                    >
-                      {isMuted ? (
-                        <VolumeX className="h-3 w-3" />
-                      ) : (
-                        <Volume2 className="h-3 w-3" />
-                      )}
-                      <span className="sr-only">
-                        {isMuted ? '取消静音' : '静音'}
-                      </span>
-                    </Button>
-                    
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={volume * 100}
-                      onChange={handleVolumeChange}
-                      className="w-20 h-1.5 bg-primary/20 rounded-full appearance-none cursor-pointer"
-                      style={{
-                        backgroundSize: `${volume * 100}% 100%`,
-                        backgroundImage: 'linear-gradient(var(--primary), var(--primary))',
-                        backgroundRepeat: 'no-repeat'
-                      }}
-                      disabled={!!audioError}
-                    />
-                  </div>
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              <span className="sr-only">音量控制</span>
+            </Button>
+            
+            {isVolumeControlVisible && (
+              <div className="absolute right-0 top-full mt-2 p-2 bg-background border rounded-md shadow-md z-50">
+                <div className="flex flex-col items-center gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6" 
+                    onClick={toggleMute}
+                  >
+                    {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                    <span className="sr-only">{isMuted ? '取消静音' : '静音'}</span>
+                  </Button>
+                  
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={volume * 100}
+                    onChange={handleVolumeChange}
+                    className="w-20 h-1.5 bg-primary/20 rounded-full appearance-none cursor-pointer"
+                    style={{
+                      backgroundSize: `${volume * 100}% 100%`,
+                      backgroundImage: 'linear-gradient(var(--primary), var(--primary))',
+                      backgroundRepeat: 'no-repeat'
+                    }}
+                    disabled={!!audioError}
+                  />
                 </div>
-              )}
-            </motion.div>
-            
-            {/* 播放控制 */}
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              </div>
+            )}
+          </motion.div>
+          
+          {/* 播放控制 */}
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={switchToPrevTrack}
+              disabled={!!audioError}
+              title="上一首"
             >
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7" 
-                onClick={switchToPrevTrack}
-                disabled={!!audioError}
-                title="上一首"
-              >
-                <SkipBack className="h-4 w-4" />
-                <span className="sr-only">上一首</span>
-              </Button>
-            </motion.div>
-            
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              <SkipBack className="h-4 w-4" />
+              <span className="sr-only">上一首</span>
+            </Button>
+          </motion.div>
+          
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8" 
+              onClick={togglePlay}
+              disabled={!!audioError}
             >
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8" 
-                onClick={handlePlayPause}
-                disabled={!!audioError}
-              >
-                {isPlaying ? (
-                  <Play className="h-4 w-4" />
-                ) : (
-                  <Pause className="h-4 w-4" />
-                )}
-                <span className="sr-only">
-                  {isPlaying ? '播放' : '暂停'}
-                </span>
-              </Button>
-            </motion.div>
-            
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              <span className="sr-only">{isPlaying ? '暂停' : '播放'}</span>
+            </Button>
+          </motion.div>
+          
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7" 
+              onClick={switchToNextTrack}
+              disabled={!!audioError}
+              title="下一首"
             >
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7" 
-                onClick={switchToNextTrack}
-                disabled={!!audioError}
-                title="下一首"
-              >
-                <SkipForward className="h-4 w-4" />
-                <span className="sr-only">下一首</span>
-              </Button>
-            </motion.div>
-          </div>
+              <SkipForward className="h-4 w-4" />
+              <span className="sr-only">下一首</span>
+            </Button>
+          </motion.div>
         </div>
-        
-        {/* 进度条 */}
+      </div>
+      
+      {/* 进度条 */}
+      <div 
+        className="absolute bottom-0 left-0 h-1 bg-primary/30"
+        style={{ width: '100%' }}
+      >
         <div 
-          className="absolute bottom-0 left-0 h-1 bg-primary/30"
-          style={{ width: '100%' }}
-        >
-          <div 
-            className="h-full bg-primary transition-all duration-100"
-            style={{ width: `${progressPercentage}%` }}
-          />
-        </div>
-        
-        {/* 可拖动进度条 */}
-        <input
-          type="range"
-          min={0}
-          max={duration || 100}
-          step={0.1}
-          value={currentTime}
-          onChange={handleProgressChange}
-          className="absolute bottom-0 left-0 w-full h-1 opacity-0 cursor-pointer"
+          className="h-full bg-primary transition-all duration-100"
+          style={{ width: `${progressPercentage}%` }}
         />
-      </>
-    )
-  }
+      </div>
+      
+      {/* 可拖动进度条 */}
+      <input
+        type="range"
+        min={0}
+        max={duration || 100}
+        step={0.1}
+        value={currentTime}
+        onChange={handleProgressChange}
+        className="absolute bottom-0 left-0 w-full h-1 opacity-0 cursor-pointer"
+      />
+    </>
+  )
   
   // 渲染应用网格
-  const renderAppGrid = () => {
-    return (
-      <div className="flex items-center space-x-4">
-        {/* 主题切换按钮 */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+  const renderAppGrid = () => (
+    <div className="flex items-center space-x-4">
+      {/* 主题切换按钮 */}
+      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <ModeToggle />
+      </motion.div>
+      
+      {/* 设置按钮 */}
+      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-9 w-9"
+          onClick={() => toggleDisplayMode('settings')}
         >
-          <ModeToggle />
-        </motion.div>
-        
-        {/* 设置按钮 */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-9 w-9"
-            onClick={() => toggleDisplayMode('settings')}
-          >
-            <Settings className="h-5 w-5" />
-            <span className="sr-only">打开设置</span>
-          </Button>
-        </motion.div>
-        
-        {/* 这里可以添加更多应用图标 */}
-      </div>
-    )
-  }
+          <Settings className="h-5 w-5" />
+          <span className="sr-only">打开设置</span>
+        </Button>
+      </motion.div>
+    </div>
+  )
   
   // 渲染设置选项
-  const renderSettings = () => {
-    return (
-      <div className="flex items-center space-x-3 overflow-x-auto scrollbar-none">
-        {/* 返回按钮 */}
-        <motion.div
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+  const renderSettings = () => (
+    <div className="flex items-center space-x-3 overflow-x-auto scrollbar-none">
+      {/* 返回按钮 */}
+      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-7 w-7 mr-1 shrink-0" 
+          onClick={() => toggleDisplayMode('apps')}
         >
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-7 w-7 mr-1 shrink-0" 
-            onClick={() => toggleDisplayMode('apps')}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="sr-only">返回</span>
-          </Button>
-        </motion.div>
-        
-        {/* 背景图片选项 */}
-        {systemBackgrounds.map((bg) => (
-          <motion.div
-            key={bg.id}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="shrink-0"
-          >
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-                backgroundImage === bg.url && "ring-2 ring-primary"
-              )}
-              onClick={() => handleSetBackground(bg.url)}
-              title={bg.name}
-            >
-              {bg.url ? (
-                <Image 
-                  src={bg.url} 
-                  alt={bg.name} 
-                  fill 
-                  className="object-cover" 
-                />
-              ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <span className="text-xs">无</span>
-                </div>
-              )}
-            </Button>
-          </motion.div>
-        ))}
-        
-        {/* 用户自定义背景 */}
-        {customBackgrounds.map((bg) => (
-          <motion.div
-            key={bg.id}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="shrink-0"
-          >
-            <Button 
-              variant="ghost" 
-              className={cn(
-                "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-                backgroundImage === bg.url && "ring-2 ring-primary"
-              )}
-              onClick={() => handleSetBackground(bg.url)}
-              title={bg.name}
-            >
-              <Image 
-                src={bg.url} 
-                alt={bg.name} 
-                fill 
-                className="object-cover" 
-              />
-            </Button>
-          </motion.div>
-        ))}
-        
-        {/* 上传按钮 */}
+          <ArrowLeft className="h-4 w-4" />
+          <span className="sr-only">返回</span>
+        </Button>
+      </motion.div>
+      
+      {/* 背景图片选项 */}
+      {systemBackgrounds.map((bg) => (
         <motion.div
+          key={bg.id}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="shrink-0"
         >
-          <label 
+          <Button 
+            variant="ghost" 
             className={cn(
-              "p-1 h-9 w-9 rounded-md overflow-hidden relative flex items-center justify-center cursor-pointer",
-              "bg-primary/10 hover:bg-primary/20 border-2 border-dashed border-primary/30"
+              "p-1 h-9 w-9 rounded-md overflow-hidden relative",
+              backgroundImage === bg.url && "ring-2 ring-primary"
             )}
-            title="上传自定义背景"
+            onClick={() => handleSetBackground(bg.url)}
+            title={bg.name}
           >
-            <Plus className="h-5 w-5 text-primary/70" />
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              onChange={handleUploadBackground} 
-            />
-          </label>
+            {bg.url ? (
+              <Image src={bg.url} alt={bg.name} fill className="object-cover" />
+            ) : (
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-xs">无</span>
+              </div>
+            )}
+          </Button>
         </motion.div>
-      </div>
-    )
-  }
+      ))}
+      
+      {/* 用户自定义背景 */}
+      {customBackgrounds.map((bg) => (
+        <motion.div
+          key={bg.id}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="shrink-0"
+        >
+          <Button 
+            variant="ghost" 
+            className={cn(
+              "p-1 h-9 w-9 rounded-md overflow-hidden relative",
+              backgroundImage === bg.url && "ring-2 ring-primary"
+            )}
+            onClick={() => handleSetBackground(bg.url)}
+            title={bg.name}
+          >
+            <Image src={bg.url} alt={bg.name} fill className="object-cover" />
+          </Button>
+        </motion.div>
+      ))}
+      
+      {/* 上传按钮 */}
+      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="shrink-0">
+        <label 
+          className={cn(
+            "p-1 h-9 w-9 rounded-md overflow-hidden relative flex items-center justify-center cursor-pointer",
+            "bg-primary/10 hover:bg-primary/20 border-2 border-dashed border-primary/30"
+          )}
+          title="上传自定义背景"
+        >
+          <Plus className="h-5 w-5 text-primary/70" />
+          <input type="file" accept="image/*" className="hidden" onChange={handleUploadBackground} />
+        </label>
+      </motion.div>
+    </div>
+  )
   
   return (
     <div 
@@ -746,10 +590,7 @@ export function MusicPlayerBar() {
         <div className="h-full flex items-center justify-between">
           {/* 左侧：返回按钮 */}
           <div className="flex items-center shrink-0">
-            <motion.div
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
+            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -780,7 +621,7 @@ export function MusicPlayerBar() {
         src={currentTrack}
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
-        onEnded={handleEnded}
+        onEnded={switchToNextTrack}
         onError={handleAudioError}
         loop={false}
         hidden
