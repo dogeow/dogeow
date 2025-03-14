@@ -89,7 +89,7 @@ export function MusicPlayer({
         <div className="flex items-center shrink-0">
           <BackButton 
             onClick={() => toggleDisplayMode('apps')}
-            title="返回音乐播放器"
+            title="返回启动台"
           />
         </div>
         
@@ -136,33 +136,37 @@ export function MusicPlayer({
             </Button>
             
             {isVolumeControlVisible && (
-              <div className="absolute right-0 top-full mt-2 p-2 bg-background border rounded-md shadow-md z-50">
-                <div className="flex flex-col items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6" 
-                    onClick={toggleMute}
-                  >
-                    {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
-                    <span className="sr-only">{isMuted ? '取消静音' : '静音'}</span>
-                  </Button>
+              <div className="absolute right-0 top-full mt-2 p-3 bg-background border rounded-md shadow-md z-50 min-w-[180px]">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-around w-full">
+                    <span className="text-xs font-medium">音量: {Math.round(volume * 100)}%</span>
+                    <PlayerControlButton 
+                      onClick={toggleMute}
+                      title={isMuted ? '取消静音' : '静音'}
+                      icon={isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
+                      className="h-6 w-6"
+                    />
+                  </div>
                   
-                  <input
-                    type="range"
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={volume * 100}
-                    onChange={handleVolumeChange}
-                    className="w-20 h-1.5 bg-primary/20 rounded-full appearance-none cursor-pointer"
-                    style={{
-                      backgroundSize: `${volume * 100}% 100%`,
-                      backgroundImage: 'linear-gradient(var(--primary), var(--primary))',
-                      backgroundRepeat: 'no-repeat'
-                    }}
-                    disabled={!!audioError}
-                  />
+                  <div className="flex items-center gap-2 w-full">
+                    <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={1}
+                      value={volume * 100}
+                      onChange={handleVolumeChange}
+                      className="flex-1 h-2 bg-primary/20 rounded-full appearance-none cursor-pointer"
+                      style={{
+                        backgroundSize: `${volume * 100}% 100%`,
+                        backgroundImage: 'linear-gradient(var(--primary), var(--primary))',
+                        backgroundRepeat: 'no-repeat'
+                      }}
+                      disabled={!!audioError}
+                    />
+                    <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
                 </div>
               </div>
             )}
@@ -179,8 +183,8 @@ export function MusicPlayer({
           <PlayerControlButton 
             onClick={togglePlay}
             disabled={!!audioError}
+            title={isPlaying ? '暂停' : '播放'}
             icon={isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-            srText={isPlaying ? '暂停' : '播放'}
             className="h-8 w-8"
           />
           
