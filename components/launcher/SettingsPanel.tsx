@@ -1,19 +1,19 @@
 "use client"
 
-import React from 'react'
-import { Plus, Palette, Image as ImageIcon, Check, Trash2 } from 'lucide-react'
+import React, { useState } from 'react'
+import { Plus, Palette, Image as ImageIcon, Check, Trash2, ChevronLeft, Settings } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import launcherItems from '@/configs/app/launcher'
 import { BackButton } from '@/components/ui/back-button'
-import { ThemeColorPicker } from './ThemeColorPicker'
 import { useThemeStore } from '@/stores/themeStore'
 import { themeColors } from '@/configs/app/themes'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
+type SettingsView = 'main' | 'background' | 'theme';
 
 // 可用的音频文件列表
 const systemBackgrounds = launcherItems.systemBackgrounds;
@@ -36,6 +36,7 @@ export function SettingsPanel({
   setCustomBackgrounds
 }: SettingsPanelProps) {
   const { currentTheme, customThemes, setCurrentTheme, addCustomTheme, removeCustomTheme } = useThemeStore()
+  const [currentView, setCurrentView] = useState<SettingsView>('main')
   
   // 设置背景图片
   const handleSetBackground = (url: string) => {
@@ -95,36 +96,34 @@ export function SettingsPanel({
     </motion.div>
   )
   
-  // 渲染主题色彩按钮
-  const renderThemeButton = (theme: {id: string, name: string, color: string}, isCustom = false) => (
-    <motion.div
-      key={theme.id}
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="shrink-0 relative"
-    >
-      <Button 
-        variant="ghost" 
-        className={cn(
-          "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-          currentTheme === theme.id && "ring-2 ring-primary"
-        )}
-        onClick={() => setCurrentTheme(theme.id)}
-        title={theme.name}
-        style={{ backgroundColor: theme.color }}
+  // 渲染主视图（选项列表）
+  const renderMainView = () => (
+    <>
+      <Button
+        variant="ghost"
+        className="flex items-center gap-2 shrink-0 h-9 px-3"
+        onClick={() => setCurrentView('background')}
       >
-        {currentTheme === theme.id && (
-          <Check className="h-5 w-5 text-white" />
-        )}
+        <ImageIcon className="h-4 w-4" />
+        <span className="text-sm font-medium">背景</span>
       </Button>
-    </motion.div>
+      
+      <Button
+        variant="ghost"
+        className="flex items-center gap-2 shrink-0 h-9 px-3"
+        onClick={() => setCurrentView('theme')}
+      >
+        <Palette className="h-4 w-4" />
+        <span className="text-sm font-medium">主题</span>
+      </Button>
+    </>
   )
   
-  return (
-    <div className="w-full flex items-center space-x-3 overflow-x-auto scrollbar-none">
-      {/* 返回按钮 */}
+  // 渲染背景设置视图
+  const renderBackgroundView = () => (
+    <>
       <BackButton 
-        onClick={() => toggleDisplayMode('apps')}
+        onClick={() => setCurrentView('main')}
         className="shrink-0"
       />
       
@@ -132,6 +131,8 @@ export function SettingsPanel({
         <ImageIcon className="h-4 w-4" />
         <span className="text-sm font-medium">背景</span>
       </div>
+      
+      <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
       
       {/* 背景图片选项 */}
       {systemBackgrounds.map(bg => renderBackgroundButton(bg))}
@@ -152,13 +153,23 @@ export function SettingsPanel({
           <input type="file" accept="image/*" className="hidden" onChange={handleUploadBackground} />
         </label>
       </motion.div>
-      
-      <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
+    </>
+  )
+  
+  // 渲染主题设置视图
+  const renderThemeView = () => (
+    <>
+      <BackButton 
+        onClick={() => setCurrentView('main')}
+        className="shrink-0"
+      />
       
       <div className="flex items-center gap-2 shrink-0">
         <Palette className="h-4 w-4" />
         <span className="text-sm font-medium">主题</span>
       </div>
+      
+      <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
       
       {/* 预设主题色 */}
       {themeColors.map(theme => (
@@ -248,6 +259,35 @@ export function SettingsPanel({
           <Plus className="h-5 w-5 text-primary/70" />
         </Button>
       </motion.div>
+    </>
+  )
+  
+  return (
+    <div className="w-full flex items-center space-x-3 overflow-x-auto scrollbar-none">
+      {currentView === 'main' ? (
+        <>
+          {/* 返回按钮 */}
+          <BackButton 
+            onClick={() => toggleDisplayMode('apps')}
+            className="shrink-0"
+          />
+          
+          {/* 设置图标 */}
+          <div className="flex items-center gap-2 shrink-0">
+            <Settings className="h-4 w-4" />
+            <span className="text-sm font-medium">设置</span>
+          </div>
+          
+          <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
+          
+          {/* 主视图选项 */}
+          {renderMainView()}
+        </>
+      ) : currentView === 'background' ? (
+        renderBackgroundView()
+      ) : (
+        renderThemeView()
+      )}
     </div>
   )
 } 
