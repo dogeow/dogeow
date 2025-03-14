@@ -4,7 +4,7 @@ const config: AppConfig = {
   tiles: [
     { name: "物品管理", icon: "/item-management.svg", href: "/things", color: "#2196F3", size: "large", colSpan: 3, rowSpan: 2 },
     { name: "实验室", icon: "/laboratory.svg", href: "/lab", color: "#388e3c", size: "medium", colSpan: 1, rowSpan: 2 },
-    { name: "待办事项", icon: "/todo.svg", href: "/todo", color: "#FF5722", size: "medium", colSpan: 2, rowSpan: 1 },
+    { name: "文件", icon: "/todo.svg", href: "/file", color: "#FF5722", size: "medium", colSpan: 2, rowSpan: 1 },
     { name: "Minecraft", icon: "/minecraft.svg", href: "/mc", color: "#8B5A2B", size: "medium", colSpan: 2, rowSpan: 1 },
     { name: "导航", icon: "/navigation.svg", href: "/nav", color: "#FFA000", size: "small", colSpan: 1, rowSpan: 1 },
     { name: "笔记", icon: "/wiki.svg", href: "/note", color: "#1976D2", size: "small", colSpan: 1, rowSpan: 1 },
