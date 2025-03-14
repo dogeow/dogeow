@@ -3,7 +3,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useMusicStore } from '@/stores/musicStore'
 import { toast } from 'sonner'
-import { MUSIC_PLAYING_EVENT } from './MusicPlayer'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { MusicPlayer } from './launcher/MusicPlayer'
 import { AppGrid } from './launcher/AppGrid'
@@ -149,12 +148,7 @@ export function AppLauncher() {
     
     return () => window.removeEventListener('resize', updatePadding)
   }, [displayMode])
-  
-  // 监听播放状态变化并触发自定义事件
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent(MUSIC_PLAYING_EVENT, { detail: { isPlaying } }))
-  }, [isPlaying])
-  
+
   // 加载音频元数据
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
@@ -258,7 +252,7 @@ export function AppLauncher() {
       case 'music':
         return (
           <div className="h-full flex items-center">
-            <MusicPlayer 
+            <MusicPlayer
               isPlaying={isPlaying}
               audioError={audioError}
               currentTime={currentTime}
@@ -312,7 +306,7 @@ export function AppLauncher() {
   
   return (
     <div 
-      id="launcher-bar"
+      id="-bar"
       className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2 h-12"
     >
       {renderContent()}

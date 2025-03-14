@@ -26,24 +26,7 @@ export function MusicPlayer() {
       window.removeEventListener(MUSIC_PLAYING_EVENT, handlePlayingStateChange as EventListener)
     }
   }, [])
-  
-  // 切换到音乐播放器模式
-  const showMusicPlayer = () => {
-    // 获取顶部栏元素
-    const playerBar = document.getElementById('launcher-bar')
-    if (playerBar) {
-      // 如果当前不是音乐模式，则触发切换
-      if (playerBar.classList.contains('h-32') || playerBar.classList.contains('h-24')) {
-        // 查找切换按钮并点击它
-        const toggleButton = playerBar.querySelector('button[title="切换到音乐播放器"]')
-        if (toggleButton) {
-          (toggleButton as HTMLButtonElement).click()
-        }
-      }
-      // 滚动到顶部栏
-      playerBar.scrollIntoView({ behavior: 'smooth' })
-    }
-  }
+
   
   return (
     <motion.div
@@ -54,7 +37,6 @@ export function MusicPlayer() {
         variant="ghost" 
         size="icon" 
         className="h-10 w-10 rounded-md"
-        onClick={showMusicPlayer}
         title="音乐播放器"
       >
         <Music className={cn("h-5 w-5", isPlaying && "text-primary")} />
