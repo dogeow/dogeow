@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useBackgroundStore } from '@/stores/backgroundStore'
+import { cn } from '@/lib/utils'
 
 interface BackgroundWrapperProps {
   children: React.ReactNode
@@ -10,17 +11,14 @@ interface BackgroundWrapperProps {
 export function BackgroundWrapper({ children }: BackgroundWrapperProps) {
   const { backgroundImage } = useBackgroundStore()
   
-  const style = backgroundImage
-    ? {
-        backgroundImage: `url(${backgroundImage})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
-      }
-    : {}
-  
   return (
-    <div className="min-h-screen" style={style}>
+    <div 
+      className={cn(
+        "min-h-screen",
+        backgroundImage && "bg-cover bg-center bg-fixed"
+      )}
+      style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
+    >
       {children}
     </div>
   )

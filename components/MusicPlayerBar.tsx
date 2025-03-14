@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react'
-import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Music, Grid, ArrowLeft, Settings, Plus } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Grid, ArrowLeft, Settings, Plus } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -26,6 +26,9 @@ const systemBackgrounds = [
   { id: "bg3", name: "2·untitled", url: "/backgrounds/F_RIhiObMAA-c8N.jpeg" },
 ]
 
+type DisplayMode = 'music' | 'apps' | 'settings';
+type CustomBackground = {id: string, name: string, url: string};
+
 export function MusicPlayerBar() {
   const { 
     currentTrack, 
@@ -43,8 +46,8 @@ export function MusicPlayerBar() {
   const [isTrackChanging, setIsTrackChanging] = useState(false)
   const [readyToPlay, setReadyToPlay] = useState(false)
   const [isVolumeControlVisible, setIsVolumeControlVisible] = useState(false)
-  const [displayMode, setDisplayMode] = useState<'music' | 'apps' | 'settings'>('music')
-  const [customBackgrounds, setCustomBackgrounds] = useState<Array<{id: string, name: string, url: string}>>([])
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('music')
+  const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
   
   const audioRef = useRef<HTMLAudioElement>(null)
   
@@ -79,26 +82,20 @@ export function MusicPlayerBar() {
   useEffect(() => {
     if (!audioRef.current) return
     
-    if (isPlaying && readyToPlay) {
-      // 只有在用户交互后且准备好播放时才尝试播放
-      if (userInteracted) {
-        console.log("尝试播放:", currentTrack)
-        audioRef.current.play().catch(error => {
-          console.error("播放失败:", error)
-          setIsPlaying(false)
-          setReadyToPlay(false)
-          setAudioError(`播放失败: ${error.message}`)
-          toast.error("音乐播放失败", {
-            description: error.message
-          })
+    if (isPlaying && readyToPlay && userInteracted) {
+      audioRef.current.play().catch(error => {
+        console.error("播放失败:", error)
+        setIsPlaying(false)
+        setReadyToPlay(false)
+        setAudioError(`播放失败: ${error.message}`)
+        toast.error("音乐播放失败", {
+          description: error.message
         })
-      } else {
-        console.log("等待用户交互后再播放")
-      }
+      })
     } else if (!isPlaying && audioRef.current) {
       audioRef.current.pause()
     }
-  }, [isPlaying, currentTrack, userInteracted, readyToPlay])
+  }, [isPlaying, userInteracted, readyToPlay])
   
   // 处理音量变化
   useEffect(() => {
@@ -111,7 +108,6 @@ export function MusicPlayerBar() {
   useEffect(() => {
     const handleUserInteraction = () => {
       if (!userInteracted) {
-        console.log("用户已交互，可以播放音频")
         setUserInteracted(true)
         
         // 如果状态是播放中且准备好播放，但因为没有用户交互而未播放，现在尝试播放
@@ -140,7 +136,6 @@ export function MusicPlayerBar() {
     if (!isTrackChanging || !audioRef.current || !userInteracted) return
     
     const handleCanPlay = () => {
-      console.log("新音轨可以播放，设置准备播放状态")
       setReadyToPlay(true)
       setIsTrackChanging(false)
       audioRef.current?.removeEventListener('canplay', handleCanPlay)
@@ -150,11 +145,32 @@ export function MusicPlayerBar() {
     return () => audioRef.current?.removeEventListener('canplay', handleCanPlay)
   }, [isTrackChanging, userInteracted])
   
+  // 监听窗口大小变化和显示模式变化，更新内边距
+  useEffect(() => {
+    const updatePadding = () => {
+      const mainContent = document.getElementById('main-content')
+      if (!mainContent) return
+      
+      const height = '3rem'
+      mainContent.style.paddingTop = height
+      document.documentElement.style.setProperty('--music-player-height', height)
+    }
+    
+    updatePadding()
+    window.addEventListener('resize', updatePadding)
+    
+    return () => window.removeEventListener('resize', updatePadding)
+  }, [displayMode])
+  
+  // 监听播放状态变化并触发自定义事件
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(MUSIC_PLAYING_EVENT, { detail: { isPlaying } }))
+  }, [isPlaying])
+  
   // 加载音频元数据
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
       setDuration(audioRef.current.duration)
-      console.log("音频元数据加载成功，时长:", audioRef.current.duration)
       setAudioError(null)
       setReadyToPlay(true)
     }
@@ -244,11 +260,8 @@ export function MusicPlayerBar() {
     return track ? track.name : currentTrack.split('/').pop()?.replace('.mp3', '')
   }
   
-  // 计算进度条百分比
-  const progressPercentage = ((currentTime / (duration || 1)) * 100).toFixed(2)
-  
   // 切换显示模式
-  const toggleDisplayMode = (mode: 'music' | 'apps' | 'settings') => {
+  const toggleDisplayMode = (mode: DisplayMode) => {
     setDisplayMode(mode)
   }
   
@@ -282,27 +295,8 @@ export function MusicPlayerBar() {
     }
   }
   
-  // 监听窗口大小变化和显示模式变化，更新内边距
-  useEffect(() => {
-    const updatePadding = () => {
-      const mainContent = document.getElementById('main-content')
-      if (!mainContent) return
-      
-      const height = '3rem'
-      mainContent.style.paddingTop = height
-      document.documentElement.style.setProperty('--music-player-height', height)
-    }
-    
-    updatePadding()
-    window.addEventListener('resize', updatePadding)
-    
-    return () => window.removeEventListener('resize', updatePadding)
-  }, [displayMode])
-  
-  // 监听播放状态变化并触发自定义事件
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent(MUSIC_PLAYING_EVENT, { detail: { isPlaying } }))
-  }, [isPlaying])
+  // 计算进度条百分比
+  const progressPercentage = ((currentTime / (duration || 1)) * 100).toFixed(2)
   
   // 渲染音乐播放器
   const renderMusicPlayer = () => (
@@ -445,8 +439,7 @@ export function MusicPlayerBar() {
       
       {/* 进度条 */}
       <div 
-        className="absolute bottom-0 left-0 h-1 bg-primary/30"
-        style={{ width: '100%' }}
+        className="absolute bottom-0 left-0 h-1 bg-primary/30 w-full"
       >
         <div 
           className="h-full bg-primary transition-all duration-100"
@@ -490,6 +483,34 @@ export function MusicPlayerBar() {
     </div>
   )
   
+  // 渲染背景选项按钮
+  const renderBackgroundButton = (bg: {id: string, name: string, url: string}) => (
+    <motion.div
+      key={bg.id}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="shrink-0"
+    >
+      <Button 
+        variant="ghost" 
+        className={cn(
+          "p-1 h-9 w-9 rounded-md overflow-hidden relative",
+          backgroundImage === bg.url && "ring-2 ring-primary"
+        )}
+        onClick={() => handleSetBackground(bg.url)}
+        title={bg.name}
+      >
+        {bg.url ? (
+          <Image src={bg.url} alt={bg.name} fill className="object-cover" />
+        ) : (
+          <div className="w-full h-full bg-muted flex items-center justify-center">
+            <span className="text-xs">无</span>
+          </div>
+        )}
+      </Button>
+    </motion.div>
+  )
+  
   // 渲染设置选项
   const renderSettings = () => (
     <div className="flex items-center space-x-3 overflow-x-auto scrollbar-none">
@@ -507,54 +528,10 @@ export function MusicPlayerBar() {
       </motion.div>
       
       {/* 背景图片选项 */}
-      {systemBackgrounds.map((bg) => (
-        <motion.div
-          key={bg.id}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="shrink-0"
-        >
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-              backgroundImage === bg.url && "ring-2 ring-primary"
-            )}
-            onClick={() => handleSetBackground(bg.url)}
-            title={bg.name}
-          >
-            {bg.url ? (
-              <Image src={bg.url} alt={bg.name} fill className="object-cover" />
-            ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <span className="text-xs">无</span>
-              </div>
-            )}
-          </Button>
-        </motion.div>
-      ))}
+      {systemBackgrounds.map(bg => renderBackgroundButton(bg))}
       
       {/* 用户自定义背景 */}
-      {customBackgrounds.map((bg) => (
-        <motion.div
-          key={bg.id}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="shrink-0"
-        >
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-              backgroundImage === bg.url && "ring-2 ring-primary"
-            )}
-            onClick={() => handleSetBackground(bg.url)}
-            title={bg.name}
-          >
-            <Image src={bg.url} alt={bg.name} fill className="object-cover" />
-          </Button>
-        </motion.div>
-      ))}
+      {customBackgrounds.map(bg => renderBackgroundButton(bg))}
       
       {/* 上传按钮 */}
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="shrink-0">
@@ -572,49 +549,56 @@ export function MusicPlayerBar() {
     </div>
   )
   
+  const renderContent = () => {
+    switch (displayMode) {
+      case 'music':
+        return (
+          <div className="h-full flex items-center">
+            {renderMusicPlayer()}
+          </div>
+        );
+      case 'apps':
+        return (
+          <div className="h-full flex items-center justify-between">
+            {/* 左侧：返回按钮 */}
+            <div className="flex items-center shrink-0">
+              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-7 w-7 mr-1" 
+                  onClick={() => toggleDisplayMode('music')}
+                  title="返回音乐播放器"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="sr-only">返回</span>
+                </Button>
+              </motion.div>
+            </div>
+            
+            {/* 右侧：应用图标 */}
+            <div className="flex-1 flex items-center justify-start">
+              {renderAppGrid()}
+            </div>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className="h-full flex items-center">
+            {renderSettings()}
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+  
   return (
     <div 
       id="music-player-bar"
-      className={cn(
-        "fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2",
-        "h-12" // 固定高度为3rem (12px * 4)
-      )}
+      className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2 h-12"
     >
-      {displayMode === 'music' ? (
-        // 音乐播放器模式
-        <div className="h-full flex items-center">
-          {renderMusicPlayer()}
-        </div>
-      ) : displayMode === 'apps' ? (
-        // 应用选择模式
-        <div className="h-full flex items-center justify-between">
-          {/* 左侧：返回按钮 */}
-          <div className="flex items-center shrink-0">
-            <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-7 w-7 mr-1" 
-                onClick={() => toggleDisplayMode('music')}
-                title="返回音乐播放器"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="sr-only">返回</span>
-              </Button>
-            </motion.div>
-          </div>
-          
-          {/* 右侧：应用图标 */}
-          <div className="flex-1 flex items-center justify-start">
-            {renderAppGrid()}
-          </div>
-        </div>
-      ) : (
-        // 设置模式
-        <div className="h-full flex items-center">
-          {renderSettings()}
-        </div>
-      )}
+      {renderContent()}
       
       <audio
         ref={audioRef}
