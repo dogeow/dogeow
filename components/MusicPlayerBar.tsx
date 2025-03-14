@@ -1,20 +1,29 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react'
-import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Music, Grid, ArrowLeft } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Music, Grid, ArrowLeft, Settings, Plus } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ModeToggle } from './ModeToggle'
-import { SettingsToggle } from './SettingsToggle'
 import { MUSIC_PLAYING_EVENT } from './MusicPlayer'
+import Image from 'next/image'
+import { useBackgroundStore } from '@/stores/backgroundStore'
 
 // 可用的音频文件列表
 const availableTracks = [
   { name: '和楽器バンド - 東風破', path: '/musics/和楽器バンド - 東風破.mp3' },
   { name: 'I WiSH - 明日への扉~5 years brew version~', path: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3' }
+]
+
+// 系统提供的背景图列表
+const systemBackgrounds = [
+  { id: "none", name: "无背景", url: "" },
+  { id: "bg1", name: "你的名字？·untitled", url: "/backgrounds/wallhaven-72rd8e_2560x1440-1.webp" },
+  { id: "bg2", name: "书房·我的世界", url: "/backgrounds/我的世界.png" },
+  { id: "bg3", name: "2·untitled", url: "/backgrounds/F_RIhiObMAA-c8N.jpeg" },
 ]
 
 export function MusicPlayerBar() {
@@ -24,6 +33,7 @@ export function MusicPlayerBar() {
     setVolume, 
     setCurrentTrack
   } = useMusicStore()
+  const { backgroundImage, setBackgroundImage } = useBackgroundStore()
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [duration, setDuration] = useState(0)
@@ -33,7 +43,8 @@ export function MusicPlayerBar() {
   const [isTrackChanging, setIsTrackChanging] = useState(false)
   const [readyToPlay, setReadyToPlay] = useState(false)
   const [isVolumeControlVisible, setIsVolumeControlVisible] = useState(false)
-  const [displayMode, setDisplayMode] = useState<'music' | 'apps'>('music')
+  const [displayMode, setDisplayMode] = useState<'music' | 'apps' | 'settings'>('music')
+  const [customBackgrounds, setCustomBackgrounds] = useState<Array<{id: string, name: string, url: string}>>([])
   
   const audioRef = useRef<HTMLAudioElement>(null)
   
@@ -302,15 +313,45 @@ export function MusicPlayerBar() {
   const progressPercentage = ((currentTime / (duration || 1)) * 100).toFixed(2)
   
   // 切换显示模式
-  const toggleDisplayMode = () => {
-    setDisplayMode(displayMode === 'music' ? 'apps' : 'music')
+  const toggleDisplayMode = (mode: 'music' | 'apps' | 'settings') => {
+    setDisplayMode(mode)
+  }
+  
+  // 设置背景图片
+  const handleSetBackground = (url: string) => {
+    setBackgroundImage(url)
+    toast.success("背景已更新")
+  }
+  
+  // 处理用户上传背景图片
+  const handleUploadBackground = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      const reader = new FileReader()
+      
+      reader.onload = (event) => {
+        if (event.target && typeof event.target.result === 'string') {
+          const newBackground = {
+            id: `custom-${Date.now()}`,
+            name: `自定义-${file.name}`,
+            url: event.target.result
+          }
+          
+          setCustomBackgrounds(prev => [...prev, newBackground])
+          handleSetBackground(newBackground.url)
+          toast.success("自定义背景已上传")
+        }
+      }
+      
+      reader.readAsDataURL(file)
+    }
   }
   
   // 监听窗口大小变化
   useEffect(() => {
     const handleResize = () => {
       const mainContent = document.getElementById('main-content')
-      if (mainContent && displayMode === 'apps') {
+      if (mainContent && displayMode !== 'music') {
         mainContent.style.paddingTop = window.innerWidth >= 640 ? '6rem' : '7rem'
       }
     }
@@ -321,13 +362,26 @@ export function MusicPlayerBar() {
     }
   }, [displayMode])
   
-  // 初始化内边距
+  // 初始化内边距，确保顶部栏的独立性
   useEffect(() => {
     const mainContent = document.getElementById('main-content')
     if (mainContent) {
       mainContent.style.paddingTop = '3rem' // 默认音乐模式高度
     }
+    
+    // 添加CSS变量到:root，方便其他组件使用
+    document.documentElement.style.setProperty('--music-player-height', '3rem')
   }, [])
+  
+  // 监听显示模式变化，更新内边距
+  useEffect(() => {
+    const mainContent = document.getElementById('main-content')
+    if (mainContent) {
+      const height = displayMode === 'music' ? '3rem' : '3rem'
+      mainContent.style.paddingTop = height
+      document.documentElement.style.setProperty('--music-player-height', height)
+    }
+  }, [displayMode])
   
   // 监听播放状态变化并触发自定义事件
   useEffect(() => {
@@ -355,7 +409,7 @@ export function MusicPlayerBar() {
                 variant="ghost" 
                 size="icon" 
                 className="h-7 w-7" 
-                onClick={toggleDisplayMode}
+                onClick={() => toggleDisplayMode('apps')}
                 title="切换到应用选择"
               >
                 <Grid className="h-4 w-4" />
@@ -474,19 +528,19 @@ export function MusicPlayerBar() {
               whileTap={{ scale: 0.9 }}
             >
               <Button 
-                variant="outline" 
+                variant="ghost" 
                 size="icon" 
                 className="h-8 w-8" 
                 onClick={handlePlayPause}
                 disabled={!!audioError}
               >
                 {isPlaying ? (
-                  <Pause className="h-4 w-4" />
-                ) : (
                   <Play className="h-4 w-4" />
+                ) : (
+                  <Pause className="h-4 w-4" />
                 )}
                 <span className="sr-only">
-                  {isPlaying ? '暂停' : '播放'}
+                  {isPlaying ? '播放' : '暂停'}
                 </span>
               </Button>
             </motion.div>
@@ -535,12 +589,151 @@ export function MusicPlayerBar() {
     )
   }
   
+  // 渲染应用网格
+  const renderAppGrid = () => {
+    return (
+      <div className="flex items-center space-x-4">
+        {/* 主题切换按钮 */}
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <ModeToggle />
+        </motion.div>
+        
+        {/* 设置按钮 */}
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-9 w-9"
+            onClick={() => toggleDisplayMode('settings')}
+          >
+            <Settings className="h-5 w-5" />
+            <span className="sr-only">打开设置</span>
+          </Button>
+        </motion.div>
+        
+        {/* 这里可以添加更多应用图标 */}
+      </div>
+    )
+  }
+  
+  // 渲染设置选项
+  const renderSettings = () => {
+    return (
+      <div className="flex items-center space-x-3 overflow-x-auto scrollbar-none">
+        {/* 返回按钮 */}
+        <motion.div
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="h-7 w-7 mr-1 shrink-0" 
+            onClick={() => toggleDisplayMode('apps')}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">返回</span>
+          </Button>
+        </motion.div>
+        
+        {/* 背景图片选项 */}
+        {systemBackgrounds.map((bg) => (
+          <motion.div
+            key={bg.id}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="shrink-0"
+          >
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "p-1 h-9 w-9 rounded-md overflow-hidden relative",
+                backgroundImage === bg.url && "ring-2 ring-primary"
+              )}
+              onClick={() => handleSetBackground(bg.url)}
+              title={bg.name}
+            >
+              {bg.url ? (
+                <Image 
+                  src={bg.url} 
+                  alt={bg.name} 
+                  fill 
+                  className="object-cover" 
+                />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <span className="text-xs">无</span>
+                </div>
+              )}
+            </Button>
+          </motion.div>
+        ))}
+        
+        {/* 用户自定义背景 */}
+        {customBackgrounds.map((bg) => (
+          <motion.div
+            key={bg.id}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="shrink-0"
+          >
+            <Button 
+              variant="ghost" 
+              className={cn(
+                "p-1 h-9 w-9 rounded-md overflow-hidden relative",
+                backgroundImage === bg.url && "ring-2 ring-primary"
+              )}
+              onClick={() => handleSetBackground(bg.url)}
+              title={bg.name}
+            >
+              <Image 
+                src={bg.url} 
+                alt={bg.name} 
+                fill 
+                className="object-cover" 
+              />
+            </Button>
+          </motion.div>
+        ))}
+        
+        {/* 上传按钮 */}
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="shrink-0"
+        >
+          <label 
+            className={cn(
+              "p-1 h-9 w-9 rounded-md overflow-hidden relative flex items-center justify-center cursor-pointer",
+              "bg-primary/10 hover:bg-primary/20 border-2 border-dashed border-primary/30"
+            )}
+            title="上传自定义背景"
+          >
+            <Plus className="h-5 w-5 text-primary/70" />
+            <input 
+              type="file" 
+              accept="image/*" 
+              className="hidden" 
+              onChange={handleUploadBackground} 
+            />
+          </label>
+        </motion.div>
+      </div>
+    )
+  }
+  
   return (
     <div 
       id="music-player-bar"
       className={cn(
         "fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2",
-        displayMode === 'music' ? "h-12" : "h-12"
+        "h-12" // 固定高度为3rem (12px * 4)
       )}
     >
       {displayMode === 'music' ? (
@@ -548,7 +741,7 @@ export function MusicPlayerBar() {
         <div className="h-full flex items-center">
           {renderMusicPlayer()}
         </div>
-      ) : (
+      ) : displayMode === 'apps' ? (
         // 应用选择模式
         <div className="h-full flex items-center justify-between">
           {/* 左侧：返回按钮 */}
@@ -561,7 +754,7 @@ export function MusicPlayerBar() {
                 variant="ghost" 
                 size="icon" 
                 className="h-7 w-7 mr-1" 
-                onClick={toggleDisplayMode}
+                onClick={() => toggleDisplayMode('music')}
                 title="返回音乐播放器"
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -572,28 +765,13 @@ export function MusicPlayerBar() {
           
           {/* 右侧：应用图标 */}
           <div className="flex-1 flex items-center justify-start">
-            {/* 主题切换按钮 */}
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center"
-            >
-              <div className="scale-75">
-                <ModeToggle />
-              </div>
-            </motion.div>
-            
-            {/* 设置按钮 */}
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex flex-col items-center"
-            >
-              <div className="scale-75">
-                <SettingsToggle />
-              </div>
-            </motion.div>
+            {renderAppGrid()}
           </div>
+        </div>
+      ) : (
+        // 设置模式
+        <div className="h-full flex items-center">
+          {renderSettings()}
         </div>
       )}
       

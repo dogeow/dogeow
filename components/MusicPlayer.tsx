@@ -51,7 +51,7 @@ export function MusicPlayer() {
       whileTap={{ scale: 0.95 }}
     >
       <Button 
-        variant="outline" 
+        variant="ghost" 
         size="icon" 
         className="h-10 w-10 rounded-md"
         onClick={showMusicPlayer}
