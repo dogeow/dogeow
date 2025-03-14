@@ -4,7 +4,6 @@ import config from '@/configs/app';
 import type { Tile } from '@/types/app';
 import { BackgroundWrapper } from "@/components/BackgroundWrapper";
 import { TopIcons } from "@/components/TopIcons";
-import { cn } from "@/lib/utils";
 
 export default function Home() {
   const tiles = config.tiles as Tile[];

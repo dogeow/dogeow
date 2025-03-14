@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/provider/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
-import { MusicPlayer } from "@/components/MusicPlayer"
 import "./globals.css";
 
 const geistSans = Geist({
@@ -36,9 +35,6 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-              <div className="fixed top-4 right-4 z-50">
-                <MusicPlayer />
-              </div>
               {children}
               <Toaster />
           </ThemeProvider>
