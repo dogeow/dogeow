@@ -362,12 +362,16 @@ export function MusicPlayerBar() {
           
           {/* 中间：歌曲信息 */}
           <div className="flex-1 overflow-hidden mx-1">
-            <div className="overflow-hidden">
-              <div className={cn("whitespace-nowrap", isPlaying && "scrolling-text")}>
-                <span className="text-sm font-medium inline-block">
+            <div className="scrolling-container" style={{ height: '20px' }}>
+              {isPlaying ? (
+                <span className="scrolling-text text-sm font-medium">
                   {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
                 </span>
-              </div>
+              ) : (
+                <span className="text-sm font-medium truncate block">
+                  {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
+                </span>
+              )}
             </div>
             
             <div className="text-xs text-muted-foreground truncate">

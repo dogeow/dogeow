@@ -237,19 +237,44 @@
   --error-text: hsl(var(--destructive-foreground));
 }
 
-/* 添加滚动文本动画 */
-@keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-100%); }
+/* 添加滚动文本动画容器 */
+.scrolling-container {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+  width: 100%;
 }
 
+/* 无缝滚动动画 */
+@keyframes scroll {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+/* 滚动文本样式 */
 .scrolling-text {
   display: inline-block;
-  animation: marquee 15s linear infinite;
-  animation-play-state: running;
-  padding-right: 100%;
+  white-space: nowrap;
+  position: absolute;
+  left: 0;
+  animation: scroll 15s linear infinite;
+  width: max-content;
 }
 
 .scrolling-text:hover {
   animation-play-state: paused;
+}
+
+/* 隐藏滚动条但保留滚动功能 */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari and Opera */
 }
