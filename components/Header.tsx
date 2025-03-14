@@ -151,15 +151,15 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center justify-between max-w-6xl mx-auto px-4">
-        <div className="flex items-center">
+      <div className="container flex h-14 items-center max-w-6xl mx-auto px-4">
+        <div className="flex items-center mr-8">
           <Link href="/lab" className="flex items-center space-x-2">
             <span className="font-bold">实验室</span>
           </Link>
         </div>
 
         {/* 桌面导航 */}
-        <div className="hidden md:flex flex-1 max-w-2xl">
+        <div className="hidden md:flex">
           <NavigationMenu>
             <NavigationMenuList className="gap-2">
               {navigationItems.map((item) => (
@@ -169,7 +169,7 @@ export function Header() {
           </NavigationMenu>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 ml-auto">
           <ModeToggle />
           
           {/* 移动端抽屉菜单 */}
