@@ -8,14 +8,14 @@ export default function Home() {
   const tiles = config.tiles as Tile[];
   
   return (
-    <div className="min-h-screen p-4">
-      <div className="absolute top-4 right-4 z-10">
+    <div className="min-h-screen container mx-auto p-4">
+      
+      <div className="flex items-center justify-between">
+        <h1 className="text-4xl font-light mb-8 mt-8 ml-2">我的应用</h1>
         <ModeToggle />
       </div>
       
-      <h1 className="text-4xl font-light mb-8 mt-8 ml-2">我的应用</h1>
-      
-      <div className="grid grid-cols-3 auto-rows-[8rem] gap-4 max-w-5xl mx-auto">
+      <div className="grid grid-cols-3 auto-rows-[8rem] gap-4">
         {tiles.map((tile: Tile, index: number) => (
           <Link 
             key={index}

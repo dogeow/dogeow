@@ -6,9 +6,9 @@ export default function RootLayout({
     children: React.ReactNode;
   }>) {
     return (
-      <div>
+      <div className="mx-auto container">
         <Header/>
-        <main className="container py-6">
+        <main className="py-6">
             {children}
         </main>
       </div>
