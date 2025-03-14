@@ -7,21 +7,13 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ModeToggle } from './ModeToggle'
+import { SettingsToggle } from './SettingsToggle'
 
 // 可用的音频文件列表
 const availableTracks = [
   { name: '和楽器バンド - 東風破', path: '/musics/和楽器バンド - 東風破.mp3' },
   { name: 'I WiSH - 明日への扉~5 years brew version~', path: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3' }
-]
-
-// 应用列表
-const apps = [
-  { name: '设置', icon: '⚙️', path: '/settings' },
-  { name: '音乐', icon: '🎵', path: '/music' },
-  { name: '图片', icon: '🖼️', path: '/images' },
-  { name: '视频', icon: '🎬', path: '/videos' },
-  { name: '文档', icon: '📄', path: '/documents' },
-  { name: '笔记', icon: '📝', path: '/notes' },
 ]
 
 export function MusicPlayerBar() {
@@ -344,33 +336,6 @@ export function MusicPlayerBar() {
     }
   }, [])
   
-  // 渲染应用图标
-  const renderApps = () => {
-    return (
-      <div className="w-full grid grid-cols-4 sm:grid-cols-6 gap-2 px-2">
-        {apps.map((app, index) => (
-          <motion.div
-            key={index}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="flex flex-col items-center"
-          >
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-5 w-5 rounded-md mb-1"
-              onClick={() => console.log(`打开应用: ${app.name}`)}
-            >
-              <span className="text-lg">{app.icon}</span>
-              <span className="sr-only">{app.name}</span>
-            </Button>
-            <span className="text-xs truncate w-full text-center">{app.name}</span>
-          </motion.div>
-        ))}
-      </div>
-    )
-  }
-  
   // 渲染音乐播放器
   const renderMusicPlayer = () => {
     return (
@@ -422,6 +387,8 @@ export function MusicPlayerBar() {
           
           {/* 右侧：播放控制和音量 */}
           <div className="flex items-center gap-1 ml-2 shrink-0">
+            
+            
             {/* 音量控制 */}
             <motion.div
               whileHover={{ scale: 1.1 }}
@@ -602,26 +569,28 @@ export function MusicPlayerBar() {
           </div>
           
           {/* 右侧：应用图标 */}
-          <div className="flex-1 flex items-center justify-end gap-2">
-            {apps.map((app, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center"
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7"
-                  onClick={() => console.log(`打开应用: ${app.name}`)}
-                  title={app.name}
-                >
-                  <span className="text-lg">{app.icon}</span>
-                  <span className="sr-only">{app.name}</span>
-                </Button>
-              </motion.div>
-            ))}
+          <div className="flex-1 flex items-center justify-start">
+            {/* 主题切换按钮 */}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center"
+            >
+              <div className="scale-75">
+                <ModeToggle />
+              </div>
+            </motion.div>
+            
+            {/* 设置按钮 */}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex flex-col items-center"
+            >
+              <div className="scale-75">
+                <SettingsToggle />
+              </div>
+            </motion.div>
           </div>
         </div>
       )}
