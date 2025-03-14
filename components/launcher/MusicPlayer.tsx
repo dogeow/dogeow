@@ -8,6 +8,37 @@ import { BackButton } from '@/components/ui/back-button'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 
+// 播放控制按钮组件
+interface PlayerControlButtonProps {
+  onClick: () => void
+  disabled?: boolean
+  title?: string
+  icon: React.ReactNode
+  className?: string
+}
+
+const PlayerControlButton = ({ 
+  onClick, 
+  disabled, 
+  title, 
+  icon, 
+  className = "h-7 w-7" 
+}: PlayerControlButtonProps) => (
+  <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className={className} 
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+    >
+      {icon}
+      <span className="sr-only">{title}</span>
+    </Button>
+  </motion.div>
+);
+
 // 音乐播放器组件的属性接口
 export interface MusicPlayerProps {
   isPlaying: boolean
@@ -138,46 +169,27 @@ export function MusicPlayer({
           </motion.div>
           
           {/* 播放控制 */}
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7" 
-              onClick={switchToPrevTrack}
-              disabled={!!audioError}
-              title="上一首"
-            >
-              <SkipBack className="h-4 w-4" />
-              <span className="sr-only">上一首</span>
-            </Button>
-          </motion.div>
+          <PlayerControlButton 
+            onClick={switchToPrevTrack}
+            disabled={!!audioError}
+            title="上一首"
+            icon={<SkipBack className="h-4 w-4" />}
+          />
           
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8" 
-              onClick={togglePlay}
-              disabled={!!audioError}
-            >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              <span className="sr-only">{isPlaying ? '暂停' : '播放'}</span>
-            </Button>
-          </motion.div>
+          <PlayerControlButton 
+            onClick={togglePlay}
+            disabled={!!audioError}
+            icon={isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            srText={isPlaying ? '暂停' : '播放'}
+            className="h-8 w-8"
+          />
           
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7" 
-              onClick={switchToNextTrack}
-              disabled={!!audioError}
-              title="下一首"
-            >
-              <SkipForward className="h-4 w-4" />
-              <span className="sr-only">下一首</span>
-            </Button>
-          </motion.div>
+          <PlayerControlButton 
+            onClick={switchToNextTrack}
+            disabled={!!audioError}
+            title="下一首"
+            icon={<SkipForward className="h-4 w-4" />}
+          />
         </div>
       </div>
       
