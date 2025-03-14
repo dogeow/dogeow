@@ -2,21 +2,18 @@
 
 import * as React from "react"
 import Image from "next/image"
-import { useTheme } from "next-themes"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { toast } from "@/components/ui/use-toast"
 import { useState, useEffect } from "react"
 import { useBackgroundStore } from "@/stores/backgroundStore"
 
 // 系统提供的背景图列表
 const systemBackgrounds = [
   { id: "none", name: "无背景", url: "" },
-  { id: "bg1", name: "背景1", url: "/backgrounds/bg1.jpg" },
-  { id: "bg2", name: "背景2", url: "/backgrounds/bg2.jpg" },
-  { id: "bg3", name: "背景3", url: "/backgrounds/bg3.jpg" },
+  { id: "bg1", name: "你的名字？·untitled", url: "/backgrounds/wallhaven-72rd8e_2560x1440-1.webp" },
+  { id: "bg2", name: "书房·我的世界", url: "/backgrounds/我的世界.png" },
+  { id: "bg3", name: "2·untitled", url: "/backgrounds/F_RIhiObMAA-c8N.jpeg" },
 ]
 
 export function BackgroundSettings() {
