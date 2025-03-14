@@ -1,30 +1,18 @@
 "use client"
 
 import React, { useEffect, useRef, useState } from 'react'
-import { ArrowLeft } from 'lucide-react'
 import { useMusicStore } from '@/stores/musicStore'
-import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { motion } from 'framer-motion'
 import { MUSIC_PLAYING_EVENT } from './MusicPlayer'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { MusicPlayer } from './launcher/MusicPlayer'
 import { AppGrid } from './launcher/AppGrid'
 import { SettingsPanel, CustomBackground } from './launcher/SettingsPanel'
+import launcherItems from '@/configs/app/launcher'
+import { LayoutGrid } from 'lucide-react'
 
 // 可用的音频文件列表
-const availableTracks = [
-  { name: '和楽器バンド - 東風破', path: '/musics/和楽器バンド - 東風破.mp3' },
-  { name: 'I WiSH - 明日への扉~5 years brew version~', path: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3' }
-]
-
-// 系统提供的背景图列表
-const systemBackgrounds = [
-  { id: "none", name: "无背景", url: "" },
-  { id: "bg1", name: "你的名字？·untitled", url: "/backgrounds/wallhaven-72rd8e_2560x1440-1.webp" },
-  { id: "bg2", name: "书房·我的世界", url: "/backgrounds/我的世界.png" },
-  { id: "bg3", name: "2·untitled", url: "/backgrounds/F_RIhiObMAA-c8N.jpeg" },
-]
+const availableTracks = launcherItems.availableTracks
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 
@@ -45,7 +33,7 @@ export function AppLauncher() {
   const [isTrackChanging, setIsTrackChanging] = useState(false)
   const [readyToPlay, setReadyToPlay] = useState(false)
   const [isVolumeControlVisible, setIsVolumeControlVisible] = useState(false)
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('music')
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
   
   const audioRef = useRef<HTMLAudioElement>(null)
@@ -293,20 +281,9 @@ export function AppLauncher() {
       case 'apps':
         return (
           <div className="h-full flex items-center justify-between">
-            {/* 左侧：返回按钮 */}
-            <div className="flex items-center shrink-0">
-              <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-7 w-7 mr-1" 
-                  onClick={() => toggleDisplayMode('music')}
-                  title="返回音乐播放器"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="sr-only">返回</span>
-                </Button>
-              </motion.div>
+            {/* 左侧：应用切换按钮 */}
+            <div className="flex items-center shrink-0 mr-2">
+              <LayoutGrid className="h-5 w-5" onClick={() => toggleDisplayMode('apps')}/>
             </div>
             
             {/* 右侧：应用图标 */}

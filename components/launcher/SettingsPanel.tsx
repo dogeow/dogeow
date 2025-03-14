@@ -1,22 +1,19 @@
 "use client"
 
 import React from 'react'
-import { ArrowLeft, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { toast } from 'sonner'
+import launcherItems from '@/configs/app/launcher'
+import { BackButton } from '@/components/ui/back-button'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 
-// 系统提供的背景图列表
-const systemBackgrounds = [
-  { id: "none", name: "无背景", url: "" },
-  { id: "bg1", name: "你的名字？·untitled", url: "/backgrounds/wallhaven-72rd8e_2560x1440-1.webp" },
-  { id: "bg2", name: "书房·我的世界", url: "/backgrounds/我的世界.png" },
-  { id: "bg3", name: "2·untitled", url: "/backgrounds/F_RIhiObMAA-c8N.jpeg" },
-]
+// 可用的音频文件列表
+const systemBackgrounds = launcherItems.systemBackgrounds;
 
 export type CustomBackground = {id: string, name: string, url: string};
 
@@ -96,17 +93,11 @@ export function SettingsPanel({
   return (
     <div className="flex items-center space-x-3 overflow-x-auto scrollbar-none">
       {/* 返回按钮 */}
-      <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-7 w-7 mr-1 shrink-0" 
-          onClick={() => toggleDisplayMode('apps')}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="sr-only">返回</span>
-        </Button>
-      </motion.div>
+      <BackButton 
+        onClick={() => toggleDisplayMode('apps')}
+        className="shrink-0"
+        
+      />
       
       {/* 背景图片选项 */}
       {systemBackgrounds.map(bg => renderBackgroundButton(bg))}

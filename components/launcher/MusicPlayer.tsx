@@ -4,6 +4,7 @@ import React from 'react'
 import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
+import { BackButton } from '@/components/ui/back-button'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 
@@ -53,20 +54,12 @@ export function MusicPlayer({
   return (
     <>
       <div className="w-full flex items-center justify-between">
-        {/* 左侧：应用切换按钮 */}
-        <div className="flex items-center shrink-0 mr-2">
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7" 
-              onClick={() => toggleDisplayMode('apps')}
-              title="切换到应用选择"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><rect width="6" height="6" x="3" y="3" rx="1" /><rect width="6" height="6" x="15" y="3" rx="1" /><rect width="6" height="6" x="3" y="15" rx="1" /><rect width="6" height="6" x="15" y="15" rx="1" /></svg>
-              <span className="sr-only">切换到应用选择</span>
-            </Button>
-          </motion.div>
+        {/* 左侧：返回按钮 */}
+        <div className="flex items-center shrink-0">
+          <BackButton 
+            onClick={() => toggleDisplayMode('apps')}
+            title="返回音乐播放器"
+          />
         </div>
         
         {/* 中间：歌曲信息 */}
