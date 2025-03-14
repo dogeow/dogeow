@@ -12,6 +12,7 @@
 - Zod（字段验证）
 - react-hook-form（表单填写）
 - Canvas / Three.js
+- (Lucide)[https://lucide.dev/]（图标）
 
 ## 其他尚未使用
 
