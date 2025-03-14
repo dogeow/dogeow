@@ -1,10 +1,6 @@
 // 导航项配置
 const navigationItems = [
     {
-      title: "首页",
-      href: "/lab",
-    },
-    {
       title: "关于",
       href: "/lab/about",
     },
