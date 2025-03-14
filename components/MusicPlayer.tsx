@@ -30,7 +30,7 @@ export function MusicPlayer() {
   // 切换到音乐播放器模式
   const showMusicPlayer = () => {
     // 获取顶部栏元素
-    const playerBar = document.getElementById('music-player-bar')
+    const playerBar = document.getElementById('launcher-bar')
     if (playerBar) {
       // 如果当前不是音乐模式，则触发切换
       if (playerBar.classList.contains('h-32') || playerBar.classList.contains('h-24')) {

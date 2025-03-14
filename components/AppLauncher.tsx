@@ -9,7 +9,8 @@ import { MusicPlayer } from './launcher/MusicPlayer'
 import { AppGrid } from './launcher/AppGrid'
 import { SettingsPanel, CustomBackground } from './launcher/SettingsPanel'
 import launcherItems from '@/configs/app/launcher'
-import { LayoutGrid } from 'lucide-react'
+import Image from 'next/image'
+import Logo from '@/public/images/80.png'
 
 // 可用的音频文件列表
 const availableTracks = launcherItems.availableTracks
@@ -282,8 +283,8 @@ export function AppLauncher() {
         return (
           <div className="h-full flex items-center justify-between">
             {/* 左侧：应用切换按钮 */}
-            <div className="flex items-center shrink-0 mr-2">
-              <LayoutGrid className="h-5 w-5" onClick={() => toggleDisplayMode('apps')}/>
+            <div className="flex items-center shrink-0 mr-6">
+              <Image src={Logo} alt="apps" className="h-10 w-10" onClick={() => toggleDisplayMode('apps')}/>
             </div>
             
             {/* 右侧：应用图标 */}
@@ -311,7 +312,7 @@ export function AppLauncher() {
   
   return (
     <div 
-      id="music-player-bar"
+      id="launcher-bar"
       className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2 h-12"
     >
       {renderContent()}
