@@ -10,9 +10,4 @@ export interface Tile {
 
 export interface AppConfig {
   tiles: Tile[];
-  // 这里可以添加其他配置项
-  // 例如：
-  // theme: ThemeConfig;
-  // api: ApiConfig;
-  // etc...
 } 

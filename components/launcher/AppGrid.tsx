@@ -4,7 +4,7 @@ import React from 'react'
 import { Settings, Music  } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { ModeToggle } from '../ModeToggle'
+import { ModeToggle } from './ModeToggle'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 

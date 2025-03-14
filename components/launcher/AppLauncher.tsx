@@ -4,12 +4,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useMusicStore } from '@/stores/musicStore'
 import { toast } from 'sonner'
 import { useBackgroundStore } from '@/stores/backgroundStore'
-import { MusicPlayer } from './launcher/MusicPlayer'
-import { AppGrid } from './launcher/AppGrid'
-import { SettingsPanel, CustomBackground } from './launcher/SettingsPanel'
+import { MusicPlayer } from './MusicPlayer'
+import { AppGrid } from './AppGrid'
+import { SettingsPanel, CustomBackground } from './SettingsPanel'
 import launcherItems from '@/configs/app/launcher'
 import Image from 'next/image'
 import Logo from '@/public/images/80.png'
+import { useRouter } from 'next/navigation'
 
 // 可用的音频文件列表
 const availableTracks = launcherItems.availableTracks
@@ -17,6 +18,8 @@ const availableTracks = launcherItems.availableTracks
 type DisplayMode = 'music' | 'apps' | 'settings';
 
 export function AppLauncher() {
+  const router = useRouter()
+  
   const { 
     currentTrack, 
     volume, 
@@ -278,7 +281,7 @@ export function AppLauncher() {
           <div className="h-full flex items-center justify-between">
             {/* 左侧：应用切换按钮 */}
             <div className="flex items-center shrink-0 mr-6">
-              <Image src={Logo} alt="apps" className="h-10 w-10" onClick={() => toggleDisplayMode('apps')}/>
+              <Image src={Logo} alt="apps" className="h-10 w-10" onClick={() => router.push('/')}/>
             </div>
             
             {/* 右侧：应用图标 */}

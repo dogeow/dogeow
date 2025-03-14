@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { Menu } from "lucide-react";
-import { ModeToggle } from "./ModeToggle";
+import { ModeToggle } from "../launcher/ModeToggle";
 import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from "@/components/ui/navigation-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -170,8 +170,6 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-4 ml-auto">
-          <ModeToggle />
-          
           {/* 移动端抽屉菜单 */}
           <div className="md:hidden">
             <Sheet>
