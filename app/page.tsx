@@ -9,6 +9,16 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const router = useRouter()
   const tiles = config.tiles as Tile[];
+
+  // Font Name: Calvin S
+  window.console.log(
+    `%c
+    ╔╦╗┌─┐┌─┐┌─┐╔═╗╦ ╦
+     ║║│ ││ ┬├┤ ║ ║║║║
+    ═╩╝└─┘└─┘└─┘╚═╝╚╩╝
+`,
+    "color: pink"
+  );
   
   return (
     <BackgroundWrapper>
