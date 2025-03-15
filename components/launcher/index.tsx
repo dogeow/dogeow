@@ -243,6 +243,31 @@ export function AppLauncher() {
     setDisplayMode(mode)
   }
   
+  // 应用背景图片
+  useEffect(() => {
+    if (backgroundImage) {
+      // 系统背景图片
+      if (backgroundImage.startsWith('wallhaven') || backgroundImage.startsWith('我的世界') || backgroundImage.startsWith('F_RIhiObMAA')) {
+        document.body.style.backgroundImage = `url(/images/backgrounds/${backgroundImage})`;
+      } 
+      // 自定义上传的背景图片（base64格式）
+      else if (backgroundImage.startsWith('data:')) {
+        document.body.style.backgroundImage = `url(${backgroundImage})`;
+      }
+      // 无背景
+      else if (backgroundImage === '') {
+        document.body.style.backgroundImage = '';
+      }
+      
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundRepeat = 'no-repeat';
+      document.body.style.backgroundAttachment = 'fixed';
+    } else {
+      document.body.style.backgroundImage = '';
+    }
+  }, [backgroundImage]);
+  
   const renderContent = () => {
     switch (displayMode) {
       case 'music':
