@@ -9,9 +9,9 @@ const launcherItems = {
   // 系统提供的背景图列表
   systemBackgrounds: [
     { id: "none", name: "无背景", url: "" },
-    { id: "bg1", name: "你的名字？·untitled", url: "/backgrounds/wallhaven-72rd8e_2560x1440-1.webp" },
-    { id: "bg2", name: "书房·我的世界", url: "/backgrounds/我的世界.png" },
-    { id: "bg3", name: "2·untitled", url: "/backgrounds/F_RIhiObMAA-c8N.jpeg" },
+    { id: "bg1", name: "你的名字？·untitled", url: "wallhaven-72rd8e_2560x1440-1.webp" },
+    { id: "bg2", name: "书房·我的世界", url: "我的世界.png" },
+    { id: "bg3", name: "2·untitled", url: "F_RIhiObMAA-c8N.jpeg" },
   ]
 };
 

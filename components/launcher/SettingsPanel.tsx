@@ -86,7 +86,7 @@ export function SettingsPanel({
         title={bg.name}
       >
         {bg.url ? (
-          <Image src={bg.url} alt={bg.name} fill className="object-cover" />
+          <Image src={`/images/backgrounds/${bg.url}`} alt={bg.name} fill className="object-cover" />
         ) : (
           <div className="w-full h-full bg-muted flex items-center justify-center">
             <span className="text-xs">无</span>

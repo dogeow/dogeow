@@ -39,7 +39,7 @@ export default function Home() {
             >
               <div className="absolute top-3 left-3 w-10 h-10">
                 <Image
-                  src={tile.icon}
+                  src={`/images/projects/${tile.icon}`}
                   alt={tile.name}
                   fill
                   className="object-contain"
