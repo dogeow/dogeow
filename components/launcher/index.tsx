@@ -298,7 +298,11 @@ export function AppLauncher() {
   return (
     <div 
       id="app-launcher-bar"
-      className="flex-none h-12 bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2"
+      className="bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2"
+      style={{ 
+        height: '3rem',
+        width: '100%'
+      }}
     >
       {renderContent()}
       

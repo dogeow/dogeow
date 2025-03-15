@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { Toaster } from "@/components/ui/sonner"
-import { AppLauncher } from "@/components/launcher/AppLauncher"
+import { AppLauncher } from "@/components/launcher"
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,10 +29,25 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        style={{ 
+          overflow: 'hidden',
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
       >
         <ThemeProvider>
-          <AppLauncher />
-          <div className="pt-12 transition-all duration-300" id="main-content">
+          <div style={{ flex: 'none' }}>
+            <AppLauncher />
+          </div>
+          <div 
+            id="main-content"
+            style={{
+              flex: '1 1 auto',
+              height: 'calc(100vh - 3rem)',
+              position: 'relative'
+            }}
+          >
             {children}
           </div>
           <Toaster />
