@@ -127,11 +127,6 @@ export function SettingsPanel({
         className="shrink-0"
       />
       
-      <div className="flex items-center gap-2 shrink-0">
-        <ImageIcon className="h-4 w-4" />
-        <span className="text-sm font-medium">背景</span>
-      </div>
-      
       <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
       
       {/* 背景图片选项 */}
@@ -163,11 +158,6 @@ export function SettingsPanel({
         onClick={() => setCurrentView('main')}
         className="shrink-0"
       />
-      
-      <div className="flex items-center gap-2 shrink-0">
-        <Palette className="h-4 w-4" />
-        <span className="text-sm font-medium">主题</span>
-      </div>
       
       <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
       
@@ -271,12 +261,6 @@ export function SettingsPanel({
             onClick={() => toggleDisplayMode('apps')}
             className="shrink-0"
           />
-          
-          {/* 设置图标 */}
-          <div className="flex items-center gap-2 shrink-0">
-            <Settings className="h-4 w-4" />
-            <span className="text-sm font-medium">设置</span>
-          </div>
           
           <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
           
