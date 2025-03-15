@@ -63,8 +63,8 @@ interface ItemState {
   fetchItems: (params?: Record<string, any>) => Promise<void>;
   fetchCategories: () => Promise<void>;
   getItem: (id: number) => Promise<Item | null>;
-  createItem: (data: Partial<Item> & { images?: File[] }) => Promise<Item>;
-  updateItem: (id: number, data: Partial<Item> & { images?: File[] }) => Promise<Item>;
+  createItem: (data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => Promise<Item>;
+  updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => Promise<Item>;
   deleteItem: (id: number) => Promise<void>;
 }
 

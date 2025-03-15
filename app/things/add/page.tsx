@@ -15,6 +15,10 @@ import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
 import { API_BASE_URL } from '@/configs/api'
+import { format } from 'date-fns'
+
+// 导入Item类型
+import type { Item } from '@/types/item'
 
 export default function AddItem() {
   const router = useRouter()
@@ -27,14 +31,29 @@ export default function AddItem() {
   const [imagePreviews, setImagePreviews] = useState<{url: string, name: string}[]>([])
   
   // 表单数据
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    images: File[];
+    name: string;
+    description: string;
+    quantity: number;
+    status: string;
+    purchase_date: string | null;
+    expiry_date: string | null;
+    purchase_price: number | null;
+    category_id: string;
+    area_id: string;
+    room_id: string;
+    spot_id: string;
+    is_public: boolean;
+  }>({
+    images: [],
     name: '',
     description: '',
     quantity: 1,
     status: 'active',
-    purchase_date: null as Date | null,
-    expiry_date: null as Date | null,
-    purchase_price: '',
+    purchase_date: null,
+    expiry_date: null,
+    purchase_price: null,
     category_id: '',
     area_id: '',
     room_id: '',
@@ -128,8 +147,15 @@ export default function AddItem() {
   }, [formData.room_id])
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    const { name, value, type } = e.target as HTMLInputElement;
+    
+    if (type === 'number') {
+      // 对于数字类型的输入，转换为数字或null
+      const numValue = value === '' ? null : Number(value);
+      setFormData(prev => ({ ...prev, [name]: numValue }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   }
   
   const handleSelectChange = (name: string, value: string) => {
@@ -138,8 +164,11 @@ export default function AddItem() {
     setFormData(prev => ({ ...prev, [name]: actualValue }))
   }
   
-  const handleDateChange = (name: string, date: Date | null) => {
-    setFormData(prev => ({ ...prev, [name]: date }))
+  const handleDateChange = (name: 'purchase_date' | 'expiry_date', date: Date | null) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: date ? format(date, 'yyyy-MM-dd') : null
+    }));
   }
   
   const handleSwitchChange = (name: string, checked: boolean) => {
@@ -176,13 +205,18 @@ export default function AddItem() {
     setLoading(true)
     
     try {
-      // 准备提交数据
+      // 准备提交数据，转换ID类型
       const itemData = {
         ...formData,
-        images: imageFiles,
+        category_id: formData.category_id === '' ? null : Number(formData.category_id),
+        spot_id: formData.spot_id === '' ? null : Number(formData.spot_id),
       }
       
-      await createItem(itemData)
+      // 单独处理图片，不作为itemData的一部分
+      await createItem({
+        ...itemData,
+        images: imageFiles
+      })
       
       toast.success("物品已成功添加")
       
@@ -195,17 +229,17 @@ export default function AddItem() {
   }
   
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Button variant="outline" size="icon" onClick={() => router.push('/things')} className="mr-4">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-3xl font-bold">添加物品</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">添加物品</h1>
         </div>
       </div>
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             <Card>
@@ -213,32 +247,38 @@ export default function AddItem() {
                 <CardTitle>基本信息</CardTitle>
                 <CardDescription>填写物品的基本信息</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">物品名称 *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description">描述</Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      rows={4}
-                    />
-                  </div>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">名称</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description">描述</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={4}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>详细信息</CardTitle>
+                <CardDescription>填写物品的详细信息</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="quantity">数量</Label>
                     <Input
@@ -271,7 +311,7 @@ export default function AddItem() {
                   <div className="space-y-2">
                     <Label htmlFor="purchase_date">购买日期</Label>
                     <DatePicker
-                      date={formData.purchase_date}
+                      date={formData.purchase_date ? new Date(formData.purchase_date) : null}
                       setDate={(date) => handleDateChange('purchase_date', date)}
                       placeholder="选择日期"
                     />
@@ -280,7 +320,7 @@ export default function AddItem() {
                   <div className="space-y-2">
                     <Label htmlFor="expiry_date">过期日期</Label>
                     <DatePicker
-                      date={formData.expiry_date}
+                      date={formData.expiry_date ? new Date(formData.expiry_date) : null}
                       setDate={(date) => handleDateChange('expiry_date', date)}
                       placeholder="选择日期"
                     />
@@ -294,7 +334,7 @@ export default function AddItem() {
                       type="number"
                       step="0.01"
                       min="0"
-                      value={formData.purchase_price}
+                      value={formData.purchase_price === null ? '' : formData.purchase_price}
                       onChange={handleInputChange}
                     />
                   </div>
@@ -320,7 +360,7 @@ export default function AddItem() {
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mt-4">
                   <Switch
                     id="is_public"
                     checked={formData.is_public}
@@ -337,51 +377,49 @@ export default function AddItem() {
                 <CardDescription>上传物品的图片</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-4">
-                    <Label htmlFor="images">上传图片</Label>
-                    <div className="flex items-center gap-4">
-                      <label htmlFor="images" className="cursor-pointer">
-                        <div className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg hover:bg-muted/50">
-                          <Upload className="h-6 w-6 mb-1 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">添加图片</span>
-                        </div>
-                        <input
-                          type="file"
-                          id="images"
-                          multiple
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageChange}
-                        />
-                      </label>
-                      
-                      {imagePreviews.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto py-2">
-                          {imagePreviews.map((preview, index) => (
-                            <div key={index} className="relative">
-                              <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-                                <Image
-                                  src={preview.url}
-                                  alt={preview.name}
-                                  fill
-                                  className="object-cover"
-                                />
-                              </div>
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="icon"
-                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                                onClick={() => removeImage(index)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
+                <div className="space-y-4">
+                  <Label htmlFor="images">上传图片</Label>
+                  <div className="flex flex-wrap items-start gap-4">
+                    <label htmlFor="images" className="cursor-pointer">
+                      <div className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg hover:bg-muted/50">
+                        <Upload className="h-6 w-6 mb-1 text-muted-foreground" />
+                        <span className="text-xs text-muted-foreground">添加图片</span>
+                      </div>
+                      <input
+                        type="file"
+                        id="images"
+                        multiple
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleImageChange}
+                      />
+                    </label>
+                    
+                    {imagePreviews.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {imagePreviews.map((preview, index) => (
+                          <div key={index} className="relative">
+                            <div className="relative w-24 h-24 rounded-lg overflow-hidden">
+                              <Image
+                                src={preview.url}
+                                alt={preview.name}
+                                fill
+                                className="object-cover"
+                              />
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                              onClick={() => removeImage(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -459,7 +497,7 @@ export default function AddItem() {
               </CardContent>
             </Card>
             
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 sticky bottom-4 bg-background p-4 rounded-lg shadow-lg">
               <Button
                 type="button"
                 variant="outline"

@@ -258,7 +258,7 @@ export default function EditItem() {
   
   if (initialLoading) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 px-4">
         <div className="flex justify-center items-center h-64">
           <p>加载中...</p>
         </div>
@@ -267,17 +267,17 @@ export default function EditItem() {
   }
   
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Button variant="outline" size="icon" onClick={() => router.push(`/things/${params.id}`)} className="mr-4">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-3xl font-bold">编辑物品</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">编辑物品</h1>
         </div>
       </div>
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
             <Card>
@@ -285,32 +285,38 @@ export default function EditItem() {
                 <CardTitle>基本信息</CardTitle>
                 <CardDescription>编辑物品的基本信息</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">物品名称 *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="description">描述</Label>
-                    <Textarea
-                      id="description"
-                      name="description"
-                      value={formData.description}
-                      onChange={handleInputChange}
-                      rows={4}
-                    />
-                  </div>
+              <CardContent className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="name">名称</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="description">描述</Label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={4}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>详细信息</CardTitle>
+                <CardDescription>编辑物品的详细信息</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="quantity">数量</Label>
                     <Input
@@ -392,7 +398,7 @@ export default function EditItem() {
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mt-4">
                   <Switch
                     id="is_public"
                     checked={formData.is_public}
@@ -409,47 +415,47 @@ export default function EditItem() {
                 <CardDescription>编辑物品的图片</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 gap-4">
-                  <div className="space-y-4">
-                    <Label htmlFor="images">现有图片</Label>
-                    {existingImages.length > 0 ? (
-                      <div className="flex gap-2 overflow-x-auto py-2">
-                        {existingImages.map((image) => (
-                          <div key={image.id} className="relative">
-                            <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-                              <Image
-                                src={`http://127.0.0.1:8001/storage/${image.thumbnail_path}`}
-                                alt="物品图片"
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                              onClick={() => removeExistingImage(image.id)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
+                <div className="space-y-4">
+                  <Label>现有图片</Label>
+                  {existingImages.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {existingImages.map((image) => (
+                        <div key={image.id} className="relative">
+                          <div className="relative w-24 h-24 rounded-lg overflow-hidden">
+                            <Image
+                              src={`http://127.0.0.1:8000/storage/${image.thumbnail_path}`}
+                              alt={formData.name}
+                              fill
+                              className="object-cover"
+                            />
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-muted-foreground">无现有图片</p>
-                    )}
-                    
-                    <Label htmlFor="new_images">上传新图片</Label>
-                    <div className="flex items-center gap-4">
-                      <label htmlFor="new_images" className="cursor-pointer">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                            onClick={() => removeExistingImage(image.id)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-muted-foreground">无现有图片</p>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="images">上传新图片</Label>
+                    <div className="flex flex-wrap items-start gap-4">
+                      <label htmlFor="images" className="cursor-pointer">
                         <div className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg hover:bg-muted/50">
                           <Upload className="h-6 w-6 mb-1 text-muted-foreground" />
                           <span className="text-xs text-muted-foreground">添加图片</span>
                         </div>
                         <input
                           type="file"
-                          id="new_images"
+                          id="images"
                           multiple
                           accept="image/*"
                           className="hidden"
@@ -458,7 +464,7 @@ export default function EditItem() {
                       </label>
                       
                       {imagePreviews.length > 0 && (
-                        <div className="flex gap-2 overflow-x-auto py-2">
+                        <div className="flex flex-wrap gap-2">
                           {imagePreviews.map((preview, index) => (
                             <div key={index} className="relative">
                               <div className="relative w-24 h-24 rounded-lg overflow-hidden">
@@ -560,7 +566,7 @@ export default function EditItem() {
               </CardContent>
             </Card>
             
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 sticky bottom-4 bg-background p-4 rounded-lg shadow-lg">
               <Button
                 type="button"
                 variant="outline"
@@ -569,7 +575,7 @@ export default function EditItem() {
                 取消
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? '保存中...' : '保存更改'}
+                {loading ? '保存中...' : '保存修改'}
               </Button>
             </div>
           </div>

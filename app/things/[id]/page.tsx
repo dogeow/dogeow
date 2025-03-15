@@ -92,7 +92,7 @@ export default function ItemDetail() {
   
   if (loading) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 px-4">
         <div className="flex justify-center items-center h-64">
           <p>加载中...</p>
         </div>
@@ -102,7 +102,7 @@ export default function ItemDetail() {
   
   if (error || !item) {
     return (
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 px-4">
         <div className="flex flex-col justify-center items-center h-64">
           <p className="text-red-500 mb-4">{error || '物品不存在'}</p>
           <Button onClick={() => router.push('/things')}>
@@ -114,19 +114,19 @@ export default function ItemDetail() {
   }
   
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="container mx-auto py-6 px-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center">
           <Button variant="outline" size="icon" onClick={() => router.push('/things')} className="mr-4">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-3xl font-bold">{item.name}</h1>
+          <h1 className="text-2xl md:text-3xl font-bold truncate">{item.name}</h1>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleEdit}>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handleEdit} className="flex-1 sm:flex-auto">
             <Edit className="mr-2 h-4 w-4" /> 编辑
           </Button>
-          <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+          <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)} className="flex-1 sm:flex-auto">
             <Trash2 className="mr-2 h-4 w-4" /> 删除
           </Button>
         </div>
@@ -137,7 +137,7 @@ export default function ItemDetail() {
           <Card>
             <CardHeader>
               <CardTitle>物品信息</CardTitle>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {getStatusBadge(item.status)}
                 <Badge variant={item.is_public ? "default" : "outline"}>
                   {item.is_public ? '公开' : '私有'}
@@ -157,7 +157,7 @@ export default function ItemDetail() {
                       />
                     </div>
                     {item.images.length > 1 && (
-                      <div className="flex gap-2 overflow-x-auto py-2">
+                      <div className="flex flex-wrap gap-2 py-2">
                         {item.images.map((image, index) => (
                           <div
                             key={image.id}
@@ -190,7 +190,7 @@ export default function ItemDetail() {
                 
                 <Separator />
                 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <h3 className="font-medium mb-1">数量</h3>
                     <p>{item.quantity}</p>

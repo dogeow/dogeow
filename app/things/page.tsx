@@ -65,32 +65,31 @@ export default function Things() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">物品管理</h1>
+    <div className="container mx-auto py-6 px-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold">物品管理</h1>
         <Button onClick={handleAddItem}>
           <Plus className="mr-2 h-4 w-4" /> 添加物品
         </Button>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1">
-          <form onSubmit={handleSearch} className="flex w-full max-w-lg items-center space-x-2">
-            <Input
-              type="text"
-              placeholder="搜索物品..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="flex-1"
-            />
-            <Button type="submit" variant="outline">
-              <Search className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-4 mb-6">
+        <form onSubmit={handleSearch} className="flex w-full items-center space-x-2">
+          <Input
+            type="text"
+            placeholder="搜索物品..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1"
+          />
+          <Button type="submit" variant="outline">
+            <Search className="h-4 w-4" />
+          </Button>
+        </form>
+        
+        <div className="flex flex-wrap items-center gap-2">
           <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="所有分类" />
             </SelectTrigger>
             <SelectContent>
@@ -105,7 +104,7 @@ export default function Things() {
 
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
             <SheetTrigger asChild>
-              <Button variant="outline">
+              <Button variant="outline" className="flex-1 sm:flex-none">
                 <SlidersHorizontal className="h-4 w-4 mr-2" />
                 筛选
               </Button>
@@ -123,7 +122,7 @@ export default function Things() {
             </SheetContent>
           </Sheet>
 
-          <Tabs value={viewMode} onValueChange={setViewMode} className="w-[120px]">
+          <Tabs value={viewMode} onValueChange={setViewMode} className="w-full sm:w-[120px]">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="grid">网格</TabsTrigger>
               <TabsTrigger value="list">列表</TabsTrigger>
@@ -163,7 +162,7 @@ export default function Things() {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex justify-center mt-6">
+            <div className="flex justify-center mt-6 overflow-x-auto pb-4">
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
