@@ -11,11 +11,15 @@ import launcherItems from '@/configs/app/launcher'
 import Image from 'next/image'
 import Logo from '@/public/images/80.png'
 import { useRouter } from 'next/navigation'
+import { AuthPanel } from '../auth/AuthPanel'
+import { Settings, User } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import useAuthStore from '@/stores/authStore'
 
 // 可用的音频文件列表
 const availableTracks = launcherItems.availableTracks
 
-type DisplayMode = 'music' | 'apps' | 'settings';
+type DisplayMode = 'music' | 'apps' | 'settings' | 'auth';
 
 export function AppLauncher() {
   const router = useRouter()
@@ -38,6 +42,7 @@ export function AppLauncher() {
   const [isVolumeControlVisible, setIsVolumeControlVisible] = useState(false)
   const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
+  const { isAuthenticated, user } = useAuthStore()
   
   const audioRef = useRef<HTMLAudioElement>(null)
   
@@ -250,10 +255,7 @@ export function AppLauncher() {
               duration={duration}
               volume={volume}
               isMuted={isMuted}
-              isVolumeControlVisible={isVolumeControlVisible}
-              toggleVolumeControl={toggleVolumeControl}
               toggleMute={toggleMute}
-              handleVolumeChange={handleVolumeChange}
               switchToPrevTrack={switchToPrevTrack}
               switchToNextTrack={switchToNextTrack}
               togglePlay={togglePlay}
@@ -272,9 +274,30 @@ export function AppLauncher() {
               <Image src={Logo} alt="apps" className="h-10 w-10" onClick={() => router.push('/')}/>
             </div>
             
-            {/* 右侧：应用图标 */}
+            {/* 中间：应用图标 */}
             <div className="flex-1 flex items-center justify-start">
               <AppGrid toggleDisplayMode={toggleDisplayMode} />
+            </div>
+            
+            {/* 右侧：用户 */}
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2 shrink-0 h-9 px-3"
+                onClick={() => toggleDisplayMode('auth')}
+              >
+                {isAuthenticated && user ? (
+                  <>
+                    <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <User className="h-4 w-4" />
+                  </>
+                )}
+              </Button>
             </div>
           </div>
         );
@@ -290,33 +313,41 @@ export function AppLauncher() {
             />
           </div>
         );
+      case 'auth':
+        return (
+          <div className="h-full flex items-center">
+            <AuthPanel toggleDisplayMode={toggleDisplayMode} />
+          </div>
+        );
       default:
         return null;
     }
   };
   
   return (
-    <div 
-      id="app-launcher-bar"
-      className="bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2"
-      style={{ 
-        height: '3rem',
-        width: '100%'
-      }}
-    >
-      {renderContent()}
-      
-      <audio
-        ref={audioRef}
-        src={currentTrack}
-        onLoadedMetadata={handleLoadedMetadata}
-        onTimeUpdate={handleTimeUpdate}
-        onEnded={switchToNextTrack}
-        onError={handleAudioError}
-        loop={false}
-        hidden
-        preload="metadata"
-      />
-    </div>
-  )
+    <>
+      <div 
+        id="app-launcher-bar"
+        className="bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2"
+        style={{ 
+          height: '3rem',
+          width: '100%'
+        }}
+      >
+        {renderContent()}
+        
+        <audio
+          ref={audioRef}
+          src={currentTrack}
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+          onEnded={switchToNextTrack}
+          onError={handleAudioError}
+          loop={false}
+          hidden
+          preload="metadata"
+        />
+      </div>
+    </>
+  );
 } 
