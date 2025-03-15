@@ -16,6 +16,7 @@ import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
 import { API_BASE_URL } from '@/configs/api'
 import { format } from 'date-fns'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // 导入Item类型
 import type { Item } from '@/types/item'
@@ -205,12 +206,19 @@ export default function AddItem() {
     setLoading(true)
     
     try {
-      // 准备提交数据，转换ID类型
+      // 准备提交数据，转换ID类型和确保正确的数据类型
       const itemData = {
         ...formData,
         category_id: formData.category_id === '' ? null : Number(formData.category_id),
         spot_id: formData.spot_id === '' ? null : Number(formData.spot_id),
+        purchase_price: formData.purchase_price, // 已经是数字类型
+        is_public: Boolean(formData.is_public), // 确保 is_public 是布尔值
       }
+      
+      // 添加日志输出，查看提交的数据
+      console.log('提交的数据:', itemData);
+      console.log('is_public 类型:', typeof itemData.is_public);
+      console.log('is_public 值:', itemData.is_public);
       
       // 单独处理图片，不作为itemData的一部分
       await createItem({
@@ -222,6 +230,7 @@ export default function AddItem() {
       
       router.push('/things')
     } catch (error) {
+      console.error('提交错误:', error)
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
     } finally {
       setLoading(false)
@@ -240,8 +249,13 @@ export default function AddItem() {
       </div>
       
       <form onSubmit={handleSubmit} className="pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="basic">基本信息</TabsTrigger>
+            <TabsTrigger value="details">详细信息</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="basic" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>基本信息</CardTitle>
@@ -269,15 +283,7 @@ export default function AddItem() {
                     rows={4}
                   />
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>详细信息</CardTitle>
-                <CardDescription>填写物品的详细信息</CardDescription>
-              </CardHeader>
-              <CardContent>
+                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="quantity">数量</Label>
@@ -309,37 +315,6 @@ export default function AddItem() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="purchase_date">购买日期</Label>
-                    <DatePicker
-                      date={formData.purchase_date ? new Date(formData.purchase_date) : null}
-                      setDate={(date) => handleDateChange('purchase_date', date)}
-                      placeholder="选择日期"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="expiry_date">过期日期</Label>
-                    <DatePicker
-                      date={formData.expiry_date ? new Date(formData.expiry_date) : null}
-                      setDate={(date) => handleDateChange('expiry_date', date)}
-                      placeholder="选择日期"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="purchase_price">购买价格</Label>
-                    <Input
-                      id="purchase_price"
-                      name="purchase_price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.purchase_price === null ? '' : formData.purchase_price}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
                     <Label htmlFor="category_id">分类</Label>
                     <Select
                       value={formData.category_id}
@@ -358,15 +333,17 @@ export default function AddItem() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-2 mt-4">
-                  <Switch
-                    id="is_public"
-                    checked={formData.is_public}
-                    onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
-                  />
-                  <Label htmlFor="is_public">公开物品（其他用户可见）</Label>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="is_public" className="flex items-center space-x-2">
+                      <Switch
+                        id="is_public"
+                        checked={formData.is_public}
+                        onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
+                      />
+                      <span>公开物品</span>
+                    </Label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -424,9 +401,50 @@ export default function AddItem() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </TabsContent>
           
-          <div className="space-y-6">
+          <TabsContent value="details" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>详细信息</CardTitle>
+                <CardDescription>填写物品的详细信息</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="purchase_date">购买日期</Label>
+                    <DatePicker
+                      date={formData.purchase_date ? new Date(formData.purchase_date) : null}
+                      setDate={(date) => handleDateChange('purchase_date', date)}
+                      placeholder="选择日期"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="expiry_date">过期日期</Label>
+                    <DatePicker
+                      date={formData.expiry_date ? new Date(formData.expiry_date) : null}
+                      setDate={(date) => handleDateChange('expiry_date', date)}
+                      placeholder="选择日期"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="purchase_price">购买价格</Label>
+                    <Input
+                      id="purchase_price"
+                      name="purchase_price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.purchase_price === null ? '' : formData.purchase_price}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             <Card>
               <CardHeader>
                 <CardTitle>存放位置</CardTitle>
@@ -496,20 +514,20 @@ export default function AddItem() {
                 </div>
               </CardContent>
             </Card>
-            
-            <div className="flex justify-end gap-2 sticky bottom-4 bg-background p-4 rounded-lg shadow-lg">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push('/things')}
-              >
-                取消
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? '保存中...' : '保存物品'}
-              </Button>
-            </div>
-          </div>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="flex justify-end gap-2 sticky bottom-4 bg-background p-4 rounded-lg shadow-lg mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push('/things')}
+          >
+            取消
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? '保存中...' : '保存物品'}
+          </Button>
         </div>
       </form>
     </div>

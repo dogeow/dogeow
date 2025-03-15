@@ -176,7 +176,15 @@ export const useItemStore = create<ItemState>((set, get) => ({
       // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
         if (key !== 'images' && value !== undefined && value !== null) {
-          formData.append(key, String(value));
+          console.log(`创建物品 - 字段 ${key}:`, value, typeof value);
+          
+          // 特殊处理is_public字段，确保它是布尔值
+          if (key === 'is_public') {
+            // 将布尔值转换为"1"或"0"，这样在PHP端会被正确解析为布尔值
+            formData.append(key, value === true ? "1" : "0");
+          } else {
+            formData.append(key, String(value));
+          }
         }
       });
       
@@ -198,6 +206,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('创建物品失败 - 服务器响应:', errorData);
         throw new Error(errorData.message || '创建物品失败');
       }
       
@@ -209,6 +218,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       return result.item;
     } catch (error) {
+      console.error('创建物品异常:', error);
       set({
         loading: false,
         error: error instanceof Error ? error.message : '未知错误',
@@ -228,7 +238,15 @@ export const useItemStore = create<ItemState>((set, get) => ({
       // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
         if (key !== 'images' && value !== undefined && value !== null) {
-          formData.append(key, String(value));
+          console.log(`更新物品 - 字段 ${key}:`, value, typeof value);
+          
+          // 特殊处理is_public字段，确保它是布尔值
+          if (key === 'is_public') {
+            // 将布尔值转换为"1"或"0"，这样在PHP端会被正确解析为布尔值
+            formData.append(key, value === true ? "1" : "0");
+          } else {
+            formData.append(key, String(value));
+          }
         }
       });
       
@@ -250,6 +268,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('更新物品失败 - 服务器响应:', errorData);
         throw new Error(errorData.message || '更新物品失败');
       }
       
@@ -261,6 +280,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       return result.item;
     } catch (error) {
+      console.error('更新物品异常:', error);
       set({
         loading: false,
         error: error instanceof Error ? error.message : '未知错误',

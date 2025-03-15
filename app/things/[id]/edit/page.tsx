@@ -15,6 +15,8 @@ import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
 import { API_BASE_URL } from '@/configs/api'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { format } from 'date-fns'
 
 export default function EditItem() {
   const params = useParams()
@@ -239,10 +241,21 @@ export default function EditItem() {
       // 准备提交数据
       const itemData = {
         ...formData,
+        purchase_date: formData.purchase_date ? format(formData.purchase_date, 'yyyy-MM-dd') : null,
+        expiry_date: formData.expiry_date ? format(formData.expiry_date, 'yyyy-MM-dd') : null,
+        purchase_price: formData.purchase_price ? Number(formData.purchase_price) : null,
+        category_id: formData.category_id ? Number(formData.category_id) : null,
+        spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         images: imageFiles,
         // 添加要保留的现有图片ID
         image_ids: existingImages.map(img => img.id),
+        is_public: Boolean(formData.is_public), // 确保 is_public 是布尔值
       }
+      
+      // 添加日志输出，查看提交的数据
+      console.log('提交的数据:', itemData);
+      console.log('is_public 类型:', typeof itemData.is_public);
+      console.log('is_public 值:', itemData.is_public);
       
       await updateItem(Number(params.id), itemData)
       
@@ -278,8 +291,13 @@ export default function EditItem() {
       </div>
       
       <form onSubmit={handleSubmit} className="pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 space-y-6">
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="basic">基本信息</TabsTrigger>
+            <TabsTrigger value="details">详细信息</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="basic" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>基本信息</CardTitle>
@@ -307,15 +325,7 @@ export default function EditItem() {
                     rows={4}
                   />
                 </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>详细信息</CardTitle>
-                <CardDescription>编辑物品的详细信息</CardDescription>
-              </CardHeader>
-              <CardContent>
+                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="quantity">数量</Label>
@@ -347,37 +357,6 @@ export default function EditItem() {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="purchase_date">购买日期</Label>
-                    <DatePicker
-                      date={formData.purchase_date}
-                      setDate={(date) => handleDateChange('purchase_date', date)}
-                      placeholder="选择日期"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="expiry_date">过期日期</Label>
-                    <DatePicker
-                      date={formData.expiry_date}
-                      setDate={(date) => handleDateChange('expiry_date', date)}
-                      placeholder="选择日期"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="purchase_price">购买价格</Label>
-                    <Input
-                      id="purchase_price"
-                      name="purchase_price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={formData.purchase_price}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
                     <Label htmlFor="category_id">分类</Label>
                     <Select
                       value={formData.category_id}
@@ -396,15 +375,17 @@ export default function EditItem() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-2 mt-4">
-                  <Switch
-                    id="is_public"
-                    checked={formData.is_public}
-                    onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
-                  />
-                  <Label htmlFor="is_public">公开物品（其他用户可见）</Label>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="is_public" className="flex items-center space-x-2">
+                      <Switch
+                        id="is_public"
+                        checked={formData.is_public}
+                        onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
+                      />
+                      <span>公开物品</span>
+                    </Label>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -493,9 +474,50 @@ export default function EditItem() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </TabsContent>
           
-          <div className="space-y-6">
+          <TabsContent value="details" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>详细信息</CardTitle>
+                <CardDescription>编辑物品的详细信息</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="purchase_date">购买日期</Label>
+                    <DatePicker
+                      date={formData.purchase_date}
+                      setDate={(date) => handleDateChange('purchase_date', date)}
+                      placeholder="选择日期"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="expiry_date">过期日期</Label>
+                    <DatePicker
+                      date={formData.expiry_date}
+                      setDate={(date) => handleDateChange('expiry_date', date)}
+                      placeholder="选择日期"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="purchase_price">购买价格</Label>
+                    <Input
+                      id="purchase_price"
+                      name="purchase_price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.purchase_price}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
             <Card>
               <CardHeader>
                 <CardTitle>存放位置</CardTitle>
@@ -565,20 +587,20 @@ export default function EditItem() {
                 </div>
               </CardContent>
             </Card>
-            
-            <div className="flex justify-end gap-2 sticky bottom-4 bg-background p-4 rounded-lg shadow-lg">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push(`/things/${params.id}`)}
-              >
-                取消
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading ? '保存中...' : '保存修改'}
-              </Button>
-            </div>
-          </div>
+          </TabsContent>
+        </Tabs>
+        
+        <div className="flex justify-end gap-2 sticky bottom-4 bg-background p-4 rounded-lg shadow-lg mt-6">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push(`/things/${params.id}`)}
+          >
+            取消
+          </Button>
+          <Button type="submit" disabled={loading}>
+            {loading ? '保存中...' : '保存修改'}
+          </Button>
         </div>
       </form>
     </div>

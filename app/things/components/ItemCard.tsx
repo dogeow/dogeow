@@ -85,7 +85,7 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
   
   if (viewMode === 'grid') {
     return (
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden h-full flex flex-col">
         <div className="relative aspect-square bg-muted">
           {item.primary_image ? (
             <Image
@@ -122,52 +122,61 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+            <div className="flex justify-between items-center">
+              <Badge variant={item.is_public ? "default" : "outline"} className="bg-background/80 backdrop-blur-sm">
+                {item.is_public ? '公开' : '私有'}
+              </Badge>
+              <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
+            </div>
+          </div>
         </div>
-        <CardHeader className="p-4">
+        <CardHeader className="p-4 pb-2">
           <div className="flex justify-between items-start">
             <div>
               <h3 className="font-semibold truncate">{item.name}</h3>
               <p className="text-sm text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
             </div>
-            <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
           </div>
         </CardHeader>
-        <CardContent className="p-4 pt-0">
-          <div className="grid grid-cols-2 gap-2 text-sm">
+        <CardContent className="p-4 pt-0 pb-2 flex-grow">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <div>
-              <p className="text-muted-foreground">数量</p>
-              <p>{item.quantity}</p>
+              <p className="text-xs text-muted-foreground">数量</p>
+              <p className="font-medium">{item.quantity}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">价格</p>
-              <p>{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
+              <p className="text-xs text-muted-foreground">价格</p>
+              <p className="font-medium">{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">购买日期</p>
-              <p>{formatDate(item.purchase_date)}</p>
+              <p className="text-xs text-muted-foreground">购买日期</p>
+              <p className="font-medium truncate">{formatDate(item.purchase_date)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">过期日期</p>
-              <p>{formatDate(item.expiry_date)}</p>
+              <p className="text-xs text-muted-foreground">过期日期</p>
+              <p className="font-medium truncate">{formatDate(item.expiry_date)}</p>
             </div>
           </div>
         </CardContent>
-        <CardFooter className="p-4 pt-0">
-          <div className="flex justify-between w-full">
-            <Badge variant={item.is_public ? "default" : "outline"}>
-              {item.is_public ? '公开' : '私有'}
-            </Badge>
-            <p className="text-sm text-muted-foreground">
-              {item.spot?.name ? `${item.spot.room?.area?.name || ''} > ${item.spot.room?.name || ''} > ${item.spot.name}` : '未指定位置'}
+        <CardFooter className="p-4 pt-0 mt-auto">
+          {item.spot?.name ? (
+            <p className="text-xs text-muted-foreground truncate w-full">
+              <span className="inline-block mr-1">📍</span>
+              {item.spot.room?.area?.name ? `${item.spot.room.area.name} > ` : ''}
+              {item.spot.room?.name ? `${item.spot.room.name} > ` : ''}
+              {item.spot.name}
             </p>
-          </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">未指定位置</p>
+          )}
         </CardFooter>
       </Card>
     )
   }
   
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow">
       <div className="flex p-4">
         <div className="relative w-24 h-24 bg-muted rounded-md mr-4 flex-shrink-0">
           {item.primary_image ? (
@@ -182,12 +191,17 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
               无图片
             </div>
           )}
+          <div className="absolute bottom-0 left-0 right-0 flex justify-center">
+            <Badge variant={item.is_public ? "default" : "outline"} className="bg-background/80 backdrop-blur-sm text-xs">
+              {item.is_public ? '公开' : '私有'}
+            </Badge>
+          </div>
         </div>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold">{item.name}</h3>
-              <p className="text-sm text-muted-foreground">{item.category?.name || '未分类'}</p>
+            <div className="min-w-0">
+              <h3 className="font-semibold truncate">{item.name}</h3>
+              <p className="text-sm text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
             </div>
             <div className="flex items-center space-x-2">
               <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
@@ -216,29 +230,33 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
           </div>
           <div className="grid grid-cols-4 gap-2 text-sm mt-2">
             <div>
-              <p className="text-muted-foreground">数量</p>
-              <p>{item.quantity}</p>
+              <p className="text-xs text-muted-foreground">数量</p>
+              <p className="font-medium">{item.quantity}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">价格</p>
-              <p>{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
+              <p className="text-xs text-muted-foreground">价格</p>
+              <p className="font-medium">{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">购买日期</p>
-              <p>{formatDate(item.purchase_date)}</p>
+              <p className="text-xs text-muted-foreground">购买日期</p>
+              <p className="font-medium truncate">{formatDate(item.purchase_date)}</p>
             </div>
             <div>
-              <p className="text-muted-foreground">过期日期</p>
-              <p>{formatDate(item.expiry_date)}</p>
+              <p className="text-xs text-muted-foreground">过期日期</p>
+              <p className="font-medium truncate">{formatDate(item.expiry_date)}</p>
             </div>
           </div>
-          <div className="flex justify-between mt-2">
-            <Badge variant={item.is_public ? "default" : "outline"}>
-              {item.is_public ? '公开' : '私有'}
-            </Badge>
-            <p className="text-sm text-muted-foreground">
-              {item.spot?.name ? `${item.spot.room?.area?.name || ''} > ${item.spot.room?.name || ''} > ${item.spot.name}` : '未指定位置'}
-            </p>
+          <div className="mt-2">
+            {item.spot?.name ? (
+              <p className="text-xs text-muted-foreground truncate">
+                <span className="inline-block mr-1">📍</span>
+                {item.spot.room?.area?.name ? `${item.spot.room.area.name} > ` : ''}
+                {item.spot.room?.name ? `${item.spot.room.name} > ` : ''}
+                {item.spot.name}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">未指定位置</p>
+            )}
           </div>
         </div>
       </div>
