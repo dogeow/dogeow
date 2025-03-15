@@ -6,7 +6,7 @@ import type { Tile } from '@/types/app';
 import { BackgroundWrapper } from "@/components/provider/BackgroundWrapper";
 import { useRouter } from "next/navigation";
 import BuiltBy from "@/components/BuiltBy";
-
+import Footer from "@/components/Footer";
 export default function Home() {
   const router = useRouter()
   const tiles = config.tiles as Tile[];
@@ -50,7 +50,7 @@ export default function Home() {
           ))}
         </div>
       </div>
-      <BuiltBy />
+      <Footer />
     </BackgroundWrapper>
   );
 }

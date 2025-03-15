@@ -1,40 +1,43 @@
-import Box from "@mui/material/Box";
-import Link from "@mui/material/Link";
 import * as React from "react";
+import Image from "next/image";
+import Link from "next/link";
 
-import graphQl from "../../resources/svg/graphQl";
-import laravel from "../../resources/svg/laravel";
-import materialUi from "../../resources/svg/materialUi";
-import react from "../../resources/svg/react";
+import reactIcon from "../public/images/tech/react.svg";
+import laravelIcon from "../public/images/tech/laravel.svg";
+import NextJsIcon from "../public/images/tech/next-js.svg";
+import graphQlIcon from "../public/images/tech/shadcn.svg";
 
-interface ImageProps {
+interface TechLinkProps {
+  href: string;
   src: string;
   alt: string;
 }
 
-const Image: React.FC<ImageProps> = (props) => (
-  <Box component="img" sx={{ width: 20, verticalAlign: "middle" }} {...props} />
+const TechLink: React.FC<TechLinkProps> = ({ href, src, alt }) => (
+  <Link 
+    href={href} 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="inline-flex items-center"
+  >
+    <Image 
+      src={src} 
+      alt={alt} 
+      width={20} 
+      height={20} 
+      className="transition-transform hover:scale-110" 
+    />
+  </Link>
 );
 
-const App: React.FC = () => (
-  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+const PoweredBy: React.FC = () => (
+  <div className="flex items-center gap-2">
     <span>Powered By 🫴</span>
-    <Link href="https://reactjs.org">
-      <Image src={react} alt="React" />
-    </Link>
-    <span>+</span>
-    <Link href="https://laravel.com">
-      <Image src={laravel} alt="Laravel" />
-    </Link>
-    <span>+</span>
-    <Link href="https://mui.com">
-      <Image src={materialUi} alt="Material-UI" />
-    </Link>
-    <span>+</span>
-    <Link href="https://graphql.org">
-      <Image src={graphQl} alt="GraphQL" />
-    </Link>
-  </Box>
+    <TechLink href="https://nextjs.org" src={NextJsIcon} alt="Next.js" />
+    <TechLink href="https://laravel.com" src={laravelIcon} alt="Laravel" />
+    <TechLink href="https://ui.shadcn.com" src={graphQlIcon} alt="shadcn/ui" />
+    <TechLink href="https://react.dev" src={reactIcon} alt="React" />
+  </div>
 );
 
-export default App;
+export default PoweredBy;
