@@ -10,6 +10,7 @@ export default function Home() {
   const router = useRouter()
   const tiles = config.tiles as Tile[];
 
+  // https://patorjk.com/software/taag
   // Font Name: Calvin S
   window.console.log(
     `%c
