@@ -135,22 +135,10 @@ export function AppLauncher() {
     return () => audioRef.current?.removeEventListener('canplay', handleCanPlay)
   }, [isTrackChanging, userInteracted])
   
-  // 监听窗口大小变化和显示模式变化，更新内边距
+  // 设置音乐播放器高度变量
   useEffect(() => {
-    const updatePadding = () => {
-      const mainContent = document.getElementById('main-content')
-      if (!mainContent) return
-      
-      const height = '3rem'
-      mainContent.style.paddingTop = height
-      document.documentElement.style.setProperty('--music-player-height', height)
-    }
-    
-    updatePadding()
-    window.addEventListener('resize', updatePadding)
-    
-    return () => window.removeEventListener('resize', updatePadding)
-  }, [displayMode])
+    document.documentElement.style.setProperty('--music-player-height', '3rem')
+  }, [])
 
   // 加载音频元数据
   const handleLoadedMetadata = () => {
@@ -309,8 +297,8 @@ export function AppLauncher() {
   
   return (
     <div 
-      id="-bar"
-      className="fixed top-0 left-0 right-0 bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2 h-12"
+      id="app-launcher-bar"
+      className="flex-none h-12 bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2"
     >
       {renderContent()}
       

@@ -2,7 +2,7 @@ import React from "react";
 
 function Heart() {
   return (
-    <span className="inline-block mx-[10px] my-[5px]">
+    <span>
       <svg 
         width="16" 
         height="16" 

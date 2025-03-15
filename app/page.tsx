@@ -5,6 +5,7 @@ import config from '@/configs/app';
 import type { Tile } from '@/types/app';
 import { BackgroundWrapper } from "@/components/provider/BackgroundWrapper";
 import { useRouter } from "next/navigation";
+import BuiltBy from "@/components/BuiltBy";
 
 export default function Home() {
   const router = useRouter()
@@ -12,7 +13,7 @@ export default function Home() {
 
   // https://patorjk.com/software/taag
   // Font Name: Calvin S
-  window.console.log(
+  console.log(
     `%c
     ╔╦╗┌─┐┌─┐┌─┐╔═╗╦ ╦
      ║║│ ││ ┬├┤ ║ ║║║║
@@ -49,6 +50,7 @@ export default function Home() {
           ))}
         </div>
       </div>
+      <BuiltBy />
     </BackgroundWrapper>
   );
 }
