@@ -47,10 +47,7 @@ export interface MusicPlayerProps {
   duration: number
   volume: number
   isMuted: boolean
-  isVolumeControlVisible: boolean
-  toggleVolumeControl: () => void
   toggleMute: () => void
-  handleVolumeChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   switchToPrevTrack: () => void
   switchToNextTrack: () => void
   togglePlay: () => void
@@ -67,10 +64,7 @@ export function MusicPlayer({
   duration,
   volume,
   isMuted,
-  isVolumeControlVisible,
-  toggleVolumeControl,
   toggleMute,
-  handleVolumeChange,
   switchToPrevTrack,
   switchToNextTrack,
   togglePlay,
@@ -118,59 +112,12 @@ export function MusicPlayer({
         
         {/* 右侧：播放控制和音量 */}
         <div className="flex items-center gap-1 ml-2 shrink-0">
-          {/* 音量控制 */}
-          <motion.div
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            className="relative"
-          >
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7" 
-              onClick={toggleVolumeControl}
-              title="音量控制"
-            >
-              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              <span className="sr-only">音量控制</span>
-            </Button>
-            
-            {isVolumeControlVisible && (
-              <div className="absolute right-0 top-full mt-2 p-3 bg-background border rounded-md shadow-md z-50 min-w-[180px]">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-around w-full">
-                    <span className="text-xs font-medium">音量: {Math.round(volume * 100)}%</span>
-                    <PlayerControlButton 
-                      onClick={toggleMute}
-                      title={isMuted ? '取消静音' : '静音'}
-                      icon={isMuted ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-                      className="h-6 w-6"
-                    />
-                  </div>
-                  
-                  <div className="flex items-center gap-2 w-full">
-                    <VolumeX className="h-3.5 w-3.5 text-muted-foreground" />
-                    <input
-                      type="range"
-                      min={0}
-                      max={100}
-                      step={1}
-                      value={volume * 100}
-                      onChange={handleVolumeChange}
-                      className="flex-1 h-2 bg-primary/20 rounded-full appearance-none cursor-pointer"
-                      style={{
-                        backgroundSize: `${volume * 100}% 100%`,
-                        backgroundImage: 'linear-gradient(var(--primary), var(--primary))',
-                        backgroundRepeat: 'no-repeat'
-                      }}
-                      disabled={!!audioError}
-                    />
-                    <Volume2 className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                </div>
-              </div>
-            )}
-          </motion.div>
+          {/* 静音控制 */}
+          <PlayerControlButton 
+            onClick={toggleMute}
+            title={isMuted ? '取消静音' : '静音'}
+            icon={isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+          />
           
           {/* 播放控制 */}
           <PlayerControlButton 
