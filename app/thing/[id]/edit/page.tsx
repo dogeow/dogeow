@@ -141,7 +141,7 @@ export default function EditItem() {
         const item = await getItem(Number(params.id))
         if (!item) {
           toast.error("物品不存在")
-          router.push('/things')
+          router.push('/thing')
           return
         }
         
@@ -279,7 +279,7 @@ export default function EditItem() {
       
       await updateItem(Number(params.id), itemData)
       toast.success("物品已成功更新")
-      router.push(`/things/${params.id}`)
+      router.push(`/thing/${params.id}`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
     } finally {
@@ -324,7 +324,7 @@ export default function EditItem() {
     <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/things/${params.id}`)} className="mr-4">
+          <Button variant="outline" size="icon" onClick={() => router.push(`/thing/${params.id}`)} className="mr-4">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl md:text-3xl font-bold">编辑物品</h1>
@@ -611,7 +611,7 @@ export default function EditItem() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push(`/things/${params.id}`)}
+            onClick={() => router.push(`/thing/${params.id}`)}
           >
             取消
           </Button>

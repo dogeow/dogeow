@@ -60,7 +60,7 @@ export default function ItemDetail() {
     try {
       await deleteItem(Number(params.id))
       toast.success("物品已成功删除")
-      router.push('/things')
+      router.push('/thing')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "发生错误，请重试")
     } finally {
@@ -105,7 +105,7 @@ export default function ItemDetail() {
       <div className="container mx-auto py-6 px-4">
         <div className="flex flex-col justify-center items-center h-64">
           <p className="text-red-500 mb-4">{error || '物品不存在'}</p>
-          <Button onClick={() => router.push('/things')}>
+          <Button onClick={() => router.push('/thing')}>
             <ArrowLeft className="mr-2 h-4 w-4" /> 返回物品列表
           </Button>
         </div>
@@ -117,7 +117,7 @@ export default function ItemDetail() {
     <div className="container mx-auto py-6 px-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <div className="flex items-center">
-          <Button variant="outline" size="icon" onClick={() => router.push('/things')} className="mr-4">
+          <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl md:text-3xl font-bold truncate">{item.name}</h1>

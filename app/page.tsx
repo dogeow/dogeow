@@ -5,8 +5,7 @@ import config from '@/configs/app';
 import type { Tile } from '@/types/app';
 import { BackgroundWrapper } from "@/components/provider/BackgroundWrapper";
 import { useRouter } from "next/navigation";
-import BuiltBy from "@/components/BuiltBy";
-import Footer from "@/components/Footer";
+import Footer from "@/components/app/Footer";
 export default function Home() {
   const router = useRouter()
   const tiles = config.tiles as Tile[];

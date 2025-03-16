@@ -2,10 +2,10 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import reactIcon from "../public/images/tech/react.svg";
-import laravelIcon from "../public/images/tech/laravel.svg";
-import NextJsIcon from "../public/images/tech/next-js.svg";
-import graphQlIcon from "../public/images/tech/shadcn.svg";
+import reactIcon from "../../public/images/tech/react.svg";
+import laravelIcon from "../../public/images/tech/laravel.svg";
+import NextJsIcon from "../../public/images/tech/next-js.svg";
+import graphQlIcon from "../../public/images/tech/shadcn.svg";
 
 interface TechLinkProps {
   href: string;

@@ -10,7 +10,7 @@ const BEIAN_URL = "http://www.beian.gov.cn/";
 const MIIT_URL = "https://beian.miit.gov.cn/";
 
 // 假设ICP图标已经移动到public/images目录
-const ICP_ICON_PATH = "/images/icp.png";
+const ICP_ICON_PATH = "/images/tech/icp.png";
 
 const ExternalLink = ({ 
   href, 

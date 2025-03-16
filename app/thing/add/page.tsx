@@ -207,7 +207,7 @@ export default function AddItem() {
       })
       
       toast.success("物品已成功添加")
-      router.push('/things')
+      router.push('/thing')
     } catch (error) {
       console.error('提交错误:', error)
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
@@ -220,7 +220,7 @@ export default function AddItem() {
     <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
-          <Button variant="outline" size="icon" onClick={() => router.push('/things')} className="mr-4">
+          <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl md:text-3xl font-bold">添加物品</h1>
@@ -500,7 +500,7 @@ export default function AddItem() {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push('/things')}
+            onClick={() => router.push('/thing')}
           >
             取消
           </Button>

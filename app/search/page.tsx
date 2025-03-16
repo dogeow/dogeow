@@ -50,7 +50,7 @@ export default function SearchPage() {
           title: item.name,
           content: item.description || '无描述',
           url: `/things/${item.id}`,
-          category: 'things'
+          category: 'thing'
         }))
         
         setResults(thingResults)
@@ -118,8 +118,8 @@ export default function SearchPage() {
           <TabsTrigger value="all">
             全部 ({getCountByCategory("all")})
           </TabsTrigger>
-          <TabsTrigger value="things">
-            物品 ({getCountByCategory("things")})
+          <TabsTrigger value="thing">
+            物品 ({getCountByCategory("thing")})
           </TabsTrigger>
           <TabsTrigger value="lab">
             实验室 ({getCountByCategory("lab")})

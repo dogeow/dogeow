@@ -48,7 +48,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
   // 定义分类列表
   const categories: Category[] = [
     { id: "all", name: "全部", path: "/search" },
-    { id: "things", name: "物品", path: "/things" },
+    { id: "thing", name: "物品", path: "/thing" },
     { id: "lab", name: "实验室", path: "/lab" },
     { id: "note", name: "笔记", path: "/note" },
     { id: "file", name: "文件", path: "/file" },
@@ -63,8 +63,8 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
       id: 1,
       title: "示例物品",
       content: "这是一个示例物品的描述内容",
-      url: "/things/1",
-      category: "things"
+      url: "/thing/1",
+      category: "thing"
     },
     {
       id: 2,
@@ -93,7 +93,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
     
     try {
       // 调用后端 API 进行搜索
-      if (activeCategory === "things" || activeCategory === "all") {
+      if (activeCategory === "thing" || activeCategory === "all") {
         // 使用直接数据库查询路由
         console.log(`正在搜索: ${searchTerm}`)
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/db-search`, {
@@ -107,14 +107,14 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
             id: item.id,
             title: item.name,
             content: item.description || '无描述',
-            url: `/things/${item.id}`,
-            category: 'things'
+            url: `/thing/${item.id}`,
+            category: 'thing'
           }))
           
           setResults(prevResults => {
-            // 如果是 "all" 分类，保留其他分类的结果，只更新 things 分类
+            // 如果是 "all" 分类，保留其他分类的结果，只更新 thing 分类
             if (activeCategory === "all") {
-              const otherResults = prevResults.filter(item => item.category !== 'things')
+              const otherResults = prevResults.filter(item => item.category !== 'thing')
               return [...otherResults, ...thingResults]
             }
             return thingResults
@@ -257,7 +257,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
                     <div className="font-medium">{result.title}</div>
                     <div className="text-sm text-muted-foreground line-clamp-1">{result.content}</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      分类: {result.category === "things" ? "物品" : 
+                      分类: {result.category === "thing" ? "物品" : 
                              result.category === "lab" ? "实验室" : 
                              result.category === "note" ? "笔记" : result.category}
                     </div>

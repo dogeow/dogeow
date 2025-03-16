@@ -25,7 +25,7 @@ interface FilterParams {
   [key: string]: any;
 }
 
-export default function Things() {
+export default function Thing() {
   const router = useRouter()
   const { items, categories, loading, error, fetchItems, fetchCategories } = useItemStore()
   const [searchTerm, setSearchTerm] = useState('')
@@ -63,7 +63,7 @@ export default function Things() {
   }
 
   const handleAddItem = () => {
-    router.push('/things/add')
+    router.push('/thing/add')
   }
 
   const handleApplyFilters = (filters: FilterParams) => {
