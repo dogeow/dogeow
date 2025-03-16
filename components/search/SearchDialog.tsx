@@ -189,7 +189,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-center">搜索</DialogTitle>
         </DialogHeader>
@@ -228,9 +228,13 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
         </div>
 
         <Tabs defaultValue="all" value={activeCategory} onValueChange={setActiveCategory} className="mt-4">
-          <TabsList className="grid grid-cols-4 sm:grid-cols-8">
-            {categories.map((category) => (
-              <TabsTrigger key={category.id} value={category.id} className="text-xs">
+          <TabsList className="grid grid-cols-4 gap-1 h-auto min-h-[70px] w-full">
+            {categories.map((category, index) => (
+              <TabsTrigger 
+                key={category.id} 
+                value={category.id} 
+                className={`text-xs ${index >= 4 ? 'mt-1' : ''} w-full`}
+              >
                 {category.name}
                 {getCountByCategory(category.id) > 0 && (
                   <span className="ml-1 text-xs">({getCountByCategory(category.id)})</span>

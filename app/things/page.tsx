@@ -21,6 +21,17 @@ import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import { useItemStore } from '@/stores/itemStore'
 
+// 定义视图模式类型
+type ViewMode = 'grid' | 'list';
+
+// 定义过滤器类型
+interface FilterParams {
+  page?: number;
+  search?: string;
+  category_id?: string | number;
+  [key: string]: any;
+}
+
 export default function Things() {
   const router = useRouter()
   const { items, categories, loading, error, fetchItems, fetchCategories } = useItemStore()
@@ -29,7 +40,7 @@ export default function Things() {
   const [totalPages, setTotalPages] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [viewMode, setViewMode] = useState('grid')
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
 
   useEffect(() => {
     // 从URL获取搜索参数
@@ -46,12 +57,12 @@ export default function Things() {
     fetchCategories()
   }, [fetchItems, fetchCategories])
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page)
     fetchItems({ page, search: searchTerm })
   }
 
-  const handleCategoryChange = (value) => {
+  const handleCategoryChange = (value: string) => {
     setSelectedCategory(value)
     const actualValue = value === "none" ? "" : value;
     fetchItems({ category_id: actualValue, page: 1, search: searchTerm })
@@ -62,10 +73,95 @@ export default function Things() {
     router.push('/things/add')
   }
 
-  const handleApplyFilters = (filters) => {
+  const handleApplyFilters = (filters: FilterParams) => {
     fetchItems({ ...filters, page: 1, search: searchTerm })
     setCurrentPage(1)
     setFiltersOpen(false)
+  }
+
+  // 渲染加载状态
+  const renderLoading = () => (
+    <div className="flex justify-center items-center h-64">
+      <p>加载中...</p>
+    </div>
+  )
+
+  // 渲染错误状态
+  const renderError = () => (
+    <div className="flex justify-center items-center h-64">
+      <p className="text-red-500">加载失败: {error}</p>
+    </div>
+  )
+
+  // 渲染空状态
+  const renderEmpty = () => (
+    <div className="flex flex-col justify-center items-center h-64 bg-muted/50 rounded-lg">
+      <p className="text-muted-foreground mb-4">暂无物品</p>
+      <Button onClick={handleAddItem}>添加第一个物品</Button>
+    </div>
+  )
+
+  // 渲染物品列表
+  const renderItems = () => (
+    <>
+      <div className={cn(
+        "grid gap-4",
+        viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'
+      )}>
+        {items.map((item) => (
+          <ItemCard 
+            key={item.id} 
+            item={item} 
+            viewMode={viewMode} 
+            onEdit={() => router.push(`/things/${item.id}/edit`)}
+            onView={() => router.push(`/things/${item.id}`)}
+          />
+        ))}
+      </div>
+
+      {renderPagination()}
+    </>
+  )
+
+  // 渲染分页
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    
+    return (
+      <div className="flex justify-center mt-6 overflow-x-auto pb-4">
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious 
+                size="icon"
+                onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <PaginationItem key={page}>
+                <PaginationLink
+                  size="icon"
+                  isActive={page === currentPage}
+                  onClick={() => handlePageChange(page)}
+                >
+                  {page}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext 
+                size="icon"
+                onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
+    );
   }
 
   return (
@@ -93,100 +189,40 @@ export default function Things() {
                 ))}
               </SelectContent>
             </Select>
-
-            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="overflow-y-auto pb-10">
-                <SheetHeader className="pb-1">
-                  <SheetTitle className="text-xl">筛选物品</SheetTitle>
-                  <SheetDescription className="text-sm">
-                    设置筛选条件以查找特定物品
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="py-2">
-                  <ItemFilters onApply={handleApplyFilters} />
-                </div>
-              </SheetContent>
-            </Sheet>
           </div>
 
-          <Tabs value={viewMode} onValueChange={setViewMode} className="w-[120px]">
+          <Tabs value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)} className="flex-1">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="grid">网格</TabsTrigger>
               <TabsTrigger value="list">列表</TabsTrigger>
             </TabsList>
           </Tabs>
+
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon">
+                <SlidersHorizontal className="h-4 w-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent className="overflow-y-auto pb-10">
+              <SheetHeader className="pb-1">
+                <SheetTitle className="text-xl">筛选物品</SheetTitle>
+                <SheetDescription className="text-sm">
+                  设置筛选条件以查找特定物品
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-2">
+                <ItemFilters onApply={handleApplyFilters} />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <p>加载中...</p>
-        </div>
-      ) : error ? (
-        <div className="flex justify-center items-center h-64">
-          <p className="text-red-500">加载失败: {error}</p>
-        </div>
-      ) : items.length === 0 ? (
-        <div className="flex flex-col justify-center items-center h-64 bg-muted/50 rounded-lg">
-          <p className="text-muted-foreground mb-4">暂无物品</p>
-          <Button onClick={handleAddItem}>添加第一个物品</Button>
-        </div>
-      ) : (
-        <>
-          <div className={cn(
-            "grid gap-4",
-            viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'
-          )}>
-            {items.map((item) => (
-              <ItemCard 
-                key={item.id} 
-                item={item} 
-                viewMode={viewMode} 
-                onEdit={() => router.push(`/things/${item.id}/edit`)}
-                onView={() => router.push(`/things/${item.id}`)}
-              />
-            ))}
-          </div>
-
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-6 overflow-x-auto pb-4">
-              <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
-                      className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                  
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <PaginationItem key={page}>
-                      <PaginationLink
-                        isActive={page === currentPage}
-                        onClick={() => handlePageChange(page)}
-                      >
-                        {page}
-                      </PaginationLink>
-                    </PaginationItem>
-                  ))}
-                  
-                  <PaginationItem>
-                    <PaginationNext 
-                      onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
-                      className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-            </div>
-          )}
-        </>
-      )}
+      {loading ? renderLoading() : 
+       error ? renderError() : 
+       items.length === 0 ? renderEmpty() : 
+       renderItems()}
     </div>
   )
 }
