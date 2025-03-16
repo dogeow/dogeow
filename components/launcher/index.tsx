@@ -10,11 +10,13 @@ import { SettingsPanel, CustomBackground } from './SettingsPanel'
 import launcherItems from '@/configs/app/launcher'
 import Image from 'next/image'
 import Logo from '@/public/images/80.png'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { AuthPanel } from '../auth/AuthPanel'
-import { Settings, User } from 'lucide-react'
+import { Settings, User, Search, X, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import useAuthStore from '@/stores/authStore'
+import { Input } from '@/components/ui/input'
+import { SearchDialog } from '@/components/search/SearchDialog'
 
 // 可用的音频文件列表
 const availableTracks = launcherItems.availableTracks
@@ -23,6 +25,7 @@ type DisplayMode = 'music' | 'apps' | 'settings' | 'auth';
 
 export function AppLauncher() {
   const router = useRouter()
+  const pathname = usePathname()
   
   const { 
     currentTrack, 
@@ -43,8 +46,12 @@ export function AppLauncher() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
   const { isAuthenticated, user } = useAuthStore()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isSearchVisible, setIsSearchVisible] = useState(false)
+  const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false)
   
   const audioRef = useRef<HTMLAudioElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
   
   // 组件加载时检查音频文件
   useEffect(() => {
@@ -268,6 +275,46 @@ export function AppLauncher() {
     }
   }, [backgroundImage]);
   
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!searchTerm.trim()) return
+    
+    // 打开搜索弹窗而不是直接跳转
+    setIsSearchDialogOpen(true)
+    
+    // 关闭顶部搜索框
+    setIsSearchVisible(false)
+  }
+  
+  // 点击搜索按钮时展开搜索框并聚焦
+  const toggleSearch = () => {
+    // 直接打开搜索弹窗
+    setIsSearchDialogOpen(true)
+  }
+  
+  // 点击外部区域时关闭搜索框
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isSearchVisible && 
+        searchInputRef.current && 
+        !searchInputRef.current.contains(event.target as Node)
+      ) {
+        // 检查点击的是否是搜索按钮
+        const target = event.target as HTMLElement
+        if (!target.closest('button[data-search-toggle]')) {
+          setIsSearchVisible(false)
+        }
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isSearchVisible])
+  
   const renderContent = () => {
     switch (displayMode) {
       case 'music':
@@ -299,30 +346,92 @@ export function AppLauncher() {
               <Image src={Logo} alt="apps" className="h-10 w-10" onClick={() => router.push('/')}/>
             </div>
             
-            {/* 中间：应用图标 */}
-            <div className="flex-1 flex items-center justify-start">
-              <AppGrid toggleDisplayMode={toggleDisplayMode} />
-            </div>
+            {/* 中间：应用图标 - 在搜索时隐藏 */}
+            {!isSearchVisible && (
+              <div className="flex-1 flex items-center justify-start">
+                <AppGrid toggleDisplayMode={toggleDisplayMode} />
+              </div>
+            )}
             
-            {/* 右侧：用户 */}
-            <div className="flex items-center gap-2 ml-auto">
-              <Button
-                variant="ghost"
-                className="flex items-center gap-2 shrink-0 h-9 px-3"
-                onClick={() => toggleDisplayMode('auth')}
-              >
-                {isAuthenticated && user ? (
-                  <>
-                    <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <User className="h-4 w-4" />
-                  </>
-                )}
-              </Button>
+            {/* 右侧：搜索按钮和用户 */}
+            <div className={`flex items-center gap-3 ${isSearchVisible ? 'flex-1 justify-between' : 'ml-auto'}`}>
+              {isSearchVisible ? (
+                <form onSubmit={handleSearch} className="relative flex items-center flex-1 max-w-md mx-auto">
+                  <Input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder="搜索..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full h-9 pl-8 border-primary/20 animate-in fade-in duration-150"
+                  />
+                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary" />
+                  <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSearchTerm('');
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      type="submit"
+                      variant="ghost" 
+                      size="icon"
+                      className="h-7 w-7"
+                    >
+                      <Search className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant="ghost" 
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => setIsSearchVisible(false)}
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </form>
+              ) : (
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={toggleSearch}
+                  data-search-toggle="true"
+                  className="h-9 w-9"
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              )}
+              
+              {/* 用户按钮 - 在搜索时隐藏 */}
+              {!isSearchVisible && (
+                <div className="flex-shrink-0">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-2 h-9 px-3"
+                    onClick={() => toggleDisplayMode('auth')}
+                  >
+                    {isAuthenticated && user ? (
+                      <>
+                        <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
+                          {user.name.charAt(0).toUpperCase()}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <User className="h-4 w-4" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         );
@@ -351,6 +460,13 @@ export function AppLauncher() {
   
   return (
     <>
+      {/* 搜索弹窗 */}
+      <SearchDialog 
+        open={isSearchDialogOpen} 
+        onOpenChange={setIsSearchDialogOpen}
+        initialSearchTerm={searchTerm}
+      />
+      
       <div 
         id="app-launcher-bar"
         className="bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2"

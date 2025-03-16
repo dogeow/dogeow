@@ -171,11 +171,11 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   }
   
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Label>分类</Label>
+    <div className="space-y-6 px-1">
+      <div className="space-y-3">
+        <Label className="text-base font-medium">分类</Label>
         <Select value={filters.category_id} onValueChange={(value) => handleChange('category_id', value)}>
-          <SelectTrigger>
+          <SelectTrigger className="h-11">
             <SelectValue placeholder="选择分类" />
           </SelectTrigger>
           <SelectContent>
@@ -189,139 +189,154 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         </Select>
       </div>
       
-      <Separator />
+      <Separator className="my-4" />
       
-      <div className="space-y-2">
-        <Label>购买日期</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label className="text-xs">从</Label>
+      <div className="space-y-3">
+        <Label className="text-base font-medium">购买日期</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">从</Label>
             <DatePicker
               date={filters.purchase_date_from}
               setDate={(date) => handleChange('purchase_date_from', date)}
               placeholder="开始日期"
+              className="h-11"
             />
           </div>
-          <div>
-            <Label className="text-xs">至</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">至</Label>
             <DatePicker
               date={filters.purchase_date_to}
               setDate={(date) => handleChange('purchase_date_to', date)}
               placeholder="结束日期"
+              className="h-11"
             />
           </div>
         </div>
       </div>
       
-      <div className="space-y-2">
-        <Label>过期日期</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label className="text-xs">从</Label>
+      <div className="space-y-3">
+        <Label className="text-base font-medium">过期日期</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">从</Label>
             <DatePicker
               date={filters.expiry_date_from}
               setDate={(date) => handleChange('expiry_date_from', date)}
               placeholder="开始日期"
+              className="h-11"
             />
           </div>
-          <div>
-            <Label className="text-xs">至</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">至</Label>
             <DatePicker
               date={filters.expiry_date_to}
               setDate={(date) => handleChange('expiry_date_to', date)}
               placeholder="结束日期"
+              className="h-11"
             />
           </div>
         </div>
       </div>
       
-      <Separator />
+      <Separator className="my-4" />
       
-      <div className="space-y-2">
-        <Label>价格范围</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label className="text-xs">最低价</Label>
+      <div className="space-y-3">
+        <Label className="text-base font-medium">价格范围</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">最低价</Label>
             <Input
               type="number"
               placeholder="最低价"
               value={filters.price_from}
               onChange={(e) => handleChange('price_from', e.target.value)}
+              className="h-11"
             />
           </div>
-          <div>
-            <Label className="text-xs">最高价</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">最高价</Label>
             <Input
               type="number"
               placeholder="最高价"
               value={filters.price_to}
               onChange={(e) => handleChange('price_to', e.target.value)}
+              className="h-11"
             />
           </div>
         </div>
       </div>
       
-      <Separator />
+      <Separator className="my-4" />
       
-      <div className="space-y-2">
-        <Label>位置</Label>
-        <div className="space-y-2">
-          <Select value={filters.area_id} onValueChange={(value) => handleChange('area_id', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="选择区域" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">全部区域</SelectItem>
-              {areas.map((area) => (
-                <SelectItem key={area.id} value={area.id.toString()}>
-                  {area.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <div className="space-y-3">
+        <Label className="text-base font-medium">位置</Label>
+        <div className="space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">区域</Label>
+            <Select value={filters.area_id} onValueChange={(value) => handleChange('area_id', value)}>
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="选择区域" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">全部区域</SelectItem>
+                {areas.map((area) => (
+                  <SelectItem key={area.id} value={area.id.toString()}>
+                    {area.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Select 
-            value={filters.room_id} 
-            onValueChange={(value) => handleChange('room_id', value)}
-            disabled={!filters.area_id}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="选择房间" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">全部房间</SelectItem>
-              {rooms.map((room) => (
-                <SelectItem key={room.id} value={room.id.toString()}>
-                  {room.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">房间</Label>
+            <Select 
+              value={filters.room_id} 
+              onValueChange={(value) => handleChange('room_id', value)}
+              disabled={!filters.area_id}
+            >
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="选择房间" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">全部房间</SelectItem>
+                {rooms.map((room) => (
+                  <SelectItem key={room.id} value={room.id.toString()}>
+                    {room.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           
-          <Select 
-            value={filters.spot_id} 
-            onValueChange={(value) => handleChange('spot_id', value)}
-            disabled={!filters.room_id}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="选择位置" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">全部位置</SelectItem>
-              {spots.map((spot) => (
-                <SelectItem key={spot.id} value={spot.id.toString()}>
-                  {spot.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="space-y-1.5">
+            <Label className="text-xs text-muted-foreground">具体位置</Label>
+            <Select 
+              value={filters.spot_id} 
+              onValueChange={(value) => handleChange('spot_id', value)}
+              disabled={!filters.room_id}
+            >
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="选择位置" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">全部位置</SelectItem>
+                {spots.map((spot) => (
+                  <SelectItem key={spot.id} value={spot.id.toString()}>
+                    {spot.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
       
-      <Separator />
+      <Separator className="my-4" />
       
       <div className="flex items-center justify-between">
-        <Label>公开状态</Label>
+        <Label className="text-base font-medium">公开状态</Label>
         <Select 
           value={filters.is_public !== null ? filters.is_public.toString() : 'none'}
           onValueChange={(value) => {
@@ -332,7 +347,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
             }
           }}
         >
-          <SelectTrigger className="w-[120px]">
+          <SelectTrigger className="w-[120px] h-11">
             <SelectValue placeholder="全部" />
           </SelectTrigger>
           <SelectContent>
@@ -343,9 +358,9 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         </Select>
       </div>
       
-      <div className="flex justify-between pt-4">
-        <Button variant="outline" onClick={handleReset}>重置</Button>
-        <Button onClick={handleApply}>应用筛选</Button>
+      <div className="flex justify-between pt-6 pb-2 gap-3">
+        <Button variant="outline" onClick={handleReset} className="flex-1 h-11">重置</Button>
+        <Button onClick={handleApply} className="flex-1 h-11">应用筛选</Button>
       </div>
     </div>
   )

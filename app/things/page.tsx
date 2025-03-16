@@ -32,25 +32,29 @@ export default function Things() {
   const [viewMode, setViewMode] = useState('grid')
 
   useEffect(() => {
-    fetchItems()
+    // 从URL获取搜索参数
+    const searchParams = new URLSearchParams(window.location.search)
+    const search = searchParams.get('search')
+    
+    if (search) {
+      setSearchTerm(search)
+      fetchItems({ search, page: 1 })
+    } else {
+      fetchItems()
+    }
+    
     fetchCategories()
   }, [fetchItems, fetchCategories])
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    fetchItems({ search: searchTerm, page: 1 })
-    setCurrentPage(1)
-  }
-
   const handlePageChange = (page) => {
     setCurrentPage(page)
-    fetchItems({ page })
+    fetchItems({ page, search: searchTerm })
   }
 
   const handleCategoryChange = (value) => {
     setSelectedCategory(value)
     const actualValue = value === "none" ? "" : value;
-    fetchItems({ category_id: actualValue, page: 1 })
+    fetchItems({ category_id: actualValue, page: 1, search: searchTerm })
     setCurrentPage(1)
   }
 
@@ -59,70 +63,58 @@ export default function Things() {
   }
 
   const handleApplyFilters = (filters) => {
-    fetchItems({ ...filters, page: 1 })
+    fetchItems({ ...filters, page: 1, search: searchTerm })
     setCurrentPage(1)
     setFiltersOpen(false)
   }
 
   return (
     <div className="container mx-auto py-6 px-4">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-2xl md:text-3xl font-bold">物品管理</h1>
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <h1 className="text-2xl font-bold mr-auto">物品管理</h1>
         <Button onClick={handleAddItem}>
           <Plus className="mr-2 h-4 w-4" /> 添加物品
         </Button>
       </div>
 
       <div className="flex flex-col gap-4 mb-6">
-        <form onSubmit={handleSearch} className="flex w-full items-center space-x-2">
-          <Input
-            type="text"
-            placeholder="搜索物品..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1"
-          />
-          <Button type="submit" variant="outline">
-            <Search className="h-4 w-4" />
-          </Button>
-        </form>
-        
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="所有分类" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">所有分类</SelectItem>
-              {categories.map((category) => (
-                <SelectItem key={category.id} value={category.id.toString()}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="所有分类" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">所有分类</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="flex-1 sm:flex-none">
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                筛选
-              </Button>
-            </SheetTrigger>
-            <SheetContent>
-              <SheetHeader>
-                <SheetTitle>筛选物品</SheetTitle>
-                <SheetDescription>
-                  设置筛选条件以查找特定物品
-                </SheetDescription>
-              </SheetHeader>
-              <div className="py-4">
-                <ItemFilters onApply={handleApplyFilters} />
-              </div>
-            </SheetContent>
-          </Sheet>
+            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="overflow-y-auto pb-10">
+                <SheetHeader className="pb-1">
+                  <SheetTitle className="text-xl">筛选物品</SheetTitle>
+                  <SheetDescription className="text-sm">
+                    设置筛选条件以查找特定物品
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="py-2">
+                  <ItemFilters onApply={handleApplyFilters} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
 
-          <Tabs value={viewMode} onValueChange={setViewMode} className="w-full sm:w-[120px]">
+          <Tabs value={viewMode} onValueChange={setViewMode} className="w-[120px]">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="grid">网格</TabsTrigger>
               <TabsTrigger value="list">列表</TabsTrigger>
