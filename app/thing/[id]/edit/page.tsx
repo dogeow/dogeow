@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,13 +10,39 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Plus, Upload, X } from "lucide-react"
+import { ArrowLeft, Upload, X } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
 import { API_BASE_URL } from '@/configs/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
+
+// 定义类型
+type Image = {
+  id: number;
+  thumbnail_path: string;
+}
+
+type FormData = {
+  name: string;
+  description: string;
+  quantity: number;
+  status: string;
+  purchase_date: Date | null;
+  expiry_date: Date | null;
+  purchase_price: string;
+  category_id: string;
+  area_id: string;
+  room_id: string;
+  spot_id: string;
+  is_public: boolean;
+}
+
+type ImagePreview = {
+  url: string;
+  name: string;
+}
 
 export default function EditItem() {
   const params = useParams()
@@ -28,17 +54,17 @@ export default function EditItem() {
   const [rooms, setRooms] = useState<any[]>([])
   const [spots, setSpots] = useState<any[]>([])
   const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [imagePreviews, setImagePreviews] = useState<{url: string, name: string}[]>([])
-  const [existingImages, setExistingImages] = useState<any[]>([])
+  const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([])
+  const [existingImages, setExistingImages] = useState<Image[]>([])
   
   // 表单数据
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
     quantity: 1,
     status: 'active',
-    purchase_date: null as Date | null,
-    expiry_date: null as Date | null,
+    purchase_date: null,
+    expiry_date: null,
     purchase_price: '',
     category_id: '',
     area_id: '',
@@ -46,6 +72,67 @@ export default function EditItem() {
     spot_id: '',
     is_public: false,
   })
+  
+  // 加载区域
+  const loadAreas = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/areas`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Accept': 'application/json',
+        },
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setAreas(data)
+      }
+    } catch (error) {
+      console.error('加载区域失败', error)
+    }
+  }, [])
+  
+  // 加载房间
+  const loadRooms = useCallback(async (areaId: string | number) => {
+    if (!areaId) return
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/areas/${areaId}/rooms`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Accept': 'application/json',
+        },
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setRooms(data)
+      }
+    } catch (error) {
+      console.error('加载房间失败', error)
+    }
+  }, [])
+  
+  // 加载位置
+  const loadSpots = useCallback(async (roomId: string | number) => {
+    if (!roomId) return
+    
+    try {
+      const res = await fetch(`${API_BASE_URL}/rooms/${roomId}/spots`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Accept': 'application/json',
+        },
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setSpots(data)
+      }
+    } catch (error) {
+      console.error('加载位置失败', error)
+    }
+  }, [])
   
   // 加载物品数据
   useEffect(() => {
@@ -98,70 +185,9 @@ export default function EditItem() {
       }
     }
     
-    // 加载区域
-    const loadAreas = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/areas`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
-        })
-        
-        if (res.ok) {
-          const data = await res.json()
-          setAreas(data)
-        }
-      } catch (error) {
-        console.error('加载区域失败', error)
-      }
-    }
-    
     loadItem()
     loadAreas()
-  }, [params.id, getItem, fetchCategories, router])
-  
-  // 加载房间
-  const loadRooms = async (areaId: string | number) => {
-    if (!areaId) return
-    
-    try {
-      const res = await fetch(`${API_BASE_URL}/areas/${areaId}/rooms`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (res.ok) {
-        const data = await res.json()
-        setRooms(data)
-      }
-    } catch (error) {
-      console.error('加载房间失败', error)
-    }
-  }
-  
-  // 加载位置
-  const loadSpots = async (roomId: string | number) => {
-    if (!roomId) return
-    
-    try {
-      const res = await fetch(`${API_BASE_URL}/rooms/${roomId}/spots`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (res.ok) {
-        const data = await res.json()
-        setSpots(data)
-      }
-    } catch (error) {
-      console.error('加载位置失败', error)
-    }
-  }
+  }, [params.id, getItem, fetchCategories, router, loadRooms, loadSpots, loadAreas])
   
   // 当选择区域时加载房间
   useEffect(() => {
@@ -172,7 +198,7 @@ export default function EditItem() {
     }
     
     loadRooms(formData.area_id)
-  }, [formData.area_id])
+  }, [formData.area_id, loadRooms])
   
   // 当选择房间时加载位置
   useEffect(() => {
@@ -183,7 +209,7 @@ export default function EditItem() {
     }
     
     loadSpots(formData.room_id)
-  }, [formData.room_id])
+  }, [formData.room_id, loadSpots])
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -247,20 +273,12 @@ export default function EditItem() {
         category_id: formData.category_id ? Number(formData.category_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         images: imageFiles,
-        // 添加要保留的现有图片ID
         image_ids: existingImages.map(img => img.id),
-        is_public: Boolean(formData.is_public), // 确保 is_public 是布尔值
+        is_public: Boolean(formData.is_public),
       }
       
-      // 添加日志输出，查看提交的数据
-      console.log('提交的数据:', itemData);
-      console.log('is_public 类型:', typeof itemData.is_public);
-      console.log('is_public 值:', itemData.is_public);
-      
       await updateItem(Number(params.id), itemData)
-      
       toast.success("物品已成功更新")
-      
       router.push(`/things/${params.id}`)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
@@ -278,6 +296,29 @@ export default function EditItem() {
       </div>
     )
   }
+  
+  // 渲染图片预览组件
+  const renderImagePreview = (url: string, name: string, onRemove: () => void) => (
+    <div className="relative">
+      <div className="relative w-24 h-24 rounded-lg overflow-hidden">
+        <Image
+          src={url}
+          alt={name}
+          fill
+          className="object-cover"
+        />
+      </div>
+      <Button
+        type="button"
+        variant="destructive"
+        size="icon"
+        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+        onClick={onRemove}
+      >
+        <X className="h-3 w-3" />
+      </Button>
+    </div>
+  )
   
   return (
     <div className="container mx-auto py-6 px-4">
@@ -401,24 +442,12 @@ export default function EditItem() {
                   {existingImages.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {existingImages.map((image) => (
-                        <div key={image.id} className="relative">
-                          <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-                            <Image
-                              src={`http://127.0.0.1:8000/storage/${image.thumbnail_path}`}
-                              alt={formData.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="icon"
-                            className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                            onClick={() => removeExistingImage(image.id)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
+                        <div key={image.id}>
+                          {renderImagePreview(
+                            `http://127.0.0.1:8000/storage/${image.thumbnail_path}`,
+                            formData.name,
+                            () => removeExistingImage(image.id)
+                          )}
                         </div>
                       ))}
                     </div>
@@ -447,24 +476,12 @@ export default function EditItem() {
                       {imagePreviews.length > 0 && (
                         <div className="flex flex-wrap gap-2">
                           {imagePreviews.map((preview, index) => (
-                            <div key={index} className="relative">
-                              <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-                                <Image
-                                  src={preview.url}
-                                  alt={preview.name}
-                                  fill
-                                  className="object-cover"
-                                />
-                              </div>
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                size="icon"
-                                className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                                onClick={() => removeNewImage(index)}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
+                            <div key={index}>
+                              {renderImagePreview(
+                                preview.url,
+                                preview.name,
+                                () => removeNewImage(index)
+                              )}
                             </div>
                           ))}
                         </div>
@@ -605,4 +622,4 @@ export default function EditItem() {
       </form>
     </div>
   )
-} 
+}

@@ -1,6 +1,6 @@
 "use client"
 
-export default function Things() {
+export default function Thing() {
   return (
     <div>
       <h1>MC</h1>
