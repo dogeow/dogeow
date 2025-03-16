@@ -49,7 +49,7 @@ export default function SearchPage() {
           id: item.id,
           title: item.name,
           content: item.description || '无描述',
-          url: `/things/${item.id}`,
+          url: `/thing/${item.id}`,
           category: 'thing'
         }))
         

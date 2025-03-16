@@ -3,9 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { format } from 'date-fns'
@@ -53,7 +52,7 @@ export default function ItemDetail() {
   }, [params.id, getItem])
   
   const handleEdit = () => {
-    router.push(`/things/${params.id}/edit`)
+    router.push(`/thing/${params.id}/edit`)
   }
   
   const handleDelete = async () => {

@@ -106,8 +106,8 @@ export default function Thing() {
             key={item.id} 
             item={item} 
             viewMode={viewMode} 
-            onEdit={() => router.push(`/things/${item.id}/edit`)}
-            onView={() => router.push(`/things/${item.id}`)}
+            onEdit={() => router.push(`/thing/${item.id}/edit`)}
+            onView={() => router.push(`/thing/${item.id}`)}
           />
         ))}
       </div>

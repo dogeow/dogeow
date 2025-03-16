@@ -33,8 +33,8 @@ const ExternalLink = ({
 
 export default function Footer() {
   return (
-    <footer className="w-full flex flex-col items-center gap-2">
-      <div className="flex flex-wrap justify-center gap-2 opacity-80">
+    <footer className="w-full py-2 mt-auto">
+      <div className="flex flex-wrap justify-center gap-2 text-sm opacity-80">
         <div>
           <PowerBy />
         </div>
@@ -42,15 +42,15 @@ export default function Footer() {
           <BuiltBy />
         </div>
       </div>
-      <div className="flex flex-wrap justify-center gap-2 opacity-60">
+      <div className="flex flex-wrap justify-center gap-2 text-xs opacity-60">
         <div>
           <ExternalLink href={BEIAN_URL}>
             <span className="flex items-center">
               <Image 
                 src={ICP_ICON_PATH} 
                 alt="ICP 图标" 
-                width={20} 
-                height={20} 
+                width={16} 
+                height={16} 
                 className="inline-block align-middle mr-1" 
               />
               闽公网安备35020302033650号
