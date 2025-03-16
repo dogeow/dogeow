@@ -36,10 +36,10 @@ export default function SearchPage() {
     setLoading(true)
     
     try {
-      // 使用测试搜索路由
+      // 使用直接数据库查询路由
       console.log(`正在搜索: ${searchTerm}`)
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/test-search`, {
-        params: { search: searchTerm }
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/db-search`, {
+        params: { q: searchTerm }
       })
       
       console.log('搜索结果:', response.data)
