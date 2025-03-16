@@ -32,29 +32,15 @@ export default function AddItem() {
   const [imagePreviews, setImagePreviews] = useState<{url: string, name: string}[]>([])
   
   // 表单数据
-  const [formData, setFormData] = useState<{
-    images: File[];
-    name: string;
-    description: string;
-    quantity: number;
-    status: string;
-    purchase_date: string | null;
-    expiry_date: string | null;
-    purchase_price: number | null;
-    category_id: string;
-    area_id: string;
-    room_id: string;
-    spot_id: string;
-    is_public: boolean;
-  }>({
-    images: [],
+  const [formData, setFormData] = useState({
+    images: [] as File[],
     name: '',
     description: '',
     quantity: 1,
     status: 'active',
-    purchase_date: null,
-    expiry_date: null,
-    purchase_price: null,
+    purchase_date: null as string | null,
+    expiry_date: null as string | null,
+    purchase_price: null as number | null,
     category_id: '',
     area_id: '',
     room_id: '',
@@ -209,25 +195,18 @@ export default function AddItem() {
       // 准备提交数据，转换ID类型和确保正确的数据类型
       const itemData = {
         ...formData,
-        category_id: formData.category_id === '' ? null : Number(formData.category_id),
-        spot_id: formData.spot_id === '' ? null : Number(formData.spot_id),
-        purchase_price: formData.purchase_price, // 已经是数字类型
-        is_public: Boolean(formData.is_public), // 确保 is_public 是布尔值
+        category_id: formData.category_id ? Number(formData.category_id) : null,
+        spot_id: formData.spot_id ? Number(formData.spot_id) : null,
+        purchase_price: formData.purchase_price,
+        is_public: Boolean(formData.is_public),
       }
       
-      // 添加日志输出，查看提交的数据
-      console.log('提交的数据:', itemData);
-      console.log('is_public 类型:', typeof itemData.is_public);
-      console.log('is_public 值:', itemData.is_public);
-      
-      // 单独处理图片，不作为itemData的一部分
       await createItem({
         ...itemData,
         images: imageFiles
       })
       
       toast.success("物品已成功添加")
-      
       router.push('/things')
     } catch (error) {
       console.error('提交错误:', error)

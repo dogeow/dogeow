@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
-import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "sonner"
 import { API_BASE_URL } from '@/configs/api'
@@ -16,26 +15,70 @@ interface ItemFiltersProps {
   onApply: (filters: any) => void
 }
 
+// 定义筛选条件类型
+interface FilterState {
+  category_id: string;
+  purchase_date_from: Date | null;
+  purchase_date_to: Date | null;
+  expiry_date_from: Date | null;
+  expiry_date_to: Date | null;
+  price_from: string;
+  price_to: string;
+  area_id: string;
+  room_id: string;
+  spot_id: string;
+  is_public: boolean | null;
+}
+
+// 定义位置相关数据类型
+interface Category {
+  id: number;
+  name: string;
+}
+
+interface Area {
+  id: number;
+  name: string;
+}
+
+interface Room {
+  id: number;
+  name: string;
+}
+
+interface Spot {
+  id: number;
+  name: string;
+}
+
 export default function ItemFilters({ onApply }: ItemFiltersProps) {
-  const [categories, setCategories] = useState<any[]>([])
-  const [areas, setAreas] = useState<any[]>([])
-  const [rooms, setRooms] = useState<any[]>([])
-  const [spots, setSpots] = useState<any[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
+  const [areas, setAreas] = useState<Area[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [spots, setSpots] = useState<Spot[]>([])
   const [loading, setLoading] = useState(false)
   
-  // 筛选条件
-  const [filters, setFilters] = useState({
+  // 初始筛选条件
+  const initialFilters: FilterState = {
     category_id: '',
-    purchase_date_from: null as Date | null,
-    purchase_date_to: null as Date | null,
-    expiry_date_from: null as Date | null,
-    expiry_date_to: null as Date | null,
+    purchase_date_from: null,
+    purchase_date_to: null,
+    expiry_date_from: null,
+    expiry_date_to: null,
     price_from: '',
     price_to: '',
     area_id: '',
     room_id: '',
     spot_id: '',
-    is_public: null as boolean | null,
+    is_public: null,
+  }
+  
+  const [filters, setFilters] = useState<FilterState>(initialFilters)
+  
+  // 获取认证令牌
+  const getAuthHeaders = () => ({
+    'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+    'Accept': 'application/json',
   })
   
   // 加载分类和位置数据
@@ -43,26 +86,16 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     const fetchData = async () => {
       setLoading(true)
       try {
-        // 获取分类
-        const categoriesRes = await fetch(`${API_BASE_URL}/categories`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
-        })
+        // 并行请求数据
+        const [categoriesRes, areasRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/categories`, { headers: getAuthHeaders() }),
+          fetch(`${API_BASE_URL}/areas`, { headers: getAuthHeaders() })
+        ])
         
         if (categoriesRes.ok) {
           const categoriesData = await categoriesRes.json()
           setCategories(categoriesData)
         }
-        
-        // 获取区域
-        const areasRes = await fetch(`${API_BASE_URL}/areas`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
-        })
         
         if (areasRes.ok) {
           const areasData = await areasRes.json()
@@ -70,6 +103,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         }
       } catch (error) {
         toast.error("无法加载筛选数据")
+        console.error("加载筛选数据失败:", error)
       } finally {
         setLoading(false)
       }
@@ -89,10 +123,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     const fetchRooms = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/areas/${filters.area_id}/rooms`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
+          headers: getAuthHeaders(),
         })
         
         if (res.ok) {
@@ -118,10 +149,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     const fetchSpots = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/rooms/${filters.room_id}/spots`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
+          headers: getAuthHeaders(),
         })
         
         if (res.ok) {
@@ -136,26 +164,14 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     fetchSpots()
   }, [filters.room_id])
   
-  const handleChange = (field: string, value: any) => {
+  const handleChange = (field: keyof FilterState, value: any) => {
     // 将 "none" 值转换为空字符串
     const actualValue = value === "none" ? "" : value;
     setFilters(prev => ({ ...prev, [field]: actualValue }))
   }
   
   const handleReset = () => {
-    setFilters({
-      category_id: '',
-      purchase_date_from: null,
-      purchase_date_to: null,
-      expiry_date_from: null,
-      expiry_date_to: null,
-      price_from: '',
-      price_to: '',
-      area_id: '',
-      room_id: '',
-      spot_id: '',
-      is_public: null,
-    })
+    setFilters(initialFilters)
   }
   
   const handleApply = () => {
@@ -169,6 +185,37 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     
     onApply(appliedFilters)
   }
+  
+  // 渲染日期选择器组件
+  const renderDateRangePicker = (
+    label: string, 
+    fromField: 'purchase_date_from' | 'expiry_date_from', 
+    toField: 'purchase_date_to' | 'expiry_date_to'
+  ) => (
+    <div className="space-y-3">
+      <Label className="text-base font-medium">{label}</Label>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">从</Label>
+          <DatePicker
+            date={filters[fromField]}
+            setDate={(date) => handleChange(fromField, date)}
+            placeholder="开始日期"
+            className="h-11"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">至</Label>
+          <DatePicker
+            date={filters[toField]}
+            setDate={(date) => handleChange(toField, date)}
+            placeholder="结束日期"
+            className="h-11"
+          />
+        </div>
+      </div>
+    </div>
+  )
   
   return (
     <div className="space-y-6 px-1">
@@ -191,53 +238,9 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       
       <Separator className="my-4" />
       
-      <div className="space-y-3">
-        <Label className="text-base font-medium">购买日期</Label>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">从</Label>
-            <DatePicker
-              date={filters.purchase_date_from}
-              setDate={(date) => handleChange('purchase_date_from', date)}
-              placeholder="开始日期"
-              className="h-11"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">至</Label>
-            <DatePicker
-              date={filters.purchase_date_to}
-              setDate={(date) => handleChange('purchase_date_to', date)}
-              placeholder="结束日期"
-              className="h-11"
-            />
-          </div>
-        </div>
-      </div>
+      {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to')}
       
-      <div className="space-y-3">
-        <Label className="text-base font-medium">过期日期</Label>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">从</Label>
-            <DatePicker
-              date={filters.expiry_date_from}
-              setDate={(date) => handleChange('expiry_date_from', date)}
-              placeholder="开始日期"
-              className="h-11"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">至</Label>
-            <DatePicker
-              date={filters.expiry_date_to}
-              setDate={(date) => handleChange('expiry_date_to', date)}
-              placeholder="结束日期"
-              className="h-11"
-            />
-          </div>
-        </div>
-      </div>
+      {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to')}
       
       <Separator className="my-4" />
       
