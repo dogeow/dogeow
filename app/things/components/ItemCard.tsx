@@ -131,54 +131,52 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
             </div>
           </div>
         </div>
-        <CardHeader className="p-4 pb-2">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-semibold truncate">{item.name}</h3>
-              <p className="text-sm text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
-            </div>
+        <div className="flex flex-col flex-grow p-3">
+          <div className="mb-2">
+            <h3 className="font-semibold truncate text-base">{item.name}</h3>
+            <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
           </div>
-        </CardHeader>
-        <CardContent className="p-4 pt-0 pb-2 flex-grow">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <div>
+          
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-sm mb-2">
+            <div className="flex flex-col">
               <p className="text-xs text-muted-foreground">数量</p>
-              <p className="font-medium">{item.quantity}</p>
+              <p className="font-medium text-sm">{item.quantity}</p>
             </div>
-            <div>
+            <div className="flex flex-col">
               <p className="text-xs text-muted-foreground">价格</p>
-              <p className="font-medium">{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
+              <p className="font-medium text-sm">{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
             </div>
-            <div>
+            <div className="flex flex-col">
               <p className="text-xs text-muted-foreground">购买日期</p>
-              <p className="font-medium truncate">{formatDate(item.purchase_date)}</p>
+              <p className="font-medium text-sm truncate">{formatDate(item.purchase_date)}</p>
             </div>
-            <div>
+            <div className="flex flex-col">
               <p className="text-xs text-muted-foreground">过期日期</p>
-              <p className="font-medium truncate">{formatDate(item.expiry_date)}</p>
+              <p className="font-medium text-sm truncate">{formatDate(item.expiry_date)}</p>
             </div>
           </div>
-        </CardContent>
-        <CardFooter className="p-4 pt-0 mt-auto">
-          {item.spot?.name ? (
-            <p className="text-xs text-muted-foreground truncate w-full">
-              <span className="inline-block mr-1">📍</span>
-              {item.spot.room?.area?.name ? `${item.spot.room.area.name} > ` : ''}
-              {item.spot.room?.name ? `${item.spot.room.name} > ` : ''}
-              {item.spot.name}
-            </p>
-          ) : (
-            <p className="text-xs text-muted-foreground">未指定位置</p>
-          )}
-        </CardFooter>
+          
+          <div className="mt-auto">
+            {item.spot?.name ? (
+              <p className="text-xs text-muted-foreground truncate w-full">
+                <span className="inline-block mr-1">📍</span>
+                {item.spot.room?.area?.name ? `${item.spot.room.area.name} > ` : ''}
+                {item.spot.room?.name ? `${item.spot.room.name} > ` : ''}
+                {item.spot.name}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">未指定位置</p>
+            )}
+          </div>
+        </div>
       </Card>
     )
   }
   
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <div className="flex p-4">
-        <div className="relative w-24 h-24 bg-muted rounded-md mr-4 flex-shrink-0">
+      <div className="flex p-3">
+        <div className="relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0">
           {item.primary_image ? (
             <Image
               src={`http://127.0.0.1:8000/storage/${item.primary_image.path}`}
@@ -199,15 +197,15 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start">
-            <div className="min-w-0">
-              <h3 className="font-semibold truncate">{item.name}</h3>
-              <p className="text-sm text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
+            <div className="min-w-0 pr-2">
+              <h3 className="font-semibold truncate text-base">{item.name}</h3>
+              <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 flex-shrink-0">
               <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
                     <MoreHorizontal className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -228,25 +226,25 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
               </DropdownMenu>
             </div>
           </div>
-          <div className="grid grid-cols-4 gap-2 text-sm mt-2">
-            <div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-3 gap-y-1 text-sm mt-1">
+            <div className="flex flex-col">
               <p className="text-xs text-muted-foreground">数量</p>
-              <p className="font-medium">{item.quantity}</p>
+              <p className="font-medium text-sm">{item.quantity}</p>
             </div>
-            <div>
+            <div className="flex flex-col">
               <p className="text-xs text-muted-foreground">价格</p>
-              <p className="font-medium">{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
+              <p className="font-medium text-sm">{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
             </div>
-            <div>
+            <div className="flex flex-col">
               <p className="text-xs text-muted-foreground">购买日期</p>
-              <p className="font-medium truncate">{formatDate(item.purchase_date)}</p>
+              <p className="font-medium text-sm truncate">{formatDate(item.purchase_date)}</p>
             </div>
-            <div>
+            <div className="flex flex-col">
               <p className="text-xs text-muted-foreground">过期日期</p>
-              <p className="font-medium truncate">{formatDate(item.expiry_date)}</p>
+              <p className="font-medium text-sm truncate">{formatDate(item.expiry_date)}</p>
             </div>
           </div>
-          <div className="mt-2">
+          <div className="mt-1">
             {item.spot?.name ? (
               <p className="text-xs text-muted-foreground truncate">
                 <span className="inline-block mr-1">📍</span>
