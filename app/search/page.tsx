@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
+import axios from "axios"
 
 // 定义搜索结果类型
 interface SearchResult {
@@ -25,48 +26,43 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("all")
 
-  // 模拟搜索结果
-  const mockResults: SearchResult[] = [
-    {
-      id: 1,
-      title: "示例物品",
-      content: "这是一个示例物品的描述内容",
-      url: "/things/1",
-      category: "things"
-    },
-    {
-      id: 2,
-      title: "实验室项目",
-      content: "这是一个实验室项目的描述内容",
-      url: "/lab/project1",
-      category: "lab"
-    },
-    {
-      id: 3,
-      title: "笔记示例",
-      content: "这是一个笔记的内容示例",
-      url: "/note/1",
-      category: "note"
-    }
-  ]
-
   // 执行搜索
-  const performSearch = () => {
+  const performSearch = async () => {
+    if (!searchTerm.trim()) {
+      setResults([])
+      return
+    }
+
     setLoading(true)
     
-    // 模拟API请求
-    setTimeout(() => {
-      // 过滤模拟结果
-      const filtered = query 
-        ? mockResults.filter(item => 
-            item.title.toLowerCase().includes(query.toLowerCase()) || 
-            item.content.toLowerCase().includes(query.toLowerCase())
-          )
-        : mockResults
+    try {
+      // 使用测试搜索路由
+      console.log(`正在搜索: ${searchTerm}`)
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/test-search`, {
+        params: { search: searchTerm }
+      })
       
-      setResults(filtered)
+      console.log('搜索结果:', response.data)
+      
+      if (response.data.results && Array.isArray(response.data.results)) {
+        const thingResults = response.data.results.map((item: any) => ({
+          id: item.id,
+          title: item.name,
+          content: item.description || '无描述',
+          url: `/things/${item.id}`,
+          category: 'things'
+        }))
+        
+        setResults(thingResults)
+      }
+      
+      // 这里可以添加其他分类的搜索逻辑
+      
+    } catch (error) {
+      console.error('搜索出错:', error)
+    } finally {
       setLoading(false)
-    }, 500)
+    }
   }
 
   // 处理搜索表单提交

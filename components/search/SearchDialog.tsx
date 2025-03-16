@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, X, ArrowRight } from "lucide-react"
+import axios from "axios"
 
 // 定义分类类型
 interface Category {
@@ -82,7 +83,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
   ]
 
   // 执行搜索
-  const performSearch = () => {
+  const performSearch = async () => {
     if (!searchTerm.trim()) {
       setResults([])
       return
@@ -90,17 +91,45 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
 
     setLoading(true)
     
-    // 模拟API请求
-    setTimeout(() => {
-      // 过滤模拟结果
-      const filtered = mockResults.filter(item => 
-        item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.content.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    try {
+      // 调用后端 API 进行搜索
+      if (activeCategory === "things" || activeCategory === "all") {
+        // 使用测试搜索路由
+        console.log(`正在搜索: ${searchTerm}`)
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/test-search`, {
+          params: { search: searchTerm }
+        })
+        
+        console.log('搜索结果:', response.data)
+        
+        if (response.data.results && Array.isArray(response.data.results)) {
+          const thingResults = response.data.results.map((item: any) => ({
+            id: item.id,
+            title: item.name,
+            content: item.description || '无描述',
+            url: `/things/${item.id}`,
+            category: 'things'
+          }))
+          
+          setResults(prevResults => {
+            // 如果是 "all" 分类，保留其他分类的结果，只更新 things 分类
+            if (activeCategory === "all") {
+              const otherResults = prevResults.filter(item => item.category !== 'things')
+              return [...otherResults, ...thingResults]
+            }
+            return thingResults
+          })
+        }
+      }
       
-      setResults(filtered)
+      // 这里可以添加其他分类的搜索逻辑
+      // 例如搜索笔记、实验室等
+      
+    } catch (error) {
+      console.error('搜索出错:', error)
+    } finally {
       setLoading(false)
-    }, 300)
+    }
   }
 
   // 处理搜索表单提交
@@ -141,8 +170,12 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
 
   // 当搜索词变化时执行搜索
   useEffect(() => {
-    performSearch()
-  }, [searchTerm])
+    const delaySearch = setTimeout(() => {
+      performSearch()
+    }, 300)
+    
+    return () => clearTimeout(delaySearch)
+  }, [searchTerm, activeCategory])
 
   // 根据当前选中的分类过滤结果
   const filteredResults = results.filter(
