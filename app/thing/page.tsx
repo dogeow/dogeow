@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { cn } from "@/lib/utils"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
+import ThingNavigation from './components/ThingNavigation'
 import { useItemStore } from '@/stores/itemStore'
 
 // 定义视图模式类型
@@ -158,64 +159,68 @@ export default function Thing() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4">
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold mr-auto">物品管理</h1>
-        <Button onClick={handleAddItem}>
-          <Plus className="mr-2 h-4 w-4" /> 添加物品
-        </Button>
-      </div>
-
-      <div className="flex flex-col gap-4 mb-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-2">
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="所有分类" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">所有分类</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Tabs value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)} className="flex-1">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="list">列表</TabsTrigger>
-              <TabsTrigger value="grid">网格</TabsTrigger>
-            </TabsList>
-          </Tabs>
-
-          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-            <SheetTrigger asChild>
-              <Button variant="outline" size="icon">
-                <SlidersHorizontal className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent className="overflow-y-auto pb-10">
-              <SheetHeader className="pb-1">
-                <SheetTitle className="text-xl">筛选物品</SheetTitle>
-                <SheetDescription className="text-sm">
-                  设置筛选条件以查找特定物品
-                </SheetDescription>
-              </SheetHeader>
-              <div className="py-2">
-                <ItemFilters onApply={handleApplyFilters} />
-              </div>
-            </SheetContent>
-          </Sheet>
+    <>
+      <ThingNavigation />
+      
+      <div className="container mx-auto py-6 px-4">
+        <div className="flex flex-wrap items-center gap-4 mb-6">
+          <h1 className="text-2xl font-bold mr-auto">物品管理</h1>
+          <Button onClick={handleAddItem}>
+            <Plus className="mr-2 h-4 w-4" /> 添加物品
+          </Button>
         </div>
-      </div>
 
-      {loading ? renderLoading() : 
-       error ? renderError() : 
-       items.length === 0 ? renderEmpty() : 
-       renderItems()}
-    </div>
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2">
+              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue placeholder="所有分类" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">所有分类</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id.toString()}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Tabs value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)} className="flex-1">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="list">列表</TabsTrigger>
+                <TabsTrigger value="grid">网格</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <SlidersHorizontal className="h-4 w-4" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="overflow-y-auto pb-10">
+                <SheetHeader className="pb-1">
+                  <SheetTitle className="text-xl">筛选物品</SheetTitle>
+                  <SheetDescription className="text-sm">
+                    设置筛选条件以查找特定物品
+                  </SheetDescription>
+                </SheetHeader>
+                <div className="py-2">
+                  <ItemFilters onApply={handleApplyFilters} />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
+        </div>
+
+        {loading ? renderLoading() : 
+         error ? renderError() : 
+         items.length === 0 ? renderEmpty() : 
+         renderItems()}
+      </div>
+    </>
   )
 }
