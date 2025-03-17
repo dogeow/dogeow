@@ -107,7 +107,7 @@ export default function Statistics() {
             <CardDescription>所有物品的总价值</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">¥{stats.totalValue.toFixed(2)}</div>
+            <div className="text-3xl font-bold">¥{Number(stats.totalValue).toFixed(2)}</div>
           </CardContent>
         </Card>
         

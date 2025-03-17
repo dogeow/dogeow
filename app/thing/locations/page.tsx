@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Pencil, Trash2, Plus, Home, DoorOpen, MapPin } from "lucide-react"
+import { Pencil, Trash2, Plus, Home, DoorOpen, MapPin, FolderTree } from "lucide-react"
 import { toast } from "sonner"
 import ThingNavigation from '../components/ThingNavigation'
 import { API_BASE_URL } from '@/configs/api'
@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import LocationTreeSelect from '../components/LocationTreeSelect'
 
 // 定义类型
 type LocationType = 'area' | 'room' | 'spot';
@@ -36,13 +37,14 @@ type Spot = { id: number; name: string; room_id: number; room?: Room; };
 
 export default function Locations() {
   // 状态
-  const [activeTab, setActiveTab] = useState<LocationType>('area')
+  const [activeTab, setActiveTab] = useState<LocationType | 'tree'>('area')
   const [areas, setAreas] = useState<Area[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [spots, setSpots] = useState<Spot[]>([])
   const [loading, setLoading] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<{id: number, type: LocationType} | null>(null)
+  const [selectedLocation, setSelectedLocation] = useState<{ type: LocationType, id: number } | undefined>(undefined)
   
   // 表单状态
   const [newAreaName, setNewAreaName] = useState('')
@@ -424,6 +426,23 @@ export default function Locations() {
     }
   }
 
+  // 处理位置选择
+  const handleLocationSelect = (type: LocationType, id: number, fullPath: string) => {
+    setSelectedLocation({ type, id })
+    
+    // 根据选择的位置类型切换到对应的标签页
+    if (type === 'area') {
+      setActiveTab('area')
+      setEditingArea(areas.find(area => area.id === id) || null)
+    } else if (type === 'room') {
+      setActiveTab('room')
+      setEditingRoom(rooms.find(room => room.id === id) || null)
+    } else if (type === 'spot') {
+      setActiveTab('spot')
+      setEditingSpot(spots.find(spot => spot.id === id) || null)
+    }
+  }
+
   return (
     <>
       <ThingNavigation />
@@ -433,8 +452,12 @@ export default function Locations() {
           <h1 className="text-2xl font-bold">位置管理</h1>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType)} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="tree" className="flex items-center">
+              <FolderTree className="mr-2 h-4 w-4" />
+              树形视图
+            </TabsTrigger>
             <TabsTrigger value="area" className="flex items-center">
               <Home className="mr-2 h-4 w-4" />
               区域
@@ -448,6 +471,57 @@ export default function Locations() {
               具体位置
             </TabsTrigger>
           </TabsList>
+          
+          {/* 树形视图 */}
+          <TabsContent value="tree">
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>位置树形结构</CardTitle>
+                  <CardDescription>查看和管理您的位置层级结构</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <LocationTreeSelect 
+                    onSelect={handleLocationSelect}
+                    selectedLocation={selectedLocation}
+                    className="min-h-[400px]"
+                  />
+                </CardContent>
+                <CardFooter className="text-sm text-muted-foreground">
+                  点击任意位置项目可以快速切换到对应的编辑页面
+                </CardFooter>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>使用说明</CardTitle>
+                  <CardDescription>如何使用树形视图管理位置</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h3 className="font-medium mb-1">查看层级结构</h3>
+                    <p className="text-sm text-muted-foreground">
+                      树形视图展示了您所有位置的层级关系，包括区域、房间和具体位置。
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-1">快速编辑</h3>
+                    <p className="text-sm text-muted-foreground">
+                      点击任意位置项目，系统会自动切换到对应的编辑页面，方便您快速修改信息。
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-1">查看物品数量</h3>
+                    <p className="text-sm text-muted-foreground">
+                      每个具体位置旁边显示的数字表示该位置存放的物品数量。
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
           
           {/* 区域管理 */}
           <TabsContent value="area">
@@ -614,7 +688,7 @@ export default function Locations() {
                           <div>
                             <span className="font-medium">{room.name}</span>
                             <p className="text-xs text-muted-foreground">
-                              {room.area?.name || `区域ID: ${room.area_id}`}
+                              区域: {room.area?.name || `未知区域 (ID: ${room.area_id})`}
                             </p>
                           </div>
                           <div className="flex space-x-2">
@@ -724,9 +798,13 @@ export default function Locations() {
                           <div>
                             <span className="font-medium">{spot.name}</span>
                             <p className="text-xs text-muted-foreground">
-                              {spot.room?.name || `房间ID: ${spot.room_id}`}
-                              {spot.room?.area?.name ? ` (${spot.room.area.name})` : ''}
+                              房间: {spot.room?.name || `未知房间 (ID: ${spot.room_id})`}
                             </p>
+                            {spot.room?.area?.name && (
+                              <p className="text-xs text-muted-foreground">
+                                区域: {spot.room.area.name}
+                              </p>
+                            )}
                           </div>
                           <div className="flex space-x-2">
                             <Button 

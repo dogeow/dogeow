@@ -17,6 +17,7 @@ import Image from "next/image"
 import { API_BASE_URL } from '@/configs/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
+import LocationTreeSelect from '../../components/LocationTreeSelect'
 
 // 定义类型
 type Image = {
@@ -56,6 +57,8 @@ export default function EditItem() {
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([])
   const [existingImages, setExistingImages] = useState<Image[]>([])
+  const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
+  const [locationPath, setLocationPath] = useState<string>('')
   
   // 表单数据
   const [formData, setFormData] = useState<FormData>({
@@ -178,6 +181,24 @@ export default function EditItem() {
         if (item.spot?.room?.id) {
           await loadSpots(item.spot.room.id)
         }
+        
+        // 设置位置选择状态
+        if (item.spot_id) {
+          setSelectedLocation({ type: 'spot', id: item.spot_id })
+          if (item.spot?.room?.name && item.spot?.room?.area?.name) {
+            setLocationPath(`${item.spot.room.area.name} / ${item.spot.room.name} / ${item.spot.name}`)
+          }
+        } else if (item.spot?.room_id) {
+          setSelectedLocation({ type: 'room', id: item.spot.room_id })
+          if (item.spot?.room?.area?.name) {
+            setLocationPath(`${item.spot.room.area.name} / ${item.spot.room.name}`)
+          }
+        } else if (item.spot?.room?.area_id) {
+          setSelectedLocation({ type: 'area', id: item.spot.room.area_id })
+          if (item.spot?.room?.area?.name) {
+            setLocationPath(item.spot.room.area.name)
+          }
+        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "发生错误，请重试")
       } finally {
@@ -284,6 +305,48 @@ export default function EditItem() {
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
     } finally {
       setLoading(false)
+    }
+  }
+  
+  // 处理位置选择
+  const handleLocationSelect = (type: 'area' | 'room' | 'spot', id: number, fullPath: string) => {
+    setSelectedLocation({ type, id })
+    setLocationPath(fullPath)
+    
+    // 更新表单数据
+    if (type === 'area') {
+      setFormData(prev => ({ 
+        ...prev, 
+        area_id: id.toString(),
+        room_id: '',
+        spot_id: ''
+      }))
+    } else if (type === 'room') {
+      setFormData(prev => ({ 
+        ...prev, 
+        room_id: id.toString(),
+        spot_id: ''
+      }))
+      
+      // 查找该房间所属的区域
+      const room = rooms.find(r => r.id === id)
+      if (room?.area_id) {
+        setFormData(prev => ({ ...prev, area_id: room.area_id.toString() }))
+      }
+    } else if (type === 'spot') {
+      setFormData(prev => ({ ...prev, spot_id: id.toString() }))
+      
+      // 查找该位置所属的房间
+      const spot = spots.find(s => s.id === id)
+      if (spot?.room_id) {
+        setFormData(prev => ({ ...prev, room_id: spot.room_id.toString() }))
+        
+        // 查找该房间所属的区域
+        const room = rooms.find(r => r.id === spot.room_id)
+        if (room?.area_id) {
+          setFormData(prev => ({ ...prev, area_id: room.area_id.toString() }))
+        }
+      }
     }
   }
   
@@ -541,67 +604,16 @@ export default function EditItem() {
                 <CardDescription>编辑物品的存放位置</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="area_id">区域</Label>
-                  <Select
-                    value={formData.area_id}
-                    onValueChange={(value) => handleSelectChange('area_id', value)}
-                  >
-                    <SelectTrigger id="area_id">
-                      <SelectValue placeholder="选择区域" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">未指定</SelectItem>
-                      {areas.map((area) => (
-                        <SelectItem key={area.id} value={area.id.toString()}>
-                          {area.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <LocationTreeSelect 
+                  onSelect={handleLocationSelect}
+                  selectedLocation={selectedLocation}
+                />
                 
-                <div className="space-y-2">
-                  <Label htmlFor="room_id">房间</Label>
-                  <Select
-                    value={formData.room_id}
-                    onValueChange={(value) => handleSelectChange('room_id', value)}
-                    disabled={!formData.area_id}
-                  >
-                    <SelectTrigger id="room_id">
-                      <SelectValue placeholder={formData.area_id ? "选择房间" : "请先选择区域"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">未指定</SelectItem>
-                      {rooms.map((room) => (
-                        <SelectItem key={room.id} value={room.id.toString()}>
-                          {room.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="spot_id">具体位置</Label>
-                  <Select
-                    value={formData.spot_id}
-                    onValueChange={(value) => handleSelectChange('spot_id', value)}
-                    disabled={!formData.room_id}
-                  >
-                    <SelectTrigger id="spot_id">
-                      <SelectValue placeholder={formData.room_id ? "选择位置" : "请先选择房间"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">未指定</SelectItem>
-                      {spots.map((spot) => (
-                        <SelectItem key={spot.id} value={spot.id.toString()}>
-                          {spot.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {locationPath && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    当前选择: {locationPath}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
