@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,7 @@ import {
 import { toast } from "sonner"
 import Image from "next/image"
 import { useItemStore } from '@/stores/itemStore'
+import { API_BASE_URL } from '@/configs/api'
 
 interface ItemCardProps {
   item: any
@@ -37,10 +38,26 @@ interface ItemCardProps {
 export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { fetchItems } = useItemStore()
+  const [imageError, setImageError] = useState(false)
+  const [primaryImage, setPrimaryImage] = useState<any>(null)
+  
+  // 从图片数组中找出主图
+  useEffect(() => {
+    if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+      // 优先查找 is_primary 为 true 的图片
+      const primary = item.images.find((img: any) => img.is_primary === true)
+      
+      // 如果没有找到主图，则使用第一张图片
+      setPrimaryImage(primary || item.images[0])
+    } else if (item.primary_image) {
+      // 如果已经有 primary_image 属性，直接使用
+      setPrimaryImage(item.primary_image)
+    }
+  }, [item.images, item.primary_image])
   
   const handleDelete = async () => {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/items/${item.id}`, {
+      const response = await fetch(`${API_BASE_URL}/items/${item.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
@@ -96,16 +113,40 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
     )
   }
   
+  // 构建正确的图片URL
+  const getImageUrl = (path: string) => {
+    // 移除URL中可能存在的/api/部分
+    const baseUrl = API_BASE_URL.replace('/api', '');
+    return `${baseUrl}/storage/${path}`;
+  }
+  
   // 渲染图片
   const renderImage = (className: string) => {
-    if (item.primary_image) {
+    if (primaryImage && !imageError) {
+      const imagePath = primaryImage.thumbnail_path || primaryImage.path
+      
+      if (!imagePath) {
+        return (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            无图片路径
+          </div>
+        )
+      }
+      
       return (
-        <Image
-          src={`http://127.0.0.1:8000/storage/${item.primary_image.path}`}
-          alt={item.name}
-          fill
-          className={className}
-        />
+        <div className="relative w-full h-full">
+          <Image
+            src={getImageUrl(imagePath)}
+            alt={item.name}
+            fill
+            className={className}
+            onError={(e) => {
+              console.error('图片加载失败:', imagePath, e);
+              setImageError(true)
+            }}
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
       )
     }
     
