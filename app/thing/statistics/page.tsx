@@ -301,19 +301,19 @@ export default function Statistics() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview" className="flex items-center">
-                <BarChart className="mr-2 h-4 w-4" />
+                <BarChart className="h-4 w-4" />
                 概览
               </TabsTrigger>
               <TabsTrigger value="category" className="flex items-center">
-                <PieChart className="mr-2 h-4 w-4" />
+                <PieChart className="h-4 w-4" />
                 分类统计
               </TabsTrigger>
               <TabsTrigger value="location" className="flex items-center">
-                <LineChart className="mr-2 h-4 w-4" />
+                <LineChart className="h-4 w-4" />
                 位置统计
               </TabsTrigger>
               <TabsTrigger value="time" className="flex items-center">
-                <Calendar className="mr-2 h-4 w-4" />
+                <Calendar className="h-4 w-4" />
                 时间统计
               </TabsTrigger>
             </TabsList>

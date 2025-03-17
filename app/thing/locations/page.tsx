@@ -455,19 +455,19 @@ export default function Locations() {
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="tree" className="flex items-center">
-              <FolderTree className="mr-2 h-4 w-4" />
+              <FolderTree className="h-4 w-4" />
               树形视图
             </TabsTrigger>
             <TabsTrigger value="area" className="flex items-center">
-              <Home className="mr-2 h-4 w-4" />
+              <Home className="h-4 w-4" />
               区域
             </TabsTrigger>
             <TabsTrigger value="room" className="flex items-center">
-              <DoorOpen className="mr-2 h-4 w-4" />
+              <DoorOpen className="h-4 w-4" />
               房间
             </TabsTrigger>
             <TabsTrigger value="spot" className="flex items-center">
-              <MapPin className="mr-2 h-4 w-4" />
+              <MapPin className="h-4 w-4" />
               具体位置
             </TabsTrigger>
           </TabsList>

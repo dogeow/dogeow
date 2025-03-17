@@ -56,7 +56,7 @@ export default function ThingNavigation() {
                 asChild
               >
                 <Link href={item.href}>
-                  <Icon className="mr-2 h-4 w-4" />
+                  <Icon className="h-4 w-4" />
                   {item.label}
                 </Link>
               </Button>
