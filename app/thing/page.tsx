@@ -13,10 +13,11 @@ import { cn } from "@/lib/utils"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ThingNavigation from './components/ThingNavigation'
+import ItemGallery from './components/ItemGallery'
 import { useItemStore } from '@/stores/itemStore'
 
 // 定义视图模式类型
-type ViewMode = 'grid' | 'list';
+type ViewMode = 'grid' | 'list' | 'gallery';
 
 // 定义过滤器类型
 interface FilterParams {
@@ -98,20 +99,24 @@ export default function Thing() {
   // 渲染物品列表
   const renderItems = () => (
     <>
-      <div className={cn(
-        "grid gap-4",
-        viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'
-      )}>
-        {items.map((item) => (
-          <ItemCard 
-            key={item.id} 
-            item={item} 
-            viewMode={viewMode} 
-            onEdit={() => router.push(`/thing/${item.id}/edit`)}
-            onView={() => router.push(`/thing/${item.id}`)}
-          />
-        ))}
-      </div>
+      {viewMode === 'gallery' ? (
+        <ItemGallery items={items} />
+      ) : (
+        <div className={cn(
+          "grid gap-4",
+          viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'
+        )}>
+          {items.map((item) => (
+            <ItemCard 
+              key={item.id} 
+              item={item} 
+              viewMode={viewMode} 
+              onEdit={() => router.push(`/thing/${item.id}/edit`)}
+              onView={() => router.push(`/thing/${item.id}`)}
+            />
+          ))}
+        </div>
+      )}
 
       {renderPagination()}
     </>
@@ -188,12 +193,15 @@ export default function Thing() {
               </Select>
             </div>
 
-            <Tabs value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)} className="flex-1">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="list">列表</TabsTrigger>
-                <TabsTrigger value="grid">网格</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex-1">
+              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="flex-1">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="list">列表</TabsTrigger>
+                  <TabsTrigger value="grid">网格</TabsTrigger>
+                  <TabsTrigger value="gallery">图片廊</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
 
             <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
               <SheetTrigger asChild>

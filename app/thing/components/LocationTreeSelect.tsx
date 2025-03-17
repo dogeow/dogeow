@@ -132,11 +132,11 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
   const renderIcon = (type: LocationType) => {
     switch (type) {
       case 'area':
-        return <Home className="h-4 w-4 mr-1" />
+        return <Home className="h-3 w-3 mr-0.5" />
       case 'room':
-        return <DoorOpen className="h-4 w-4 mr-1" />
+        return <DoorOpen className="h-3 w-3 mr-0.5" />
       case 'spot':
-        return <MapPin className="h-4 w-4 mr-1" />
+        return <MapPin className="h-3 w-3 mr-0.5" />
     }
   }
   
@@ -154,35 +154,35 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
       <div key={node.id} className="select-none">
         <div 
           className={cn(
-            "flex items-center py-1 px-2 rounded-md cursor-pointer hover:bg-muted transition-colors",
+            "flex items-center py-0.5 px-2 rounded-md cursor-pointer hover:bg-muted transition-colors text-sm",
             isSelected(node) && "bg-primary text-primary-foreground hover:bg-primary/90",
-            level > 0 && "ml-4"
+            level > 0 && "ml-2"
           )}
           onClick={() => handleSelect(node)}
         >
           {hasChildren && (
             <span 
-              className="mr-1 cursor-pointer"
+              className="mr-0.5 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation()
                 toggleNode(node.id)
               }}
             >
-              {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
             </span>
           )}
-          {!hasChildren && <span className="w-4 mr-1"></span>}
+          {!hasChildren && <span className="w-3 mr-0.5"></span>}
           {renderIcon(node.type)}
-          <span>{node.name}</span>
+          <span className="truncate">{node.name}</span>
           {node.type === 'spot' && node.items_count !== undefined && node.items_count > 0 && (
-            <span className="ml-2 text-xs bg-muted-foreground/20 px-1.5 py-0.5 rounded-full">
+            <span className="ml-1 text-xs bg-muted-foreground/20 px-1 py-0.5 rounded-full">
               {node.items_count}
             </span>
           )}
         </div>
         
         {hasChildren && isExpanded && (
-          <div className="ml-4">
+          <div className="ml-2">
             {node.children!.map(child => renderTreeNode(child, level + 1))}
           </div>
         )}
@@ -199,8 +199,10 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
   }
   
   return (
-    <div className={cn("border rounded-md p-2 max-h-[300px] overflow-y-auto", className)}>
-      {tree.map(node => renderTreeNode(node))}
+    <div className={cn("border rounded-md p-2 max-h-[200px] overflow-y-auto", className)}>
+      <div className="grid grid-cols-1 gap-1">
+        {tree.map(node => renderTreeNode(node))}
+      </div>
     </div>
   )
 } 

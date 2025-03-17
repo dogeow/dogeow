@@ -8,6 +8,8 @@ export interface Item {
   expiry_date: string | null;
   purchase_price: number | null;
   category_id: number | null;
+  area_id: number | null;
+  room_id: number | null;
   spot_id: number | null;
   is_public: boolean;
   created_at: string;

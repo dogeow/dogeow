@@ -18,6 +18,7 @@ import { API_BASE_URL } from '@/configs/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
 import LocationTreeSelect from '../../components/LocationTreeSelect'
+import { Item } from '@/types/item'
 
 // 定义类型
 type Image = {
@@ -188,13 +189,13 @@ export default function EditItem() {
           if (item.spot?.room?.name && item.spot?.room?.area?.name) {
             setLocationPath(`${item.spot.room.area.name} / ${item.spot.room.name} / ${item.spot.name}`)
           }
-        } else if (item.spot?.room_id) {
-          setSelectedLocation({ type: 'room', id: item.spot.room_id })
-          if (item.spot?.room?.area?.name) {
+        } else if (item.room_id) {
+          setSelectedLocation({ type: 'room', id: item.room_id })
+          if (item.spot?.room?.name && item.spot?.room?.area?.name) {
             setLocationPath(`${item.spot.room.area.name} / ${item.spot.room.name}`)
           }
-        } else if (item.spot?.room?.area_id) {
-          setSelectedLocation({ type: 'area', id: item.spot.room.area_id })
+        } else if (item.area_id) {
+          setSelectedLocation({ type: 'area', id: item.area_id })
           if (item.spot?.room?.area?.name) {
             setLocationPath(item.spot.room.area.name)
           }
@@ -292,6 +293,8 @@ export default function EditItem() {
         expiry_date: formData.expiry_date ? format(formData.expiry_date, 'yyyy-MM-dd') : null,
         purchase_price: formData.purchase_price ? Number(formData.purchase_price) : null,
         category_id: formData.category_id ? Number(formData.category_id) : null,
+        area_id: formData.area_id ? Number(formData.area_id) : null,
+        room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         images: imageFiles,
         image_ids: existingImages.map(img => img.id),
@@ -603,14 +606,35 @@ export default function EditItem() {
                 <CardTitle>存放位置</CardTitle>
                 <CardDescription>编辑物品的存放位置</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label>区域</Label>
+                    <div className="text-sm font-medium mt-1">
+                      {formData.area_id ? areas.find(a => a.id.toString() === formData.area_id)?.name || '未选择' : '未选择'}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>房间</Label>
+                    <div className="text-sm font-medium mt-1">
+                      {formData.room_id ? rooms.find(r => r.id.toString() === formData.room_id)?.name || '未选择' : '未选择'}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>具体位置</Label>
+                    <div className="text-sm font-medium mt-1">
+                      {formData.spot_id ? spots.find(s => s.id.toString() === formData.spot_id)?.name || '未选择' : '未选择'}
+                    </div>
+                  </div>
+                </div>
+                
                 <LocationTreeSelect 
                   onSelect={handleLocationSelect}
                   selectedLocation={selectedLocation}
                 />
                 
                 {locationPath && (
-                  <div className="mt-2 text-sm text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     当前选择: {locationPath}
                   </div>
                 )}

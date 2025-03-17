@@ -243,6 +243,8 @@ export default function AddItem() {
       const itemData = {
         ...formData,
         category_id: formData.category_id ? Number(formData.category_id) : null,
+        area_id: formData.area_id ? Number(formData.area_id) : null,
+        room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         purchase_price: formData.purchase_price,
         is_public: Boolean(formData.is_public),
@@ -476,14 +478,35 @@ export default function AddItem() {
                 <CardTitle>存放位置</CardTitle>
                 <CardDescription>设置物品的存放位置</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label>区域</Label>
+                    <div className="text-sm font-medium mt-1">
+                      {formData.area_id ? areas.find(a => a.id.toString() === formData.area_id)?.name || '未选择' : '未选择'}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>房间</Label>
+                    <div className="text-sm font-medium mt-1">
+                      {formData.room_id ? rooms.find(r => r.id.toString() === formData.room_id)?.name || '未选择' : '未选择'}
+                    </div>
+                  </div>
+                  <div>
+                    <Label>具体位置</Label>
+                    <div className="text-sm font-medium mt-1">
+                      {formData.spot_id ? spots.find(s => s.id.toString() === formData.spot_id)?.name || '未选择' : '未选择'}
+                    </div>
+                  </div>
+                </div>
+                
                 <LocationTreeSelect 
                   onSelect={handleLocationSelect}
                   selectedLocation={selectedLocation}
                 />
                 
                 {locationPath && (
-                  <div className="mt-2 text-sm text-muted-foreground">
+                  <div className="text-xs text-muted-foreground">
                     当前选择: {locationPath}
                   </div>
                 )}

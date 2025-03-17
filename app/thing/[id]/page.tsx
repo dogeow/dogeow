@@ -142,12 +142,6 @@ export default function ItemDetail() {
             <CardHeader className="pb-3">
               <div className="flex justify-between items-center">
                 <CardTitle>物品信息</CardTitle>
-                <div className="flex flex-wrap gap-2">
-                  {getStatusBadge(item.status)}
-                  <Badge variant={item.is_public ? "default" : "outline"}>
-                    {item.is_public ? '公开' : '私有'}
-                  </Badge>
-                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -161,9 +155,19 @@ export default function ItemDetail() {
                       className="object-contain"
                     />
                   </div>
+                  
+                  <div className="flex justify-between items-center mt-2">
+                    <div className="flex flex-wrap gap-2">
+                      {getStatusBadge(item.status)}
+                      <Badge variant={item.is_public ? "default" : "outline"}>
+                        {item.is_public ? '公开' : '私有'}
+                      </Badge>
+                    </div>
+                  </div>
+                  
                   {item.images.length > 1 && (
                     <div className="flex flex-wrap gap-2 py-2 justify-center">
-                      {item.images.map((image, index) => (
+                      {item.images.map((image: any, index: number) => (
                         <div
                           key={image.id}
                           className={`relative w-16 h-16 rounded-md cursor-pointer border-2 transition-all ${
@@ -188,27 +192,27 @@ export default function ItemDetail() {
                 </div>
               )}
               
-              <div className="bg-muted/30 p-4 rounded-lg">
-                <h3 className="font-medium mb-2 text-sm text-muted-foreground">描述</h3>
-                <p className="text-foreground">{item.description || '无描述'}</p>
+              <div className="bg-muted/30 p-3 rounded-lg">
+                <h3 className="font-medium text-xs text-muted-foreground mb-1">描述</h3>
+                <p className="text-sm">{item.description || '无描述'}</p>
               </div>
               
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <div className="bg-background p-4 rounded-lg border shadow-sm">
-                  <h3 className="font-medium mb-1 text-sm text-muted-foreground">数量</h3>
-                  <p className="text-xl font-semibold">{item.quantity}</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-background p-3 rounded-lg border shadow-sm">
+                  <h3 className="font-medium text-xs text-muted-foreground">数量</h3>
+                  <p className="text-sm font-semibold">{item.quantity}</p>
                 </div>
-                <div className="bg-background p-4 rounded-lg border shadow-sm">
-                  <h3 className="font-medium mb-1 text-sm text-muted-foreground">分类</h3>
-                  <p className="text-xl font-semibold">{item.category?.name || '未分类'}</p>
+                <div className="bg-background p-3 rounded-lg border shadow-sm">
+                  <h3 className="font-medium text-xs text-muted-foreground">分类</h3>
+                  <p className="text-sm font-semibold truncate">{item.category?.name || '未分类'}</p>
                 </div>
-                <div className="bg-background p-4 rounded-lg border shadow-sm">
-                  <h3 className="font-medium mb-1 text-sm text-muted-foreground">价格</h3>
-                  <p className="text-xl font-semibold">{item.purchase_price ? `¥${item.purchase_price}` : '-'}</p>
+                <div className="bg-background p-3 rounded-lg border shadow-sm">
+                  <h3 className="font-medium text-xs text-muted-foreground">价格</h3>
+                  <p className="text-sm font-semibold">{item.purchase_price ? `¥${item.purchase_price}` : '-'}</p>
                 </div>
-                <div className="bg-background p-4 rounded-lg border shadow-sm">
-                  <h3 className="font-medium mb-1 text-sm text-muted-foreground">状态</h3>
-                  <p className="text-xl font-semibold">{
+                <div className="bg-background p-3 rounded-lg border shadow-sm">
+                  <h3 className="font-medium text-xs text-muted-foreground">状态</h3>
+                  <p className="text-sm font-semibold">{
                     item.status === 'active' ? '正常' : 
                     item.status === 'inactive' ? '闲置' : 
                     item.status === 'expired' ? '已过期' : item.status
@@ -226,22 +230,22 @@ export default function ItemDetail() {
                 <CardTitle>详细信息</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="bg-background p-4 rounded-lg border shadow-sm">
-                    <h3 className="font-medium mb-1 text-sm text-muted-foreground">购买日期</h3>
-                    <p className="text-lg font-semibold">{formatDate(item.purchase_date)}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-background p-3 rounded-lg border shadow-sm">
+                    <h3 className="font-medium text-xs text-muted-foreground">购买日期</h3>
+                    <p className="text-sm font-semibold">{formatDate(item.purchase_date)}</p>
                   </div>
-                  <div className="bg-background p-4 rounded-lg border shadow-sm">
-                    <h3 className="font-medium mb-1 text-sm text-muted-foreground">过期日期</h3>
-                    <p className="text-lg font-semibold">{formatDate(item.expiry_date)}</p>
+                  <div className="bg-background p-3 rounded-lg border shadow-sm">
+                    <h3 className="font-medium text-xs text-muted-foreground">过期日期</h3>
+                    <p className="text-sm font-semibold">{formatDate(item.expiry_date)}</p>
                   </div>
-                  <div className="bg-background p-4 rounded-lg border shadow-sm">
-                    <h3 className="font-medium mb-1 text-sm text-muted-foreground">创建时间</h3>
-                    <p className="text-lg font-semibold">{formatDate(item.created_at)}</p>
+                  <div className="bg-background p-3 rounded-lg border shadow-sm">
+                    <h3 className="font-medium text-xs text-muted-foreground">创建时间</h3>
+                    <p className="text-sm font-semibold">{formatDate(item.created_at)}</p>
                   </div>
-                  <div className="bg-background p-4 rounded-lg border shadow-sm">
-                    <h3 className="font-medium mb-1 text-sm text-muted-foreground">更新时间</h3>
-                    <p className="text-lg font-semibold">{formatDate(item.updated_at)}</p>
+                  <div className="bg-background p-3 rounded-lg border shadow-sm">
+                    <h3 className="font-medium text-xs text-muted-foreground">更新时间</h3>
+                    <p className="text-sm font-semibold">{formatDate(item.updated_at)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -253,23 +257,23 @@ export default function ItemDetail() {
               </CardHeader>
               <CardContent>
                 {item.spot ? (
-                  <div className="space-y-4">
-                    <div className="bg-background p-4 rounded-lg border shadow-sm">
-                      <h3 className="font-medium mb-1 text-sm text-muted-foreground">区域</h3>
-                      <p className="text-lg font-semibold">{item.spot.room?.area?.name || '未指定'}</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-background p-3 rounded-lg border shadow-sm">
+                      <h3 className="font-medium text-xs text-muted-foreground">区域</h3>
+                      <p className="text-sm font-semibold truncate">{item.spot.room?.area?.name || '未指定'}</p>
                     </div>
-                    <div className="bg-background p-4 rounded-lg border shadow-sm">
-                      <h3 className="font-medium mb-1 text-sm text-muted-foreground">房间</h3>
-                      <p className="text-lg font-semibold">{item.spot.room?.name || '未指定'}</p>
+                    <div className="bg-background p-3 rounded-lg border shadow-sm">
+                      <h3 className="font-medium text-xs text-muted-foreground">房间</h3>
+                      <p className="text-sm font-semibold truncate">{item.spot.room?.name || '未指定'}</p>
                     </div>
-                    <div className="bg-background p-4 rounded-lg border shadow-sm">
-                      <h3 className="font-medium mb-1 text-sm text-muted-foreground">具体位置</h3>
-                      <p className="text-lg font-semibold">{item.spot.name}</p>
+                    <div className="bg-background p-3 rounded-lg border shadow-sm">
+                      <h3 className="font-medium text-xs text-muted-foreground">具体位置</h3>
+                      <p className="text-sm font-semibold truncate">{item.spot.name}</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-48 bg-muted rounded-lg">
-                    <p className="text-muted-foreground">未指定存放位置</p>
+                  <div className="flex items-center justify-center h-20 bg-muted rounded-lg">
+                    <p className="text-muted-foreground text-sm">未指定存放位置</p>
                   </div>
                 )}
               </CardContent>
