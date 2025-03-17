@@ -33,7 +33,7 @@ export default function Thing() {
   const [totalPages, setTotalPages] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   useEffect(() => {
     // 从URL获取搜索参数
@@ -186,8 +186,8 @@ export default function Thing() {
 
           <Tabs value={viewMode} onValueChange={(value: ViewMode) => setViewMode(value)} className="flex-1">
             <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="grid">网格</TabsTrigger>
               <TabsTrigger value="list">列表</TabsTrigger>
+              <TabsTrigger value="grid">网格</TabsTrigger>
             </TabsList>
           </Tabs>
 

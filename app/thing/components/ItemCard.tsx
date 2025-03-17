@@ -91,7 +91,7 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
   }
   
   const formatDate = (date: string) => {
-    if (!date) return '无'
+    if (!date) return '-'
     try {
       return format(new Date(date), 'yyyy-MM-dd')
     } catch (e) {
@@ -191,7 +191,7 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
       </div>
       <div className="flex flex-col">
         <p className="text-xs text-muted-foreground">价格</p>
-        <p className="font-medium text-sm">{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
+        <p className="font-medium text-sm">{item.purchase_price ? `¥${item.purchase_price}` : '-'}</p>
       </div>
       <div className="flex flex-col">
         <p className="text-xs text-muted-foreground">购买日期</p>
@@ -276,7 +276,7 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
               删除
             </AlertDialogAction>
           </AlertDialogFooter>

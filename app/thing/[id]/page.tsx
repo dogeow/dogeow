@@ -68,7 +68,7 @@ export default function ItemDetail() {
   }
   
   const formatDate = (date: string) => {
-    if (!date) return '无'
+    if (!date) return '-'
     try {
       return format(new Date(date), 'yyyy-MM-dd')
     } catch (e) {
@@ -204,7 +204,7 @@ export default function ItemDetail() {
                 </div>
                 <div className="bg-background p-4 rounded-lg border shadow-sm">
                   <h3 className="font-medium mb-1 text-sm text-muted-foreground">价格</h3>
-                  <p className="text-xl font-semibold">{item.purchase_price ? `¥${item.purchase_price}` : '无'}</p>
+                  <p className="text-xl font-semibold">{item.purchase_price ? `¥${item.purchase_price}` : '-'}</p>
                 </div>
                 <div className="bg-background p-4 rounded-lg border shadow-sm">
                   <h3 className="font-medium mb-1 text-sm text-muted-foreground">状态</h3>
@@ -288,7 +288,7 @@ export default function ItemDetail() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
               删除
             </AlertDialogAction>
           </AlertDialogFooter>
