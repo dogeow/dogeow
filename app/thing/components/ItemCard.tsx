@@ -197,7 +197,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   }
   
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow py-0">
       <div className="flex p-3 items-center">
         <div className="relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0">
           {renderImage("object-cover rounded-md")}
