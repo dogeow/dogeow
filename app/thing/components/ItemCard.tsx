@@ -30,12 +30,11 @@ import { API_BASE_URL } from '@/configs/api'
 
 interface ItemCardProps {
   item: any
-  viewMode: 'grid' | 'list'
   onEdit: () => void
   onView: () => void
 }
 
-export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardProps) {
+export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { fetchItems } = useItemStore()
   const [imageError, setImageError] = useState(false)
@@ -161,7 +160,7 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
   const renderActionMenu = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className={viewMode === 'grid' ? "bg-background/80 backdrop-blur-sm" : "h-8 w-8"}>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -192,49 +191,6 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
     </div>
   )
   
-  if (viewMode === 'grid') {
-    // 防止item对象有问题
-    if (!item || typeof item !== 'object') {
-      return <Card className="p-4">加载错误</Card>
-    }
-    
-    return (
-      <Card className="overflow-hidden h-full flex flex-col">
-        <div className="relative aspect-square bg-muted">
-          {renderImage("object-cover")}
-          <div className="absolute top-2 right-2">
-            {renderActionMenu()}
-          </div>
-          {item.is_public ? (
-            <div className="absolute top-2 left-2">
-              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
-                <Globe className="h-3.5 w-3.5" />
-              </Badge>
-            </div>
-          ) : null}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-            <div className="flex justify-end items-center">
-              <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
-            </div>
-          </div>
-        </div>
-        <div className="flex flex-col flex-grow p-3">
-          <div className="mb-2">
-            <h3 className="font-semibold truncate text-base">{item.name}</h3>
-            <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
-          </div>
-          
-          {renderInfoGrid("grid-cols-2")}
-          
-          <div className="mt-auto">
-            {renderLocation()}
-          </div>
-        </div>
-      </Card>
-    )
-  }
-  
-  // 列表视图
   // 防止item对象有问题
   if (!item || typeof item !== 'object') {
     return <Card className="p-4">加载错误</Card>

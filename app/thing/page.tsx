@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Pagination } from "@/components/ui/pagination"
-import { PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
 import { Plus, SlidersHorizontal } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { cn } from "@/lib/utils"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ThingNavigation from './components/ThingNavigation'
@@ -17,7 +15,7 @@ import ItemGallery from './components/ItemGallery'
 import { useItemStore } from '@/stores/itemStore'
 
 // 定义视图模式类型
-type ViewMode = 'grid' | 'list' | 'gallery';
+type ViewMode = 'list' | 'gallery';
 
 // 定义过滤器类型
 interface FilterParams {
@@ -29,13 +27,15 @@ interface FilterParams {
 
 export default function Thing() {
   const router = useRouter()
-  const { items, categories, loading, error, fetchItems, fetchCategories } = useItemStore()
+  const { items, categories, loading, error, fetchItems, fetchCategories, meta } = useItemStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState('')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+  
+  // 计算总页数
+  const totalPages = meta?.last_page || 1
 
   useEffect(() => {
     // 从URL获取搜索参数
@@ -52,11 +52,13 @@ export default function Thing() {
     fetchCategories()
   }, [fetchItems, fetchCategories])
 
+  // 处理页面变化
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
-    fetchItems({ page, search: searchTerm })
+    fetchItems({ page, search: searchTerm, category_id: selectedCategory !== 'none' ? selectedCategory : '' })
   }
 
+  // 处理分类变化
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value)
     const actualValue = value === "none" ? "" : value;
@@ -64,12 +66,19 @@ export default function Thing() {
     setCurrentPage(1)
   }
 
+  // 添加新物品
   const handleAddItem = () => {
     router.push('/thing/add')
   }
 
+  // 应用筛选条件
   const handleApplyFilters = (filters: FilterParams) => {
-    fetchItems({ ...filters, page: 1, search: searchTerm })
+    fetchItems({ 
+      ...filters, 
+      page: 1, 
+      search: searchTerm,
+      category_id: selectedCategory !== 'none' ? selectedCategory : ''
+    })
     setCurrentPage(1)
     setFiltersOpen(false)
   }
@@ -96,32 +105,6 @@ export default function Thing() {
     </div>
   )
 
-  // 渲染物品列表
-  const renderItems = () => (
-    <>
-      {viewMode === 'gallery' ? (
-        <ItemGallery items={items} />
-      ) : (
-        <div className={cn(
-          "grid gap-4",
-          viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-1'
-        )}>
-          {items.map((item) => (
-            <ItemCard 
-              key={item.id} 
-              item={item} 
-              viewMode={viewMode} 
-              onEdit={() => router.push(`/thing/${item.id}/edit`)}
-              onView={() => router.push(`/thing/${item.id}`)}
-            />
-          ))}
-        </div>
-      )}
-
-      {renderPagination()}
-    </>
-  )
-
   // 渲染分页
   const renderPagination = () => {
     if (totalPages <= 1) return null;
@@ -132,18 +115,18 @@ export default function Thing() {
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious 
-                size="icon"
                 onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
                 className={currentPage <= 1 ? "pointer-events-none opacity-50" : ""}
+                size="icon"
               />
             </PaginationItem>
             
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
               <PaginationItem key={page}>
                 <PaginationLink
-                  size="icon"
                   isActive={page === currentPage}
                   onClick={() => handlePageChange(page)}
+                  size="icon"
                 >
                   {page}
                 </PaginationLink>
@@ -152,9 +135,9 @@ export default function Thing() {
             
             <PaginationItem>
               <PaginationNext 
-                size="icon"
                 onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
                 className={currentPage >= totalPages ? "pointer-events-none opacity-50" : ""}
+                size="icon"
               />
             </PaginationItem>
           </PaginationContent>
@@ -162,6 +145,28 @@ export default function Thing() {
       </div>
     );
   }
+
+  // 渲染物品列表
+  const renderItems = () => (
+    <>
+      {viewMode === 'gallery' ? (
+        <ItemGallery items={items} />
+      ) : (
+        <div className="grid gap-4 grid-cols-1">
+          {items.map((item) => (
+            <ItemCard 
+              key={item.id} 
+              item={item} 
+              onEdit={() => router.push(`/thing/${item.id}/edit`)}
+              onView={() => router.push(`/thing/${item.id}`)}
+            />
+          ))}
+        </div>
+      )}
+
+      {renderPagination()}
+    </>
+  )
 
   return (
     <>
@@ -186,15 +191,12 @@ export default function Thing() {
               </Select>
             </div>
 
-            <div className="flex-1">
-              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="flex-1">
-                <TabsList className="grid w-full grid-cols-3 bg-primary/10">
-                  <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">列表</TabsTrigger>
-                  <TabsTrigger value="grid" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">网格</TabsTrigger>
-                  <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">图片廊</TabsTrigger>
-                </TabsList>
-              </Tabs>
-            </div>
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+              <TabsList className="grid grid-cols-2 bg-primary/10">
+                <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">列表</TabsTrigger>
+                <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">图片廊</TabsTrigger>
+              </TabsList>
+            </Tabs>
 
             <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
               <SheetTrigger asChild>
