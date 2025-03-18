@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Eye, MoreHorizontal, Trash2 } from "lucide-react"
+import { Edit, Eye, MoreHorizontal, Trash2, Globe } from "lucide-react"
 import { format } from 'date-fns'
 import { cn } from "@/lib/utils"
 import {
@@ -104,7 +104,7 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
     if (!item.spot?.name) return <p className="text-xs text-muted-foreground">未指定位置</p>
     
     return (
-      <p className="text-xs text-muted-foreground truncate w-full">
+      <p className="text-xs text-muted-foreground truncate">
         <span className="inline-block mr-1">📍</span>
         {item.spot.room?.area?.name ? `${item.spot.room.area.name} > ` : ''}
         {item.spot.room?.name ? `${item.spot.room.name} > ` : ''}
@@ -186,25 +186,18 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
   const renderInfoGrid = (columns: string) => (
     <div className={`grid ${columns} gap-x-3 gap-y-1 text-sm mb-2`}>
       <div className="flex flex-col">
-        <p className="text-xs text-muted-foreground">数量</p>
-        <p className="font-medium text-sm">{item.quantity}</p>
-      </div>
-      <div className="flex flex-col">
-        <p className="text-xs text-muted-foreground">价格</p>
-        <p className="font-medium text-sm">{item.purchase_price ? `¥${item.purchase_price}` : '-'}</p>
-      </div>
-      <div className="flex flex-col">
         <p className="text-xs text-muted-foreground">购买日期</p>
         <p className="font-medium text-sm truncate">{formatDate(item.purchase_date)}</p>
-      </div>
-      <div className="flex flex-col">
-        <p className="text-xs text-muted-foreground">过期日期</p>
-        <p className="font-medium text-sm truncate">{formatDate(item.expiry_date)}</p>
       </div>
     </div>
   )
   
   if (viewMode === 'grid') {
+    // 防止item对象有问题
+    if (!item || typeof item !== 'object') {
+      return <Card className="p-4">加载错误</Card>
+    }
+    
     return (
       <Card className="overflow-hidden h-full flex flex-col">
         <div className="relative aspect-square bg-muted">
@@ -212,11 +205,15 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
           <div className="absolute top-2 right-2">
             {renderActionMenu()}
           </div>
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
-            <div className="flex justify-between items-center">
-              <Badge variant={item.is_public ? "default" : "outline"} className="bg-background/80 backdrop-blur-sm">
-                {item.is_public ? '公开' : '私有'}
+          {item.is_public ? (
+            <div className="absolute top-2 left-2">
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
+                <Globe className="h-3.5 w-3.5" />
               </Badge>
+            </div>
+          ) : null}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-3">
+            <div className="flex justify-end items-center">
               <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
             </div>
           </div>
@@ -237,22 +234,29 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
     )
   }
   
+  // 列表视图
+  // 防止item对象有问题
+  if (!item || typeof item !== 'object') {
+    return <Card className="p-4">加载错误</Card>
+  }
+  
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <div className="flex p-3">
+      <div className="flex p-3 items-center">
         <div className="relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0">
           {renderImage("object-cover rounded-md")}
-          <div className="absolute bottom-0 left-0 right-0 flex justify-center">
-            <Badge variant={item.is_public ? "default" : "outline"} className="bg-background/80 backdrop-blur-sm text-xs">
-              {item.is_public ? '公开' : '私有'}
-            </Badge>
-          </div>
+          {item.is_public ? (
+            <div className="absolute top-0 right-0">
+              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
+                <Globe className="h-3.5 w-3.5" />
+              </Badge>
+            </div>
+          ) : null}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start">
             <div className="min-w-0 pr-2">
               <h3 className="font-semibold truncate text-base">{item.name}</h3>
-              <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
             </div>
             <div className="flex items-center space-x-1 flex-shrink-0">
               <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
@@ -260,8 +264,9 @@ export default function ItemCard({ item, viewMode, onEdit, onView }: ItemCardPro
             </div>
           </div>
           {renderInfoGrid("grid-cols-2 sm:grid-cols-4 mt-1")}
-          <div className="mt-1">
+          <div className="flex justify-between flex-auto">
             {renderLocation()}
+            <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
           </div>
         </div>
       </div>

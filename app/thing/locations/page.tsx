@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Pencil, Trash2, Plus, Home, DoorOpen, MapPin, FolderTree } from "lucide-react"
+import { Pencil, Trash2, Plus, Home, DoorOpen, MapPin, FolderTree, X, Check } from "lucide-react"
 import { toast } from "sonner"
 import ThingNavigation from '../components/ThingNavigation'
 import { API_BASE_URL } from '@/configs/api'
@@ -37,7 +37,7 @@ type Spot = { id: number; name: string; room_id: number; room?: Room; };
 
 export default function Locations() {
   // 状态
-  const [activeTab, setActiveTab] = useState<LocationType | 'tree'>('area')
+  const [activeTab, setActiveTab] = useState<LocationType | 'tree'>('tree')
   const [areas, setAreas] = useState<Area[]>([])
   const [rooms, setRooms] = useState<Room[]>([])
   const [spots, setSpots] = useState<Spot[]>([])
@@ -57,6 +57,9 @@ export default function Locations() {
   const [newSpotName, setNewSpotName] = useState('')
   const [selectedRoomId, setSelectedRoomId] = useState<string>('')
   const [editingSpot, setEditingSpot] = useState<Spot | null>(null)
+
+  const [editingInlineAreaId, setEditingInlineAreaId] = useState<number | null>(null)
+  const [editingAreaName, setEditingAreaName] = useState('')
 
   // 加载数据
   useEffect(() => {
@@ -183,22 +186,22 @@ export default function Locations() {
   }
   
   // 更新区域
-  const handleUpdateArea = async () => {
-    if (!editingArea || !editingArea.name.trim()) {
+  const handleUpdateArea = async (areaId: number, newName: string) => {
+    if (!newName.trim()) {
       toast.error("区域名称不能为空")
       return
     }
 
     setLoading(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/areas/${editingArea.id}`, {
+      const response = await fetch(`${API_BASE_URL}/areas/${areaId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name: editingArea.name }),
+        body: JSON.stringify({ name: newName }),
       })
 
       if (!response.ok) {
@@ -206,7 +209,7 @@ export default function Locations() {
       }
 
       toast.success("区域更新成功")
-      setEditingArea(null)
+      setEditingInlineAreaId(null)
       fetchAreas()
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
@@ -433,7 +436,6 @@ export default function Locations() {
     // 根据选择的位置类型切换到对应的标签页
     if (type === 'area') {
       setActiveTab('area')
-      setEditingArea(areas.find(area => area.id === id) || null)
     } else if (type === 'room') {
       setActiveTab('room')
       setEditingRoom(rooms.find(room => room.id === id) || null)
@@ -489,32 +491,34 @@ export default function Locations() {
           {/* 区域管理 */}
           <TabsContent value="area">
             <div className="grid gap-6 md:grid-cols-2">
-              {/* 添加/编辑区域卡片 */}
+              {/* 添加区域卡片 */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>添加区域</CardTitle>
+                  <CardDescription>
+                    创建新的区域
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <div className="flex items-center space-x-2">
                     <div className="flex-grow">
                       <Label htmlFor="areaName" className="sr-only">区域名称</Label>
                       <Input
                         id="areaName"
                         placeholder="输入区域名称，如：家、办公室"
-                        value={editingArea ? editingArea.name : newAreaName}
-                        onChange={(e) => editingArea 
-                          ? setEditingArea({...editingArea, name: e.target.value})
-                          : setNewAreaName(e.target.value)
-                        }
+                        value={newAreaName}
+                        onChange={(e) => setNewAreaName(e.target.value)}
                       />
                     </div>
-                    {editingArea && (
-                      <Button variant="outline" onClick={() => setEditingArea(null)}>
-                        取消
-                      </Button>
-                    )}
                     <Button 
-                      onClick={editingArea ? handleUpdateArea : handleAddArea}
+                      onClick={handleAddArea}
                       disabled={loading}
                     >
-                      {loading ? '处理中...' : editingArea ? '更新' : '添加'}
+                      {loading ? '处理中...' : '添加'}
                     </Button>
                   </div>
+                </CardContent>
+              </Card>
 
               {/* 区域列表卡片 */}
               <Card>
@@ -531,22 +535,66 @@ export default function Locations() {
                     <div className="space-y-2">
                       {areas.map((area) => (
                         <div key={area.id} className="flex items-center justify-between p-2 border rounded-md">
-                          <span>{area.name}</span>
+                          {editingInlineAreaId === area.id ? (
+                            <div className="flex items-center flex-1 mr-2">
+                              <Input
+                                value={editingAreaName}
+                                onChange={(e) => setEditingAreaName(e.target.value)}
+                                className="h-8"
+                                autoFocus
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleUpdateArea(area.id, editingAreaName);
+                                  } else if (e.key === 'Escape') {
+                                    setEditingInlineAreaId(null);
+                                  }
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <span>{area.name}</span>
+                          )}
                           <div className="flex space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => setEditingArea(area)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => confirmDelete(area.id, 'area')}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
+                            {editingInlineAreaId === area.id ? (
+                              <>
+                                <Button 
+                                  variant="outline" 
+                                  size="icon"
+                                  onClick={() => setEditingInlineAreaId(null)}
+                                  className="h-8 w-8"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="default" 
+                                  size="icon"
+                                  onClick={() => handleUpdateArea(area.id, editingAreaName)}
+                                  className="h-8 w-8"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                              </>
+                            ) : (
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => {
+                                    setEditingInlineAreaId(area.id);
+                                    setEditingAreaName(area.name);
+                                  }}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon"
+                                  onClick={() => confirmDelete(area.id, 'area')}
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -796,7 +844,7 @@ export default function Locations() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
               删除
             </AlertDialogAction>
           </AlertDialogFooter>

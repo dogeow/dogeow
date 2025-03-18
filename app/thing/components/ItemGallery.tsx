@@ -16,7 +16,7 @@ import { Slider } from "@/components/ui/slider"
 import { API_BASE_URL } from '@/configs/api'
 import { useRouter } from 'next/navigation'
 import { cn } from "@/lib/utils"
-import { LayoutGrid, Grid2X2, Grid3X3, ChevronDown, ChevronUp } from "lucide-react"
+import { LayoutGrid, Grid2X2, Grid3X3, ChevronDown, ChevronUp, Globe, LockIcon } from "lucide-react"
 
 interface ItemGalleryProps {
   items: any[]
@@ -171,18 +171,28 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
                 className="object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-muted">
-                <span className="text-xs text-muted-foreground">无图片</span>
+              <div className="flex items-center justify-center h-full text-muted-foreground bg-muted">
+                无图片
               </div>
             )}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-              <h3 className="text-white text-sm font-medium truncate">{item.name}</h3>
-              {item.category && (
-                <div className="mt-1">
-                  <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">
-                    {item.category.name}
-                  </Badge>
-                </div>
+            
+            {item.is_public && (
+              <div className="absolute top-2 left-2">
+                <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
+                  <Globe className="h-3.5 w-3.5" />
+                </Badge>
+              </div>
+            )}
+            
+            <div className="absolute top-2 right-2">
+              {getStatusBadge(item.status)}
+            </div>
+            
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+              <p className="text-white text-sm font-medium truncate">{item.name}</p>
+              <p className="text-white/80 text-xs truncate">{item.category?.name || '未分类'}</p>
+              {item.quantity !== 0 && item.quantity && (
+                <p className="text-white/80 text-xs truncate">数量: {item.quantity}</p>
               )}
             </div>
           </div>
@@ -208,7 +218,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               <div className="flex flex-wrap gap-2">
                 {getStatusBadge(selectedItem.status)}
                 <Badge variant={selectedItem.is_public ? "default" : "outline"}>
-                  {selectedItem.is_public ? '公开' : '私有'}
+                  {selectedItem.is_public ? <><Globe className="h-3.5 w-3.5 mr-1" /> 公开</> : <><LockIcon className="h-3.5 w-3.5 mr-1" /> 私有</>}
                 </Badge>
                 {selectedItem.category && (
                   <Badge variant="secondary" className="bg-primary/20 text-primary">
