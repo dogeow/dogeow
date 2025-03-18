@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -61,328 +61,240 @@ export default function Locations() {
   const [editingInlineAreaId, setEditingInlineAreaId] = useState<number | null>(null)
   const [editingAreaName, setEditingAreaName] = useState('')
 
+  // API请求通用函数
+  const apiRequest = useCallback(async (endpoint: string, method: string = 'GET', body?: object) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method,
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
+          'Accept': 'application/json',
+          ...(body ? { 'Content-Type': 'application/json' } : {})
+        },
+        ...(body ? { body: JSON.stringify(body) } : {})
+      });
+      
+      if (!response.ok) {
+        throw new Error(`请求失败: ${response.status}`);
+      }
+      
+      return method === 'DELETE' ? null : await response.json();
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
+  // 获取所有区域
+  const fetchAreas = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiRequest('/areas');
+      setAreas(data);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "获取区域失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [apiRequest]);
+  
+  // 获取所有房间
+  const fetchRooms = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiRequest('/rooms');
+      setRooms(data);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "获取房间失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [apiRequest]);
+  
+  // 获取所有位置
+  const fetchSpots = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiRequest('/spots');
+      setSpots(data);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "获取位置失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [apiRequest]);
+
   // 加载数据
   useEffect(() => {
-    fetchAreas()
-  }, [])
+    fetchAreas();
+  }, [fetchAreas]);
   
   // 当选择区域变化时，加载对应的房间
   useEffect(() => {
     if (activeTab === 'room' || activeTab === 'spot') {
-      fetchRooms()
+      fetchRooms();
     }
-  }, [activeTab])
+  }, [activeTab, fetchRooms]);
   
   // 当选择房间变化时，加载对应的位置
   useEffect(() => {
     if (activeTab === 'spot') {
-      fetchSpots()
+      fetchSpots();
     }
-  }, [activeTab])
-
-  // 获取所有区域
-  const fetchAreas = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(`${API_BASE_URL}/areas`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (!response.ok) {
-        throw new Error('获取区域失败')
-      }
-      
-      const data = await response.json()
-      setAreas(data)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  // 获取所有房间
-  const fetchRooms = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(`${API_BASE_URL}/rooms`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (!response.ok) {
-        throw new Error('获取房间失败')
-      }
-      
-      const data = await response.json()
-      setRooms(data)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-    } finally {
-      setLoading(false)
-    }
-  }
-  
-  // 获取所有位置
-  const fetchSpots = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(`${API_BASE_URL}/spots`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (!response.ok) {
-        throw new Error('获取位置失败')
-      }
-      
-      const data = await response.json()
-      setSpots(data)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-    } finally {
-      setLoading(false)
-    }
-  }
+  }, [activeTab, fetchSpots]);
 
   // 添加区域
   const handleAddArea = async () => {
     if (!newAreaName.trim()) {
-      toast.error("区域名称不能为空")
-      return
+      toast.error("区域名称不能为空");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/areas`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newAreaName }),
-      })
-
-      if (!response.ok) {
-        throw new Error('创建区域失败')
-      }
-
-      toast.success("区域创建成功")
-      setNewAreaName('')
-      fetchAreas()
+      await apiRequest('/areas', 'POST', { name: newAreaName });
+      toast.success("区域创建成功");
+      setNewAreaName('');
+      fetchAreas();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : "创建区域失败");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   
   // 更新区域
   const handleUpdateArea = async (areaId: number, newName: string) => {
     if (!newName.trim()) {
-      toast.error("区域名称不能为空")
-      return
+      toast.error("区域名称不能为空");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/areas/${areaId}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ name: newName }),
-      })
-
-      if (!response.ok) {
-        throw new Error('更新区域失败')
-      }
-
-      toast.success("区域更新成功")
-      setEditingInlineAreaId(null)
-      fetchAreas()
+      await apiRequest(`/areas/${areaId}`, 'PUT', { name: newName });
+      toast.success("区域更新成功");
+      setEditingInlineAreaId(null);
+      fetchAreas();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : "更新区域失败");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   
   // 添加房间
   const handleAddRoom = async () => {
     if (!newRoomName.trim()) {
-      toast.error("房间名称不能为空")
-      return
+      toast.error("房间名称不能为空");
+      return;
     }
     
     if (!selectedAreaId) {
-      toast.error("请选择区域")
-      return
+      toast.error("请选择区域");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/rooms`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          name: newRoomName,
-          area_id: parseInt(selectedAreaId)
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('创建房间失败')
-      }
-
-      toast.success("房间创建成功")
-      setNewRoomName('')
-      fetchRooms()
+      await apiRequest('/rooms', 'POST', { 
+        name: newRoomName,
+        area_id: parseInt(selectedAreaId)
+      });
+      toast.success("房间创建成功");
+      setNewRoomName('');
+      fetchRooms();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : "创建房间失败");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   
   // 更新房间
   const handleUpdateRoom = async () => {
     if (!editingRoom || !editingRoom.name.trim()) {
-      toast.error("房间名称不能为空")
-      return
+      toast.error("房间名称不能为空");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/rooms/${editingRoom.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          name: editingRoom.name,
-          area_id: editingRoom.area_id
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('更新房间失败')
-      }
-
-      toast.success("房间更新成功")
-      setEditingRoom(null)
-      fetchRooms()
+      await apiRequest(`/rooms/${editingRoom.id}`, 'PUT', { 
+        name: editingRoom.name,
+        area_id: editingRoom.area_id
+      });
+      toast.success("房间更新成功");
+      setEditingRoom(null);
+      fetchRooms();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : "更新房间失败");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   
   // 添加位置
   const handleAddSpot = async () => {
     if (!newSpotName.trim()) {
-      toast.error("位置名称不能为空")
-      return
+      toast.error("位置名称不能为空");
+      return;
     }
     
     if (!selectedRoomId) {
-      toast.error("请选择房间")
-      return
+      toast.error("请选择房间");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/spots`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          name: newSpotName,
-          room_id: parseInt(selectedRoomId)
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('创建位置失败')
-      }
-
-      toast.success("位置创建成功")
-      setNewSpotName('')
-      fetchSpots()
+      await apiRequest('/spots', 'POST', { 
+        name: newSpotName,
+        room_id: parseInt(selectedRoomId)
+      });
+      toast.success("位置创建成功");
+      setNewSpotName('');
+      fetchSpots();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : "创建位置失败");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   
   // 更新位置
   const handleUpdateSpot = async () => {
     if (!editingSpot || !editingSpot.name.trim()) {
-      toast.error("位置名称不能为空")
-      return
+      toast.error("位置名称不能为空");
+      return;
     }
 
-    setLoading(true)
+    setLoading(true);
     try {
-      const response = await fetch(`${API_BASE_URL}/spots/${editingSpot.id}`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          name: editingSpot.name,
-          room_id: editingSpot.room_id
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('更新位置失败')
-      }
-
-      toast.success("位置更新成功")
-      setEditingSpot(null)
-      fetchSpots()
+      await apiRequest(`/spots/${editingSpot.id}`, 'PUT', { 
+        name: editingSpot.name,
+        room_id: editingSpot.room_id
+      });
+      toast.success("位置更新成功");
+      setEditingSpot(null);
+      fetchSpots();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : "更新位置失败");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   
   // 删除确认
   const confirmDelete = (id: number, type: LocationType) => {
-    setItemToDelete({ id, type })
-    setDeleteDialogOpen(true)
-  }
+    setItemToDelete({ id, type });
+    setDeleteDialogOpen(true);
+  };
   
   // 执行删除
   const handleDelete = async () => {
-    if (!itemToDelete) return
+    if (!itemToDelete) return;
 
-    setLoading(true)
+    setLoading(true);
     try {
       let endpoint = '';
       let successMessage = '';
@@ -390,60 +302,49 @@ export default function Locations() {
       
       switch (itemToDelete.type) {
         case 'area':
-          endpoint = `${API_BASE_URL}/areas/${itemToDelete.id}`;
+          endpoint = `/areas/${itemToDelete.id}`;
           successMessage = '区域删除成功';
           refreshFunction = fetchAreas;
           break;
         case 'room':
-          endpoint = `${API_BASE_URL}/rooms/${itemToDelete.id}`;
+          endpoint = `/rooms/${itemToDelete.id}`;
           successMessage = '房间删除成功';
           refreshFunction = fetchRooms;
           break;
         case 'spot':
-          endpoint = `${API_BASE_URL}/spots/${itemToDelete.id}`;
+          endpoint = `/spots/${itemToDelete.id}`;
           successMessage = '位置删除成功';
           refreshFunction = fetchSpots;
           break;
       }
       
-      const response = await fetch(endpoint, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-
-      if (!response.ok) {
-        throw new Error('删除失败')
-      }
-
-      toast.success(successMessage)
-      refreshFunction()
+      await apiRequest(endpoint, 'DELETE');
+      toast.success(successMessage);
+      refreshFunction();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : "删除失败");
     } finally {
-      setLoading(false)
-      setDeleteDialogOpen(false)
-      setItemToDelete(null)
+      setLoading(false);
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
     }
-  }
+  };
 
   // 处理位置选择
   const handleLocationSelect = (type: LocationType, id: number, fullPath: string) => {
-    setSelectedLocation({ type, id })
+    setSelectedLocation({ type, id });
     
     // 根据选择的位置类型切换到对应的标签页
     if (type === 'area') {
-      setActiveTab('area')
+      setActiveTab('area');
     } else if (type === 'room') {
-      setActiveTab('room')
-      setEditingRoom(rooms.find(room => room.id === id) || null)
+      setActiveTab('room');
+      setEditingRoom(rooms.find(room => room.id === id) || null);
     } else if (type === 'spot') {
-      setActiveTab('spot')
-      setEditingSpot(spots.find(spot => spot.id === id) || null)
+      setActiveTab('spot');
+      setEditingSpot(spots.find(spot => spot.id === id) || null);
     }
-  }
+  };
 
   return (
     <>

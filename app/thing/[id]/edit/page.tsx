@@ -510,7 +510,7 @@ export default function EditItem() {
                       {existingImages.map((image) => (
                         <div key={image.id}>
                           {renderImagePreview(
-                            `http://127.0.0.1:8000/storage/${image.thumbnail_path}`,
+                            `${API_BASE_URL.replace('/api', '')}/storage/${image.thumbnail_path}`,
                             formData.name,
                             () => removeExistingImage(image.id)
                           )}
