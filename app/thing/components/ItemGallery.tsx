@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { format } from 'date-fns'
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
@@ -11,8 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Slider } from "@/components/ui/slider"
 import { API_BASE_URL } from '@/configs/api'
 import { useRouter } from 'next/navigation'
+import { cn } from "@/lib/utils"
+import { LayoutGrid, Grid2X2, Grid3X3, ChevronDown, ChevronUp } from "lucide-react"
 
 interface ItemGalleryProps {
   items: any[]
@@ -20,6 +24,8 @@ interface ItemGalleryProps {
 
 export default function ItemGallery({ items }: ItemGalleryProps) {
   const [selectedItem, setSelectedItem] = useState<any>(null)
+  const [imageSize, setImageSize] = useState(150) // 默认图片大小
+  const [showSizeControls, setShowSizeControls] = useState(true) // 控制大小调整区域的显示/隐藏
   const router = useRouter()
   
   // 构建正确的图片URL
@@ -59,13 +65,102 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     router.push(`/thing/${id}`)
   }
   
+  // 处理图片大小变化
+  const handleSizeChange = (value: number[]) => {
+    setImageSize(value[0])
+  }
+  
+  // 设置预设图片大小
+  const setPresetSize = (size: number) => {
+    setImageSize(size)
+  }
+  
+  // 切换大小控制区域的显示/隐藏
+  const toggleSizeControls = () => {
+    setShowSizeControls(!showSizeControls)
+  }
+  
+  // 计算每行显示的列数
+  const getGridCols = () => {
+    if (imageSize < 100) return "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10"
+    if (imageSize < 150) return "grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8"
+    if (imageSize < 200) return "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+    return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+  }
+  
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="mb-4">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={toggleSizeControls} 
+          className="flex items-center gap-1 bg-primary/10 border-primary/20 mb-2"
+        >
+          <span className="text-sm">图片大小控制</span>
+          {showSizeControls ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </Button>
+        
+        {showSizeControls && (
+          <div className="flex flex-wrap items-center gap-4 p-2 bg-primary/5 rounded-md border border-primary/10">
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className={cn("bg-primary/10 border-primary/20", imageSize === 80 && "bg-primary text-primary-foreground")}
+                onClick={() => setPresetSize(80)}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className={cn("bg-primary/10 border-primary/20", imageSize === 120 && "bg-primary text-primary-foreground")}
+                onClick={() => setPresetSize(120)}
+              >
+                <Grid2X2 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className={cn("bg-primary/10 border-primary/20", imageSize === 160 && "bg-primary text-primary-foreground")}
+                onClick={() => setPresetSize(160)}
+              >
+                <Grid2X2 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className={cn("bg-primary/10 border-primary/20", imageSize === 220 && "bg-primary text-primary-foreground")}
+                onClick={() => setPresetSize(220)}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="w-48">
+              <Slider
+                value={[imageSize]}
+                min={80}
+                max={250}
+                step={10}
+                onValueChange={handleSizeChange}
+                className="bg-primary/10 rounded-full"
+              />
+            </div>
+            <div className="text-xs text-primary-foreground bg-primary/20 px-2 py-1 rounded-full">{imageSize}px</div>
+          </div>
+        )}
+      </div>
+      
+      <div className={cn(
+        "grid gap-4",
+        getGridCols()
+      )}>
         {items.map((item) => (
           <div 
             key={item.id} 
-            className="relative aspect-square rounded-md overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border shadow-sm"
+            className="relative rounded-md overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border shadow-sm"
+            style={{ width: `${imageSize}px`, height: `${imageSize}px` }}
             onClick={() => setSelectedItem(item)}
           >
             {item.primary_image || (item.images && item.images.length > 0) ? (
@@ -82,6 +177,13 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             )}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
               <h3 className="text-white text-sm font-medium truncate">{item.name}</h3>
+              {item.category && (
+                <div className="mt-1">
+                  <Badge variant="secondary" className="text-xs bg-primary/20 text-primary">
+                    {item.category.name}
+                  </Badge>
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -109,7 +211,9 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
                   {selectedItem.is_public ? '公开' : '私有'}
                 </Badge>
                 {selectedItem.category && (
-                  <Badge variant="secondary">{selectedItem.category.name}</Badge>
+                  <Badge variant="secondary" className="bg-primary/20 text-primary">
+                    {selectedItem.category.name}
+                  </Badge>
                 )}
               </div>
               

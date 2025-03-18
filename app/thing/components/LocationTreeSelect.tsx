@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useEffect } from 'react'
-import { ChevronRight, ChevronDown, Home, DoorOpen, MapPin } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { ChevronRight, ChevronDown, Home, DoorOpen, MapPin, FolderPlus, FolderMinus } from 'lucide-react'
 import { API_BASE_URL } from '@/configs/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 
 // 定义类型
 type LocationType = 'area' | 'room' | 'spot';
@@ -28,6 +30,9 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
   const [tree, setTree] = useState<LocationNode[]>([])
   const [loading, setLoading] = useState(false)
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+  const [searchTerm, setSearchTerm] = useState('')
+  const [allNodes, setAllNodes] = useState<LocationNode[]>([])
+  const [allNodeIds, setAllNodeIds] = useState<string[]>([])
   
   // 加载树形结构数据
   useEffect(() => {
@@ -47,6 +52,25 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
         
         const data = await response.json()
         setTree(data.tree)
+        
+        // 存储所有节点的平面列表，用于搜索
+        const flattenNodes: LocationNode[] = []
+        const nodeIds: string[] = []
+        
+        // 递归将树形结构转为平面结构
+        const flattenTree = (nodes: LocationNode[]) => {
+          nodes.forEach(node => {
+            flattenNodes.push(node)
+            if (node.children && node.children.length > 0) {
+              nodeIds.push(node.id)
+              flattenTree(node.children)
+            }
+          })
+        }
+        
+        flattenTree(data.tree)
+        setAllNodes(flattenNodes)
+        setAllNodeIds(nodeIds)
         
         // 如果有选中的位置，自动展开其父节点
         if (selectedLocation) {
@@ -84,6 +108,25 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
     fetchLocationTree()
   }, [selectedLocation])
   
+  // 过滤搜索结果
+  const filteredNodes = useMemo(() => {
+    if (!searchTerm.trim()) return allNodes
+    
+    return allNodes.filter(node => 
+      node.name.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  }, [searchTerm, allNodes])
+  
+  // 一键展开所有节点
+  const expandAll = () => {
+    setExpandedNodes(new Set(allNodeIds))
+  }
+  
+  // 一键收起所有节点
+  const collapseAll = () => {
+    setExpandedNodes(new Set())
+  }
+  
   // 切换节点展开/折叠状态
   const toggleNode = (nodeId: string) => {
     const newExpandedNodes = new Set(expandedNodes)
@@ -94,6 +137,45 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
     }
     setExpandedNodes(newExpandedNodes)
   }
+  
+  // 搜索时自动展开匹配节点的父节点
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      const matchingNodes = allNodes.filter(node => 
+        node.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      
+      // 获取需要展开的父节点ID
+      const parentNodesIds = new Set<string>()
+      
+      // 为每个匹配节点找到其所有父节点
+      matchingNodes.forEach(node => {
+        if (node.type === 'spot') {
+          // 查找房间和区域
+          for (const area of tree) {
+            for (const room of area.children || []) {
+              if (room.children?.some(spot => spot.id === node.id)) {
+                parentNodesIds.add(area.id)
+                parentNodesIds.add(room.id)
+                break
+              }
+            }
+          }
+        } else if (node.type === 'room') {
+          // 查找区域
+          const area = tree.find(area => 
+            area.children?.some(room => room.id === node.id)
+          )
+          if (area) {
+            parentNodesIds.add(area.id)
+          }
+        }
+      })
+      
+      // 更新展开节点
+      setExpandedNodes(parentNodesIds)
+    }
+  }, [searchTerm, allNodes, tree])
   
   // 获取节点的完整路径
   const getNodePath = (node: LocationNode): string => {
@@ -200,8 +282,61 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
   
   return (
     <div className={cn("border rounded-md p-2 max-h-[200px] overflow-y-auto", className)}>
-      <div className="grid grid-cols-1 gap-1">
-        {tree.map(node => renderTreeNode(node))}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-1">
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={expandAll}
+            title="展开所有"
+            className="h-8 w-8 bg-primary/10 border-primary/20"
+          >
+            <FolderPlus className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant="outline" 
+            size="icon"
+            onClick={collapseAll}
+            title="收起所有"
+            className="h-8 w-8 bg-primary/10 border-primary/20"
+          >
+            <FolderMinus className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="flex-1">
+          <Input
+            placeholder="搜索位置..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-8"
+          />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 gap-1 mt-2">
+        {searchTerm.trim() ? (
+          filteredNodes.length > 0 ? (
+            filteredNodes.map(node => (
+              <div 
+                key={node.id}
+                className={cn(
+                  "flex items-center py-1 px-2 rounded-md cursor-pointer hover:bg-muted transition-colors text-sm",
+                  isSelected(node) && "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
+                onClick={() => handleSelect(node)}
+              >
+                {renderIcon(node.type)}
+                <span className="truncate">{node.name}</span>
+                <span className="text-xs ml-2 text-muted-foreground">{getNodePath(node)}</span>
+              </div>
+            ))
+          ) : (
+            <div className="py-2 text-center text-sm text-muted-foreground">未找到匹配的位置</div>
+          )
+        ) : (
+          tree.map(node => renderTreeNode(node))
+        )}
       </div>
     </div>
   )

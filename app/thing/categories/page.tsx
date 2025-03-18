@@ -136,40 +136,20 @@ export default function Categories() {
       <ThingNavigation />
       
       <div className="container mx-auto py-6 px-4">
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">分类管理</h1>
-        </div>
-
         <div className="grid gap-6 md:grid-cols-2">
           {/* 添加/编辑分类卡片 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{editingCategory ? '编辑分类' : '添加分类'}</CardTitle>
-              <CardDescription>
-                {editingCategory ? '修改现有分类的名称' : '创建新的物品分类'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="categoryName">分类名称</Label>
-                  <Input
-                    id="categoryName"
-                    placeholder="输入分类名称"
-                    value={editingCategory ? editingCategory.name : newCategoryName}
-                    onChange={(e) => editingCategory 
-                      ? setEditingCategory({...editingCategory, name: e.target.value})
-                      : setNewCategoryName(e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <Input
+                id="categoryName"
+                placeholder="输入分类名称"
+                value={editingCategory ? editingCategory.name : newCategoryName}
+                onChange={(e) => editingCategory ? setEditingCategory({...editingCategory, name: e.target.value}) : setNewCategoryName(e.target.value)}
+              />
+            </div>
+            <div className="flex gap-2">
               {editingCategory && (
-                <Button variant="outline" onClick={() => setEditingCategory(null)}>
-                  取消
-                </Button>
+                <Button variant="outline" onClick={() => setEditingCategory(null)}>取消</Button>
               )}
               <Button 
                 onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
@@ -177,8 +157,8 @@ export default function Categories() {
               >
                 {loading ? '处理中...' : editingCategory ? '更新分类' : '添加分类'}
               </Button>
-            </CardFooter>
-          </Card>
+            </div>
+          </div>
 
           {/* 分类列表卡片 */}
           <Card>

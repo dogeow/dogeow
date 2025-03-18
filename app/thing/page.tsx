@@ -168,18 +168,11 @@ export default function Thing() {
       <ThingNavigation />
       
       <div className="container mx-auto py-6 px-4">
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold mr-auto">物品管理</h1>
-          <Button onClick={handleAddItem}>
-            <Plus className="mr-2 h-4 w-4" /> 添加物品
-          </Button>
-        </div>
-
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
               <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[140px] bg-primary/10 border-primary/20">
                   <SelectValue placeholder="所有分类" />
                 </SelectTrigger>
                 <SelectContent>
@@ -195,17 +188,17 @@ export default function Thing() {
 
             <div className="flex-1">
               <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)} className="flex-1">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="list">列表</TabsTrigger>
-                  <TabsTrigger value="grid">网格</TabsTrigger>
-                  <TabsTrigger value="gallery">图片廊</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 bg-primary/10">
+                  <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">列表</TabsTrigger>
+                  <TabsTrigger value="grid" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">网格</TabsTrigger>
+                  <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">图片廊</TabsTrigger>
                 </TabsList>
               </Tabs>
             </div>
 
             <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" className="bg-primary/10 border-primary/20 hover:bg-primary/20">
                   <SlidersHorizontal className="h-4 w-4" />
                 </Button>
               </SheetTrigger>

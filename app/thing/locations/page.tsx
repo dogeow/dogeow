@@ -448,10 +448,6 @@ export default function Locations() {
       <ThingNavigation />
       
       <div className="container mx-auto py-6 px-4">
-        <div className="flex flex-wrap items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold">位置管理</h1>
-        </div>
-
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="w-full">
           <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="tree" className="flex items-center">
@@ -478,7 +474,6 @@ export default function Locations() {
               <Card>
                 <CardHeader>
                   <CardTitle>位置树形结构</CardTitle>
-                  <CardDescription>查看和管理您的位置层级结构</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <LocationTreeSelect 
@@ -486,38 +481,6 @@ export default function Locations() {
                     selectedLocation={selectedLocation}
                     className="min-h-[400px]"
                   />
-                </CardContent>
-                <CardFooter className="text-sm text-muted-foreground">
-                  点击任意位置项目可以快速切换到对应的编辑页面
-                </CardFooter>
-              </Card>
-              
-              <Card>
-                <CardHeader>
-                  <CardTitle>使用说明</CardTitle>
-                  <CardDescription>如何使用树形视图管理位置</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="font-medium mb-1">查看层级结构</h3>
-                    <p className="text-sm text-muted-foreground">
-                      树形视图展示了您所有位置的层级关系，包括区域、房间和具体位置。
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-1">快速编辑</h3>
-                    <p className="text-sm text-muted-foreground">
-                      点击任意位置项目，系统会自动切换到对应的编辑页面，方便您快速修改信息。
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-1">查看物品数量</h3>
-                    <p className="text-sm text-muted-foreground">
-                      每个具体位置旁边显示的数字表示该位置存放的物品数量。
-                    </p>
-                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -527,17 +490,9 @@ export default function Locations() {
           <TabsContent value="area">
             <div className="grid gap-6 md:grid-cols-2">
               {/* 添加/编辑区域卡片 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>{editingArea ? '编辑区域' : '添加区域'}</CardTitle>
-                  <CardDescription>
-                    {editingArea ? '修改现有区域的名称' : '创建新的区域'}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="areaName">区域名称</Label>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex-grow">
+                      <Label htmlFor="areaName" className="sr-only">区域名称</Label>
                       <Input
                         id="areaName"
                         placeholder="输入区域名称，如：家、办公室"
@@ -548,22 +503,18 @@ export default function Locations() {
                         }
                       />
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  {editingArea && (
-                    <Button variant="outline" onClick={() => setEditingArea(null)}>
-                      取消
+                    {editingArea && (
+                      <Button variant="outline" onClick={() => setEditingArea(null)}>
+                        取消
+                      </Button>
+                    )}
+                    <Button 
+                      onClick={editingArea ? handleUpdateArea : handleAddArea}
+                      disabled={loading}
+                    >
+                      {loading ? '处理中...' : editingArea ? '更新' : '添加'}
                     </Button>
-                  )}
-                  <Button 
-                    onClick={editingArea ? handleUpdateArea : handleAddArea}
-                    disabled={loading}
-                  >
-                    {loading ? '处理中...' : editingArea ? '更新区域' : '添加区域'}
-                  </Button>
-                </CardFooter>
-              </Card>
+                  </div>
 
               {/* 区域列表卡片 */}
               <Card>

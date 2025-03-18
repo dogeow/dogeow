@@ -3,9 +3,11 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Package, FolderTree, MapPin, BarChart2 } from "lucide-react"
+import { Package, FolderTree, MapPin, BarChart2, Plus } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function ThingNavigation() {
+  const router = useRouter()
   const pathname = usePathname()
   
   // 导航项定义
@@ -40,11 +42,18 @@ export default function ThingNavigation() {
     }
     return pathname.startsWith(item.href)
   }
+
+  const handleAddItem = () => {
+    router.push('/thing/add')
+  }
   
   return (
     <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
       <nav className="container flex items-center py-2 overflow-x-auto">
         <div className="flex items-center space-x-1 md:space-x-2">
+          <Button size="sm" onClick={handleAddItem}>
+            <Plus className="h-4 w-4" />
+          </Button>
           {navItems.map((item) => {
             const Icon = item.icon
             return (
