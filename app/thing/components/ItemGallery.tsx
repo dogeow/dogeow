@@ -137,13 +137,13 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
       </div>
       
       <div className={cn(
-        "flex flex-wrap gap-4 justify-center"
+        "flex flex-wrap gap-2 justify-center"
       )}>
         {items.map((item) => (
           <div 
             key={item.id} 
             className="relative rounded-md overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border shadow-sm"
-            style={{ width: `${imageSize}px`, height: `${imageSize}px`, margin: '0 4px 4px 0' }}
+            style={{ width: `${imageSize}px`, height: `${imageSize}px` }}
             onClick={() => setSelectedItem(item)}
           >
             {item.primary_image || (item.images && item.images.length > 0) ? (

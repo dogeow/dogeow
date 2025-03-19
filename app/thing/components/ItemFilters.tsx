@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { API_BASE_URL } from '@/configs/api'
 
@@ -57,6 +58,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   const [rooms, setRooms] = useState<Room[]>([])
   const [spots, setSpots] = useState<Spot[]>([])
   const [loading, setLoading] = useState(false)
+  const [activeTab, setActiveTab] = useState("basic")
   
   // 初始筛选条件
   const initialFilters: FilterState = {
@@ -199,8 +201,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   ) => (
     <div className="space-y-3">
       <Label className="text-base font-medium">{label}</Label>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
+      <div className="flex flex-col gap-3 items-center">
+        <div className="space-y-1.5 w-full">
           <Label className="text-xs text-muted-foreground">从</Label>
           <DatePicker
             date={filters[fromField]}
@@ -209,7 +211,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
             className="h-11"
           />
         </div>
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 w-full">
           <Label className="text-xs text-muted-foreground">至</Label>
           <DatePicker
             date={filters[toField]}
@@ -223,108 +225,117 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   )
   
   return (
-    <div className="space-y-6 px-1">
-      {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to')}
-      
-      {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to')}
-      
-      <Separator className="my-4" />
-      
-      <div className="space-y-3">
-        <Label className="text-base font-medium">价格范围</Label>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">最低价</Label>
-            <Input
-              type="number"
-              placeholder="最低价"
-              value={filters.price_from}
-              onChange={(e) => handleChange('price_from', e.target.value)}
-              className="h-11"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">最高价</Label>
-            <Input
-              type="number"
-              placeholder="最高价"
-              value={filters.price_to}
-              onChange={(e) => handleChange('price_to', e.target.value)}
-              className="h-11"
-            />
-          </div>
-        </div>
-      </div>
-      
-      <Separator className="my-4" />
-      
-      <div className="space-y-3">
-        <Label className="text-base font-medium">位置</Label>
-        <div className="space-y-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">区域</Label>
-            <Select value={filters.area_id} onValueChange={(value) => handleChange('area_id', value)}>
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="选择区域" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">全部区域</SelectItem>
-                {areas.map((area) => (
-                  <SelectItem key={area.id} value={area.id.toString()}>
-                    {area.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="space-y-4 px-1">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-2 w-full mb-4">
+          <TabsTrigger value="basic">基础筛选</TabsTrigger>
+          <TabsTrigger value="detailed">详细筛选</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="basic" className="space-y-6">
+          {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to')}
           
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">房间</Label>
-            <Select 
-              value={filters.room_id} 
-              onValueChange={(value) => handleChange('room_id', value)}
-              disabled={!filters.area_id}
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="选择房间" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">全部房间</SelectItem>
-                {rooms.map((room) => (
-                  <SelectItem key={room.id} value={room.id.toString()}>
-                    {room.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <Separator className="my-4" />
           
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">具体位置</Label>
-            <Select 
-              value={filters.spot_id} 
-              onValueChange={(value) => handleChange('spot_id', value)}
-              disabled={!filters.room_id}
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="选择位置" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">全部位置</SelectItem>
-                {spots.map((spot) => (
-                  <SelectItem key={spot.id} value={spot.id.toString()}>
-                    {spot.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="space-y-3">
+            <Label className="text-base font-medium">价格范围</Label>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">最低价</Label>
+                <Input
+                  type="number"
+                  placeholder="最低价"
+                  value={filters.price_from}
+                  onChange={(e) => handleChange('price_from', e.target.value)}
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">最高价</Label>
+                <Input
+                  type="number"
+                  placeholder="最高价"
+                  value={filters.price_to}
+                  onChange={(e) => handleChange('price_to', e.target.value)}
+                  className="h-11"
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        </TabsContent>
+
+        <TabsContent value="detailed" className="space-y-6">
+          {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to')}
+          
+          <Separator className="my-4" />
+          
+          <div className="space-y-3">
+            <Label className="text-base font-medium">位置</Label>
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">区域</Label>
+                <Select value={filters.area_id} onValueChange={(value) => handleChange('area_id', value)}>
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="选择区域" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">全部区域</SelectItem>
+                    {areas.map((area) => (
+                      <SelectItem key={area.id} value={area.id.toString()}>
+                        {area.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">房间</Label>
+                <Select 
+                  value={filters.room_id} 
+                  onValueChange={(value) => handleChange('room_id', value)}
+                  disabled={!filters.area_id}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="选择房间" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">全部房间</SelectItem>
+                    {rooms.map((room) => (
+                      <SelectItem key={room.id} value={room.id.toString()}>
+                        {room.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">具体位置</Label>
+                <Select 
+                  value={filters.spot_id} 
+                  onValueChange={(value) => handleChange('spot_id', value)}
+                  disabled={!filters.room_id}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="选择位置" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">全部位置</SelectItem>
+                    {spots.map((spot) => (
+                      <SelectItem key={spot.id} value={spot.id.toString()}>
+                        {spot.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
       
-      <Separator className="my-4" />
-      
-      <div className="flex justify-between pt-6 pb-2 gap-3">
+      <div className="flex justify-between pt-4 pb-2 gap-3">
         <Button variant="outline" onClick={handleReset} className="flex-1 h-11">重置</Button>
         <Button onClick={handleApply} className="flex-1 h-11">应用筛选</Button>
       </div>

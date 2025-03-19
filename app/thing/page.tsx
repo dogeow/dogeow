@@ -263,14 +263,14 @@ export default function Thing() {
                   <SlidersHorizontal className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
-              <SheetContent className="overflow-y-auto pb-10">
+              <SheetContent className="overflow-y-auto pb-10 max-w-[50%] sm:max-w-[300px]">
                 <SheetHeader className="pb-1">
-                  <SheetTitle className="text-xl">筛选物品</SheetTitle>
-                  <SheetDescription className="text-sm">
+                  <SheetTitle className="text-xl sr-only">筛选物品</SheetTitle>
+                  <SheetDescription className="text-sm sr-only">
                     设置筛选条件以查找特定物品
                   </SheetDescription>
                 </SheetHeader>
-                <div className="py-2">
+                <div className="py-1">
                   <ItemFilters onApply={handleApplyFilters} />
                 </div>
               </SheetContent>
