@@ -80,23 +80,15 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     setShowSizeControls(!showSizeControls)
   }
   
-  // 计算每行显示的列数
-  const getGridCols = () => {
-    if (imageSize < 100) return "grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10"
-    if (imageSize < 150) return "grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8"
-    if (imageSize < 200) return "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
-    return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-  }
-  
   return (
     <div>
       <div className="mb-6">
-        <div className="flex flex-col items-center p-4 bg-primary/5 rounded-md border border-primary/10">
-          <div className="flex gap-2 mb-4 w-full justify-center">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-2 justify-center">
             <Button 
               variant="outline" 
               size="icon" 
-              className={cn("bg-primary/10 border-primary/20", imageSize === 80 && "bg-primary text-primary-foreground")}
+              className={cn("bg-background border-muted", imageSize === 80 && "bg-muted text-foreground")}
               onClick={() => setPresetSize(80)}
             >
               <Grid3X3 className="h-4 w-4" />
@@ -104,7 +96,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             <Button 
               variant="outline" 
               size="icon" 
-              className={cn("bg-primary/10 border-primary/20", imageSize === 120 && "bg-primary text-primary-foreground")}
+              className={cn("bg-background border-muted", imageSize === 120 && "bg-muted text-foreground")}
               onClick={() => setPresetSize(120)}
             >
               <Grid2X2 className="h-4 w-4" />
@@ -112,7 +104,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             <Button 
               variant="outline" 
               size="icon" 
-              className={cn("bg-primary/10 border-primary/20", imageSize === 160 && "bg-primary text-primary-foreground")}
+              className={cn("bg-background border-muted", imageSize === 160 && "bg-muted text-foreground")}
               onClick={() => setPresetSize(160)}
             >
               <Grid2X2 className="h-4 w-4" />
@@ -120,37 +112,38 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             <Button 
               variant="outline" 
               size="icon" 
-              className={cn("bg-primary/10 border-primary/20", imageSize === 220 && "bg-primary text-primary-foreground")}
+              className={cn("bg-background border-muted", imageSize === 220 && "bg-muted text-foreground")}
               onClick={() => setPresetSize(220)}
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
-          <div className="w-full max-w-md px-2">
-            <Slider
-              value={[imageSize]}
-              min={80}
-              max={250}
-              step={10}
-              onValueChange={handleSizeChange}
-              className="bg-primary/10 rounded-full"
-            />
-          </div>
-          <div className="text-base font-medium text-primary mt-3">
-            {imageSize}px
+          <div className="flex items-center w-full max-w-md gap-3">
+            <div className="flex-grow">
+              <Slider
+                value={[imageSize]}
+                min={60}
+                max={250}
+                step={10}
+                onValueChange={handleSizeChange}
+                className="cursor-pointer"
+              />
+            </div>
+            <div className="text-base font-medium text-amber-400">
+              {imageSize}px
+            </div>
           </div>
         </div>
       </div>
       
       <div className={cn(
-        "grid gap-4",
-        getGridCols()
+        "flex flex-wrap gap-4 justify-center"
       )}>
         {items.map((item) => (
           <div 
             key={item.id} 
             className="relative rounded-md overflow-hidden cursor-pointer hover:opacity-90 transition-opacity border shadow-sm"
-            style={{ width: `${imageSize}px`, height: `${imageSize}px` }}
+            style={{ width: `${imageSize}px`, height: `${imageSize}px`, margin: '0 4px 4px 0' }}
             onClick={() => setSelectedItem(item)}
           >
             {item.primary_image || (item.images && item.images.length > 0) ? (
