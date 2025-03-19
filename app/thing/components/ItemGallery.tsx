@@ -90,66 +90,56 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
   
   return (
     <div>
-      <div className="mb-4">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={toggleSizeControls} 
-          className="flex items-center gap-1 bg-primary/10 border-primary/20 mb-2"
-        >
-          <span className="text-sm">图片大小控制</span>
-          {showSizeControls ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </Button>
-        
-        {showSizeControls && (
-          <div className="flex flex-wrap items-center gap-4 p-2 bg-primary/5 rounded-md border border-primary/10">
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className={cn("bg-primary/10 border-primary/20", imageSize === 80 && "bg-primary text-primary-foreground")}
-                onClick={() => setPresetSize(80)}
-              >
-                <Grid3X3 className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className={cn("bg-primary/10 border-primary/20", imageSize === 120 && "bg-primary text-primary-foreground")}
-                onClick={() => setPresetSize(120)}
-              >
-                <Grid2X2 className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className={cn("bg-primary/10 border-primary/20", imageSize === 160 && "bg-primary text-primary-foreground")}
-                onClick={() => setPresetSize(160)}
-              >
-                <Grid2X2 className="h-4 w-4" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className={cn("bg-primary/10 border-primary/20", imageSize === 220 && "bg-primary text-primary-foreground")}
-                onClick={() => setPresetSize(220)}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="w-48">
-              <Slider
-                value={[imageSize]}
-                min={80}
-                max={250}
-                step={10}
-                onValueChange={handleSizeChange}
-                className="bg-primary/10 rounded-full"
-              />
-            </div>
-            <div className="text-xs text-primary-foreground bg-primary/20 px-2 py-1 rounded-full">{imageSize}px</div>
+      <div className="mb-6">
+        <div className="flex flex-col items-center p-4 bg-primary/5 rounded-md border border-primary/10">
+          <div className="flex gap-2 mb-4 w-full justify-center">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className={cn("bg-primary/10 border-primary/20", imageSize === 80 && "bg-primary text-primary-foreground")}
+              onClick={() => setPresetSize(80)}
+            >
+              <Grid3X3 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className={cn("bg-primary/10 border-primary/20", imageSize === 120 && "bg-primary text-primary-foreground")}
+              onClick={() => setPresetSize(120)}
+            >
+              <Grid2X2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className={cn("bg-primary/10 border-primary/20", imageSize === 160 && "bg-primary text-primary-foreground")}
+              onClick={() => setPresetSize(160)}
+            >
+              <Grid2X2 className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className={cn("bg-primary/10 border-primary/20", imageSize === 220 && "bg-primary text-primary-foreground")}
+              onClick={() => setPresetSize(220)}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
           </div>
-        )}
+          <div className="w-full max-w-md px-2">
+            <Slider
+              value={[imageSize]}
+              min={80}
+              max={250}
+              step={10}
+              onValueChange={handleSizeChange}
+              className="bg-primary/10 rounded-full"
+            />
+          </div>
+          <div className="text-base font-medium text-primary mt-3">
+            {imageSize}px
+          </div>
+        </div>
       </div>
       
       <div className={cn(
@@ -176,25 +166,20 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               </div>
             )}
             
-            {item.is_public && (
+            {item.is_public && imageSize >= 150 ? (
               <div className="absolute top-2 left-2">
                 <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
                   <Globe className="h-3.5 w-3.5" />
                 </Badge>
               </div>
+            ) : null}
+            
+            {imageSize >= 150 && (
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                <p className="text-white text-sm font-medium truncate">{item.name}</p>
+                <p className="text-white/80 text-xs truncate">{item.category?.name || '未分类'}</p>
+              </div>
             )}
-            
-            <div className="absolute top-2 right-2">
-              {getStatusBadge(item.status)}
-            </div>
-            
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-              <p className="text-white text-sm font-medium truncate">{item.name}</p>
-              <p className="text-white/80 text-xs truncate">{item.category?.name || '未分类'}</p>
-              {item.quantity !== 0 && item.quantity && (
-                <p className="text-white/80 text-xs truncate">数量: {item.quantity}</p>
-              )}
-            </div>
           </div>
         ))}
       </div>
@@ -216,7 +201,6 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               </div>
               
               <div className="flex flex-wrap gap-2">
-                {getStatusBadge(selectedItem.status)}
                 <Badge variant={selectedItem.is_public ? "default" : "outline"}>
                   {selectedItem.is_public ? <><Globe className="h-3.5 w-3.5 mr-1" /> 公开</> : <><LockIcon className="h-3.5 w-3.5 mr-1" /> 私有</>}
                 </Badge>
@@ -232,9 +216,6 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               )}
               
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>
-                  <span className="text-muted-foreground">数量:</span> {selectedItem.quantity}
-                </div>
                 <div>
                   <span className="text-muted-foreground">价格:</span> {selectedItem.purchase_price ? `¥${selectedItem.purchase_price}` : '-'}
                 </div>

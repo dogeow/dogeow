@@ -145,7 +145,17 @@ export default function ItemDetail() {
             <Card className="overflow-hidden">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-center">
-                  <CardTitle>物品信息</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-sm py-1 px-3">
+                      {item.category?.name || '未分类'}
+                    </Badge>
+                    <Badge className={status.variant === 'bg-green-500' ? status.variant : ''} variant={status.variant !== 'bg-green-500' ? (status.variant as "outline" | "destructive" | "secondary" | "default") : undefined}>
+                      {status.label}
+                    </Badge>
+                    <Badge variant={item.is_public ? "default" : "outline"}>
+                      {item.is_public ? '公开' : '私有'}
+                    </Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -153,22 +163,11 @@ export default function ItemDetail() {
                   <div className="space-y-3">
                     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-sm">
                       <Image
-                        src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${item.images[activeImageIndex].path}`}
+                        src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '')}/storage/${item.images[activeImageIndex].path}`}
                         alt={item.name}
                         fill
                         className="object-contain"
                       />
-                    </div>
-                    
-                    <div className="flex justify-between items-center mt-2">
-                      <div className="flex flex-wrap gap-2">
-                        <Badge className={status.variant === 'bg-green-500' ? status.variant : ''} variant={status.variant !== 'bg-green-500' ? (status.variant as "outline" | "destructive" | "secondary" | "default") : undefined}>
-                          {status.label}
-                        </Badge>
-                        <Badge variant={item.is_public ? "default" : "outline"}>
-                          {item.is_public ? '公开' : '私有'}
-                        </Badge>
-                      </div>
                     </div>
                     
                     {item.images.length > 1 && (
@@ -182,7 +181,7 @@ export default function ItemDetail() {
                             onClick={() => setActiveImageIndex(index)}
                           >
                             <Image
-                              src={`${process.env.NEXT_PUBLIC_API_URL}/storage/${image.thumbnail_path}`}
+                              src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '')}/storage/${image.thumbnail_path}`}
                               alt={`${item.name} 图片 ${index + 1}`}
                               fill
                               className="object-cover rounded-sm"
@@ -203,22 +202,18 @@ export default function ItemDetail() {
                   <p className="text-sm">{item.description || '无描述'}</p>
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   <div className="bg-background p-3 rounded-lg border shadow-sm">
                     <h3 className="font-medium text-xs text-muted-foreground">数量</h3>
                     <p className="text-sm font-semibold">{item.quantity}</p>
-                  </div>
-                  <div className="bg-background p-3 rounded-lg border shadow-sm">
-                    <h3 className="font-medium text-xs text-muted-foreground">分类</h3>
-                    <p className="text-sm font-semibold truncate">{item.category?.name || '未分类'}</p>
                   </div>
                   <div className="bg-background p-3 rounded-lg border shadow-sm">
                     <h3 className="font-medium text-xs text-muted-foreground">价格</h3>
                     <p className="text-sm font-semibold">{item.purchase_price ? `¥${item.purchase_price}` : '-'}</p>
                   </div>
                   <div className="bg-background p-3 rounded-lg border shadow-sm">
-                    <h3 className="font-medium text-xs text-muted-foreground">状态</h3>
-                    <p className="text-sm font-semibold">{status.label}</p>
+                    <h3 className="font-medium text-xs text-muted-foreground">购买日期</h3>
+                    <p className="text-sm font-semibold">{formatDate(item.purchase_date)}</p>
                   </div>
                 </div>
               </CardContent>
@@ -229,14 +224,10 @@ export default function ItemDetail() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="overflow-hidden">
                 <CardHeader className="pb-3">
-                  <CardTitle>详细信息</CardTitle>
+                  <CardTitle>时间信息</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-background p-3 rounded-lg border shadow-sm">
-                      <h3 className="font-medium text-xs text-muted-foreground">购买日期</h3>
-                      <p className="text-sm font-semibold">{formatDate(item.purchase_date)}</p>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="bg-background p-3 rounded-lg border shadow-sm">
                       <h3 className="font-medium text-xs text-muted-foreground">过期日期</h3>
                       <p className="text-sm font-semibold">{formatDate(item.expiry_date)}</p>
@@ -245,7 +236,7 @@ export default function ItemDetail() {
                       <h3 className="font-medium text-xs text-muted-foreground">创建时间</h3>
                       <p className="text-sm font-semibold">{formatDate(item.created_at)}</p>
                     </div>
-                    <div className="bg-background p-3 rounded-lg border shadow-sm">
+                    <div className="bg-background p-3 rounded-lg border shadow-sm col-span-1 sm:col-span-2">
                       <h3 className="font-medium text-xs text-muted-foreground">更新时间</h3>
                       <p className="text-sm font-semibold">{formatDate(item.updated_at)}</p>
                     </div>
