@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { API_BASE_URL } from '@/configs/api';
+import { format } from 'date-fns';
 
 interface Item {
   id: number;
@@ -61,6 +62,7 @@ interface ItemState {
   categories: Category[];
   loading: boolean;
   error: string | null;
+  meta: any | null;
   
   fetchItems: (params?: Record<string, any>) => Promise<void>;
   fetchCategories: () => Promise<void>;
@@ -75,6 +77,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
   categories: [],
   loading: false,
   error: null,
+  meta: null,
   
   fetchItems: async (params = {}) => {
     set({ loading: true, error: null });
@@ -83,13 +86,23 @@ export const useItemStore = create<ItemState>((set, get) => ({
       // 构建查询参数
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          queryParams.append(key, String(value));
+        // 包括 "none" 值和空字符串，但过滤 undefined 和 null
+        if (value !== undefined && value !== null) {
+          // 处理日期对象
+          if (value instanceof Date) {
+            queryParams.append(key, format(value, 'yyyy-MM-dd'));
+          } else {
+            queryParams.append(key, String(value));
+          }
         }
       });
       
       const queryString = queryParams.toString();
+      console.log('查询字符串:', queryString); // 添加日志
+      
       const url = `${API_BASE_URL}/items${queryString ? `?${queryString}` : ''}`;
+      
+      console.log('筛选请求URL:', url);
       
       const response = await fetch(url, {
         headers: {
@@ -107,6 +120,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       set({
         items: data.data || [],
         loading: false,
+        meta: data.meta || null,
       });
       
       return data;

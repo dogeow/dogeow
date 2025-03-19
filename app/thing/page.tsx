@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { SlidersHorizontal } from "lucide-react"
+import { SlidersHorizontal, LayoutList, Grid } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
@@ -31,6 +31,7 @@ export default function Thing() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedPublicStatus, setSelectedPublicStatus] = useState<string>('none')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   
@@ -44,25 +45,53 @@ export default function Thing() {
     
     if (search) {
       setSearchTerm(search)
-      fetchItems({ search, page: 1 })
+      fetchItems({ 
+        search, 
+        page: 1,
+        is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
+      })
     } else {
-      fetchItems()
+      fetchItems({
+        is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
+      })
     }
     
     fetchCategories()
-  }, [fetchItems, fetchCategories])
+  }, [fetchItems, fetchCategories, selectedPublicStatus])
 
   // 处理页面变化
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
-    fetchItems({ page, search: searchTerm, category_id: selectedCategory !== 'none' ? selectedCategory : '' })
+    fetchItems({ 
+      page, 
+      search: searchTerm, 
+      category_id: selectedCategory !== 'none' ? selectedCategory : '',
+      is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
+    })
   }
 
   // 处理分类变化
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value)
     const actualValue = value === "none" ? "" : value;
-    fetchItems({ category_id: actualValue, page: 1, search: searchTerm })
+    fetchItems({ 
+      category_id: actualValue, 
+      page: 1, 
+      search: searchTerm,
+      is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
+    })
+    setCurrentPage(1)
+  }
+
+  // 处理公开状态变化
+  const handlePublicStatusChange = (value: string) => {
+    setSelectedPublicStatus(value)
+    fetchItems({ 
+      category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined, 
+      page: 1, 
+      search: searchTerm,
+      is_public: value === 'none' ? undefined : value === 'true'
+    })
     setCurrentPage(1)
   }
 
@@ -73,14 +102,29 @@ export default function Thing() {
 
   // 应用筛选条件
   const handleApplyFilters = (filters: FilterParams) => {
-    fetchItems({ 
-      ...filters, 
-      page: 1, 
+    console.log('接收到的筛选条件:', filters);
+    
+    // 构建筛选参数
+    const filterParams: Record<string, any> = {
+      ...filters,
+      page: 1,
       search: searchTerm,
-      category_id: selectedCategory !== 'none' ? selectedCategory : ''
-    })
-    setCurrentPage(1)
-    setFiltersOpen(false)
+      // 保留当前选中的分类和公开状态
+      category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined,
+      is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
+    };
+    
+    // 移除undefined和null值
+    Object.keys(filterParams).forEach(key => {
+      if (filterParams[key] === undefined || filterParams[key] === null) {
+        delete filterParams[key];
+      }
+    });
+    
+    console.log('发送最终筛选参数:', filterParams);
+    fetchItems(filterParams);
+    setCurrentPage(1);
+    setFiltersOpen(false);
   }
 
   // 渲染加载状态
@@ -149,9 +193,7 @@ export default function Thing() {
   // 渲染物品列表
   const renderItems = () => (
     <>
-      {viewMode === 'gallery' ? (
-        <ItemGallery items={items} />
-      ) : (
+      {viewMode === 'list' ? (
         <div className="grid gap-4 grid-cols-1">
           {items.map((item) => (
             <ItemCard 
@@ -162,6 +204,8 @@ export default function Thing() {
             />
           ))}
         </div>
+      ) : (
+        <ItemGallery items={items} />
       )}
 
       {renderPagination()}
@@ -176,8 +220,19 @@ export default function Thing() {
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-2">
+              <Select value={selectedPublicStatus} onValueChange={handlePublicStatusChange}>
+                <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
+                  <SelectValue placeholder="所有物品" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">所有物品</SelectItem>
+                  <SelectItem value="true">公开</SelectItem>
+                  <SelectItem value="false">私有</SelectItem>
+                </SelectContent>
+              </Select>
+
               <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="w-[140px] bg-primary/10 border-primary/20">
+                <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
                   <SelectValue placeholder="所有分类" />
                 </SelectTrigger>
                 <SelectContent>
@@ -193,8 +248,12 @@ export default function Thing() {
 
             <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
               <TabsList className="grid grid-cols-2 bg-primary/10">
-                <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">列表</TabsTrigger>
-                <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">图片廊</TabsTrigger>
+                <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <LayoutList className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                  <Grid className="h-4 w-4" />
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 

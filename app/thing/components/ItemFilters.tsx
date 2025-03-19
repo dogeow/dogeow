@@ -165,9 +165,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   }, [filters.room_id])
   
   const handleChange = (field: keyof FilterState, value: any) => {
-    // 将 "none" 值转换为空字符串
-    const actualValue = value === "none" ? "" : value;
-    setFilters(prev => ({ ...prev, [field]: actualValue }))
+    // 将 "none" 保留为实际值，不再转换为空字符串
+    setFilters(prev => ({ ...prev, [field]: value }))
   }
   
   const handleReset = () => {
@@ -175,15 +174,21 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   }
   
   const handleApply = () => {
-    // 过滤掉空值
+    // 过滤掉空值，确保日期正确传递
     const appliedFilters = Object.entries(filters).reduce((acc: Record<string, any>, [key, value]) => {
-      if (value !== '' && value !== null) {
-        acc[key] = value
+      // 不再添加 is_public 参数，它已经在外部处理
+      if (key !== 'is_public' && value !== null) {
+        acc[key] = value;
+        // 特别打印category_id的值
+        if (key === 'category_id') {
+          console.log('FilterFilters - 添加分类ID:', value, typeof value);
+        }
       }
-      return acc
-    }, {})
+      return acc;
+    }, {});
     
-    onApply(appliedFilters)
+    console.log('应用筛选条件:', appliedFilters);
+    onApply(appliedFilters);
   }
   
   // 渲染日期选择器组件
@@ -219,25 +224,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   return (
     <div className="space-y-6 px-1">
-      <div className="space-y-3">
-        <Label className="text-base font-medium">分类</Label>
-        <Select value={filters.category_id} onValueChange={(value) => handleChange('category_id', value)}>
-          <SelectTrigger className="h-11">
-            <SelectValue placeholder="选择分类" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">全部分类</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id.toString()}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      
-      <Separator className="my-4" />
-      
       {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to')}
       
       {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to')}
@@ -337,29 +323,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       </div>
       
       <Separator className="my-4" />
-      
-      <div className="flex items-center justify-between">
-        <Label className="text-base font-medium">公开状态</Label>
-        <Select 
-          value={filters.is_public !== null ? filters.is_public.toString() : 'none'}
-          onValueChange={(value) => {
-            if (value === 'none') {
-              handleChange('is_public', null)
-            } else {
-              handleChange('is_public', value === 'true')
-            }
-          }}
-        >
-          <SelectTrigger className="w-[120px] h-11">
-            <SelectValue placeholder="全部" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">全部</SelectItem>
-            <SelectItem value="true">公开</SelectItem>
-            <SelectItem value="false">私有</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
       
       <div className="flex justify-between pt-6 pb-2 gap-3">
         <Button variant="outline" onClick={handleReset} className="flex-1 h-11">重置</Button>

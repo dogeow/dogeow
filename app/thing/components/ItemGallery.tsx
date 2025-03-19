@@ -88,32 +88,32 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             <Button 
               variant="outline" 
               size="icon" 
-              className={cn("bg-background border-muted", imageSize === 80 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(80)}
+              className={cn("bg-background border-muted", imageSize === 60 && "bg-muted text-foreground")}
+              onClick={() => setPresetSize(60)}
             >
               <Grid3X3 className="h-4 w-4" />
             </Button>
             <Button 
               variant="outline" 
               size="icon" 
-              className={cn("bg-background border-muted", imageSize === 120 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(120)}
+              className={cn("bg-background border-muted", imageSize === 100 && "bg-muted text-foreground")}
+              onClick={() => setPresetSize(100)}
             >
               <Grid2X2 className="h-4 w-4" />
             </Button>
             <Button 
               variant="outline" 
               size="icon" 
-              className={cn("bg-background border-muted", imageSize === 160 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(160)}
+              className={cn("bg-background border-muted", imageSize === 140 && "bg-muted text-foreground")}
+              onClick={() => setPresetSize(140)}
             >
               <Grid2X2 className="h-4 w-4" />
             </Button>
             <Button 
               variant="outline" 
               size="icon" 
-              className={cn("bg-background border-muted", imageSize === 220 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(220)}
+              className={cn("bg-background border-muted", imageSize === 200 && "bg-muted text-foreground")}
+              onClick={() => setPresetSize(200)}
             >
               <LayoutGrid className="h-4 w-4" />
             </Button>
@@ -122,8 +122,8 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             <div className="flex-grow">
               <Slider
                 value={[imageSize]}
-                min={60}
-                max={250}
+                min={40}
+                max={520}
                 step={10}
                 onValueChange={handleSizeChange}
                 className="cursor-pointer"
