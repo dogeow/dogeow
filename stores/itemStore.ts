@@ -86,8 +86,8 @@ export const useItemStore = create<ItemState>((set, get) => ({
       // 构建查询参数
       const queryParams = new URLSearchParams();
       Object.entries(params).forEach(([key, value]) => {
-        // 包括 "none" 值和空字符串，但过滤 undefined 和 null
-        if (value !== undefined && value !== null) {
+        // 过滤 undefined、null 和空字符串
+        if (value !== undefined && value !== null && value !== '') {
           // 处理日期对象
           if (value instanceof Date) {
             queryParams.append(key, format(value, 'yyyy-MM-dd'));

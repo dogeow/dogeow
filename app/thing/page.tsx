@@ -65,7 +65,7 @@ export default function Thing() {
     fetchItems({ 
       page, 
       search: searchTerm, 
-      category_id: selectedCategory !== 'none' ? selectedCategory : '',
+      category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined,
       is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
     })
   }
@@ -114,9 +114,9 @@ export default function Thing() {
       is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
     };
     
-    // 移除undefined和null值
+    // 移除undefined、null和空字符串值
     Object.keys(filterParams).forEach(key => {
-      if (filterParams[key] === undefined || filterParams[key] === null) {
+      if (filterParams[key] === undefined || filterParams[key] === null || filterParams[key] === '') {
         delete filterParams[key];
       }
     });

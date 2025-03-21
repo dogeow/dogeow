@@ -24,17 +24,16 @@ export default function Home() {
   return (
     <BackgroundWrapper>
       <div className="container mx-auto p-4">
-        <div className="flex flex-wrap gap-4">
+        <div className="grid grid-cols-3 gap-4">
           {tiles.map((tile: Tile, index: number) => (
             <div
               key={index}
               className="relative flex flex-col items-start justify-end p-4 rounded-lg transition-transform hover:translate-y-[-5px]"
               style={{ 
                 backgroundColor: tile.color,
-                width: `calc(${(100 / 3) * tile.colSpan}% - ${tile.colSpan > 1 ? (4 * (tile.colSpan - 1)) : 0}px)`,
+                gridColumn: `span ${tile.colSpan} / span ${tile.colSpan}`,
+                gridRow: `span ${tile.rowSpan} / span ${tile.rowSpan}`,
                 height: `${8 * tile.rowSpan}rem`,
-                flexGrow: 0,
-                flexShrink: 0
               }}
               onClick={() => router.push(tile.href)}
             >

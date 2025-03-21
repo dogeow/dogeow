@@ -29,6 +29,8 @@ interface FilterState {
   room_id: string;
   spot_id: string;
   is_public: boolean | null;
+  include_null_purchase_date: boolean;
+  include_null_expiry_date: boolean;
 }
 
 // 定义位置相关数据类型
@@ -73,6 +75,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     room_id: '',
     spot_id: '',
     is_public: null,
+    include_null_purchase_date: true,
+    include_null_expiry_date: true,
   }
   
   const [filters, setFilters] = useState<FilterState>(initialFilters)
@@ -178,8 +182,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   const handleApply = () => {
     // 过滤掉空值，确保日期正确传递
     const appliedFilters = Object.entries(filters).reduce((acc: Record<string, any>, [key, value]) => {
-      // 不再添加 is_public 参数，它已经在外部处理
-      if (key !== 'is_public' && value !== null) {
+      // 不再添加 is_public 参数和空字符串参数
+      if (key !== 'is_public' && value !== null && value !== '') {
         acc[key] = value;
         // 特别打印category_id的值
         if (key === 'category_id') {
@@ -189,6 +193,15 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       return acc;
     }, {});
     
+    // 如果有日期筛选条件且不包含空日期，添加特殊标记
+    if (filters.purchase_date_from && !filters.include_null_purchase_date) {
+      appliedFilters.exclude_null_purchase_date = true;
+    }
+    
+    if (filters.expiry_date_from && !filters.include_null_expiry_date) {
+      appliedFilters.exclude_null_expiry_date = true;
+    }
+    
     console.log('应用筛选条件:', appliedFilters);
     onApply(appliedFilters);
   }
@@ -197,7 +210,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   const renderDateRangePicker = (
     label: string, 
     fromField: 'purchase_date_from' | 'expiry_date_from', 
-    toField: 'purchase_date_to' | 'expiry_date_to'
+    toField: 'purchase_date_to' | 'expiry_date_to',
+    includeNullField: 'include_null_purchase_date' | 'include_null_expiry_date'
   ) => (
     <div className="space-y-3">
       <Label className="text-base font-medium">{label}</Label>
@@ -220,6 +234,16 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
             className="h-11"
           />
         </div>
+        <div className="flex items-center space-x-2 w-full mt-1">
+          <Switch 
+            id={`include-null-${fromField}`}
+            checked={filters[includeNullField]}
+            onCheckedChange={(checked) => handleChange(includeNullField, checked)}
+          />
+          <Label htmlFor={`include-null-${fromField}`} className="text-xs cursor-pointer">
+            包含空日期的物品
+          </Label>
+        </div>
       </div>
     </div>
   )
@@ -233,7 +257,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6">
-          {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to')}
+          {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to', 'include_null_purchase_date')}
           
           <Separator className="my-4" />
           
@@ -265,7 +289,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         </TabsContent>
 
         <TabsContent value="detailed" className="space-y-6">
-          {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to')}
+          {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to', 'include_null_expiry_date')}
           
           <Separator className="my-4" />
           
