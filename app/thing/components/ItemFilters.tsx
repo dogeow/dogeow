@@ -223,8 +223,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                     <SelectValue placeholder="选择区域" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">全部区域</SelectItem>
-                    {areas?.map((area) => (
+                    <SelectItem value="">全部区域</SelectItem>
+                    {areas.map((area: Area) => (
                       <SelectItem key={area.id} value={area.id.toString()}>
                         {area.name}
                       </SelectItem>
@@ -244,8 +244,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                     <SelectValue placeholder="选择房间" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">全部房间</SelectItem>
-                    {rooms?.map((room) => (
+                    <SelectItem value="">全部房间</SelectItem>
+                    {rooms.map((room: Room) => (
                       <SelectItem key={room.id} value={room.id.toString()}>
                         {room.name}
                       </SelectItem>
@@ -265,8 +265,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                     <SelectValue placeholder="选择位置" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">全部位置</SelectItem>
-                    {spots?.map((spot) => (
+                    <SelectItem value="">全部位置</SelectItem>
+                    {spots.map((spot: Spot) => (
                       <SelectItem key={spot.id} value={spot.id.toString()}>
                         {spot.name}
                       </SelectItem>

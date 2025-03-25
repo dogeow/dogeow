@@ -3,15 +3,10 @@
 import * as React from "react"
 import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Calendar } from "@/components/ui/calendar"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { Input } from "@/components/ui/input"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 interface DatePickerProps {
   date: Date | null
@@ -26,11 +21,19 @@ export function DatePicker({
   placeholder = "选择日期",
   className,
 }: DatePickerProps) {
+  const [isOpen, setIsOpen] = React.useState(false)
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value ? new Date(e.target.value) : null
+    setDate(newDate)
+    setIsOpen(false)
+  }
+
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant={"outline"}
+          variant="outline"
           className={cn(
             "w-full justify-start text-left font-normal",
             !date && "text-muted-foreground",
@@ -42,12 +45,14 @@ export function DatePicker({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date || undefined}
-          onSelect={setDate}
-          initialFocus
-        />
+        <div className="p-3">
+          <Input
+            type="date"
+            value={date ? format(date, "yyyy-MM-dd") : ""}
+            onChange={handleDateChange}
+            className="w-full"
+          />
+        </div>
       </PopoverContent>
     </Popover>
   )
