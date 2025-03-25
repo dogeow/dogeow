@@ -61,17 +61,6 @@ export const useSpot = (id: number) => {
   return useSWR<Spot>(id ? `/spots/${id}` : null, fetcher);
 };
 
-// 统计相关 hooks
-export const useStatistics = () => {
-  return useSWR<{
-    total_items: number;
-    total_categories: number;
-    total_areas: number;
-    total_rooms: number;
-    total_spots: number;
-  }>('/statistics', fetcher);
-};
-
 // 导航相关 hooks
 export const useNavCategories = () => {
   return useSWR<Category[]>('/nav/categories', fetcher);

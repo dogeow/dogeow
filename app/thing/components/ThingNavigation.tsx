@@ -27,11 +27,6 @@ export default function ThingNavigation() {
       href: "/thing/locations",
       label: "位置管理",
       icon: MapPin
-    },
-    {
-      href: "/thing/statistics",
-      label: "统计分析",
-      icon: BarChart2
     }
   ]
   
