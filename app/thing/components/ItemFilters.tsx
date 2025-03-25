@@ -11,55 +11,35 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { API_BASE_URL } from '@/configs/api'
+import { useCategories, useAreas, useRooms, useSpots } from '@/hooks/useApi'
+import type { Category, Area, Room, Spot } from '@/types'
 
 interface ItemFiltersProps {
-  onApply: (filters: any) => void
+  onApply: (filters: FilterState) => void
 }
 
 // 定义筛选条件类型
 interface FilterState {
-  category_id: string;
+  category_id: string | number;
   purchase_date_from: Date | null;
   purchase_date_to: Date | null;
   expiry_date_from: Date | null;
   expiry_date_to: Date | null;
-  price_from: string;
-  price_to: string;
-  area_id: string;
-  room_id: string;
-  spot_id: string;
+  price_from: string | number;
+  price_to: string | number;
+  area_id: string | number;
+  room_id: string | number;
+  spot_id: string | number;
   is_public: boolean | null;
   include_null_purchase_date: boolean;
   include_null_expiry_date: boolean;
 }
 
-// 定义位置相关数据类型
-interface Category {
-  id: number;
-  name: string;
-}
-
-interface Area {
-  id: number;
-  name: string;
-}
-
-interface Room {
-  id: number;
-  name: string;
-}
-
-interface Spot {
-  id: number;
-  name: string;
-}
-
 export default function ItemFilters({ onApply }: ItemFiltersProps) {
-  const [categories, setCategories] = useState<Category[]>([])
-  const [areas, setAreas] = useState<Area[]>([])
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [spots, setSpots] = useState<Spot[]>([])
-  const [loading, setLoading] = useState(false)
+  const { data: categories = [], error: categoriesError } = useCategories()
+  const { data: areas = [], error: areasError } = useAreas()
+  const { data: rooms = [], error: roomsError } = useRooms()
+  const { data: spots = [], error: spotsError } = useSpots()
   const [activeTab, setActiveTab] = useState("basic")
   
   // 初始筛选条件
@@ -87,92 +67,32 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     'Accept': 'application/json',
   })
   
-  // 加载分类和位置数据
+  // 处理错误
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true)
-      try {
-        // 并行请求数据
-        const [categoriesRes, areasRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/categories`, { headers: getAuthHeaders() }),
-          fetch(`${API_BASE_URL}/areas`, { headers: getAuthHeaders() })
-        ])
-        
-        if (categoriesRes.ok) {
-          const categoriesData = await categoriesRes.json()
-          setCategories(categoriesData)
-        }
-        
-        if (areasRes.ok) {
-          const areasData = await areasRes.json()
-          setAreas(areasData)
-        }
-      } catch (error) {
-        toast.error("无法加载筛选数据")
-        console.error("加载筛选数据失败:", error)
-      } finally {
-        setLoading(false)
-      }
+    if (categoriesError) {
+      toast.error("加载分类数据失败")
+      console.error("加载分类数据失败:", categoriesError)
     }
-    
-    fetchData()
-  }, [])
-  
-  // 当选择区域时加载房间
-  useEffect(() => {
-    if (!filters.area_id) {
-      setRooms([])
-      setFilters(prev => ({ ...prev, room_id: '', spot_id: '' }))
-      return
+    if (areasError) {
+      toast.error("加载区域数据失败")
+      console.error("加载区域数据失败:", areasError)
     }
-    
-    const fetchRooms = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/areas/${filters.area_id}/rooms`, {
-          headers: getAuthHeaders(),
-        })
-        
-        if (res.ok) {
-          const data = await res.json()
-          setRooms(data)
-        }
-      } catch (error) {
-        console.error('加载房间失败', error)
-      }
+    if (roomsError) {
+      toast.error("加载房间数据失败")
+      console.error("加载房间数据失败:", roomsError)
     }
-    
-    fetchRooms()
-  }, [filters.area_id])
-  
-  // 当选择房间时加载位置
-  useEffect(() => {
-    if (!filters.room_id) {
-      setSpots([])
-      setFilters(prev => ({ ...prev, spot_id: '' }))
-      return
+    if (spotsError) {
+      toast.error("加载位置数据失败")
+      console.error("加载位置数据失败:", spotsError)
     }
-    
-    const fetchSpots = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/rooms/${filters.room_id}/spots`, {
-          headers: getAuthHeaders(),
-        })
-        
-        if (res.ok) {
-          const data = await res.json()
-          setSpots(data)
-        }
-      } catch (error) {
-        console.error('加载位置失败', error)
-      }
-    }
-    
-    fetchSpots()
-  }, [filters.room_id])
+  }, [categoriesError, areasError, roomsError, spotsError])
   
   const handleChange = (field: keyof FilterState, value: any) => {
-    // 将 "none" 保留为实际值，不再转换为空字符串
-    setFilters(prev => ({ ...prev, [field]: value }))
+    setFilters(prev => {
+      const newFilters = { ...prev, [field]: value }
+      onApply(newFilters)
+      return newFilters
+    })
   }
   
   const handleReset = () => {
@@ -298,13 +218,13 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">区域</Label>
-                <Select value={filters.area_id} onValueChange={(value) => handleChange('area_id', value)}>
+                <Select value={filters.area_id.toString()} onValueChange={(value) => handleChange('area_id', value)}>
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="选择区域" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">全部区域</SelectItem>
-                    {areas.map((area) => (
+                    {areas?.map((area) => (
                       <SelectItem key={area.id} value={area.id.toString()}>
                         {area.name}
                       </SelectItem>
@@ -316,7 +236,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">房间</Label>
                 <Select 
-                  value={filters.room_id} 
+                  value={filters.room_id.toString()} 
                   onValueChange={(value) => handleChange('room_id', value)}
                   disabled={!filters.area_id}
                 >
@@ -325,7 +245,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">全部房间</SelectItem>
-                    {rooms.map((room) => (
+                    {rooms?.map((room) => (
                       <SelectItem key={room.id} value={room.id.toString()}>
                         {room.name}
                       </SelectItem>
@@ -337,7 +257,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">具体位置</Label>
                 <Select 
-                  value={filters.spot_id} 
+                  value={filters.spot_id.toString()} 
                   onValueChange={(value) => handleChange('spot_id', value)}
                   disabled={!filters.room_id}
                 >
@@ -346,7 +266,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">全部位置</SelectItem>
-                    {spots.map((spot) => (
+                    {spots?.map((spot) => (
                       <SelectItem key={spot.id} value={spot.id.toString()}>
                         {spot.name}
                       </SelectItem>
