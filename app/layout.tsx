@@ -49,11 +49,8 @@ export default function RootLayout({
           <div 
             id="main-content"
             style={{
-              flex: '1 1 auto',
-              display: 'flex',
-              flexDirection: 'column',
-              minHeight: '0',
-              overflow: 'auto'
+              overflow: 'auto',
+              margin: '8px 8px'
             }}
           >
             {children}

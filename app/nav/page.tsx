@@ -45,7 +45,7 @@ export default function NavPage() {
   }).filter(category => category.items && category.items.length > 0);
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto">
       <div className="mb-6 flex items-center gap-1">
         <Folder className="h-6 w-6" />
         <h1 className="text-2xl font-bold">我的导航</h1>

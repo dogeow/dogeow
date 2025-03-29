@@ -23,7 +23,7 @@ export default function Home() {
   
   return (
     <BackgroundWrapper>
-      <div className="container mx-auto p-4">
+      <div className="container mx-auto">
         <div className="grid grid-cols-3 gap-4">
           {tiles.map((tile: Tile, index: number) => (
             <div

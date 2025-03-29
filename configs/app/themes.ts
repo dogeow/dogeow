@@ -47,7 +47,14 @@ export const themeColors = [
     name: "明亮黄",
     primary: "hsl(47.9 95.8% 53.1%)",
     color: "#eab308"
-  }
+  },
+  // 我的世界风格
+  {
+    id: "minecraft",
+    name: "草方绿",
+    primary: "hsl(101 50% 43%)",
+    color: "#5d9c32"
+  },
 ];
 
 // 自定义主题类型
