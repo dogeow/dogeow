@@ -1,6 +1,6 @@
 'use client'
 
-import { useContext, useState } from 'react'
+import { useContext, useState, useEffect } from 'react'
 import {
   File,
   FileText,
@@ -80,13 +80,47 @@ export default function GridView({ files }: GridViewProps) {
     }
   }
 
-  // 获取文件图标
+  // 获取文件图标或缩略图
   const getFileIcon = (file: CloudFile) => {
     if (file.is_folder) return <Folder className="h-12 w-12 text-yellow-500" />
     
+    console.log('文件类型:', file.type, '文件扩展名:', file.extension);
+    
+    // 如果是图片类型，直接显示缩略图
+    if (file.type === 'image') {
+      // 直接构造存储URL而不是通过API获取
+      const baseUrl = '127.0.0.1:8000'; // 后端API基础URL
+      const storageUrl = `http://${baseUrl}/storage/${file.path}?t=${new Date().getTime()}`;
+      console.log('直接构造图片URL:', storageUrl);
+      
+      return (
+        <div className="w-16 h-16 relative overflow-hidden rounded-md flex items-center justify-center bg-muted">
+          <img 
+            src={storageUrl}
+            alt={file.name} 
+            className="object-cover w-full h-full"
+            loading="lazy"
+            onLoad={() => console.log('图片加载成功:', file.name)}
+            onError={(e) => {
+              console.error('图片加载失败:', file.name);
+              console.error('图片URL:', storageUrl);
+              
+              // 显示默认图标
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.parentElement?.classList.add('flex');
+              e.currentTarget.parentElement?.appendChild(
+                Object.assign(document.createElement('div'), {
+                  className: 'flex-center',
+                  innerHTML: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-12 w-12 text-blue-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="10" cy="13" r="2"></circle><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"></path></svg>'
+                })
+              );
+            }}
+          />
+        </div>
+      );
+    }
+    
     switch (file.type) {
-      case 'image':
-        return <FileImage className="h-12 w-12 text-blue-500" />
       case 'pdf':
         return <FileType className="h-12 w-12 text-red-500" />
       case 'document':
@@ -198,6 +232,16 @@ export default function GridView({ files }: GridViewProps) {
     setPreviewType(null)
 
     try {
+      // 对于图片，直接构造URL而不是使用API响应的URL
+      if (file.type === 'image') {
+        const baseUrl = '127.0.0.1:8000';
+        const directUrl = `http://${baseUrl}/storage/${file.path}?t=${new Date().getTime()}`;
+        console.log('预览图片，直接使用存储URL:', directUrl);
+        setPreviewType('image');
+        setPreviewUrl(directUrl);
+        return;
+      }
+      
       const response = await axios.get(`${API_BASE_URL}/cloud/files/${file.id}/preview`, {
         headers: getAuthHeaders()
       })

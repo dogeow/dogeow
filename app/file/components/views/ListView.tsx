@@ -63,13 +63,35 @@ export default function ListView({ files }: ListViewProps) {
     }
   }
 
-  // 获取文件图标
+  // 获取文件图标或缩略图
   const getFileIcon = (file: CloudFile) => {
     if (file.is_folder) return <Folder className="h-4 w-4 text-yellow-500" />
     
+    // 如果是图片，显示缩略图
+    if (file.type === 'image') {
+      return (
+        <div className="w-6 h-6 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted">
+          <img 
+            src={`${API_BASE_URL}/cloud/files/${file.id}/preview?thumb=true`} 
+            alt={file.name} 
+            className="object-cover w-full h-full"
+            onError={(e) => {
+              // 如果缩略图加载失败，显示默认图标
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.parentElement?.classList.add('flex');
+              e.currentTarget.parentElement?.appendChild(
+                Object.assign(document.createElement('div'), {
+                  className: 'flex items-center justify-center',
+                  innerHTML: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-blue-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="10" cy="13" r="2"></circle><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"></path></svg>'
+                })
+              );
+            }}
+          />
+        </div>
+      );
+    }
+    
     switch (file.type) {
-      case 'image':
-        return <FileImage className="h-4 w-4 text-blue-500" />
       case 'pdf':
         return <FileType className="h-4 w-4 text-red-500" />
       case 'document':
