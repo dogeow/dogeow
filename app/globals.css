@@ -164,3 +164,19 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
 }
+
+/* 主内容容器 - 用于页面布局 */
+.main-content-container {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-container {
+  width: 100%;
+  padding: 1.5rem 1rem;
+  margin: 0 auto;
+  max-width: 1200px;
+}

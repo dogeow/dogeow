@@ -37,15 +37,22 @@ export default function RootLayout({
         }}
       >
         <ThemeProvider>
-          <div style={{ flex: 'none' }}>
+          <div style={{ 
+            flex: 'none', 
+            position: 'sticky',
+            top: 0,
+            zIndex: 10,
+            backgroundColor: 'var(--background)'
+          }}>
             <AppLauncher />
           </div>
           <div 
             id="main-content"
             style={{
               flex: '1 1 auto',
-              height: 'calc(100vh - 3rem)',
-              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
+              minHeight: '0',
               overflow: 'auto'
             }}
           >

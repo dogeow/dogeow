@@ -14,7 +14,7 @@ export function BackgroundWrapper({ children }: BackgroundWrapperProps) {
   return (
     <div 
       className={cn(
-        "min-h-screen",
+        "min-h-[calc(100vh-var(--navbar-height,64px))]",
         backgroundImage && "bg-cover bg-center bg-fixed"
       )}
       style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}

@@ -132,83 +132,81 @@ export default function Categories() {
   }
 
   return (
-    <>
+    <div className="flex flex-col h-full mx-2">
       <ThingNavigation />
-      
-      <div className="container mx-auto py-6 px-4">
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* 添加/编辑分类卡片 */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1">
-              <Input
-                id="categoryName"
-                placeholder="输入分类名称"
-                value={editingCategory ? editingCategory.name : newCategoryName}
-                onChange={(e) => editingCategory ? setEditingCategory({...editingCategory, name: e.target.value}) : setNewCategoryName(e.target.value)}
-              />
-            </div>
-            <div className="flex gap-2">
-              {editingCategory && (
-                <Button variant="outline" onClick={() => setEditingCategory(null)}>取消</Button>
-              )}
-              <Button 
-                onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
-                disabled={loading}
-              >
-                {loading ? '处理中...' : editingCategory ? '更新分类' : '添加分类'}
-              </Button>
-            </div>
+    
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* 添加/编辑分类卡片 */}
+        <div className="flex items-center gap-4">
+          <div className="flex-1">
+            <Input
+              id="categoryName"
+              placeholder="输入分类名称"
+              value={editingCategory ? editingCategory.name : newCategoryName}
+              onChange={(e) => editingCategory ? setEditingCategory({...editingCategory, name: e.target.value}) : setNewCategoryName(e.target.value)}
+            />
           </div>
-
-          {/* 分类列表卡片 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>分类列表</CardTitle>
-              <CardDescription>管理您的物品分类</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {categories.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
-                  暂无分类，请添加您的第一个分类
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>名称</TableHead>
-                      <TableHead className="w-[100px]">操作</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {categories.map((category) => (
-                      <TableRow key={category.id}>
-                        <TableCell>{category.name}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => setEditingCategory({id: category.id, name: category.name})}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={() => confirmDelete(category.id)}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+          <div className="flex gap-2">
+            {editingCategory && (
+              <Button variant="outline" onClick={() => setEditingCategory(null)}>取消</Button>
+            )}
+            <Button 
+              onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
+              disabled={loading}
+            >
+              {loading ? '处理中...' : editingCategory ? '更新分类' : '添加分类'}
+            </Button>
+          </div>
         </div>
+
+        {/* 分类列表卡片 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>分类列表</CardTitle>
+            <CardDescription>管理您的物品分类</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {categories.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground">
+                暂无分类，请添加您的第一个分类
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>名称</TableHead>
+                    <TableHead className="w-[100px]">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories.map((category) => (
+                    <TableRow key={category.id}>
+                      <TableCell>{category.name}</TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => setEditingCategory({id: category.id, name: category.name})}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => confirmDelete(category.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
@@ -227,6 +225,6 @@ export default function Categories() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   )
 } 
