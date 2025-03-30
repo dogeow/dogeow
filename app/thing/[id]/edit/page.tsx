@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
@@ -18,7 +18,8 @@ import { API_BASE_URL } from '@/configs/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
 import LocationTreeSelect from '../../components/LocationTreeSelect'
-import { Item } from '@/types/item'
+import { useAreas, useRooms, useSpots, useItem } from '@/utils/api'
+import { apiRequest } from '@/utils/api'
 
 // 定义类型
 type Image = {
@@ -52,14 +53,16 @@ export default function EditItem() {
   const { getItem, updateItem, fetchCategories, categories } = useItemStore()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
-  const [areas, setAreas] = useState<any[]>([])
-  const [rooms, setRooms] = useState<any[]>([])
-  const [spots, setSpots] = useState<any[]>([])
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([])
   const [existingImages, setExistingImages] = useState<Image[]>([])
   const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
   const [locationPath, setLocationPath] = useState<string>('')
+  
+  // 使用 SWR hooks 获取数据
+  const { data: areas = [], mutate: refreshAreas } = useAreas();
+  const { data: rooms = [], mutate: refreshRooms } = useRooms();
+  const { data: spots = [], mutate: refreshSpots } = useSpots();
   
   // 表单数据
   const [formData, setFormData] = useState<FormData>({
@@ -77,66 +80,35 @@ export default function EditItem() {
     is_public: false,
   })
   
-  // 加载区域
-  const loadAreas = useCallback(async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/areas`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (res.ok) {
-        const data = await res.json()
-        setAreas(data)
-      }
-    } catch (error) {
-      console.error('加载区域失败', error)
-    }
-  }, [])
+  // 加载区域，直接使用 SWR 提供的数据
   
-  // 加载房间
+  // 加载特定区域的房间
   const loadRooms = useCallback(async (areaId: string | number) => {
     if (!areaId) return
     
     try {
-      const res = await fetch(`${API_BASE_URL}/areas/${areaId}/rooms`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (res.ok) {
-        const data = await res.json()
-        setRooms(data)
-      }
+      // 这里需要获取特定区域下的房间，而不是所有房间
+      const data = await apiRequest<any[]>(`/areas/${areaId}/rooms`);
+      // 更新本地状态
+      refreshRooms();
     } catch (error) {
       console.error('加载房间失败', error)
     }
-  }, [])
+  }, [refreshRooms])
   
-  // 加载位置
+  // 加载特定房间的位置
   const loadSpots = useCallback(async (roomId: string | number) => {
     if (!roomId) return
     
     try {
-      const res = await fetch(`${API_BASE_URL}/rooms/${roomId}/spots`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (res.ok) {
-        const data = await res.json()
-        setSpots(data)
-      }
+      // 这里需要获取特定房间下的位置，而不是所有位置
+      const data = await apiRequest<any[]>(`/rooms/${roomId}/spots`);
+      // 更新本地状态
+      refreshSpots();
     } catch (error) {
       console.error('加载位置失败', error)
     }
-  }, [])
+  }, [refreshSpots])
   
   // 加载物品数据
   useEffect(() => {
@@ -208,13 +180,13 @@ export default function EditItem() {
     }
     
     loadItem()
-    loadAreas()
-  }, [params.id, getItem, fetchCategories, router, loadRooms, loadSpots, loadAreas])
+    refreshAreas()
+  }, [params.id, getItem, fetchCategories, router, loadRooms, loadSpots, refreshAreas])
   
   // 当选择区域时加载房间
   useEffect(() => {
     if (!formData.area_id) {
-      setRooms([])
+      // 不能直接修改 SWR 返回的数据，这里只需要加载房间即可
       setFormData(prev => ({ ...prev, room_id: '', spot_id: '' }))
       return
     }
@@ -225,7 +197,7 @@ export default function EditItem() {
   // 当选择房间时加载位置
   useEffect(() => {
     if (!formData.room_id) {
-      setSpots([])
+      // 不能直接修改 SWR 返回的数据，这里只需要加载位置即可
       setFormData(prev => ({ ...prev, spot_id: '' }))
       return
     }

@@ -27,6 +27,7 @@ import { toast } from "sonner"
 import Image from "next/image"
 import { useItemStore } from '@/stores/itemStore'
 import { API_BASE_URL } from '@/configs/api'
+import { del } from '@/utils/api'
 
 interface ItemCardProps {
   item: any
@@ -56,17 +57,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   
   const handleDelete = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/items/${item.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      })
-      
-      if (!response.ok) {
-        throw new Error('删除失败')
-      }
+      await del(`/items/${item.id}`)
       
       toast.success("物品已成功删除")
       

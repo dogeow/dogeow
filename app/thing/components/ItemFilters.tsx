@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { API_BASE_URL } from '@/configs/api'
-import { useCategories, useAreas, useRooms, useSpots } from '@/hooks/useApi'
+import { useCategories, useAreas, useRooms, useSpots } from '@/utils/api'
 import type { Category, Area, Room, Spot } from '@/types'
 
 interface ItemFiltersProps {

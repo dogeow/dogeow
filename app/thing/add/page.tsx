@@ -18,6 +18,7 @@ import { API_BASE_URL } from '@/configs/api'
 import { format } from 'date-fns'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import LocationTreeSelect from '../components/LocationTreeSelect'
+import { apiRequest } from '@/utils/api'
 
 // 导入Item类型
 import type { Item } from '@/types/item'
@@ -61,17 +62,8 @@ export default function AddItem() {
       
       // 加载区域
       try {
-        const res = await fetch(`${API_BASE_URL}/areas`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
-        })
-        
-        if (res.ok) {
-          const data = await res.json()
-          setAreas(data)
-        }
+        const data = await apiRequest<any[]>('/areas')
+        setAreas(data)
       } catch (error) {
         console.error('加载区域失败', error)
       }
@@ -90,17 +82,8 @@ export default function AddItem() {
     
     const fetchRooms = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/areas/${formData.area_id}/rooms`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
-        })
-        
-        if (res.ok) {
-          const data = await res.json()
-          setRooms(data)
-        }
+        const data = await apiRequest<any[]>(`/areas/${formData.area_id}/rooms`)
+        setRooms(data)
       } catch (error) {
         console.error('加载房间失败', error)
       }
@@ -119,17 +102,8 @@ export default function AddItem() {
     
     const fetchSpots = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/rooms/${formData.room_id}/spots`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
-        })
-        
-        if (res.ok) {
-          const data = await res.json()
-          setSpots(data)
-        }
+        const data = await apiRequest<any[]>(`/rooms/${formData.room_id}/spots`)
+        setSpots(data)
       } catch (error) {
         console.error('加载位置失败', error)
       }

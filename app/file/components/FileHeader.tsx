@@ -1,7 +1,6 @@
 'use client'
 
 import { useContext, useState, useEffect } from 'react'
-import axios from 'axios'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
@@ -28,17 +27,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
 import FileContext from '../context/FileContext'
 import { useSWRConfig } from 'swr'
+import { apiRequest, post, del } from '@/utils/api'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-// 获取授权头
-const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? 
-    localStorage.getItem('token') || sessionStorage.getItem('token') : null;
-  
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 export default function FileHeader() {
   const { 
@@ -58,12 +50,10 @@ export default function FileHeader() {
 
   const createFolder = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/cloud/folders`, {
+      await post(`${API_BASE_URL}/cloud/folders`, {
         name: folderName,
         parent_id: currentFolderId,
         description: folderDescription
-      }, {
-        headers: getAuthHeaders()
       })
       
       mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
@@ -90,11 +80,10 @@ export default function FileHeader() {
         formData.append('file', file)
         formData.append('parent_id', currentFolderId ? currentFolderId.toString() : '')
 
-        await axios.post(`${API_BASE_URL}/cloud/files`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            ...getAuthHeaders()
-          }
+        // 使用原生 fetch，因为 FormData 需要特殊处理
+        await fetch(`${API_BASE_URL}/cloud/files`, {
+          method: 'POST',
+          body: formData,
         })
       }
       
@@ -115,9 +104,7 @@ export default function FileHeader() {
     
     try {
       for (const id of selectedFiles) {
-        await axios.delete(`${API_BASE_URL}/cloud/files/${id}`, {
-          headers: getAuthHeaders()
-        })
+        await del(`${API_BASE_URL}/cloud/files/${id}`)
       }
       
       mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)

@@ -18,11 +18,11 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'react-hot-toast'
-import axios from 'axios'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/utils'
 import FileContext from '../../context/FileContext'
 import { CloudFile, SortField } from '../../types'
+import { apiRequest } from '@/utils/api'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';

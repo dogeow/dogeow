@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Pencil, Trash2, Plus, Home, DoorOpen, MapPin, FolderTree, X, Check } from "lucide-react"
 import { toast } from "sonner"
 import ThingNavigation from '../components/ThingNavigation'
-import { API_BASE_URL } from '@/configs/api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,23 +27,39 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import LocationTreeSelect from '../components/LocationTreeSelect'
+import { 
+  useAreas, 
+  useRooms, 
+  useSpots, 
+  createArea, 
+  updateArea, 
+  deleteArea,
+  createRoom,
+  updateRoom,
+  deleteRoom,
+  createSpot,
+  updateSpot,
+  deleteSpot
+} from '@/utils/api'
 
 // 定义类型
 type LocationType = 'area' | 'room' | 'spot';
 type Area = { id: number; name: string; };
-type Room = { id: number; name: string; area_id: number; area?: Area; };
-type Spot = { id: number; name: string; room_id: number; room?: Room; };
+type Room = { id: number; name: string; area_id: number; area?: { id: number; name: string; }; };
+type Spot = { id: number; name: string; room_id: number; room?: { id: number; name: string; area?: { id: number; name: string; } }; };
 
 export default function Locations() {
   // 状态
   const [activeTab, setActiveTab] = useState<LocationType | 'tree'>('tree')
-  const [areas, setAreas] = useState<Area[]>([])
-  const [rooms, setRooms] = useState<Room[]>([])
-  const [spots, setSpots] = useState<Spot[]>([])
   const [loading, setLoading] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [itemToDelete, setItemToDelete] = useState<{id: number, type: LocationType} | null>(null)
   const [selectedLocation, setSelectedLocation] = useState<{ type: LocationType, id: number } | undefined>(undefined)
+  
+  // 获取数据
+  const { data: areas = [], mutate: refreshAreas } = useAreas();
+  const { data: rooms = [], mutate: refreshRooms } = useRooms();
+  const { data: spots = [], mutate: refreshSpots } = useSpots();
   
   // 表单状态
   const [newAreaName, setNewAreaName] = useState('')
@@ -61,87 +76,6 @@ export default function Locations() {
   const [editingInlineAreaId, setEditingInlineAreaId] = useState<number | null>(null)
   const [editingAreaName, setEditingAreaName] = useState('')
 
-  // API请求通用函数
-  const apiRequest = useCallback(async (endpoint: string, method: string = 'GET', body?: object) => {
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method,
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-          ...(body ? { 'Content-Type': 'application/json' } : {})
-        },
-        ...(body ? { body: JSON.stringify(body) } : {})
-      });
-      
-      if (!response.ok) {
-        throw new Error(`请求失败: ${response.status}`);
-      }
-      
-      return method === 'DELETE' ? null : await response.json();
-    } catch (error) {
-      throw error;
-    }
-  }, []);
-
-  // 获取所有区域
-  const fetchAreas = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await apiRequest('/areas');
-      setAreas(data);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "获取区域失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiRequest]);
-  
-  // 获取所有房间
-  const fetchRooms = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await apiRequest('/rooms');
-      setRooms(data);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "获取房间失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiRequest]);
-  
-  // 获取所有位置
-  const fetchSpots = useCallback(async () => {
-    setLoading(true);
-    try {
-      const data = await apiRequest('/spots');
-      setSpots(data);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "获取位置失败");
-    } finally {
-      setLoading(false);
-    }
-  }, [apiRequest]);
-
-  // 加载数据
-  useEffect(() => {
-    fetchAreas();
-  }, [fetchAreas]);
-  
-  // 当选择区域变化时，加载对应的房间
-  useEffect(() => {
-    if (activeTab === 'room' || activeTab === 'spot') {
-      fetchRooms();
-    }
-  }, [activeTab, fetchRooms]);
-  
-  // 当选择房间变化时，加载对应的位置
-  useEffect(() => {
-    if (activeTab === 'spot') {
-      fetchSpots();
-    }
-  }, [activeTab, fetchSpots]);
-
   // 添加区域
   const handleAddArea = async () => {
     if (!newAreaName.trim()) {
@@ -151,10 +85,10 @@ export default function Locations() {
 
     setLoading(true);
     try {
-      await apiRequest('/areas', 'POST', { name: newAreaName });
+      await createArea({ name: newAreaName });
       toast.success("区域创建成功");
       setNewAreaName('');
-      fetchAreas();
+      refreshAreas();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "创建区域失败");
     } finally {
@@ -171,10 +105,10 @@ export default function Locations() {
 
     setLoading(true);
     try {
-      await apiRequest(`/areas/${areaId}`, 'PUT', { name: newName });
+      await updateArea(areaId)({ name: newName });
       toast.success("区域更新成功");
       setEditingInlineAreaId(null);
-      fetchAreas();
+      refreshAreas();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "更新区域失败");
     } finally {
@@ -196,13 +130,13 @@ export default function Locations() {
 
     setLoading(true);
     try {
-      await apiRequest('/rooms', 'POST', { 
+      await createRoom({ 
         name: newRoomName,
         area_id: parseInt(selectedAreaId)
       });
       toast.success("房间创建成功");
       setNewRoomName('');
-      fetchRooms();
+      refreshRooms();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "创建房间失败");
     } finally {
@@ -219,13 +153,13 @@ export default function Locations() {
 
     setLoading(true);
     try {
-      await apiRequest(`/rooms/${editingRoom.id}`, 'PUT', { 
+      await updateRoom(editingRoom.id)({ 
         name: editingRoom.name,
         area_id: editingRoom.area_id
       });
       toast.success("房间更新成功");
       setEditingRoom(null);
-      fetchRooms();
+      refreshRooms();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "更新房间失败");
     } finally {
@@ -247,13 +181,13 @@ export default function Locations() {
 
     setLoading(true);
     try {
-      await apiRequest('/spots', 'POST', { 
+      await createSpot({ 
         name: newSpotName,
         room_id: parseInt(selectedRoomId)
       });
       toast.success("位置创建成功");
       setNewSpotName('');
-      fetchSpots();
+      refreshSpots();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "创建位置失败");
     } finally {
@@ -270,13 +204,13 @@ export default function Locations() {
 
     setLoading(true);
     try {
-      await apiRequest(`/spots/${editingSpot.id}`, 'PUT', { 
+      await updateSpot(editingSpot.id)({ 
         name: editingSpot.name,
         room_id: editingSpot.room_id
       });
       toast.success("位置更新成功");
       setEditingSpot(null);
-      fetchSpots();
+      refreshSpots();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "更新位置失败");
     } finally {
@@ -296,31 +230,24 @@ export default function Locations() {
 
     setLoading(true);
     try {
-      let endpoint = '';
-      let successMessage = '';
-      let refreshFunction;
-      
-      switch (itemToDelete.type) {
-        case 'area':
-          endpoint = `/areas/${itemToDelete.id}`;
-          successMessage = '区域删除成功';
-          refreshFunction = fetchAreas;
-          break;
-        case 'room':
-          endpoint = `/rooms/${itemToDelete.id}`;
-          successMessage = '房间删除成功';
-          refreshFunction = fetchRooms;
-          break;
-        case 'spot':
-          endpoint = `/spots/${itemToDelete.id}`;
-          successMessage = '位置删除成功';
-          refreshFunction = fetchSpots;
-          break;
+      if (itemToDelete.type === 'area') {
+        await deleteArea(itemToDelete.id);
+        refreshAreas();
+      } else if (itemToDelete.type === 'room') {
+        await deleteRoom(itemToDelete.id);
+        refreshRooms();
+      } else if (itemToDelete.type === 'spot') {
+        await deleteSpot(itemToDelete.id);
+        refreshSpots();
       }
       
-      await apiRequest(endpoint, 'DELETE');
-      toast.success(successMessage);
-      refreshFunction();
+      const successMessages = {
+        area: '区域删除成功',
+        room: '房间删除成功',
+        spot: '位置删除成功'
+      };
+      
+      toast.success(successMessages[itemToDelete.type]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "删除失败");
     } finally {
@@ -335,45 +262,41 @@ export default function Locations() {
     setSelectedLocation({ type, id });
     
     // 根据选择的位置类型切换到对应的标签页
-    if (type === 'area') {
-      setActiveTab('area');
-    } else if (type === 'room') {
-      setActiveTab('room');
+    setActiveTab(type);
+    
+    if (type === 'room') {
       setEditingRoom(rooms.find(room => room.id === id) || null);
     } else if (type === 'spot') {
-      setActiveTab('spot');
       setEditingSpot(spots.find(spot => spot.id === id) || null);
     }
   };
 
   return (
     <>
-      <ThingNavigation />
-      
-      <div className="container mx-auto py-6 px-4">
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="tree" className="flex items-center">
-              <FolderTree className="h-4 w-4" />
+      <div>
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')}>
+          <TabsList className="w-full">
+            <TabsTrigger value="tree">
+              <FolderTree/>
               树形视图
             </TabsTrigger>
-            <TabsTrigger value="area" className="flex items-center">
-              <Home className="h-4 w-4" />
+            <TabsTrigger value="area">
+              <Home/>
               区域
             </TabsTrigger>
-            <TabsTrigger value="room" className="flex items-center">
-              <DoorOpen className="h-4 w-4" />
+            <TabsTrigger value="room">
+              <DoorOpen/>
               房间
             </TabsTrigger>
-            <TabsTrigger value="spot" className="flex items-center">
-              <MapPin className="h-4 w-4" />
+            <TabsTrigger value="spot">
+              <MapPin/>
               具体位置
             </TabsTrigger>
           </TabsList>
           
           {/* 树形视图 */}
           <TabsContent value="tree">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="flex flex-col md:flex-row gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>位置树形结构</CardTitle>
@@ -391,7 +314,7 @@ export default function Locations() {
           
           {/* 区域管理 */}
           <TabsContent value="area">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="flex flex-col md:flex-row gap-6">
               {/* 添加区域卡片 */}
               <Card>
                 <CardHeader>
@@ -409,6 +332,7 @@ export default function Locations() {
                         placeholder="输入区域名称，如：家、办公室"
                         value={newAreaName}
                         onChange={(e) => setNewAreaName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddArea()}
                       />
                     </div>
                     <Button 
@@ -464,7 +388,7 @@ export default function Locations() {
                                   onClick={() => setEditingInlineAreaId(null)}
                                   className="h-8 w-8"
                                 >
-                                  <X className="h-4 w-4" />
+                                  <X/>
                                 </Button>
                                 <Button 
                                   variant="default" 
@@ -472,7 +396,7 @@ export default function Locations() {
                                   onClick={() => handleUpdateArea(area.id, editingAreaName)}
                                   className="h-8 w-8"
                                 >
-                                  <Check className="h-4 w-4" />
+                                  <Check/>
                                 </Button>
                               </>
                             ) : (
@@ -485,7 +409,7 @@ export default function Locations() {
                                     setEditingAreaName(area.name);
                                   }}
                                 >
-                                  <Pencil className="h-4 w-4" />
+                                  <Pencil/>
                                 </Button>
                                 <Button 
                                   variant="ghost" 
@@ -508,7 +432,7 @@ export default function Locations() {
           
           {/* 房间管理 */}
           <TabsContent value="room">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="flex flex-col md:flex-row gap-6">
               {/* 添加/编辑房间卡片 */}
               <Card>
                 <CardHeader>
@@ -529,6 +453,7 @@ export default function Locations() {
                           ? setEditingRoom({...editingRoom, name: e.target.value})
                           : setNewRoomName(e.target.value)
                         }
+                        onKeyDown={(e) => e.key === 'Enter' && (editingRoom ? handleUpdateRoom() : handleAddRoom())}
                       />
                     </div>
                     
@@ -588,7 +513,7 @@ export default function Locations() {
                           <div>
                             <span className="font-medium">{room.name}</span>
                             <p className="text-xs text-muted-foreground">
-                              区域: {room.area?.name || `未知区域 (ID: ${room.area_id})`}
+                              区域: {(room as any).area?.name || `未知区域 (ID: ${room.area_id})`}
                             </p>
                           </div>
                           <div className="flex space-x-2">
@@ -597,7 +522,7 @@ export default function Locations() {
                               size="icon"
                               onClick={() => setEditingRoom(room)}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil/>
                             </Button>
                             <Button 
                               variant="ghost" 
@@ -618,7 +543,7 @@ export default function Locations() {
           
           {/* 位置管理 */}
           <TabsContent value="spot">
-            <div className="grid gap-6 md:grid-cols-2">
+            <div className="flex flex-col md:flex-row gap-6">
               {/* 添加/编辑位置卡片 */}
               <Card>
                 <CardHeader>
@@ -639,6 +564,7 @@ export default function Locations() {
                           ? setEditingSpot({...editingSpot, name: e.target.value})
                           : setNewSpotName(e.target.value)
                         }
+                        onKeyDown={(e) => e.key === 'Enter' && (editingSpot ? handleUpdateSpot() : handleAddSpot())}
                       />
                     </div>
                     
@@ -657,7 +583,7 @@ export default function Locations() {
                         <SelectContent>
                           {rooms.map((room) => (
                             <SelectItem key={room.id} value={room.id.toString()}>
-                              {room.name} {room.area?.name ? `(${room.area.name})` : ''}
+                              {room.name} {(room as any).area?.name ? `(${(room as any).area.name})` : ''}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -698,11 +624,11 @@ export default function Locations() {
                           <div>
                             <span className="font-medium">{spot.name}</span>
                             <p className="text-xs text-muted-foreground">
-                              房间: {spot.room?.name || `未知房间 (ID: ${spot.room_id})`}
+                              房间: {(spot as any).room?.name || `未知房间 (ID: ${spot.room_id})`}
                             </p>
-                            {spot.room?.area?.name && (
+                            {(spot as any).room?.area?.name && (
                               <p className="text-xs text-muted-foreground">
-                                区域: {spot.room.area.name}
+                                区域: {(spot as any).room.area.name}
                               </p>
                             )}
                           </div>
@@ -712,7 +638,7 @@ export default function Locations() {
                               size="icon"
                               onClick={() => setEditingSpot(spot)}
                             >
-                              <Pencil className="h-4 w-4" />
+                              <Pencil/>
                             </Button>
                             <Button 
                               variant="ghost" 

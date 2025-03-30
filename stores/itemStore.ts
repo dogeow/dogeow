@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { API_BASE_URL } from '@/configs/api';
 import { format } from 'date-fns';
+import { apiRequest, get, post, put, del } from '@/utils/api';
 
 interface Item {
   id: number;
@@ -64,8 +65,8 @@ interface ItemState {
   error: string | null;
   meta: any | null;
   
-  fetchItems: (params?: Record<string, any>) => Promise<void>;
-  fetchCategories: () => Promise<void>;
+  fetchItems: (params?: Record<string, any>) => Promise<any>;
+  fetchCategories: () => Promise<Category[] | undefined>;
   getItem: (id: number) => Promise<Item | null>;
   createItem: (data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => Promise<Item>;
   updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => Promise<Item>;
@@ -100,22 +101,11 @@ export const useItemStore = create<ItemState>((set, get) => ({
       const queryString = queryParams.toString();
       console.log('查询字符串:', queryString); // 添加日志
       
-      const url = `${API_BASE_URL}/items${queryString ? `?${queryString}` : ''}`;
+      const url = `/items${queryString ? `?${queryString}` : ''}`;
       
-      console.log('筛选请求URL:', url);
+      console.log('筛选请求URL:', API_BASE_URL + url);
       
-      const response = await fetch(url, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('获取物品列表失败');
-      }
-      
-      const data = await response.json();
+      const data = await apiRequest<{data: Item[], meta: any}>(url);
       
       set({
         items: data.data || [],
@@ -134,23 +124,13 @@ export const useItemStore = create<ItemState>((set, get) => ({
   
   fetchCategories: async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/categories`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('获取分类列表失败');
-      }
-      
-      const data = await response.json();
+      const data = await apiRequest<Category[]>(`/categories`);
       set({ categories: data });
       
       return data;
     } catch (error) {
       console.error('获取分类失败:', error);
+      return undefined;
     }
   },
   
@@ -158,18 +138,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      const response = await fetch(`${API_BASE_URL}/items/${id}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      });
-      
-      if (!response.ok) {
-        throw new Error('获取物品详情失败');
-      }
-      
-      const item = await response.json();
+      const item = await apiRequest<Item>(`/items/${id}`);
       set({ loading: false });
       
       return item;
@@ -211,12 +180,9 @@ export const useItemStore = create<ItemState>((set, get) => ({
         });
       }
       
+      // 使用 fetch 因为需要上传文件，apiRequest 处理 FormData 可能不方便
       const response = await fetch(`${API_BASE_URL}/items`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
         body: formData,
       });
       
@@ -243,7 +209,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
   
-  updateItem: async (id, data) => {
+  updateItem: async (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => {
     set({ loading: true, error: null });
     
     try {
@@ -254,11 +220,8 @@ export const useItemStore = create<ItemState>((set, get) => ({
       // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
         if (key !== 'images' && value !== undefined && value !== null) {
-          console.log(`更新物品 - 字段 ${key}:`, value, typeof value);
-          
           // 特殊处理is_public字段，确保它是布尔值
           if (key === 'is_public') {
-            // 将布尔值转换为"1"或"0"，这样在PHP端会被正确解析为布尔值
             formData.append(key, value === true ? "1" : "0");
           } else {
             formData.append(key, String(value));
@@ -273,18 +236,14 @@ export const useItemStore = create<ItemState>((set, get) => ({
         });
       }
       
+      // 使用 fetch，因为需要上传文件
       const response = await fetch(`${API_BASE_URL}/items/${id}`, {
         method: 'POST', // 使用POST方法，但添加_method=PUT
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
         body: formData,
       });
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('更新物品失败 - 服务器响应:', errorData);
         throw new Error(errorData.message || '更新物品失败');
       }
       
@@ -296,7 +255,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       return result.item;
     } catch (error) {
-      console.error('更新物品异常:', error);
       set({
         loading: false,
         error: error instanceof Error ? error.message : '未知错误',
@@ -305,27 +263,20 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
   
-  deleteItem: async (id) => {
+  deleteItem: async (id: number) => {
     set({ loading: true, error: null });
     
     try {
-      const response = await fetch(`${API_BASE_URL}/items/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-          'Accept': 'application/json',
-        },
-      });
+      await del(`/items/${id}`);
       
-      if (!response.ok) {
-        throw new Error('删除物品失败');
-      }
+      // 从状态中移除已删除的项目
+      set(state => ({
+        items: state.items.filter(item => item.id !== id),
+        loading: false
+      }));
       
-      set({ loading: false });
-      
-      // 从列表中移除已删除的物品
-      const currentItems = get().items;
-      set({ items: currentItems.filter(item => item.id !== id) });
+      // 刷新物品列表
+      get().fetchItems();
     } catch (error) {
       set({
         loading: false,
@@ -333,5 +284,5 @@ export const useItemStore = create<ItemState>((set, get) => ({
       });
       throw error;
     }
-  },
+  }
 })); 

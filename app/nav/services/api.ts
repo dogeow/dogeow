@@ -1,13 +1,12 @@
 import { NavCategory, NavItem } from '@/types/nav';
+import { apiRequest, post, put, del } from '@/utils/api';
 import { API_BASE_URL } from '@/configs/api';
 
 const BASE_URL = API_BASE_URL;
 
 // 获取所有导航分类（及其导航项）
 export async function getCategories() {
-  const response = await fetch(`${BASE_URL}/nav/categories`);
-  const data = await response.json();
-  return data as NavCategory[];
+  return await apiRequest<NavCategory[]>(`${BASE_URL}/nav/categories`);
 }
 
 // 获取所有导航项
@@ -16,97 +15,39 @@ export async function getItems(categoryId?: number) {
   if (categoryId) {
     url += `?category_id=${categoryId}`;
   }
-  const response = await fetch(url);
-  const data = await response.json();
-  return data as NavItem[];
+  return await apiRequest<NavItem[]>(url);
 }
 
 // 记录点击
 export async function recordClick(itemId: number) {
-  const response = await fetch(`${BASE_URL}/nav/items/${itemId}/click`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
-  return await response.json();
+  return await post<any>(`${BASE_URL}/nav/items/${itemId}/click`, {});
 }
 
 // 管理员接口
 export async function getAllCategories() {
-  const response = await fetch(`${BASE_URL}/nav/admin/categories`, {
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-  });
-  const data = await response.json();
-  return data as NavCategory[];
+  return await apiRequest<NavCategory[]>(`${BASE_URL}/nav/admin/categories`);
 }
 
 export async function createCategory(category: Partial<NavCategory>) {
-  const response = await fetch(`${BASE_URL}/nav/categories`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify(category),
-  });
-  return await response.json();
+  return await post<NavCategory>(`${BASE_URL}/nav/categories`, category);
 }
 
 export async function updateCategory(id: number, category: Partial<NavCategory>) {
-  const response = await fetch(`${BASE_URL}/nav/categories/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify(category),
-  });
-  return await response.json();
+  return await put<NavCategory>(`${BASE_URL}/nav/categories/${id}`, category);
 }
 
 export async function deleteCategory(id: number) {
-  const response = await fetch(`${BASE_URL}/nav/categories/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-  });
-  return await response.json();
+  return await del<any>(`${BASE_URL}/nav/categories/${id}`);
 }
 
 export async function createItem(item: Partial<NavItem>) {
-  const response = await fetch(`${BASE_URL}/nav/items`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify(item),
-  });
-  return await response.json();
+  return await post<NavItem>(`${BASE_URL}/nav/items`, item);
 }
 
 export async function updateItem(id: number, item: Partial<NavItem>) {
-  const response = await fetch(`${BASE_URL}/nav/items/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify(item),
-  });
-  return await response.json();
+  return await put<NavItem>(`${BASE_URL}/nav/items/${id}`, item);
 }
 
 export async function deleteItem(id: number) {
-  const response = await fetch(`${BASE_URL}/nav/items/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
-    },
-  });
-  return await response.json();
+  return await del<any>(`${BASE_URL}/nav/items/${id}`);
 }

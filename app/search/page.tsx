@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Search } from "lucide-react"
-import axios from "axios"
+import { apiRequest } from '@/utils/api'
 
 // 定义搜索结果类型
 interface SearchResult {
@@ -38,14 +38,12 @@ export default function SearchPage() {
     try {
       // 使用直接数据库查询路由
       console.log(`正在搜索: ${searchTerm}`)
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/db-search`, {
-        params: { q: searchTerm }
-      })
+      const data = await apiRequest<{results: any[]}>(`/db-search?q=${encodeURIComponent(searchTerm)}`)
       
-      console.log('搜索结果:', response.data)
+      console.log('搜索结果:', data)
       
-      if (response.data.results && Array.isArray(response.data.results)) {
-        const thingResults = response.data.results.map((item: any) => ({
+      if (data.results && Array.isArray(data.results)) {
+        const thingResults = data.results.map((item: any) => ({
           id: item.id,
           title: item.name,
           content: item.description || '无描述',

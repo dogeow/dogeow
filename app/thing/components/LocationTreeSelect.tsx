@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { apiRequest } from '@/utils/api'
 
 // 定义类型
 type LocationType = 'area' | 'room' | 'spot';
@@ -39,18 +40,8 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
     const fetchLocationTree = async () => {
       setLoading(true)
       try {
-        const response = await fetch(`${API_BASE_URL}/locations/tree`, {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-            'Accept': 'application/json',
-          },
-        })
+        const data = await apiRequest<{tree: LocationNode[], spots: any[], rooms: any[]}>('/locations/tree')
         
-        if (!response.ok) {
-          throw new Error('获取位置数据失败')
-        }
-        
-        const data = await response.json()
         setTree(data.tree)
         
         // 存储所有节点的平面列表，用于搜索

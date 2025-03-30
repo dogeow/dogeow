@@ -2,21 +2,13 @@
 
 import { useContext, useEffect, useState } from 'react'
 import { ChevronRight, Home } from 'lucide-react'
-import axios, { AxiosResponse } from 'axios'
 import { Button } from '@/components/ui/button'
 import FileContext from '../context/FileContext'
 import { CloudFile } from '../types'
+import { apiRequest } from '@/utils/api'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-// 获取授权头
-const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? 
-    localStorage.getItem('token') || sessionStorage.getItem('token') : null;
-  
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 interface Breadcrumb {
   id: number
@@ -40,11 +32,9 @@ export default function BreadcrumbNav() {
       let currentId: number | null = folderId
 
       while (currentId) {
-        const response: AxiosResponse<CloudFile> = await axios.get<CloudFile>(
-          `${API_BASE_URL}/cloud/files/${currentId}`,
-          { headers: getAuthHeaders() }
+        const folder: CloudFile = await apiRequest<CloudFile>(
+          `${API_BASE_URL}/cloud/files/${currentId}`
         )
-        const folder: CloudFile = response.data
         
         breadcrumbList.unshift({
           id: folder.id,

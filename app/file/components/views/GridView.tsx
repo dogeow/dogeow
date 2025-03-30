@@ -37,22 +37,14 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
-import axios from 'axios'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/utils'
 import FileContext from '../../context/FileContext'
 import { CloudFile } from '../../types'
+import { apiRequest, put, del } from '@/utils/api'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
-
-// 获取授权头
-const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? 
-    localStorage.getItem('token') || sessionStorage.getItem('token') : null;
-  
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 interface GridViewProps {
   files: CloudFile[]
@@ -182,9 +174,7 @@ export default function GridView({ files }: GridViewProps) {
   // 删除文件/文件夹
   const deleteFile = async (file: CloudFile) => {
     try {
-      await axios.delete(`${API_BASE_URL}/cloud/files/${file.id}`, {
-        headers: getAuthHeaders()
-      })
+      await del(`${API_BASE_URL}/cloud/files/${file.id}`)
       mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
       toast.success('删除成功')
     } catch (error) {
@@ -206,11 +196,9 @@ export default function GridView({ files }: GridViewProps) {
     if (!editingFile) return
 
     try {
-      await axios.put(`${API_BASE_URL}/cloud/files/${editingFile.id}`, {
+      await put(`${API_BASE_URL}/cloud/files/${editingFile.id}`, {
         name: fileName,
         description: fileDescription
-      }, {
-        headers: getAuthHeaders()
       })
       
       mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
@@ -242,10 +230,7 @@ export default function GridView({ files }: GridViewProps) {
         return;
       }
       
-      const response = await axios.get(`${API_BASE_URL}/cloud/files/${file.id}/preview`, {
-        headers: getAuthHeaders()
-      })
-      const { type, content, url, message } = response.data
+      const { type, content, url, message } = await apiRequest<any>(`${API_BASE_URL}/cloud/files/${file.id}/preview`)
 
       setPreviewType(type)
       

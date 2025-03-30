@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { User, AuthResponse } from '../types';
+import { post } from '@/utils/api';
 
 interface AuthState {
   user: User | null;
@@ -39,21 +40,8 @@ const useAuthStore = create<AuthState>()(
         set({ loading: true });
         
         try {
-          const res = await fetch('http://127.0.0.1:8000/api/login', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-          });
-          
-          if (!res.ok) {
-            const error = await res.json();
-            throw new Error(error.message || '登录失败');
-          }
-          
-          const data = await res.json() as AuthResponse;
+          // 注意：这里我们使用完整URL而不是相对路径，因为登录接口可能需要特殊处理
+          const data = await post<AuthResponse>('/login', { email, password });
           
           // 存储用户信息和token
           set({ 
