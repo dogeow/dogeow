@@ -272,7 +272,7 @@ export default function Thing() {
 
   return (
     <BackgroundWrapper>
-      <div className="flex flex-col h-full gap-2">
+      <div id="thing-page"className="flex flex-col h-full gap-2 mx-2">
         <ThingNavigation />
         
         <div className="flex flex-col gap-2">

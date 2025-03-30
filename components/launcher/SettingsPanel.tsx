@@ -1,9 +1,9 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Plus, Palette, Image as ImageIcon, Check, Trash2, ChevronLeft, Settings } from 'lucide-react'
+import { Plus, Palette, Image as ImageIcon, Check, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { toast } from 'sonner'
@@ -15,7 +15,7 @@ import { themeColors } from '@/configs/app/themes'
 type DisplayMode = 'music' | 'apps' | 'settings';
 type SettingsView = 'main' | 'background' | 'theme';
 
-// 可用的音频文件列表
+// 系统背景列表
 const systemBackgrounds = launcherItems.systemBackgrounds;
 
 export type CustomBackground = {id: string, name: string, url: string};
@@ -35,7 +35,7 @@ export function SettingsPanel({
   customBackgrounds,
   setCustomBackgrounds
 }: SettingsPanelProps) {
-  const { currentTheme, customThemes, setCurrentTheme, addCustomTheme, removeCustomTheme } = useThemeStore()
+  const { currentTheme, customThemes, setCurrentTheme, removeCustomTheme } = useThemeStore()
   const [currentView, setCurrentView] = useState<SettingsView>('main')
   
   // 设置背景图片
@@ -46,26 +46,26 @@ export function SettingsPanel({
   
   // 处理用户上传背景图片
   const handleUploadBackground = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0]
-      const reader = new FileReader()
-      
-      reader.onload = (event) => {
-        if (event.target && typeof event.target.result === 'string') {
-          const newBackground = {
-            id: `custom-${Date.now()}`,
-            name: `自定义-${file.name}`,
-            url: event.target.result
-          }
-          
-          setCustomBackgrounds(prev => [...prev, newBackground])
-          handleSetBackground(newBackground.url)
-          toast.success("自定义背景已上传")
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const result = event.target?.result
+      if (typeof result === 'string') {
+        const newBackground = {
+          id: `custom-${Date.now()}`,
+          name: `自定义-${file.name}`,
+          url: result
         }
+        
+        setCustomBackgrounds(prev => [...prev, newBackground])
+        handleSetBackground(newBackground.url)
+        toast.success("自定义背景已上传")
       }
-      
-      reader.readAsDataURL(file)
     }
+    
+    reader.readAsDataURL(file)
   }
   
   // 渲染背景选项按钮
@@ -94,6 +94,11 @@ export function SettingsPanel({
         )}
       </Button>
     </motion.div>
+  )
+  
+  // 渲染分隔线
+  const renderDivider = () => (
+    <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
   )
   
   // 渲染主视图（选项列表）
@@ -127,13 +132,13 @@ export function SettingsPanel({
         className="shrink-0"
       />
       
-      <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
+      {renderDivider()}
       
       {/* 背景图片选项 */}
-      {systemBackgrounds.map(bg => renderBackgroundButton(bg))}
+      {systemBackgrounds.map(renderBackgroundButton)}
       
       {/* 用户自定义背景 */}
-      {customBackgrounds.map(bg => renderBackgroundButton(bg))}
+      {customBackgrounds.map(renderBackgroundButton)}
       
       {/* 上传按钮 */}
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="shrink-0">
@@ -151,6 +156,46 @@ export function SettingsPanel({
     </>
   )
   
+  // 渲染主题色按钮
+  const renderThemeButton = (theme: {id: string, name: string, color: string}, isCustom = false) => (
+    <motion.div
+      key={theme.id}
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className="shrink-0 relative"
+    >
+      <Button 
+        variant="ghost" 
+        className={cn(
+          "p-1 h-9 w-9 rounded-md overflow-hidden relative",
+          currentTheme === theme.id && "ring-2 ring-primary"
+        )}
+        onClick={() => setCurrentTheme(theme.id)}
+        title={theme.name}
+        style={{ backgroundColor: theme.color }}
+      >
+        {currentTheme === theme.id && (
+          <Check className="h-5 w-5 text-white" />
+        )}
+      </Button>
+      
+      {isCustom && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border shadow-sm hover:bg-destructive hover:text-destructive-foreground"
+          onClick={(e) => {
+            e.stopPropagation();
+            removeCustomTheme(theme.id);
+          }}
+          title={`删除 ${theme.name}`}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      )}
+    </motion.div>
+  )
+  
   // 渲染主题设置视图
   const renderThemeView = () => (
     <>
@@ -159,96 +204,13 @@ export function SettingsPanel({
         className="shrink-0"
       />
       
-      <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
+      {renderDivider()}
       
       {/* 预设主题色 */}
-      {themeColors.map(theme => (
-        <motion.div
-          key={theme.id}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="shrink-0 relative"
-        >
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-              currentTheme === theme.id && "ring-2 ring-primary"
-            )}
-            onClick={() => setCurrentTheme(theme.id)}
-            title={theme.name}
-            style={{ backgroundColor: theme.color }}
-          >
-            {currentTheme === theme.id && (
-              <Check className="h-5 w-5 text-white" />
-            )}
-          </Button>
-        </motion.div>
-      ))}
+      {themeColors.map(theme => renderThemeButton(theme))}
       
       {/* 用户自定义主题 */}
-      {customThemes.map(theme => (
-        <motion.div
-          key={theme.id}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="shrink-0 relative"
-        >
-          <Button 
-            variant="ghost" 
-            className={cn(
-              "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-              currentTheme === theme.id && "ring-2 ring-primary"
-            )}
-            onClick={() => setCurrentTheme(theme.id)}
-            title={theme.name}
-            style={{ backgroundColor: theme.color }}
-          >
-            {currentTheme === theme.id && (
-              <Check className="h-5 w-5 text-white" />
-            )}
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border shadow-sm hover:bg-destructive hover:text-destructive-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              removeCustomTheme(theme.id);
-            }}
-            title={`删除 ${theme.name}`}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </motion.div>
-      ))}
-      
-      {/* 添加自定义主题按钮 */}
-      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="shrink-0">
-        <Button 
-          variant="ghost"
-          className={cn(
-            "p-1 h-9 w-9 rounded-md overflow-hidden relative flex items-center justify-center",
-            "bg-primary/10 hover:bg-primary/20 border-2 border-dashed border-primary/30"
-          )}
-          title="添加自定义主题"
-          onClick={() => {
-            // 简单实现：添加一个随机颜色的主题
-            const randomColor = `#${Math.floor(Math.random()*16777215).toString(16)}`;
-            const newTheme = {
-              id: `custom-${Date.now()}`,
-              name: `自定义主题`,
-              primary: `hsl(${Math.floor(Math.random()*360)} 80% 50%)`,
-              color: randomColor
-            };
-            addCustomTheme(newTheme);
-            toast.success("添加了随机颜色主题");
-          }}
-        >
-          <Plus className="h-5 w-5 text-primary/70" />
-        </Button>
-      </motion.div>
+      {customThemes.map(theme => renderThemeButton(theme, true))}
     </>
   )
   
@@ -262,7 +224,7 @@ export function SettingsPanel({
             className="shrink-0"
           />
           
-          <div className="w-px h-8 bg-border mx-2 shrink-0"></div>
+          {renderDivider()}
           
           {/* 主视图选项 */}
           {renderMainView()}
