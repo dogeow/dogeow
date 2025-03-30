@@ -46,6 +46,14 @@ export default function Thing() {
     is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
   })
 
+  // 加载数据
+  const loadItems = (params = {}) => {
+    fetchItems({
+      ...getBaseFilterParams(),
+      ...params
+    })
+  }
+
   useEffect(() => {
     // 从URL获取搜索参数
     const searchParams = new URLSearchParams(window.location.search)
@@ -53,13 +61,9 @@ export default function Thing() {
     
     if (search) {
       setSearchTerm(search)
-      fetchItems({ 
-        search, 
-        page: 1,
-        ...getBaseFilterParams()
-      })
+      loadItems({ page: 1 })
     } else {
-      fetchItems(getBaseFilterParams())
+      loadItems()
     }
     
     fetchCategories()
@@ -68,32 +72,27 @@ export default function Thing() {
   // 处理页面变化
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
-    fetchItems({ 
-      ...getBaseFilterParams(),
-      page
-    })
+    loadItems({ page })
   }
 
   // 处理分类变化
   const handleCategoryChange = (value: string) => {
     setSelectedCategory(value)
-    fetchItems({ 
-      ...getBaseFilterParams(),
+    setCurrentPage(1)
+    loadItems({ 
       category_id: value === "none" ? undefined : value,
       page: 1
     })
-    setCurrentPage(1)
   }
 
   // 处理公开状态变化
   const handlePublicStatusChange = (value: string) => {
     setSelectedPublicStatus(value)
-    fetchItems({ 
-      ...getBaseFilterParams(),
+    setCurrentPage(1)
+    loadItems({ 
       is_public: value === 'none' ? undefined : value === 'true',
       page: 1
     })
-    setCurrentPage(1)
   }
 
   // 添加新物品
@@ -103,23 +102,19 @@ export default function Thing() {
 
   // 应用筛选条件
   const handleApplyFilters = (filters: FilterParams) => {
-    // 构建筛选参数
-    const filterParams = {
-      ...filters,
-      ...getBaseFilterParams(),
-      page: 1
-    }
-    
     // 移除undefined、null和空字符串值
-    Object.keys(filterParams).forEach(key => {
-      if (filterParams[key as keyof typeof filterParams] === undefined || filterParams[key as keyof typeof filterParams] === null || filterParams[key as keyof typeof filterParams] === '') {
-        delete filterParams[key as keyof typeof filterParams]
-      }
-    })
+    const cleanFilters = Object.fromEntries(
+      Object.entries(filters).filter(([_, value]) => 
+        value !== undefined && value !== null && value !== ''
+      )
+    )
     
-    fetchItems(filterParams)
     setCurrentPage(1)
     setFiltersOpen(false)
+    loadItems({
+      ...cleanFilters,
+      page: 1
+    })
   }
 
   // 渲染加载状态
@@ -268,18 +263,21 @@ export default function Thing() {
     </div>
   )
 
+  // 条件渲染内容
+  const renderContent = () => {
+    if (loading) return renderLoading()
+    if (error) return renderError()
+    return items.length === 0 ? renderEmpty() : renderItems()
+  }
+
   return (
     <BackgroundWrapper>
       <div className="flex flex-col h-full gap-2">
         <ThingNavigation />
         
-        <div className="flex flex-col gap-2 ">
+        <div className="flex flex-col gap-2">
           {renderFilters()}
-
-          {loading ? renderLoading() : 
-            error ? renderError() : 
-            items.length === 0 ? renderEmpty() : 
-            renderItems()}
+          {renderContent()}
         </div>
       </div>
     </BackgroundWrapper>
