@@ -16,7 +16,7 @@ export default function ThingNavigation() {
       href: "/thing",
       label: "所有物品",
       icon: Package,
-      exact: true // 精确匹配路径
+      exact: true
     },
     {
       href: "/thing/categories",

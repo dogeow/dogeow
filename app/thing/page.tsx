@@ -112,8 +112,8 @@ export default function Thing() {
     
     // 移除undefined、null和空字符串值
     Object.keys(filterParams).forEach(key => {
-      if (filterParams[key] === undefined || filterParams[key] === null || filterParams[key] === '') {
-        delete filterParams[key]
+      if (filterParams[key as keyof typeof filterParams] === undefined || filterParams[key as keyof typeof filterParams] === null || filterParams[key as keyof typeof filterParams] === '') {
+        delete filterParams[key as keyof typeof filterParams]
       }
     })
     
@@ -207,70 +207,74 @@ export default function Thing() {
     </>
   )
 
+  const renderFilters = () => (
+    <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
+        <Select value={selectedPublicStatus} onValueChange={handlePublicStatusChange}>
+          <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
+            <SelectValue placeholder="所有物品" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">所有物品</SelectItem>
+            <SelectItem value="true">公开</SelectItem>
+            <SelectItem value="false">私有</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+          <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
+            <SelectValue placeholder="所有分类" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">所有分类</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category.id} value={category.id.toString()}>
+                {category.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+        <TabsList className="grid grid-cols-2 bg-primary/10">
+          <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <LayoutList className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Grid className="h-4 w-4" />
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="icon" className="bg-primary/10 border-primary/20 hover:bg-primary/20">
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent className="overflow-y-auto pb-10 max-w-[50%] sm:max-w-[300px]">
+          <SheetHeader className="pb-1">
+            <SheetTitle className="text-xl sr-only">筛选物品</SheetTitle>
+            <SheetDescription className="text-sm sr-only">
+              设置筛选条件以查找特定物品
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-1">
+            <ItemFilters onApply={handleApplyFilters} />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </div>
+  )
+
   return (
     <BackgroundWrapper>
       <div className="flex flex-col h-full gap-2">
         <ThingNavigation />
         
-        <div className="flex flex-col gap-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-2">
-              <Select value={selectedPublicStatus} onValueChange={handlePublicStatusChange}>
-                <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
-                  <SelectValue placeholder="所有物品" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">所有物品</SelectItem>
-                  <SelectItem value="true">公开</SelectItem>
-                  <SelectItem value="false">私有</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
-                  <SelectValue placeholder="所有分类" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">所有分类</SelectItem>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
-              <TabsList className="grid grid-cols-2 bg-primary/10">
-                <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <LayoutList className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-                  <Grid className="h-4 w-4" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
-
-            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="bg-primary/10 border-primary/20 hover:bg-primary/20">
-                  <SlidersHorizontal className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="overflow-y-auto pb-10 max-w-[50%] sm:max-w-[300px]">
-                <SheetHeader className="pb-1">
-                  <SheetTitle className="text-xl sr-only">筛选物品</SheetTitle>
-                  <SheetDescription className="text-sm sr-only">
-                    设置筛选条件以查找特定物品
-                  </SheetDescription>
-                </SheetHeader>
-                <div className="py-1">
-                  <ItemFilters onApply={handleApplyFilters} />
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
+        <div className="flex flex-col gap-2 ">
+          {renderFilters()}
 
           {loading ? renderLoading() : 
             error ? renderError() : 
