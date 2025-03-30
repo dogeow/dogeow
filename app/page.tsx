@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react";
 import Image from "next/image";
 import {styled} from "styled-components";
 import config from '@/configs/app';
@@ -49,16 +50,19 @@ export default function Home() {
   const router = useRouter();
   const tiles = config.tiles as Tile[];
 
-  // https://patorjk.com/software/taag
-  // Font Name: Calvin S
-  console.log(
-    `%c
-    ╔╦╗┌─┐┌─┐┌─┐╔═╗╦ ╦
-     ║║│ ││ ┬├┤ ║ ║║║║
-    ═╩╝└─┘└─┘└─┘╚═╝╚╩╝
-`,
-    "color: pink"
-  );
+  // 使用useEffect确保只在客户端执行一次
+  useEffect(() => {
+    // https://patorjk.com/software/taag
+    // Font Name: Calvin S
+    console.log(
+      `%c
+      ╔╦╗┌─┐┌─┐┌─┐╔═╗╦ ╦
+       ║║│ ││ ┬├┤ ║ ║║║║
+      ═╩╝└─┘└─┘└─┘╚═╝╚╩╝
+  `,
+      "color: pink"
+    );
+  }, []);
   
   return (
     <>
