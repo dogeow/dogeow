@@ -1,6 +1,6 @@
 'use client'
 
-import { useContext, useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
@@ -25,9 +25,9 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
-import FileContext from '../context/FileContext'
 import { useSWRConfig } from 'swr'
-import { apiRequest, post, del } from '@/utils/api'
+import { post, del } from '@/utils/api'
+import useFileStore from '../store/useFileStore'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -41,7 +41,7 @@ export default function FileHeader() {
     currentFolderId,
     selectedFiles,
     setSelectedFiles
-  } = useContext(FileContext)
+  } = useFileStore()
   
   const [folderName, setFolderName] = useState('')
   const [folderDescription, setFolderDescription] = useState('')
