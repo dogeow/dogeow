@@ -5,10 +5,7 @@ import { ChevronRight, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import FileContext from '../context/FileContext'
 import { CloudFile } from '../types'
-import { apiRequest } from '@/utils/api'
-
-// 后端API基础URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+import { apiRequest, API_BASE_URL } from '@/utils/api'
 
 interface Breadcrumb {
   id: number

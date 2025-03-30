@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, X, ArrowRight } from "lucide-react"
-import axios from "axios"
+import { get, API_BASE_URL } from "@/utils/api"
 
 // 定义分类类型
 interface Category {
@@ -96,14 +96,22 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
       if (activeCategory === "thing" || activeCategory === "all") {
         // 使用直接数据库查询路由
         console.log(`正在搜索: ${searchTerm}`)
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_BASE_URL}/db-search`, {
-          params: { q: searchTerm }
-        })
         
-        console.log('搜索结果:', response.data)
+        interface SearchApiResponse {
+          results: Array<{
+            id: number;
+            name: string;
+            description?: string;
+            [key: string]: any;
+          }>;
+        }
         
-        if (response.data.results && Array.isArray(response.data.results)) {
-          const thingResults = response.data.results.map((item: any) => ({
+        const response = await get<SearchApiResponse>(`/db-search?q=${encodeURIComponent(searchTerm)}`)
+        
+        console.log('搜索结果:', response)
+        
+        if (response.results && Array.isArray(response.results)) {
+          const thingResults = response.results.map((item) => ({
             id: item.id,
             title: item.name,
             content: item.description || '无描述',
