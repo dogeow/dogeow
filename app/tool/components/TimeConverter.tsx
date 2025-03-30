@@ -44,45 +44,139 @@ const TimeConverter = () => {
   // 时间戳转日期时间
   const convertTimestampToDateTime = () => {
     try {
-      // 检查时间戳长度，如果是13位则为毫秒级时间戳，否则为秒级时间戳
-      const timestampNum = Number(timestamp)
+      if (!timestamp.trim()) {
+        setDateTime("请输入时间戳")
+        return
+      }
+
+      // 移除可能存在的非数字字符
+      const cleanTimestamp = timestamp.replace(/\D/g, '')
+      const timestampNum = Number(cleanTimestamp)
+      
       if (isNaN(timestampNum)) {
         setDateTime("无效的时间戳")
         return
       }
 
-      const date = new Date(
-        timestampNum.toString().length > 10 
-          ? timestampNum 
-          : timestampNum * 1000
-      )
+      let date
+      
+      // 根据时间戳位数判断是秒级还是毫秒级
+      if (cleanTimestamp.length >= 13) {
+        // 毫秒级时间戳
+        date = new Date(timestampNum)
+      } else if (cleanTimestamp.length >= 10) {
+        // 秒级时间戳
+        date = new Date(timestampNum * 1000)
+      } else {
+        // 时间戳位数不足
+        setDateTime("时间戳位数不足")
+        return
+      }
+      
+      // 验证日期是否有效（检查是否超出了JavaScript Date支持的范围）
+      if (isNaN(date.getTime()) || date.getTime() <= 0) {
+        setDateTime("无效的时间戳")
+        return
+      }
+      
+      // 检查日期是否明显不合理（1970年以前或远未来）
+      const year = date.getFullYear()
+      if (year < 1970 || year > 2100) {
+        setDateTime(`可能不正确的时间戳 (${year}年)，请检查`)
+        return
+      }
 
-      setDateTime(format(date, dateFormat, { locale: zhCN }))
+      const result = format(date, dateFormat, { locale: zhCN })
+      setDateTime(result)
+      toast.success("转换成功", { 
+        description: `${timestamp} → ${result}`
+      })
     } catch (error) {
+      console.error("时间戳转换错误:", error)
       setDateTime("转换出错")
+      toast.error("转换失败")
     }
   }
 
   // 日期时间转时间戳
   const convertDateTimeToTimestamp = () => {
     try {
+      if (!inputDateTime.trim()) {
+        setOutputTimestamp("请输入日期时间")
+        return
+      }
+      
+      // 验证日期时间格式
+      const dateTimePattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      if (!dateTimePattern.test(inputDateTime)) {
+        setOutputTimestamp("日期格式应为 yyyy-MM-dd HH:mm:ss")
+        return
+      }
+      
+      // 使用date-fns解析日期时间字符串
       const date = parse(inputDateTime, "yyyy-MM-dd HH:mm:ss", new Date())
-      setOutputTimestamp(Math.floor(date.getTime() / 1000).toString())
+      
+      // 检查日期是否有效
+      if (isNaN(date.getTime())) {
+        setOutputTimestamp("无效的日期格式")
+        return
+      }
+      
+      // 检查日期是否在合理范围内
+      const year = date.getFullYear()
+      if (year < 1970) {
+        setOutputTimestamp(`可能不正确的日期 (${year}年)，请检查`)
+        return
+      }
+      
+      const result = Math.floor(date.getTime() / 1000).toString()
+      setOutputTimestamp(result)
+      toast.success("转换成功", { 
+        description: `${inputDateTime} → ${result}`
+      })
     } catch (error) {
+      console.error("日期转换错误:", error)
       setOutputTimestamp("转换出错")
+      toast.error("转换失败")
     }
   }
 
   // 使用当前时间戳
   const useCurrentTimestamp = () => {
-    setTimestamp(currentTimestamp.toString())
-    convertTimestampToDateTime()
+    try {
+      const now = new Date()
+      const current = Math.floor(now.getTime() / 1000)
+      setTimestamp(current.toString())
+      
+      // 直接计算结果而不是调用转换函数
+      const result = format(now, dateFormat, { locale: zhCN })
+      setDateTime(result)
+      toast.success("已使用当前时间", {
+        description: `${current} → ${result}`
+      })
+    } catch (error) {
+      console.error("使用当前时间戳出错:", error)
+      toast.error("获取当前时间戳失败")
+    }
   }
 
   // 使用当前日期时间
   const useCurrentDateTime = () => {
-    setInputDateTime(currentDateTime)
-    convertDateTimeToTimestamp()
+    try {
+      const now = new Date()
+      const formattedDate = format(now, "yyyy-MM-dd HH:mm:ss", { locale: zhCN })
+      setInputDateTime(formattedDate)
+      
+      // 直接计算结果而不是调用转换函数
+      const result = Math.floor(now.getTime() / 1000).toString()
+      setOutputTimestamp(result)
+      toast.success("已使用当前时间", {
+        description: `${formattedDate} → ${result}`
+      })
+    } catch (error) {
+      console.error("使用当前日期时间出错:", error)
+      toast.error("获取当前日期时间失败")
+    }
   }
 
   // 复制到剪贴板
