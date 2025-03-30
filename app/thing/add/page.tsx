@@ -5,23 +5,20 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Plus, Upload, X } from "lucide-react"
+import { ArrowLeft, Upload, X } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
-import { API_BASE_URL } from '@/configs/api'
 import { format } from 'date-fns'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import LocationTreeSelect from '../components/LocationTreeSelect'
 import { apiRequest } from '@/utils/api'
 
-// 导入Item类型
-import type { Item } from '@/types/item'
 
 export default function AddItem() {
   const router = useRouter()

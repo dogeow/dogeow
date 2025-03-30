@@ -1,6 +1,6 @@
 "use client"
 
-import { NavCategory as CategoryType } from '@/types/nav';
+import { NavCategory as CategoryType } from '@/app/nav/types';
 import { NavCard } from './NavCard';
 
 type NavCategoryProps = {

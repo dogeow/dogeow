@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getCategories } from './services/api';
-import { NavCategory as CategoryType } from '@/types/nav';
+import { NavCategory as CategoryType } from '@/app/nav/types';
 import { NavCategory } from './components/NavCategory';
 import { Folder, Search } from 'lucide-react';
 

@@ -10,9 +10,8 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
-import { API_BASE_URL } from '@/configs/api'
 import { useCategories, useAreas, useRooms, useSpots } from '@/utils/api'
-import type { Category, Area, Room, Spot } from '@/types'
+import type { Area, Room, Spot } from '@/app/thing/types'
 
 interface ItemFiltersProps {
   onApply: (filters: FilterState) => void

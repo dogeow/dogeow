@@ -1,6 +1,6 @@
 "use client"
 
-import { NavItem } from '@/types/nav';
+import { NavItem } from '@/app/nav/types';
 import { ExternalLink } from 'lucide-react';
 import { useState } from 'react';
 import { recordClick } from '../services/api';

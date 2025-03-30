@@ -1,4 +1,4 @@
-import { NavCategory, NavItem } from '@/types/nav';
+import { NavCategory, NavItem } from '@/app/nav/types';
 import { apiRequest, post, put, del } from '@/utils/api';
 
 // 获取所有导航分类（及其导航项）
