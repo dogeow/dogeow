@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { ChevronRight, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CloudFile } from '../types'
-import { apiRequest, API_BASE_URL } from '@/utils/api'
+import { apiRequest } from '@/utils/api'
 import useFileStore from '../store/useFileStore'
 
 interface Breadcrumb {
@@ -30,7 +30,7 @@ export default function BreadcrumbNav() {
 
       while (currentId) {
         const folder: CloudFile = await apiRequest<CloudFile>(
-          `${API_BASE_URL}/cloud/files/${currentId}`
+          `/cloud/files/${currentId}`
         )
         
         breadcrumbList.unshift({

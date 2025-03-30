@@ -34,13 +34,22 @@ export async function apiRequest<T>(
 ): Promise<T> {
   const url = `${API_BASE_URL}${endpoint}`;
   
+  const headers = getHeaders();
   const options: RequestInit = {
     method,
-    headers: getHeaders(),
+    headers,
   };
   
   if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
-    options.body = JSON.stringify(data);
+    // 检查是否为 FormData 类型
+    if (data instanceof FormData) {
+      // FormData 不需要设置 Content-Type，浏览器会自动设置正确的 boundary
+      const headersObj = options.headers as Record<string, string>;
+      delete headersObj['Content-Type'];
+      options.body = data;
+    } else {
+      options.body = JSON.stringify(data);
+    }
   }
   
   const response = await fetch(url, options);
@@ -97,6 +106,13 @@ export function patch<T>(endpoint: string, data: any): Promise<T> {
  */
 export function del<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, 'DELETE');
+}
+
+/**
+ * 文件上传请求
+ */
+export function uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
+  return apiRequest<T>(endpoint, 'POST', formData);
 }
 
 // 通用 fetcher 函数 (用于 SWR)

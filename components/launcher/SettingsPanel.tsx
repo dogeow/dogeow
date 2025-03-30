@@ -7,16 +7,15 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
 import { toast } from 'sonner'
-import launcherItems from '@/configs/app/launcher'
 import { BackButton } from '@/components/ui/back-button'
 import { useThemeStore } from '@/stores/themeStore'
-import { themeColors } from '@/configs/app/themes'
+import { configs } from '@/app/configs'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 type SettingsView = 'main' | 'background' | 'theme';
 
 // 系统背景列表
-const systemBackgrounds = launcherItems.systemBackgrounds;
+const systemBackgrounds = configs.systemBackgrounds;
 
 export type CustomBackground = {id: string, name: string, url: string};
 

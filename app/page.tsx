@@ -3,8 +3,8 @@
 import { useEffect } from "react";
 import Image from "next/image";
 import {styled} from "styled-components";
-import config from '@/configs/app';
-import type { Tile } from '@/types/app';
+import { configs } from '@/app/configs';
+import type { Tile } from '@/app/types';
 import { useRouter } from "next/navigation";
 import Footer from "@/components/app/Footer";
 
@@ -53,7 +53,7 @@ const TileName = styled.span`
 
 export default function Home() {
   const router = useRouter();
-  const tiles = config.tiles as Tile[];
+  const tiles = configs.tiles as Tile[];
 
   // 使用useEffect确保只在客户端执行一次
   useEffect(() => {

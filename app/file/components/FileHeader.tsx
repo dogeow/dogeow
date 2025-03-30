@@ -25,11 +25,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
-import { post, del } from '@/utils/api'
+import { post, del, uploadFile, API_BASE_URL } from '@/utils/api'
 import useFileStore from '../store/useFileStore'
-
-// 后端API基础URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 export default function FileHeader() {
   const { 
@@ -49,13 +46,13 @@ export default function FileHeader() {
 
   const createFolder = async () => {
     try {
-      await post(`${API_BASE_URL}/cloud/folders`, {
+      await post(`/cloud/folders`, {
         name: folderName,
         parent_id: currentFolderId,
         description: folderDescription
       })
       
-      mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
+      mutate(`/cloud/files?parent_id=${currentFolderId || ''}`)
       toast.success('文件夹创建成功')
       setFolderName('')
       setFolderDescription('')
@@ -79,14 +76,11 @@ export default function FileHeader() {
         formData.append('file', file)
         formData.append('parent_id', currentFolderId ? currentFolderId.toString() : '')
 
-        // 使用原生 fetch，因为 FormData 需要特殊处理
-        await fetch(`${API_BASE_URL}/cloud/files`, {
-          method: 'POST',
-          body: formData,
-        })
+        // 使用新的 uploadFile 函数处理文件上传
+        await uploadFile('/cloud/files', formData)
       }
       
-      mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
+      mutate(`/cloud/files?parent_id=${currentFolderId || ''}`)
       toast.success(files.length > 1 ? `${files.length} 个文件上传成功` : '文件上传成功')
     } catch (error) {
       toast.error('文件上传失败')
@@ -103,10 +97,10 @@ export default function FileHeader() {
     
     try {
       for (const id of selectedFiles) {
-        await del(`${API_BASE_URL}/cloud/files/${id}`)
+        await del(`/cloud/files/${id}`)
       }
       
-      mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
+      mutate(`/cloud/files?parent_id=${currentFolderId || ''}`)
       toast.success(selectedFiles.length > 1 
         ? `已删除 ${selectedFiles.length} 个项目` 
         : '删除成功'

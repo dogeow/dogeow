@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { Plus, Check, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { themeColors, CustomTheme } from '@/configs/app/themes'
+import { configs } from '@/app/configs'
+import { CustomTheme } from '@/app/types'
 import {
   Dialog,
   DialogContent,
@@ -112,7 +113,7 @@ export function ThemeColorPicker({
   return (
     <div className="flex items-center space-x-3 overflow-x-auto scrollbar-none">
       {/* 预设主题 */}
-      {themeColors.map(theme => renderThemeButton(theme))}
+      {configs.themeColors.map(theme => renderThemeButton(theme))}
       
       {/* 用户自定义主题 */}
       {customThemes.map(theme => renderThemeButton(theme, true))}

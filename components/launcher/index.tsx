@@ -7,7 +7,7 @@ import { useBackgroundStore } from '@/stores/backgroundStore'
 import { MusicPlayer } from './MusicPlayer'
 import { AppGrid } from './AppGrid'
 import { SettingsPanel, CustomBackground } from './SettingsPanel'
-import launcherItems from '@/configs/app/launcher'
+import { configs } from '@/app/configs'
 import Image from 'next/image'
 import Logo from '@/public/images/80.png'
 import { useRouter, usePathname } from 'next/navigation'
@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input'
 import { SearchDialog } from '@/components/search/SearchDialog'
 
 // 可用的音频文件列表
-const availableTracks = launcherItems.availableTracks
+const availableTracks = configs.availableTracks
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth';
 

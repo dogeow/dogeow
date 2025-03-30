@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect } from 'react'
-import useSWR from 'swr'
 import { toast } from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
 import { CloudFile, FolderNode } from '../types'
@@ -11,9 +10,7 @@ import TreeView from './views/TreeView'
 import BreadcrumbNav from './BreadcrumbNav'
 import { apiRequest } from '@/utils/api'
 import useFileStore from '../store/useFileStore'
-
-// 后端API基础URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+import useSWR from 'swr'
 
 export default function FileExplorer() {
   const { 
@@ -26,28 +23,14 @@ export default function FileExplorer() {
 
   // 获取文件列表
   const { data: files, error, isLoading, mutate } = useSWR<CloudFile[]>(
-    `${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}&search=${searchQuery}&sort_by=${sortField}&sort_direction=${sortDirection}`,
-    async (url: string) => {
-      try {
-        return await apiRequest<CloudFile[]>(url);
-      } catch (error) {
-        console.error('API请求失败:', error);
-        throw error;
-      }
-    }
+    `/cloud/files?parent_id=${currentFolderId || ''}&search=${searchQuery}&sort_by=${sortField}&sort_direction=${sortDirection}`,
+    apiRequest
   )
 
   // 获取文件夹树(仅用于TreeView)
   const { data: folderTree } = useSWR<FolderNode[]>(
-    currentView === 'tree' ? `${API_BASE_URL}/cloud/tree` : null,
-    async (url: string) => {
-      try {
-        return await apiRequest<FolderNode[]>(url);
-      } catch (error) {
-        console.error('API请求失败:', error);
-        throw error;
-      }
-    }
+    currentView === 'tree' ? `/cloud/tree` : null,
+    apiRequest
   )
 
   // 如果搜索或排序条件变化，自动刷新数据
