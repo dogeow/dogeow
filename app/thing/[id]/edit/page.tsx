@@ -14,7 +14,7 @@ import { ArrowLeft, Upload, X } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
-import { API_BASE_URL } from '@/configs/api'
+import { API_BASE_URL } from '@/utils/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
 import LocationTreeSelect from '../../components/LocationTreeSelect'

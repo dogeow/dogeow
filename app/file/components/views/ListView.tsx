@@ -11,7 +11,6 @@ import {
   FileSpreadsheet,
   Folder,
   ArrowUpDown,
-  Download,
   ChevronDown,
   ChevronUp,
 } from 'lucide-react'
@@ -20,11 +19,8 @@ import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/utils'
 import { CloudFile, SortField } from '../../types'
-import { apiRequest } from '@/utils/api'
 import useFileStore from '../../store/useFileStore'
-
-// 后端API基础URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+import { API_BASE_URL } from '@/utils/api'
 
 interface ListViewProps {
   files: CloudFile[]

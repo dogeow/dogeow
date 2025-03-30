@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Slider } from "@/components/ui/slider"
-import { API_BASE_URL } from '@/configs/api'
+import { API_BASE_URL } from '@/utils/api'
 import { useRouter } from 'next/navigation'
 import { cn } from "@/lib/utils"
 import { LayoutGrid, Grid2X2, Grid3X3, ChevronDown, ChevronUp, Globe, LockIcon } from "lucide-react"

@@ -6,7 +6,6 @@ import {
   ChevronDown,
   File,
   FileText,
-  FileImage,
   FileArchive,
   FileAudio,
   FileVideo,
@@ -18,9 +17,7 @@ import {
 import { cn } from '@/lib/utils'
 import { CloudFile, FolderNode } from '../../types'
 import useFileStore from '../../store/useFileStore'
-
-// 后端API基础URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+import { API_BASE_URL } from '@/utils/api'
 
 interface TreeViewProps {
   folderTree: FolderNode[]

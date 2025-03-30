@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import ThingNavigation from '../components/ThingNavigation'
+import { API_BASE_URL } from '@/utils/api'
 
 export default function ItemDetail() {
   const params = useParams()
@@ -163,7 +164,7 @@ export default function ItemDetail() {
                   <div className="space-y-3">
                     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-sm">
                       <Image
-                        src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '')}/storage/${item.images[activeImageIndex].path}`}
+                        src={`${API_BASE_URL}/storage/${item.images[activeImageIndex].path}`}
                         alt={item.name}
                         fill
                         className="object-contain"
@@ -181,7 +182,7 @@ export default function ItemDetail() {
                             onClick={() => setActiveImageIndex(index)}
                           >
                             <Image
-                              src={`${process.env.NEXT_PUBLIC_API_BASE_URL?.replace('/api', '')}/storage/${image.thumbnail_path}`}
+                              src={`${API_BASE_URL}/storage/${image.thumbnail_path}`}
                               alt={`${item.name} 图片 ${index + 1}`}
                               fill
                               className="object-cover rounded-sm"

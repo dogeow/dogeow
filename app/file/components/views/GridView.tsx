@@ -42,9 +42,7 @@ import { cn } from '@/lib/utils'
 import { CloudFile } from '../../types'
 import { apiRequest, put, del } from '@/utils/api'
 import useFileStore from '../../store/useFileStore'
-
-// 后端API基础URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
+import { API_BASE_URL } from '@/utils/api'
 
 interface GridViewProps {
   files: CloudFile[]

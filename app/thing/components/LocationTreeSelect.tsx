@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { ChevronRight, ChevronDown, Home, DoorOpen, MapPin, FolderPlus, FolderMinus } from 'lucide-react'
-import { API_BASE_URL } from '@/configs/api'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from "@/components/ui/button"

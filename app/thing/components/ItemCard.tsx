@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner"
 import Image from "next/image"
 import { useItemStore } from '@/stores/itemStore'
-import { API_BASE_URL } from '@/configs/api'
+import { API_BASE_URL } from '@/utils/api'
 import { del } from '@/utils/api'
 
 interface ItemCardProps {
