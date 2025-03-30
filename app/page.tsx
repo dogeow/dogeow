@@ -9,10 +9,16 @@ import { useRouter } from "next/navigation";
 import Footer from "@/components/app/Footer";
 
 const TileGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   margin: 1rem;
+`;
+
+const TileRow = styled.div`
+  display: flex;
+  width: 100%;
+  gap: 1rem;
 `;
 
 const TileItem = styled.div<{ color: string; colSpan: number; rowSpan: number }>`
@@ -24,8 +30,7 @@ const TileItem = styled.div<{ color: string; colSpan: number; rowSpan: number }>
   padding: 1rem;
   border-radius: 0.5rem;
   background-color: ${props => props.color};
-  grid-column: span ${props => props.colSpan} / span ${props => props.colSpan};
-  grid-row: span ${props => props.rowSpan} / span ${props => props.rowSpan};
+  flex: ${props => props.colSpan};
   height: ${props => 8 * props.rowSpan}rem;
   transition: transform 0.2s;
   
@@ -64,28 +69,105 @@ export default function Home() {
     );
   }, []);
   
+  // 将磁贴分组为行
+  const topRowTiles = tiles.slice(0, 1); // 物品管理
+  const middleRowTiles = [tiles[1]]; // 实验室
+  const rightColumnTiles = tiles.slice(2, 4); // 文件和Minecraft
+  const bottomRowTiles = tiles.slice(4); // 导航、笔记和游戏
+  
   return (
     <>
       <TileGrid>
-        {tiles.map((tile: Tile, index: number) => (
-          <TileItem
-            key={index}
-            color={tile.color}
-            colSpan={tile.colSpan}
-            rowSpan={tile.rowSpan}
-            onClick={() => router.push(tile.href)}
-          >
-            <IconWrapper>
-              <Image
-                src={`/images/projects/${tile.icon}`}
-                alt={tile.name}
-                fill
-                className="object-contain"
-              />
-            </IconWrapper>
-            <TileName>{tile.name}</TileName>
-          </TileItem>
-        ))}
+        <TileRow>
+          {topRowTiles.map((tile: Tile, index: number) => (
+            <TileItem
+              key={`top-${index}`}
+              color={tile.color}
+              colSpan={tile.colSpan}
+              rowSpan={tile.rowSpan}
+              onClick={() => router.push(tile.href)}
+            >
+              <IconWrapper>
+                <Image
+                  src={`/images/projects/${tile.icon}`}
+                  alt={tile.name}
+                  fill
+                  className="object-contain"
+                />
+              </IconWrapper>
+              <TileName>{tile.name}</TileName>
+            </TileItem>
+          ))}
+        </TileRow>
+        
+        <TileRow>
+          {middleRowTiles.map((tile: Tile, index: number) => (
+            <TileItem
+              key={`middle-${index}`}
+              color={tile.color}
+              colSpan={1}
+              rowSpan={2}
+              onClick={() => router.push(tile.href)}
+              style={{ width: 'calc(33.33% - 0.67rem)' }}
+            >
+              <IconWrapper>
+                <Image
+                  src={`/images/projects/${tile.icon}`}
+                  alt={tile.name}
+                  fill
+                  className="object-contain"
+                />
+              </IconWrapper>
+              <TileName>{tile.name}</TileName>
+            </TileItem>
+          ))}
+          
+          <div style={{ display: 'flex', flexDirection: 'column', width: 'calc(66.67% - 0.33rem)', gap: '1rem' }}>
+            {rightColumnTiles.map((tile: Tile, index: number) => (
+              <TileItem
+                key={`right-${index}`}
+                color={tile.color}
+                colSpan={2}
+                rowSpan={1}
+                onClick={() => router.push(tile.href)}
+                style={{ width: '100%'}}
+              >
+                <IconWrapper>
+                  <Image
+                    src={`/images/projects/${tile.icon}`}
+                    alt={tile.name}
+                    fill
+                    className="object-contain"
+                  />
+                </IconWrapper>
+                <TileName>{tile.name}</TileName>
+              </TileItem>
+            ))}
+          </div>
+        </TileRow>
+        
+        <TileRow>
+          {bottomRowTiles.map((tile: Tile, index: number) => (
+            <TileItem
+              key={`bottom-${index}`}
+              color={tile.color}
+              colSpan={1}
+              rowSpan={1}
+              onClick={() => router.push(tile.href)}
+              style={{ width: 'calc(33.33% - 0.67rem)' }}
+            >
+              <IconWrapper>
+                <Image
+                  src={`/images/projects/${tile.icon}`}
+                  alt={tile.name}
+                  fill
+                  className="object-contain"
+                />
+              </IconWrapper>
+              <TileName>{tile.name}</TileName>
+            </TileItem>
+          ))}
+        </TileRow>
       </TileGrid>
       <Footer />
     </>
