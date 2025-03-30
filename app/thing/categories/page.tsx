@@ -132,7 +132,7 @@ export default function Categories() {
   }
 
   return (
-    <div className="flex flex-col h-full mx-2">
+    <div className="flex flex-col h-full">
       <ThingNavigation />
     
       <div className="grid gap-6 md:grid-cols-2">

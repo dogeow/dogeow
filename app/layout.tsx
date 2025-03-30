@@ -26,33 +26,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        style={{ 
-          overflow: 'hidden',
-          height: '100vh',
-          display: 'flex',
-          flexDirection: 'column'
-        }}
-      >
+    <html lang="zh-CN" suppressHydrationWarning>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen flex flex-col`}>
         <ThemeProvider>
-          <div style={{ 
-            flex: 'none', 
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-            backgroundColor: 'var(--background)'
-          }}>
+          <div id="header-container" className="flex-none sticky top-0 z-10 bg-background" >
             <AppLauncher />
           </div>
-          <div 
-            id="main-content"
-            style={{
-              overflow: 'auto',
-              margin: '8px 8px'
-            }}
-          >
+          <div id="main-container">
             {children}
           </div>
           <Toaster />
