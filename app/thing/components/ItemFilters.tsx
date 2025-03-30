@@ -33,6 +33,8 @@ interface FilterState {
   is_public: boolean | null;
   include_null_purchase_date: boolean;
   include_null_expiry_date: boolean;
+  exclude_null_purchase_date?: boolean;
+  exclude_null_expiry_date?: boolean;
 }
 
 export default function ItemFilters({ onApply }: ItemFiltersProps) {
@@ -44,16 +46,16 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   // 初始筛选条件
   const initialFilters: FilterState = {
-    category_id: '',
+    category_id: 'all',
     purchase_date_from: null,
     purchase_date_to: null,
     expiry_date_from: null,
     expiry_date_to: null,
     price_from: '',
     price_to: '',
-    area_id: '',
-    room_id: '',
-    spot_id: '',
+    area_id: 'all',
+    room_id: 'all',
+    spot_id: 'all',
     is_public: null,
     include_null_purchase_date: true,
     include_null_expiry_date: true,
@@ -90,7 +92,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   const handleChange = (field: keyof FilterState, value: any) => {
     setFilters(prev => {
       const newFilters = { ...prev, [field]: value }
-      onApply(newFilters)
       return newFilters
     })
   }
@@ -100,18 +101,20 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   }
   
   const handleApply = () => {
-    // 过滤掉空值，确保日期正确传递
-    const appliedFilters = Object.entries(filters).reduce((acc: Record<string, any>, [key, value]) => {
-      // 不再添加 is_public 参数和空字符串参数
-      if (key !== 'is_public' && value !== null && value !== '') {
-        acc[key] = value;
+    // 创建一个新的对象，只保留非空、非"all"的值
+    const appliedFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+      const fieldKey = key as keyof FilterState;
+      // 不包含空值、"all"值和is_public为null的情况
+      if (fieldKey !== 'is_public' && value !== null && value !== '' && value !== 'all') {
+        acc[fieldKey] = value;
+        
         // 特别打印category_id的值
         if (key === 'category_id') {
           console.log('FilterFilters - 添加分类ID:', value, typeof value);
         }
       }
       return acc;
-    }, {});
+    }, {} as Partial<FilterState>);
     
     // 如果有日期筛选条件且不包含空日期，添加特殊标记
     if (filters.purchase_date_from && !filters.include_null_purchase_date) {
@@ -123,7 +126,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     }
     
     console.log('应用筛选条件:', appliedFilters);
-    onApply(appliedFilters);
+    onApply(appliedFilters as FilterState);
   }
   
   // 渲染日期选择器组件
@@ -218,12 +221,15 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">区域</Label>
-                <Select value={filters.area_id.toString()} onValueChange={(value) => handleChange('area_id', value)}>
+                <Select 
+                  value={typeof filters.area_id === 'number' ? filters.area_id.toString() : filters.area_id.toString()} 
+                  onValueChange={(value) => handleChange('area_id', value)}
+                >
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="选择区域" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部区域</SelectItem>
+                    <SelectItem value="all">全部区域</SelectItem>
                     {areas.map((area: Area) => (
                       <SelectItem key={area.id} value={area.id.toString()}>
                         {area.name}
@@ -236,15 +242,15 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">房间</Label>
                 <Select 
-                  value={filters.room_id.toString()} 
+                  value={typeof filters.room_id === 'number' ? filters.room_id.toString() : filters.room_id.toString()} 
                   onValueChange={(value) => handleChange('room_id', value)}
-                  disabled={!filters.area_id}
+                  disabled={filters.area_id === 'all'}
                 >
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="选择房间" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部房间</SelectItem>
+                    <SelectItem value="all">全部房间</SelectItem>
                     {rooms.map((room: Room) => (
                       <SelectItem key={room.id} value={room.id.toString()}>
                         {room.name}
@@ -257,15 +263,15 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">具体位置</Label>
                 <Select 
-                  value={filters.spot_id.toString()} 
+                  value={typeof filters.spot_id === 'number' ? filters.spot_id.toString() : filters.spot_id.toString()} 
                   onValueChange={(value) => handleChange('spot_id', value)}
-                  disabled={!filters.room_id}
+                  disabled={filters.room_id === 'all'}
                 >
                   <SelectTrigger className="h-11">
                     <SelectValue placeholder="选择位置" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">全部位置</SelectItem>
+                    <SelectItem value="all">全部位置</SelectItem>
                     {spots.map((spot: Spot) => (
                       <SelectItem key={spot.id} value={spot.id.toString()}>
                         {spot.name}
