@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "@/components/ThemeProvider"
 import { Toaster } from "@/components/ui/sonner"
 import { AppLauncher } from "@/components/launcher"
+import { BackgroundWrapper } from "@/components/provider/BackgroundWrapper"
 import "./globals.css";
 
 const geistSans = Geist({
@@ -33,7 +34,9 @@ export default function RootLayout({
             <AppLauncher />
           </div>
           <div id="main-container">
-            {children}
+            <BackgroundWrapper>
+              {children}
+            </BackgroundWrapper>
           </div>
           <Toaster />
         </ThemeProvider>

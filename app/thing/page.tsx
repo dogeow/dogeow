@@ -10,10 +10,8 @@ import { SlidersHorizontal, LayoutList, Grid } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
-import ThingNavigation from './components/ThingNavigation'
 import ItemGallery from './components/ItemGallery'
 import { useItemStore } from '@/stores/itemStore'
-import { BackgroundWrapper } from '@/components/provider/BackgroundWrapper'
 
 // 定义视图模式类型
 type ViewMode = 'list' | 'gallery';
@@ -271,15 +269,9 @@ export default function Thing() {
   }
 
   return (
-    <BackgroundWrapper>
-      <div id="thing-page" className="flex flex-col h-full gap-2 mx-2">
-        <ThingNavigation />
-        
-        <div className="flex flex-col gap-2">
-          {renderFilters()}
-          {renderContent()}
-        </div>
-      </div>
-    </BackgroundWrapper>
+    <div className="flex flex-col gap-2">
+      {renderFilters()}
+      {renderContent()}
+    </div>
   )
 }
