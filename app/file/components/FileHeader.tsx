@@ -9,7 +9,6 @@ import {
   Search, 
   FolderPlus, 
   Upload,
-  SlidersHorizontal, 
   Trash2,
   FolderTree
 } from 'lucide-react'

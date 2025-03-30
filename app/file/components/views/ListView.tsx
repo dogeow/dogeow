@@ -1,6 +1,5 @@
 'use client'
 
-import { useContext } from 'react'
 import {
   File,
   FileText,
@@ -20,9 +19,9 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/utils'
-import FileContext from '../../context/FileContext'
 import { CloudFile, SortField } from '../../types'
 import { apiRequest } from '@/utils/api'
+import useFileStore from '../../store/useFileStore'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -41,7 +40,7 @@ export default function ListView({ files }: ListViewProps) {
     sortField,
     sortDirection,
     handleSort
-  } = useContext(FileContext)
+  } = useFileStore()
 
   // 切换选择文件
   const toggleSelection = (fileId: number, event: React.MouseEvent) => {

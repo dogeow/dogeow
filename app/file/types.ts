@@ -36,18 +36,4 @@ export interface FolderNode {
   id: number
   name: string
   children: FolderNode[]
-}
-
-export interface FileContextType {
-  currentView: FileView
-  setCurrentView: (view: FileView) => void
-  searchQuery: string
-  setSearchQuery: (query: string) => void
-  currentFolderId: number | null
-  navigateToFolder: (folderId: number | null) => void
-  selectedFiles: number[]
-  setSelectedFiles: (files: number[]) => void
-  sortField: SortField
-  sortDirection: SortDirection
-  handleSort: (field: SortField) => void
 } 

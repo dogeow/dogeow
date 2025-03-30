@@ -1,6 +1,6 @@
 'use client'
 
-import { useContext, useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import {
   File,
   FileText,
@@ -39,9 +39,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/utils'
-import FileContext from '../../context/FileContext'
 import { CloudFile } from '../../types'
 import { apiRequest, put, del } from '@/utils/api'
+import useFileStore from '../../store/useFileStore'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -52,7 +52,7 @@ interface GridViewProps {
 
 export default function GridView({ files }: GridViewProps) {
   const { mutate } = useSWRConfig()
-  const { currentFolderId, navigateToFolder, selectedFiles, setSelectedFiles } = useContext(FileContext)
+  const { currentFolderId, navigateToFolder, selectedFiles, setSelectedFiles } = useFileStore()
   const [editingFile, setEditingFile] = useState<CloudFile | null>(null)
   const [fileName, setFileName] = useState('')
   const [fileDescription, setFileDescription] = useState('')

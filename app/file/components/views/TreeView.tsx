@@ -1,6 +1,6 @@
 'use client'
 
-import { useContext, useState } from 'react'
+import { useState } from 'react'
 import {
   ChevronRight,
   ChevronDown,
@@ -16,8 +16,8 @@ import {
   FolderOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import FileContext from '../../context/FileContext'
 import { CloudFile, FolderNode } from '../../types'
+import useFileStore from '../../store/useFileStore'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -103,7 +103,7 @@ const FolderNodeComponent: React.FC<FolderNodeComponentProps> = ({
 }
 
 export default function TreeView({ folderTree, files }: TreeViewProps) {
-  const { currentFolderId, navigateToFolder } = useContext(FileContext)
+  const { currentFolderId, navigateToFolder } = useFileStore()
   const [expandedNodes, setExpandedNodes] = useState<Record<number, boolean>>({})
 
   // 获取文件图标或缩略图

@@ -1,16 +1,16 @@
 'use client'
 
-import { useContext, useEffect } from 'react'
+import { useEffect } from 'react'
 import useSWR from 'swr'
 import { toast } from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
-import FileContext from '../context/FileContext'
 import { CloudFile, FolderNode } from '../types'
 import GridView from './views/GridView'
 import ListView from './views/ListView'
 import TreeView from './views/TreeView'
 import BreadcrumbNav from './BreadcrumbNav'
 import { apiRequest } from '@/utils/api'
+import useFileStore from '../store/useFileStore'
 
 // 后端API基础URL
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -22,7 +22,7 @@ export default function FileExplorer() {
     searchQuery,
     sortField,
     sortDirection
-  } = useContext(FileContext)
+  } = useFileStore()
 
   // 获取文件列表
   const { data: files, error, isLoading, mutate } = useSWR<CloudFile[]>(

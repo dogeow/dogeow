@@ -1,11 +1,11 @@
 'use client'
 
-import { useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { ChevronRight, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import FileContext from '../context/FileContext'
 import { CloudFile } from '../types'
 import { apiRequest, API_BASE_URL } from '@/utils/api'
+import useFileStore from '../store/useFileStore'
 
 interface Breadcrumb {
   id: number
@@ -13,7 +13,7 @@ interface Breadcrumb {
 }
 
 export default function BreadcrumbNav() {
-  const { currentFolderId, navigateToFolder } = useContext(FileContext)
+  const { currentFolderId, navigateToFolder } = useFileStore()
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
