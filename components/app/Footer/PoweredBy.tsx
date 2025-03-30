@@ -2,10 +2,10 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-import reactIcon from "../../public/images/tech/react.svg";
-import laravelIcon from "../../public/images/tech/laravel.svg";
-import NextJsIcon from "../../public/images/tech/next-js.svg";
-import graphQlIcon from "../../public/images/tech/shadcn.svg";
+import reactIcon from "@/public/images/tech/react.svg";
+import laravelIcon from "@/public/images/tech/laravel.svg";
+import NextJsIcon from "@/public/images/tech/next-js.svg";
+import graphQlIcon from "@/public/images/tech/shadcn.svg";
 
 interface TechLinkProps {
   href: string;
@@ -18,7 +18,7 @@ const TechLink: React.FC<TechLinkProps> = ({ href, src, alt }) => (
     href={href} 
     target="_blank" 
     rel="noopener noreferrer"
-    className="inline-flex items-center"
+    className="inline-flex items-center text-sm"
   >
     <Image 
       src={src} 
@@ -31,7 +31,7 @@ const TechLink: React.FC<TechLinkProps> = ({ href, src, alt }) => (
 );
 
 const PoweredBy: React.FC = () => (
-  <div className="flex items-center gap-2">
+  <div className="flex items-center gap-2 text-sm opacity-80">
     <span>Powered By 🫴</span>
     <TechLink href="https://nextjs.org" src={NextJsIcon} alt="Next.js" />
     <TechLink href="https://laravel.com" src={laravelIcon} alt="Laravel" />

@@ -179,7 +179,6 @@ export default function FileHeader() {
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="h-8">
               <FolderPlus className="h-4 w-4 mr-2" />
-              新建文件夹
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -224,7 +223,6 @@ export default function FileHeader() {
             multiple
           />
           <Upload className="h-4 w-4 mr-2" />
-          上传文件
           {isUploading && (
             <span className="ml-2 inline-block h-3 w-3 animate-spin rounded-full border-2 border-solid border-current border-r-transparent" />
           )}
@@ -239,7 +237,6 @@ export default function FileHeader() {
             onClick={deleteSelectedFiles}
           >
             <Trash2 className="h-4 w-4 mr-2" />
-            删除
           </Button>
         )}
       </div>

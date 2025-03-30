@@ -48,9 +48,7 @@ export default function FilePage() {
       }}
     >
       <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-6">云存储</h1>
-        
-        <FileHeader />
+       <FileHeader />
         
         <div className="mt-4">
           <FileExplorer />
