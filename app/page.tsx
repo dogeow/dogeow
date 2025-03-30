@@ -4,7 +4,6 @@ import Image from "next/image";
 import {styled} from "styled-components";
 import config from '@/configs/app';
 import type { Tile } from '@/types/app';
-import { BackgroundWrapper } from "@/components/provider/BackgroundWrapper";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/app/Footer";
 
@@ -62,7 +61,7 @@ export default function Home() {
   );
   
   return (
-    <BackgroundWrapper>
+    <>
       <TileGrid>
         {tiles.map((tile: Tile, index: number) => (
           <TileItem
@@ -85,6 +84,6 @@ export default function Home() {
         ))}
       </TileGrid>
       <Footer />
-    </BackgroundWrapper>
+    </>
   );
 }
