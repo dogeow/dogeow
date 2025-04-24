@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -15,8 +15,45 @@ export default function ShootingRangePage() {
   const [isStarted, setIsStarted] = useState(false)
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("easy")
 
+  // 防止空格键引起页面滚动
+  useEffect(() => {
+    const preventSpacebarScroll = (e: KeyboardEvent) => {
+      // 如果按下空格键
+      if (e.code === 'Space' || e.key === ' ') {
+        // 阻止默认行为（滚动）
+        e.preventDefault();
+        return false;
+      }
+    };
+
+    // 添加事件监听器
+    window.addEventListener('keydown', preventSpacebarScroll);
+
+    // 清理函数移除事件监听器
+    return () => {
+      window.removeEventListener('keydown', preventSpacebarScroll);
+    };
+  }, []);
+
+  // 处理返回设置按钮点击，确保释放指针锁定
+  const handleBackToSettings = () => {
+    // 尝试释放指针锁定
+    if (document.exitPointerLock) {
+      document.exitPointerLock();
+    } else if ((document as any).mozExitPointerLock) {
+      (document as any).mozExitPointerLock();
+    } else if ((document as any).webkitExitPointerLock) {
+      (document as any).webkitExitPointerLock();
+    }
+    
+    // 设置一个短暂的延迟，确保指针锁释放后再更改状态
+    setTimeout(() => {
+      setIsStarted(false);
+    }, 50);
+  }
+
   return (
-    <div className="container py-8 px-4">
+    <div className="w-full py-8">
       {!isStarted ? (
         <Card className="p-6 max-w-md mx-auto">
           <h2 className="text-2xl font-semibold mb-4">游戏设置</h2>
@@ -60,17 +97,10 @@ export default function ShootingRangePage() {
           </Button>
         </Card>
       ) : (
-        <div className="relative">
-          <Button 
-            variant="outline" 
-            className="absolute top-2 left-2 z-10"
-            onClick={() => setIsStarted(false)}
-          >
-            返回设置
-          </Button>
-          <div className="h-[80vh] w-full rounded-lg overflow-hidden border relative">
+        <div className="relative w-full h-[90vh]">
+          <div className="h-full w-full rounded-lg overflow-hidden relative">
             <Suspense fallback={<div className="flex justify-center items-center h-full">加载游戏中...</div>}>
-              <ShootingGame difficulty={difficulty} />
+              <ShootingGame difficulty={difficulty} setGameStarted={setIsStarted} />
             </Suspense>
           </div>
         </div>

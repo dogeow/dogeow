@@ -25,7 +25,7 @@ export default function NoteCategories() {
   const [loading, setLoading] = useState(false)
 
   // 加载分类数据
-  const { data: categories, error } = useSWR<Category[]>("/api/note-categories", get)
+  const { data: categories, error } = useSWR<Category[]>('/note-categories', get)
 
   // 添加分类
   const addCategory = async () => {
@@ -36,13 +36,13 @@ export default function NoteCategories() {
 
     setLoading(true)
     try {
-      await post("/api/note-categories", {
+      await post("/note-categories", {
         name: newCategory,
         description: newDescription
       })
       setNewCategory("")
       setNewDescription("")
-      mutate("/api/note-categories")
+      mutate("/note-categories")
       toast.success("分类添加成功")
     } catch (error) {
       toast.error("添加分类失败")
@@ -61,12 +61,12 @@ export default function NoteCategories() {
 
     setLoading(true)
     try {
-      await put(`/api/note-categories/${editingCategory.id}`, {
+      await put(`/note-categories/${editingCategory.id}`, {
         name: editingCategory.name,
         description: editingCategory.description
       })
       setEditingCategory(null)
-      mutate("/api/note-categories")
+      mutate("/note-categories")
       toast.success("分类更新成功")
     } catch (error) {
       toast.error("更新分类失败")
@@ -84,8 +84,8 @@ export default function NoteCategories() {
 
     setLoading(true)
     try {
-      await del(`/api/note-categories/${id}`)
-      mutate("/api/note-categories")
+      await del(`/note-categories/${id}`)
+      mutate("/note-categories")
       toast.success("分类删除成功")
     } catch (error) {
       toast.error("删除分类失败")

@@ -19,6 +19,7 @@ interface Target {
 
 interface ShootingGameProps {
   difficulty: "easy" | "medium" | "hard"
+  setGameStarted?: (started: boolean) => void
 }
 
 // 爆炸粒子效果
@@ -296,13 +297,12 @@ const GunModel = () => {
 const Crosshair = () => {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 100 }}>
-      <div className="relative w-10 h-10 flex items-center justify-center">
-        {/* 十字准星 */}
-        <div className="absolute w-8 h-0.5 bg-white opacity-90"></div>
-        <div className="absolute h-8 w-0.5 bg-white opacity-90"></div>
-        
-        {/* 中心点 - 保留小红点增加精确度 */}
-        <div className="absolute w-1 h-1 bg-red-500 rounded-full"></div>
+      <div className="relative w-12 h-12 flex items-center justify-center">
+        {/* 十字准星 - 增加中心空白区域 */}
+        <div className="absolute left-0 w-[5px] h-[1px] bg-white opacity-90"></div>
+        <div className="absolute right-0 w-[5px] h-[1px] bg-white opacity-90"></div>
+        <div className="absolute top-0 h-[5px] w-[1px] bg-white opacity-90"></div>
+        <div className="absolute bottom-0 h-[5px] w-[1px] bg-white opacity-90"></div>
       </div>
     </div>
   )
@@ -317,12 +317,12 @@ const GameUI = ({ score, timeLeft, gameOver, onRestart }: {
 }) => {
   return (
     <div className="fixed inset-0 pointer-events-none">
-      <div className="container mx-auto p-4">
-        <div className="flex justify-between">
-          <div className="bg-black/50 p-2 rounded text-white">
+      <div className="w-full pt-16 px-4">
+        <div className="flex justify-between max-w-3xl mx-auto">
+          <div className="bg-black/80 p-2 px-4 rounded-lg text-white font-medium shadow-lg">
             得分: {score}
           </div>
-          <div className="bg-black/50 p-2 rounded text-white">
+          <div className="bg-black/80 p-2 px-4 rounded-lg text-white font-medium shadow-lg">
             时间: {timeLeft.toFixed(1)}s
           </div>
         </div>
@@ -481,6 +481,9 @@ const GameScene = ({
   
   // 鼠标位置状态 (用于备用控制)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  
+  // 指针锁状态
+  const [pointerLocked, setPointerLocked] = useState(false);
   
   // 根据难度设置参数
   const difficultySettings = {
@@ -651,27 +654,6 @@ const GameScene = ({
     setTimeout(() => setMuzzleFlash(false), 100)
   }, [])
   
-  // 调试模式
-  const [debugMode, setDebugMode] = useState(false)
-  
-  // 强制更新所有目标状态（调试用）
-  const forceExplodeAll = useCallback(() => {
-    console.log("强制引爆所有目标");
-    setTargets(prev => 
-      prev.map(target => ({...target, hit: true}))
-    )
-  }, [])
-  
-  // 调试用射线
-  const [debugRay, setDebugRay] = useState<{
-    origin: THREE.Vector3;
-    direction: THREE.Vector3;
-    length: number;
-  } | null>(null);
-  
-  // 显示命中点 - 调试用
-  const [hitPosition, setHitPosition] = useState<THREE.Vector3 | null>(null);
-  
   // 处理子弹碰撞检测
   const checkBulletCollisions = useCallback(() => {
     setBullets(prevBullets => {
@@ -702,11 +684,6 @@ const GameScene = ({
               // 计算交点与子弹当前位置的距离
               const distance = intersectionPoint.distanceTo(bullet.position);
               hitTargets.push({ id: target.id, distance });
-              
-              // 调试模式下记录命中位置
-              if (debugMode) {
-                setHitPosition(intersectionPoint.clone());
-              }
             }
           }
         });
@@ -722,7 +699,7 @@ const GameScene = ({
         return true; // 保留子弹
       });
     });
-  }, [targets, handleTargetHit, debugMode]);
+  }, [targets, handleTargetHit]);
   
   // 每帧更新子弹碰撞
   useFrame(() => {
@@ -734,8 +711,6 @@ const GameScene = ({
   // 处理普通模式下的射击
   const handleShoot = useCallback(() => {
     if (!gameStarted || !canShoot) return
-    
-    console.log("射击!");
     
     // 设置射击冷却
     setCanShoot(false);
@@ -760,18 +735,6 @@ const GameScene = ({
     const bulletPosition = camera.position.clone();
     // 稍微前移子弹起始位置，避免与相机碰撞
     bulletPosition.add(bulletDirection.clone().multiplyScalar(0.1));
-    
-    // 在调试模式下显示射线
-    if (debugMode) {
-      setDebugRay({
-        origin: camera.position.clone(),
-        direction: bulletDirection.clone(),
-        length: 50
-      });
-      
-      // 清除之前的命中点
-      setHitPosition(null);
-    }
     
     // 创建子弹，使用与射线相同的起点和方向
     setBullets(prev => [
@@ -872,19 +835,10 @@ const GameScene = ({
       hittableTargets.sort((a, b) => a.distance - b.distance);
       const hitResult = hittableTargets[0];
       
-      console.log(`命中目标 ID: ${hitResult.targetId}, 距离: ${hitResult.distance.toFixed(2)}`);
-      
-      // 在调试模式下显示命中点
-      if (debugMode) {
-        setHitPosition(hitResult.point);
-      }
-      
       // 处理目标被击中
       handleTargetHit(hitResult.targetId);
-    } else {
-      console.log("未命中任何目标");
     }
-  }, [camera, gameStarted, scene, handleTargetHit, showMuzzleFlash, targets, bullets.length, bulletCounter, canShoot, shootCooldown, debugMode]);
+  }, [camera, gameStarted, scene, handleTargetHit, showMuzzleFlash, targets, bullets.length, bulletCounter, canShoot, shootCooldown]);
   
   // 监听鼠标点击事件（正常模式下）
   useEffect(() => {
@@ -903,82 +857,120 @@ const GameScene = ({
     }
   }, [gameStarted, handleShoot, useFallbackControls])
   
-  // 在调试模式下显示射线
-  const updateDebugRay = useCallback(() => {
-    if (!debugMode || !camera) return;
-    
-    const origin = new THREE.Vector3().copy(camera.position);
-    const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
-    
-    setDebugRay({
-      origin,
-      direction,
-      length: 50
-    });
-  }, [debugMode, camera]);
-  
-  // 更新调试射线
-  useFrame(() => {
-    if (debugMode) {
-      updateDebugRay();
-    }
-  });
-  
   // 添加键盘快捷键
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 按D键切换调试模式
-      if (e.key === 'd' || e.key === 'D') {
-        setDebugMode(prev => !prev);
-        console.log("调试模式:", !debugMode);
-        
-        // 在开启调试模式时，生成一个参考射线
-        if (!debugMode && camera) {
-          const origin = camera.position.clone();
-          const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
-          
-          setDebugRay({
-            origin,
-            direction,
-            length: 50
-          });
-        }
-      }
-      
-      // 按X强制引爆所有目标
-      if (e.key === 'x' || e.key === 'X') {
-        forceExplodeAll();
-      }
-      
       // 按空格射击
       if (e.key === ' ' && gameStarted && !useFallbackControls) {
+        e.preventDefault(); // 阻止默认行为
         handleShoot();
       }
     };
     
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, { passive: false });
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [debugMode, forceExplodeAll, gameStarted, handleShoot, useFallbackControls, updateDebugRay]);
+  }, [gameStarted, handleShoot, useFallbackControls]);
 
   // 使用effect来检测gameStarted状态的变化
   useEffect(() => {
-    console.log(`游戏场景中的gameStarted状态变为: ${gameStarted}`);
+    let pointerLockErrorReported = false;
     
     // 如果使用备用控制模式，不需要锁定指针
     if (gameStarted && !useFallbackControls && controls.current) {
       try {
-        console.log("尝试锁定鼠标指针");
-        controls.current.lock();
+        // 延迟一帧再锁定指针，避免状态同步问题
+        const timeoutId = setTimeout(() => {
+          try {
+            if (controls.current && typeof controls.current.lock === 'function') {
+              controls.current.lock();
+            }
+          } catch (error) {
+            if (!pointerLockErrorReported) {
+              console.error("锁定指针失败:", error);
+              onError("无法锁定鼠标指针，请尝试使用备用控制模式");
+              pointerLockErrorReported = true;
+            }
+          }
+        }, 300); // 等待300ms，让DOM完全渲染
+        
+        return () => clearTimeout(timeoutId);
       } catch (error) {
-        console.error("锁定指针失败:", error);
-        onError("无法锁定鼠标指针，请尝试使用备用控制模式");
+        if (!pointerLockErrorReported) {
+          console.error("请求动画帧失败:", error);
+          onError("无法锁定鼠标指针，请尝试使用备用控制模式");
+          pointerLockErrorReported = true;
+        }
       }
     }
-  }, [gameStarted, useFallbackControls, onError]);
+    
+    // 添加锁定状态变化监听
+    const handlePointerLockChange = () => {
+      // 检查当前文档的指针锁定状态
+      const isLocked = 
+        document.pointerLockElement === gl.domElement ||
+        (document as any).mozPointerLockElement === gl.domElement ||
+        (document as any).webkitPointerLockElement === gl.domElement;
+      
+      setPointerLocked(isLocked);
+      
+      // 如果应该是游戏状态但指针未锁定，则可能是用户按了ESC
+      if (gameStarted && !isLocked) {
+        // 处理用户通过ESC退出了指针锁定
+        console.log("指针锁定已退出，更新游戏状态");
+        setGameStarted(false);
+      }
+    };
+    
+    // 添加退出前的处理逻辑
+    const handleBeforeUnload = () => {
+      // 确保在页面卸载前释放指针锁
+      if (document.exitPointerLock) {
+        document.exitPointerLock();
+      }
+    };
+    
+    // 注册事件监听器
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
+    document.addEventListener('mozpointerlockchange', handlePointerLockChange);
+    document.addEventListener('webkitpointerlockchange', handlePointerLockChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      // 组件卸载时，确保释放指针锁
+      try {
+        if (document.pointerLockElement || 
+            (document as any).mozPointerLockElement || 
+            (document as any).webkitPointerLockElement) {
+          if (document.exitPointerLock) {
+            document.exitPointerLock();
+          } else if ((document as any).mozExitPointerLock) {
+            (document as any).mozExitPointerLock();
+          } else if ((document as any).webkitExitPointerLock) {
+            (document as any).webkitExitPointerLock();
+          }
+        }
+      } catch (e) {
+        console.error("释放指针锁出错:", e);
+      }
+      
+      // 移除事件监听器
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+      document.removeEventListener('mozpointerlockchange', handlePointerLockChange);
+      document.removeEventListener('webkitpointerlockchange', handlePointerLockChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [gameStarted, useFallbackControls, onError, gl, setGameStarted]);
 
   return (
     <>
-      {!useFallbackControls && <PointerLockControls ref={controls} />}
+      {!useFallbackControls && (
+        <Suspense fallback={null}>
+          {/* 使用错误处理包装PointerLockControls */}
+          {gameStarted ? (
+            <PointerLockControls ref={controls} />
+          ) : null}
+        </Suspense>
+      )}
       
       {/* 环境光 */}
       <ambientLight intensity={0.5} />
@@ -1015,76 +1007,6 @@ const GameScene = ({
         />
       ))}
       
-      {/* 调试辅助 - 射线可视化 */}
-      {debugMode && (
-        <group>
-          {/* 摄像机前方直线 - 精确显示准心射线 */}
-          <line>
-            <bufferGeometry
-              attach="geometry"
-              onUpdate={(self) => {
-                const start = camera.position.clone();
-                const forward = new THREE.Vector3(0, 0, -1)
-                  .applyQuaternion(camera.quaternion)
-                  .normalize();
-                const end = start.clone().add(forward.multiplyScalar(100));
-                
-                const positions = [
-                  start.x, start.y, start.z,
-                  end.x, end.y, end.z
-                ];
-                
-                self.setAttribute(
-                  'position',
-                  new THREE.Float32BufferAttribute(positions, 3)
-                );
-              }}
-            />
-            <lineBasicMaterial color="#ff0000" linewidth={3} />
-          </line>
-          
-          {/* 准心指向的点 */}
-          <mesh position={[0, 0, -5]} scale={[0.05, 0.05, 0.05]}>
-            <sphereGeometry args={[1, 16, 16]} />
-            <meshBasicMaterial color="#00ff00" />
-          </mesh>
-          
-          {/* 命中点标记 */}
-          {hitPosition && (
-            <mesh position={hitPosition} scale={[0.1, 0.1, 0.1]}>
-              <sphereGeometry args={[1, 16, 16]} />
-              <meshBasicMaterial color="#ff00ff" />
-            </mesh>
-          )}
-          
-          {/* 标记点击位置的线 */}
-          {debugRay && (
-            <line>
-              <bufferGeometry
-                attach="geometry"
-                onUpdate={(self) => {
-                  const start = debugRay.origin;
-                  const end = start.clone().add(
-                    debugRay.direction.clone().multiplyScalar(debugRay.length)
-                  );
-                  
-                  const positions = [
-                    start.x, start.y, start.z,
-                    end.x, end.y, end.z
-                  ];
-                  
-                  self.setAttribute(
-                    'position',
-                    new THREE.Float32BufferAttribute(positions, 3)
-                  );
-                }}
-              />
-              <lineBasicMaterial color="#00ffff" linewidth={3} />
-            </line>
-          )}
-        </group>
-      )}
-      
       {/* 武器 */}
       <Suspense fallback={null}>
         {/* 调整枪的位置，确保视觉上与射击位置一致 */}
@@ -1119,16 +1041,35 @@ const GameScene = ({
 }
 
 // 主游戏组件
-const ShootingGame = ({ difficulty }: ShootingGameProps) => {
+const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
   const [score, setScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState(60)
   const [gameOver, setGameOver] = useState(false)
-  const [gameStarted, setGameStarted] = useState(false)
+  const [gameStarted, setGameStartedState] = useState(false)
+  const [showStartOverlay, setShowStartOverlay] = useState(true) // 控制开始弹窗显示的状态
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const canvasContainerRef = useRef<HTMLDivElement>(null)
   
   // 错误状态处理
   const [pointerLockError, setPointerLockError] = useState<string | null>(null)
+  
+  // 防止空格键引起页面滚动
+  useEffect(() => {
+    const preventSpacebarScroll = (e: KeyboardEvent) => {
+      // 如果按下空格键，阻止默认行为（滚动）
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+      }
+    };
+
+    // 添加事件监听器
+    window.addEventListener('keydown', preventSpacebarScroll, { passive: false });
+
+    // 清理函数移除事件监听器
+    return () => {
+      window.removeEventListener('keydown', preventSpacebarScroll);
+    };
+  }, []);
   
   // 处理得分
   const handleScore = () => {
@@ -1175,7 +1116,6 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
       if (!('pointerLockElement' in document) && 
           !('mozPointerLockElement' in document) && 
           !('webkitPointerLockElement' in document)) {
-        console.log("浏览器不支持Pointer Lock API，使用备用控制模式");
         setBrowserSupport({
           supported: false,
           message: '您的浏览器不支持Pointer Lock API，游戏将以有限功能模式运行。',
@@ -1186,7 +1126,6 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
       
       // 检查是否在移动设备上
       if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        console.log("当前设备是移动设备，不推荐在移动设备上玩射击游戏");
         setBrowserSupport({
           supported: false,
           message: '射击游戏需要使用鼠标控制，不支持移动设备。请在台式机或笔记本电脑上尝试。',
@@ -1200,7 +1139,6 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
     
     // 添加错误监听
     const handlePointerLockError = () => {
-      console.error("Pointer Lock Error")
       setPointerLockError("浏览器拒绝了指针锁定请求，可能是权限问题或浏览器限制。")
       // 自动切换到备用模式
       setBrowserSupport(prev => ({
@@ -1225,59 +1163,97 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // 如果按下Enter或空格，且游戏未开始，则开始游戏
       if ((e.key === 'Enter' || e.key === ' ') && !gameStarted && !gameOver) {
-        console.log("通过键盘开始游戏");
-        setGameStarted(true);
+        e.preventDefault(); // 阻止默认行为
+        startGame();
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, startGame]);
+  
+  // 统一处理游戏开始的函数
+  const startGame = useCallback(() => {
+    // 先隐藏开始弹窗
+    setShowStartOverlay(false);
+    
+    // 设置游戏状态
+    setGameStartedState(true);
+    if (setGameStarted) setGameStarted(true);
+    
+    // 使用延迟而不是requestAnimationFrame
+    setTimeout(() => {
+      // 尝试锁定指针
+      if (!browserSupport.useFallback && canvasRef.current) {
+        try {
+          if (canvasRef.current.requestPointerLock) {
+            canvasRef.current.requestPointerLock();
+          } else if ((canvasRef.current as any).mozRequestPointerLock) {
+            (canvasRef.current as any).mozRequestPointerLock();
+          } else if ((canvasRef.current as any).webkitRequestPointerLock) {
+            (canvasRef.current as any).webkitRequestPointerLock();
+          }
+        } catch (e) {
+          console.error("锁定指针失败:", e);
+          setBrowserSupport(prev => ({...prev, useFallback: true}));
+        }
+      }
+    }, 300); // 使用300ms延迟确保DOM已完全更新
+  }, [browserSupport.useFallback, setGameStarted]);
   
   // 点击Canvas区域启动游戏
   const handleCanvasClick = useCallback(() => {
-    console.log("画布被点击", { gameStarted, gameOver });
-    
-    // 直接设置游戏开始状态
     if (!gameStarted && !gameOver) {
-      console.log("正在尝试开始游戏...");
-      setGameStarted(true);
-      
-      // 通过事件传播，会触发Three.js场景中的控制器锁定
-      if (canvasRef.current) {
-        // 确保canvas元素仍然在DOM中
-        if (document.body.contains(canvasRef.current)) {
-          try {
-            // 模拟点击
-            const event = new MouseEvent('click', {
-              view: window,
-              bubbles: true,
-              cancelable: true
-            });
-            canvasRef.current.dispatchEvent(event);
-            console.log("已分发Canvas点击事件");
-          } catch (error) {
-            console.error("分发事件失败:", error);
-          }
-        }
-      }
+      startGame();
     }
-  }, [gameStarted, gameOver, setGameStarted]);
+  }, [gameStarted, gameOver, startGame]);
 
   // 清除错误并重试
-  const handleClearErrorAndRetry = () => {
-    setPointerLockError(null)
-    // 如果用户明确选择重试，关闭备用模式
-    if (browserSupport.useFallback) {
-      setBrowserSupport(prev => ({
-        ...prev,
-        useFallback: false
-      }))
+  const handleRetry = () => {
+    setPointerLockError(null);
+    
+    // 先释放指针锁
+    try {
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      } else if ((document as any).mozPointerLockElement) {
+        (document as any).mozExitPointerLock();
+      } else if ((document as any).webkitPointerLockElement) {
+        (document as any).webkitExitPointerLock();
+      }
+    } catch (e) {
+      console.error("释放指针锁失败:", e);
     }
+    
     // 重置游戏状态
-    setGameStarted(false)
-    setGameOver(false)
+    setGameStartedState(false);
+    if (setGameStarted) setGameStarted(false);
+    setGameOver(false);
+    setShowStartOverlay(true); // 显示开始弹窗
   }
+  
+  // 处理回到设置的函数
+  const handleBackToSettings = useCallback(() => {
+    // 释放指针锁
+    try {
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      } else if ((document as any).mozPointerLockElement) {
+        (document as any).mozExitPointerLock();
+      } else if ((document as any).webkitPointerLockElement) {
+        (document as any).webkitExitPointerLock();
+      }
+    } catch (e) {
+      console.error("释放指针锁失败:", e);
+    }
+    
+    // 重置游戏状态
+    setGameStartedState(false);
+    setShowStartOverlay(true);
+    
+    // 通知父组件
+    if (setGameStarted) setTimeout(() => setGameStarted(false), 100);
+  }, [setGameStarted]);
 
   if (!browserSupport.supported && !browserSupport.useFallback) {
     return (
@@ -1315,7 +1291,7 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
             difficulty={difficulty} 
             onScore={handleScore} 
             gameStarted={gameStarted && !gameOver}
-            setGameStarted={setGameStarted}
+            setGameStarted={setGameStartedState}
             useFallbackControls={browserSupport.useFallback}
             onError={setPointerLockError}
           />
@@ -1325,12 +1301,47 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
         {gameStarted && !gameOver && <Crosshair />}
       </div>
       
+      {/* 返回设置按钮 */}
+      {gameStarted && (
+        <button 
+          className="fixed top-16 left-4 z-50 bg-black/80 hover:bg-black/90 text-white px-4 py-2 rounded-lg border border-white/20 shadow-lg text-sm font-medium"
+          onClick={handleBackToSettings}
+        >
+          返回设置
+        </button>
+      )}
+      
       <GameUI 
         score={score} 
         timeLeft={timeLeft} 
         gameOver={gameOver}
         onRestart={handleRestart}
       />
+      
+      {/* 开始游戏弹窗 */}
+      {showStartOverlay && !gameOver && !pointerLockError && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+          <div className="bg-white p-6 rounded-lg max-w-sm w-full text-center">
+            <h2 className="text-xl font-bold mb-2">准备就绪</h2>
+            <p className="mb-4">点击按钮开始游戏</p>
+            {browserSupport.useFallback ? (
+              <p className="text-sm text-red-500 mb-2">
+                您的浏览器不完全支持此游戏的控制方式，正在使用有限功能模式运行。
+              </p>
+            ) : (
+              <p className="text-sm text-gray-500">
+                <strong>注意:</strong> 游戏将请求锁定您的鼠标指针。按ESC键可随时退出。
+              </p>
+            )}
+            <button 
+              className="w-full mt-4 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
+              onClick={startGame}
+            >
+              开始游戏
+            </button>
+          </div>
+        </div>
+      )}
       
       {/* 错误提示 */}
       {pointerLockError && (
@@ -1341,15 +1352,15 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
             <div className="flex gap-2">
               <button 
                 className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded"
-                onClick={handleClearErrorAndRetry}
+                onClick={handleRetry}
               >
                 重试
               </button>
               <button 
                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded"
                 onClick={() => {
-                  setPointerLockError(null)
-                  // 继续使用备用模式
+                  setPointerLockError(null);
+                  setBrowserSupport(prev => ({...prev, useFallback: true}));
                 }}
               >
                 继续（使用备用控制）
@@ -1359,34 +1370,11 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
         </div>
       )}
       
-      {!gameStarted && !gameOver && !pointerLockError && (
-        <div 
-          className="fixed inset-0 flex items-center justify-center bg-black/30 cursor-pointer"
-          onClick={() => {
-            console.log("开始游戏遮罩被点击");
-            handleCanvasClick();
-            setGameStarted(true); // 直接设置游戏状态为开始
-          }}
-        >
-          <div className="bg-white p-6 rounded-lg max-w-sm w-full text-center">
-            <h2 className="text-xl font-bold mb-2">准备就绪</h2>
-            <p className="mb-4">点击屏幕开始游戏</p>
-            {browserSupport.useFallback ? (
-              <p className="text-sm text-red-500 mb-2">
-                您的浏览器不完全支持此游戏的控制方式，正在使用有限功能模式运行。
-              </p>
-            ) : (
-              <p className="text-sm text-gray-500">
-                <strong>注意:</strong> 游戏将请求锁定您的鼠标指针。按ESC键可随时退出。
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-      
       {/* 调试信息和游戏说明 */}
-      <div className="fixed bottom-2 right-2 bg-black/50 p-2 rounded text-white text-xs">
-        <p>空格键：射击 | D：调试模式 | X：引爆所有目标 | ESC：暂停</p>
+      <div className="fixed bottom-2 inset-x-0 flex justify-center">
+        <div className="bg-black/70 p-2 rounded-lg text-white text-xs max-w-fit mx-auto">
+          <p>空格键或鼠标左键：射击 | ESC：暂停</p>
+        </div>
       </div>
     </>
   )

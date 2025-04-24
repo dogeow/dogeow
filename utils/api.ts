@@ -3,7 +3,7 @@ import useAuthStore from '../stores/authStore';
 import type { Category, Area, Room, Spot, Item } from '@/app/thing/types';
 import type { User, ApiError } from '@/app';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
 
 /**
  * 创建带有认证token的请求头

@@ -56,7 +56,7 @@ export default function NoteNavigation() {
     setLoading(true)
     
     try {
-      const newNote = await post('/api/notes', {
+      const newNote = await post('/notes', {
         title: newNoteTitle,
         content: '# ' + newNoteTitle + '\n\n开始编辑你的新笔记吧！'
       })

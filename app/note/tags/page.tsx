@@ -24,7 +24,7 @@ export default function NoteTags() {
   const [loading, setLoading] = useState(false)
 
   // 加载标签数据
-  const { data: tags, error } = useSWR<Tag[]>("/api/note-tags", get)
+  const { data: tags, error } = useSWR<Tag[]>('/note-tags', get)
 
   // 添加标签
   const addTag = async () => {
@@ -35,12 +35,12 @@ export default function NoteTags() {
 
     setLoading(true)
     try {
-      await post("/api/note-tags", {
+      await post("/note-tags", {
         name: newTag,
         color: newColor
       })
       setNewTag("")
-      mutate("/api/note-tags")
+      mutate("/note-tags")
       toast.success("标签添加成功")
     } catch (error) {
       toast.error("添加标签失败")
@@ -58,8 +58,8 @@ export default function NoteTags() {
 
     setLoading(true)
     try {
-      await del(`/api/note-tags/${id}`)
-      mutate("/api/note-tags")
+      await del(`/note-tags/${id}`)
+      mutate("/note-tags")
       toast.success("标签删除成功")
     } catch (error) {
       toast.error("删除标签失败")

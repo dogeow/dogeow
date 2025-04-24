@@ -613,7 +613,7 @@ const MarkdownEditor = () => {
   const [linkText, setLinkText] = useState('')
   
   // 加载笔记列表
-  const { data: notes } = useSWR<Note[]>('/api/notes', get)
+  const { data: notes } = useSWR<Note[]>('/notes', get)
   
   const editor = useMemo(() => withShortcuts(withHistory(withReact(createEditor()))), [])
 
@@ -696,12 +696,12 @@ const MarkdownEditor = () => {
     const markdown = serialize(value)
     
     try {
-      await put(`/api/notes/${currentNoteId}`, {
+      await put(`/notes/${currentNoteId}`, {
         content: markdown
       })
       
       // 更新缓存
-      mutate('/api/notes')
+      mutate('/notes')
       
       toast.success('笔记已保存')
     } catch (error) {
@@ -722,13 +722,13 @@ const MarkdownEditor = () => {
     setLoading(true)
     
     try {
-      const newNote = await post<Note>('/api/notes', {
+      const newNote = await post<Note>('/notes', {
         title: newNoteTitle,
         content: '# ' + newNoteTitle + '\n\n开始编辑你的新笔记吧！'
       })
       
       // 更新缓存
-      mutate('/api/notes')
+      mutate('/notes')
       
       // 加载新创建的笔记
       if (newNote) {
@@ -760,10 +760,10 @@ const MarkdownEditor = () => {
     setLoading(true)
     
     try {
-      await del(`/api/notes/${currentNoteId}`)
+      await del(`/notes/${currentNoteId}`)
       
       // 更新缓存
-      mutate('/api/notes')
+      mutate('/notes')
       
       // 如果还有其他笔记，切换到第一个
       if (notes && notes.length > 1) {
