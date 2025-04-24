@@ -58,9 +58,9 @@ export async function apiRequest<T>(
   if (response.status === 401) {
     // token过期或无效，登出用户
     useAuthStore.getState().logout();
-    // 如果在浏览器环境，重定向到登录页
+    // 如果在浏览器环境，重定向到根路径
     if (typeof window !== 'undefined') {
-      window.location.href = '/login';
+      window.location.href = '/';
     }
     throw new Error('登录已过期，请重新登录');
   }
