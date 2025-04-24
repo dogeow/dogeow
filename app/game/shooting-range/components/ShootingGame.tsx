@@ -114,8 +114,8 @@ const Target = ({ position, hit, scale, onClick, id }: {
   
   // 目标的材质 - 修改为useState以确保状态变化时能够重新渲染
   const [targetMaterial, setTargetMaterial] = useState(() => new THREE.MeshStandardMaterial({ 
-    color: hit ? "#ff0000" : "#0088ff",
-    emissive: hit ? "#550000" : "#003366",
+    color: hit ? "#ff0000" : "#00aaff",
+    emissive: hit ? "#550000" : "#004488",
     roughness: 0.2,
     metalness: 0.8
   }))
@@ -161,8 +161,8 @@ const Target = ({ position, hit, scale, onClick, id }: {
       setStartExplosion(false)
       setDestroyed(false)
       setTargetMaterial(new THREE.MeshStandardMaterial({ 
-        color: "#0088ff",
-        emissive: "#003366",
+        color: "#00aaff",
+        emissive: "#004488",
         roughness: 0.2,
         metalness: 0.8
       }))
@@ -260,34 +260,34 @@ const Target = ({ position, hit, scale, onClick, id }: {
 const GunModel = () => {
   return (
     <group>
-      {/* 枪身 */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[0.2, 0.2, 0.6]} />
-        <meshStandardMaterial color="#222222" />
+      {/* 枪身 - 调整形状和位置 */}
+      <mesh position={[0, -0.05, 0]}>
+        <boxGeometry args={[0.2, 0.1, 0.4]} />
+        <meshStandardMaterial color="#222222" metalness={0.7} roughness={0.3} />
       </mesh>
       
-      {/* 枪管 */}
-      <mesh position={[0, 0, -0.4]}>
-        <cylinderGeometry args={[0.05, 0.05, 0.5, 8]} />
-        <meshStandardMaterial color="#111111" />
+      {/* 枪管 - 修改为更合理的形状 */}
+      <mesh position={[0, 0, -0.3]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.6, 8]} />
+        <meshStandardMaterial color="#111111" metalness={0.8} roughness={0.2} />
       </mesh>
       
-      {/* 握把 */}
-      <mesh position={[0, -0.2, 0.1]} rotation={[0.3, 0, 0]}>
-        <boxGeometry args={[0.15, 0.3, 0.15]} />
-        <meshStandardMaterial color="#222222" />
+      {/* 握把 - 调整角度和尺寸 */}
+      <mesh position={[0, -0.15, 0.05]} rotation={[0.3, 0, 0]}>
+        <boxGeometry args={[0.15, 0.25, 0.12]} />
+        <meshStandardMaterial color="#222222" metalness={0.6} roughness={0.4} />
       </mesh>
       
-      {/* 瞄准器 - 与准心位置对齐 */}
-      <mesh position={[0, 0.15, -0.1]}>
-        <boxGeometry args={[0.05, 0.05, 0.2]} />
-        <meshStandardMaterial color="#333333" />
+      {/* 瞄准器 - 更精细的形状 */}
+      <mesh position={[0, 0.07, -0.05]}>
+        <boxGeometry args={[0.05, 0.03, 0.15]} />
+        <meshStandardMaterial color="#333333" metalness={0.5} roughness={0.5} />
       </mesh>
       
-      {/* 枪口参考点 - 帮助调试射击位置 */}
-      <mesh position={[0, 0, -0.65]} visible={false}>
-        <sphereGeometry args={[0.02, 8, 8]} />
-        <meshBasicMaterial color="#ff0000" />
+      {/* 枪口 */}
+      <mesh position={[0, 0, -0.6]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.035, 0.04, 0.03, 8]} />
+        <meshStandardMaterial color="#111111" metalness={0.9} roughness={0.1} />
       </mesh>
     </group>
   )
@@ -297,12 +297,19 @@ const GunModel = () => {
 const Crosshair = () => {
   return (
     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 100 }}>
-      <div className="relative w-12 h-12 flex items-center justify-center">
-        {/* 十字准星 - 增加中心空白区域 */}
-        <div className="absolute left-0 w-[5px] h-[1px] bg-white opacity-90"></div>
-        <div className="absolute right-0 w-[5px] h-[1px] bg-white opacity-90"></div>
-        <div className="absolute top-0 h-[5px] w-[1px] bg-white opacity-90"></div>
-        <div className="absolute bottom-0 h-[5px] w-[1px] bg-white opacity-90"></div>
+      <div className="relative w-8 h-8 flex items-center justify-center">
+        {/* 中心点 */}
+        <div className="absolute w-1 h-1 bg-white rounded-full opacity-80"></div>
+        
+        {/* 十字准星 - 减小间隔 */}
+        <div className="absolute left-1/2 -translate-x-1/2 w-6 h-[1px] bg-white opacity-80 flex justify-between">
+          <div className="w-2 h-full"></div>
+          <div className="w-2 h-full"></div>
+        </div>
+        <div className="absolute top-1/2 -translate-y-1/2 h-6 w-[1px] bg-white opacity-80 flex flex-col justify-between">
+          <div className="w-full h-2"></div>
+          <div className="w-full h-2"></div>
+        </div>
       </div>
     </div>
   )
@@ -445,6 +452,75 @@ const Bullet = ({ initialPosition, direction, onHit }: {
   );
 };
 
+// 第一人称武器组件
+const FPSWeapon = ({ muzzleFlash }: { muzzleFlash: boolean }) => {
+  const { camera } = useThree();
+  const gunRef = useRef<THREE.Group>(null);
+  
+  // 使用useFrame使枪支跟随相机旋转
+  useFrame(() => {
+    if (gunRef.current) {
+      // 基础位置偏移，基于相机的局部坐标系
+      const offsetPosition = new THREE.Vector3(0.15, -0.1, -0.3);
+      
+      // 获取相机的位置和旋转
+      const cameraPosition = camera.position.clone();
+      const cameraQuaternion = camera.quaternion.clone();
+      
+      // 创建一个局部位置向量，将偏移应用到相机局部空间
+      const localPosition = offsetPosition.clone();
+      
+      // 将局部位置向量应用相机的旋转，得到世界空间中的位置
+      localPosition.applyQuaternion(cameraQuaternion);
+      
+      // 计算最终位置（相机位置+旋转后的局部位置）
+      const finalPosition = cameraPosition.clone().add(localPosition);
+      
+      // 应用位置
+      gunRef.current.position.copy(finalPosition);
+      
+      // 完全跟随相机旋转
+      gunRef.current.quaternion.copy(cameraQuaternion);
+      
+      // 添加轻微的武器摇晃，模拟走路/呼吸效果
+      const time = Date.now() * 0.001;
+      const swayQuaternion = new THREE.Quaternion();
+      swayQuaternion.setFromEuler(
+        new THREE.Euler(
+          Math.sin(time * 2) * 0.005,  // 上下轻微摇晃
+          Math.sin(time * 1.5) * 0.005, // 左右轻微摇晃
+          Math.sin(time * 1.2) * 0.003  // 轻微的侧倾
+        )
+      );
+      
+      // 将摇晃应用到枪支的旋转上
+      gunRef.current.quaternion.multiply(swayQuaternion);
+    }
+  });
+  
+  return (
+    <group ref={gunRef} scale={1.4}>
+      <GunModel />
+      {/* 枪口闪光 */}
+      {muzzleFlash && (
+        <>
+          <pointLight 
+            position={[0, 0, -0.6]} 
+            intensity={2} 
+            color="#ffaa00" 
+            distance={1.5}
+          />
+          {/* 闪光粒子效果 */}
+          <mesh position={[0, 0, -0.65]}>
+            <sphereGeometry args={[0.05, 8, 8]} />
+            <meshBasicMaterial color="#ffaa00" transparent opacity={0.8} />
+          </mesh>
+        </>
+      )}
+    </group>
+  );
+};
+
 // 游戏场景
 const GameScene = ({ 
   difficulty, 
@@ -487,9 +563,9 @@ const GameScene = ({
   
   // 根据难度设置参数
   const difficultySettings = {
-    easy: { targetCount: 8, targetSpeed: 0.01, gameAreaSize: 12 },
-    medium: { targetCount: 12, targetSpeed: 0.02, gameAreaSize: 15 },
-    hard: { targetCount: 16, targetSpeed: 0.03, gameAreaSize: 18 }
+    easy: { targetCount: 8, targetSpeed: 0.01, gameAreaSize: 20 },
+    medium: { targetCount: 12, targetSpeed: 0.02, gameAreaSize: 25 },
+    hard: { targetCount: 16, targetSpeed: 0.03, gameAreaSize: 30 }
   }
   
   const settings = difficultySettings[difficulty]
@@ -501,11 +577,11 @@ const GameScene = ({
     for (let i = 0; i < settings.targetCount; i++) {
       const gameArea = settings.gameAreaSize
       
-      // 随机位置，但要保持一定距离
+      // 随机位置，但要保持一定距离，确保目标更远
       const position: [number, number, number] = [
         (Math.random() - 0.5) * gameArea,
         (Math.random() - 0.5) * gameArea / 2 + 2,
-        (Math.random() - 0.5) * gameArea - 5
+        (Math.random() - 0.5) * gameArea - (gameArea / 2) // 确保z轴距离更远
       ]
       
       // 随机移动方向
@@ -579,7 +655,7 @@ const GameScene = ({
             const position: [number, number, number] = [
               (Math.random() - 0.5) * gameArea,
               (Math.random() - 0.5) * gameArea / 2 + 2,
-              (Math.random() - 0.5) * gameArea - 5
+              (Math.random() - 0.5) * gameArea - (gameArea / 2) // 确保z轴距离更远
             ]
             
             const direction: [number, number, number] = [
@@ -978,13 +1054,56 @@ const GameScene = ({
       
       {/* 场景 */}
       <Environment preset="sunset" />
-      <fog attach="fog" args={['#111', 10, 50]} />
+      <fog attach="fog" args={['#0c1445', 15, 50]} />
+      
+      {/* 太阳 - 完全重设为明亮的红黄色圆盘 */}
+      <mesh position={[0, 15, -40]} rotation={[0, 0, 0]}>
+        <circleGeometry args={[10, 32]} />
+        <meshStandardMaterial color="#ff3300" emissive="#ff3300" emissiveIntensity={2} toneMapped={false} />
+      </mesh>
+      
+      {/* 太阳强光 */}
+      <pointLight position={[0, 15, -40]} color="#ff5500" intensity={10} distance={200} decay={0.5} />
+      
+      {/* 平行光源模拟太阳光 */}
+      <directionalLight 
+        position={[0, 100, -100]} 
+        intensity={1} 
+        color="#fffbe0" 
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-far={250}
+        shadow-camera-left={-50}
+        shadow-camera-right={50}
+        shadow-camera-top={50}
+        shadow-camera-bottom={-50}
+      />
       
       {/* 地面 */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1, 0]} receiveShadow>
-        <planeGeometry args={[100, 100]} />
-        <meshStandardMaterial color="#335577" />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -2, 0]} receiveShadow>
+        <planeGeometry args={[200, 200]} />
+        <meshStandardMaterial color="#1a2b4a" />
       </mesh>
+      
+      {/* 使用useMemo减少闪烁问题 */}
+      {useMemo(() => {
+        // 减少星星数量
+        const stars = [];
+        for (let i = 0; i < 50; i++) {
+          const x = (Math.random() - 0.5) * 180;
+          const y = Math.random() * 40 + 10;
+          const z = (Math.random() - 0.5) * 180;
+          const size = Math.random() * 0.15 + 0.05;
+          stars.push(
+            <mesh key={i} position={[x, y, z]}>
+              <sphereGeometry args={[size, 4, 4]} />
+              <meshBasicMaterial color="#ffffff" transparent opacity={0.7} />
+            </mesh>
+          );
+        }
+        return stars;
+      }, [])}
       
       {/* 目标 */}
       {targets.map(target => (
@@ -1009,33 +1128,8 @@ const GameScene = ({
       
       {/* 武器 */}
       <Suspense fallback={null}>
-        {/* 调整枪的位置，确保视觉上与射击位置一致 */}
-        <group position={[0.15, -0.3, -0.3]} rotation={[0, 0, 0]}>
-          <GunModel />
-          {/* 枪口闪光 */}
-          {muzzleFlash && (
-            <>
-              <pointLight 
-                position={[0, 0, -0.6]} 
-                intensity={2} 
-                color="#ffaa00" 
-                distance={1.5}
-              />
-              {/* 闪光粒子效果 */}
-              <mesh position={[0, 0, -0.65]}>
-                <sphereGeometry args={[0.05, 8, 8]} />
-                <meshBasicMaterial color="#ffaa00" transparent opacity={0.8} />
-              </mesh>
-            </>
-          )}
-        </group>
+        <FPSWeapon muzzleFlash={muzzleFlash} />
       </Suspense>
-      
-      {/* 远景 */}
-      <mesh position={[0, 10, -50]}>
-        <sphereGeometry args={[30, 16, 16]} />
-        <meshBasicMaterial color="#000011" side={THREE.BackSide} />
-      </mesh>
     </>
   )
 }
@@ -1279,10 +1373,12 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
         <Canvas 
           shadows 
           ref={canvasRef} 
-          camera={{ fov: 75, position: [0, 1.6, 0] }}
-          onCreated={({ gl }) => {
+          camera={{ fov: 65, position: [0, 1.6, 0], rotation: [0, 0, 0] }}
+          onCreated={({ gl, camera }) => {
             console.log("Canvas已创建");
             gl.setClearColor("#020617");
+            // 确保相机初始角度平视
+            camera.rotation.set(0, 0, 0);
           }}
           style={{ touchAction: 'none' }} // 防止触摸事件引起页面滚动
           className="outline-none" // 防止焦点边框

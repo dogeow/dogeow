@@ -2,10 +2,10 @@
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import { createEditor, Descendant } from 'slate'
-import { Slate, Editable, withReact } from 'slate-react'
+import { Slate, Editable, withReact, ReactEditor } from 'slate-react'
 import { withHistory } from 'slate-history'
 import { Button } from "@/components/ui/button"
-import { Save, FileText } from 'lucide-react'
+import { Save, FileText, Bold, Italic, List, ListOrdered, Code, Link as LinkIcon } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { put } from '@/utils/api'
 
@@ -104,9 +104,9 @@ const Element = ({ attributes, children, element }) => {
     case 'heading-three':
       return <h3 {...attributes} className="text-xl font-bold my-2">{children}</h3>
     case 'list-item':
-      return <li {...attributes}>{children}</li>
+      return <li {...attributes} className="editor-list-item">{children}</li>
     default:
-      return <p {...attributes} className="my-2">{children}</p>
+      return <p {...attributes} className="editor-paragraph">{children}</p>
   }
 }
 
@@ -129,6 +129,107 @@ const Leaf = ({ attributes, children, leaf }) => {
   return <span {...attributes}>{renderedChildren}</span>
 }
 
+// 添加快捷键处理的编辑器增强
+const withShortcuts = (editor: any) => {
+  const { insertText, deleteBackward } = editor
+  
+  editor.insertText = (text: string) => {
+    // 获取当前选区
+    const { selection } = editor
+    
+    // 如果输入空格，且有有效选区
+    if (text === ' ' && selection && selection.anchor.offset === 1) {
+      // 获取当前行的内容
+      const startOfLine = { ...selection.anchor, offset: 0 }
+      const beforeText = editor.string({ anchor: startOfLine, focus: selection.focus })
+      
+      // 检查是否是特定的Markdown标记
+      if (beforeText === '-' || beforeText === '*') {
+        // 删除标记
+        editor.delete({ unit: 'character', reverse: true })
+        // 创建列表项
+        const listItem = {
+          type: 'list-item',
+          children: [{ text: '' }]
+        }
+        // 插入列表项
+        editor.insertNode(listItem)
+        return
+      }
+      
+      // 处理标题
+      if (beforeText === '#') {
+        editor.delete({ unit: 'character', reverse: true })
+        editor.insertNode({
+          type: 'heading-one',
+          children: [{ text: '' }]
+        })
+        return
+      }
+      
+      if (beforeText === '##') {
+        editor.delete({ unit: 'character', reverse: true })
+        editor.delete({ unit: 'character', reverse: true })
+        editor.insertNode({
+          type: 'heading-two',
+          children: [{ text: '' }]
+        })
+        return
+      }
+      
+      if (beforeText === '###') {
+        editor.delete({ unit: 'character', reverse: true })
+        editor.delete({ unit: 'character', reverse: true })
+        editor.delete({ unit: 'character', reverse: true })
+        editor.insertNode({
+          type: 'heading-three',
+          children: [{ text: '' }]
+        })
+        return
+      }
+    }
+    
+    // 默认行为
+    insertText(text)
+  }
+  
+  editor.deleteBackward = (...args: any[]) => {
+    const { selection } = editor
+    
+    // 处理特殊块的删除逻辑
+    if (selection && selection.anchor.offset === 0) {
+      const currentNode = editor.above()
+      
+      if (currentNode) {
+        const [node, path] = currentNode
+        
+        // 如果当前不是普通段落，且在行首，则转换为普通段落
+        if (node.type !== 'paragraph' && selection.anchor.offset === 0) {
+          editor.setNodes({ type: 'paragraph' })
+          return
+        }
+      }
+    }
+    
+    // 默认行为
+    deleteBackward(...args)
+  }
+  
+  return editor
+}
+
+// 自定义Placeholder组件
+const Placeholder = ({ children, attributes }: { children: React.ReactNode; attributes?: any }) => {
+  return (
+    <div
+      {...attributes}
+      className="absolute top-[16px] left-[16px] opacity-50 pointer-events-none select-none"
+    >
+      {children}
+    </div>
+  );
+};
+
 // 主编辑器组件
 interface MarkdownEditorProps {
   noteId: number
@@ -141,7 +242,7 @@ const MarkdownEditorSimple = ({ noteId, initialContent = '' }: MarkdownEditorPro
   const [showMarkdown, setShowMarkdown] = useState(false)
   const [loading, setLoading] = useState(false)
   
-  const editor = useMemo(() => withHistory(withReact(createEditor())), [])
+  const editor = useMemo(() => withShortcuts(withHistory(withReact(createEditor()))), [])
 
   // 初始化编辑器
   useEffect(() => {
@@ -193,11 +294,68 @@ const MarkdownEditorSimple = ({ noteId, initialContent = '' }: MarkdownEditorPro
     setShowMarkdown(!showMarkdown)
   }, [showMarkdown, updateMarkdown])
 
+  // 添加格式化功能
+  const toggleBold = useCallback(() => {
+    // @ts-ignore - 简化实现
+    const selection = editor.selection
+    if (selection) {
+      // @ts-ignore - 简化实现
+      const marks = editor.marks || {}
+      // @ts-ignore - 简化实现
+      editor.addMark('bold', !marks.bold)
+    }
+  }, [editor])
+  
+  const toggleItalic = useCallback(() => {
+    // @ts-ignore - 简化实现
+    const selection = editor.selection
+    if (selection) {
+      // @ts-ignore - 简化实现
+      const marks = editor.marks || {}
+      // @ts-ignore - 简化实现
+      editor.addMark('italic', !marks.italic)
+    }
+  }, [editor])
+  
+  const toggleCode = useCallback(() => {
+    // @ts-ignore - 简化实现
+    const selection = editor.selection
+    if (selection) {
+      // @ts-ignore - 简化实现
+      const marks = editor.marks || {}
+      // @ts-ignore - 简化实现
+      editor.addMark('code', !marks.code)
+    }
+  }, [editor])
+  
+  const insertList = useCallback((listType: 'bulleted' | 'numbered') => {
+    // @ts-ignore - 简化实现
+    const selection = editor.selection
+    if (selection) {
+      // 简单插入一个列表项
+      const listItem = {
+        type: 'list-item',
+        children: [{ text: '' }]
+      }
+      // @ts-ignore - 简化实现
+      editor.insertNodes(listItem)
+    }
+  }, [editor])
+  
+  const insertLink = useCallback(() => {
+    const url = prompt('输入链接URL:')
+    if (url) {
+      const text = prompt('输入链接文本:', url)
+      // @ts-ignore - 简化实现
+      editor.insertText(`[${text || url}](${url})`)
+    }
+  }, [editor])
+
   return (
     <div className="flex flex-col space-y-4">
       <div className="border rounded-lg overflow-hidden">
         {showMarkdown ? (
-          <div className="p-4 min-h-[400px] font-mono whitespace-pre-wrap bg-muted/10">
+          <div className="p-4 min-h-[400px] font-mono whitespace-pre-wrap bg-muted/10 slate-editor-container">
             {markdownValue || '暂无内容'}
           </div>
         ) : (
@@ -207,6 +365,76 @@ const MarkdownEditorSimple = ({ noteId, initialContent = '' }: MarkdownEditorPro
             onChange={newValue => setValue(newValue)}
           >
             <div className="bg-muted/30 p-2 border-b flex flex-wrap gap-1">
+              <Button 
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={toggleBold}
+                title="加粗"
+                className="h-9 w-9"
+              >
+                <Bold className="h-5 w-5" />
+              </Button>
+              
+              <Button 
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={toggleItalic}
+                title="斜体"
+                className="h-9 w-9"
+              >
+                <Italic className="h-5 w-5" />
+              </Button>
+              
+              <Button 
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={toggleCode}
+                title="代码"
+                className="h-9 w-9"
+              >
+                <Code className="h-5 w-5" />
+              </Button>
+              
+              <div className="w-px h-8 bg-border mx-1"></div>
+              
+              <Button 
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => insertList('bulleted')}
+                title="无序列表"
+                className="h-9 w-9"
+              >
+                <List className="h-5 w-5" />
+              </Button>
+              
+              <Button 
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => insertList('numbered')}
+                title="有序列表"
+                className="h-9 w-9"
+              >
+                <ListOrdered className="h-5 w-5" />
+              </Button>
+              
+              <div className="w-px h-8 bg-border mx-1"></div>
+              
+              <Button 
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={insertLink}
+                title="插入链接"
+                className="h-9 w-9"
+              >
+                <LinkIcon className="h-5 w-5" />
+              </Button>
+
               <div className="ml-auto flex items-center gap-1">
                 <Button 
                   variant="ghost" 
@@ -230,14 +458,33 @@ const MarkdownEditorSimple = ({ noteId, initialContent = '' }: MarkdownEditorPro
                 </Button>
               </div>
             </div>
-            <Editable
-              className="p-4 min-h-[400px] focus:outline-none"
-              renderElement={Element}
-              renderLeaf={Leaf}
-              placeholder="开始输入 Markdown 内容..."
-              spellCheck={false}
-              autoFocus
-            />
+            <div className="relative slate-editor-container">
+              <Editable
+                className="min-h-[400px] focus:outline-none w-full"
+                renderElement={Element}
+                renderLeaf={Leaf}
+                spellCheck={false}
+                autoFocus
+                placeholder=""
+                onDOMBeforeInput={(event) => {
+                  // 防止浏览器默认行为导致光标位置异常
+                  const target = event.target as HTMLElement
+                  if (event.inputType === 'insertParagraph' && !target.textContent) {
+                    event.preventDefault()
+                    // @ts-ignore
+                    editor.insertText('\n')
+                  }
+                }}
+              />
+              {/* 使用类型断言处理类型错误，检查是否显示占位符 */}
+              {value.length > 0 && 
+               // @ts-ignore - 简化实现
+               (value[0].children?.[0]?.text === '' || value[0].children?.[0]?.text === undefined) && (
+                <div className="absolute top-4 left-0 opacity-50 pointer-events-none pl-4">
+                  开始输入 Markdown 内容...
+                </div>
+              )}
+            </div>
           </Slate>
         )}
       </div>

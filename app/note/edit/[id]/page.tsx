@@ -10,8 +10,8 @@ import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
 // 使用动态导入，避免SSR时的错误
-const MarkdownEditorSimple = dynamic(
-  () => import('@/app/note/components/MarkdownEditorSimple'), 
+const SimpleMarkdownEditor = dynamic(
+  () => import('@/app/note/components/SimpleMarkdownEditor'), 
   { ssr: false }
 )
 
@@ -62,7 +62,7 @@ export default function NoteEditPage() {
       ) : (
         <div>
           <h1 className="text-2xl font-bold mb-4">{note?.title}</h1>
-          <MarkdownEditorSimple noteId={parseInt(noteId)} initialContent={note?.content} />
+          <SimpleMarkdownEditor noteId={parseInt(noteId)} initialContent={note?.content} />
         </div>
       )}
     </div>
