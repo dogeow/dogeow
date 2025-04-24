@@ -16,6 +16,8 @@ type SettingsView = 'main' | 'background' | 'theme';
 
 // 系统背景列表
 const systemBackgrounds = configs.systemBackgrounds;
+// 系统主题列表
+const themeColors = configs.themeColors;
 
 export type CustomBackground = {id: string, name: string, url: string};
 
