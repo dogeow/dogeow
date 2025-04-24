@@ -600,57 +600,35 @@ const withShortcuts = (editor: Editor) => {
 }
 
 // 主编辑器组件
-const MarkdownEditor = () => {
+interface MarkdownEditorProps {
+  noteId: number;
+  initialContent?: string;
+}
+
+const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
   const [value, setValue] = useState<Descendant[]>(initialValue)
-  const [markdownValue, setMarkdownValue] = useState('')
+  const [markdownValue, setMarkdownValue] = useState(initialContent || '')
   const [showMarkdown, setShowMarkdown] = useState(false)
-  const [currentNoteId, setCurrentNoteId] = useState<number | null>(null)
-  const [isNewNoteDialogOpen, setIsNewNoteDialogOpen] = useState(false)
-  const [newNoteTitle, setNewNoteTitle] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [currentNoteId, setCurrentNoteId] = useState<number | null>(noteId)
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [linkText, setLinkText] = useState('')
-  
-  // 加载笔记列表
-  const { data: notes } = useSWR<Note[]>('/notes', get)
+  const [loading, setLoading] = useState(false)
   
   const editor = useMemo(() => withShortcuts(withHistory(withReact(createEditor()))), [])
 
-  // 加载默认笔记或上次编辑的笔记
+  // 初始化编辑器
   useEffect(() => {
-    // 尝试从 localStorage 获取上次编辑的笔记 ID
-    const lastNoteId = localStorage.getItem('last-note-id')
-    if (lastNoteId && notes?.length) {
-      const noteId = parseInt(lastNoteId)
-      const note = notes.find(note => note.id === noteId)
-      if (note) {
-        loadNote(note)
-      } else if (notes[0]) {
-        // 如果找不到上次的笔记，加载第一个笔记
-        loadNote(notes[0])
+    if (initialContent) {
+      try {
+        setValue(deserialize(initialContent))
+      } catch (error) {
+        console.error('解析笔记内容失败:', error)
+        setValue(initialValue)
       }
-    } else if (notes?.length) {
-      // 如果没有上次编辑的笔记，加载第一个笔记
-      loadNote(notes[0])
+      setMarkdownValue(initialContent)
     }
-  }, [notes])
-
-  // 加载指定笔记
-  const loadNote = (note: Note) => {
-    setCurrentNoteId(note.id)
-    localStorage.setItem('last-note-id', note.id.toString())
-    
-    // 解析 Markdown 内容到 Slate 格式
-    try {
-      setValue(deserialize(note.content))
-    } catch (error) {
-      console.error('解析笔记内容失败:', error)
-      setValue(initialValue)
-    }
-    
-    setMarkdownValue(note.content)
-  }
+  }, [initialContent])
 
   // 处理编辑器的键盘快捷键
   const handleKeyDown = (event: React.KeyboardEvent) => {
@@ -687,7 +665,7 @@ const MarkdownEditor = () => {
   // 保存笔记
   const saveNote = useCallback(async () => {
     if (!currentNoteId) {
-      toast.error('请先选择或创建一个笔记')
+      toast.error('笔记ID无效')
       return
     }
     
@@ -700,9 +678,6 @@ const MarkdownEditor = () => {
         content: markdown
       })
       
-      // 更新缓存
-      mutate('/notes')
-      
       toast.success('笔记已保存')
     } catch (error) {
       console.error('保存笔记失败:', error)
@@ -711,85 +686,6 @@ const MarkdownEditor = () => {
       setLoading(false)
     }
   }, [value, updateMarkdown, currentNoteId])
-
-  // 创建新笔记
-  const createNote = async () => {
-    if (!newNoteTitle.trim()) {
-      toast.error('请输入笔记标题')
-      return
-    }
-    
-    setLoading(true)
-    
-    try {
-      const newNote = await post<Note>('/notes', {
-        title: newNoteTitle,
-        content: '# ' + newNoteTitle + '\n\n开始编辑你的新笔记吧！'
-      })
-      
-      // 更新缓存
-      mutate('/notes')
-      
-      // 加载新创建的笔记
-      if (newNote) {
-        loadNote(newNote)
-      }
-      
-      setIsNewNoteDialogOpen(false)
-      setNewNoteTitle('')
-      toast.success('笔记已创建')
-    } catch (error) {
-      console.error('创建笔记失败:', error)
-      toast.error('创建笔记失败')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  // 删除当前笔记
-  const deleteCurrentNote = async () => {
-    if (!currentNoteId) {
-      toast.error('没有选中的笔记')
-      return
-    }
-    
-    if (!confirm('确定要删除此笔记吗？此操作不可撤销。')) {
-      return
-    }
-    
-    setLoading(true)
-    
-    try {
-      await del(`/notes/${currentNoteId}`)
-      
-      // 更新缓存
-      mutate('/notes')
-      
-      // 如果还有其他笔记，切换到第一个
-      if (notes && notes.length > 1) {
-        const remainingNotes = notes.filter(note => note.id !== currentNoteId)
-        if (remainingNotes.length) {
-          loadNote(remainingNotes[0])
-        } else {
-          // 如果没有其他笔记，清空编辑器
-          setCurrentNoteId(null)
-          setValue(initialValue)
-          setMarkdownValue('')
-        }
-      } else {
-        setCurrentNoteId(null)
-        setValue(initialValue)
-        setMarkdownValue('')
-      }
-      
-      toast.success('笔记已删除')
-    } catch (error) {
-      console.error('删除笔记失败:', error)
-      toast.error('删除笔记失败')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // 切换 Markdown 预览
   const toggleMarkdownView = useCallback(() => {
@@ -836,7 +732,7 @@ const MarkdownEditor = () => {
     Transforms.move(editor)
   }, [editor])
 
-  // 插入表格（简单的2x2表格）
+  // 插入表格
   const insertTable = useCallback(() => {
     const tableNode = {
       type: 'table',
@@ -864,66 +760,6 @@ const MarkdownEditor = () => {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <h2 className="text-lg font-semibold">
-            {currentNoteId && notes 
-              ? notes.find(note => note.id === currentNoteId)?.title || '未命名笔记'
-              : '创建你的第一个笔记'}
-          </h2>
-          {currentNoteId && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={deleteCurrentNote}
-              disabled={loading}
-              title="删除笔记"
-            >
-              <Trash className="h-4 w-4 text-red-500" />
-            </Button>
-          )}
-        </div>
-        
-        <Dialog open={isNewNoteDialogOpen} onOpenChange={setIsNewNoteDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="flex items-center gap-1"
-            >
-              <Plus className="h-4 w-4" />
-              新建笔记
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>新建笔记</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <Input
-                placeholder="笔记标题"
-                value={newNoteTitle}
-                onChange={(e) => setNewNoteTitle(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                onClick={() => setIsNewNoteDialogOpen(false)}
-              >
-                取消
-              </Button>
-              <Button 
-                onClick={createNote}
-                disabled={loading || !newNoteTitle.trim()}
-              >
-                创建
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
       <div className="border rounded-lg overflow-hidden">
         {showMarkdown ? (
           <div className="p-4 min-h-[400px] font-mono whitespace-pre-wrap bg-muted/10">
@@ -1011,30 +847,6 @@ const MarkdownEditor = () => {
               onKeyDown={handleKeyDown}
             />
           </Slate>
-        )}
-      </div>
-      
-      {/* 笔记列表 */}
-      <div className="border rounded-lg p-3">
-        <h3 className="font-medium mb-3">我的笔记</h3>
-        {notes?.length ? (
-          <div className="space-y-1 max-h-48 overflow-y-auto">
-            {notes.map(note => (
-              <div 
-                key={note.id} 
-                className={`p-2 rounded-md cursor-pointer hover:bg-muted ${
-                  currentNoteId === note.id ? 'bg-primary/10 font-medium' : ''
-                }`}
-                onClick={() => loadNote(note)}
-              >
-                {note.title || '未命名笔记'}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-muted-foreground text-sm">
-            暂无笔记，点击"新建笔记"按钮创建
-          </p>
         )}
       </div>
       

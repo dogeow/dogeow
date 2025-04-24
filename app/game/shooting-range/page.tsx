@@ -53,7 +53,7 @@ export default function ShootingRangePage() {
   }
 
   return (
-    <div className="w-full py-8">
+    <div className="w-full">
       {!isStarted ? (
         <Card className="p-6 max-w-md mx-auto">
           <h2 className="text-2xl font-semibold mb-4">游戏设置</h2>
@@ -98,7 +98,7 @@ export default function ShootingRangePage() {
         </Card>
       ) : (
         <div className="relative w-full h-[90vh]">
-          <div className="h-full w-full rounded-lg overflow-hidden relative">
+          <div className="h-full w-full overflow-hidden relative">
             <Suspense fallback={<div className="flex justify-center items-center h-full">加载游戏中...</div>}>
               <ShootingGame difficulty={difficulty} setGameStarted={setIsStarted} />
             </Suspense>

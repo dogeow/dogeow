@@ -1107,6 +1107,35 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
     message: '',
     useFallback: false
   })
+
+  // 统一处理游戏开始的函数 - 声明提前到使用之前
+  const startGame = useCallback(() => {
+    // 先隐藏开始弹窗
+    setShowStartOverlay(false);
+    
+    // 设置游戏状态
+    setGameStartedState(true);
+    if (setGameStarted) setGameStarted(true);
+    
+    // 使用延迟而不是requestAnimationFrame
+    setTimeout(() => {
+      // 尝试锁定指针
+      if (!browserSupport.useFallback && canvasRef.current) {
+        try {
+          if (canvasRef.current.requestPointerLock) {
+            canvasRef.current.requestPointerLock();
+          } else if ((canvasRef.current as any).mozRequestPointerLock) {
+            (canvasRef.current as any).mozRequestPointerLock();
+          } else if ((canvasRef.current as any).webkitRequestPointerLock) {
+            (canvasRef.current as any).webkitRequestPointerLock();
+          }
+        } catch (e) {
+          console.error("锁定指针失败:", e);
+          setBrowserSupport(prev => ({...prev, useFallback: true}));
+        }
+      }
+    }, 300); // 使用300ms延迟确保DOM已完全更新
+  }, [browserSupport.useFallback, setGameStarted, canvasRef]);
   
   // 检查浏览器兼容性
   useEffect(() => {
@@ -1171,35 +1200,6 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [gameStarted, gameOver, startGame]);
-  
-  // 统一处理游戏开始的函数
-  const startGame = useCallback(() => {
-    // 先隐藏开始弹窗
-    setShowStartOverlay(false);
-    
-    // 设置游戏状态
-    setGameStartedState(true);
-    if (setGameStarted) setGameStarted(true);
-    
-    // 使用延迟而不是requestAnimationFrame
-    setTimeout(() => {
-      // 尝试锁定指针
-      if (!browserSupport.useFallback && canvasRef.current) {
-        try {
-          if (canvasRef.current.requestPointerLock) {
-            canvasRef.current.requestPointerLock();
-          } else if ((canvasRef.current as any).mozRequestPointerLock) {
-            (canvasRef.current as any).mozRequestPointerLock();
-          } else if ((canvasRef.current as any).webkitRequestPointerLock) {
-            (canvasRef.current as any).webkitRequestPointerLock();
-          }
-        } catch (e) {
-          console.error("锁定指针失败:", e);
-          setBrowserSupport(prev => ({...prev, useFallback: true}));
-        }
-      }
-    }, 300); // 使用300ms延迟确保DOM已完全更新
-  }, [browserSupport.useFallback, setGameStarted]);
   
   // 点击Canvas区域启动游戏
   const handleCanvasClick = useCallback(() => {
@@ -1372,7 +1372,7 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
       
       {/* 调试信息和游戏说明 */}
       <div className="fixed bottom-2 inset-x-0 flex justify-center">
-        <div className="bg-black/70 p-2 rounded-lg text-white text-xs max-w-fit mx-auto">
+        <div className="bg-black/70 p-2 text-white text-xs max-w-fit mx-auto">
           <p>空格键或鼠标左键：射击 | ESC：暂停</p>
         </div>
       </div>
