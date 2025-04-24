@@ -129,7 +129,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
                 className="cursor-pointer"
               />
             </div>
-            <div className="text-base font-medium text-amber-400">
+            <div className="text-base font-medium text-primary">
               {imageSize}px
             </div>
           </div>
