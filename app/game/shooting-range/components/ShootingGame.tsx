@@ -277,10 +277,16 @@ const GunModel = () => {
         <meshStandardMaterial color="#222222" />
       </mesh>
       
-      {/* 瞄准器 */}
+      {/* 瞄准器 - 与准心位置对齐 */}
       <mesh position={[0, 0.15, -0.1]}>
         <boxGeometry args={[0.05, 0.05, 0.2]} />
         <meshStandardMaterial color="#333333" />
+      </mesh>
+      
+      {/* 枪口参考点 - 帮助调试射击位置 */}
+      <mesh position={[0, 0, -0.65]} visible={false}>
+        <sphereGeometry args={[0.02, 8, 8]} />
+        <meshBasicMaterial color="#ff0000" />
       </mesh>
     </group>
   )
@@ -289,11 +295,14 @@ const GunModel = () => {
 // 准星
 const Crosshair = () => {
   return (
-    <div className="fixed inset-0 flex items-center justify-center pointer-events-none">
-      <div className="relative w-6 h-6">
-        <div className="absolute w-4 h-0.5 bg-white left-1 top-[11px]"></div>
-        <div className="absolute h-4 w-0.5 bg-white top-1 left-[11px]"></div>
-        <div className="absolute w-1 h-1 bg-white rounded-full left-[10px] top-[10px]"></div>
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 100 }}>
+      <div className="relative w-10 h-10 flex items-center justify-center">
+        {/* 十字准星 */}
+        <div className="absolute w-8 h-0.5 bg-white opacity-90"></div>
+        <div className="absolute h-8 w-0.5 bg-white opacity-90"></div>
+        
+        {/* 中心点 - 保留小红点增加精确度 */}
+        <div className="absolute w-1 h-1 bg-red-500 rounded-full"></div>
       </div>
     </div>
   )
@@ -465,6 +474,10 @@ const GameScene = ({
   
   // 子弹计数器
   const bulletCounter = useRef(0);
+  
+  // 麦克雷左轮射击冷却控制
+  const [canShoot, setCanShoot] = useState(true);
+  const shootCooldown = useRef(500); // 麦克雷左轮手枪射击间隔约为0.5秒
   
   // 鼠标位置状态 (用于备用控制)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
@@ -638,27 +651,26 @@ const GameScene = ({
     setTimeout(() => setMuzzleFlash(false), 100)
   }, [])
   
-  // 创建新子弹
-  const createBullet = useCallback(() => {
-    // 从枪口位置发射
-    const gunPosition = new THREE.Vector3(0.3, -0.3, -0.5).applyMatrix4(camera.matrixWorld);
-    // 方向与摄像机方向一致
-    const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
-    
-    setBullets(prev => [
-      ...prev, 
-      { 
-        id: bulletCounter.current++, 
-        position: gunPosition.clone(),
-        direction: direction.clone()
-      }
-    ]);
-    
-    // 限制子弹数量，防止性能问题
-    if (bullets.length > 20) {
-      setBullets(prev => prev.slice(prev.length - 20));
-    }
-  }, [camera, bullets.length]);
+  // 调试模式
+  const [debugMode, setDebugMode] = useState(false)
+  
+  // 强制更新所有目标状态（调试用）
+  const forceExplodeAll = useCallback(() => {
+    console.log("强制引爆所有目标");
+    setTargets(prev => 
+      prev.map(target => ({...target, hit: true}))
+    )
+  }, [])
+  
+  // 调试用射线
+  const [debugRay, setDebugRay] = useState<{
+    origin: THREE.Vector3;
+    direction: THREE.Vector3;
+    length: number;
+  } | null>(null);
+  
+  // 显示命中点 - 调试用
+  const [hitPosition, setHitPosition] = useState<THREE.Vector3 | null>(null);
   
   // 处理子弹碰撞检测
   const checkBulletCollisions = useCallback(() => {
@@ -674,33 +686,43 @@ const GameScene = ({
         );
         
         // 获取场景中的目标
-        const hitTargets: number[] = [];
+        const hitTargets: { id: number, distance: number }[] = [];
         
         targets.forEach(target => {
           if (!target.hit) {
             // 为每个目标创建碰撞球体
             const sphere = new THREE.Sphere(
               new THREE.Vector3(...target.position),
-              target.scale * 1.2
+              target.scale * 1.2 // 稍微增大碰撞范围
             );
             
             // 检查射线是否与球体相交
-            if (raycaster.ray.intersectSphere(sphere, new THREE.Vector3())) {
-              hitTargets.push(target.id);
+            const intersectionPoint = new THREE.Vector3();
+            if (raycaster.ray.intersectSphere(sphere, intersectionPoint)) {
+              // 计算交点与子弹当前位置的距离
+              const distance = intersectionPoint.distanceTo(bullet.position);
+              hitTargets.push({ id: target.id, distance });
+              
+              // 调试模式下记录命中位置
+              if (debugMode) {
+                setHitPosition(intersectionPoint.clone());
+              }
             }
           }
         });
         
         // 如果击中目标，触发爆炸
         if (hitTargets.length > 0) {
-          handleTargetHit(hitTargets[0]);
+          // 按距离排序，取最近的目标
+          hitTargets.sort((a, b) => a.distance - b.distance);
+          handleTargetHit(hitTargets[0].id);
           return false; // 移除此子弹
         }
         
         return true; // 保留子弹
       });
     });
-  }, [targets, handleTargetHit]);
+  }, [targets, handleTargetHit, debugMode]);
   
   // 每帧更新子弹碰撞
   useFrame(() => {
@@ -708,113 +730,161 @@ const GameScene = ({
       checkBulletCollisions();
     }
   });
-
+  
   // 处理普通模式下的射击
   const handleShoot = useCallback(() => {
-    if (!gameStarted) return
+    if (!gameStarted || !canShoot) return
     
     console.log("射击!");
+    
+    // 设置射击冷却
+    setCanShoot(false);
+    setTimeout(() => {
+      setCanShoot(true);
+    }, shootCooldown.current);
     
     // 显示枪口闪光
     showMuzzleFlash()
     
-    // 创建子弹
-    createBullet()
+    // 创建一个射线，从相机位置沿视线方向
+    const raycaster = new THREE.Raycaster();
+    
+    // 确保使用精确的屏幕中心点(0,0)发射射线
+    // 在Three.js中，(0,0)是屏幕的正中心
+    const exactCenter = new THREE.Vector2(0, 0);
+    raycaster.setFromCamera(exactCenter, camera);
+    
+    // 使用与射线完全相同的方向创建子弹
+    const bulletDirection = raycaster.ray.direction.clone();
+    // 子弹从相机位置发射
+    const bulletPosition = camera.position.clone();
+    // 稍微前移子弹起始位置，避免与相机碰撞
+    bulletPosition.add(bulletDirection.clone().multiplyScalar(0.1));
+    
+    // 在调试模式下显示射线
+    if (debugMode) {
+      setDebugRay({
+        origin: camera.position.clone(),
+        direction: bulletDirection.clone(),
+        length: 50
+      });
+      
+      // 清除之前的命中点
+      setHitPosition(null);
+    }
+    
+    // 创建子弹，使用与射线相同的起点和方向
+    setBullets(prev => [
+      ...prev, 
+      { 
+        id: bulletCounter.current++, 
+        position: bulletPosition,
+        direction: bulletDirection
+      }
+    ]);
+    
+    // 限制子弹数量，防止性能问题
+    if (bullets.length > 20) {
+      setBullets(prev => prev.slice(prev.length - 20));
+    }
     
     // 播放射击音效
     try {
       const shotSound = new Audio('/sounds/shot.mp3');
       shotSound.volume = 0.3;
-      shotSound.playbackRate = 1.0; // 正常速度播放
+      shotSound.playbackRate = 0.9;
       
-      // 限制最大播放时长
       setTimeout(() => {
         shotSound.pause();
         shotSound.currentTime = 0;
-      }, 800); // 延长射击音效播放时间
+      }, 800);
       
       shotSound.play().catch(err => console.log('音频播放失败', err));
     } catch (e) {
       console.log('音频初始化失败', e);
     }
     
-    // 原有的射击检测逻辑
-    const raycaster = new THREE.Raycaster()
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera)
+    // 收集所有可能被击中的目标
+    const hittableTargets: { targetId: number; distance: number; point: THREE.Vector3 }[] = [];
     
-    // 获取场景中的所有对象
-    const targetObjects: { targetId: number }[] = []
-    
-    // 直接遍历目标数组而不是场景对象
+    // 方法1：使用球体检测
     targets.forEach(target => {
       if (!target.hit) {
         // 为每个目标创建一个碰撞球体
         const sphere = new THREE.Sphere(
           new THREE.Vector3(...target.position),
-          target.scale * 1.2 // 稍微增大碰撞范围
+          target.scale * 1.2 // 略微增大碰撞范围
         );
         
         // 检查射线是否与球体相交
-        const rayOrigin = new THREE.Vector3().copy(camera.position);
-        const rayDirection = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+        const intersectPoint = new THREE.Vector3();
+        const didIntersect = raycaster.ray.intersectSphere(sphere, intersectPoint);
         
-        if (raycaster.ray.intersectSphere(sphere, new THREE.Vector3())) {
-          console.log(`射线与目标 ${target.id} 相交!`);
-          targetObjects.push({ targetId: target.id });
+        if (didIntersect) {
+          // 计算距离
+          const distance = intersectPoint.distanceTo(camera.position);
+          hittableTargets.push({ 
+            targetId: target.id, 
+            distance: distance,
+            point: intersectPoint.clone()
+          });
         }
       }
     });
     
-    console.log(`找到 ${targetObjects.length} 个可能的目标`);
-    
-    if (targetObjects.length > 0) {
-      // 取最近的目标
-      const targetId = targetObjects[0].targetId;
-      console.log(`处理击中目标 ${targetId}`);
-      
-      // 处理击中
-      handleTargetHit(targetId);
-    } else {
-      // 传统射线检测方法（备用）
-      const meshes: THREE.Object3D[] = []
-      scene.traverse((object: THREE.Object3D) => {
+    // 方法2：传统的Mesh检测（作为备用）
+    if (hittableTargets.length === 0) {
+      // 收集所有未被击中的目标Mesh
+      const targetMeshes: THREE.Object3D[] = [];
+      scene.traverse((object) => {
         if (object instanceof THREE.Mesh && 
             object.userData && 
             object.userData.isTarget && 
             !object.userData.hit) {
-          meshes.push(object)
+          targetMeshes.push(object);
         }
-      })
+      });
       
-      if (meshes.length === 0) {
-        console.log("没有找到可命中的目标");
-        return;
-      }
+      // 检测射线与目标Mesh的交点
+      const intersects = raycaster.intersectObjects(targetMeshes, true);
       
-      const intersects = raycaster.intersectObjects(meshes, true)
-      
-      if (intersects.length > 0) {
-        let targetObject: THREE.Object3D | null = intersects[0].object
+      for (const intersect of intersects) {
+        let targetObject: THREE.Object3D | null = intersect.object;
         
-        // 如果点击的是子对象，向上查找到带有targetId的父对象
+        // 查找具有targetId的父对象
         while (targetObject && !targetObject.userData?.targetId) {
-          targetObject = targetObject.parent
+          targetObject = targetObject.parent;
         }
         
         if (targetObject && targetObject.userData?.targetId !== undefined) {
-          console.log("命中目标ID:", targetObject.userData.targetId);
-          
-          // 直接更新该对象的状态
-          targetObject.userData.hit = true;
-          
-          // 同时更新状态管理中的数据
-          handleTargetHit(targetObject.userData.targetId);
+          hittableTargets.push({
+            targetId: targetObject.userData.targetId,
+            distance: intersect.distance,
+            point: intersect.point.clone()
+          });
         }
-      } else {
-        console.log("未命中任何目标");
       }
     }
-  }, [camera, gameStarted, scene, handleTargetHit, showMuzzleFlash, targets, createBullet]);
+    
+    // 处理命中结果
+    if (hittableTargets.length > 0) {
+      // 按距离排序，击中最近的目标
+      hittableTargets.sort((a, b) => a.distance - b.distance);
+      const hitResult = hittableTargets[0];
+      
+      console.log(`命中目标 ID: ${hitResult.targetId}, 距离: ${hitResult.distance.toFixed(2)}`);
+      
+      // 在调试模式下显示命中点
+      if (debugMode) {
+        setHitPosition(hitResult.point);
+      }
+      
+      // 处理目标被击中
+      handleTargetHit(hitResult.targetId);
+    } else {
+      console.log("未命中任何目标");
+    }
+  }, [camera, gameStarted, scene, handleTargetHit, showMuzzleFlash, targets, bullets.length, bulletCounter, canShoot, shootCooldown, debugMode]);
   
   // 监听鼠标点击事件（正常模式下）
   useEffect(() => {
@@ -832,17 +902,27 @@ const GameScene = ({
       window.removeEventListener('mousedown', handleClick)
     }
   }, [gameStarted, handleShoot, useFallbackControls])
-
-  // 调试模式
-  const [debugMode, setDebugMode] = useState(false)
   
-  // 强制更新所有目标状态（调试用）
-  const forceExplodeAll = useCallback(() => {
-    console.log("强制引爆所有目标");
-    setTargets(prev => 
-      prev.map(target => ({...target, hit: true}))
-    )
-  }, [])
+  // 在调试模式下显示射线
+  const updateDebugRay = useCallback(() => {
+    if (!debugMode || !camera) return;
+    
+    const origin = new THREE.Vector3().copy(camera.position);
+    const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+    
+    setDebugRay({
+      origin,
+      direction,
+      length: 50
+    });
+  }, [debugMode, camera]);
+  
+  // 更新调试射线
+  useFrame(() => {
+    if (debugMode) {
+      updateDebugRay();
+    }
+  });
   
   // 添加键盘快捷键
   useEffect(() => {
@@ -851,6 +931,18 @@ const GameScene = ({
       if (e.key === 'd' || e.key === 'D') {
         setDebugMode(prev => !prev);
         console.log("调试模式:", !debugMode);
+        
+        // 在开启调试模式时，生成一个参考射线
+        if (!debugMode && camera) {
+          const origin = camera.position.clone();
+          const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+          
+          setDebugRay({
+            origin,
+            direction,
+            length: 50
+          });
+        }
       }
       
       // 按X强制引爆所有目标
@@ -866,7 +958,7 @@ const GameScene = ({
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [debugMode, forceExplodeAll, gameStarted, handleShoot, useFallbackControls]);
+  }, [debugMode, forceExplodeAll, gameStarted, handleShoot, useFallbackControls, updateDebugRay]);
 
   // 使用effect来检测gameStarted状态的变化
   useEffect(() => {
@@ -926,33 +1018,93 @@ const GameScene = ({
       {/* 调试辅助 - 射线可视化 */}
       {debugMode && (
         <group>
-          <arrowHelper 
-            args={[
-              new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize(),
-              camera.position,
-              50,
-              0xff0000
-            ]}
-          />
-          <mesh position={[0, 0, -20]} onClick={forceExplodeAll}>
+          {/* 摄像机前方直线 - 精确显示准心射线 */}
+          <line>
+            <bufferGeometry
+              attach="geometry"
+              onUpdate={(self) => {
+                const start = camera.position.clone();
+                const forward = new THREE.Vector3(0, 0, -1)
+                  .applyQuaternion(camera.quaternion)
+                  .normalize();
+                const end = start.clone().add(forward.multiplyScalar(100));
+                
+                const positions = [
+                  start.x, start.y, start.z,
+                  end.x, end.y, end.z
+                ];
+                
+                self.setAttribute(
+                  'position',
+                  new THREE.Float32BufferAttribute(positions, 3)
+                );
+              }}
+            />
+            <lineBasicMaterial color="#ff0000" linewidth={3} />
+          </line>
+          
+          {/* 准心指向的点 */}
+          <mesh position={[0, 0, -5]} scale={[0.05, 0.05, 0.05]}>
             <sphereGeometry args={[1, 16, 16]} />
-            <meshStandardMaterial color="red" />
+            <meshBasicMaterial color="#00ff00" />
           </mesh>
+          
+          {/* 命中点标记 */}
+          {hitPosition && (
+            <mesh position={hitPosition} scale={[0.1, 0.1, 0.1]}>
+              <sphereGeometry args={[1, 16, 16]} />
+              <meshBasicMaterial color="#ff00ff" />
+            </mesh>
+          )}
+          
+          {/* 标记点击位置的线 */}
+          {debugRay && (
+            <line>
+              <bufferGeometry
+                attach="geometry"
+                onUpdate={(self) => {
+                  const start = debugRay.origin;
+                  const end = start.clone().add(
+                    debugRay.direction.clone().multiplyScalar(debugRay.length)
+                  );
+                  
+                  const positions = [
+                    start.x, start.y, start.z,
+                    end.x, end.y, end.z
+                  ];
+                  
+                  self.setAttribute(
+                    'position',
+                    new THREE.Float32BufferAttribute(positions, 3)
+                  );
+                }}
+              />
+              <lineBasicMaterial color="#00ffff" linewidth={3} />
+            </line>
+          )}
         </group>
       )}
       
       {/* 武器 */}
       <Suspense fallback={null}>
-        <group position={[0.3, -0.3, -0.5]}>
+        {/* 调整枪的位置，确保视觉上与射击位置一致 */}
+        <group position={[0.15, -0.3, -0.3]} rotation={[0, 0, 0]}>
           <GunModel />
           {/* 枪口闪光 */}
           {muzzleFlash && (
-            <pointLight 
-              position={[0, 0, -0.6]} 
-              intensity={2} 
-              color="#ffaa00" 
-              distance={1.5}
-            />
+            <>
+              <pointLight 
+                position={[0, 0, -0.6]} 
+                intensity={2} 
+                color="#ffaa00" 
+                distance={1.5}
+              />
+              {/* 闪光粒子效果 */}
+              <mesh position={[0, 0, -0.65]}>
+                <sphereGeometry args={[0.05, 8, 8]} />
+                <meshBasicMaterial color="#ffaa00" transparent opacity={0.8} />
+              </mesh>
+            </>
           )}
         </group>
       </Suspense>
@@ -1146,7 +1298,7 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
       <div 
         ref={canvasContainerRef}
         onClick={handleCanvasClick}
-        style={{ width: '100%', height: '100%', cursor: gameStarted ? 'none' : 'pointer' }}
+        style={{ width: '100%', height: '100%', cursor: gameStarted ? 'none' : 'pointer', position: 'relative' }}
       >
         <Canvas 
           shadows 
@@ -1168,9 +1320,11 @@ const ShootingGame = ({ difficulty }: ShootingGameProps) => {
             onError={setPointerLockError}
           />
         </Canvas>
+        
+        {/* 只在游戏进行中显示准心，放在Canvas容器内部确保对齐 */}
+        {gameStarted && !gameOver && <Crosshair />}
       </div>
       
-      <Crosshair />
       <GameUI 
         score={score} 
         timeLeft={timeLeft} 

@@ -17,12 +17,9 @@ export default function ShootingRangePage() {
 
   return (
     <div className="container py-8 px-4">
-      <h1 className="text-3xl font-bold mb-6">射击训练场</h1>
-      <p className="mb-6">测试你的反应速度和瞄准精度的第一人称射击游戏。</p>
-
       {!isStarted ? (
         <Card className="p-6 max-w-md mx-auto">
-          <h2 className="text-xl font-semibold mb-4">游戏设置</h2>
+          <h2 className="text-2xl font-semibold mb-4">游戏设置</h2>
           
           <div className="mb-4">
             <h3 className="font-medium mb-2">难度选择：</h3>
@@ -71,7 +68,7 @@ export default function ShootingRangePage() {
           >
             返回设置
           </Button>
-          <div className="h-[80vh] w-full rounded-lg overflow-hidden border">
+          <div className="h-[80vh] w-full rounded-lg overflow-hidden border relative">
             <Suspense fallback={<div className="flex justify-center items-center h-full">加载游戏中...</div>}>
               <ShootingGame difficulty={difficulty} />
             </Suspense>

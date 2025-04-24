@@ -48,6 +48,7 @@ const IconWrapper = styled.div`
 `;
 
 const TileName = styled.span`
+  font-size: 1.2rem;
   color: white;
 `;
 
