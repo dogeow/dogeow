@@ -21,7 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import ThingNavigation from '../components/ThingNavigation'
 import { API_BASE_URL } from '@/utils/api'
 
 export default function ItemDetail() {
@@ -81,7 +80,6 @@ export default function ItemDetail() {
   if (loading) {
     return (
       <>
-        <ThingNavigation />
         <div className="container mx-auto py-6 px-4">
           <div className="flex justify-center items-center h-64">
             <p>加载中...</p>
@@ -94,7 +92,6 @@ export default function ItemDetail() {
   if (error || !item) {
     return (
       <>
-        <ThingNavigation />
         <div className="container mx-auto py-6 px-4">
           <div className="flex flex-col justify-center items-center h-64">
             <p className="text-red-500 mb-4">{error || '物品不存在'}</p>
@@ -117,7 +114,6 @@ export default function ItemDetail() {
   
   return (
     <>
-      <ThingNavigation />
       <div className="container mx-auto py-6 px-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div className="flex items-center w-full">

@@ -44,9 +44,9 @@ export default function ThingNavigation() {
   
   return (
     <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-      <nav className="container flex items-center py-2 overflow-x-auto">
+      <nav className="container flex items-center py-2 px-4 overflow-x-auto">
         <div className="flex items-center space-x-1 md:space-x-2">
-          <Button size="sm" onClick={handleAddItem}>
+          <Button size="sm" onClick={handleAddItem} className="mr-2">
             <Plus className="h-4 w-4" />
           </Button>
           {navItems.map((item) => {
