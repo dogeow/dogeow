@@ -270,7 +270,7 @@ export function AppLauncher() {
       // 从URL中提取文件名
       const filename = audioUrl.split('/').pop();
       // 使用API进行流式传输
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/music/stream/${filename}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/music/stream/${filename}`;
       
       let offset = 0;
       const CHUNK_SIZE = 1024 * 256; // 256KB 片段

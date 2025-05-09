@@ -11,7 +11,7 @@ export const configs = {
   ],
   // 可用的音频文件列表
   availableTracks: [
-    { name: '1.mp3', path: '1.mp3' },
+    { name: '1.mp3', path: '/musics/1.mp3' },
     { name: '和楽器バンド - 東風破', path: '/musics/和楽器バンド - 東風破.mp3' },
     { name: 'I WiSH - 明日への扉~5 years brew version~', path: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3' }
   ],
