@@ -52,6 +52,10 @@ export function AppLauncher() {
   
   const audioRef = useRef<HTMLAudioElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const mediaSourceRef = useRef<MediaSource | null>(null);
+  const sourceBufferRef = useRef<SourceBuffer | null>(null);
+  const fetchControllerRef = useRef<AbortController | null>(null);
+  const [isStreamingSupported, setIsStreamingSupported] = useState(true);
   
   // 组件加载时检查音频文件
   useEffect(() => {
@@ -197,64 +201,206 @@ export function AppLauncher() {
   // 切换音量控制显示
   const toggleVolumeControl = () => setIsVolumeControlVisible(!isVolumeControlVisible)
   
-  // 切换到下一个或上一个音频文件
-  const switchTrack = (direction: 'next' | 'prev') => {
-    const currentIndex = availableTracks.findIndex(track => track.path === currentTrack)
-    const newIndex = direction === 'next'
-      ? (currentIndex + 1) % availableTracks.length
-      : (currentIndex - 1 + availableTracks.length) % availableTracks.length
-    
-    const newTrack = availableTracks[newIndex].path
-    
-    // 先设置新的音轨路径，但暂时不开始播放
-    setCurrentTrack(newTrack)
-    setIsTrackChanging(true)
-    setCurrentTime(0)
-    setReadyToPlay(false)
-    
-    // 检查新音轨是否可用，仅在确认用户有意图播放时才进行
-    if (isPlaying) {
-      fetch(newTrack)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`音频文件不存在 (${response.status})`)
-          }
-          // 文件存在，设置状态开始播放
-          setIsPlaying(true)
-          setUserInteracted(true)
-          toast.info(`已切换到: ${availableTracks[newIndex].name}`)
-        })
-        .catch(error => {
-          console.error("音频文件检查失败:", error)
-          setAudioError(`音频文件检查失败: ${error.message}`)
-          setIsPlaying(false)
-          toast.error("音频文件检查失败", {
-            description: error.message
-          })
-        })
-    } else {
-      // 如果当前不是播放状态，只切换轨道但不开始播放
-      toast.info(`已切换到: ${availableTracks[newIndex].name}`)
+  // 创建媒体源并开始流式播放
+  const setupMediaSource = () => {
+    // 检查浏览器是否支持 MediaSource
+    if (!window.MediaSource) {
+      setIsStreamingSupported(false);
+      console.warn('此浏览器不支持 MediaSource Extensions，将使用传统播放方式');
+      return;
     }
-  }
-  
-  const switchToNextTrack = () => switchTrack('next')
-  const switchToPrevTrack = () => switchTrack('prev')
-  
+
+    try {
+      // 如果有正在进行的请求，取消它
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+
+      // 创建新的 MediaSource
+      const mediaSource = new MediaSource();
+      mediaSourceRef.current = mediaSource;
+
+      if (audioRef.current) {
+        audioRef.current.src = URL.createObjectURL(mediaSource);
+      }
+
+      mediaSource.addEventListener('sourceopen', () => {
+        try {
+          // 尝试创建 SourceBuffer
+          const mimeType = 'audio/mpeg'; // 假设是 MP3 文件
+          if (!MediaSource.isTypeSupported(mimeType)) {
+            console.warn(`浏览器不支持 ${mimeType} 类型`);
+            setIsStreamingSupported(false);
+            // 回退到直接使用 src
+            if (audioRef.current) {
+              audioRef.current.src = currentTrack;
+            }
+            return;
+          }
+
+          // 创建 SourceBuffer
+          const sourceBuffer = mediaSource.addSourceBuffer(mimeType);
+          sourceBufferRef.current = sourceBuffer;
+
+          // 开始加载音频
+          startStreamingAudio(currentTrack);
+        } catch (error) {
+          console.error('创建 SourceBuffer 失败:', error);
+          setIsStreamingSupported(false);
+          // 回退到直接使用 src
+          if (audioRef.current) {
+            audioRef.current.src = currentTrack;
+          }
+        }
+      });
+    } catch (error) {
+      console.error('设置 MediaSource 失败:', error);
+      setIsStreamingSupported(false);
+    }
+  };
+
+  // 流式加载音频
+  const startStreamingAudio = async (audioUrl: string) => {
+    if (!sourceBufferRef.current || !mediaSourceRef.current) return;
+
+    const fetchController = new AbortController();
+    fetchControllerRef.current = fetchController;
+    
+    try {
+      let offset = 0;
+      const CHUNK_SIZE = 1024 * 256; // 256KB 片段
+      let isFirstChunk = true;
+
+      // 加载下一个片段的函数
+      const fetchNextChunk = async () => {
+        try {
+          const response = await fetch(audioUrl, {
+            headers: {
+              Range: `bytes=${offset}-${offset + CHUNK_SIZE - 1}`
+            },
+            signal: fetchController.signal
+          });
+
+          // 检查服务器是否支持范围请求
+          if (response.status === 206) {
+            const arrayBuffer = await response.arrayBuffer();
+            const chunk = new Uint8Array(arrayBuffer);
+            
+            // 等待 sourceBuffer 准备好
+            const appendBuffer = () => {
+              if (sourceBufferRef.current?.updating) {
+                setTimeout(appendBuffer, 50); // 等待 50ms 后再次尝试
+                return;
+              }
+              
+              try {
+                // 添加缓冲区
+                if (sourceBufferRef.current) {
+                  sourceBufferRef.current.appendBuffer(chunk);
+                }
+
+                // 如果是第一个块，可以开始播放
+                if (isFirstChunk && audioRef.current && isPlaying) {
+                  audioRef.current.play().catch(e => {
+                    console.error('播放失败:', e);
+                    setIsPlaying(false);
+                  });
+                  isFirstChunk = false;
+                }
+
+                // 计算下一个片段的偏移量
+                offset += chunk.length;
+
+                // 获取总长度
+                const contentRange = response.headers.get('Content-Range');
+                const totalLength = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
+
+                // 如果还有更多数据，加载下一个片段
+                if (offset < totalLength) {
+                  if (sourceBufferRef.current) {
+                    if (sourceBufferRef.current.updating) {
+                      sourceBufferRef.current.addEventListener('updateend', fetchNextChunk, { once: true });
+                    } else {
+                      fetchNextChunk();
+                    }
+                  }
+                } else if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+                  // 所有数据加载完成
+                  setTimeout(() => {
+                    if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+                      try {
+                        mediaSourceRef.current.endOfStream();
+                      } catch (e) {
+                        console.warn('结束媒体流时出错:', e);
+                      }
+                    }
+                  }, 1000);
+                }
+              } catch (e) {
+                console.error('添加缓冲区时出错:', e);
+                // 如果发生错误，回退到传统播放方式
+                setIsStreamingSupported(false);
+                if (audioRef.current) {
+                  audioRef.current.src = audioUrl;
+                }
+              }
+            };
+
+            appendBuffer();
+          } else {
+            console.warn('服务器不支持范围请求，将使用传统播放方式');
+            setIsStreamingSupported(false);
+            // 回退到直接使用 src
+            if (audioRef.current) {
+              audioRef.current.src = audioUrl;
+            }
+          }
+        } catch (error: any) {
+          if (error.name !== 'AbortError') {
+            console.error('获取音频块时出错:', error);
+            setIsStreamingSupported(false);
+            // 回退到直接使用 src
+            if (audioRef.current) {
+              audioRef.current.src = audioUrl;
+            }
+          }
+        }
+      };
+
+      // 开始加载第一个片段
+      fetchNextChunk();
+    } catch (error) {
+      console.error('流式加载音频时出错:', error);
+      setIsStreamingSupported(false);
+    }
+  };
+
   // 切换播放/暂停状态
   const togglePlay = () => {
     // 如果要开始播放，先检查音频文件是否存在
     if (!isPlaying && audioRef.current) {
       // 只有在开始播放时检查音频文件是否存在
-      fetch(currentTrack)
+      fetch(currentTrack, { method: 'HEAD' })
         .then(response => {
           if (!response.ok) {
             throw new Error(`音频文件不存在 (${response.status})`)
           }
           // 文件存在，设置状态开始播放
-          setIsPlaying(true)
-          setReadyToPlay(true)
-          setUserInteracted(true)
+          setIsPlaying(true);
+          setReadyToPlay(true);
+          setUserInteracted(true);
+          
+          // 如果支持流式播放，设置 MediaSource
+          if (isStreamingSupported) {
+            setupMediaSource();
+          } else if (audioRef.current) {
+            // 传统播放方式
+            audioRef.current.src = currentTrack;
+            audioRef.current.play().catch(e => {
+              console.error('播放失败:', e);
+              setIsPlaying(false);
+            });
+          }
         })
         .catch(error => {
           console.error("音频文件检查失败:", error)
@@ -348,6 +494,93 @@ export function AppLauncher() {
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isSearchVisible])
+  
+  // 切换到下一个或上一个音频文件
+  const switchTrack = (direction: 'next' | 'prev') => {
+    const currentIndex = availableTracks.findIndex(track => track.path === currentTrack)
+    const newIndex = direction === 'next'
+      ? (currentIndex + 1) % availableTracks.length
+      : (currentIndex - 1 + availableTracks.length) % availableTracks.length
+    
+    const newTrack = availableTracks[newIndex].path
+    
+    // 先设置新的音轨路径，但暂时不开始播放
+    setCurrentTrack(newTrack)
+    setIsTrackChanging(true)
+    setCurrentTime(0)
+    setReadyToPlay(false)
+    
+    // 清理当前的 MediaSource
+    if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+      try {
+        mediaSourceRef.current.endOfStream();
+      } catch (e) {
+        console.warn('结束媒体流时出错:', e);
+      }
+    }
+    
+    if (fetchControllerRef.current) {
+      fetchControllerRef.current.abort();
+    }
+    
+    // 检查新音轨是否可用，仅在确认用户有意图播放时才进行
+    if (isPlaying) {
+      fetch(newTrack, { method: 'HEAD' })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`音频文件不存在 (${response.status})`)
+          }
+          // 文件存在，设置状态开始播放
+          setIsPlaying(true)
+          setUserInteracted(true)
+          
+          // 如果支持流式播放，设置新的 MediaSource
+          if (isStreamingSupported) {
+            setupMediaSource();
+          } else if (audioRef.current) {
+            // 传统播放方式
+            audioRef.current.src = newTrack;
+            audioRef.current.play().catch(e => {
+              console.error('播放失败:', e);
+              setIsPlaying(false);
+            });
+          }
+          
+          toast.info(`已切换到: ${availableTracks[newIndex].name}`)
+        })
+        .catch(error => {
+          console.error("音频文件检查失败:", error)
+          setAudioError(`音频文件检查失败: ${error.message}`)
+          setIsPlaying(false)
+          toast.error("音频文件检查失败", {
+            description: error.message
+          })
+        })
+    } else {
+      // 如果当前不是播放状态，只切换轨道但不开始播放
+      toast.info(`已切换到: ${availableTracks[newIndex].name}`)
+    }
+  }
+  
+  const switchToNextTrack = () => switchTrack('next')
+  const switchToPrevTrack = () => switchTrack('prev')
+  
+  // 清理 MediaSource 资源
+  useEffect(() => {
+    return () => {
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+      
+      if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+        try {
+          mediaSourceRef.current.endOfStream();
+        } catch (e) {
+          console.warn('清理时结束媒体流出错:', e);
+        }
+      }
+    };
+  }, []);
   
   const renderContent = () => {
     switch (displayMode) {
@@ -513,7 +746,6 @@ export function AppLauncher() {
         
         <audio
           ref={audioRef}
-          src={currentTrack}
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
           onEnded={switchToNextTrack}
