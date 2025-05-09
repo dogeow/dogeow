@@ -6,7 +6,7 @@ export type CustomTheme = {
   color: string;
 }; 
 
-interface Tile {
+export interface Tile {
   name: string;
   icon: string;
   href: string;
@@ -16,6 +16,6 @@ interface Tile {
   rowSpan: number;
 }
 
-interface AppConfig {
+export interface AppConfig {
   tiles: Tile[];
 } 

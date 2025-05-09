@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
-import { createEditor, Descendant } from 'slate'
+import { createEditor, Descendant, Text, Element as SlateElement } from 'slate'
 import { Slate, Editable, withReact, ReactEditor } from 'slate-react'
 import { withHistory } from 'slate-history'
 import { Button } from "@/components/ui/button"
@@ -65,29 +65,32 @@ const deserialize = (markdownString: string): Descendant[] => {
 const serialize = (nodes: Descendant[]): string => {
   return nodes
     .map(node => {
-      // @ts-ignore - 简化实现
-      if (node.text) {
+      // 检查是否是文本节点
+      if (Text.isText(node)) {
         return node.text
       }
       
-      // @ts-ignore - 简化实现
-      const children = node.children.map(n => serialize([n])).join('')
-      
-      // @ts-ignore - 简化实现
-      switch (node.type) {
-        case 'paragraph':
-          return `${children}\n\n`
-        case 'heading-one':
-          return `# ${children}\n\n`
-        case 'heading-two':
-          return `## ${children}\n\n`
-        case 'heading-three':
-          return `### ${children}\n\n`
-        case 'list-item':
-          return `- ${children}\n`
-        default:
-          return children
+      // 处理元素节点
+      if (SlateElement.isElement(node)) {
+        const children = node.children.map(n => serialize([n])).join('')
+        
+        switch (node.type) {
+          case 'paragraph':
+            return `${children}\n\n`
+          case 'heading-one':
+            return `# ${children}\n\n`
+          case 'heading-two':
+            return `## ${children}\n\n`
+          case 'heading-three':
+            return `### ${children}\n\n`
+          case 'list-item':
+            return `- ${children}\n`
+          default:
+            return children
+        }
       }
+      
+      return ''
     })
     .join('')
 }

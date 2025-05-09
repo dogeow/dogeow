@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo, useState, useCallback, useEffect } from 'react'
-import { createEditor, Descendant, Editor, Transforms, Element as SlateElement, Text, Range, BaseEditor, Point } from 'slate'
+import { createEditor, Descendant, Editor, Transforms, Element as SlateElement, Text, Range, BaseEditor, Point, Node } from 'slate'
 import { Slate, Editable, withReact, useSlate, ReactEditor } from 'slate-react'
 import { withHistory, HistoryEditor } from 'slate-history'
 import isHotkey from 'is-hotkey'
@@ -18,7 +18,7 @@ type CustomElement = {
   type: 'paragraph' | 'heading-one' | 'heading-two' | 'heading-three' | 
         'bulleted-list' | 'numbered-list' | 'list-item' | 'block-quote' |
         'code-block' | 'table' | 'table-row' | 'table-cell';
-  children: CustomText[];
+  children: CustomText[] | CustomElement[];
   url?: string;
   language?: string;
 }
@@ -43,7 +43,7 @@ type Note = {
   updated_at: string;
 }
 
-// 扩展 Slate 的类型声明
+// 声明 Slate 编辑器元素类型
 declare module 'slate' {
   interface CustomTypes {
     Editor: BaseEditor & ReactEditor & HistoryEditor
@@ -51,6 +51,9 @@ declare module 'slate' {
     Text: CustomText
   }
 }
+
+// 使 Descendant 类型明确为我们自定义的类型之一
+type CustomDescendant = CustomElement | CustomText
 
 // 热键定义
 const HOTKEYS = {
@@ -99,20 +102,21 @@ const initialValue: Descendant[] = [
     ],
   },
   {
-    type: 'bulleted-list',
+    type: 'paragraph',
     children: [
-      {
-        type: 'list-item',
-        children: [
-          { text: '列表项 1' },
-        ],
-      },
-      {
-        type: 'list-item',
-        children: [
-          { text: '列表项 2' },
-        ],
-      },
+      { text: '列表:' },
+    ],
+  },
+  {
+    type: 'paragraph',
+    children: [
+      { text: '- 列表项 1' },
+    ],
+  },
+  {
+    type: 'paragraph',
+    children: [
+      { text: '- 列表项 2' },
     ],
   },
   {
@@ -134,7 +138,7 @@ const deserialize = (markdownString: string): Descendant[] => {
   const lines = markdownString.split('\n')
   const nodes: Descendant[] = []
   
-  let currentList: Descendant | null = null
+  let currentList: CustomElement | null = null
   let inCodeBlock = false
   let codeBlockContent = ''
   let codeBlockLanguage = ''
@@ -156,7 +160,7 @@ const deserialize = (markdownString: string): Descendant[] => {
           type: 'code-block',
           language: codeBlockLanguage,
           children: [{ text: codeBlockContent }]
-        })
+        } as CustomElement)
       }
       continue
     }
@@ -175,7 +179,7 @@ const deserialize = (markdownString: string): Descendant[] => {
       nodes.push({
         type: 'heading-one',
         children: [{ text: line.substring(2) }]
-      })
+      } as CustomElement)
       continue
     }
     
@@ -183,7 +187,7 @@ const deserialize = (markdownString: string): Descendant[] => {
       nodes.push({
         type: 'heading-two',
         children: [{ text: line.substring(3) }]
-      })
+      } as CustomElement)
       continue
     }
     
@@ -191,7 +195,7 @@ const deserialize = (markdownString: string): Descendant[] => {
       nodes.push({
         type: 'heading-three',
         children: [{ text: line.substring(4) }]
-      })
+      } as CustomElement)
       continue
     }
     
@@ -200,16 +204,16 @@ const deserialize = (markdownString: string): Descendant[] => {
       const listItem = {
         type: 'list-item',
         children: [{ text: line.substring(2) }]
-      }
+      } as CustomElement
       
       if (!currentList || currentList.type !== 'bulleted-list') {
         currentList = {
           type: 'bulleted-list',
           children: [listItem]
-        }
+        } as CustomElement
         nodes.push(currentList)
       } else {
-        currentList.children.push(listItem)
+        (currentList.children as CustomElement[]).push(listItem)
       }
       continue
     }
@@ -219,7 +223,7 @@ const deserialize = (markdownString: string): Descendant[] => {
       nodes.push({
         type: 'block-quote',
         children: [{ text: line.substring(2) }]
-      })
+      } as CustomElement)
       continue
     }
     
@@ -242,7 +246,7 @@ const deserialize = (markdownString: string): Descendant[] => {
           text: match[1],
           link: true,
           url: match[2]
-        })
+        } as CustomText)
         
         lastIndex = match.index + match[0].length
       }
@@ -260,7 +264,7 @@ const deserialize = (markdownString: string): Descendant[] => {
       nodes.push({
         type: 'paragraph',
         children: textParts
-      })
+      } as CustomElement)
       continue
     }
   }
@@ -271,7 +275,7 @@ const deserialize = (markdownString: string): Descendant[] => {
       type: 'code-block',
       language: codeBlockLanguage,
       children: [{ text: codeBlockContent }]
-    })
+    } as CustomElement)
   }
   
   return nodes.length ? nodes : initialValue
@@ -413,7 +417,7 @@ const ToolbarButton = ({ format, icon: Icon, tooltip, editor }: {
 
   const isMarkActive = (editor: Editor, format: string) => {
     const marks = Editor.marks(editor)
-    return marks ? marks[format] === true : false
+    return marks ? marks[format as keyof Omit<CustomText, 'text'>] === true : false
   }
 
   const toggleBlock = (editor: Editor, format: string) => {
@@ -428,14 +432,21 @@ const ToolbarButton = ({ format, icon: Icon, tooltip, editor }: {
       split: true,
     })
 
-    const newProperties: any = {
-      type: isActive ? 'paragraph' : isList ? 'list-item' : format,
+    const newProperties: Partial<CustomElement> = {
+      type: isActive 
+        ? 'paragraph' 
+        : isList 
+          ? 'list-item' 
+          : format as CustomElement['type'],
     }
     
     Transforms.setNodes(editor, newProperties)
 
     if (!isActive && isList) {
-      const block = { type: format, children: [] }
+      const block: CustomElement = { 
+        type: format as 'bulleted-list' | 'numbered-list', 
+        children: [] 
+      }
       Transforms.wrapNodes(editor, block)
     }
   }
@@ -584,6 +595,7 @@ const withShortcuts = (editor: Editor) => {
         const start = Editor.start(editor, path)
         
         if (
+          SlateElement.isElement(block) && 
           block.type !== 'paragraph' &&
           Point.equals(selection.anchor, start)
         ) {
@@ -642,9 +654,12 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
           // 获取选中的文本作为默认链接文本
           const selection = editor.selection
           if (selection && !Range.isCollapsed(selection)) {
-            const [fragment] = Editor.fragment(editor)
-            if (fragment.length > 0 && typeof fragment[0] === 'object' && 'text' in fragment[0]) {
-              setLinkText(fragment[0].text)
+            const fragment = Editor.fragment(editor, selection)
+            if (fragment.length > 0) {
+              const firstNode = fragment[0]
+              if (Text.isText(firstNode)) {
+                setLinkText(firstNode.text)
+              }
             }
           }
           setIsLinkDialogOpen(true)
@@ -719,7 +734,7 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
   // 插入代码块
   const insertCodeBlock = useCallback(() => {
     // 创建代码块
-    const codeBlockNode = {
+    const codeBlockNode: CustomElement = {
       type: 'code-block',
       language: '',
       children: [{ text: '' }]
@@ -734,7 +749,7 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
 
   // 插入表格
   const insertTable = useCallback(() => {
-    const tableNode = {
+    const tableNode: CustomElement = {
       type: 'table',
       children: [
         {
@@ -743,14 +758,14 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
             { type: 'table-cell', children: [{ text: '列1' }] },
             { type: 'table-cell', children: [{ text: '列2' }] }
           ]
-        },
+        } as CustomElement,
         {
           type: 'table-row',
           children: [
             { type: 'table-cell', children: [{ text: '' }] },
             { type: 'table-cell', children: [{ text: '' }] }
           ]
-        }
+        } as CustomElement
       ]
     }
     

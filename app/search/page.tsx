@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,7 +18,8 @@ interface SearchResult {
   category: string
 }
 
-export default function SearchPage() {
+// 搜索内容组件
+function SearchContent() {
   const searchParams = useSearchParams()
   const query = searchParams.get("q") || ""
   const [searchTerm, setSearchTerm] = useState(query)
@@ -160,5 +161,14 @@ export default function SearchPage() {
         </TabsContent>
       </Tabs>
     </div>
+  )
+}
+
+// 主页面组件，使用 Suspense 包裹
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto py-8 text-center">加载中...</div>}>
+      <SearchContent />
+    </Suspense>
   )
 } 

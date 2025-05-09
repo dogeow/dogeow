@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -15,7 +15,8 @@ const SlidingPuzzle = dynamic(
   }
 )
 
-export default function SlidingPuzzlePage() {
+// 内部组件，使用 useSearchParams
+function SlidingPuzzleGame() {
   const router = useRouter()
   const searchParams = useSearchParams()
   
@@ -131,5 +132,14 @@ export default function SlidingPuzzlePage() {
         </div>
       )}
     </div>
+  )
+}
+
+// 主页面组件，使用 Suspense 包裹
+export default function SlidingPuzzlePage() {
+  return (
+    <Suspense fallback={<div className="p-4 text-center">加载中...</div>}>
+      <SlidingPuzzleGame />
+    </Suspense>
   )
 } 
