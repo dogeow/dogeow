@@ -64,20 +64,7 @@ export function AppLauncher() {
       setCurrentTrack(formattedTrack)
     }
     
-    // 检查音频文件是否存在
-    fetch(formattedTrack)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`音频文件不存在 (${response.status})`)
-        }
-      })
-      .catch(error => {
-        console.error("音频文件检查失败:", error)
-        setAudioError(`音频文件检查失败: ${error.message}`)
-        toast.error("音频文件检查失败", {
-          description: error.message
-        })
-      })
+    // 不再在组件初始化时检查音频文件
   }, [currentTrack, setCurrentTrack])
   
   // 处理播放/暂停
@@ -217,14 +204,38 @@ export function AppLauncher() {
       ? (currentIndex + 1) % availableTracks.length
       : (currentIndex - 1 + availableTracks.length) % availableTracks.length
     
+    const newTrack = availableTracks[newIndex].path
+    
+    // 先设置新的音轨路径，但暂时不开始播放
+    setCurrentTrack(newTrack)
     setIsTrackChanging(true)
     setCurrentTime(0)
     setReadyToPlay(false)
-    setCurrentTrack(availableTracks[newIndex].path)
-    setIsPlaying(true)
-    setUserInteracted(true)
     
-    toast.info(`已切换到: ${availableTracks[newIndex].name}`)
+    // 检查新音轨是否可用，仅在确认用户有意图播放时才进行
+    if (isPlaying) {
+      fetch(newTrack)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`音频文件不存在 (${response.status})`)
+          }
+          // 文件存在，设置状态开始播放
+          setIsPlaying(true)
+          setUserInteracted(true)
+          toast.info(`已切换到: ${availableTracks[newIndex].name}`)
+        })
+        .catch(error => {
+          console.error("音频文件检查失败:", error)
+          setAudioError(`音频文件检查失败: ${error.message}`)
+          setIsPlaying(false)
+          toast.error("音频文件检查失败", {
+            description: error.message
+          })
+        })
+    } else {
+      // 如果当前不是播放状态，只切换轨道但不开始播放
+      toast.info(`已切换到: ${availableTracks[newIndex].name}`)
+    }
   }
   
   const switchToNextTrack = () => switchTrack('next')
@@ -232,11 +243,34 @@ export function AppLauncher() {
   
   // 切换播放/暂停状态
   const togglePlay = () => {
-    setIsPlaying(!isPlaying)
-    if (!isPlaying) {
-      setReadyToPlay(true)
+    // 如果要开始播放，先检查音频文件是否存在
+    if (!isPlaying && audioRef.current) {
+      // 只有在开始播放时检查音频文件是否存在
+      fetch(currentTrack)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`音频文件不存在 (${response.status})`)
+          }
+          // 文件存在，设置状态开始播放
+          setIsPlaying(true)
+          setReadyToPlay(true)
+          setUserInteracted(true)
+        })
+        .catch(error => {
+          console.error("音频文件检查失败:", error)
+          setAudioError(`音频文件检查失败: ${error.message}`)
+          toast.error("音频文件检查失败", {
+            description: error.message
+          })
+        })
+    } else {
+      // 如果是暂停操作，直接切换状态
+      setIsPlaying(!isPlaying)
+      if (!isPlaying) {
+        setReadyToPlay(true)
+      }
+      setUserInteracted(true)
     }
-    setUserInteracted(true)
   }
   
   // 获取当前音频文件名称
@@ -486,7 +520,7 @@ export function AppLauncher() {
           onError={handleAudioError}
           loop={false}
           hidden
-          preload="metadata"
+          preload="none"
         />
       </div>
     </>
