@@ -180,19 +180,9 @@ export const useItemStore = create<ItemState>((set, get) => ({
         });
       }
       
-      // 使用 fetch 因为需要上传文件，apiRequest 处理 FormData 可能不方便
-      const response = await fetch(`${API_BASE_URL}/items`, {
-        method: 'POST',
-        body: formData,
-      });
+      // 使用apiRequest发送请求，它会自动携带认证令牌
+      const result = await apiRequest<{item: Item}>(`/items`, 'POST', formData);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('创建物品失败 - 服务器响应:', errorData);
-        throw new Error(errorData.message || '创建物品失败');
-      }
-      
-      const result = await response.json();
       set({ loading: false });
       
       // 刷新物品列表
@@ -236,18 +226,9 @@ export const useItemStore = create<ItemState>((set, get) => ({
         });
       }
       
-      // 使用 fetch，因为需要上传文件
-      const response = await fetch(`${API_BASE_URL}/items/${id}`, {
-        method: 'POST', // 使用POST方法，但添加_method=PUT
-        body: formData,
-      });
+      // 使用apiRequest发送请求，它会自动携带认证令牌
+      const result = await apiRequest<{item: Item}>(`/items/${id}`, 'POST', formData);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || '更新物品失败');
-      }
-      
-      const result = await response.json();
       set({ loading: false });
       
       // 刷新物品列表
