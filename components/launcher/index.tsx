@@ -267,6 +267,11 @@ export function AppLauncher() {
     fetchControllerRef.current = fetchController;
     
     try {
+      // 从URL中提取文件名
+      const filename = audioUrl.split('/').pop();
+      // 使用API进行流式传输
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || ''}/api/music/stream/${filename}`;
+      
       let offset = 0;
       const CHUNK_SIZE = 1024 * 256; // 256KB 片段
       let isFirstChunk = true;
@@ -274,7 +279,7 @@ export function AppLauncher() {
       // 加载下一个片段的函数
       const fetchNextChunk = async () => {
         try {
-          const response = await fetch(audioUrl, {
+          const response = await fetch(apiUrl, {
             headers: {
               Range: `bytes=${offset}-${offset + CHUNK_SIZE - 1}`
             },
