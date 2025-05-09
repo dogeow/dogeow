@@ -7,7 +7,7 @@ eslint: {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['127.0.0.1', 'localhost'],
+    domains: ['127.0.0.1', 'localhost', 'next-api.dogeow.com'],
   },
 };
 
