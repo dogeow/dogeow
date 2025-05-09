@@ -22,9 +22,10 @@ import { useAreas, useRooms, useSpots, useItem } from '@/utils/api'
 import { apiRequest } from '@/utils/api'
 
 // 定义类型
-type Image = {
+interface ItemImage {
   id: number;
   thumbnail_path: string;
+  thumbnail_url?: string;
 }
 
 type FormData = {
@@ -55,7 +56,7 @@ export default function EditItem() {
   const [initialLoading, setInitialLoading] = useState(true)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([])
-  const [existingImages, setExistingImages] = useState<Image[]>([])
+  const [existingImages, setExistingImages] = useState<ItemImage[]>([])
   const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
   const [locationPath, setLocationPath] = useState<string>('')
   
@@ -482,7 +483,7 @@ export default function EditItem() {
                       {existingImages.map((image) => (
                         <div key={image.id}>
                           {renderImagePreview(
-                            `${API_BASE_URL.replace('/api', '')}/storage/${image.thumbnail_path}`,
+                            image.thumbnail_url || `${API_BASE_URL.replace('/api', '')}/storage/${image.thumbnail_path}`,
                             formData.name,
                             () => removeExistingImage(image.id)
                           )}

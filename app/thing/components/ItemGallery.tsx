@@ -148,7 +148,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
           >
             {item.primary_image || (item.images && item.images.length > 0) ? (
               <Image
-                src={getImageUrl(item.primary_image?.thumbnail_path || item.images[0].thumbnail_path)}
+                src={item.primary_image?.thumbnail_url || item.images[0]?.thumbnail_url || getImageUrl(item.primary_image?.thumbnail_path || item.images[0].thumbnail_path)}
                 alt={item.name}
                 fill
                 className="object-cover"

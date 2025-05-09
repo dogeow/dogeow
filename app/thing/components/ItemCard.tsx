@@ -113,9 +113,10 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   // 渲染图片
   const renderImage = (className: string) => {
     if (primaryImage && !imageError) {
-      const imagePath = primaryImage.thumbnail_path || primaryImage.path
+      // 优先使用thumbnail_url，然后是url，最后才构造URL
+      const imageUrl = primaryImage.thumbnail_url || primaryImage.url || getImageUrl(primaryImage.thumbnail_path || primaryImage.path)
       
-      if (!imagePath) {
+      if (!imageUrl) {
         return (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             无图片路径
@@ -126,12 +127,12 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
       return (
         <div className="relative w-full h-full">
           <Image
-            src={getImageUrl(imagePath)}
+            src={imageUrl}
             alt={item.name}
             fill
             className={className}
             onError={(e) => {
-              console.error('图片加载失败:', imagePath, e);
+              console.error('图片加载失败:', imageUrl, e);
               setImageError(true)
             }}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
