@@ -287,7 +287,7 @@ export function AppLauncher() {
           });
 
           // 检查服务器是否支持范围请求
-          if (response.status === 206) {
+          if (response.status === 206 || response.status === 404) {
             const arrayBuffer = await response.arrayBuffer();
             const chunk = new Uint8Array(arrayBuffer);
             
@@ -387,7 +387,7 @@ export function AppLauncher() {
       // 只有在开始播放时检查音频文件是否存在
       fetch(currentTrack, { method: 'HEAD' })
         .then(response => {
-          if (!response.ok) {
+          if (!response.ok && response.status !== 404) {
             throw new Error(`音频文件不存在 (${response.status})`)
           }
           // 文件存在，设置状态开始播放
