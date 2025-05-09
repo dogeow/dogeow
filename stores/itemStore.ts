@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { API_BASE_URL } from '@/utils/api';
 import { format } from 'date-fns';
 import { apiRequest, get, post, put, del } from '@/utils/api';
+import useAuthStore from '@/stores/authStore';
 
 interface Item {
   id: number;
@@ -179,6 +180,10 @@ export const useItemStore = create<ItemState>((set, get) => ({
           formData.append(`images[${index}]`, image);
         });
       }
+      
+      // 检查当前的授权token
+      const authToken = useAuthStore.getState().token;
+      console.log('创建物品 - 授权Token状态:', authToken ? '已设置' : '未设置');
       
       // 使用apiRequest发送请求，它会自动携带认证令牌
       const result = await apiRequest<{item: Item}>(`/items`, 'POST', formData);

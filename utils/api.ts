@@ -45,7 +45,23 @@ export async function apiRequest<T>(
     if (data instanceof FormData) {
       // FormData 不需要设置 Content-Type，浏览器会自动设置正确的 boundary
       const headersObj = options.headers as Record<string, string>;
-      delete headersObj['Content-Type'];
+      // 记录删除Content-Type前的请求头
+      console.log('FormData请求前的请求头:', {...headersObj});
+      // 保存授权信息
+      const authToken = headersObj['Authorization'];
+      // 重新设置headers
+      options.headers = {
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      };
+      
+      // 确保授权头部被正确设置
+      if (authToken) {
+        (options.headers as Record<string, string>)['Authorization'] = authToken;
+      }
+      
+      // 记录最终的请求头
+      console.log('FormData最终请求头:', {...options.headers});
       options.body = data;
     } else {
       options.body = JSON.stringify(data);
