@@ -284,6 +284,7 @@ export function AppLauncher() {
       const CHUNK_SIZE = 1024 * 256; // 256KB 片段
       let isFirstChunk = true;
       let totalFileSize = 0;
+      let isLoading = false; // 防止并发请求同一块
 
       // 首先获取文件总大小
       try {
@@ -291,7 +292,7 @@ export function AppLauncher() {
         const contentLength = headResponse.headers.get('Content-Length');
         if (contentLength) {
           totalFileSize = parseInt(contentLength, 10);
-          console.log(`音频文件总大小: ${totalFileSize} 字节`);
+          console.log(`音频文件总大小: ${totalFileSize} 字节 (${(totalFileSize / (1024 * 1024)).toFixed(2)} MB)`);
         }
       } catch (error) {
         console.warn('获取文件大小失败，将尝试流式播放:', error);
@@ -299,9 +300,16 @@ export function AppLauncher() {
 
       // 加载下一个片段的函数
       const fetchNextChunk = async () => {
+        if (isLoading) {
+          console.log('已有请求正在进行，跳过这次加载');
+          return;
+        }
+        
+        isLoading = true;
+        
         try {
           const endByte = offset + CHUNK_SIZE - 1;
-          console.log(`获取音频块: ${offset}-${endByte}, 总大小: ${totalFileSize || '未知'}`);
+          console.log(`获取音频块: ${offset}-${endByte}, 总大小: ${totalFileSize || '未知'} 字节`);
           
           const response = await fetch(apiUrl, {
             headers: {
@@ -315,7 +323,7 @@ export function AppLauncher() {
             const arrayBuffer = await response.arrayBuffer();
             const chunk = new Uint8Array(arrayBuffer);
             
-            console.log(`获取到音频块，大小: ${chunk.length} 字节`);
+            console.log(`获取到音频块，大小: ${chunk.length} 字节, 进度: ${Math.round((offset + chunk.length) / (totalFileSize || 1) * 100)}%`);
             
             if (chunk.length === 0) {
               console.warn('获取到空音频块，可能已到达文件末尾');
@@ -326,13 +334,14 @@ export function AppLauncher() {
                   console.warn('结束媒体流时出错:', e);
                 }
               }
+              isLoading = false;
               return;
             }
-            
-            // 等待 sourceBuffer 准备好
-            const appendBuffer = () => {
+
+            const processChunk = () => {
+              // 如果sourceBuffer正在更新，等待更新完成
               if (sourceBufferRef.current?.updating) {
-                setTimeout(appendBuffer, 50); // 等待 50ms 后再次尝试
+                setTimeout(processChunk, 50); // 等待后再次尝试
                 return;
               }
               
@@ -340,53 +349,58 @@ export function AppLauncher() {
                 // 添加缓冲区
                 if (sourceBufferRef.current) {
                   sourceBufferRef.current.appendBuffer(chunk);
-                }
-
-                // 如果是第一个块，可以开始播放
-                if (isFirstChunk && audioRef.current && isPlaying) {
-                  audioRef.current.play().catch(e => {
-                    console.error('播放失败:', e);
-                    setIsPlaying(false);
-                  });
-                  isFirstChunk = false;
-                }
-
-                // 计算下一个片段的偏移量
-                offset += chunk.length;
-
-                // 获取总长度
-                const contentRange = response.headers.get('Content-Range');
-                if (contentRange && !totalFileSize) {
-                  const parts = contentRange.split('/');
-                  if (parts.length > 1) {
-                    totalFileSize = parseInt(parts[1], 10);
-                  }
-                } else if (response.headers.get('Content-Length') && !totalFileSize) {
-                  // 如果没有 Content-Range，但有 Content-Length，使用它作为总长度
-                  totalFileSize = parseInt(response.headers.get('Content-Length') || '0', 10);
-                }
-                
-                console.log(`当前进度: ${offset}/${totalFileSize} 字节 (${totalFileSize ? Math.round(offset/totalFileSize*100) : '?'}%)`);
-
-                // 如果还有更多数据，加载下一个片段
-                if (!totalFileSize || offset < totalFileSize) {
-                  if (sourceBufferRef.current) {
-                    if (sourceBufferRef.current.updating) {
-                      sourceBufferRef.current.addEventListener('updateend', fetchNextChunk, { once: true });
+                  
+                  // 监听缓冲区更新完成事件，加载下一块
+                  sourceBufferRef.current.addEventListener('updateend', function onUpdateEnd() {
+                    sourceBufferRef.current?.removeEventListener('updateend', onUpdateEnd);
+                    
+                    // 如果是第一个块，可以开始播放
+                    if (isFirstChunk && audioRef.current && isPlaying) {
+                      audioRef.current.play().catch(e => {
+                        console.error('播放失败:', e);
+                        setIsPlaying(false);
+                      });
+                      isFirstChunk = false;
+                    }
+                    
+                    // 更新偏移量
+                    offset += chunk.length;
+                    
+                    // 获取总长度（如果之前没获取到）
+                    if (!totalFileSize) {
+                      const contentRange = response.headers.get('Content-Range');
+                      if (contentRange) {
+                        const parts = contentRange.split('/');
+                        if (parts.length > 1) {
+                          totalFileSize = parseInt(parts[1], 10);
+                          console.log(`从Content-Range获取到总大小: ${totalFileSize} 字节`);
+                        }
+                      } else if (response.headers.get('Content-Length')) {
+                        totalFileSize = parseInt(response.headers.get('Content-Length') || '0', 10);
+                        console.log(`从Content-Length获取到大小: ${totalFileSize} 字节`);
+                      }
+                    }
+                    
+                    console.log(`已加载: ${offset}/${totalFileSize || '未知'} 字节 (${totalFileSize ? Math.round(offset/totalFileSize*100) : '?'}%)`);
+                    
+                    // 如果还有更多数据，加载下一个片段
+                    if (!totalFileSize || offset < totalFileSize) {
+                      console.log('准备获取下一块数据');
+                      isLoading = false; // 重置加载状态
+                      fetchNextChunk(); // 请求下一块
                     } else {
-                      fetchNextChunk();
+                      // 所有数据加载完成
+                      console.log('音频加载完成! 总共加载了 ' + offset + ' 字节');
+                      if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+                        try {
+                          mediaSourceRef.current.endOfStream();
+                        } catch (e) {
+                          console.warn('结束媒体流时出错:', e);
+                        }
+                      }
+                      isLoading = false;
                     }
-                  }
-                } else {
-                  // 所有数据加载完成
-                  console.log('音频加载完成');
-                  if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-                    try {
-                      mediaSourceRef.current.endOfStream();
-                    } catch (e) {
-                      console.warn('结束媒体流时出错:', e);
-                    }
-                  }
+                  }, { once: true });
                 }
               } catch (e) {
                 console.error('添加缓冲区时出错:', e);
@@ -395,10 +409,11 @@ export function AppLauncher() {
                 if (audioRef.current) {
                   audioRef.current.src = apiUrl;
                 }
+                isLoading = false;
               }
             };
-
-            appendBuffer();
+            
+            processChunk();
           } else {
             console.warn(`服务器不支持范围请求或返回了错误状态码: ${response.status}`);
             setIsStreamingSupported(false);
@@ -406,12 +421,14 @@ export function AppLauncher() {
             if (audioRef.current) {
               audioRef.current.src = apiUrl;
             }
+            isLoading = false;
           }
         } catch (error: any) {
+          isLoading = false;
           if (error.name !== 'AbortError') {
             console.error('获取音频块时出错:', error);
             setIsStreamingSupported(false);
-            // 回退到直接使用 src
+            // 回退到直统播放方式
             if (audioRef.current) {
               audioRef.current.src = apiUrl;
             }
@@ -559,18 +576,36 @@ export function AppLauncher() {
   
   // 切换到下一个或上一个音频文件
   const switchTrack = (direction: 'next' | 'prev') => {
-    const currentIndex = availableTracks.findIndex(track => track.path === currentTrack)
+    const currentIndex = availableTracks.findIndex(track => track.path === currentTrack);
+    console.log('当前音轨索引:', currentIndex, '当前音轨:', currentTrack);
+    
+    // 检查当前音轨是否在列表中
+    if (currentIndex === -1) {
+      console.warn('当前音轨不在列表中，将从第一首开始');
+      if (availableTracks.length > 0) {
+        setCurrentTrack(availableTracks[0].path);
+        setIsTrackChanging(true);
+        setCurrentTime(0);
+        setReadyToPlay(false);
+        return;
+      } else {
+        console.error('没有可用的音轨');
+        return;
+      }
+    }
+    
     const newIndex = direction === 'next'
       ? (currentIndex + 1) % availableTracks.length
-      : (currentIndex - 1 + availableTracks.length) % availableTracks.length
+      : (currentIndex - 1 + availableTracks.length) % availableTracks.length;
     
-    const newTrack = availableTracks[newIndex].path
+    console.log('切换到新音轨索引:', newIndex);
+    const newTrack = availableTracks[newIndex].path;
     
     // 先设置新的音轨路径，但暂时不开始播放
-    setCurrentTrack(newTrack)
-    setIsTrackChanging(true)
-    setCurrentTime(0)
-    setReadyToPlay(false)
+    setCurrentTrack(newTrack);
+    setIsTrackChanging(true);
+    setCurrentTime(0);
+    setReadyToPlay(false);
     
     // 清理当前的 MediaSource
     if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
@@ -589,8 +624,14 @@ export function AppLauncher() {
     if (isPlaying) {
       // 从URL中提取文件名
       const filename = newTrack.split('/').pop();
+      if (!filename) {
+        console.error('无法从路径提取文件名:', newTrack);
+        setAudioError('无法从路径提取文件名');
+        return;
+      }
+      
       // 使用API检查文件是否存在
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
       
       console.log('尝试检查新音轨:', apiUrl);
       
@@ -599,8 +640,8 @@ export function AppLauncher() {
           console.log('新音轨检查结果:', response.status, response.ok, newTrack);
           // 无论状态码如何，继续播放
           // 文件存在，设置状态开始播放
-          setIsPlaying(true)
-          setUserInteracted(true)
+          setIsPlaying(true);
+          setUserInteracted(true);
           
           // 如果支持流式播放，设置新的 MediaSource
           if (isStreamingSupported) {
@@ -614,21 +655,21 @@ export function AppLauncher() {
             });
           }
           
-          toast.info(`已切换到: ${availableTracks[newIndex].name}`)
+          toast.info(`已切换到: ${availableTracks[newIndex].name}`);
         })
         .catch(error => {
-          console.error("音频文件检查失败:", error)
-          setAudioError(`音频文件检查失败: ${error.message}`)
-          setIsPlaying(false)
+          console.error("音频文件检查失败:", error);
+          setAudioError(`音频文件检查失败: ${error.message}`);
+          setIsPlaying(false);
           toast.error("音频文件检查失败", {
             description: error.message
-          })
-        })
+          });
+        });
     } else {
       // 如果当前不是播放状态，只切换轨道但不开始播放
-      toast.info(`已切换到: ${availableTracks[newIndex].name}`)
+      toast.info(`已切换到: ${availableTracks[newIndex].name}`);
     }
-  }
+  };
   
   const switchToNextTrack = () => switchTrack('next')
   const switchToPrevTrack = () => switchTrack('prev')
@@ -816,7 +857,22 @@ export function AppLauncher() {
           ref={audioRef}
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
-          onEnded={switchToNextTrack}
+          onEnded={() => {
+            console.log('播放结束，准备切换到下一曲');
+            // 检查下一曲是否存在，再切换
+            const currentIndex = availableTracks.findIndex(track => track.path === currentTrack);
+            if (currentIndex >= 0) {
+              switchToNextTrack();
+            } else {
+              console.warn('当前曲目不在播放列表中，不自动切换到下一曲');
+              // 如果当前曲目不在列表中，切换到第一首
+              if (availableTracks.length > 0) {
+                setCurrentTrack(availableTracks[0].path);
+                setIsTrackChanging(true);
+                toast.info(`已切换到: ${availableTracks[0].name}`);
+              }
+            }
+          }}
           onError={handleAudioError}
           loop={false}
           hidden
