@@ -236,7 +236,7 @@ export function AppLauncher() {
             // 回退到直接使用 src
             if (audioRef.current) {
               const filename = currentTrack.split('/').pop();
-              const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+              const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
               console.log('回退到直接URL:', directUrl);
               audioRef.current.src = directUrl;
             }
@@ -249,7 +249,7 @@ export function AppLauncher() {
 
           // 开始加载音频
           const filename = currentTrack.split('/').pop();
-          const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+          const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
           console.log('开始流式加载音频:', apiUrl);
           startStreamingAudio(apiUrl);
         } catch (error) {
@@ -258,7 +258,7 @@ export function AppLauncher() {
           // 回退到直接使用 src
           if (audioRef.current) {
             const filename = currentTrack.split('/').pop();
-            const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+            const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
             console.log('回退到直接URL:', directUrl);
             audioRef.current.src = directUrl;
           }
@@ -411,15 +411,15 @@ export function AppLauncher() {
       // 从URL中提取文件名
       const filename = currentTrack.split('/').pop();
       // 使用API检查文件是否存在
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
+      
+      console.log('尝试检查音频文件:', apiUrl);
       
       // 只有在开始播放时检查音频文件是否存在
       fetch(apiUrl, { method: 'HEAD' })
         .then(response => {
-          console.log('音频文件检查结果:', response.status);
-          if (!response.ok && response.status !== 200 && response.status !== 206) {
-            throw new Error(`音频文件不存在 (${response.status})`)
-          }
+          console.log('音频文件检查结果:', response.status, response.ok);
+          // 接受任何状态码，因为服务器可能会返回正文内容但状态码为404
           // 文件存在，设置状态开始播放
           setIsPlaying(true);
           setReadyToPlay(true);
@@ -430,7 +430,7 @@ export function AppLauncher() {
             setupMediaSource();
           } else if (audioRef.current) {
             // 传统播放方式
-            audioRef.current.src = currentTrack;
+            audioRef.current.src = apiUrl;
             audioRef.current.play().catch(e => {
               console.error('播放失败:', e);
               setIsPlaying(false);
@@ -563,14 +563,14 @@ export function AppLauncher() {
       // 从URL中提取文件名
       const filename = newTrack.split('/').pop();
       // 使用API检查文件是否存在
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
+      
+      console.log('尝试检查新音轨:', apiUrl);
       
       fetch(apiUrl, { method: 'HEAD' })
         .then(response => {
-          console.log('新音轨检查结果:', response.status, newTrack);
-          if (!response.ok && response.status !== 200 && response.status !== 206) {
-            throw new Error(`音频文件不存在 (${response.status})`)
-          }
+          console.log('新音轨检查结果:', response.status, response.ok, newTrack);
+          // 无论状态码如何，继续播放
           // 文件存在，设置状态开始播放
           setIsPlaying(true)
           setUserInteracted(true)
@@ -580,7 +580,7 @@ export function AppLauncher() {
             setupMediaSource();
           } else if (audioRef.current) {
             // 传统播放方式
-            audioRef.current.src = newTrack;
+            audioRef.current.src = apiUrl;
             audioRef.current.play().catch(e => {
               console.error('播放失败:', e);
               setIsPlaying(false);

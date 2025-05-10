@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+/** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
-eslint: {
+  reactStrictMode: true,
+  eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.
     ignoreDuringBuilds: true,
@@ -9,6 +11,17 @@ eslint: {
   images: {
     domains: ['127.0.0.1', 'localhost', 'next-api.dogeow.com'],
   },
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
+          { key: "Cross-Origin-Embedder-Policy", value: "require-corp" }
+        ]
+      }
+    ]
+  }
 };
 
 export default nextConfig;
