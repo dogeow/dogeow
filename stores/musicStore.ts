@@ -11,7 +11,7 @@ interface MusicState {
 export const useMusicStore = create<MusicState>()(
   persist(
     (set) => ({
-      currentTrack: '/musics/和楽器バンド - 東風破.mp3',
+      currentTrack: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3',
       volume: 0.5,
       setCurrentTrack: (track: string) => set({ currentTrack: track }),
       setVolume: (volume: number) => set({ volume }),
