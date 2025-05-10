@@ -393,7 +393,24 @@ export function AppLauncher() {
                       console.log('音频加载完成! 总共加载了 ' + offset + ' 字节');
                       if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
                         try {
-                          mediaSourceRef.current.endOfStream();
+                          // 确保缓冲区不再更新时再结束流
+                          if (!sourceBufferRef.current?.updating) {
+                            mediaSourceRef.current.endOfStream();
+                            console.log('媒体流已正常结束');
+                          } else {
+                            // 如果缓冲区仍在更新，等待更新完成后再结束流
+                            sourceBufferRef.current.addEventListener('updateend', function onFinalUpdate() {
+                              sourceBufferRef.current?.removeEventListener('updateend', onFinalUpdate);
+                              if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+                                try {
+                                  mediaSourceRef.current.endOfStream();
+                                  console.log('媒体流已延迟结束');
+                                } catch (e) {
+                                  console.warn('延迟结束媒体流时出错:', e);
+                                }
+                              }
+                            }, { once: true });
+                          }
                         } catch (e) {
                           console.warn('结束媒体流时出错:', e);
                         }
@@ -691,6 +708,44 @@ export function AppLauncher() {
     };
   }, []);
   
+  // 监听音频播放结束
+  useEffect(() => {
+    const handleAudioEnded = () => {
+      console.log('音频播放已结束');
+      
+      // 清理MediaSource资源
+      if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+        try {
+          mediaSourceRef.current.endOfStream();
+        } catch (e) {
+          console.warn('在播放结束时关闭媒体流出错:', e);
+        }
+      }
+      
+      // 重置播放状态但保留音轨
+      setCurrentTime(0);
+      
+      // 检查是否自动切换到下一曲
+      const currentIndex = availableTracks.findIndex(track => track.path === currentTrack);
+      if (currentIndex >= 0) {
+        switchToNextTrack();
+      } else {
+        console.warn('当前曲目不在播放列表中，不自动切换到下一曲');
+        setIsPlaying(false);
+      }
+    };
+    
+    if (audioRef.current) {
+      audioRef.current.addEventListener('ended', handleAudioEnded);
+    }
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.removeEventListener('ended', handleAudioEnded);
+      }
+    };
+  }, [currentTrack, switchToNextTrack]);
+  
   const renderContent = () => {
     switch (displayMode) {
       case 'music':
@@ -857,22 +912,6 @@ export function AppLauncher() {
           ref={audioRef}
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
-          onEnded={() => {
-            console.log('播放结束，准备切换到下一曲');
-            // 检查下一曲是否存在，再切换
-            const currentIndex = availableTracks.findIndex(track => track.path === currentTrack);
-            if (currentIndex >= 0) {
-              switchToNextTrack();
-            } else {
-              console.warn('当前曲目不在播放列表中，不自动切换到下一曲');
-              // 如果当前曲目不在列表中，切换到第一首
-              if (availableTracks.length > 0) {
-                setCurrentTrack(availableTracks[0].path);
-                setIsTrackChanging(true);
-                toast.info(`已切换到: ${availableTracks[0].name}`);
-              }
-            }
-          }}
           onError={handleAudioError}
           loop={false}
           hidden
