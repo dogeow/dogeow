@@ -10,6 +10,7 @@ export type ToolCategory =
   | "计算工具" 
   | "网络工具" 
   | "开发辅助" 
+  | "多媒体"
   | "其他"
 
 // 工具接口定义
@@ -21,6 +22,7 @@ export interface Tool {
   category: ToolCategory
   tags: string[]
   icon?: string
+  route?: string // 添加路由字段
 }
 
 // 所有工具列表
@@ -32,6 +34,15 @@ export const tools: Tool[] = [
     component: TimeConverter,
     category: "日期时间",
     tags: ["时间戳", "日期", "转换"],
+  },
+  {
+    id: "music-player",
+    title: "HLS 音乐播放器",
+    description: "全平台支持的 HLS 流媒体音乐播放器，支持 PC、安卓和 iOS",
+    component: () => null, // 不需要组件，使用独立路由
+    category: "多媒体",
+    tags: ["音乐", "HLS", "流媒体", "播放器"],
+    route: "/tool/music",
   },
   // 后续可添加更多工具
 ]

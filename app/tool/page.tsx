@@ -6,16 +6,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { tools, getCategories, searchTools } from "./tools"
+import { useRouter } from "next/navigation"
 
 export default function ToolPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [activeTab, setActiveTab] = useState("time-converter")
+  const router = useRouter()
   
   // 过滤工具
   const filteredTools = searchTerm ? searchTools(searchTerm) : tools
 
   // 根据 ID 获取当前活动工具
   const activeTool = tools.find(tool => tool.id === activeTab)
+
+  // 处理工具选择
+  const handleToolSelect = (toolId: string) => {
+    const tool = tools.find(t => t.id === toolId)
+    if (tool?.route) {
+      // 如果有路由，导航到该路由
+      router.push(tool.route)
+    } else {
+      // 否则在当前页面显示工具
+      setActiveTab(toolId)
+    }
+  }
   
   return (
     <div className="container mx-auto py-6">
@@ -34,7 +48,7 @@ export default function ToolPage() {
             </div>
             <CardContent>
               {filteredTools.length > 0 ? (
-                <Tabs orientation="vertical" defaultValue="time-converter" onValueChange={setActiveTab}>
+                <Tabs orientation="vertical" defaultValue="time-converter" onValueChange={handleToolSelect}>
                   <TabsList className="flex flex-col items-stretch h-auto">
                     {filteredTools.map((tool) => (
                       <TabsTrigger 
