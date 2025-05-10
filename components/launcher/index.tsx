@@ -283,14 +283,29 @@ export function AppLauncher() {
       let offset = 0;
       const CHUNK_SIZE = 1024 * 256; // 256KB 片段
       let isFirstChunk = true;
+      let totalFileSize = 0;
+
+      // 首先获取文件总大小
+      try {
+        const headResponse = await fetch(apiUrl, { method: 'HEAD' });
+        const contentLength = headResponse.headers.get('Content-Length');
+        if (contentLength) {
+          totalFileSize = parseInt(contentLength, 10);
+          console.log(`音频文件总大小: ${totalFileSize} 字节`);
+        }
+      } catch (error) {
+        console.warn('获取文件大小失败，将尝试流式播放:', error);
+      }
 
       // 加载下一个片段的函数
       const fetchNextChunk = async () => {
         try {
-          console.log(`获取音频块: ${offset}-${offset + CHUNK_SIZE - 1}`);
+          const endByte = offset + CHUNK_SIZE - 1;
+          console.log(`获取音频块: ${offset}-${endByte}, 总大小: ${totalFileSize || '未知'}`);
+          
           const response = await fetch(apiUrl, {
             headers: {
-              Range: `bytes=${offset}-${offset + CHUNK_SIZE - 1}`
+              Range: `bytes=${offset}-${endByte}`
             },
             signal: fetchController.signal
           });
@@ -301,6 +316,18 @@ export function AppLauncher() {
             const chunk = new Uint8Array(arrayBuffer);
             
             console.log(`获取到音频块，大小: ${chunk.length} 字节`);
+            
+            if (chunk.length === 0) {
+              console.warn('获取到空音频块，可能已到达文件末尾');
+              if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+                try {
+                  mediaSourceRef.current.endOfStream();
+                } catch (e) {
+                  console.warn('结束媒体流时出错:', e);
+                }
+              }
+              return;
+            }
             
             // 等待 sourceBuffer 准备好
             const appendBuffer = () => {
@@ -329,22 +356,20 @@ export function AppLauncher() {
 
                 // 获取总长度
                 const contentRange = response.headers.get('Content-Range');
-                let totalLength = 0;
-                
-                if (contentRange) {
+                if (contentRange && !totalFileSize) {
                   const parts = contentRange.split('/');
                   if (parts.length > 1) {
-                    totalLength = parseInt(parts[1], 10);
+                    totalFileSize = parseInt(parts[1], 10);
                   }
-                } else if (response.headers.get('Content-Length')) {
+                } else if (response.headers.get('Content-Length') && !totalFileSize) {
                   // 如果没有 Content-Range，但有 Content-Length，使用它作为总长度
-                  totalLength = parseInt(response.headers.get('Content-Length') || '0', 10);
+                  totalFileSize = parseInt(response.headers.get('Content-Length') || '0', 10);
                 }
                 
-                console.log(`当前进度: ${offset}/${totalLength} 字节`);
+                console.log(`当前进度: ${offset}/${totalFileSize} 字节 (${totalFileSize ? Math.round(offset/totalFileSize*100) : '?'}%)`);
 
                 // 如果还有更多数据，加载下一个片段
-                if (!totalLength || offset < totalLength) {
+                if (!totalFileSize || offset < totalFileSize) {
                   if (sourceBufferRef.current) {
                     if (sourceBufferRef.current.updating) {
                       sourceBufferRef.current.addEventListener('updateend', fetchNextChunk, { once: true });
@@ -352,18 +377,16 @@ export function AppLauncher() {
                       fetchNextChunk();
                     }
                   }
-                } else if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+                } else {
                   // 所有数据加载完成
                   console.log('音频加载完成');
-                  setTimeout(() => {
-                    if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-                      try {
-                        mediaSourceRef.current.endOfStream();
-                      } catch (e) {
-                        console.warn('结束媒体流时出错:', e);
-                      }
+                  if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+                    try {
+                      mediaSourceRef.current.endOfStream();
+                    } catch (e) {
+                      console.warn('结束媒体流时出错:', e);
                     }
-                  }, 1000);
+                  }
                 }
               } catch (e) {
                 console.error('添加缓冲区时出错:', e);
@@ -401,6 +424,10 @@ export function AppLauncher() {
     } catch (error) {
       console.error('流式加载音频时出错:', error);
       setIsStreamingSupported(false);
+      // 回退到传统播放方式
+      if (audioRef.current) {
+        audioRef.current.src = apiUrl;
+      }
     }
   };
 
