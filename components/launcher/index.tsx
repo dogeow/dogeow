@@ -221,7 +221,9 @@ export function AppLauncher() {
       mediaSourceRef.current = mediaSource;
 
       if (audioRef.current) {
-        audioRef.current.src = URL.createObjectURL(mediaSource);
+        const objectURL = URL.createObjectURL(mediaSource);
+        console.log('创建MediaSource对象URL:', objectURL);
+        audioRef.current.src = objectURL;
       }
 
       mediaSource.addEventListener('sourceopen', () => {
@@ -233,7 +235,10 @@ export function AppLauncher() {
             setIsStreamingSupported(false);
             // 回退到直接使用 src
             if (audioRef.current) {
-              audioRef.current.src = currentTrack;
+              const filename = currentTrack.split('/').pop();
+              const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+              console.log('回退到直接URL:', directUrl);
+              audioRef.current.src = directUrl;
             }
             return;
           }
@@ -243,13 +248,19 @@ export function AppLauncher() {
           sourceBufferRef.current = sourceBuffer;
 
           // 开始加载音频
-          startStreamingAudio(currentTrack);
+          const filename = currentTrack.split('/').pop();
+          const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+          console.log('开始流式加载音频:', apiUrl);
+          startStreamingAudio(apiUrl);
         } catch (error) {
           console.error('创建 SourceBuffer 失败:', error);
           setIsStreamingSupported(false);
           // 回退到直接使用 src
           if (audioRef.current) {
-            audioRef.current.src = currentTrack;
+            const filename = currentTrack.split('/').pop();
+            const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+            console.log('回退到直接URL:', directUrl);
+            audioRef.current.src = directUrl;
           }
         }
       });
@@ -260,17 +271,14 @@ export function AppLauncher() {
   };
 
   // 流式加载音频
-  const startStreamingAudio = async (audioUrl: string) => {
+  const startStreamingAudio = async (apiUrl: string) => {
     if (!sourceBufferRef.current || !mediaSourceRef.current) return;
 
     const fetchController = new AbortController();
     fetchControllerRef.current = fetchController;
     
     try {
-      // 从URL中提取文件名
-      const filename = audioUrl.split('/').pop();
-      // 使用API进行流式传输
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+      console.log('使用API URL:', apiUrl);
       
       let offset = 0;
       const CHUNK_SIZE = 1024 * 256; // 256KB 片段
@@ -279,6 +287,7 @@ export function AppLauncher() {
       // 加载下一个片段的函数
       const fetchNextChunk = async () => {
         try {
+          console.log(`获取音频块: ${offset}-${offset + CHUNK_SIZE - 1}`);
           const response = await fetch(apiUrl, {
             headers: {
               Range: `bytes=${offset}-${offset + CHUNK_SIZE - 1}`
@@ -287,9 +296,11 @@ export function AppLauncher() {
           });
 
           // 检查服务器是否支持范围请求
-          if (response.status === 206 || response.status === 404) {
+          if (response.status === 206 || response.status === 200) {
             const arrayBuffer = await response.arrayBuffer();
             const chunk = new Uint8Array(arrayBuffer);
+            
+            console.log(`获取到音频块，大小: ${chunk.length} 字节`);
             
             // 等待 sourceBuffer 准备好
             const appendBuffer = () => {
@@ -318,10 +329,22 @@ export function AppLauncher() {
 
                 // 获取总长度
                 const contentRange = response.headers.get('Content-Range');
-                const totalLength = contentRange ? parseInt(contentRange.split('/')[1]) : 0;
+                let totalLength = 0;
+                
+                if (contentRange) {
+                  const parts = contentRange.split('/');
+                  if (parts.length > 1) {
+                    totalLength = parseInt(parts[1], 10);
+                  }
+                } else if (response.headers.get('Content-Length')) {
+                  // 如果没有 Content-Range，但有 Content-Length，使用它作为总长度
+                  totalLength = parseInt(response.headers.get('Content-Length') || '0', 10);
+                }
+                
+                console.log(`当前进度: ${offset}/${totalLength} 字节`);
 
                 // 如果还有更多数据，加载下一个片段
-                if (offset < totalLength) {
+                if (!totalLength || offset < totalLength) {
                   if (sourceBufferRef.current) {
                     if (sourceBufferRef.current.updating) {
                       sourceBufferRef.current.addEventListener('updateend', fetchNextChunk, { once: true });
@@ -331,6 +354,7 @@ export function AppLauncher() {
                   }
                 } else if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
                   // 所有数据加载完成
+                  console.log('音频加载完成');
                   setTimeout(() => {
                     if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
                       try {
@@ -346,18 +370,18 @@ export function AppLauncher() {
                 // 如果发生错误，回退到传统播放方式
                 setIsStreamingSupported(false);
                 if (audioRef.current) {
-                  audioRef.current.src = audioUrl;
+                  audioRef.current.src = apiUrl;
                 }
               }
             };
 
             appendBuffer();
           } else {
-            console.warn('服务器不支持范围请求，将使用传统播放方式');
+            console.warn(`服务器不支持范围请求或返回了错误状态码: ${response.status}`);
             setIsStreamingSupported(false);
             // 回退到直接使用 src
             if (audioRef.current) {
-              audioRef.current.src = audioUrl;
+              audioRef.current.src = apiUrl;
             }
           }
         } catch (error: any) {
@@ -366,7 +390,7 @@ export function AppLauncher() {
             setIsStreamingSupported(false);
             // 回退到直接使用 src
             if (audioRef.current) {
-              audioRef.current.src = audioUrl;
+              audioRef.current.src = apiUrl;
             }
           }
         }
@@ -384,10 +408,16 @@ export function AppLauncher() {
   const togglePlay = () => {
     // 如果要开始播放，先检查音频文件是否存在
     if (!isPlaying && audioRef.current) {
+      // 从URL中提取文件名
+      const filename = currentTrack.split('/').pop();
+      // 使用API检查文件是否存在
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+      
       // 只有在开始播放时检查音频文件是否存在
-      fetch(currentTrack, { method: 'HEAD' })
+      fetch(apiUrl, { method: 'HEAD' })
         .then(response => {
-          if (!response.ok && response.status !== 404) {
+          console.log('音频文件检查结果:', response.status);
+          if (!response.ok && response.status !== 200 && response.status !== 206) {
             throw new Error(`音频文件不存在 (${response.status})`)
           }
           // 文件存在，设置状态开始播放
@@ -530,9 +560,15 @@ export function AppLauncher() {
     
     // 检查新音轨是否可用，仅在确认用户有意图播放时才进行
     if (isPlaying) {
-      fetch(newTrack, { method: 'HEAD' })
+      // 从URL中提取文件名
+      const filename = newTrack.split('/').pop();
+      // 使用API检查文件是否存在
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/music/stream/${filename}`;
+      
+      fetch(apiUrl, { method: 'HEAD' })
         .then(response => {
-          if (!response.ok) {
+          console.log('新音轨检查结果:', response.status, newTrack);
+          if (!response.ok && response.status !== 200 && response.status !== 206) {
             throw new Error(`音频文件不存在 (${response.status})`)
           }
           // 文件存在，设置状态开始播放
