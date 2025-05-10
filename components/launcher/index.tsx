@@ -269,7 +269,7 @@ export function AppLauncher() {
             // 回退到直接使用 src
             if (audioRef.current) {
               const filename = currentTrack.split('/').pop();
-              const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
+              const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
               console.log('回退到直接URL:', directUrl);
               audioRef.current.src = directUrl;
             }
@@ -303,7 +303,7 @@ export function AppLauncher() {
 
           // 开始加载音频
           const filename = currentTrack.split('/').pop();
-          const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
+          const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
           console.log('开始流式加载音频:', apiUrl);
           startStreamingAudio(apiUrl);
         } catch (error) {
@@ -312,7 +312,7 @@ export function AppLauncher() {
           // 回退到直接使用 src
           if (audioRef.current) {
             const filename = currentTrack.split('/').pop();
-            const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
+            const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
             console.log('回退到直接URL:', directUrl);
             audioRef.current.src = directUrl;
           }
@@ -472,7 +472,7 @@ export function AppLauncher() {
                             if (audioRef.current) {
                               const filename = currentTrack.split('/').pop();
                               if (filename) {
-                                const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
+                                const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
                                 console.log('结束媒体流失败，回退到直接URL:', directUrl);
                                 audioRef.current.src = directUrl;
                                 if (isPlaying) {
@@ -719,7 +719,7 @@ export function AppLauncher() {
       }
       
       // 使用API检查文件是否存在
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
       
       console.log('尝试检查新音轨:', apiUrl);
       
