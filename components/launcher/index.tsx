@@ -220,10 +220,43 @@ export function AppLauncher() {
       const mediaSource = new MediaSource();
       mediaSourceRef.current = mediaSource;
 
+      // 监听mediaSource状态变化
+      mediaSource.addEventListener('sourceclose', () => {
+        console.log('MediaSource已关闭');
+      });
+      
+      mediaSource.addEventListener('sourceended', () => {
+        console.log('MediaSource已结束');
+      });
+
       if (audioRef.current) {
         const objectURL = URL.createObjectURL(mediaSource);
         console.log('创建MediaSource对象URL:', objectURL);
         audioRef.current.src = objectURL;
+        
+        // 设置音频事件监听
+        audioRef.current.onended = () => {
+          console.log('音频播放完成');
+          
+          // 确保正确释放资源
+          if (mediaSourceRef.current) {
+            if (objectURL) {
+              try {
+                URL.revokeObjectURL(objectURL);
+                console.log('已释放objectURL');
+              } catch (e) {
+                console.warn('释放objectURL时出错:', e);
+              }
+            }
+          }
+          
+          // 如果是自动播放下一曲
+          if (isPlaying) {
+            setTimeout(() => {
+              switchToNextTrack();
+            }, 500);
+          }
+        };
       }
 
       mediaSource.addEventListener('sourceopen', () => {
@@ -236,7 +269,7 @@ export function AppLauncher() {
             // 回退到直接使用 src
             if (audioRef.current) {
               const filename = currentTrack.split('/').pop();
-              const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
+              const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
               console.log('回退到直接URL:', directUrl);
               audioRef.current.src = directUrl;
             }
@@ -246,10 +279,31 @@ export function AppLauncher() {
           // 创建 SourceBuffer
           const sourceBuffer = mediaSource.addSourceBuffer(mimeType);
           sourceBufferRef.current = sourceBuffer;
+          
+          // 设置模式为"segments"而不是默认的"sequence"
+          try {
+            sourceBuffer.mode = 'segments';
+            console.log('SourceBuffer模式设置为segments');
+          } catch (e) {
+            console.warn('设置SourceBuffer模式失败:', e);
+          }
+          
+          // 监听SourceBuffer状态
+          sourceBuffer.addEventListener('updateend', () => {
+            // console.log('SourceBuffer更新完成');
+          });
+          
+          sourceBuffer.addEventListener('error', (e) => {
+            console.error('SourceBuffer错误:', e);
+          });
+          
+          sourceBuffer.addEventListener('abort', () => {
+            console.warn('SourceBuffer操作被中止');
+          });
 
           // 开始加载音频
           const filename = currentTrack.split('/').pop();
-          const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
+          const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
           console.log('开始流式加载音频:', apiUrl);
           startStreamingAudio(apiUrl);
         } catch (error) {
@@ -258,7 +312,7 @@ export function AppLauncher() {
           // 回退到直接使用 src
           if (audioRef.current) {
             const filename = currentTrack.split('/').pop();
-            const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
+            const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
             console.log('回退到直接URL:', directUrl);
             audioRef.current.src = directUrl;
           }
@@ -391,30 +445,47 @@ export function AppLauncher() {
                     } else {
                       // 所有数据加载完成
                       console.log('音频加载完成! 总共加载了 ' + offset + ' 字节');
-                      if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-                        try {
-                          // 确保缓冲区不再更新时再结束流
-                          if (!sourceBufferRef.current?.updating) {
-                            mediaSourceRef.current.endOfStream();
-                            console.log('媒体流已正常结束');
-                          } else {
-                            // 如果缓冲区仍在更新，等待更新完成后再结束流
-                            sourceBufferRef.current.addEventListener('updateend', function onFinalUpdate() {
-                              sourceBufferRef.current?.removeEventListener('updateend', onFinalUpdate);
-                              if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-                                try {
+                      
+                      // 在结束MediaSource前确保所有数据都已经被添加到缓冲区
+                      setTimeout(() => {
+                        if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
+                          try {
+                            // 检查源缓冲区的更新状态
+                            if (sourceBufferRef.current?.updating) {
+                              // 如果还在更新，等待更新完成再结束
+                              sourceBufferRef.current.addEventListener('updateend', function onFinalUpdate() {
+                                sourceBufferRef.current?.removeEventListener('updateend', onFinalUpdate);
+                                if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
                                   mediaSourceRef.current.endOfStream();
-                                  console.log('媒体流已延迟结束');
-                                } catch (e) {
-                                  console.warn('延迟结束媒体流时出错:', e);
+                                  console.log('在更新完成后结束媒体流');
+                                }
+                              }, { once: true });
+                            } else {
+                              // 如果不在更新，直接结束
+                              mediaSourceRef.current.endOfStream();
+                              console.log('媒体流已结束');
+                            }
+                          } catch (e) {
+                            console.warn('结束媒体流时出错:', e);
+                            
+                            // 如果结束媒体流出错，尝试回退到传统播放方式
+                            if (audioRef.current) {
+                              const filename = currentTrack.split('/').pop();
+                              if (filename) {
+                                const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://next-api.dogeow.com'}/music/stream/${filename}`;
+                                console.log('结束媒体流失败，回退到直接URL:', directUrl);
+                                audioRef.current.src = directUrl;
+                                if (isPlaying) {
+                                  audioRef.current.play().catch(e => {
+                                    console.error('播放失败:', e);
+                                  });
                                 }
                               }
-                            }, { once: true });
+                            }
                           }
-                        } catch (e) {
-                          console.warn('结束媒体流时出错:', e);
                         }
-                      }
+                      }, 100); // 稍微延迟确保所有数据都处理完成
+                      
                       isLoading = false;
                     }
                   }, { once: true });
