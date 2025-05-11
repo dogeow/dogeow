@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import useSWR from 'swr';
 import HLSMusicPlayer from './HLSMusicPlayer';
 import MusicList, { MusicItem } from './MusicList';
@@ -10,7 +10,17 @@ import { Input } from "@/components/ui/input";
 import { cn } from '@/lib/utils';
 
 // 加载音乐列表的 fetcher 函数
-const fetcher = (url: string) => fetch(url).then(res => res.json());
+const fetcher = (url: string) => 
+  fetch(url, {
+    method: 'GET',
+    mode: 'cors',
+    credentials: 'omit',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+      'Origin': typeof window !== 'undefined' ? window.location.origin : ''
+    }
+  }).then(res => res.json());
 
 export default function MusicPlayerPage() {
   // 从状态管理中获取当前音乐和音量
@@ -27,6 +37,34 @@ export default function MusicPlayerPage() {
     `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/hls`,
     fetcher
   );
+
+  // 音频元素ref预创建
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  
+  // 在组件挂载时创建audio元素
+  useEffect(() => {
+    // 确保只在客户端执行
+    if (typeof window !== 'undefined') {
+      // 创建audio元素并添加到DOM中以确保它完全初始化
+      if (!audioRef.current) {
+        audioRef.current = new Audio();
+        audioRef.current.preload = "metadata";
+        // 可以考虑将它隐藏并添加到DOM中以确保更好的兼容性
+        document.body.appendChild(audioRef.current);
+        
+        console.log('音频元素已创建和初始化');
+      }
+    }
+    
+    // 组件卸载时清理
+    return () => {
+      if (audioRef.current && document.body.contains(audioRef.current)) {
+        document.body.removeChild(audioRef.current);
+        audioRef.current = null;
+        console.log('音频元素已移除');
+      }
+    };
+  }, []);
 
   // 处理音乐数据
   useEffect(() => {
@@ -112,6 +150,61 @@ export default function MusicPlayerPage() {
       .replace(/[_-]/g, ' ');
   };
 
+  // 从文件路径提取目录名
+  const getDirectoryFromPath = (path: string) => {
+    // 查找格式为 /musics/hls/目录名/, /music/hls/目录名/ 的路径
+    const match = path.match(/\/(?:music|musics)\/hls\/([^\/]+)/);
+    if (match && match[1]) {
+      // 确保对目录名进行正确编码处理
+      let songDir = match[1];
+      
+      // 先解码以防止双重编码
+      try {
+        songDir = decodeURIComponent(songDir);
+      } catch (e) {
+        console.warn('解码失败，使用原始路径:', songDir);
+      }
+      
+      console.log('提取歌曲目录:', songDir);
+      return songDir;
+    }
+    
+    // 如果没有找到匹配的模式，使用路径的上一级目录名
+    const parts = path.split('/');
+    if (parts.length >= 2) {
+      return parts[parts.length - 2];
+    }
+    
+    // 如果都无法提取，返回原始路径
+    console.log('无法提取目录，使用原路径:', path);
+    return path;
+  };
+  
+  // 构建HLS播放地址
+  const buildHlsUrl = (music: MusicItem) => {
+    if (!music) return '';
+    
+    // 使用固定的API基础URL，避免环境变量未加载的问题
+    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+    // 去除'/api'后缀，因为hls-converter.php直接位于根目录
+    const baseUrl = apiBaseUrl.replace(/\/api$/, '');
+    const songDir = getDirectoryFromPath(music.path);
+    
+    // 确保路径正确编码
+    const encodedPath = encodeURIComponent(songDir);
+    
+    const fullUrl = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
+    console.log('构建HLS播放地址:', {
+      apiBaseUrl,
+      baseUrl,
+      songDir,
+      encodedPath,
+      fullUrl
+    });
+    
+    return fullUrl;
+  };
+
   return (
     <div className="container mx-auto py-4 flex flex-col gap-6">
       <h1 className="text-2xl font-bold">HLS 音乐播放器</h1>
@@ -143,15 +236,50 @@ export default function MusicPlayerPage() {
         <TabsContent value="player" className="pt-4">
           {currentMusic ? (
             <HLSMusicPlayer
-              src={`${process.env.NEXT_PUBLIC_API_BASE_URL}${currentMusic.path}`}
-              title={currentMusic.name}
+              src={buildHlsUrl(currentMusic)}
               autoPlay={isPlaying}
-              onNext={playNext}
-              onPrev={playPrev}
+              showControls={true}
+              externalAudioRef={audioRef}
             />
           ) : (
             <div className="text-center p-8 border rounded-md">
               <p className="text-muted-foreground">请从播放列表中选择一首歌曲</p>
+            </div>
+          )}
+          
+          {/* 单独添加上一首/下一首控制按钮 */}
+          {currentMusic && (
+            <div className="flex justify-center gap-4 mt-4">
+              <button 
+                onClick={playPrev} 
+                className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="上一首"
+              >
+                <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              
+              <div className="px-4 py-2 bg-muted/30 rounded-full">
+                <p className="text-sm font-medium truncate max-w-xs">
+                  {currentMusic.name}
+                </p>
+                {currentMusic.artist && (
+                  <p className="text-xs text-muted-foreground truncate">
+                    {currentMusic.artist}
+                  </p>
+                )}
+              </div>
+              
+              <button 
+                onClick={playNext} 
+                className="p-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                aria-label="下一首"
+              >
+                <svg className="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
             </div>
           )}
         </TabsContent>
