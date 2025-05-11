@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useEffect, useRef, useState } from 'react'
-import { useMusicStore } from '@/stores/musicStore'
+import React, { useEffect, useRef, useState, useCallback } from 'react'
+import { useMusicStore, MusicTrack } from '@/stores/musicStore'
 import { toast } from 'sonner'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { MusicPlayer } from './MusicPlayer'
@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import useAuthStore from '@/stores/authStore'
 import { Input } from '@/components/ui/input'
 import { SearchDialog } from '@/components/search/SearchDialog'
+import { isHlsCompatible, buildHlsUrl, setupHls, extractSongName } from './HLSIntegration'
 
 // 可用的音频文件列表
 const availableTracks = configs.availableTracks
@@ -29,13 +30,15 @@ export function AppLauncher() {
   
   const { 
     currentTrack, 
-    volume, 
+    volume: musicVolume, 
     setVolume, 
-    setCurrentTrack
+    setCurrentTrack,
+    setAvailableTracks
   } = useMusicStore()
   const { backgroundImage, setBackgroundImage } = useBackgroundStore()
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
+  const [volume, setVolumeState] = useState(musicVolume || 0.5)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [audioError, setAudioError] = useState<string | null>(null)
@@ -52,24 +55,91 @@ export function AppLauncher() {
   
   const audioRef = useRef<HTMLAudioElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
-  const mediaSourceRef = useRef<MediaSource | null>(null);
-  const sourceBufferRef = useRef<SourceBuffer | null>(null);
-  const fetchControllerRef = useRef<AbortController | null>(null);
-  const [isStreamingSupported, setIsStreamingSupported] = useState(true);
+  const hlsInstanceRef = useRef<{ hls: any; destroy: () => void } | null>(null);
   
   // 组件加载时检查音频文件
   useEffect(() => {
-    // 确保使用正确的路径格式
-    const formattedTrack = currentTrack.startsWith('/') 
-      ? currentTrack 
-      : `/${currentTrack}`
+    // 输出环境变量信息
+    console.log('环境变量:', {
+      API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+      API_URL: process.env.NEXT_PUBLIC_API_URL,
+      NODE_ENV: process.env.NODE_ENV
+    });
     
-    if (formattedTrack !== currentTrack) {
-      setCurrentTrack(formattedTrack)
-    }
+    // 加载音频列表
+    const fetchAvailableTracks = async () => {
+      try {
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+        console.log('使用的API基础URL:', apiBaseUrl);
+        
+        // 获取HLS音频列表
+        const hlsUrl = `${apiBaseUrl}/music/hls`;
+        console.log('请求HLS音频列表:', hlsUrl);
+        const hlsResponse = await fetch(hlsUrl);
+        const hlsData = await hlsResponse.json();
+        
+        console.log('获取到HLS音频列表:', hlsData);
+        
+        setAvailableTracks(hlsData);
+        
+        // 如果当前没有选中音轨，选择第一个
+        const currentTrackValue = useMusicStore.getState().currentTrack;
+        console.log('当前选中音轨:', currentTrackValue);
+        if ((!currentTrackValue || currentTrackValue === '') && hlsData.length > 0) {
+          console.log('选择第一个音轨:', hlsData[0].path);
+          setCurrentTrack(hlsData[0].path);
+        }
+      } catch (error) {
+        console.error('加载音频列表失败:', error);
+      }
+    };
     
-    // 不再在组件初始化时检查音频文件
-  }, [currentTrack, setCurrentTrack])
+    fetchAvailableTracks();
+  }, [setCurrentTrack]);
+  
+  // 监听currentTrack变化，初始化播放器
+  useEffect(() => {
+    if (!currentTrack) return;
+    
+    // 测试直接请求HLS API
+    const testHlsApi = async () => {
+      try {
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+        const hlsApiUrl = `${apiBaseUrl}/music/hls`;
+        console.log('直接测试HLS API:', hlsApiUrl);
+        
+        const response = await fetch(hlsApiUrl);
+        if (!response.ok) {
+          console.error('HLS API请求失败:', response.status, response.statusText);
+          return;
+        }
+        
+        const data = await response.json();
+        console.log('直接请求HLS API成功:', data);
+        
+        // 测试直接请求HLS文件
+        if (data && data.length > 0) {
+          const hlsFilePath = data[0].path;
+          console.log('测试访问HLS文件:', hlsFilePath);
+          
+          const hlsFileResponse = await fetch(hlsFilePath);
+          if (!hlsFileResponse.ok) {
+            console.error('HLS文件请求失败:', hlsFileResponse.status, hlsFileResponse.statusText);
+            return;
+          }
+          
+          console.log('HLS文件请求成功，状态码:', hlsFileResponse.status);
+          const contentType = hlsFileResponse.headers.get('content-type');
+          console.log('HLS文件内容类型:', contentType);
+        }
+      } catch (error) {
+        console.error('测试HLS API失败:', error);
+      }
+    };
+    
+    testHlsApi();
+    setupMediaSource();
+  }, [currentTrack]);
   
   // 处理播放/暂停
   useEffect(() => {
@@ -91,12 +161,20 @@ export function AppLauncher() {
   }, [isPlaying, userInteracted, readyToPlay])
   
   // 处理音量变化
-  useEffect(() => {
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseFloat(e.target.value);
+    setVolumeState(newVolume);
+    setVolume(newVolume);
+    
+    // 直接应用到当前音频元素
     if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume
+      audioRef.current.volume = isMuted ? 0 : newVolume;
     }
-  }, [volume, isMuted])
-  
+  };
+
+  // 切换静音状态
+  const toggleMute = () => setIsMuted(!isMuted);
+
   // 监听全局用户交互
   useEffect(() => {
     const handleUserInteraction = () => {
@@ -143,454 +221,268 @@ export function AppLauncher() {
     document.documentElement.style.setProperty('--music-player-height', '3rem')
   }, [])
 
-  // 加载音频元数据
+  // 阻止用户输入事件冒泡到 body，避免全局热键影响
+  const stopPropagation = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+  };
+
+  // 更新音频状态 - 处理音频元素的各种事件
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
-      setDuration(audioRef.current.duration)
-      setAudioError(null)
-      setReadyToPlay(true)
-    }
-  }
-  
-  // 处理音频错误
-  const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
-    const error = (e.target as HTMLAudioElement).error
-    const errorMessage = error ? `错误代码: ${error.code}, 消息: ${error.message}` : "未知错误"
-    console.error("音频加载错误:", errorMessage)
-    setAudioError(errorMessage)
-    setIsPlaying(false)
-    setIsTrackChanging(false)
-    setReadyToPlay(false)
-    toast.error("音频加载错误", {
-      description: errorMessage
-    })
-  }
-  
-  // 更新当前播放时间
-  const handleTimeUpdate = () => {
-    if (audioRef.current) {
-      setCurrentTime(audioRef.current.currentTime)
-    }
-  }
-  
-  // 格式化时间显示
-  const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60)
-    const seconds = Math.floor(time % 60)
-    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
-  }
-  
-  // 设置播放进度
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = parseFloat(e.target.value)
-    setCurrentTime(newTime)
-    if (audioRef.current) {
-      audioRef.current.currentTime = newTime
-    }
-  }
-  
-  // 设置音量
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value) / 100
-    setVolume(newVolume)
-  }
-  
-  // 切换静音
-  const toggleMute = () => setIsMuted(!isMuted)
-  
-  // 切换音量控制显示
-  const toggleVolumeControl = () => setIsVolumeControlVisible(!isVolumeControlVisible)
-  
-  // 创建媒体源并开始流式播放
-  const setupMediaSource = () => {
-    // 检查浏览器是否支持 MediaSource
-    if (!window.MediaSource) {
-      setIsStreamingSupported(false);
-      console.warn('此浏览器不支持 MediaSource Extensions，将使用传统播放方式');
-      return;
-    }
-
-    try {
-      // 如果有正在进行的请求，取消它
-      if (fetchControllerRef.current) {
-        fetchControllerRef.current.abort();
-      }
-
-      // 创建新的 MediaSource
-      const mediaSource = new MediaSource();
-      mediaSourceRef.current = mediaSource;
-
-      // 监听mediaSource状态变化
-      mediaSource.addEventListener('sourceclose', () => {
-        console.log('MediaSource已关闭');
+      console.log('音频元数据已加载:', {
+        duration: audioRef.current.duration,
+        src: audioRef.current.src
       });
       
-      mediaSource.addEventListener('sourceended', () => {
-        console.log('MediaSource已结束');
-      });
-
-      if (audioRef.current) {
-        const objectURL = URL.createObjectURL(mediaSource);
-        console.log('创建MediaSource对象URL:', objectURL);
-        audioRef.current.src = objectURL;
-        
-        // 设置音频事件监听
-        audioRef.current.onended = () => {
-          console.log('音频播放完成');
-          
-          // 确保正确释放资源
-          if (mediaSourceRef.current) {
-            if (objectURL) {
-              try {
-                URL.revokeObjectURL(objectURL);
-                console.log('已释放objectURL');
-              } catch (e) {
-                console.warn('释放objectURL时出错:', e);
-              }
-            }
-          }
-          
-          // 如果是自动播放下一曲
-          if (isPlaying) {
-            setTimeout(() => {
-              switchToNextTrack();
-            }, 500);
-          }
-        };
+      setDuration(audioRef.current.duration);
+      setAudioError(null);
+      
+      // 如果处于播放状态，尝试播放
+      if (isPlaying && audioRef.current.paused) {
+        audioRef.current.play().catch(err => {
+          console.error('元数据加载后播放失败:', err);
+          setAudioError(`播放失败: ${err.message}`);
+        });
       }
-
-      mediaSource.addEventListener('sourceopen', () => {
-        try {
-          // 尝试创建 SourceBuffer
-          const mimeType = 'audio/mpeg'; // 假设是 MP3 文件
-          if (!MediaSource.isTypeSupported(mimeType)) {
-            console.warn(`浏览器不支持 ${mimeType} 类型`);
-            setIsStreamingSupported(false);
-            // 回退到直接使用 src
-            if (audioRef.current) {
-              const filename = currentTrack.split('/').pop();
-              const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
-              console.log('回退到直接URL:', directUrl);
-              audioRef.current.src = directUrl;
-            }
-            return;
-          }
-
-          // 创建 SourceBuffer
-          const sourceBuffer = mediaSource.addSourceBuffer(mimeType);
-          sourceBufferRef.current = sourceBuffer;
-          
-          // 设置模式为"segments"而不是默认的"sequence"
-          try {
-            sourceBuffer.mode = 'segments';
-            console.log('SourceBuffer模式设置为segments');
-          } catch (e) {
-            console.warn('设置SourceBuffer模式失败:', e);
-          }
-          
-          // 监听SourceBuffer状态
-          sourceBuffer.addEventListener('updateend', () => {
-            // console.log('SourceBuffer更新完成');
-          });
-          
-          sourceBuffer.addEventListener('error', (e) => {
-            console.error('SourceBuffer错误:', e);
-          });
-          
-          sourceBuffer.addEventListener('abort', () => {
-            console.warn('SourceBuffer操作被中止');
-          });
-
-          // 开始加载音频
-          const filename = currentTrack.split('/').pop();
-          const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
-          console.log('开始流式加载音频:', apiUrl);
-          startStreamingAudio(apiUrl);
-        } catch (error) {
-          console.error('创建 SourceBuffer 失败:', error);
-          setIsStreamingSupported(false);
-          // 回退到直接使用 src
-          if (audioRef.current) {
-            const filename = currentTrack.split('/').pop();
-            const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
-            console.log('回退到直接URL:', directUrl);
-            audioRef.current.src = directUrl;
-          }
-        }
-      });
-    } catch (error) {
-      console.error('设置 MediaSource 失败:', error);
-      setIsStreamingSupported(false);
     }
   };
 
-  // 流式加载音频
-  const startStreamingAudio = async (apiUrl: string) => {
-    if (!sourceBufferRef.current || !mediaSourceRef.current) return;
-
-    const fetchController = new AbortController();
-    fetchControllerRef.current = fetchController;
+  // 处理音频错误
+  const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
+    const audio = e.currentTarget;
+    console.error('音频播放错误:', audio.error, {
+      src: audio.src,
+      readyState: audio.readyState,
+      networkState: audio.networkState
+    });
     
-    try {
-      console.log('使用API URL:', apiUrl);
+    // 获取更详细的错误信息
+    const errorCode = audio.error ? audio.error.code : 'unknown';
+    const errorMessage = audio.error ? audio.error.message : 'Unknown error';
+    
+    setAudioError(`播放错误 (${errorCode}): ${errorMessage}`);
+    setIsPlaying(false);
+    
+    // 尝试使用直接播放模式作为回退方案
+    if (isHlsCompatible(currentTrack) && hlsInstanceRef.current) {
+      console.log('HLS播放失败，尝试直接播放原始文件');
       
-      let offset = 0;
-      const CHUNK_SIZE = 1024 * 256; // 256KB 片段
-      let isFirstChunk = true;
-      let totalFileSize = 0;
-      let isLoading = false; // 防止并发请求同一块
-
-      // 首先获取文件总大小
-      try {
-        const headResponse = await fetch(apiUrl, { method: 'HEAD' });
-        const contentLength = headResponse.headers.get('Content-Length');
-        if (contentLength) {
-          totalFileSize = parseInt(contentLength, 10);
-          console.log(`音频文件总大小: ${totalFileSize} 字节 (${(totalFileSize / (1024 * 1024)).toFixed(2)} MB)`);
-        }
-      } catch (error) {
-        console.warn('获取文件大小失败，将尝试流式播放:', error);
-      }
-
-      // 加载下一个片段的函数
-      const fetchNextChunk = async () => {
-        if (isLoading) {
-          console.log('已有请求正在进行，跳过这次加载');
-          return;
-        }
-        
-        isLoading = true;
-        
-        try {
-          const endByte = offset + CHUNK_SIZE - 1;
-          console.log(`获取音频块: ${offset}-${endByte}, 总大小: ${totalFileSize || '未知'} 字节`);
-          
-          const response = await fetch(apiUrl, {
-            headers: {
-              Range: `bytes=${offset}-${endByte}`
-            },
-            signal: fetchController.signal
-          });
-
-          // 检查服务器是否支持范围请求
-          if (response.status === 206 || response.status === 200) {
-            const arrayBuffer = await response.arrayBuffer();
-            const chunk = new Uint8Array(arrayBuffer);
-            
-            console.log(`获取到音频块，大小: ${chunk.length} 字节, 进度: ${Math.round((offset + chunk.length) / (totalFileSize || 1) * 100)}%`);
-            
-            if (chunk.length === 0) {
-              console.warn('获取到空音频块，可能已到达文件末尾');
-              if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-                try {
-                  mediaSourceRef.current.endOfStream();
-                } catch (e) {
-                  console.warn('结束媒体流时出错:', e);
-                }
-              }
-              isLoading = false;
-              return;
-            }
-
-            const processChunk = () => {
-              // 如果sourceBuffer正在更新，等待更新完成
-              if (sourceBufferRef.current?.updating) {
-                setTimeout(processChunk, 50); // 等待后再次尝试
-                return;
-              }
-              
-              try {
-                // 添加缓冲区
-                if (sourceBufferRef.current) {
-                  sourceBufferRef.current.appendBuffer(chunk);
-                  
-                  // 监听缓冲区更新完成事件，加载下一块
-                  sourceBufferRef.current.addEventListener('updateend', function onUpdateEnd() {
-                    sourceBufferRef.current?.removeEventListener('updateend', onUpdateEnd);
-                    
-                    // 如果是第一个块，可以开始播放
-                    if (isFirstChunk && audioRef.current && isPlaying) {
-                      audioRef.current.play().catch(e => {
-                        console.error('播放失败:', e);
-                        setIsPlaying(false);
-                      });
-                      isFirstChunk = false;
-                    }
-                    
-                    // 更新偏移量
-                    offset += chunk.length;
-                    
-                    // 获取总长度（如果之前没获取到）
-                    if (!totalFileSize) {
-                      const contentRange = response.headers.get('Content-Range');
-                      if (contentRange) {
-                        const parts = contentRange.split('/');
-                        if (parts.length > 1) {
-                          totalFileSize = parseInt(parts[1], 10);
-                          console.log(`从Content-Range获取到总大小: ${totalFileSize} 字节`);
-                        }
-                      } else if (response.headers.get('Content-Length')) {
-                        totalFileSize = parseInt(response.headers.get('Content-Length') || '0', 10);
-                        console.log(`从Content-Length获取到大小: ${totalFileSize} 字节`);
-                      }
-                    }
-                    
-                    console.log(`已加载: ${offset}/${totalFileSize || '未知'} 字节 (${totalFileSize ? Math.round(offset/totalFileSize*100) : '?'}%)`);
-                    
-                    // 如果还有更多数据，加载下一个片段
-                    if (!totalFileSize || offset < totalFileSize) {
-                      console.log('准备获取下一块数据');
-                      isLoading = false; // 重置加载状态
-                      fetchNextChunk(); // 请求下一块
-                    } else {
-                      // 所有数据加载完成
-                      console.log('音频加载完成! 总共加载了 ' + offset + ' 字节');
-                      
-                      // 在结束MediaSource前确保所有数据都已经被添加到缓冲区
-                      setTimeout(() => {
-                        if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-                          try {
-                            // 检查源缓冲区的更新状态
-                            if (sourceBufferRef.current?.updating) {
-                              // 如果还在更新，等待更新完成再结束
-                              sourceBufferRef.current.addEventListener('updateend', function onFinalUpdate() {
-                                sourceBufferRef.current?.removeEventListener('updateend', onFinalUpdate);
-                                if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-                                  mediaSourceRef.current.endOfStream();
-                                  console.log('在更新完成后结束媒体流');
-                                }
-                              }, { once: true });
-                            } else {
-                              // 如果不在更新，直接结束
-                              mediaSourceRef.current.endOfStream();
-                              console.log('媒体流已结束');
-                            }
-                          } catch (e) {
-                            console.warn('结束媒体流时出错:', e);
-                            
-                            // 如果结束媒体流出错，尝试回退到传统播放方式
-                            if (audioRef.current) {
-                              const filename = currentTrack.split('/').pop();
-                              if (filename) {
-                                const directUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
-                                console.log('结束媒体流失败，回退到直接URL:', directUrl);
-                                audioRef.current.src = directUrl;
-                                if (isPlaying) {
-                                  audioRef.current.play().catch(e => {
-                                    console.error('播放失败:', e);
-                                  });
-                                }
-                              }
-                            }
-                          }
-                        }
-                      }, 100); // 稍微延迟确保所有数据都处理完成
-                      
-                      isLoading = false;
-                    }
-                  }, { once: true });
-                }
-              } catch (e) {
-                console.error('添加缓冲区时出错:', e);
-                // 如果发生错误，回退到传统播放方式
-                setIsStreamingSupported(false);
-                if (audioRef.current) {
-                  audioRef.current.src = apiUrl;
-                }
-                isLoading = false;
-              }
-            };
-            
-            processChunk();
-          } else {
-            console.warn(`服务器不支持范围请求或返回了错误状态码: ${response.status}`);
-            setIsStreamingSupported(false);
-            // 回退到直接使用 src
-            if (audioRef.current) {
-              audioRef.current.src = apiUrl;
-            }
-            isLoading = false;
-          }
-        } catch (error: any) {
-          isLoading = false;
-          if (error.name !== 'AbortError') {
-            console.error('获取音频块时出错:', error);
-            setIsStreamingSupported(false);
-            // 回退到直统播放方式
-            if (audioRef.current) {
-              audioRef.current.src = apiUrl;
-            }
-          }
-        }
-      };
-
-      // 开始加载第一个片段
-      fetchNextChunk();
-    } catch (error) {
-      console.error('流式加载音频时出错:', error);
-      setIsStreamingSupported(false);
-      // 回退到传统播放方式
+      // 清理HLS实例
+      hlsInstanceRef.current.destroy();
+      hlsInstanceRef.current = null;
+      
+      // 尝试直接播放源文件
       if (audioRef.current) {
-        audioRef.current.src = apiUrl;
+        audioRef.current.src = currentTrack;
+        audioRef.current.load();
+      }
+    }
+  };
+
+  // 更新当前播放时间
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  // 格式化时间显示
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  // 处理进度条拖动
+  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTime = parseFloat(e.target.value);
+    setCurrentTime(newTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = newTime;
+    }
+  };
+
+  // 切换音量控制显示
+  const toggleVolumeControl = () => setIsVolumeControlVisible(!isVolumeControlVisible);
+  
+  // 重构的setupMediaSource函数，支持HLS播放
+  const setupMediaSource = () => {
+    if (!currentTrack) return;
+    
+    console.log('设置音频源:', currentTrack, '是否HLS兼容:', isHlsCompatible(currentTrack));
+    
+    // 清理之前的任何HLS实例
+    if (hlsInstanceRef.current) {
+      hlsInstanceRef.current.destroy();
+      hlsInstanceRef.current = null;
+    }
+    
+    // 阻止任何当前播放
+    if (audioRef.current) {
+      audioRef.current.pause();
+      
+      // 重置音频元素
+      audioRef.current.removeAttribute('src');
+      audioRef.current.load();
+    }
+    
+    // 重置状态
+    setAudioError(null);
+    setCurrentTime(0);
+    
+    // 检查是否支持HLS格式
+    if (isHlsCompatible(currentTrack)) {
+      // 使用buildHlsUrl构建hls-converter.php URL
+      const hlsUrl = buildHlsUrl(currentTrack);
+      console.log('最终使用的HLS URL:', hlsUrl);
+      
+      if (!audioRef.current) {
+        setAudioError('音频元素未初始化');
+        return;
+      }
+      
+      // 设置HLS播放器
+      hlsInstanceRef.current = setupHls(
+        audioRef.current,
+        hlsUrl,
+        (error) => {
+          console.error('HLS播放器错误:', error);
+          setAudioError(error);
+          
+          // 如果HLS失败，回退到直接播放
+          console.log('HLS失败，回退到直接播放');
+          if (audioRef.current) {
+            audioRef.current.src = currentTrack;
+            audioRef.current.load();
+            
+            if (isPlaying) {
+              audioRef.current.play().catch(err => {
+                console.error('回退播放失败:', err);
+              });
+            }
+          }
+        },
+        () => console.log('HLS媒体已附加'),
+        () => {
+          console.log('HLS清单已解析，准备播放');
+          // 设置音量
+          if (audioRef.current) {
+            audioRef.current.volume = isMuted ? 0 : volume;
+            
+            // 如果之前是播放状态，则尝试播放
+            if (isPlaying) {
+              audioRef.current.play().catch(err => {
+                console.error('播放失败:', err);
+                setAudioError(`播放失败: ${err.message}`);
+                setIsPlaying(false);
+              });
+            }
+          }
+        }
+      );
+    } else {
+      // 使用传统方式播放非HLS音频
+      console.log('使用传统方式播放:', currentTrack);
+      
+      if (audioRef.current) {
+        // 直接设置src
+        try {
+          audioRef.current.src = currentTrack;
+          audioRef.current.load();
+          
+          // 设置音量
+          audioRef.current.volume = isMuted ? 0 : volume;
+          
+          // 如果之前是播放状态，则尝试播放
+          if (isPlaying) {
+            audioRef.current.play().catch(err => {
+              console.error('播放失败:', err);
+              setAudioError(`播放失败: ${err.message}`);
+              setIsPlaying(false);
+            });
+          }
+        } catch (err) {
+          console.error('设置音频源失败:', err);
+          setAudioError(`设置音频源失败: ${err}`);
+        }
       }
     }
   };
 
   // 切换播放/暂停状态
   const togglePlay = () => {
-    // 如果要开始播放，先检查音频文件是否存在
-    if (!isPlaying && audioRef.current) {
-      // 从URL中提取文件名
-      const filename = currentTrack.split('/').pop();
-      // 使用API检查文件是否存在
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
-      
-      console.log('尝试检查音频文件:', apiUrl);
-      
-      // 只有在开始播放时检查音频文件是否存在
-      fetch(apiUrl, { method: 'HEAD' })
-        .then(response => {
-          console.log('音频文件检查结果:', response.status, response.ok);
-          // 接受任何状态码，因为服务器可能会返回正文内容但状态码为404
-          // 文件存在，设置状态开始播放
-          setIsPlaying(true);
-          setReadyToPlay(true);
-          setUserInteracted(true);
-          
-          // 如果支持流式播放，设置 MediaSource
-          if (isStreamingSupported) {
-            setupMediaSource();
-          } else if (audioRef.current) {
-            // 传统播放方式
-            audioRef.current.src = apiUrl;
-            audioRef.current.play().catch(e => {
-              console.error('播放失败:', e);
-              setIsPlaying(false);
-            });
-          }
-        })
-        .catch(error => {
-          console.error("音频文件检查失败:", error)
-          setAudioError(`音频文件检查失败: ${error.message}`)
-          toast.error("音频文件检查失败", {
-            description: error.message
-          })
-        })
+    if (!audioRef.current || !currentTrack) return;
+    
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
     } else {
-      // 如果是暂停操作，直接切换状态
-      setIsPlaying(!isPlaying)
-      if (!isPlaying) {
-        setReadyToPlay(true)
-      }
-      setUserInteracted(true)
+      // 确保音量正确设置
+      audioRef.current.volume = isMuted ? 0 : volume;
+      
+      audioRef.current.play().catch((err) => {
+        console.error('播放失败:', err);
+        setAudioError(`播放失败: ${err.message}`);
+      });
+      
+      setIsPlaying(true);
     }
-  }
+  };
   
   // 获取当前音频文件名称
   const getCurrentTrackName = () => {
-    const track = availableTracks.find(track => track.path === currentTrack)
-    return track ? track.name : currentTrack.split('/').pop()?.replace('.mp3', '')
-  }
+    if (!currentTrack) return '没有选择音乐';
+    
+    // 首先尝试从可用轨道中查找
+    const allTracks = useMusicStore.getState().availableTracks;
+    console.log('查找当前轨道名称，当前轨道路径:', currentTrack);
+    console.log('可用的轨道列表:', allTracks);
+    
+    // 查找包含相同path的音乐
+    const trackInfo = allTracks.find(track => {
+      // 完全匹配
+      if (track.path === currentTrack) return true;
+      
+      // 对于HLS格式，检查包含关系
+      if (isHlsCompatible(currentTrack) && currentTrack.includes(track.path)) return true;
+      
+      // 对于使用hls-converter.php的情况，提取歌曲名称比较
+      if (currentTrack.includes('hls-converter.php?path=')) {
+        const songName = decodeURIComponent(currentTrack.split('hls-converter.php?path=')[1]);
+        return track.name.includes(songName) || songName.includes(track.name);
+      }
+      
+      return false;
+    });
+    
+    if (trackInfo?.name) {
+      console.log('从轨道列表中找到名称:', trackInfo.name);
+      return trackInfo.name;
+    }
+    
+    // 从路径中提取文件名
+    if (currentTrack.includes('hls-converter.php?path=')) {
+      // 从hls-converter.php的path参数中提取歌曲名
+      const songName = decodeURIComponent(currentTrack.split('hls-converter.php?path=')[1]);
+      console.log('从hls-converter URL提取的歌曲名:', songName);
+      return songName.replace(/-/g, ' ').replace(/_/g, ' ');
+    }
+    
+    // 传统方式：从路径中提取文件名
+    const parts = currentTrack.split('/');
+    let fileName = parts[parts.length - 1];
+    
+    // 处理HLS格式的特殊情况
+    if (isHlsCompatible(currentTrack) && !fileName.includes('.')) {
+      // 对于HLS格式，可能路径是目录形式，使用上一级目录名
+      fileName = parts[parts.length - 2] || fileName;
+    }
+    
+    // 移除扩展名和特殊字符
+    return fileName
+      .replace(/\.(mp3|wav|m4a|aac|ogg|flac|m3u8|ts)$/i, '')
+      .replace(/[_\-]/g, ' ');
+  };
   
   // 切换显示模式
   const toggleDisplayMode = (mode: DisplayMode) => {
@@ -662,142 +554,64 @@ export function AppLauncher() {
     }
   }, [isSearchVisible])
   
-  // 切换到下一个或上一个音频文件
+  // 切换曲目
   const switchTrack = (direction: 'next' | 'prev') => {
-    const currentIndex = availableTracks.findIndex(track => track.path === currentTrack);
-    console.log('当前音轨索引:', currentIndex, '当前音轨:', currentTrack);
+    if (!currentTrack) return;
     
-    // 检查当前音轨是否在列表中
+    // 获取可用曲目列表
+    const tracks = useMusicStore.getState().availableTracks;
+    
+    // 如果没有曲目，不执行任何操作
+    if (!tracks.length) return;
+    
+    // 查找当前曲目在列表中的位置
+    const currentIndex = tracks.findIndex(track => track.path === currentTrack);
+    
+    // 如果当前曲目不在列表中，使用第一首或最后一首
+    let nextIndex;
     if (currentIndex === -1) {
-      console.warn('当前音轨不在列表中，将从第一首开始');
-      if (availableTracks.length > 0) {
-        setCurrentTrack(availableTracks[0].path);
-        setIsTrackChanging(true);
-        setCurrentTime(0);
-        setReadyToPlay(false);
-        return;
-      } else {
-        console.error('没有可用的音轨');
-        return;
-      }
-    }
-    
-    const newIndex = direction === 'next'
-      ? (currentIndex + 1) % availableTracks.length
-      : (currentIndex - 1 + availableTracks.length) % availableTracks.length;
-    
-    console.log('切换到新音轨索引:', newIndex);
-    const newTrack = availableTracks[newIndex].path;
-    
-    // 先设置新的音轨路径，但暂时不开始播放
-    setCurrentTrack(newTrack);
-    setIsTrackChanging(true);
-    setCurrentTime(0);
-    setReadyToPlay(false);
-    
-    // 清理当前的 MediaSource
-    if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-      try {
-        mediaSourceRef.current.endOfStream();
-      } catch (e) {
-        console.warn('结束媒体流时出错:', e);
-      }
-    }
-    
-    if (fetchControllerRef.current) {
-      fetchControllerRef.current.abort();
-    }
-    
-    // 检查新音轨是否可用，仅在确认用户有意图播放时才进行
-    if (isPlaying) {
-      // 从URL中提取文件名
-      const filename = newTrack.split('/').pop();
-      if (!filename) {
-        console.error('无法从路径提取文件名:', newTrack);
-        setAudioError('无法从路径提取文件名');
-        return;
-      }
-      
-      // 使用API检查文件是否存在
-      const apiUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/stream/${filename}`;
-      
-      console.log('尝试检查新音轨:', apiUrl);
-      
-      fetch(apiUrl, { method: 'HEAD' })
-        .then(response => {
-          console.log('新音轨检查结果:', response.status, response.ok, newTrack);
-          // 无论状态码如何，继续播放
-          // 文件存在，设置状态开始播放
-          setIsPlaying(true);
-          setUserInteracted(true);
-          
-          // 如果支持流式播放，设置新的 MediaSource
-          if (isStreamingSupported) {
-            setupMediaSource();
-          } else if (audioRef.current) {
-            // 传统播放方式
-            audioRef.current.src = apiUrl;
-            audioRef.current.play().catch(e => {
-              console.error('播放失败:', e);
-              setIsPlaying(false);
-            });
-          }
-          
-          toast.info(`已切换到: ${availableTracks[newIndex].name}`);
-        })
-        .catch(error => {
-          console.error("音频文件检查失败:", error);
-          setAudioError(`音频文件检查失败: ${error.message}`);
-          setIsPlaying(false);
-          toast.error("音频文件检查失败", {
-            description: error.message
-          });
-        });
+      nextIndex = direction === 'next' ? 0 : tracks.length - 1;
     } else {
-      // 如果当前不是播放状态，只切换轨道但不开始播放
-      toast.info(`已切换到: ${availableTracks[newIndex].name}`);
+      // 计算下一首/上一首索引，循环播放
+      nextIndex = direction === 'next'
+        ? (currentIndex + 1) % tracks.length
+        : (currentIndex - 1 + tracks.length) % tracks.length;
     }
+    
+    // 设置新的当前曲目
+    setCurrentTrack(tracks[nextIndex].path);
+    
+    // 更新状态
+    setAudioError(null);
+    setIsPlaying(true);
   };
   
   const switchToNextTrack = () => switchTrack('next')
   const switchToPrevTrack = () => switchTrack('prev')
   
-  // 清理 MediaSource 资源
+  // 同步音量
   useEffect(() => {
-    return () => {
-      if (fetchControllerRef.current) {
-        fetchControllerRef.current.abort();
-      }
-      
-      if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-        try {
-          mediaSourceRef.current.endOfStream();
-        } catch (e) {
-          console.warn('清理时结束媒体流出错:', e);
-        }
-      }
-    };
-  }, []);
+    if (audioRef.current) {
+      audioRef.current.volume = isMuted ? 0 : volume;
+    }
+  }, [volume, isMuted]);
+
+  // 同步音频当前状态到store
+  useEffect(() => {
+    setVolume(volume);
+  }, [volume, setVolume]);
   
   // 监听音频播放结束
   useEffect(() => {
     const handleAudioEnded = () => {
       console.log('音频播放已结束');
       
-      // 清理MediaSource资源
-      if (mediaSourceRef.current && mediaSourceRef.current.readyState === 'open') {
-        try {
-          mediaSourceRef.current.endOfStream();
-        } catch (e) {
-          console.warn('在播放结束时关闭媒体流出错:', e);
-        }
-      }
-      
       // 重置播放状态但保留音轨
       setCurrentTime(0);
       
       // 检查是否自动切换到下一曲
-      const currentIndex = availableTracks.findIndex(track => track.path === currentTrack);
+      const tracks = useMusicStore.getState().availableTracks;
+      const currentIndex = tracks.findIndex(track => track.path === currentTrack);
       if (currentIndex >= 0) {
         switchToNextTrack();
       } else {
@@ -816,6 +630,16 @@ export function AppLauncher() {
       }
     };
   }, [currentTrack, switchToNextTrack]);
+  
+  // 在组件卸载时清理HLS实例
+  useEffect(() => {
+    return () => {
+      if (hlsInstanceRef.current) {
+        hlsInstanceRef.current.destroy();
+        hlsInstanceRef.current = null;
+      }
+    };
+  }, []);
   
   const renderContent = () => {
     switch (displayMode) {
