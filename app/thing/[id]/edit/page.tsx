@@ -229,17 +229,50 @@ export default function EditItem() {
     if (!e.target.files || e.target.files.length === 0) return
     
     const files = Array.from(e.target.files)
+    console.log('Files selected:', files.map(file => ({name: file.name, type: file.type, size: file.size})))
+    
+    // 对文件进行验证
+    const validFiles = files.filter(file => {
+      // 检查文件是否为图片类型
+      if (!file.type.startsWith('image/')) {
+        console.error('文件不是图片类型:', file.name, file.type)
+        toast.error(`文件 ${file.name} 不是有效的图片格式`)
+        return false
+      }
+      
+      // 检查文件大小（最大 5MB）
+      if (file.size > 5 * 1024 * 1024) {
+        console.error('文件太大:', file.name, file.size)
+        toast.error(`文件 ${file.name} 超过 5MB 限制`)
+        return false
+      }
+      
+      return true
+    })
+    
+    if (validFiles.length === 0) return
     
     // 添加新文件到现有文件列表
-    setImageFiles(prev => [...prev, ...files])
+    setImageFiles(prev => [...prev, ...validFiles])
     
     // 创建预览URL
-    const newPreviews = files.map(file => ({
-      url: URL.createObjectURL(file),
-      name: file.name
-    }))
+    const newPreviews = validFiles.map(file => {
+      try {
+        const url = URL.createObjectURL(file)
+        return {
+          url,
+          name: file.name
+        }
+      } catch (error) {
+        console.error('创建预览URL失败:', error, file)
+        toast.error(`无法预览文件 ${file.name}`)
+        return null
+      }
+    }).filter(Boolean) as ImagePreview[]
     
-    setImagePreviews(prev => [...prev, ...newPreviews])
+    if (newPreviews.length > 0) {
+      setImagePreviews(prev => [...prev, ...newPreviews])
+    }
   }
   
   const removeNewImage = (index: number) => {

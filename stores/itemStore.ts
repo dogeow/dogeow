@@ -70,7 +70,7 @@ interface ItemState {
   fetchCategories: () => Promise<Category[] | undefined>;
   getItem: (id: number) => Promise<Item | null>;
   createItem: (data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => Promise<Item>;
-  updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => Promise<Item>;
+  updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[], image_ids?: number[] }) => Promise<Item>;
   deleteItem: (id: number) => Promise<void>;
 }
 
@@ -200,7 +200,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
   
-  updateItem: async (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => {
+  updateItem: async (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[], image_ids?: number[] }) => {
     set({ loading: true, error: null });
     
     try {
@@ -220,10 +220,35 @@ export const useItemStore = create<ItemState>((set, get) => ({
         }
       });
       
-      // 添加图片
+      // 添加图片 - 添加验证
       if (data.images && Array.isArray(data.images)) {
-        data.images.forEach((image, index) => {
-          formData.append(`images[${index}]`, image);
+        // 检查图片文件是否有效
+        const validImages = data.images.filter(image => {
+          if (!image.type.startsWith('image/')) {
+            console.error('非图片文件:', image.name, image.type);
+            return false;
+          }
+          return true;
+        });
+        
+        if (validImages.length !== data.images.length) {
+          console.warn(`有 ${data.images.length - validImages.length} 个文件不是有效图片，已过滤`);
+        }
+        
+        validImages.forEach((image, index) => {
+          try {
+            console.log(`准备上传图片 ${index}:`, image.name, image.type, image.size);
+            formData.append(`images[${index}]`, image);
+          } catch (err) {
+            console.error(`添加图片 ${image.name} 到FormData时发生错误:`, err);
+          }
+        });
+      }
+      
+      // 添加其他需要的字段
+      if (data.image_ids && Array.isArray(data.image_ids)) {
+        data.image_ids.forEach((id, index) => {
+          formData.append(`image_ids[${index}]`, String(id));
         });
       }
       
@@ -237,6 +262,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       return result.item;
     } catch (error) {
+      console.error('更新物品错误:', error);
       set({
         loading: false,
         error: error instanceof Error ? error.message : '未知错误',

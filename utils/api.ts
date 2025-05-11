@@ -59,30 +59,66 @@ export async function apiRequest<T>(
       }
       
       options.body = data;
+      
+      // 记录FormData详情（不包括文件内容）
+      console.log('发送FormData请求:', endpoint);
+      if (data.has('images[0]')) {
+        const imageFiles = [];
+        for (let i = 0; data.has(`images[${i}]`); i++) {
+          const file = data.get(`images[${i}]`) as File;
+          if (file) {
+            imageFiles.push({
+              name: file.name,
+              type: file.type,
+              size: file.size
+            });
+          }
+        }
+        console.log('包含图片:', imageFiles);
+      }
     } else {
       options.body = JSON.stringify(data);
     }
   }
   
-  const response = await fetch(url, options);
-  
-  // 处理401未授权错误
-  if (response.status === 401) {
-    // token过期或无效，登出用户
-    useAuthStore.getState().logout();
-    // 如果在浏览器环境，重定向到根路径
-    if (typeof window !== 'undefined') {
-      window.location.href = '/';
+  try {
+    const response = await fetch(url, options);
+    
+    // 处理401未授权错误
+    if (response.status === 401) {
+      // token过期或无效，登出用户
+      useAuthStore.getState().logout();
+      // 如果在浏览器环境，重定向到根路径
+      if (typeof window !== 'undefined') {
+        window.location.href = '/';
+      }
+      throw new Error('登录已过期，请重新登录');
     }
-    throw new Error('登录已过期，请重新登录');
+    
+    if (!response.ok) {
+      // 尝试解析错误信息
+      let errorMessage = '请求失败';
+      try {
+        const errorData = await response.json() as ApiError;
+        errorMessage = errorData.message || `请求失败 (${response.status})`;
+        
+        // 如果有详细错误信息，记录到控制台
+        if (errorData.errors) {
+          console.error('API错误详情:', errorData.errors);
+        }
+      } catch (parseError) {
+        // 如果无法解析JSON，使用HTTP状态文本
+        errorMessage = `请求失败: ${response.statusText || response.status}`;
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('API请求错误:', error, '请求URL:', url);
+    throw error;
   }
-  
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({})) as ApiError;
-    throw new Error(errorData.message || '请求失败');
-  }
-  
-  return response.json();
 }
 
 /**
