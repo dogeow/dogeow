@@ -231,61 +231,85 @@ export default function EditItem() {
     const files = Array.from(e.target.files)
     console.log('Files selected:', files.map(file => ({name: file.name, type: file.type, size: file.size})))
     
-    // 对文件进行验证和处理
-    const processFile = async (file: File): Promise<File | null> => {
+    // 验证文件
+    const validFiles = files.filter(file => {
       // 检查文件是否为图片类型
       if (!file.type.startsWith('image/')) {
         console.error('文件不是图片类型:', file.name, file.type)
         toast.error(`文件 ${file.name} 不是有效的图片格式`)
-        return null
+        return false
       }
       
-      // 检查文件大小（最大 5MB）
-      if (file.size > 5 * 1024 * 1024) {
+      // 检查文件大小（最大 8MB）
+      if (file.size > 8 * 1024 * 1024) {
         console.error('文件太大:', file.name, file.size)
-        toast.error(`文件 ${file.name} 超过 5MB 限制`)
-        return null
+        toast.error(`文件 ${file.name} 超过 8MB 限制`)
+        return false
       }
       
-      // 对于移动设备的照片，可能需要处理方向问题
-      // 这里直接返回原文件，不做额外处理
-      return file
+      return true
+    })
+    
+    if (validFiles.length === 0) {
+      toast.error('没有可用的图片')
+      return
     }
     
-    // 处理所有文件
-    Promise.all(files.map(processFile))
-      .then(processedFiles => {
-        // 过滤掉处理失败的文件
-        const validFiles = processedFiles.filter(Boolean) as File[]
-        
-        if (validFiles.length === 0) return
-        
-        // 添加新文件到现有文件列表
-        setImageFiles(prev => [...prev, ...validFiles])
-        
-        // 为每个文件创建一个本地预览URL
-        const newPreviews = validFiles.map(file => {
-          try {
-            const url = URL.createObjectURL(file)
-            return {
-              url,
-              name: file.name
+    // 显示处理中提示
+    toast.loading(`正在处理 ${validFiles.length} 张图片...`)
+    
+    // 使用较小的批次处理图片，避免内存问题
+    const processFilesInBatches = async () => {
+      const newFiles: File[] = []
+      const newPreviews: ImagePreview[] = []
+      
+      for (const file of validFiles) {
+        try {
+          // 创建文件副本，但不进行压缩
+          // 这种方法可以解决一些移动设备上的问题
+          const fileCopy = new File(
+            [file.slice(0, file.size)], 
+            file.name, 
+            { 
+              type: 'image/jpeg', // 统一使用JPEG格式
+              lastModified: Date.now() 
             }
-          } catch (error) {
-            console.error('创建预览URL失败:', error, file)
-            toast.error(`无法预览文件 ${file.name}`)
-            return null
-          }
-        }).filter(Boolean) as ImagePreview[]
-        
-        if (newPreviews.length > 0) {
-          setImagePreviews(prev => [...prev, ...newPreviews])
+          )
+          
+          // 创建预览URL
+          const url = URL.createObjectURL(fileCopy)
+          
+          newFiles.push(fileCopy)
+          newPreviews.push({
+            url,
+            name: file.name
+          })
+          
+          console.log(`处理图片: ${file.name}, 大小: ${file.size}`)
+        } catch (error) {
+          console.error('处理图片失败:', file.name, error)
         }
-      })
-      .catch(error => {
-        console.error('处理图片时发生错误:', error)
-        toast.error('处理图片失败，请重试')
-      })
+      }
+      
+      // 更新状态
+      if (newFiles.length > 0) {
+        setImageFiles(prev => [...prev, ...newFiles])
+        setImagePreviews(prev => [...prev, ...newPreviews])
+        toast.success(`已添加 ${newFiles.length} 张图片`)
+      } else {
+        toast.error('图片处理失败')
+      }
+      
+      // 关闭加载提示
+      toast.dismiss()
+    }
+    
+    // 开始处理
+    processFilesInBatches().catch(error => {
+      console.error('处理图片时发生错误:', error)
+      toast.error('处理图片失败，请重试')
+      toast.dismiss()
+    })
   }
   
   const removeNewImage = (index: number) => {
@@ -303,6 +327,9 @@ export default function EditItem() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    
+    // 移除所有现有的toast
+    toast.dismiss()
     
     try {
       // 在提交前再次验证图片文件
@@ -340,19 +367,69 @@ export default function EditItem() {
       
       // 如果有图片，显示上传中提示
       if (validImageFiles.length > 0) {
-        toast.loading(`正在上传 ${validImageFiles.length} 张图片...`)
+        const toastId = toast.loading(`正在上传 ${validImageFiles.length} 张图片，请耐心等待...`, {
+          duration: 60000, // 长时间显示
+        })
+        
+        // 分批处理上传，每批最多3张图片
+        const MAX_BATCH_SIZE = 3;
+        if (validImageFiles.length > MAX_BATCH_SIZE) {
+          console.log(`图片数量超过${MAX_BATCH_SIZE}张，将分批上传`);
+          
+          // 分割成小批次
+          const batches = [];
+          for (let i = 0; i < validImageFiles.length; i += MAX_BATCH_SIZE) {
+            batches.push(validImageFiles.slice(i, i + MAX_BATCH_SIZE));
+          }
+          
+          // 准备基础数据（不含图片）
+          const baseData = { ...itemData, images: [] };
+          
+          // 先上传基础数据和现有图片IDs
+          let result = await updateItem(Number(params.id), baseData);
+          console.log('基础数据上传成功:', result);
+          
+          // 逐批上传图片
+          let batchNumber = 1;
+          for (const batch of batches) {
+            toast.loading(`正在上传第 ${batchNumber}/${batches.length} 批图片...`, {
+              id: toastId
+            });
+            
+            try {
+              // 仅包含当前批次的图片
+              const batchData = { images: batch };
+              await updateItem(Number(params.id), batchData);
+              console.log(`第 ${batchNumber}/${batches.length} 批图片上传成功`);
+            } catch (error) {
+              console.error(`第 ${batchNumber}/${batches.length} 批图片上传失败:`, error);
+              toast.error(`第 ${batchNumber} 批图片上传失败，但其他数据已保存`);
+            }
+            
+            batchNumber++;
+          }
+          
+          toast.success("物品已成功更新");
+          router.push(`/thing/${params.id}`);
+        } else {
+          // 图片数量较少，一次性上传
+          await updateItem(Number(params.id), itemData);
+          toast.success("物品已成功更新");
+          router.push(`/thing/${params.id}`);
+        }
+      } else {
+        // 没有图片，直接上传
+        await updateItem(Number(params.id), itemData);
+        toast.success("物品已成功更新");
+        router.push(`/thing/${params.id}`);
       }
-      
-      await updateItem(Number(params.id), itemData)
-      toast.success("物品已成功更新")
-      router.push(`/thing/${params.id}`)
     } catch (error) {
-      console.error('更新物品失败:', error)
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      console.error('更新物品失败:', error);
+      toast.error(error instanceof Error ? error.message : "发生错误，请重试");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
   
   // 处理位置选择
   const handleLocationSelect = (type: 'area' | 'room' | 'spot', id: number, fullPath: string) => {
