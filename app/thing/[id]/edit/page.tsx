@@ -20,12 +20,23 @@ import { format } from 'date-fns'
 import LocationTreeSelect from '../../components/LocationTreeSelect'
 import { useAreas, useRooms, useSpots, useItem } from '@/utils/api'
 import { apiRequest } from '@/utils/api'
+import ImageUploader from '../../components/ImageUploader'
 
 // 定义类型
 interface ItemImage {
   id: number;
   thumbnail_path: string;
   thumbnail_url?: string;
+  path?: string;
+  url?: string;
+}
+
+// 新增上传图片类型
+type UploadedImage = {
+  path: string;
+  thumbnail_path: string;
+  url: string;
+  thumbnail_url: string;
 }
 
 type FormData = {
@@ -54,9 +65,8 @@ export default function EditItem() {
   const { getItem, updateItem, fetchCategories, categories } = useItemStore()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
-  const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [imagePreviews, setImagePreviews] = useState<ImagePreview[]>([])
   const [existingImages, setExistingImages] = useState<ItemImage[]>([])
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
   const [locationPath, setLocationPath] = useState<string>('')
   
@@ -111,6 +121,21 @@ export default function EditItem() {
     }
   }, [refreshSpots])
   
+  // 处理上传图片变化
+  const handleUploadedImagesChange = (images: UploadedImage[]) => {
+    setUploadedImages(images)
+  }
+
+  // 将现有图片转换为上传组件需要的格式
+  const convertExistingImagesToUploadedFormat = useCallback((images: ItemImage[]): UploadedImage[] => {
+    return images.map(img => ({
+      path: img.path || '', 
+      thumbnail_path: img.thumbnail_path || '',
+      url: img.url || `${API_BASE_URL.replace('/api', '')}/storage/${img.path || ''}`,
+      thumbnail_url: img.thumbnail_url || `${API_BASE_URL.replace('/api', '')}/storage/${img.thumbnail_path || ''}`
+    }))
+  }, [])
+
   // 加载物品数据
   useEffect(() => {
     const loadItem = async () => {
@@ -141,6 +166,9 @@ export default function EditItem() {
         // 设置现有图片
         if (item.images && item.images.length > 0) {
           setExistingImages(item.images)
+          // 转换为上传组件需要的格式
+          const convertedImages = convertExistingImagesToUploadedFormat(item.images)
+          setUploadedImages(convertedImages)
         }
         
         // 加载分类
@@ -182,7 +210,7 @@ export default function EditItem() {
     
     loadItem()
     refreshAreas()
-  }, [params.id, getItem, fetchCategories, router, loadRooms, loadSpots, refreshAreas])
+  }, [params.id, getItem, fetchCategories, router, loadRooms, loadSpots, refreshAreas, convertExistingImagesToUploadedFormat])
   
   // 当选择区域时加载房间
   useEffect(() => {
@@ -225,105 +253,6 @@ export default function EditItem() {
     setFormData(prev => ({ ...prev, [name]: checked }))
   }
   
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return
-    
-    const files = Array.from(e.target.files)
-    console.log('Files selected:', files.map(file => ({name: file.name, type: file.type, size: file.size})))
-    
-    // 验证文件
-    const validFiles = files.filter(file => {
-      // 检查文件是否为图片类型
-      if (!file.type.startsWith('image/')) {
-        console.error('文件不是图片类型:', file.name, file.type)
-        toast.error(`文件 ${file.name} 不是有效的图片格式`)
-        return false
-      }
-      
-      // 检查文件大小（最大 8MB）
-      if (file.size > 8 * 1024 * 1024) {
-        console.error('文件太大:', file.name, file.size)
-        toast.error(`文件 ${file.name} 超过 8MB 限制`)
-        return false
-      }
-      
-      return true
-    })
-    
-    if (validFiles.length === 0) {
-      toast.error('没有可用的图片')
-      return
-    }
-    
-    // 显示处理中提示
-    toast.loading(`正在处理 ${validFiles.length} 张图片...`)
-    
-    // 使用较小的批次处理图片，避免内存问题
-    const processFilesInBatches = async () => {
-      const newFiles: File[] = []
-      const newPreviews: ImagePreview[] = []
-      
-      for (const file of validFiles) {
-        try {
-          // 创建文件副本，但不进行压缩
-          // 这种方法可以解决一些移动设备上的问题
-          const fileCopy = new File(
-            [file.slice(0, file.size)], 
-            file.name, 
-            { 
-              type: 'image/jpeg', // 统一使用JPEG格式
-              lastModified: Date.now() 
-            }
-          )
-          
-          // 创建预览URL
-          const url = URL.createObjectURL(fileCopy)
-          
-          newFiles.push(fileCopy)
-          newPreviews.push({
-            url,
-            name: file.name
-          })
-          
-          console.log(`处理图片: ${file.name}, 大小: ${file.size}`)
-        } catch (error) {
-          console.error('处理图片失败:', file.name, error)
-        }
-      }
-      
-      // 更新状态
-      if (newFiles.length > 0) {
-        setImageFiles(prev => [...prev, ...newFiles])
-        setImagePreviews(prev => [...prev, ...newPreviews])
-        toast.success(`已添加 ${newFiles.length} 张图片`)
-      } else {
-        toast.error('图片处理失败')
-      }
-      
-      // 关闭加载提示
-      toast.dismiss()
-    }
-    
-    // 开始处理
-    processFilesInBatches().catch(error => {
-      console.error('处理图片时发生错误:', error)
-      toast.error('处理图片失败，请重试')
-      toast.dismiss()
-    })
-  }
-  
-  const removeNewImage = (index: number) => {
-    setImageFiles(prev => prev.filter((_, i) => i !== index))
-    
-    // 释放预览URL
-    URL.revokeObjectURL(imagePreviews[index].url)
-    setImagePreviews(prev => prev.filter((_, i) => i !== index))
-  }
-  
-  const removeExistingImage = (imageId: number) => {
-    setExistingImages(prev => prev.filter(img => img.id !== imageId))
-  }
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -332,19 +261,6 @@ export default function EditItem() {
     toast.dismiss()
     
     try {
-      // 在提交前再次验证图片文件
-      const validImageFiles = imageFiles.filter(file => {
-        if (!file.type.startsWith('image/')) {
-          console.error('提交时发现非图片文件:', file.name, file.type)
-          return false
-        }
-        return true
-      })
-      
-      if (validImageFiles.length !== imageFiles.length) {
-        console.warn(`过滤掉 ${imageFiles.length - validImageFiles.length} 个无效图片文件`)
-      }
-      
       // 准备提交数据
       const itemData = {
         ...formData,
@@ -355,74 +271,24 @@ export default function EditItem() {
         area_id: formData.area_id ? Number(formData.area_id) : null,
         room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
-        images: validImageFiles,
-        image_ids: existingImages.map(img => img.id),
+        image_paths: uploadedImages.map(img => img.path), // 使用已上传图片的路径
+        image_ids: existingImages.map(img => img.id), // 保留现有图片ID
         is_public: Boolean(formData.is_public),
       }
       
       console.log('提交物品数据:', {
         ...itemData,
-        images: validImageFiles.map(f => ({name: f.name, type: f.type, size: f.size}))
+        image_paths: itemData.image_paths,
       })
       
-      // 如果有图片，显示上传中提示
-      if (validImageFiles.length > 0) {
-        const toastId = toast.loading(`正在上传 ${validImageFiles.length} 张图片，请耐心等待...`, {
-          duration: 60000, // 长时间显示
-        })
-        
-        // 分批处理上传，每批最多3张图片
-        const MAX_BATCH_SIZE = 3;
-        if (validImageFiles.length > MAX_BATCH_SIZE) {
-          console.log(`图片数量超过${MAX_BATCH_SIZE}张，将分批上传`);
-          
-          // 分割成小批次
-          const batches = [];
-          for (let i = 0; i < validImageFiles.length; i += MAX_BATCH_SIZE) {
-            batches.push(validImageFiles.slice(i, i + MAX_BATCH_SIZE));
-          }
-          
-          // 准备基础数据（不含图片）
-          const baseData = { ...itemData, images: [] };
-          
-          // 先上传基础数据和现有图片IDs
-          let result = await updateItem(Number(params.id), baseData);
-          console.log('基础数据上传成功:', result);
-          
-          // 逐批上传图片
-          let batchNumber = 1;
-          for (const batch of batches) {
-            toast.loading(`正在上传第 ${batchNumber}/${batches.length} 批图片...`, {
-              id: toastId
-            });
-            
-            try {
-              // 仅包含当前批次的图片
-              const batchData = { images: batch };
-              await updateItem(Number(params.id), batchData);
-              console.log(`第 ${batchNumber}/${batches.length} 批图片上传成功`);
-            } catch (error) {
-              console.error(`第 ${batchNumber}/${batches.length} 批图片上传失败:`, error);
-              toast.error(`第 ${batchNumber} 批图片上传失败，但其他数据已保存`);
-            }
-            
-            batchNumber++;
-          }
-          
-          toast.success("物品已成功更新");
-          router.push(`/thing/${params.id}`);
-        } else {
-          // 图片数量较少，一次性上传
-          await updateItem(Number(params.id), itemData);
-          toast.success("物品已成功更新");
-          router.push(`/thing/${params.id}`);
-        }
-      } else {
-        // 没有图片，直接上传
-        await updateItem(Number(params.id), itemData);
-        toast.success("物品已成功更新");
-        router.push(`/thing/${params.id}`);
-      }
+      // 显示上传中提示
+      const toastId = toast.loading('正在保存物品信息...')
+      
+      // 提交数据
+      await updateItem(Number(params.id), itemData);
+      
+      toast.success("物品已成功更新", { id: toastId });
+      router.push(`/thing/${params.id}`);
     } catch (error) {
       console.error('更新物品失败:', error);
       toast.error(error instanceof Error ? error.message : "发生错误，请重试");
@@ -482,29 +348,6 @@ export default function EditItem() {
       </div>
     )
   }
-  
-  // 渲染图片预览组件
-  const renderImagePreview = (url: string, name: string, onRemove: () => void) => (
-    <div className="relative">
-      <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-        <Image
-          src={url}
-          alt={name}
-          fill
-          className="object-cover"
-        />
-      </div>
-      <Button
-        type="button"
-        variant="destructive"
-        size="icon"
-        className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-        onClick={onRemove}
-      >
-        <X className="h-3 w-3" />
-      </Button>
-    </div>
-  )
   
   return (
     <div className="container mx-auto py-6 px-4">
@@ -624,56 +467,12 @@ export default function EditItem() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Label>现有图片</Label>
-                  {existingImages.length > 0 ? (
-                    <div className="flex flex-wrap gap-2">
-                      {existingImages.map((image) => (
-                        <div key={image.id}>
-                          {renderImagePreview(
-                            image.thumbnail_url || `${API_BASE_URL.replace('/api', '')}/storage/${image.thumbnail_path}`,
-                            formData.name,
-                            () => removeExistingImage(image.id)
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-muted-foreground">无现有图片</p>
-                  )}
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="images">上传新图片</Label>
-                    <div className="flex flex-wrap items-start gap-4">
-                      <label htmlFor="images" className="cursor-pointer">
-                        <div className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg hover:bg-muted/50">
-                          <Upload className="h-6 w-6 mb-1 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">添加图片</span>
-                        </div>
-                        <input
-                          type="file"
-                          id="images"
-                          multiple
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleImageChange}
-                        />
-                      </label>
-                      
-                      {imagePreviews.length > 0 && (
-                        <div className="flex flex-wrap gap-2">
-                          {imagePreviews.map((preview, index) => (
-                            <div key={index}>
-                              {renderImagePreview(
-                                preview.url,
-                                preview.name,
-                                () => removeNewImage(index)
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <Label>物品图片</Label>
+                  <ImageUploader 
+                    onImagesChange={handleUploadedImagesChange}
+                    existingImages={uploadedImages}
+                    maxImages={10}
+                  />
                 </div>
               </CardContent>
             </Card>

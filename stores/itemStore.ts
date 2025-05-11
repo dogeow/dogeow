@@ -69,8 +69,15 @@ interface ItemState {
   fetchItems: (params?: Record<string, any>) => Promise<any>;
   fetchCategories: () => Promise<Category[] | undefined>;
   getItem: (id: number) => Promise<Item | null>;
-  createItem: (data: Omit<Partial<Item>, 'images'> & { images?: File[] }) => Promise<Item>;
-  updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[], image_ids?: number[] }) => Promise<Item>;
+  createItem: (data: Omit<Partial<Item>, 'images'> & { 
+    images?: File[],
+    image_paths?: string[]
+  }) => Promise<Item>;
+  updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { 
+    images?: File[], 
+    image_ids?: number[],
+    image_paths?: string[] 
+  }) => Promise<Item>;
   deleteItem: (id: number) => Promise<void>;
 }
 
@@ -159,7 +166,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'images' && value !== undefined && value !== null) {
+        if (key !== 'images' && key !== 'image_paths' && value !== undefined && value !== null) {
           
           // 特殊处理is_public字段，确保它是布尔值
           if (key === 'is_public') {
@@ -171,10 +178,17 @@ export const useItemStore = create<ItemState>((set, get) => ({
         }
       });
       
-      // 添加图片
+      // 添加图片（直接上传方式）
       if (data.images && Array.isArray(data.images)) {
         data.images.forEach((image, index) => {
           formData.append(`images[${index}]`, image);
+        });
+      }
+      
+      // 添加图片路径（预上传方式）
+      if (data.image_paths && Array.isArray(data.image_paths)) {
+        data.image_paths.forEach((path, index) => {
+          formData.append(`image_paths[${index}]`, path);
         });
       }
       
@@ -200,7 +214,11 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
   
-  updateItem: async (id: number, data: Omit<Partial<Item>, 'images'> & { images?: File[], image_ids?: number[] }) => {
+  updateItem: async (id: number, data: Omit<Partial<Item>, 'images'> & { 
+    images?: File[], 
+    image_ids?: number[],
+    image_paths?: string[]
+  }) => {
     set({ loading: true, error: null });
     
     try {
@@ -210,7 +228,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'images' && value !== undefined && value !== null) {
+        if (key !== 'images' && key !== 'image_paths' && key !== 'image_ids' && value !== undefined && value !== null) {
           // 特殊处理is_public字段，确保它是布尔值
           if (key === 'is_public') {
             formData.append(key, value === true ? "1" : "0");
@@ -220,6 +238,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
         }
       });
       
+      // 添加图片 - 添加验证（直接上传方式）
       // 添加图片 - 添加验证
       if (data.images && Array.isArray(data.images)) {
         // 检查图片文件是否有效

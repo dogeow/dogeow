@@ -18,7 +18,15 @@ import { format } from 'date-fns'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import LocationTreeSelect from '../components/LocationTreeSelect'
 import { apiRequest } from '@/utils/api'
+import ImageUploader from '../components/ImageUploader'
 
+// 图片上传类型
+type UploadedImage = {
+  path: string;
+  thumbnail_path: string;
+  url: string;
+  thumbnail_url: string;
+}
 
 export default function AddItem() {
   const router = useRouter()
@@ -27,12 +35,10 @@ export default function AddItem() {
   const [areas, setAreas] = useState<any[]>([])
   const [rooms, setRooms] = useState<any[]>([])
   const [spots, setSpots] = useState<any[]>([])
-  const [imageFiles, setImageFiles] = useState<File[]>([])
-  const [imagePreviews, setImagePreviews] = useState<{url: string, name: string}[]>([])
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   
   // 表单数据
   const [formData, setFormData] = useState({
-    images: [] as File[],
     name: '',
     description: '',
     quantity: 1,
@@ -138,29 +144,8 @@ export default function AddItem() {
     setFormData(prev => ({ ...prev, [name]: checked }))
   }
   
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) return
-    
-    const files = Array.from(e.target.files)
-    
-    // 添加新文件到现有文件列表
-    setImageFiles(prev => [...prev, ...files])
-    
-    // 创建预览URL
-    const newPreviews = files.map(file => ({
-      url: URL.createObjectURL(file),
-      name: file.name
-    }))
-    
-    setImagePreviews(prev => [...prev, ...newPreviews])
-  }
-  
-  const removeImage = (index: number) => {
-    setImageFiles(prev => prev.filter((_, i) => i !== index))
-    
-    // 释放预览URL
-    URL.revokeObjectURL(imagePreviews[index].url)
-    setImagePreviews(prev => prev.filter((_, i) => i !== index))
+  const handleUploadedImagesChange = (images: UploadedImage[]) => {
+    setUploadedImages(images)
   }
   
   // 处理位置选择
@@ -210,26 +195,24 @@ export default function AddItem() {
     setLoading(true)
     
     try {
-      // 准备提交数据，转换ID类型和确保正确的数据类型
+      // 准备提交数据
       const itemData = {
         ...formData,
         category_id: formData.category_id ? Number(formData.category_id) : null,
         area_id: formData.area_id ? Number(formData.area_id) : null,
         room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
-        purchase_price: formData.purchase_price,
-        is_public: Boolean(formData.is_public),
+        image_paths: uploadedImages.map(img => img.path),
       }
       
-      await createItem({
-        ...itemData,
-        images: imageFiles
-      })
+      // 提交请求
+      const toast_id = toast.loading("正在创建物品...");
+      const newItem = await createItem(itemData)
       
-      toast.success("物品已成功添加")
-      router.push('/thing')
+      toast.success("物品创建成功", { id: toast_id })
+      router.push(`/thing/${newItem.id}`)
     } catch (error) {
-      console.error('提交错误:', error)
+      console.error("创建物品失败:", error)
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
     } finally {
       setLoading(false)
@@ -354,49 +337,12 @@ export default function AddItem() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Label htmlFor="images">上传图片</Label>
-                  <div className="flex flex-wrap items-start gap-4">
-                    <label htmlFor="images" className="cursor-pointer">
-                      <div className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg hover:bg-muted/50">
-                        <Upload className="h-6 w-6 mb-1 text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">添加图片</span>
-                      </div>
-                      <input
-                        type="file"
-                        id="images"
-                        multiple
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleImageChange}
-                      />
-                    </label>
-                    
-                    {imagePreviews.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {imagePreviews.map((preview, index) => (
-                          <div key={index} className="relative">
-                            <div className="relative w-24 h-24 rounded-lg overflow-hidden">
-                              <Image
-                                src={preview.url}
-                                alt={preview.name}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="icon"
-                              className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
-                              onClick={() => removeImage(index)}
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <Label htmlFor="images">物品图片</Label>
+                  <ImageUploader 
+                    onImagesChange={handleUploadedImagesChange}
+                    existingImages={[]}
+                    maxImages={10}
+                  />
                 </div>
               </CardContent>
             </Card>
