@@ -105,19 +105,8 @@ export const buildHlsUrl = (musicPath: string) => {
   // 对歌曲名进行编码
   const encodedPath = encodeURIComponent(songName);
   
-  // 检测是否为iOS设备
-  const isiOS = typeof window !== 'undefined' && /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-  
-  // 构建hls-converter.php URL，对iOS设备特殊处理
-  let converterUrl = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
-  
-  // 添加iOS标识，以便后端脚本可以对iOS设备做特殊处理
-  if (isiOS) {
-    converterUrl += '&device=ios';
-  }
-  
-  // 添加时间戳避免缓存问题
-  converterUrl += `&_t=${Date.now()}`;
+  // 构建hls-converter.php URL
+  const converterUrl = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
   
   console.log('使用hls-converter.php构建的URL:', converterUrl);
   return converterUrl;
@@ -136,26 +125,6 @@ export const isHlsCompatible = (path: string): boolean => {
   const isAudioFile = /\.(mp3|wav|ogg|aac|flac|m4a)$/i.test(path);
   
   return isHlsPath || isAudioFile;
-};
-
-/**
- * 检测是否为iOS设备
- */
-export const isIOS = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  const userAgent = window.navigator.userAgent.toLowerCase();
-  return /iphone|ipad|ipod/.test(userAgent);
-};
-
-/**
- * 检测是否为Safari浏览器
- */
-export const isSafari = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  
-  const userAgent = window.navigator.userAgent.toLowerCase();
-  return userAgent.indexOf('safari') > -1 && userAgent.indexOf('chrome') === -1;
 };
 
 /**
@@ -178,85 +147,10 @@ export const setupHls = (
     }
   };
   
-  // 为确保iOS的兼容性，确保source已经是hls-converter.php格式
-  let finalSource = source;
-  if (source.startsWith('/') && !source.includes('hls-converter.php')) {
-    // 对于相对路径，使用hls-converter.php处理
-    const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
-    const baseUrl = apiBaseUrl.replace(/\/api$/, '');
-    const songName = extractSongName(source);
-    const encodedPath = encodeURIComponent(songName);
-    
-    // 使用hls-converter.php
-    finalSource = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
-    console.log('转换为hls-converter URL:', finalSource);
-  }
+  console.log('设置HLS播放器，源地址:', source);
   
-  console.log('设置HLS播放器，源地址:', finalSource);
-  
-  // 检测iOS设备
-  const isiOSDevice = isIOS();
-  const isSafariBrowser = isSafari();
-  console.log('设备检测:', { iOS: isiOSDevice, Safari: isSafariBrowser });
-  
-  // 如果是iOS设备，直接使用原生HLS支持
-  if (isiOSDevice || isSafariBrowser || audioElement.canPlayType('application/vnd.apple.mpegurl')) {
-    console.log('使用iOS/Safari原生HLS播放');
-    try {
-      // 确保使用https，iOS通常需要https
-      if (finalSource.startsWith('http:') && typeof window !== 'undefined' && window.location.protocol === 'https:') {
-        finalSource = finalSource.replace('http:', 'https:');
-        console.log('转换为HTTPS:', finalSource);
-      }
-      
-      // 添加时间戳参数避免缓存问题
-      const timestamp = new Date().getTime();
-      finalSource = finalSource.includes('?') 
-        ? `${finalSource}&_t=${timestamp}` 
-        : `${finalSource}?_t=${timestamp}`;
-      
-      console.log('原生HLS: 设置音频源:', finalSource);
-      audioElement.src = finalSource;
-      
-      // 预加载设置
-      audioElement.preload = 'auto';
-      
-      // iOS需要设置这些属性以允许播放
-      audioElement.setAttribute('playsinline', 'true');
-      audioElement.setAttribute('webkit-playsinline', 'true');
-      
-      // 添加loadedmetadata事件处理
-      audioElement.addEventListener('loadedmetadata', () => {
-        console.log('原生HLS: 元数据已加载');
-        onManifestParsed();
-      });
-      
-      // 监听错误
-      audioElement.addEventListener('error', (e) => {
-        const errorDetails = audioElement.error 
-          ? `代码: ${audioElement.error.code}, 消息: ${audioElement.error.message}` 
-          : '未知错误';
-        console.error('原生HLS播放失败:', errorDetails);
-        onError(`iOS HLS播放失败: ${errorDetails}`);
-      });
-      
-      return {
-        hls: null,
-        destroy: () => {
-          audioElement.removeEventListener('loadedmetadata', onManifestParsed);
-          audioElement.src = '';
-        }
-      };
-    } catch (err) {
-      console.error('iOS HLS播放设置失败:', err);
-      onError(`iOS HLS播放设置失败: ${err}`);
-      return {
-        hls: null,
-        destroy: () => {}
-      };
-    }
-  } else if (Hls.isSupported()) {
-    // 非iOS设备使用hls.js
+  // 处理HLS播放
+  if (Hls.isSupported()) {
     // 创建新的HLS实例
     hls = new Hls({
       debug: true, // 开启调试以便排查问题
@@ -275,6 +169,22 @@ export const setupHls = (
     hls.on(Hls.Events.MEDIA_ATTACHED, () => {
       console.log('HLS: 媒体已附加到音频元素');
       try {
+        // 确保URL可以被正确加载
+        let finalSource = source;
+        
+        // 处理相对路径，确保使用hls-converter.php
+        if (source.startsWith('/') && !source.includes('hls-converter.php')) {
+          // 对于相对路径，不要直接拼接域名，而是使用hls-converter.php处理
+          const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+          const baseUrl = apiBaseUrl.replace(/\/api$/, '');
+          const songName = extractSongName(source);
+          const encodedPath = encodeURIComponent(songName);
+          
+          // 使用hls-converter.php
+          finalSource = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
+          console.log('HLS: 转换为hls-converter URL:', finalSource);
+        }
+        
         console.log('HLS: 最终加载的源:', finalSource);
         hls?.loadSource(finalSource);
         onMediaAttached();
@@ -323,6 +233,42 @@ export const setupHls = (
     return {
       hls,
       destroy: destroyHls
+    };
+  } else if (audioElement.canPlayType('application/vnd.apple.mpegurl')) {
+    // Safari等原生支持HLS的浏览器
+    try {
+      // 处理URL
+      let finalSource = source;
+      
+      // 处理相对路径，确保使用hls-converter.php
+      if (source.startsWith('/') && !source.includes('hls-converter.php')) {
+        // 对于相对路径，不要直接拼接域名，而是使用hls-converter.php处理
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+        const baseUrl = apiBaseUrl.replace(/\/api$/, '');
+        const songName = extractSongName(source);
+        const encodedPath = encodeURIComponent(songName);
+        
+        // 使用hls-converter.php
+        finalSource = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
+        console.log('原生HLS: 转换为hls-converter URL:', finalSource);
+      }
+      
+      console.log('原生HLS: 设置音频源:', finalSource);
+      audioElement.src = finalSource;
+      audioElement.addEventListener('loadedmetadata', onManifestParsed);
+      audioElement.addEventListener('error', () => {
+        onError('HLS原生播放失败');
+      });
+    } catch (err) {
+      console.error('原生HLS播放设置失败:', err);
+      onError(`原生HLS播放设置失败: ${err}`);
+    }
+    
+    return {
+      hls: null,
+      destroy: () => {
+        audioElement.removeEventListener('loadedmetadata', onManifestParsed);
+      }
     };
   } else {
     onError('当前浏览器不支持HLS播放');
