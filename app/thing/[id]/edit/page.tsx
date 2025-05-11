@@ -231,48 +231,61 @@ export default function EditItem() {
     const files = Array.from(e.target.files)
     console.log('Files selected:', files.map(file => ({name: file.name, type: file.type, size: file.size})))
     
-    // 对文件进行验证
-    const validFiles = files.filter(file => {
+    // 对文件进行验证和处理
+    const processFile = async (file: File): Promise<File | null> => {
       // 检查文件是否为图片类型
       if (!file.type.startsWith('image/')) {
         console.error('文件不是图片类型:', file.name, file.type)
         toast.error(`文件 ${file.name} 不是有效的图片格式`)
-        return false
+        return null
       }
       
       // 检查文件大小（最大 5MB）
       if (file.size > 5 * 1024 * 1024) {
         console.error('文件太大:', file.name, file.size)
         toast.error(`文件 ${file.name} 超过 5MB 限制`)
-        return false
-      }
-      
-      return true
-    })
-    
-    if (validFiles.length === 0) return
-    
-    // 添加新文件到现有文件列表
-    setImageFiles(prev => [...prev, ...validFiles])
-    
-    // 创建预览URL
-    const newPreviews = validFiles.map(file => {
-      try {
-        const url = URL.createObjectURL(file)
-        return {
-          url,
-          name: file.name
-        }
-      } catch (error) {
-        console.error('创建预览URL失败:', error, file)
-        toast.error(`无法预览文件 ${file.name}`)
         return null
       }
-    }).filter(Boolean) as ImagePreview[]
-    
-    if (newPreviews.length > 0) {
-      setImagePreviews(prev => [...prev, ...newPreviews])
+      
+      // 对于移动设备的照片，可能需要处理方向问题
+      // 这里直接返回原文件，不做额外处理
+      return file
     }
+    
+    // 处理所有文件
+    Promise.all(files.map(processFile))
+      .then(processedFiles => {
+        // 过滤掉处理失败的文件
+        const validFiles = processedFiles.filter(Boolean) as File[]
+        
+        if (validFiles.length === 0) return
+        
+        // 添加新文件到现有文件列表
+        setImageFiles(prev => [...prev, ...validFiles])
+        
+        // 为每个文件创建一个本地预览URL
+        const newPreviews = validFiles.map(file => {
+          try {
+            const url = URL.createObjectURL(file)
+            return {
+              url,
+              name: file.name
+            }
+          } catch (error) {
+            console.error('创建预览URL失败:', error, file)
+            toast.error(`无法预览文件 ${file.name}`)
+            return null
+          }
+        }).filter(Boolean) as ImagePreview[]
+        
+        if (newPreviews.length > 0) {
+          setImagePreviews(prev => [...prev, ...newPreviews])
+        }
+      })
+      .catch(error => {
+        console.error('处理图片时发生错误:', error)
+        toast.error('处理图片失败，请重试')
+      })
   }
   
   const removeNewImage = (index: number) => {
@@ -292,6 +305,19 @@ export default function EditItem() {
     setLoading(true)
     
     try {
+      // 在提交前再次验证图片文件
+      const validImageFiles = imageFiles.filter(file => {
+        if (!file.type.startsWith('image/')) {
+          console.error('提交时发现非图片文件:', file.name, file.type)
+          return false
+        }
+        return true
+      })
+      
+      if (validImageFiles.length !== imageFiles.length) {
+        console.warn(`过滤掉 ${imageFiles.length - validImageFiles.length} 个无效图片文件`)
+      }
+      
       // 准备提交数据
       const itemData = {
         ...formData,
@@ -302,15 +328,26 @@ export default function EditItem() {
         area_id: formData.area_id ? Number(formData.area_id) : null,
         room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
-        images: imageFiles,
+        images: validImageFiles,
         image_ids: existingImages.map(img => img.id),
         is_public: Boolean(formData.is_public),
+      }
+      
+      console.log('提交物品数据:', {
+        ...itemData,
+        images: validImageFiles.map(f => ({name: f.name, type: f.type, size: f.size}))
+      })
+      
+      // 如果有图片，显示上传中提示
+      if (validImageFiles.length > 0) {
+        toast.loading(`正在上传 ${validImageFiles.length} 张图片...`)
       }
       
       await updateItem(Number(params.id), itemData)
       toast.success("物品已成功更新")
       router.push(`/thing/${params.id}`)
     } catch (error) {
+      console.error('更新物品失败:', error)
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
     } finally {
       setLoading(false)

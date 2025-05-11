@@ -132,8 +132,25 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
             fill
             className={className}
             onError={(e) => {
-              console.error('图片加载失败:', imageUrl, e);
-              setImageError(true)
+              // 记录详细的错误信息
+              console.error('图片加载失败:', {
+                url: imageUrl,
+                item: item.id,
+                name: item.name,
+                imageId: primaryImage.id,
+                type: primaryImage.path.split('.').pop(),
+                event: e
+              });
+              setImageError(true);
+              
+              // 尝试使用备用URL
+              if (imageUrl === primaryImage.thumbnail_url && primaryImage.url) {
+                // 如果缩略图加载失败，尝试加载原图
+                e.currentTarget.src = primaryImage.url;
+              } else if (primaryImage.path && !imageUrl.includes(primaryImage.path)) {
+                // 尝试直接构造路径
+                e.currentTarget.src = getImageUrl(primaryImage.path);
+              }
             }}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
