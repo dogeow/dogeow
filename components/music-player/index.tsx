@@ -51,8 +51,6 @@ export default function MusicPlayerPage() {
         audioRef.current.preload = "metadata";
         // 可以考虑将它隐藏并添加到DOM中以确保更好的兼容性
         document.body.appendChild(audioRef.current);
-        
-        console.log('音频元素已创建和初始化');
       }
     }
     
@@ -61,7 +59,6 @@ export default function MusicPlayerPage() {
       if (audioRef.current && document.body.contains(audioRef.current)) {
         document.body.removeChild(audioRef.current);
         audioRef.current = null;
-        console.log('音频元素已移除');
       }
     };
   }, []);
@@ -165,7 +162,6 @@ export default function MusicPlayerPage() {
         console.warn('解码失败，使用原始路径:', songDir);
       }
       
-      console.log('提取歌曲目录:', songDir);
       return songDir;
     }
     
@@ -176,7 +172,6 @@ export default function MusicPlayerPage() {
     }
     
     // 如果都无法提取，返回原始路径
-    console.log('无法提取目录，使用原路径:', path);
     return path;
   };
   
@@ -194,13 +189,6 @@ export default function MusicPlayerPage() {
     const encodedPath = encodeURIComponent(songDir);
     
     const fullUrl = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
-    console.log('构建HLS播放地址:', {
-      apiBaseUrl,
-      baseUrl,
-      songDir,
-      encodedPath,
-      fullUrl
-    });
     
     return fullUrl;
   };

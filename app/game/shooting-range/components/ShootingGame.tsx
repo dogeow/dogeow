@@ -122,10 +122,7 @@ const Target = ({ position, hit, scale, onClick, id }: {
 
   // 当hit状态改变时更新材质和触发爆炸
   useEffect(() => {
-    console.log(`Target ${id} hit state: ${hit}`);
-    
     if (hit && !startExplosion) {
-      console.log(`Starting explosion for target ${id}`);
       setStartExplosion(true)
       
       // 设置目标为红色表示被击中

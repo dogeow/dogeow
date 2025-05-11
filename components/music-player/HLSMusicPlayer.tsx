@@ -98,7 +98,6 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
       }
       
       const processedUrl = processUrl(src);
-      console.log('处理后的HLS地址:', processedUrl);
       
       // 检查是否支持HLS
       if (Hls.isSupported()) {
@@ -132,7 +131,6 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
         
         // 添加事件监听器
         hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-          console.log('HLS媒体已成功附加到音频元素');
           try {
             hls.loadSource(processedUrl);
           } catch (err) {
@@ -143,7 +141,6 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
         });
         
         hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-          console.log('HLS清单已解析:', data);
           setStreamInfo({
             levels: data.levels,
             audioTracks: data.audioTracks
@@ -184,17 +181,14 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
             switch (data.type) {
               case Hls.ErrorTypes.NETWORK_ERROR:
                 // 尝试恢复网络错误
-                console.log('网络错误，尝试恢复...');
                 hls.startLoad();
                 break;
               case Hls.ErrorTypes.MEDIA_ERROR:
                 // 尝试恢复媒体错误
-                console.log('媒体错误，尝试恢复...');
                 hls.recoverMediaError();
                 break;
               default:
                 // 无法恢复的错误
-                console.error('致命错误，无法恢复:', data);
                 destroyHls();
                 setError(`播放错误: ${data.details || '未知错误'}`);
                 setIsLoading(false);

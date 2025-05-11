@@ -4,30 +4,22 @@ import Hls from 'hls.js';
  * 处理播放地址，确保它是完整URL
  */
 export const processUrl = (urlStr: string) => {
-  console.log('处理URL:', urlStr);
-  console.log('环境变量:', {
-    API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL, 
-    API_URL: process.env.NEXT_PUBLIC_API_URL
-  });
-
   try {
     // 检查是否需要添加API前缀
     if (urlStr.startsWith('/')) {
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
       const fullUrl = `${baseUrl}${urlStr}`;
-      console.log('处理后的URL:', fullUrl);
+
       return fullUrl;
     }
     
     // 检查是否已经是完整URL
     const url = new URL(urlStr);
-    console.log('已经是完整URL:', url.toString());
     return url.toString();
   } catch (e) {
     // 如果不是有效URL，假设它是相对路径
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
     const fallbackUrl = `${baseUrl}${urlStr.startsWith('/') ? '' : '/'}${urlStr}`;
-    console.log('处理为回退URL:', fallbackUrl);
     return fallbackUrl;
   }
 };
@@ -43,7 +35,6 @@ export const extractSongName = (path: string): string => {
   // 对于hls-converter.php路径，直接从参数提取
   if (path.includes('hls-converter.php?path=')) {
     const songName = decodeURIComponent(path.split('hls-converter.php?path=')[1]);
-    console.log('从hls-converter URL提取的歌曲名:', songName);
     return songName;
   }
   
@@ -53,7 +44,6 @@ export const extractSongName = (path: string): string => {
     const match = path.match(/\/hls\/([^\/]+)/);
     if (match && match[1]) {
       const dirName = match[1];
-      console.log('从HLS目录结构提取的歌曲名:', dirName);
       return dirName;
     }
   }
@@ -63,7 +53,6 @@ export const extractSongName = (path: string): string => {
   
   // 移除扩展名，保留歌曲名
   const songName = fileName.replace(/\.(mp3|wav|ogg|aac|flac|m4a|m3u8|ts)$/i, '');
-  console.log('从文件名提取的歌曲名:', songName);
   
   return songName;
 };
@@ -74,24 +63,15 @@ export const extractSongName = (path: string): string => {
 export const buildHlsUrl = (musicPath: string) => {
   if (!musicPath) return '';
   
-  console.log('构建HLS URL，原始路径:', musicPath);
-  console.log('环境变量:', {
-    API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL, 
-    API_URL: process.env.NEXT_PUBLIC_API_URL
-  });
-  
   // 检查是否已经是HLS路径或已存在hls-converter.php?path=的情况
   if (musicPath.includes('hls-converter.php?path=') || musicPath.includes('ts-handler.php?path=')) {
-    console.log('检测到已经是hls-converter或ts-handler路径，直接使用');
     return musicPath;
   }
   
   // 从文件路径中提取歌曲名
   const songName = extractSongName(musicPath);
-  console.log('提取的歌曲名:', songName);
   
   if (!songName) {
-    console.error('无法从路径中提取歌曲名:', musicPath);
     return '';
   }
   

@@ -74,14 +74,11 @@ export default function GridView({ files }: GridViewProps) {
   const getFileIcon = (file: CloudFile) => {
     if (file.is_folder) return <Folder className="h-12 w-12 text-yellow-500" />
     
-    console.log('文件类型:', file.type, '文件扩展名:', file.extension);
-    
     // 如果是图片类型，直接显示缩略图
     if (file.type === 'image') {
       // 直接构造存储URL而不是通过API获取
       const baseUrl = '127.0.0.1:8000'; // 后端API基础URL
       const storageUrl = `http://${baseUrl}/storage/${file.path}?t=${new Date().getTime()}`;
-      console.log('直接构造图片URL:', storageUrl);
       
       return (
         <div className="w-16 h-16 relative overflow-hidden rounded-md flex items-center justify-center bg-muted">
@@ -222,7 +219,6 @@ export default function GridView({ files }: GridViewProps) {
       if (file.type === 'image') {
         const baseUrl = '127.0.0.1:8000';
         const directUrl = `http://${baseUrl}/storage/${file.path}?t=${new Date().getTime()}`;
-        console.log('预览图片，直接使用存储URL:', directUrl);
         setPreviewType('image');
         setPreviewUrl(directUrl);
         return;

@@ -95,8 +95,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
       // 调用后端 API 进行搜索
       if (activeCategory === "thing" || activeCategory === "all") {
         // 使用直接数据库查询路由
-        console.log(`正在搜索: ${searchTerm}`)
-        
         interface SearchApiResponse {
           results: Array<{
             id: number;
@@ -107,8 +105,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
         }
         
         const response = await get<SearchApiResponse>(`/db-search?q=${encodeURIComponent(searchTerm)}`)
-        
-        console.log('搜索结果:', response)
         
         if (response.results && Array.isArray(response.results)) {
           const thingResults = response.results.map((item) => ({

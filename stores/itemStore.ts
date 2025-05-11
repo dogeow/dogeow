@@ -100,11 +100,9 @@ export const useItemStore = create<ItemState>((set, get) => ({
       });
       
       const queryString = queryParams.toString();
-      console.log('查询字符串:', queryString); // 添加日志
       
       const url = `/items${queryString ? `?${queryString}` : ''}`;
-      
-      console.log('筛选请求URL:', API_BASE_URL + url);
+
       
       const data = await apiRequest<{data: Item[], meta: any}>(url);
       
@@ -162,7 +160,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
       // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
         if (key !== 'images' && value !== undefined && value !== null) {
-          console.log(`创建物品 - 字段 ${key}:`, value, typeof value);
           
           // 特殊处理is_public字段，确保它是布尔值
           if (key === 'is_public') {
@@ -183,7 +180,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       // 检查当前的授权token
       const authToken = useAuthStore.getState().token;
-      console.log('创建物品 - 授权Token状态:', authToken ? '已设置' : '未设置');
       
       // 使用apiRequest发送请求，它会自动携带认证令牌
       const result = await apiRequest<{item: Item}>(`/items`, 'POST', formData);
