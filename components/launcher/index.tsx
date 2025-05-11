@@ -288,6 +288,11 @@ export function AppLauncher() {
       // 重置音频元素
       audioRef.current.removeAttribute('src');
       audioRef.current.load();
+      
+      // 添加iOS播放所需的属性
+      audioRef.current.setAttribute('playsinline', 'true');
+      audioRef.current.setAttribute('webkit-playsinline', 'true');
+      audioRef.current.preload = 'auto';
     }
     
     // 重置状态
@@ -316,6 +321,11 @@ export function AppLauncher() {
           // 如果HLS失败，回退到直接播放
           console.log('HLS失败，回退到直接播放');
           if (audioRef.current) {
+            // 确保直接播放时也添加iOS所需属性
+            audioRef.current.setAttribute('playsinline', 'true');
+            audioRef.current.setAttribute('webkit-playsinline', 'true');
+            audioRef.current.preload = 'auto';
+            
             audioRef.current.src = currentTrack;
             audioRef.current.load();
             
@@ -351,6 +361,11 @@ export function AppLauncher() {
       if (audioRef.current) {
         // 直接设置src
         try {
+          // 确保直接播放时也添加iOS所需属性
+          audioRef.current.setAttribute('playsinline', 'true');
+          audioRef.current.setAttribute('webkit-playsinline', 'true');
+          audioRef.current.preload = 'auto';
+          
           audioRef.current.src = currentTrack;
           audioRef.current.load();
           
@@ -384,10 +399,48 @@ export function AppLauncher() {
       // 确保音量正确设置
       audioRef.current.volume = isMuted ? 0 : volume;
       
-      audioRef.current.play().catch((err) => {
-        console.error('播放失败:', err);
-        setAudioError(`播放失败: ${err.message}`);
-      });
+      // 检测是否为iOS设备
+      const isiOS = typeof window !== 'undefined' && /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+      
+      if (isiOS) {
+        // iOS设备上的特殊处理
+        console.log('在iOS设备上播放音频');
+        
+        // 确保设置了所需属性
+        audioRef.current.setAttribute('playsinline', 'true');
+        audioRef.current.setAttribute('webkit-playsinline', 'true');
+        
+        // 创建用户交互上下文 - iOS通常需要用户交互才能播放音频
+        const playPromise = audioRef.current.play();
+        
+        // 使用一个时间戳触发重新加载，这有时可以绕过iOS的自动播放限制
+        if (audioRef.current.src.includes('?')) {
+          audioRef.current.src = `${audioRef.current.src}&_t=${Date.now()}`;
+        } else {
+          audioRef.current.src = `${audioRef.current.src}?_t=${Date.now()}`;
+        }
+        
+        // 处理播放请求
+        if (playPromise !== undefined) {
+          playPromise.catch((err) => {
+            console.error('iOS播放失败:', err);
+            
+            // 特殊错误处理
+            if (err.name === 'NotAllowedError') {
+              console.log('iOS自动播放被阻止，需要用户交互');
+              setAudioError('在iOS上，需要先点击播放按钮才能开始播放。请再次点击播放按钮。');
+            } else {
+              setAudioError(`iOS播放失败: ${err.message}`);
+            }
+          });
+        }
+      } else {
+        // 非iOS设备正常播放
+        audioRef.current.play().catch((err) => {
+          console.error('播放失败:', err);
+          setAudioError(`播放失败: ${err.message}`);
+        });
+      }
       
       setIsPlaying(true);
     }
