@@ -38,6 +38,12 @@ export default function ImageUploader({
     }
     
     const files = Array.from(e.target.files)
+    console.log('选择的文件:', files.map(file => ({
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: new Date(file.lastModified).toISOString()
+    })))
     
     // 验证文件
     const validFiles = files.filter(file => {
@@ -60,13 +66,134 @@ export default function ImageUploader({
     
     setIsUploading(true)
     
-    // 逐个上传图片
+    // 使用canvas转换图片格式，解决兼容性问题
+    const convertImageViaCanvas = (file: File): Promise<File> => {
+      return new Promise((resolve, reject) => {
+        // 创建文件阅读器
+        const reader = new FileReader()
+        
+        reader.onload = (event) => {
+          if (!event.target?.result) {
+            return reject(new Error('读取文件失败'))
+          }
+          
+          // 创建图片元素
+          const img = document.createElement('img')
+          
+          img.onload = () => {
+            // 创建canvas
+            const canvas = document.createElement('canvas')
+            const ctx = canvas.getContext('2d')
+            
+            if (!ctx) {
+              return reject(new Error('创建图片上下文失败'))
+            }
+            
+            // 设置canvas尺寸为图片尺寸
+            canvas.width = img.width
+            canvas.height = img.height
+            
+            // 在canvas上绘制图片
+            ctx.drawImage(img, 0, 0)
+            
+            // 将canvas内容转换为Blob
+            canvas.toBlob((blob) => {
+              if (!blob) {
+                return reject(new Error('转换图片格式失败'))
+              }
+              
+              // 创建新文件
+              const newFile = new File(
+                [blob], 
+                `photo_${Date.now()}.jpg`, 
+                { type: 'image/jpeg', lastModified: Date.now() }
+              )
+              
+              resolve(newFile)
+            }, 'image/jpeg', 0.85) // 使用85%的质量
+          }
+          
+          img.onerror = () => {
+            reject(new Error('加载图片失败'))
+          }
+          
+          // 设置图片源
+          img.src = event.target.result as string
+        }
+        
+        reader.onerror = () => {
+          reject(new Error('读取文件失败'))
+        }
+        
+        // 以数据URL的形式读取文件
+        reader.readAsDataURL(file)
+      })
+    }
+    
+    // 逐个处理图片并上传
     for (const file of validFiles) {
       try {
-        const formData = new FormData()
-        formData.append('image', file)
+        // 显示处理中提示
+        const toastId = toast.loading(`正在处理 ${file.name}...`)
         
-        toast.loading(`正在上传 ${file.name}...`)
+        // 为拍照文件创建副本以规避一些移动设备问题
+        let fileToUpload: File
+        
+        // 尝试检测是否为移动设备拍照
+        const isCapturedPhoto = file.name.includes('image') && file.name.includes('.') === false
+        
+        if (isCapturedPhoto || file.type === 'image/jpeg' || file.name.endsWith('.heic')) {
+          // 处理拍照文件，通过canvas转换
+          try {
+            fileToUpload = await convertImageViaCanvas(file)
+            
+            console.log('图片通过Canvas转换成功:', { 
+              originalName: file.name,
+              originalType: file.type,
+              newName: fileToUpload.name,
+              newType: fileToUpload.type,
+              size: fileToUpload.size
+            })
+          } catch (error) {
+            console.error('通过Canvas转换图片失败:', error)
+            
+            // 失败后尝试使用Blob方法
+            try {
+              // 使用Blob创建副本
+              const blob = await file.arrayBuffer().then(buffer => new Blob([buffer], { type: 'image/jpeg' }))
+              
+              // 使用随机文件名
+              const randomName = `photo_${Date.now()}.jpg`
+              
+              // 创建File副本
+              fileToUpload = new File([blob], randomName, { 
+                type: 'image/jpeg',
+                lastModified: Date.now() 
+              })
+              
+              console.log('通过Blob方法创建文件副本成功:', { 
+                originalName: file.name,
+                originalType: file.type,
+                newName: fileToUpload.name,
+                newType: fileToUpload.type,
+                size: fileToUpload.size
+              })
+            } catch (blobError) {
+              console.error('通过Blob创建文件副本失败:', blobError)
+              fileToUpload = file // 所有方法失败，使用原文件
+            }
+          }
+        } else {
+          // 非拍照图片直接使用
+          fileToUpload = file
+        }
+        
+        // 创建FormData
+        const formData = new FormData()
+        formData.append('image', fileToUpload)
+        
+        // 更新提示信息
+        toast.loading(`正在上传 ${fileToUpload.name}...`, { id: toastId })
         
         // 调用API上传图片
         const result = await apiRequest<UploadedImage>(`/items/upload-temp-image`, 'POST', formData)
@@ -74,9 +201,9 @@ export default function ImageUploader({
         // 更新上传的图片列表
         setUploadedImages(prev => [...prev, result])
         
-        toast.success(`${file.name} 上传成功`)
+        toast.success(`${file.name} 上传成功`, { id: toastId })
       } catch (error) {
-        console.error('上传图片失败:', error)
+        console.error('上传图片失败:', file.name, error)
         toast.error(error instanceof Error ? error.message : '上传图片失败，请重试')
       }
     }
