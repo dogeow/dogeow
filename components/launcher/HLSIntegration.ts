@@ -172,11 +172,17 @@ export const setupHls = (
         // 确保URL可以被正确加载
         let finalSource = source;
         
-        // 处理相对路径
+        // 处理相对路径，确保使用hls-converter.php
         if (source.startsWith('/') && !source.includes('hls-converter.php')) {
-          // 相对路径，使用当前域名
-          finalSource = window.location.origin + source;
-          console.log('HLS: 转换为绝对URL:', finalSource);
+          // 对于相对路径，不要直接拼接域名，而是使用hls-converter.php处理
+          const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+          const baseUrl = apiBaseUrl.replace(/\/api$/, '');
+          const songName = extractSongName(source);
+          const encodedPath = encodeURIComponent(songName);
+          
+          // 使用hls-converter.php
+          finalSource = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
+          console.log('HLS: 转换为hls-converter URL:', finalSource);
         }
         
         console.log('HLS: 最终加载的源:', finalSource);
@@ -234,10 +240,17 @@ export const setupHls = (
       // 处理URL
       let finalSource = source;
       
-      // 处理相对路径(不包含hls-converter.php)
+      // 处理相对路径，确保使用hls-converter.php
       if (source.startsWith('/') && !source.includes('hls-converter.php')) {
-        finalSource = window.location.origin + source;
-        console.log('原生HLS: 转换为绝对URL:', finalSource);
+        // 对于相对路径，不要直接拼接域名，而是使用hls-converter.php处理
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+        const baseUrl = apiBaseUrl.replace(/\/api$/, '');
+        const songName = extractSongName(source);
+        const encodedPath = encodeURIComponent(songName);
+        
+        // 使用hls-converter.php
+        finalSource = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
+        console.log('原生HLS: 转换为hls-converter URL:', finalSource);
       }
       
       console.log('原生HLS: 设置音频源:', finalSource);

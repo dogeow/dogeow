@@ -101,43 +101,7 @@ export function AppLauncher() {
   useEffect(() => {
     if (!currentTrack) return;
     
-    // 测试直接请求HLS API
-    const testHlsApi = async () => {
-      try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
-        const hlsApiUrl = `${apiBaseUrl}/music/hls`;
-        console.log('直接测试HLS API:', hlsApiUrl);
-        
-        const response = await fetch(hlsApiUrl);
-        if (!response.ok) {
-          console.error('HLS API请求失败:', response.status, response.statusText);
-          return;
-        }
-        
-        const data = await response.json();
-        console.log('直接请求HLS API成功:', data);
-        
-        // 测试直接请求HLS文件
-        if (data && data.length > 0) {
-          const hlsFilePath = data[0].path;
-          console.log('测试访问HLS文件:', hlsFilePath);
-          
-          const hlsFileResponse = await fetch(hlsFilePath);
-          if (!hlsFileResponse.ok) {
-            console.error('HLS文件请求失败:', hlsFileResponse.status, hlsFileResponse.statusText);
-            return;
-          }
-          
-          console.log('HLS文件请求成功，状态码:', hlsFileResponse.status);
-          const contentType = hlsFileResponse.headers.get('content-type');
-          console.log('HLS文件内容类型:', contentType);
-        }
-      } catch (error) {
-        console.error('测试HLS API失败:', error);
-      }
-    };
-    
-    testHlsApi();
+    // 测试HLS功能已经工作正常，移除测试代码
     setupMediaSource();
   }, [currentTrack]);
   
