@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Upload, X, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
@@ -26,6 +26,10 @@ export default function ImageUploader({
 }: ImageUploaderProps) {
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>(existingImages)
   const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // 检测是否为iOS设备
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
   
   // 验证文件并处理上传
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -81,36 +85,64 @@ export default function ImageUploader({
           const img = document.createElement('img')
           
           img.onload = () => {
-            // 创建canvas
-            const canvas = document.createElement('canvas')
-            const ctx = canvas.getContext('2d')
-            
-            if (!ctx) {
-              return reject(new Error('创建图片上下文失败'))
-            }
-            
-            // 设置canvas尺寸为图片尺寸
-            canvas.width = img.width
-            canvas.height = img.height
-            
-            // 在canvas上绘制图片
-            ctx.drawImage(img, 0, 0)
-            
-            // 将canvas内容转换为Blob
-            canvas.toBlob((blob) => {
-              if (!blob) {
-                return reject(new Error('转换图片格式失败'))
+            try {
+              // 创建canvas
+              const canvas = document.createElement('canvas')
+              // 获取上下文前先设置尺寸限制 - 提高限制以适应苹果高像素相机
+              const MAX_WIDTH = 5000
+              const MAX_HEIGHT = 5000
+              
+              let width = img.width
+              let height = img.height
+              
+              // 计算缩放比例，确保图片尺寸不超过限制
+              if (width > height) {
+                if (width > MAX_WIDTH) {
+                  height = Math.round(height * (MAX_WIDTH / width))
+                  width = MAX_WIDTH
+                }
+              } else {
+                if (height > MAX_HEIGHT) {
+                  width = Math.round(width * (MAX_HEIGHT / height))
+                  height = MAX_HEIGHT
+                }
               }
               
-              // 创建新文件
-              const newFile = new File(
-                [blob], 
-                `photo_${Date.now()}.jpg`, 
-                { type: 'image/jpeg', lastModified: Date.now() }
-              )
+              // 设置canvas尺寸
+              canvas.width = width
+              canvas.height = height
               
-              resolve(newFile)
-            }, 'image/jpeg', 0.85) // 使用85%的质量
+              const ctx = canvas.getContext('2d')
+              
+              if (!ctx) {
+                return reject(new Error('创建图片上下文失败'))
+              }
+              
+              // 清除画布
+              ctx.clearRect(0, 0, width, height)
+              
+              // 在canvas上绘制图片
+              ctx.drawImage(img, 0, 0, width, height)
+              
+              // 将canvas内容转换为Blob
+              canvas.toBlob((blob) => {
+                if (!blob) {
+                  return reject(new Error('转换图片格式失败'))
+                }
+                
+                // 创建新文件
+                const newFile = new File(
+                  [blob], 
+                  `photo_${Date.now()}.jpg`, 
+                  { type: 'image/jpeg', lastModified: Date.now() }
+                )
+                
+                resolve(newFile)
+              }, 'image/jpeg', 0.85) // 使用85%的质量
+            } catch (canvasError) {
+              console.error('Canvas处理错误:', canvasError)
+              reject(canvasError)
+            }
           }
           
           img.onerror = () => {
@@ -130,8 +162,33 @@ export default function ImageUploader({
       })
     }
     
-    // 逐个处理图片并上传
-    for (const file of validFiles) {
+    const processFileBatch = async (filesToProcess: File[]): Promise<UploadedImage[]> => {
+      const results: UploadedImage[] = []
+      
+      // 限制并发上传数量
+      const maxConcurrent = 2
+      
+      // 分批处理文件
+      for (let i = 0; i < filesToProcess.length; i += maxConcurrent) {
+        const batch = filesToProcess.slice(i, i + maxConcurrent)
+        const batchPromises = batch.map(file => processFile(file))
+        
+        // 等待当前批次完成
+        const batchResults = await Promise.allSettled(batchPromises)
+        
+        // 收集成功的结果
+        batchResults.forEach(result => {
+          if (result.status === 'fulfilled') {
+            results.push(result.value)
+          }
+        })
+      }
+      
+      return results
+    }
+    
+    // 处理单个文件
+    const processFile = async (file: File): Promise<UploadedImage> => {
       try {
         // 显示处理中提示
         const toastId = toast.loading(`正在处理 ${file.name}...`)
@@ -142,7 +199,7 @@ export default function ImageUploader({
         // 尝试检测是否为移动设备拍照
         const isCapturedPhoto = file.name.includes('image') && file.name.includes('.') === false
         
-        if (isCapturedPhoto || file.type === 'image/jpeg' || file.name.endsWith('.heic')) {
+        if (isIOS || isCapturedPhoto || file.type === 'image/jpeg' || file.name.endsWith('.heic')) {
           // 处理拍照文件，通过canvas转换
           try {
             fileToUpload = await convertImageViaCanvas(file)
@@ -195,23 +252,59 @@ export default function ImageUploader({
         // 更新提示信息
         toast.loading(`正在上传 ${fileToUpload.name}...`, { id: toastId })
         
-        // 调用API上传图片
-        const result = await apiRequest<UploadedImage>(`/items/upload-temp-image`, 'POST', formData)
+        // 添加重试逻辑
+        let retries = 0
+        const maxRetries = 2
+        let result: UploadedImage | null = null
         
-        // 更新上传的图片列表
-        setUploadedImages(prev => [...prev, result])
+        while (retries <= maxRetries && !result) {
+          try {
+            // 调用API上传图片
+            result = await apiRequest<UploadedImage>(`/items/upload-temp-image`, 'POST', formData)
+            break
+          } catch (uploadError) {
+            retries++
+            console.error(`上传尝试 ${retries}/${maxRetries} 失败:`, uploadError)
+            
+            if (retries <= maxRetries) {
+              toast.loading(`上传失败，正在重试 (${retries}/${maxRetries})...`, { id: toastId })
+              // 等待一小段时间再重试
+              await new Promise(resolve => setTimeout(resolve, 1000))
+            } else {
+              throw uploadError
+            }
+          }
+        }
+        
+        if (!result) {
+          throw new Error('上传失败，已达到最大重试次数')
+        }
         
         toast.success(`${file.name} 上传成功`, { id: toastId })
+        return result
       } catch (error) {
         console.error('上传图片失败:', file.name, error)
         toast.error(error instanceof Error ? error.message : '上传图片失败，请重试')
+        throw error
       }
     }
     
-    setIsUploading(false)
-    
-    // 清空input，允许重复选择相同文件
-    e.target.value = ''
+    try {
+      // 批量处理文件
+      const newImages = await processFileBatch(validFiles)
+      
+      // 更新上传的图片列表
+      setUploadedImages(prev => [...prev, ...newImages])
+      
+      // 在iOS上，重置input元素以确保相同文件可以重复上传
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    } catch (error) {
+      console.error('批量处理图片失败:', error)
+    } finally {
+      setIsUploading(false)
+    }
   }
   
   // 移除已上传的图片
@@ -282,6 +375,7 @@ export default function ImageUploader({
             <span className="text-xs text-muted-foreground">添加图片</span>
           </div>
           <input
+            ref={fileInputRef}
             type="file"
             id="image-upload"
             multiple
