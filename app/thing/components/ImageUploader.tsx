@@ -54,17 +54,6 @@ export default function ImageUploader({
         return false
       }
       
-      // 检查文件大小（最大 10MB）
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error(`文件 ${file.name} 超过 10MB 限制`)
-        return false
-      }
-      
-      // 大文件提示
-      if (file.size > 3 * 1024 * 1024) { // 3MB
-        toast.warning(`图片较大 (${(file.size / (1024 * 1024)).toFixed(1)}MB)，可能导致上传较慢`)
-      }
-      
       return true
     })
     
