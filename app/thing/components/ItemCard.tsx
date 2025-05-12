@@ -70,12 +70,14 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     }
   }
   
-  const getStatusColor = (status: string) => {
+  const getStatusBorderColor = (status: string) => {
     const statusColors = {
-      'active': 'bg-green-500',
-      'inactive': 'bg-gray-500',
-      'expired': 'bg-red-500',
-      'default': 'bg-blue-500'
+      'active': 'border-transparent',
+      'idle': 'border-amber-500',
+      'expired': 'border-red-500',
+      'damaged': 'border-orange-500',
+      'inactive': 'border-gray-500',
+      'default': 'border-transparent'
     }
     return statusColors[status as keyof typeof statusColors] || statusColors.default
   }
@@ -87,6 +89,31 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     } catch (e) {
       return '无效日期'
     }
+  }
+  
+  // 渲染状态标签
+  const renderStatusBadge = () => {
+    const statusText = {
+      'active': '正常',
+      'idle': '闲置',
+      'expired': '过期',
+      'damaged': '损坏',
+      'default': item.status || '未知'
+    }
+    
+    const statusColor = {
+      'active': 'text-green-600',
+      'idle': 'text-amber-500',
+      'damaged': 'text-red-500',
+      'default': 'text-blue-500'
+    }
+    
+    const status = item.status as keyof typeof statusText || 'default'
+    
+    return (
+        {statusText[status] || statusText.default}
+      </span>
+    )
   }
   
   // 渲染位置信息
@@ -238,7 +265,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     >
       <div className="p-3">
         <div className="flex items-center mb-2 justify-between">
-          <div className="relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0">
+          <div className={`relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0 border ${getStatusBorderColor(item.status)}`}>
             {renderImage("object-cover rounded-md")}
             {item.is_public ? (
               <div className="absolute top-0 right-0">
@@ -252,9 +279,6 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
             <div className="flex justify-between items-start">
               <div className="min-w-0 pr-2">
                 <h3 className="font-semibold truncate text-base">{item.name}</h3>
-              </div>
-              <div className="flex items-center space-x-1 flex-shrink-0">
-                <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
               </div>
             </div>
             {renderInfoGrid("grid-cols-2 sm:grid-cols-4 mt-1")}
