@@ -289,4 +289,32 @@ export default {
   useSpot,
   useNavCategories,
   useNavItems
-}; 
+};
+
+/**
+ * 记录错误日志到后端
+ */
+export async function logErrorToServer(
+  errorType: string, 
+  errorMessage: string, 
+  errorDetails: Record<string, any> = {}
+): Promise<void> {
+  try {
+    const errorLog = {
+      error_type: errorType,
+      error_message: errorMessage,
+      error_details: errorDetails,
+      user_agent: navigator.userAgent,
+      timestamp: new Date().toISOString(),
+      url: window.location.href
+    };
+    
+    console.log('发送错误日志到服务器:', errorLog);
+    
+    // 发送日志到后端
+    await apiRequest('/debug/log-error', 'POST', errorLog);
+  } catch (err) {
+    // 如果记录日志失败，只在控制台记录，不抛出异常
+    console.error('记录错误日志到服务器失败:', err);
+  }
+} 

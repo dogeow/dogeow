@@ -4,7 +4,7 @@ import { Upload, X, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 import { API_BASE_URL } from '@/utils/api'
-import { apiRequest } from '@/utils/api'
+import { apiRequest, logErrorToServer } from '@/utils/api'
 
 type UploadedImage = {
   path: string;
@@ -127,7 +127,17 @@ export default function ImageUploader({
               // 将canvas内容转换为Blob
               canvas.toBlob((blob) => {
                 if (!blob) {
-                  return reject(new Error('转换图片格式失败'))
+                  const error = new Error('转换图片格式失败')
+                  logErrorToServer('canvas_conversion_error', '转换图片格式失败', {
+                    imageWidth: img.width,
+                    imageHeight: img.height,
+                    canvasWidth: width,
+                    canvasHeight: height,
+                    fileType: file.type,
+                    fileName: file.name,
+                    fileSize: file.size
+                  })
+                  return reject(error)
                 }
                 
                 // 创建新文件
@@ -141,6 +151,13 @@ export default function ImageUploader({
               }, 'image/jpeg', 0.85) // 使用85%的质量
             } catch (canvasError) {
               console.error('Canvas处理错误:', canvasError)
+              logErrorToServer('canvas_processing_error', canvasError instanceof Error ? canvasError.message : 'Canvas处理未知错误', {
+                fileType: file.type,
+                fileName: file.name,
+                fileSize: file.size,
+                imageWidth: img.width,
+                imageHeight: img.height
+              })
               reject(canvasError)
             }
           }
@@ -214,6 +231,15 @@ export default function ImageUploader({
           } catch (error) {
             console.error('通过Canvas转换图片失败:', error)
             
+            // 记录转换失败到服务器
+            logErrorToServer('canvas_conversion_failure', error instanceof Error ? error.message : '通过Canvas转换图片失败',  {
+              fileName: file.name,
+              fileType: file.type,
+              fileSize: file.size,
+              isIOS: isIOS,
+              isCapturedPhoto: isCapturedPhoto
+            })
+            
             // 失败后尝试使用Blob方法
             try {
               // 使用Blob创建副本
@@ -237,6 +263,16 @@ export default function ImageUploader({
               })
             } catch (blobError) {
               console.error('通过Blob创建文件副本失败:', blobError)
+              
+              // 记录Blob处理失败到服务器
+              logErrorToServer('blob_processing_error', blobError instanceof Error ? blobError.message : '通过Blob创建文件副本失败', {
+                fileName: file.name,
+                fileType: file.type,
+                fileSize: file.size,
+                isIOS: isIOS,
+                isCapturedPhoto: isCapturedPhoto
+              })
+              
               fileToUpload = file // 所有方法失败，使用原文件
             }
           }
@@ -266,6 +302,16 @@ export default function ImageUploader({
             retries++
             console.error(`上传尝试 ${retries}/${maxRetries} 失败:`, uploadError)
             
+            // 记录上传失败到服务器
+            logErrorToServer('api_upload_retry', `上传尝试 ${retries}/${maxRetries} 失败`, {
+              fileName: fileToUpload.name,
+              fileType: fileToUpload.type,
+              fileSize: fileToUpload.size,
+              retryCount: retries,
+              maxRetries: maxRetries,
+              error: uploadError instanceof Error ? uploadError.message : String(uploadError)
+            })
+            
             if (retries <= maxRetries) {
               toast.loading(`上传失败，正在重试 (${retries}/${maxRetries})...`, { id: toastId })
               // 等待一小段时间再重试
@@ -284,6 +330,15 @@ export default function ImageUploader({
         return result
       } catch (error) {
         console.error('上传图片失败:', file.name, error)
+        
+        // 记录整体上传失败到服务器
+        logErrorToServer('file_upload_failure', '上传图片失败', {
+          fileName: file.name,
+          fileType: file.type,
+          fileSize: file.size,
+          error: error instanceof Error ? error.message : String(error)
+        })
+        
         toast.error(error instanceof Error ? error.message : '上传图片失败，请重试')
         throw error
       }
@@ -302,6 +357,13 @@ export default function ImageUploader({
       }
     } catch (error) {
       console.error('批量处理图片失败:', error)
+      
+      // 记录批量处理失败到服务器
+      logErrorToServer('batch_processing_error', '批量处理图片失败', {
+        fileCount: validFiles.length,
+        error: error instanceof Error ? error.message : String(error)
+      })
+      
     } finally {
       setIsUploading(false)
     }
