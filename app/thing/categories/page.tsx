@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Plus, Pencil, Trash2, Check, X } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import ThingNavigation from '../components/ThingNavigation'
@@ -27,12 +27,21 @@ export default function Categories() {
   const [loading, setLoading] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [editingCategory, setEditingCategory] = useState<{id: number, name: string} | null>(null)
+  const [inlineEditingId, setInlineEditingId] = useState<number | null>(null)
+  const [inlineEditingName, setInlineEditingName] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
+  const inlineInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchCategories()
   }, [fetchCategories])
+
+  useEffect(() => {
+    if (inlineEditingId && inlineInputRef.current) {
+      inlineInputRef.current.focus()
+    }
+  }, [inlineEditingId])
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
@@ -72,6 +81,37 @@ export default function Categories() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleInlineEdit = (category: {id: number, name: string}) => {
+    setInlineEditingId(category.id)
+    setInlineEditingName(category.name)
+  }
+
+  const saveInlineEdit = async () => {
+    if (!inlineEditingId || !inlineEditingName.trim()) {
+      toast.error("分类名称不能为空")
+      return
+    }
+
+    setLoading(true)
+    try {
+      await put(`/categories/${inlineEditingId}`, { name: inlineEditingName })
+      
+      toast.success("分类更新成功")
+      fetchCategories()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+    } finally {
+      setLoading(false)
+      setInlineEditingId(null)
+      setInlineEditingName('')
+    }
+  }
+
+  const cancelInlineEdit = () => {
+    setInlineEditingId(null)
+    setInlineEditingName('')
   }
 
   const handleDeleteCategory = async () => {
@@ -138,22 +178,54 @@ export default function Categories() {
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
-                  <TableHead className="w-[100px]">操作</TableHead>
+                  <TableHead className="w-[50px]">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {categories.map((category) => (
                   <TableRow key={category.id}>
-                    <TableCell>{category.name}</TableCell>
+                    <TableCell>
+                      {inlineEditingId === category.id ? (
+                        <div className="flex gap-2 items-center">
+                          <Input
+                            ref={inlineInputRef}
+                            value={inlineEditingName}
+                            onChange={(e) => setInlineEditingName(e.target.value)}
+                            className="h-8"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                saveInlineEdit()
+                              } else if (e.key === 'Escape') {
+                                cancelInlineEdit()
+                              }
+                            }}
+                          />
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={saveInlineEdit}
+                          >
+                            <Check className="h-4 w-4 text-green-500" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={cancelInlineEdit}
+                          >
+                            <X className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="cursor-pointer hover:underline" 
+                          onClick={() => handleInlineEdit(category)}
+                        >
+                          {category.name}
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => setEditingCategory({id: category.id, name: category.name})}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
                         <Button 
                           variant="ghost" 
                           size="icon"

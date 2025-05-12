@@ -78,7 +78,7 @@ export default function Thing() {
     setSelectedCategory(value)
     setCurrentPage(1)
     loadItems({ 
-      category_id: value === "none" ? undefined : value,
+      category_id: value === "none" ? undefined : value === "uncategorized" ? null : value,
       page: 1
     })
   }
@@ -220,6 +220,7 @@ export default function Thing() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="none">所有分类</SelectItem>
+            <SelectItem value="uncategorized">未分类</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category.id} value={category.id.toString()}>
                 {category.name}
