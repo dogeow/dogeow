@@ -646,14 +646,14 @@ export default function EditItem() {
                 </div>
               </CardContent>
             </Card>
-            
-            <div className="flex justify-end">
-              <Button type="submit" size="lg" disabled={loading}>
-                {loading ? "更新中..." : "更新物品"}
-              </Button>
-            </div>
           </TabsContent>
         </Tabs>
+        
+        <div className="flex justify-end mt-6">
+          <Button type="submit" size="lg" disabled={loading}>
+            {loading ? "更新中..." : "更新物品"}
+          </Button>
+        </div>
       </form>
       
       {/* 创建标签对话框 */}
