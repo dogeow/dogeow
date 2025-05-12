@@ -216,31 +216,6 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     )
   }
   
-  // 渲染操作菜单
-  const renderActionMenu = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onView}>
-          <Eye className="mr-2 h-4 w-4" />
-          查看
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={onEdit}>
-          <Edit className="mr-2 h-4 w-4" />
-          编辑
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)} className="text-destructive">
-          <Trash2 className="mr-2 h-4 w-4" />
-          删除
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-  
   // 渲染物品信息网格
   const renderInfoGrid = (columns: string) => (
     <div className={`grid ${columns} gap-x-3 gap-y-1 text-sm mb-2`}>
@@ -257,32 +232,36 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   }
   
   return (
-    <Card className="hover:shadow-md transition-shadow py-0">
-      <div className="flex p-3 items-center">
-        <div className="relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0">
-          {renderImage("object-cover rounded-md")}
-          {item.is_public ? (
-            <div className="absolute top-0 right-0">
-              <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
-                <Globe className="h-3.5 w-3.5" />
-              </Badge>
-            </div>
-          ) : null}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start">
-            <div className="min-w-0 pr-2">
-              <h3 className="font-semibold truncate text-base">{item.name}</h3>
-            </div>
-            <div className="flex items-center space-x-1 flex-shrink-0">
-              <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
-              {renderActionMenu()}
-            </div>
+    <Card 
+      className="hover:shadow-md transition-shadow py-0 cursor-pointer"
+      onClick={onView}
+    >
+      <div className="p-3">
+        <div className="flex items-center mb-2 justify-between">
+          <div className="relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0">
+            {renderImage("object-cover rounded-md")}
+            {item.is_public ? (
+              <div className="absolute top-0 right-0">
+                <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
+                  <Globe className="h-3.5 w-3.5" />
+                </Badge>
+              </div>
+            ) : null}
           </div>
-          {renderInfoGrid("grid-cols-2 sm:grid-cols-4 mt-1")}
-          <div className="flex justify-between flex-auto">
-            {renderLocation()}
-            <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start">
+              <div className="min-w-0 pr-2">
+                <h3 className="font-semibold truncate text-base">{item.name}</h3>
+              </div>
+              <div className="flex items-center space-x-1 flex-shrink-0">
+                <div className={cn("w-3 h-3 rounded-full", getStatusColor(item.status))} />
+              </div>
+            </div>
+            {renderInfoGrid("grid-cols-2 sm:grid-cols-4 mt-1")}
+            <div className="flex justify-between flex-auto">
+              {renderLocation()}
+              <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
+            </div>
           </div>
         </div>
       </div>
