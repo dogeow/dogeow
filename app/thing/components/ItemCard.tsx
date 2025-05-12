@@ -91,16 +91,67 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   
   // 渲染位置信息
   const renderLocation = () => {
-    if (!item.spot?.name) return <p className="text-xs text-muted-foreground">未指定位置</p>
+    // 检查是否有spot对象，并且有完整的位置路径
+    if (item.spot?.room?.area?.name && item.spot?.room?.name && item.spot?.name) {
+      return (
+        <p className="text-xs text-muted-foreground truncate">
+          <span className="inline-block mr-1">📍</span>
+          {item.spot.room.area.name} &gt; {item.spot.room.name} &gt; {item.spot.name}
+        </p>
+      );
+    }
     
-    return (
-      <p className="text-xs text-muted-foreground truncate">
-        <span className="inline-block mr-1">📍</span>
-        {item.spot.room?.area?.name ? `${item.spot.room.area.name} > ` : ''}
-        {item.spot.room?.name ? `${item.spot.room.name} > ` : ''}
-        {item.spot.name}
-      </p>
-    )
+    // 检查是否有spot对象，并且有区域和房间
+    if (item.spot?.room?.area?.name && item.spot?.room?.name) {
+      return (
+        <p className="text-xs text-muted-foreground truncate">
+          <span className="inline-block mr-1">📍</span>
+          {item.spot.room.area.name} &gt; {item.spot.room.name}
+        </p>
+      );
+    }
+    
+    // 检查是否有spot对象，并且只有区域
+    if (item.spot?.room?.area?.name) {
+      return (
+        <p className="text-xs text-muted-foreground truncate">
+          <span className="inline-block mr-1">📍</span>
+          {item.spot.room.area.name}
+        </p>
+      );
+    }
+    
+    // 直接检查area_id和room_id (即使spot为null)
+    if (item.area_id || item.room_id) {
+      // 尝试获取区域名称
+      let locationText = '';
+      
+      // 尝试从不同来源获取区域名称
+      if (item.area?.name) {
+        locationText = item.area.name;
+      } else if (item.area_id) {
+        // 如果只有ID没有名称，至少显示"区域" + ID
+        locationText = `区域 ${item.area_id}`;
+      }
+      
+      // 尝试获取房间名称
+      if (item.room?.name) {
+        locationText += locationText ? ` > ${item.room.name}` : item.room.name;
+      } else if (item.room_id && !item.room?.name) {
+        // 如果只有ID没有名称
+        locationText += locationText ? ` > 房间 ${item.room_id}` : `房间 ${item.room_id}`;
+      }
+      
+      return (
+        <p className="text-xs text-muted-foreground truncate">
+          <span className="inline-block mr-1">📍</span>
+          {locationText || '位置ID存在但名称未知'}
+        </p>
+      );
+    }
+    
+    // 如果没有任何位置信息
+    return <p className="text-xs text-muted-foreground">未指定位置</p>;
   }
   
   // 构建正确的图片URL

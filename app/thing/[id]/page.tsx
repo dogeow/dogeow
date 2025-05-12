@@ -281,19 +281,25 @@ export default function ItemDetail() {
                   <CardTitle>存放位置</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {item.spot ? (
+                  {(item.area_id || item.room_id || item.spot_id) ? (
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-background p-3 rounded-lg border shadow-sm">
                         <h3 className="font-medium text-xs text-muted-foreground">区域</h3>
-                        <p className="text-sm font-semibold truncate">{item.spot.room?.area?.name || '未指定'}</p>
+                        <p className="text-sm font-semibold truncate">
+                          {item.spot?.room?.area?.name || item.area?.name || '未指定'}
+                        </p>
                       </div>
                       <div className="bg-background p-3 rounded-lg border shadow-sm">
                         <h3 className="font-medium text-xs text-muted-foreground">房间</h3>
-                        <p className="text-sm font-semibold truncate">{item.spot.room?.name || '未指定'}</p>
+                        <p className="text-sm font-semibold truncate">
+                          {item.spot?.room?.name || item.room?.name || '未指定'}
+                        </p>
                       </div>
                       <div className="bg-background p-3 rounded-lg border shadow-sm">
                         <h3 className="font-medium text-xs text-muted-foreground">具体位置</h3>
-                        <p className="text-sm font-semibold truncate">{item.spot.name}</p>
+                        <p className="text-sm font-semibold truncate">
+                          {item.spot?.name || '未指定'}
+                        </p>
                       </div>
                     </div>
                   ) : (

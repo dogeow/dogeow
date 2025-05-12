@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -85,6 +85,40 @@ export default function AddItem() {
       try {
         const data = await apiRequest<any[]>('/areas')
         setAreas(data)
+        
+        // 检查URL是否有预设的位置信息
+        const searchParams = new URLSearchParams(window.location.search);
+        const areaId = searchParams.get('area_id');
+        const roomId = searchParams.get('room_id');
+        const spotId = searchParams.get('spot_id');
+        
+        if (areaId) {
+          setFormData(prev => ({ ...prev, area_id: areaId }));
+          
+          // 如果有区域ID，加载该区域的房间
+          try {
+            const rooms = await apiRequest<any[]>(`/areas/${areaId}/rooms`);
+            setRooms(rooms);
+            
+            if (roomId) {
+              setFormData(prev => ({ ...prev, room_id: roomId }));
+              
+              // 如果有房间ID，加载该房间的位置
+              try {
+                const spots = await apiRequest<any[]>(`/rooms/${roomId}/spots`);
+                setSpots(spots);
+                
+                if (spotId) {
+                  setFormData(prev => ({ ...prev, spot_id: spotId }));
+                }
+              } catch (error) {
+                console.error('加载位置失败', error);
+              }
+            }
+          } catch (error) {
+            console.error('加载房间失败', error);
+          }
+        }
       } catch (error) {
         console.error('加载区域失败', error)
       }
@@ -92,6 +126,43 @@ export default function AddItem() {
     
     loadData()
   }, [fetchCategories, fetchTags])
+  
+  // 加载初始位置数据
+  useEffect(() => {
+    const loadInitialLocationData = async () => {
+      // 如果已有位置ID但没有对应的位置数据，需要主动加载
+      if (formData.area_id && areas.length === 0) {
+        try {
+          const data = await apiRequest<any[]>('/areas')
+          setAreas(data)
+        } catch (error) {
+          console.error('加载区域失败', error)
+        }
+      }
+      
+      if (formData.room_id && rooms.length === 0 && formData.area_id) {
+        try {
+          const data = await apiRequest<any[]>(`/areas/${formData.area_id}/rooms`)
+          setRooms(data)
+        } catch (error) {
+          console.error('加载房间失败', error)
+        }
+      }
+      
+      if (formData.spot_id && spots.length === 0 && formData.room_id) {
+        try {
+          const data = await apiRequest<any[]>(`/rooms/${formData.room_id}/spots`)
+          setSpots(data)
+        } catch (error) {
+          console.error('加载位置失败', error)
+        }
+      }
+    }
+    
+    if (formData.area_id || formData.room_id || formData.spot_id) {
+      loadInitialLocationData()
+    }
+  }, [formData.area_id, formData.room_id, formData.spot_id, areas.length, rooms.length, spots.length])
   
   // 当选择区域时加载房间
   useEffect(() => {
@@ -132,6 +203,66 @@ export default function AddItem() {
     
     fetchSpots()
   }, [formData.room_id])
+  
+  // 检查位置数据是否正在加载
+  const isLocationLoading = useCallback(() => {
+    if (formData.area_id && areas.length === 0) return true;
+    if (formData.room_id && rooms.length === 0) return true;
+    if (formData.spot_id && spots.length === 0) return true;
+    return false;
+  }, [formData.area_id, formData.room_id, formData.spot_id, areas.length, rooms.length, spots.length]);
+  
+  // 当位置信息变化时，更新位置路径显示
+  useEffect(() => {
+    const updateLocationPath = async () => {
+      let path = '';
+      
+      // 有区域ID
+      if (formData.area_id && areas.length > 0) {
+        const area = areas.find(a => a.id.toString() === formData.area_id);
+        if (area) {
+          path = area.name;
+          
+          // 有房间ID
+          if (formData.room_id && rooms.length > 0) {
+            const room = rooms.find(r => r.id.toString() === formData.room_id);
+            if (room) {
+              path += ` > ${room.name}`;
+              
+              // 有具体位置ID
+              if (formData.spot_id && spots.length > 0) {
+                const spot = spots.find(s => s.id.toString() === formData.spot_id);
+                if (spot) {
+                  path += ` > ${spot.name}`;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // 如果构建了路径，更新显示
+      if (path) {
+        setLocationPath(path);
+        
+        // 设置选中的位置类型
+        if (formData.spot_id && spots.length > 0) {
+          setSelectedLocation({ type: 'spot', id: Number(formData.spot_id) });
+        } else if (formData.room_id && rooms.length > 0) {
+          setSelectedLocation({ type: 'room', id: Number(formData.room_id) });
+        } else if (formData.area_id && areas.length > 0) {
+          setSelectedLocation({ type: 'area', id: Number(formData.area_id) });
+        }
+      } else if (!formData.area_id && !formData.room_id && !formData.spot_id) {
+        // 如果没有任何位置ID，清空路径
+        setLocationPath('');
+        setSelectedLocation(undefined);
+      }
+      // 注意：如果有位置ID但没有构建路径，可能是因为数据还未加载完成，保留原来的路径不变
+    };
+    
+    updateLocationPath();
+  }, [formData.area_id, formData.room_id, formData.spot_id, areas, rooms, spots]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -502,11 +633,36 @@ export default function AddItem() {
                   <Label className="mb-2 block">存放位置</Label>
                   <LocationTreeSelect 
                     onSelect={handleLocationSelect}
+                    selectedLocation={
+                      formData.spot_id 
+                        ? { type: 'spot', id: Number(formData.spot_id) }
+                        : formData.room_id 
+                          ? { type: 'room', id: Number(formData.room_id) }
+                          : formData.area_id 
+                            ? { type: 'area', id: Number(formData.area_id) }
+                            : undefined
+                    }
                   />
-                  {locationPath && (
+                  {locationPath ? (
                     <p className="text-sm text-muted-foreground mt-2">
                       {locationPath}
                     </p>
+                  ) : (
+                    isLocationLoading() ? (
+                      <p className="text-sm text-amber-500 mt-2">
+                        位置信息加载中...
+                      </p>
+                    ) : (
+                      formData.area_id || formData.room_id || formData.spot_id ? (
+                        <p className="text-sm text-orange-500 mt-2">
+                          位置数据不完整，请重新选择
+                        </p>
+                      ) : (
+                        <p className="text-sm text-muted-foreground mt-2">
+                          未指定位置
+                        </p>
+                      )
+                    )
                   )}
                 </div>
               </CardContent>
