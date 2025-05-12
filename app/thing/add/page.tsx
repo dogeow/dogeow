@@ -319,36 +319,7 @@ export default function AddItem() {
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
-                  <div className="space-y-2" style={{ width: 80 }}>
-                    <Label htmlFor="quantity">数量</Label>
-                    <Input
-                      id="quantity"
-                      name="quantity"
-                      type="number"
-                      min="1"
-                      value={formData.quantity}
-                      onChange={handleInputChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="status">状态</Label>
-                    <Select
-                      value={formData.status}
-                      onValueChange={(value) => handleSelectChange('status', value)}
-                    >
-                      <SelectTrigger id="status">
-                        <SelectValue placeholder="选择状态" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">正常</SelectItem>
-                        <SelectItem value="inactive">闲置</SelectItem>
-                        <SelectItem value="expired">已过期</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
+                <div className="space-y-2">
                     <Label htmlFor="category_id">分类</Label>
                     <Select
                       value={formData.category_id}
@@ -367,8 +338,49 @@ export default function AddItem() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
+                  <div className="space-y-2" style={{ width: 80 }}>
+                    <Label htmlFor="quantity">数量</Label>
+                    <Input
+                      id="quantity"
+                      name="quantity"
+                      type="number"
+                      min="1"
+                      value={formData.quantity}
+                      onChange={handleInputChange}
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
                   <div className="space-y-2">
+                    <Label htmlFor="status">状态</Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(value) => handleSelectChange('status', value)}
+                    >
+                      <SelectTrigger id="status">
+                        <SelectValue placeholder="选择状态" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">正常</SelectItem>
+                        <SelectItem value="inactive">闲置</SelectItem>
+                        <SelectItem value="expired">已过期</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="is_public" className="flex items-center space-x-2">
+                      <Switch
+                        id="is_public"
+                        checked={formData.is_public}
+                        onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
+                      />
+                      <span>公开物品</span>
+                    </Label>
+                  </div>
+                </div>
+                <div className="space-y-2">
                     <Label htmlFor="tags" className="flex justify-between items-center">
                       <span>标签</span>
                       <Button 
@@ -419,18 +431,6 @@ export default function AddItem() {
                       })}
                     </div>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="is_public" className="flex items-center space-x-2">
-                      <Switch
-                        id="is_public"
-                        checked={formData.is_public}
-                        onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
-                      />
-                      <span>公开物品</span>
-                    </Label>
-                  </div>
-                </div>
               </CardContent>
             </Card>
             
