@@ -19,16 +19,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import LocationTreeSelect from '../components/LocationTreeSelect'
 import { apiRequest } from '@/utils/api'
 import ImageUploader from '../components/ImageUploader'
-import {
-  MultiSelect,
-  MultiSelectContent,
-  MultiSelectItem,
-  MultiSelectLabel,
-  MultiSelectTrigger,
-  MultiSelectValue,
-} from "@/components/ui/multi-select"
 import { Badge } from "@/components/ui/badge"
 import CreateTagDialog from '../components/CreateTagDialog'
+import * as PopoverPrimitive from "@radix-ui/react-popover"
+import * as SelectPrimitive from "@radix-ui/react-select"
 
 // 图片上传类型
 type UploadedImage = {
@@ -296,39 +290,40 @@ export default function AddItem() {
                 <CardDescription>填写物品的基本信息</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">名称</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="description">描述</Label>
-                  <Textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={4}
-                  />
-                </div>
-                
-                <div className="flex flex-wrap gap-2">
-                <div className="space-y-2">
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">名称</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      className="h-10"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="description">描述</Label>
+                    <Textarea
+                      id="description"
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows={4}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label htmlFor="category_id">分类</Label>
                     <Select
                       value={formData.category_id}
                       onValueChange={(value) => handleSelectChange('category_id', value)}
                     >
-                      <SelectTrigger id="category_id">
+                      <SelectTrigger id="category_id" className="w-full h-10">
                         <SelectValue placeholder="选择分类" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" align="start" sideOffset={4} avoidCollisions={false} className="z-[100]">
                         <SelectItem value="none">未分类</SelectItem>
                         {categories.map((category) => (
                           <SelectItem key={category.id} value={category.id.toString()}>
@@ -339,29 +334,29 @@ export default function AddItem() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2" style={{ width: 80 }}>
+                  <div className="space-y-2">
                     <Label htmlFor="quantity">数量</Label>
                     <Input
                       id="quantity"
                       name="quantity"
                       type="number"
                       min="1"
+                      className="h-10"
                       value={formData.quantity}
                       onChange={handleInputChange}
                     />
                   </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
+                  
                   <div className="space-y-2">
                     <Label htmlFor="status">状态</Label>
                     <Select
                       value={formData.status}
                       onValueChange={(value) => handleSelectChange('status', value)}
                     >
-                      <SelectTrigger id="status">
+                      <SelectTrigger id="status" className="w-full h-10">
                         <SelectValue placeholder="选择状态" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent position="popper" align="start" sideOffset={4} avoidCollisions={false} className="z-[100]">
                         <SelectItem value="active">正常</SelectItem>
                         <SelectItem value="inactive">闲置</SelectItem>
                         <SelectItem value="expired">已过期</SelectItem>
@@ -370,19 +365,28 @@ export default function AddItem() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="is_public" className="flex items-center space-x-2">
+                    <Label htmlFor="is_public">公开物品</Label>
+                    <div className="h-10 flex items-center">
                       <Switch
                         id="is_public"
                         checked={formData.is_public}
                         onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
                       />
-                      <span>公开物品</span>
-                    </Label>
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="tags" className="flex justify-between items-center">
-                      <span>标签</span>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="images">物品图片</Label>
+                    <ImageUploader 
+                      onImagesChange={handleUploadedImagesChange}
+                      existingImages={[]}
+                      maxImages={10}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center mb-2">
+                      <Label htmlFor="tags">标签</Label>
                       <Button 
                         type="button" 
                         variant="outline" 
@@ -394,59 +398,60 @@ export default function AddItem() {
                         <Tag className="h-3.5 w-3.5 mr-1" />
                         新建标签
                       </Button>
-                    </Label>
-                    <MultiSelect
-                      value={selectedTags}
-                      onValueChange={setSelectedTags}
-                      closeOnSelect={false}
-                    >
-                      <MultiSelectTrigger>
-                        <MultiSelectValue placeholder="选择标签" />
-                      </MultiSelectTrigger>
-                      <MultiSelectContent>
-                        {tags.map((tag) => (
-                          <MultiSelectItem key={tag.id} value={tag.id.toString()}>
-                            <Badge 
-                              style={getTagStyle(tag.color)}
-                              className="mr-2 py-0.5 px-2 my-0.5"
-                            >
-                              {tag.name}
-                            </Badge>
-                          </MultiSelectItem>
-                        ))}
-                      </MultiSelectContent>
-                    </MultiSelect>
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {selectedTags.map(tagId => {
-                        const tag = tags.find(t => t.id.toString() === tagId);
-                        return tag ? (
+                    </div>
+                    
+                    <div>
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {selectedTags.length > 0 ? (
+                          selectedTags.map(tagId => {
+                            const tag = tags.find(t => t.id.toString() === tagId);
+                            return tag ? (
+                              <Badge 
+                                key={tag.id} 
+                                style={getTagStyle(tag.color)}
+                                className="py-0.5 px-2 my-0.5 flex items-center"
+                              >
+                                {tag.name}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
+                                  onClick={() => setSelectedTags(prev => prev.filter(id => id !== tagId))}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            ) : null;
+                          })
+                        ) : (
+                          <div className="text-sm text-muted-foreground">未选择标签</div>
+                        )}
+                      </div>
+                      
+                      <div className="text-sm font-medium mb-2">可用标签：</div>
+                      <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto p-1">
+                        {tags.map(tag => (
                           <Badge 
                             key={tag.id} 
                             style={getTagStyle(tag.color)}
-                            className="py-0.5 px-2 my-0.5"
+                            className={`py-0.5 px-2 my-0.5 cursor-pointer transition-opacity ${
+                              selectedTags.includes(tag.id.toString()) ? 'opacity-50' : ''
+                            }`}
+                            onClick={() => {
+                              if (selectedTags.includes(tag.id.toString())) {
+                                setSelectedTags(prev => prev.filter(id => id !== tag.id.toString()));
+                              } else {
+                                setSelectedTags(prev => [...prev, tag.id.toString()]);
+                              }
+                            }}
                           >
                             {tag.name}
                           </Badge>
-                        ) : null;
-                      })}
+                        ))}
+                      </div>
                     </div>
                   </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>图片</CardTitle>
-                <CardDescription>上传物品的图片</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Label htmlFor="images">物品图片</Label>
-                  <ImageUploader 
-                    onImagesChange={handleUploadedImagesChange}
-                    existingImages={[]}
-                    maxImages={10}
-                  />
                 </div>
               </CardContent>
             </Card>
