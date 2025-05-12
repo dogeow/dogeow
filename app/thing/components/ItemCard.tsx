@@ -180,7 +180,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     }
     
     // 如果没有任何位置信息
-    return <p className="text-xs text-muted-foreground">未指定位置</p>;
+    return <p className="text-xs text-muted-foreground"></p>;
   }
   
   // 构建正确的图片URL
