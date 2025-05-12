@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
-import { Upload, X, ImageIcon, Wifi, WifiOff } from "lucide-react"
+import { Upload, X, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
 import { API_BASE_URL } from '@/utils/api'
@@ -27,63 +27,6 @@ export default function ImageUploader({
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>(existingImages)
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
-  
-  // 检测是否为iOS设备
-  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)
-  
-  // 在组件开始处添加网络状态检测
-  const [networkInfo, setNetworkInfo] = useState<{
-    online: boolean;
-    effectiveType?: string;
-    downlink?: number;
-  }>({
-    online: typeof navigator !== 'undefined' ? navigator.onLine : true
-  });
-  
-  // 检测网络状态变化
-  useEffect(() => {
-    const handleOnline = () => setNetworkInfo(prev => ({ ...prev, online: true }));
-    const handleOffline = () => setNetworkInfo(prev => ({ ...prev, online: false }));
-    
-    const updateConnectionInfo = () => {
-      if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-        const connection = (navigator as any).connection;
-        if (connection) {
-          setNetworkInfo({
-            online: navigator.onLine,
-            effectiveType: connection.effectiveType,
-            downlink: connection.downlink
-          });
-        }
-      }
-    };
-    
-    // 初始化网络信息
-    updateConnectionInfo();
-    
-    // 添加事件监听
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-    
-    if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-      const connection = (navigator as any).connection;
-      if (connection) {
-        connection.addEventListener('change', updateConnectionInfo);
-      }
-    }
-    
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      
-      if (typeof navigator !== 'undefined' && 'connection' in navigator) {
-        const connection = (navigator as any).connection;
-        if (connection) {
-          connection.removeEventListener('change', updateConnectionInfo);
-        }
-      }
-    };
-  }, []);
   
   // 验证文件并处理上传
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,121 +60,17 @@ export default function ImageUploader({
         return false
       }
       
+      // 大文件提示
+      if (file.size > 3 * 1024 * 1024) { // 3MB
+        toast.warning(`图片较大 (${(file.size / (1024 * 1024)).toFixed(1)}MB)，可能导致上传较慢`)
+      }
+      
       return true
     })
     
     if (validFiles.length === 0) return
     
     setIsUploading(true)
-    
-    // 使用canvas转换图片格式，解决兼容性问题
-    const convertImageViaCanvas = (file: File): Promise<File> => {
-      return new Promise((resolve, reject) => {
-        // 创建文件阅读器
-        const reader = new FileReader()
-        
-        reader.onload = (event) => {
-          if (!event.target?.result) {
-            return reject(new Error('读取文件失败'))
-          }
-          
-          // 创建图片元素
-          const img = document.createElement('img')
-          
-          img.onload = () => {
-            try {
-              // 创建canvas
-              const canvas = document.createElement('canvas')
-              // 获取上下文前先设置尺寸限制 - 提高限制以适应苹果高像素相机
-              const MAX_WIDTH = 5000
-              const MAX_HEIGHT = 5000
-              
-              let width = img.width
-              let height = img.height
-              
-              // 计算缩放比例，确保图片尺寸不超过限制
-              if (width > height) {
-                if (width > MAX_WIDTH) {
-                  height = Math.round(height * (MAX_WIDTH / width))
-                  width = MAX_WIDTH
-                }
-              } else {
-                if (height > MAX_HEIGHT) {
-                  width = Math.round(width * (MAX_HEIGHT / height))
-                  height = MAX_HEIGHT
-                }
-              }
-              
-              // 设置canvas尺寸
-              canvas.width = width
-              canvas.height = height
-              
-              const ctx = canvas.getContext('2d')
-              
-              if (!ctx) {
-                return reject(new Error('创建图片上下文失败'))
-              }
-              
-              // 清除画布
-              ctx.clearRect(0, 0, width, height)
-              
-              // 在canvas上绘制图片
-              ctx.drawImage(img, 0, 0, width, height)
-              
-              // 将canvas内容转换为Blob
-              canvas.toBlob((blob) => {
-                if (!blob) {
-                  const error = new Error('转换图片格式失败')
-                  logErrorToServer('canvas_conversion_error', '转换图片格式失败', {
-                    imageWidth: img.width,
-                    imageHeight: img.height,
-                    canvasWidth: width,
-                    canvasHeight: height,
-                    fileType: file.type,
-                    fileName: file.name,
-                    fileSize: file.size
-                  })
-                  return reject(error)
-                }
-                
-                // 创建新文件
-                const newFile = new File(
-                  [blob], 
-                  `photo_${Date.now()}.jpg`, 
-                  { type: 'image/jpeg', lastModified: Date.now() }
-                )
-                
-                resolve(newFile)
-              }, 'image/jpeg', 0.85) // 使用85%的质量
-            } catch (canvasError) {
-              console.error('Canvas处理错误:', canvasError)
-              logErrorToServer('canvas_processing_error', canvasError instanceof Error ? canvasError.message : 'Canvas处理未知错误', {
-                fileType: file.type,
-                fileName: file.name,
-                fileSize: file.size,
-                imageWidth: img.width,
-                imageHeight: img.height
-              })
-              reject(canvasError)
-            }
-          }
-          
-          img.onerror = () => {
-            reject(new Error('加载图片失败'))
-          }
-          
-          // 设置图片源
-          img.src = event.target.result as string
-        }
-        
-        reader.onerror = () => {
-          reject(new Error('读取文件失败'))
-        }
-        
-        // 以数据URL的形式读取文件
-        reader.readAsDataURL(file)
-      })
-    }
     
     const processFileBatch = async (filesToProcess: File[]): Promise<UploadedImage[]> => {
       const results: UploadedImage[] = []
@@ -264,131 +103,19 @@ export default function ImageUploader({
         // 显示处理中提示
         const toastId = toast.loading(`正在处理 ${file.name}...`)
         
-        // 检查网络状态
-        if (!networkInfo.online) {
-          toast.error('网络连接已断开，请检查网络后重试', { id: toastId })
-          throw new Error('网络连接已断开')
-        }
-        
-        // 对于iOS设备，如果网络状况不好，提示用户
-        if (isIOS && networkInfo.effectiveType && 
-            (networkInfo.effectiveType === 'slow-2g' || networkInfo.effectiveType === '2g')) {
-          toast.loading('您的网络连接较慢，上传可能需要较长时间', { id: toastId })
-        }
-        
-        // 为拍照文件创建副本以规避一些移动设备问题
-        let fileToUpload: File
-        
-        // 尝试检测是否为移动设备拍照
-        const isCapturedPhoto = file.name.includes('image') && file.name.includes('.') === false
-        
         // 记录文件信息
         logErrorToServer('file_processing_start', '开始处理文件', {
           fileName: file.name,
           fileType: file.type,
-          fileSize: file.size,
-          isIOS: isIOS,
-          isCapturedPhoto: isCapturedPhoto,
-          networkType: networkInfo.effectiveType || 'unknown',
-          downlink: networkInfo.downlink || 0
-        })
-        
-        if (isIOS || isCapturedPhoto || file.type === 'image/jpeg' || file.name.endsWith('.heic')) {
-          // 处理拍照文件，通过canvas转换
-          try {
-            fileToUpload = await convertImageViaCanvas(file)
-            
-            console.log('图片通过Canvas转换成功:', { 
-              originalName: file.name,
-              originalType: file.type,
-              newName: fileToUpload.name,
-              newType: fileToUpload.type,
-              size: fileToUpload.size
-            })
-          } catch (error) {
-            console.error('通过Canvas转换图片失败:', error)
-            
-            // 记录转换失败到服务器
-            logErrorToServer('canvas_conversion_failure', error instanceof Error ? error.message : '通过Canvas转换图片失败',  {
-              fileName: file.name,
-              fileType: file.type,
-              fileSize: file.size,
-              isIOS: isIOS,
-              isCapturedPhoto: isCapturedPhoto
-            })
-            
-            // 失败后尝试使用Blob方法
-            try {
-              // 使用Blob创建副本
-              const blob = await file.arrayBuffer().then(buffer => new Blob([buffer], { type: 'image/jpeg' }))
-              
-              // 使用随机文件名
-              const randomName = `photo_${Date.now()}.jpg`
-              
-              // 创建File副本
-              fileToUpload = new File([blob], randomName, { 
-                type: 'image/jpeg',
-                lastModified: Date.now() 
-              })
-              
-              console.log('通过Blob方法创建文件副本成功:', { 
-                originalName: file.name,
-                originalType: file.type,
-                newName: fileToUpload.name,
-                newType: fileToUpload.type,
-                size: fileToUpload.size
-              })
-            } catch (blobError) {
-              console.error('通过Blob创建文件副本失败:', blobError)
-              
-              // 记录Blob处理失败到服务器
-              logErrorToServer('blob_processing_error', blobError instanceof Error ? blobError.message : '通过Blob创建文件副本失败', {
-                fileName: file.name,
-                fileType: file.type,
-                fileSize: file.size,
-                isIOS: isIOS,
-                isCapturedPhoto: isCapturedPhoto
-              })
-              
-              fileToUpload = file // 所有方法失败，使用原文件
-            }
-          }
-        } else {
-          // 非拍照图片直接使用
-          fileToUpload = file
-        }
-        
-        // 记录处理后的文件信息
-        logErrorToServer('file_processing_complete', '文件处理完成', {
-          originalFileName: file.name,
-          processedFileName: fileToUpload.name,
-          originalSize: file.size,
-          processedSize: fileToUpload.size,
-          originalType: file.type,
-          processedType: fileToUpload.type
+          fileSize: file.size
         })
         
         // 创建FormData
         const formData = new FormData()
-        formData.append('image', fileToUpload)
+        formData.append('image', file)
         
         // 更新提示信息
-        toast.loading(`正在上传 ${fileToUpload.name}...`, { id: toastId })
-        
-        // 对于iOS设备，针对"Load failed"问题的特殊处理
-        if (isIOS) {
-          // 分块处理大文件 - 只对超过1MB的文件进行分块处理
-          if (fileToUpload.size > 1024 * 1024) {
-            const chunkSize = 512 * 1024 // 512KB 块大小
-            const chunks = Math.ceil(fileToUpload.size / chunkSize)
-            
-            // 放弃分块上传，直接返回一个错误，提示用户选择较小的图片
-            if (chunks > 4) { // 超过2MB
-              toast.error(`图片过大 (${(fileToUpload.size / (1024 * 1024)).toFixed(1)}MB)，在iOS设备上可能导致上传失败。请选择较小的图片。`, { id: toastId })
-              throw new Error('iOS设备上传图片大小限制')
-            }
-          }
-        }
+        toast.loading(`正在上传 ${file.name}...`, { id: toastId })
         
         // 添加重试逻辑
         let retries = 0
@@ -397,12 +124,6 @@ export default function ImageUploader({
         
         while (retries <= maxRetries && !result) {
           try {
-            // 检查网络状态
-            if (!networkInfo.online) {
-              toast.error('网络连接已断开，请检查网络后重试', { id: toastId })
-              throw new Error('网络连接已断开')
-            }
-            
             // 调用API上传图片
             result = await apiRequest<UploadedImage>(`/items/upload-temp-image`, 'POST', formData)
             break
@@ -412,42 +133,20 @@ export default function ImageUploader({
             
             // 记录上传失败到服务器
             logErrorToServer('api_upload_retry', `上传尝试 ${retries}/${maxRetries} 失败`, {
-              fileName: fileToUpload.name,
-              fileType: fileToUpload.type,
-              fileSize: fileToUpload.size,
+              fileName: file.name,
+              fileType: file.type,
+              fileSize: file.size,
               retryCount: retries,
               maxRetries: maxRetries,
-              error: uploadError instanceof Error ? uploadError.message : String(uploadError),
-              networkInfo
+              error: uploadError instanceof Error ? uploadError.message : String(uploadError)
             })
-            
-            // 检查是否为iOS特定的"Load failed"错误
-            const errorMessage = uploadError instanceof Error ? uploadError.message : String(uploadError)
-            if (isIOS && errorMessage.includes('Load failed')) {
-              // iOS特有的错误，提供更有帮助的错误消息
-              const suggestion = 
-                networkInfo.effectiveType === 'slow-2g' || networkInfo.effectiveType === '2g' 
-                  ? '您的网络连接较慢，建议使用WiFi网络' 
-                  : '这可能是iOS设备限制导致的，请尝试使用较小的图片'
-              
-              toast.error(`上传失败: ${suggestion}`, { id: toastId })
-              
-              // 如果图片太大，建议放弃进一步尝试
-              if (fileToUpload.size > 3 * 1024 * 1024) { // 3MB
-                throw new Error(`图片太大 (${(fileToUpload.size / (1024 * 1024)).toFixed(1)}MB)，建议选择较小的图片`)
-              }
-            }
             
             if (retries <= maxRetries) {
               toast.loading(`上传失败，正在重试 (${retries}/${maxRetries})...`, { id: toastId })
               // 等待一小段时间再重试
               await new Promise(resolve => setTimeout(resolve, 1000))
             } else {
-              if (isIOS) {
-                toast.error('上传多次失败，iOS设备可能需要更稳定的网络连接或较小的图片', { id: toastId })
-              } else {
-                toast.error('上传失败，请检查网络连接后重试', { id: toastId })
-              }
+              toast.error('上传失败，请检查网络连接后重试', { id: toastId })
               throw uploadError
             }
           }
@@ -467,8 +166,7 @@ export default function ImageUploader({
           fileName: file.name,
           fileType: file.type,
           fileSize: file.size,
-          error: error instanceof Error ? error.message : String(error),
-          networkInfo
+          error: error instanceof Error ? error.message : String(error)
         })
         
         toast.error(error instanceof Error ? error.message : '上传图片失败，请重试')
@@ -483,7 +181,7 @@ export default function ImageUploader({
       // 更新上传的图片列表
       setUploadedImages(prev => [...prev, ...newImages])
       
-      // 在iOS上，重置input元素以确保相同文件可以重复上传
+      // 重置input元素以确保相同文件可以重复上传
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
@@ -579,26 +277,6 @@ export default function ImageUploader({
             disabled={isUploading || uploadedImages.length >= maxImages}
           />
         </label>
-        
-        {/* 网络状态指示器 */}
-        {isIOS && (
-          <div className="flex items-center text-xs text-muted-foreground ml-2">
-            {networkInfo.online ? (
-              <Wifi className="h-3 w-3 mr-1 text-green-500" />
-            ) : (
-              <WifiOff className="h-3 w-3 mr-1 text-red-500" />
-            )}
-            {networkInfo.effectiveType && (
-              <span className={`ml-1 ${
-                networkInfo.effectiveType === '4g' ? 'text-green-500' : 
-                networkInfo.effectiveType === '3g' ? 'text-yellow-500' : 
-                'text-red-500'
-              }`}>
-                {networkInfo.effectiveType.toUpperCase()}
-              </span>
-            )}
-          </div>
-        )}
         
         {uploadedImages.length > 0 && (
           <div className="flex flex-wrap gap-2">

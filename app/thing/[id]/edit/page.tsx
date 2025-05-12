@@ -135,7 +135,7 @@ export default function EditItem() {
       thumbnail_url: img.thumbnail_url || `${API_BASE_URL.replace('/api', '')}/storage/${img.thumbnail_path || ''}`
     }))
   }, [])
-
+  
   // 加载物品数据
   useEffect(() => {
     const loadItem = async () => {
