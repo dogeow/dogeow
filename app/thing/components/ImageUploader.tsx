@@ -232,6 +232,7 @@ export default function ImageUploader({
               path: image.path
             })
           }}
+          unoptimized={true} // 防止Next.js优化处理图片URL
         />
       </div>
       <Button

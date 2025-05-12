@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/multi-select"
 import { Badge } from "@/components/ui/badge"
 import CreateTagDialog from '../components/CreateTagDialog'
-import QuickCreateTag from '../components/QuickCreateTag'
 
 // 图片上传类型
 type UploadedImage = {
@@ -246,11 +245,11 @@ export default function AddItem() {
         room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         image_paths: uploadedImages.map(img => img.path),
-        tags: selectedTags.map(id => Number(id))
+        tags: selectedTags.length > 0 ? selectedTags.map(id => Number(id)) : []
       }
       
       // 提交请求
-      const toast_id = toast.loading("正在创建物品...");
+      const toast_id = toast.loading("正在创建物品...")
       const newItem = await createItem(itemData)
       
       toast.success("物品创建成功", { id: toast_id })
@@ -319,8 +318,8 @@ export default function AddItem() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <div className="space-y-2" style={{ width: 80 }}>
                     <Label htmlFor="quantity">数量</Label>
                     <Input
                       id="quantity"
@@ -418,11 +417,6 @@ export default function AddItem() {
                           </Badge>
                         ) : null;
                       })}
-                    </div>
-                    
-                    <div className="mt-3 pt-2 border-t">
-                      <div className="text-xs text-muted-foreground mb-2">快速创建标签:</div>
-                      <QuickCreateTag onTagCreated={handleTagCreated} />
                     </div>
                   </div>
                   

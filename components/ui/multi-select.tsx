@@ -234,8 +234,14 @@ export function MultiSelectContent({
   ...props
 }: React.ComponentPropsWithoutRef<typeof PopoverContent>) {
   return (
-    <PopoverContent className={cn("p-0", className)} {...props}>
-      {children}
+    <PopoverContent 
+      className={cn("p-0 w-[var(--radix-popover-trigger-width)]", className)} 
+      align="start"
+      {...props}
+    >
+      <div className="max-h-[300px] overflow-y-auto">
+        {children}
+      </div>
     </PopoverContent>
   )
 }

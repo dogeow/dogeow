@@ -281,7 +281,7 @@ export default function EditItem() {
     setLoading(true)
     
     try {
-      // 准备数据
+      // 准备提交数据
       const updateData: any = {
         ...formData,
         purchase_date: formData.purchase_date ? format(formData.purchase_date, 'yyyy-MM-dd') : null,
@@ -293,7 +293,7 @@ export default function EditItem() {
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
         // 提交时将选中的标签ID转换为数字
-        tags: selectedTags.map(id => Number(id))
+        tags: selectedTags.length > 0 ? selectedTags.map(id => Number(id)) : []
       }
       
       // 提交更新

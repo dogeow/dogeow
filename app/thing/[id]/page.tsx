@@ -196,6 +196,7 @@ export default function ItemDetail() {
                         alt={item.name}
                         fill
                         className="object-contain"
+                        unoptimized={true}
                       />
                     </div>
                     

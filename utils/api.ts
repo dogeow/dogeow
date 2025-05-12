@@ -413,9 +413,10 @@ export async function logErrorToServer(
 export const getImageUrl = (path: string) => {
   if (!path) return '';
   
-  // 如果已经是完整URL，则直接返回
+  // 如果已经是完整URL，则直接返回（但需要清理掉错误的参数格式）
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
+    // 移除错误格式的参数，如&w=3D1200&q=3D75
+    return path.replace(/&w=3D\d+&q=3D\d+/g, '');
   }
 
   // 确保path不以斜杠开头
