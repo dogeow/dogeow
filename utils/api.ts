@@ -82,7 +82,35 @@ export async function apiRequest<T>(
   }
   
   try {
-    const response = await fetch(url, options);
+    // 为FormData请求增加超时处理
+    let timeoutId: number | null = null;
+    const isFormDataRequest = data instanceof FormData;
+    
+    // 创建用于取消请求的控制器
+    const controller = new AbortController();
+    options.signal = controller.signal;
+    
+    // 对于图片上传请求使用更长的超时时间
+    const timeoutDuration = isFormDataRequest ? 60000 : 30000; // 60秒用于文件上传，30秒用于普通请求
+    
+    // 创建超时Promise
+    const timeoutPromise = new Promise<Response>((_, reject) => {
+      timeoutId = window.setTimeout(() => {
+        controller.abort();
+        reject(new Error(`请求超时 (${timeoutDuration / 1000}秒)`));
+      }, timeoutDuration);
+    });
+    
+    // 创建fetch Promise
+    const fetchPromise = fetch(url, options);
+    
+    // 使用Promise.race竞争超时
+    const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
+    
+    // 清除超时定时器
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId);
+    }
     
     // 处理401未授权错误
     if (response.status === 401) {
@@ -114,9 +142,71 @@ export async function apiRequest<T>(
       throw new Error(errorMessage);
     }
     
+    // 对于空响应或非JSON响应进行特殊处理
+    const contentType = response.headers.get('content-type');
+    if (response.status === 204 || !contentType || !contentType.includes('application/json')) {
+      // 处理非JSON响应或空响应
+      if (response.status === 204) {
+        return {} as T; // 204 No Content
+      }
+      
+      // 尝试获取响应文本
+      const text = await response.text();
+      console.warn('收到非JSON响应:', {
+        status: response.status,
+        contentType,
+        text: text.substring(0, 100) // 只显示前100个字符
+      });
+      
+      // 尝试将其解析为JSON，如果失败则返回空对象
+      try {
+        return JSON.parse(text) as T;
+      } catch (e) {
+        return {} as T;
+      }
+    }
+    
     return response.json();
   } catch (error) {
-    console.error('API请求错误:', error, '请求URL:', url);
+    // 检查是否为网络错误或跨域错误
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    // 记录详细错误信息
+    console.error('API请求错误:', {
+      url,
+      method,
+      error: errorMessage,
+      isFormData: data instanceof FormData,
+      hasAbortSignal: options.signal instanceof AbortSignal
+    });
+    
+    // 记录特定iOS错误模式
+    if (errorMessage.includes('Load failed') || 
+        errorMessage.includes('network error') || 
+        errorMessage.includes('aborted')) {
+      
+      // 收集错误上下文
+      const errorContext = {
+        url,
+        method,
+        isFormData: data instanceof FormData,
+        userAgent: navigator.userAgent,
+        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
+        connectionType: (navigator as any).connection ? (navigator as any).connection.effectiveType : 'unknown',
+        timestamp: new Date().toISOString()
+      };
+      
+      // 使用自定义函数记录iOS错误
+      if (typeof logErrorToServer === 'function') {
+        logErrorToServer('ios_network_error', `iOS上传错误: ${errorMessage}`, errorContext);
+      }
+      
+      // 为用户提供更友好的错误信息
+      if (/iPad|iPhone|iPod/.test(navigator.userAgent) && data instanceof FormData) {
+        throw new Error('文件上传失败，这可能是由于网络连接问题或iOS设备限制导致的。请尝试：\n1. 使用WiFi网络\n2. 选择较小的图片\n3. 稍后再试');
+      }
+    }
+    
     throw error;
   }
 }
