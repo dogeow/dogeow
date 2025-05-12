@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['127.0.0.1', 'localhost', 'next-api.dogeow.com'],
+    domains: ['127.0.0.1', 'next-api.dogeow.com'],
   },
   async headers() {
     return [

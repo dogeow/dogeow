@@ -239,7 +239,7 @@ export default function AddItem() {
     
     try {
       // 准备提交数据
-      const itemData = {
+      const itemData: any = {
         ...formData,
         category_id: formData.category_id ? Number(formData.category_id) : null,
         area_id: formData.area_id ? Number(formData.area_id) : null,

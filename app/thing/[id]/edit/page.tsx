@@ -282,7 +282,7 @@ export default function EditItem() {
     
     try {
       // 准备数据
-      const updateData = {
+      const updateData: any = {
         ...formData,
         purchase_date: formData.purchase_date ? format(formData.purchase_date, 'yyyy-MM-dd') : null,
         expiry_date: formData.expiry_date ? format(formData.expiry_date, 'yyyy-MM-dd') : null,
@@ -292,6 +292,7 @@ export default function EditItem() {
         room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
+        // 提交时将选中的标签ID转换为数字
         tags: selectedTags.map(id => Number(id))
       }
       
