@@ -407,4 +407,22 @@ export async function logErrorToServer(
     // 如果记录日志失败，只在控制台记录，不抛出异常
     console.error('记录错误日志到服务器失败:', err);
   }
-} 
+}
+
+// 用于构建图片URL的辅助函数
+export const getImageUrl = (path: string) => {
+  if (!path) return '';
+  
+  // 如果已经是完整URL，则直接返回
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+
+  // 确保path不以斜杠开头
+  const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
+  
+  // 使用NEXT_PUBLIC_API_URL作为图片服务器地址
+  const imageBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+  
+  return `${imageBaseUrl}/storage/${normalizedPath}`;
+}; 

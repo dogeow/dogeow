@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Upload, X } from "lucide-react"
+import { ArrowLeft, Upload, X, Plus, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
@@ -19,6 +19,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import LocationTreeSelect from '../components/LocationTreeSelect'
 import { apiRequest } from '@/utils/api'
 import ImageUploader from '../components/ImageUploader'
+import {
+  MultiSelect,
+  MultiSelectContent,
+  MultiSelectItem,
+  MultiSelectLabel,
+  MultiSelectTrigger,
+  MultiSelectValue,
+} from "@/components/ui/multi-select"
+import { Badge } from "@/components/ui/badge"
+import CreateTagDialog from '../components/CreateTagDialog'
+import QuickCreateTag from '../components/QuickCreateTag'
 
 // 图片上传类型
 type UploadedImage = {
@@ -28,14 +39,25 @@ type UploadedImage = {
   thumbnail_url: string;
 }
 
+// 标签类型
+type Tag = {
+  id: number;
+  name: string;
+  color: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function AddItem() {
   const router = useRouter()
-  const { createItem, fetchCategories, categories } = useItemStore()
+  const { createItem, fetchCategories, fetchTags, categories, tags } = useItemStore()
   const [loading, setLoading] = useState(false)
   const [areas, setAreas] = useState<any[]>([])
   const [rooms, setRooms] = useState<any[]>([])
   const [spots, setSpots] = useState<any[]>([])
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [createTagDialogOpen, setCreateTagDialogOpen] = useState(false)
   
   // 表单数据
   const [formData, setFormData] = useState({
@@ -57,11 +79,14 @@ export default function AddItem() {
   const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
   const [locationPath, setLocationPath] = useState<string>('')
   
-  // 加载分类和位置数据
+  // 加载分类、标签和位置数据
   useEffect(() => {
     const loadData = async () => {
       // 加载分类
       await fetchCategories()
+      
+      // 加载标签
+      await fetchTags()
       
       // 加载区域
       try {
@@ -73,7 +98,7 @@ export default function AddItem() {
     }
     
     loadData()
-  }, [fetchCategories])
+  }, [fetchCategories, fetchTags])
   
   // 当选择区域时加载房间
   useEffect(() => {
@@ -148,6 +173,24 @@ export default function AddItem() {
     setUploadedImages(images)
   }
   
+  // 获取标签样式
+  const getTagStyle = (color: string = "#3b82f6") => {
+    return {
+      backgroundColor: color,
+      color: isLightColor(color) ? "#000" : "#fff"
+    }
+  }
+
+  // 判断颜色是否为浅色
+  const isLightColor = (color: string): boolean => {
+    const hex = color.replace("#", "")
+    const r = parseInt(hex.substr(0, 2), 16)
+    const g = parseInt(hex.substr(2, 2), 16)
+    const b = parseInt(hex.substr(4, 2), 16)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000
+    return brightness > 155
+  }
+  
   // 处理位置选择
   const handleLocationSelect = (type: 'area' | 'room' | 'spot', id: number, fullPath: string) => {
     setSelectedLocation({ type, id })
@@ -203,6 +246,7 @@ export default function AddItem() {
         room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         image_paths: uploadedImages.map(img => img.path),
+        tags: selectedTags.map(id => Number(id))
       }
       
       // 提交请求
@@ -217,6 +261,15 @@ export default function AddItem() {
     } finally {
       setLoading(false)
     }
+  }
+  
+  // 处理新创建的标签
+  const handleTagCreated = (tag: any) => {
+    // 刷新标签列表
+    fetchTags()
+    
+    // 将新创建的标签添加到选中的标签中
+    setSelectedTags(prev => [...prev, tag.id.toString()])
   }
   
   return (
@@ -317,6 +370,63 @@ export default function AddItem() {
                   </div>
                   
                   <div className="space-y-2">
+                    <Label htmlFor="tags" className="flex justify-between items-center">
+                      <span>标签</span>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-7 px-2"
+                        onClick={() => setCreateTagDialogOpen(true)}
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1" />
+                        <Tag className="h-3.5 w-3.5 mr-1" />
+                        新建标签
+                      </Button>
+                    </Label>
+                    <MultiSelect
+                      value={selectedTags}
+                      onValueChange={setSelectedTags}
+                      closeOnSelect={false}
+                    >
+                      <MultiSelectTrigger>
+                        <MultiSelectValue placeholder="选择标签" />
+                      </MultiSelectTrigger>
+                      <MultiSelectContent>
+                        {tags.map((tag) => (
+                          <MultiSelectItem key={tag.id} value={tag.id.toString()}>
+                            <Badge 
+                              style={getTagStyle(tag.color)}
+                              className="mr-2 py-0.5 px-2 my-0.5"
+                            >
+                              {tag.name}
+                            </Badge>
+                          </MultiSelectItem>
+                        ))}
+                      </MultiSelectContent>
+                    </MultiSelect>
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {selectedTags.map(tagId => {
+                        const tag = tags.find(t => t.id.toString() === tagId);
+                        return tag ? (
+                          <Badge 
+                            key={tag.id} 
+                            style={getTagStyle(tag.color)}
+                            className="py-0.5 px-2 my-0.5"
+                          >
+                            {tag.name}
+                          </Badge>
+                        ) : null;
+                      })}
+                    </div>
+                    
+                    <div className="mt-3 pt-2 border-t">
+                      <div className="text-xs text-muted-foreground mb-2">快速创建标签:</div>
+                      <QuickCreateTag onTagCreated={handleTagCreated} />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
                     <Label htmlFor="is_public" className="flex items-center space-x-2">
                       <Switch
                         id="is_public"
@@ -382,69 +492,42 @@ export default function AddItem() {
                       type="number"
                       step="0.01"
                       min="0"
-                      value={formData.purchase_price === null ? '' : formData.purchase_price}
+                      value={formData.purchase_price !== null ? formData.purchase_price : ''}
                       onChange={handleInputChange}
+                      placeholder="0.00"
                     />
                   </div>
+                </div>
+                
+                <div className="mt-6">
+                  <Label className="mb-2 block">存放位置</Label>
+                  <LocationTreeSelect 
+                    onSelect={handleLocationSelect}
+                  />
+                  {locationPath && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      {locationPath}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader>
-                <CardTitle>存放位置</CardTitle>
-                <CardDescription>设置物品的存放位置</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Label>区域</Label>
-                    <div className="text-sm font-medium mt-1">
-                      {formData.area_id ? areas.find(a => a.id.toString() === formData.area_id)?.name || '未选择' : '未选择'}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>房间</Label>
-                    <div className="text-sm font-medium mt-1">
-                      {formData.room_id ? rooms.find(r => r.id.toString() === formData.room_id)?.name || '未选择' : '未选择'}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>具体位置</Label>
-                    <div className="text-sm font-medium mt-1">
-                      {formData.spot_id ? spots.find(s => s.id.toString() === formData.spot_id)?.name || '未选择' : '未选择'}
-                    </div>
-                  </div>
-                </div>
-                
-                <LocationTreeSelect 
-                  onSelect={handleLocationSelect}
-                  selectedLocation={selectedLocation}
-                />
-                
-                {locationPath && (
-                  <div className="text-xs text-muted-foreground">
-                    当前选择: {locationPath}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="flex justify-end">
+              <Button type="submit" size="lg" disabled={loading}>
+                {loading ? "处理中..." : "创建物品"}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
-        
-        <div className="flex justify-end gap-2 sticky bottom-4 bg-background p-4 rounded-lg shadow-lg mt-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push('/thing')}
-          >
-            取消
-          </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? '保存中...' : '保存物品'}
-          </Button>
-        </div>
       </form>
+
+      {/* 创建标签对话框 */}
+      <CreateTagDialog 
+        open={createTagDialogOpen} 
+        onOpenChange={setCreateTagDialogOpen} 
+        onTagCreated={handleTagCreated}
+      />
     </div>
   )
 } 

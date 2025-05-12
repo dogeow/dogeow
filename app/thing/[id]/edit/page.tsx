@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Upload, X } from "lucide-react"
+import { ArrowLeft, Upload, X, Plus, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
@@ -21,6 +21,17 @@ import LocationTreeSelect from '../../components/LocationTreeSelect'
 import { useAreas, useRooms, useSpots, useItem } from '@/utils/api'
 import { apiRequest } from '@/utils/api'
 import ImageUploader from '../../components/ImageUploader'
+import {
+  MultiSelect,
+  MultiSelectContent,
+  MultiSelectItem,
+  MultiSelectLabel,
+  MultiSelectTrigger,
+  MultiSelectValue,
+} from "@/components/ui/multi-select"
+import { Badge } from "@/components/ui/badge"
+import CreateTagDialog from '../../components/CreateTagDialog'
+import QuickCreateTag from '../../components/QuickCreateTag'
 
 // 定义类型
 interface ItemImage {
@@ -37,6 +48,7 @@ type UploadedImage = {
   thumbnail_path: string;
   url: string;
   thumbnail_url: string;
+  id?: number;
 }
 
 type FormData = {
@@ -62,13 +74,15 @@ type ImagePreview = {
 export default function EditItem() {
   const params = useParams()
   const router = useRouter()
-  const { getItem, updateItem, fetchCategories, categories } = useItemStore()
+  const { getItem, updateItem, fetchCategories, categories, fetchTags, tags } = useItemStore()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [existingImages, setExistingImages] = useState<ItemImage[]>([])
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
   const [locationPath, setLocationPath] = useState<string>('')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [createTagDialogOpen, setCreateTagDialogOpen] = useState(false)
   
   // 使用 SWR hooks 获取数据
   const { data: areas = [], mutate: refreshAreas } = useAreas();
@@ -132,7 +146,8 @@ export default function EditItem() {
       path: img.path || '', 
       thumbnail_path: img.thumbnail_path || '',
       url: img.url || `${API_BASE_URL.replace('/api', '')}/storage/${img.path || ''}`,
-      thumbnail_url: img.thumbnail_url || `${API_BASE_URL.replace('/api', '')}/storage/${img.thumbnail_path || ''}`
+      thumbnail_url: img.thumbnail_url || `${API_BASE_URL.replace('/api', '')}/storage/${img.thumbnail_path || ''}`,
+      id: img.id
     }))
   }, [])
   
@@ -201,6 +216,14 @@ export default function EditItem() {
             setLocationPath(item.spot.room.area.name)
           }
         }
+        
+        // 加载标签
+        await fetchTags()
+        
+        // 如果物品有标签，设置选中的标签
+        if (item.tags && Array.isArray(item.tags)) {
+          setSelectedTags(item.tags.map((tag: any) => tag.id.toString()))
+        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "发生错误，请重试")
       } finally {
@@ -210,7 +233,7 @@ export default function EditItem() {
     
     loadItem()
     refreshAreas()
-  }, [params.id, getItem, fetchCategories, router, loadRooms, loadSpots, refreshAreas, convertExistingImagesToUploadedFormat])
+  }, [params.id, getItem, fetchCategories, router, loadRooms, loadSpots, refreshAreas, convertExistingImagesToUploadedFormat, fetchTags])
   
   // 当选择区域时加载房间
   useEffect(() => {
@@ -257,12 +280,9 @@ export default function EditItem() {
     e.preventDefault()
     setLoading(true)
     
-    // 移除所有现有的toast
-    toast.dismiss()
-    
     try {
-      // 准备提交数据
-      const itemData = {
+      // 准备数据
+      const updateData = {
         ...formData,
         purchase_date: formData.purchase_date ? format(formData.purchase_date, 'yyyy-MM-dd') : null,
         expiry_date: formData.expiry_date ? format(formData.expiry_date, 'yyyy-MM-dd') : null,
@@ -271,31 +291,23 @@ export default function EditItem() {
         area_id: formData.area_id ? Number(formData.area_id) : null,
         room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
-        image_paths: uploadedImages.map(img => img.path), // 使用已上传图片的路径
-        image_ids: existingImages.map(img => img.id), // 保留现有图片ID
-        is_public: Boolean(formData.is_public),
+        image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
+        tags: selectedTags.map(id => Number(id))
       }
       
-      console.log('提交物品数据:', {
-        ...itemData,
-        image_paths: itemData.image_paths,
-      })
+      // 提交更新
+      const toast_id = toast.loading("正在更新物品...")
+      await updateItem(Number(params.id), updateData)
       
-      // 显示上传中提示
-      const toastId = toast.loading('正在保存物品信息...')
-      
-      // 提交数据
-      await updateItem(Number(params.id), itemData);
-      
-      toast.success("物品已成功更新", { id: toastId });
-      router.push(`/thing/${params.id}`);
+      toast.success("物品更新成功", { id: toast_id })
+      router.push(`/thing/${params.id}`)
     } catch (error) {
-      console.error('更新物品失败:', error);
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试");
+      console.error("更新物品失败:", error)
+      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
   
   // 处理位置选择
   const handleLocationSelect = (type: 'area' | 'room' | 'spot', id: number, fullPath: string) => {
@@ -319,7 +331,7 @@ export default function EditItem() {
       
       // 查找该房间所属的区域
       const room = rooms.find(r => r.id === id)
-      if (room?.area_id) {
+      if (room && room.area_id) {
         setFormData(prev => ({ ...prev, area_id: room.area_id.toString() }))
       }
     } else if (type === 'spot') {
@@ -327,22 +339,57 @@ export default function EditItem() {
       
       // 查找该位置所属的房间
       const spot = spots.find(s => s.id === id)
-      if (spot?.room_id) {
+      if (spot && spot.room_id) {
         setFormData(prev => ({ ...prev, room_id: spot.room_id.toString() }))
         
         // 查找该房间所属的区域
         const room = rooms.find(r => r.id === spot.room_id)
-        if (room?.area_id) {
+        if (room && room.area_id) {
           setFormData(prev => ({ ...prev, area_id: room.area_id.toString() }))
         }
       }
     }
   }
   
+  // 获取标签样式
+  const getTagStyle = (color: string = "#3b82f6") => {
+    return {
+      backgroundColor: color,
+      color: isLightColor(color) ? "#000" : "#fff"
+    }
+  }
+
+  // 判断颜色是否为浅色
+  const isLightColor = (color: string): boolean => {
+    const hex = color.replace("#", "")
+    const r = parseInt(hex.substr(0, 2), 16)
+    const g = parseInt(hex.substr(2, 2), 16)
+    const b = parseInt(hex.substr(4, 2), 16)
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000
+    return brightness > 155
+  }
+  
+  // 处理新创建的标签
+  const handleTagCreated = (tag: any) => {
+    // 刷新标签列表
+    fetchTags()
+    
+    // 将新创建的标签添加到选中的标签中
+    setSelectedTags(prev => [...prev, tag.id.toString()])
+  }
+  
   if (initialLoading) {
     return (
       <div className="container mx-auto py-6 px-4">
-        <div className="flex justify-center items-center h-64">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center">
+            <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <h1 className="text-2xl md:text-3xl font-bold">编辑物品</h1>
+          </div>
+        </div>
+        <div className="flex items-center justify-center h-64">
           <p>加载中...</p>
         </div>
       </div>
@@ -353,7 +400,7 @@ export default function EditItem() {
     <div className="container mx-auto py-6 px-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
-          <Button variant="outline" size="icon" onClick={() => router.push(`/thing/${params.id}`)} className="mr-4">
+          <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl md:text-3xl font-bold">编辑物品</h1>
@@ -462,6 +509,71 @@ export default function EditItem() {
             
             <Card>
               <CardHeader>
+                <CardTitle>标签</CardTitle>
+                <CardDescription>编辑物品的标签</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <Label htmlFor="tags" className="flex justify-between items-center">
+                    <span>标签</span>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-7 px-2"
+                      onClick={() => setCreateTagDialogOpen(true)}
+                    >
+                      <Plus className="h-3.5 w-3.5 mr-1" />
+                      <Tag className="h-3.5 w-3.5 mr-1" />
+                      新建标签
+                    </Button>
+                  </Label>
+                  <MultiSelect
+                    value={selectedTags}
+                    onValueChange={setSelectedTags}
+                    closeOnSelect={false}
+                  >
+                    <MultiSelectTrigger>
+                      <MultiSelectValue placeholder="选择标签" />
+                    </MultiSelectTrigger>
+                    <MultiSelectContent>
+                      {tags.map((tag) => (
+                        <MultiSelectItem key={tag.id} value={tag.id.toString()}>
+                          <Badge 
+                            style={getTagStyle(tag.color)}
+                            className="mr-2 py-0.5 px-2 my-0.5"
+                          >
+                            {tag.name}
+                          </Badge>
+                        </MultiSelectItem>
+                      ))}
+                    </MultiSelectContent>
+                  </MultiSelect>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {selectedTags.map(tagId => {
+                      const tag = tags.find(t => t.id.toString() === tagId);
+                      return tag ? (
+                        <Badge 
+                          key={tag.id} 
+                          style={getTagStyle(tag.color)}
+                          className="py-0.5 px-2 my-0.5"
+                        >
+                          {tag.name}
+                        </Badge>
+                      ) : null;
+                    })}
+                  </div>
+                  
+                  <div className="mt-3 pt-2 border-t">
+                    <div className="text-xs text-muted-foreground mb-2">快速创建标签:</div>
+                    <QuickCreateTag onTagCreated={handleTagCreated} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
                 <CardTitle>图片</CardTitle>
                 <CardDescription>编辑物品的图片</CardDescription>
               </CardHeader>
@@ -514,67 +626,41 @@ export default function EditItem() {
                       min="0"
                       value={formData.purchase_price}
                       onChange={handleInputChange}
+                      placeholder="0.00"
                     />
                   </div>
+                </div>
+                
+                <div className="mt-6">
+                  <Label className="mb-2 block">存放位置</Label>
+                  <LocationTreeSelect
+                    onSelect={handleLocationSelect}
+                    selectedLocation={selectedLocation}
+                  />
+                  {locationPath && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      当前位置: {locationPath}
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardHeader>
-                <CardTitle>存放位置</CardTitle>
-                <CardDescription>编辑物品的存放位置</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <Label>区域</Label>
-                    <div className="text-sm font-medium mt-1">
-                      {formData.area_id ? areas.find(a => a.id.toString() === formData.area_id)?.name || '未选择' : '未选择'}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>房间</Label>
-                    <div className="text-sm font-medium mt-1">
-                      {formData.room_id ? rooms.find(r => r.id.toString() === formData.room_id)?.name || '未选择' : '未选择'}
-                    </div>
-                  </div>
-                  <div>
-                    <Label>具体位置</Label>
-                    <div className="text-sm font-medium mt-1">
-                      {formData.spot_id ? spots.find(s => s.id.toString() === formData.spot_id)?.name || '未选择' : '未选择'}
-                    </div>
-                  </div>
-                </div>
-                
-                <LocationTreeSelect 
-                  onSelect={handleLocationSelect}
-                  selectedLocation={selectedLocation}
-                />
-                
-                {locationPath && (
-                  <div className="text-xs text-muted-foreground">
-                    当前选择: {locationPath}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="flex justify-end">
+              <Button type="submit" size="lg" disabled={loading}>
+                {loading ? "更新中..." : "更新物品"}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
-        
-        <div className="flex justify-end gap-2 sticky bottom-4 bg-background p-4 rounded-lg shadow-lg mt-6">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.push(`/thing/${params.id}`)}
-          >
-            取消
-          </Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? '保存中...' : '保存修改'}
-          </Button>
-        </div>
       </form>
+      
+      {/* 创建标签对话框 */}
+      <CreateTagDialog 
+        open={createTagDialogOpen} 
+        onOpenChange={setCreateTagDialogOpen} 
+        onTagCreated={handleTagCreated}
+      />
     </div>
   )
 }

@@ -51,6 +51,7 @@ interface Item {
     path: string;
     thumbnail_path: string;
   };
+  tags?: Tag[];
 }
 
 interface Category {
@@ -59,24 +60,35 @@ interface Category {
   user_id: number;
 }
 
+interface Tag {
+  id: number;
+  name: string;
+  color: string;
+  user_id: number;
+}
+
 interface ItemState {
   items: Item[];
   categories: Category[];
+  tags: Tag[];
   loading: boolean;
   error: string | null;
   meta: any | null;
   
   fetchItems: (params?: Record<string, any>) => Promise<any>;
   fetchCategories: () => Promise<Category[] | undefined>;
+  fetchTags: () => Promise<Tag[] | undefined>;
   getItem: (id: number) => Promise<Item | null>;
   createItem: (data: Omit<Partial<Item>, 'images'> & { 
     images?: File[],
-    image_paths?: string[]
+    image_paths?: string[],
+    tags?: number[]
   }) => Promise<Item>;
   updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { 
     images?: File[], 
     image_ids?: number[],
-    image_paths?: string[] 
+    image_paths?: string[],
+    tags?: number[]
   }) => Promise<Item>;
   deleteItem: (id: number) => Promise<void>;
 }
@@ -84,6 +96,7 @@ interface ItemState {
 export const useItemStore = create<ItemState>((set, get) => ({
   items: [],
   categories: [],
+  tags: [],
   loading: false,
   error: null,
   meta: null,
@@ -140,6 +153,18 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
   
+  fetchTags: async () => {
+    try {
+      const data = await apiRequest<Tag[]>(`/thing-tags`);
+      set({ tags: data });
+      
+      return data;
+    } catch (error) {
+      console.error('获取标签失败:', error);
+      return undefined;
+    }
+  },
+  
   getItem: async (id) => {
     set({ loading: true, error: null });
     
@@ -166,7 +191,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'images' && key !== 'image_paths' && value !== undefined && value !== null) {
+        if (key !== 'images' && key !== 'image_paths' && key !== 'tags' && value !== undefined && value !== null) {
           
           // 特殊处理is_public字段，确保它是布尔值
           if (key === 'is_public') {
@@ -192,6 +217,13 @@ export const useItemStore = create<ItemState>((set, get) => ({
         });
       }
       
+      // 添加标签
+      if (data.tags && Array.isArray(data.tags)) {
+        data.tags.forEach((tagId, index) => {
+          formData.append(`tags[${index}]`, String(tagId));
+        });
+      }
+      
       // 检查当前的授权token
       const authToken = useAuthStore.getState().token;
       
@@ -214,23 +246,22 @@ export const useItemStore = create<ItemState>((set, get) => ({
     }
   },
   
-  updateItem: async (id: number, data: Omit<Partial<Item>, 'images'> & { 
-    images?: File[], 
-    image_ids?: number[],
-    image_paths?: string[]
-  }) => {
+  updateItem: async (id, data) => {
     set({ loading: true, error: null });
     
     try {
       // 使用FormData处理文件上传
       const formData = new FormData();
-      formData.append('_method', 'PUT'); // Laravel需要这个来模拟PUT请求
+      
+      // 由于使用FormData，需要手动添加_method字段模拟PUT请求
+      formData.append('_method', 'PUT');
       
       // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'images' && key !== 'image_paths' && key !== 'image_ids' && value !== undefined && value !== null) {
+        if (key !== 'images' && key !== 'image_paths' && key !== 'image_ids' && key !== 'tags' && value !== undefined && value !== null) {
           // 特殊处理is_public字段，确保它是布尔值
           if (key === 'is_public') {
+            // 将布尔值转换为"1"或"0"
             formData.append(key, value === true ? "1" : "0");
           } else {
             formData.append(key, String(value));
@@ -238,29 +269,17 @@ export const useItemStore = create<ItemState>((set, get) => ({
         }
       });
       
-      // 添加图片 - 添加验证（直接上传方式）
-      // 添加图片 - 添加验证
+      // 添加图片（直接上传方式）
       if (data.images && Array.isArray(data.images)) {
-        // 检查图片文件是否有效
-        const validImages = data.images.filter(image => {
-          if (!image.type.startsWith('image/')) {
-            console.error('非图片文件:', image.name, image.type);
-            return false;
-          }
-          return true;
+        data.images.forEach((image, index) => {
+          formData.append(`images[${index}]`, image);
         });
-        
-        if (validImages.length !== data.images.length) {
-          console.warn(`有 ${data.images.length - validImages.length} 个文件不是有效图片，已过滤`);
-        }
-        
-        validImages.forEach((image, index) => {
-          try {
-            console.log(`准备上传图片 ${index}:`, image.name, image.type, image.size);
-            formData.append(`images[${index}]`, image);
-          } catch (err) {
-            console.error(`添加图片 ${image.name} 到FormData时发生错误:`, err);
-          }
+      }
+      
+      // 添加图片路径（预上传方式）
+      if (data.image_paths && Array.isArray(data.image_paths)) {
+        data.image_paths.forEach((path, index) => {
+          formData.append(`image_paths[${index}]`, path);
         });
       }
       
@@ -268,6 +287,13 @@ export const useItemStore = create<ItemState>((set, get) => ({
       if (data.image_ids && Array.isArray(data.image_ids)) {
         data.image_ids.forEach((id, index) => {
           formData.append(`image_ids[${index}]`, String(id));
+        });
+      }
+      
+      // 添加标签
+      if (data.tags && Array.isArray(data.tags)) {
+        data.tags.forEach((tagId, index) => {
+          formData.append(`tags[${index}]`, String(tagId));
         });
       }
       

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Package, FolderTree, MapPin, BarChart2, Plus } from "lucide-react"
+import { Package, FolderTree, MapPin, BarChart2, Plus, Tag } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export default function ThingNavigation() {
@@ -27,6 +27,11 @@ export default function ThingNavigation() {
       href: "/thing/locations",
       label: "位置管理",
       icon: MapPin
+    },
+    {
+      href: "/thing/tags",
+      label: "标签管理",
+      icon: Tag
     }
   ]
   

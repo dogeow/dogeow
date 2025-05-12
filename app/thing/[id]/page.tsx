@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { API_BASE_URL } from '@/utils/api'
+import { API_BASE_URL, getImageUrl } from '@/utils/api'
 
 export default function ItemDetail() {
   const params = useParams()
@@ -112,6 +112,38 @@ export default function ItemDetail() {
   
   const status = statusMap[item.status as keyof typeof statusMap] || { label: item.status, variant: 'secondary' }
   
+  const renderTags = (item: any) => {
+    if (!item.tags || item.tags.length === 0) return null;
+    
+    return (
+      <div className="flex flex-wrap gap-2 mt-3">
+        <h3 className="font-medium text-xs text-muted-foreground mt-1">标签:</h3>
+        {item.tags.map((tag: any) => (
+          <Badge
+            key={tag.id}
+            style={{
+              backgroundColor: tag.color || '#3b82f6',
+              color: isLightColor(tag.color) ? '#000' : '#fff'
+            }}
+            className="h-6 px-2"
+          >
+            {tag.name}
+          </Badge>
+        ))}
+      </div>
+    );
+  };
+  
+  const isLightColor = (color: string): boolean => {
+    if (!color) return false;
+    const hex = color.replace("#", "");
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    return brightness > 155;
+  };
+  
   return (
     <>
       <div className="container mx-auto py-6 px-4">
@@ -160,7 +192,7 @@ export default function ItemDetail() {
                   <div className="space-y-3">
                     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-sm">
                       <Image
-                        src={item.images[activeImageIndex].url || `${API_BASE_URL}/storage/${item.images[activeImageIndex].path}`}
+                        src={item.images[activeImageIndex].url || getImageUrl(item.images[activeImageIndex].path)}
                         alt={item.name}
                         fill
                         className="object-contain"
@@ -178,7 +210,7 @@ export default function ItemDetail() {
                             onClick={() => setActiveImageIndex(index)}
                           >
                             <Image
-                              src={image.thumbnail_url || `${API_BASE_URL}/storage/${image.thumbnail_path}`}
+                              src={image.thumbnail_url || getImageUrl(image.thumbnail_path)}
                               alt={`${item.name} 图片 ${index + 1}`}
                               fill
                               className="object-cover rounded-sm"
@@ -213,6 +245,8 @@ export default function ItemDetail() {
                     <p className="text-sm font-semibold">{formatDate(item.purchase_date)}</p>
                   </div>
                 </div>
+                
+                {renderTags(item)}
               </CardContent>
             </Card>
           </TabsContent>

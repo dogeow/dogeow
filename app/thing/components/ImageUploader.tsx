@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Upload, X, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
-import { API_BASE_URL } from '@/utils/api'
+import { API_BASE_URL, getImageUrl } from '@/utils/api'
 import { apiRequest, logErrorToServer } from '@/utils/api'
 
 type UploadedImage = {
@@ -216,14 +216,14 @@ export default function ImageUploader({
     <div key={index} className="relative">
       <div className="relative w-24 h-24 rounded-lg overflow-hidden">
         <Image
-          src={image.thumbnail_url || `${API_BASE_URL.replace('/api', '')}/storage/${image.thumbnail_path}`}
+          src={image.thumbnail_url || getImageUrl(image.thumbnail_path)}
           alt={`上传的图片 ${index + 1}`}
           fill
           className="object-cover"
           onError={(e) => {
             // 如果缩略图加载失败，尝试加载原图
             const target = e.currentTarget
-            target.src = image.url || `${API_BASE_URL.replace('/api', '')}/storage/${image.path}`
+            target.src = image.url || getImageUrl(image.path)
             
             // 记录错误
             console.error('缩略图加载失败，尝试使用原图:', {
