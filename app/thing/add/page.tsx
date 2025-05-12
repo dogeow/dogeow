@@ -667,14 +667,14 @@ export default function AddItem() {
                 </div>
               </CardContent>
             </Card>
-            
-            <div className="flex justify-end">
-              <Button type="submit" size="lg" disabled={loading}>
-                {loading ? "处理中..." : "创建物品"}
-              </Button>
-            </div>
           </TabsContent>
         </Tabs>
+        
+        <div className="flex justify-end mt-6">
+          <Button type="submit" size="lg" disabled={loading}>
+            {loading ? "处理中..." : "创建物品"}
+          </Button>
+        </div>
       </form>
 
       {/* 创建标签对话框 */}
