@@ -111,6 +111,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     const status = item.status as keyof typeof statusText || 'default'
     
     return (
+      <span className={`text-xs font-medium ${statusColor[status] || statusColor.default}`}>
         {statusText[status] || statusText.default}
       </span>
     )
