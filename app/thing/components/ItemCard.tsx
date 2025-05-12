@@ -104,6 +104,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     const statusColor = {
       'active': 'text-green-600',
       'idle': 'text-amber-500',
+      'expired': 'text-red-500',
       'damaged': 'text-red-500',
       'default': 'text-blue-500'
     }
@@ -248,8 +249,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   const renderInfoGrid = (columns: string) => (
     <div className={`grid ${columns} gap-x-3 gap-y-1 text-sm mb-2`}>
       <div className="flex flex-col">
-        <p className="text-xs text-muted-foreground">购买日期</p>
-        <p className="font-medium text-sm truncate">{formatDate(item.purchase_date)}</p>
+        <p className="font-medium text-sm truncate">{item.description || ''}</p>
       </div>
     </div>
   )
