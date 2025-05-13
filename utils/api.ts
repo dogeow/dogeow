@@ -422,8 +422,5 @@ export const getImageUrl = (path: string) => {
   // 确保path不以斜杠开头
   const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
   
-  // 使用NEXT_PUBLIC_API_URL作为图片服务器地址
-  const imageBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
-  
-  return `${imageBaseUrl}/storage/${normalizedPath}`;
+  return `${API_URL}/storage/${normalizedPath}`;
 }; 

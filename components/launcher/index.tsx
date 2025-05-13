@@ -51,12 +51,14 @@ export function AppLauncher() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hlsInstanceRef = useRef<{ hls: any; destroy: () => void } | null>(null);
   
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
   // 组件加载时检查音频文件
   useEffect(() => {
     // 只在开发环境输出环境变量信息
     if (process.env.NODE_ENV === 'development') {
       console.log('环境变量:', {
-        API_URL: process.env.NEXT_PUBLIC_API_URL,
+        API_URL: apiUrl,
         NODE_ENV: process.env.NODE_ENV
       });
     }
@@ -64,10 +66,8 @@ export function AppLauncher() {
     // 加载音频列表
     const fetchAvailableTracks = async () => {
       try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-        
         // 获取音频列表
-        const musicUrl = `${apiBaseUrl}/musics`;
+        const musicUrl = `${apiUrl}/api/musics`;
         const musicResponse = await fetch(musicUrl);
         const musicData = await musicResponse.json();
         
@@ -277,15 +277,8 @@ export function AppLauncher() {
     
     // 设置音频
     try {
-      // 减少不必要的日志
-      // console.log('设置音频源:', currentTrack)
-      
       // 构建音频URL
-      const audioUrl = process.env.NEXT_PUBLIC_API_URL + currentTrack
-      // 只在开发环境输出日志
-      if (process.env.NODE_ENV === 'development') {
-        console.log('最终音频URL:', audioUrl)
-      }
+      const audioUrl = apiUrl + currentTrack
       
       // 设置音频元素的源
       audioRef.current.src = audioUrl
