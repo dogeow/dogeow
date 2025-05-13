@@ -23,35 +23,47 @@ interface ItemGalleryProps {
 
 export default function ItemGallery({ items }: ItemGalleryProps) {
   const [selectedItem, setSelectedItem] = useState<any>(null)
-  const [imageSize, setImageSize] = useState(150) // 默认图片大小
+  const [imageSize, setImageSize] = useState(120) // 默认图片大小为中尺寸
   const [showSizeControls, setShowSizeControls] = useState(true) // 控制大小调整区域的显示/隐藏
   const [maxSize, setMaxSize] = useState(520) // 默认最大尺寸
+  const [currentSizePreset, setCurrentSizePreset] = useState<'small' | 'medium' | 'large'>('medium')
   const router = useRouter()
   
-  // 监听窗口大小变化，根据屏幕宽度设置最大尺寸
+  // 监听窗口大小变化，根据屏幕宽度设置最大尺寸和调整当前尺寸
   useEffect(() => {
-    const updateMaxSize = () => {
-      // 获取屏幕宽度，考虑边距和其他元素，设置最大值
+    const updateSizes = () => {
       const screenWidth = window.innerWidth
-      // 减去一些边距，确保不超过屏幕范围
-      const newMaxSize = Math.min(520, screenWidth - 40) // 减去一些边距
+      const containerWidth = screenWidth - 40 // 考虑容器边距
+      const gapSize = 8 // 图片之间的间距 (2px * (n-1))
+      
+      // 计算不同预设的尺寸，考虑每行显示的图片数和间距
+      const largeSize = ensureEven(Math.floor((containerWidth - gapSize) / 2)) // 大尺寸，一行2张
+      const mediumSize = ensureEven(Math.floor((containerWidth - (gapSize * 2)) / 4)) // 中尺寸，一行4张
+      const smallSize = ensureEven(Math.floor((containerWidth - (gapSize * 4)) / 8)) // 小尺寸，一行8张
+      
+      // 设置最大单个图片尺寸
+      const newMaxSize = Math.min(520, containerWidth)
       setMaxSize(newMaxSize)
       
-      // 如果当前尺寸超过了新的最大值，则调整当前尺寸
-      if (imageSize > newMaxSize) {
-        setImageSize(newMaxSize)
+      // 根据当前选择的预设调整图片尺寸
+      if (currentSizePreset === 'large') {
+        setImageSize(Math.min(largeSize, newMaxSize))
+      } else if (currentSizePreset === 'medium') {
+        setImageSize(Math.min(mediumSize, newMaxSize))
+      } else if (currentSizePreset === 'small') {
+        setImageSize(Math.min(smallSize, newMaxSize))
       }
     }
     
     // 初始化时调用一次
-    updateMaxSize()
+    updateSizes()
     
     // 监听窗口大小变化
-    window.addEventListener('resize', updateMaxSize)
+    window.addEventListener('resize', updateSizes)
     
     // 组件卸载时移除监听器
-    return () => window.removeEventListener('resize', updateMaxSize)
-  }, [imageSize])
+    return () => window.removeEventListener('resize', updateSizes)
+  }, [currentSizePreset]) // 依赖添加 currentSizePreset
   
   // 构建正确的图片URL
   const getImageUrl = (path: string) => {
@@ -90,15 +102,43 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     router.push(`/thing/${id}`)
   }
   
+  // 确保尺寸为偶数的辅助函数
+  const ensureEven = (size: number) => {
+    // 如果是奇数，则减1使其成为偶数
+    return size % 2 === 0 ? size : size - 1
+  }
+  
+  // 计算基于屏幕宽度的图片尺寸
+  const getCalculatedSize = (preset: 'small' | 'medium' | 'large') => {
+    const screenWidth = window.innerWidth
+    const containerWidth = screenWidth - 40 // 考虑容器边距
+    const gapSize = 8 // 图片之间的间距
+    
+    if (preset === 'large') {
+      return ensureEven(Math.min(Math.floor((containerWidth - gapSize) / 2), maxSize)) // 大尺寸，一行2张
+    } else if (preset === 'medium') {
+      return ensureEven(Math.min(Math.floor((containerWidth - (gapSize * 2)) / 4), maxSize)) // 中尺寸，一行4张
+    } else {
+      return ensureEven(Math.min(Math.floor((containerWidth - (gapSize * 4)) / 8), maxSize)) // 小尺寸，一行8张
+    }
+  }
+  
   // 处理图片大小变化
   const handleSizeChange = (value: number[]) => {
-    setImageSize(value[0])
+    // 确保滑块调整的尺寸也是偶数
+    const newSize = ensureEven(value[0])
+    setImageSize(newSize)
+    // 清除当前预设选择状态
+    setCurrentSizePreset(newSize === getCalculatedSize('small') ? 'small' : 
+                         newSize === getCalculatedSize('medium') ? 'medium' : 
+                         newSize === getCalculatedSize('large') ? 'large' : null as any)
   }
   
   // 设置预设图片大小
-  const setPresetSize = (size: number) => {
-    // 确保预设尺寸不超过最大尺寸
-    setImageSize(Math.min(size, maxSize))
+  const setPresetSize = (preset: 'small' | 'medium' | 'large') => {
+    setCurrentSizePreset(preset)
+    const newSize = getCalculatedSize(preset)
+    setImageSize(newSize)
   }
   
   // 切换大小控制区域的显示/隐藏
@@ -113,22 +153,22 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
           <div className="flex gap-2 justify-center">
             <Button 
               variant="outline" 
-              className={cn("bg-background border-muted px-3", imageSize === 40 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(40)}
+              className={cn("bg-background border-muted px-3", currentSizePreset === 'small' && "bg-muted text-foreground")}
+              onClick={() => setPresetSize('small')}
             >
               小
             </Button>
             <Button 
               variant="outline" 
-              className={cn("bg-background border-muted px-3", imageSize === 100 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(120)}
+              className={cn("bg-background border-muted px-3", currentSizePreset === 'medium' && "bg-muted text-foreground")}
+              onClick={() => setPresetSize('medium')}
             >
               中
             </Button>
             <Button 
               variant="outline" 
-              className={cn("bg-background border-muted px-3", imageSize === maxSize && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(maxSize)}
+              className={cn("bg-background border-muted px-3", currentSizePreset === 'large' && "bg-muted text-foreground")}
+              onClick={() => setPresetSize('large')}
             >
               大
             </Button>
