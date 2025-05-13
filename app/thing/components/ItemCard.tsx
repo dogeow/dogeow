@@ -248,7 +248,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
               </div>
             ) : null}
           </div>
-          <div className="flex flex-col min-w-0 gap-1">
+          <div className="flex flex-col flex-1 min-w-0 gap-1">
             <div className="flex justify-between items-start">
               <div className="flex w-full justify-between items-center">
                 <h3 className="font-semibold truncate text-base">{item.name}</h3>
