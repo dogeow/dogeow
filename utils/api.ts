@@ -32,7 +32,7 @@ export async function apiRequest<T>(
   method: string = 'GET', 
   data?: any
 ): Promise<T> {
-  const url = `${API_URL}/${endpoint}`;
+  const url = `${API_URL}/api${endpoint}`;
   
   const headers = getHeaders();
   const options: RequestInit = {
