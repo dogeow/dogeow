@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { format } from 'date-fns'
 import { Badge } from "@/components/ui/badge"
@@ -26,7 +26,33 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [imageSize, setImageSize] = useState(150) // 默认图片大小
   const [showSizeControls, setShowSizeControls] = useState(true) // 控制大小调整区域的显示/隐藏
+  const [maxSize, setMaxSize] = useState(520) // 默认最大尺寸
   const router = useRouter()
+  
+  // 监听窗口大小变化，根据屏幕宽度设置最大尺寸
+  useEffect(() => {
+    const updateMaxSize = () => {
+      // 获取屏幕宽度，考虑边距和其他元素，设置最大值
+      const screenWidth = window.innerWidth
+      // 减去一些边距，确保不超过屏幕范围
+      const newMaxSize = Math.min(520, screenWidth - 40) // 减去一些边距
+      setMaxSize(newMaxSize)
+      
+      // 如果当前尺寸超过了新的最大值，则调整当前尺寸
+      if (imageSize > newMaxSize) {
+        setImageSize(newMaxSize)
+      }
+    }
+    
+    // 初始化时调用一次
+    updateMaxSize()
+    
+    // 监听窗口大小变化
+    window.addEventListener('resize', updateMaxSize)
+    
+    // 组件卸载时移除监听器
+    return () => window.removeEventListener('resize', updateMaxSize)
+  }, [imageSize])
   
   // 构建正确的图片URL
   const getImageUrl = (path: string) => {
@@ -72,7 +98,8 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
   
   // 设置预设图片大小
   const setPresetSize = (size: number) => {
-    setImageSize(size)
+    // 确保预设尺寸不超过最大尺寸
+    setImageSize(Math.min(size, maxSize))
   }
   
   // 切换大小控制区域的显示/隐藏
@@ -87,35 +114,24 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
           <div className="flex gap-2 justify-center">
             <Button 
               variant="outline" 
-              size="icon" 
-              className={cn("bg-background border-muted", imageSize === 60 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(60)}
+              className={cn("bg-background border-muted px-3", imageSize === 40 && "bg-muted text-foreground")}
+              onClick={() => setPresetSize(40)}
             >
-              <Grid3X3 className="h-4 w-4" />
+              小
             </Button>
             <Button 
               variant="outline" 
-              size="icon" 
-              className={cn("bg-background border-muted", imageSize === 100 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(100)}
+              className={cn("bg-background border-muted px-3", imageSize === 100 && "bg-muted text-foreground")}
+              onClick={() => setPresetSize(120)}
             >
-              <Grid2X2 className="h-4 w-4" />
+              中
             </Button>
             <Button 
               variant="outline" 
-              size="icon" 
-              className={cn("bg-background border-muted", imageSize === 140 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(140)}
+              className={cn("bg-background border-muted px-3", imageSize === maxSize && "bg-muted text-foreground")}
+              onClick={() => setPresetSize(maxSize)}
             >
-              <Grid2X2 className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className={cn("bg-background border-muted", imageSize === 200 && "bg-muted text-foreground")}
-              onClick={() => setPresetSize(200)}
-            >
-              <LayoutGrid className="h-4 w-4" />
+              大
             </Button>
           </div>
           <div className="flex items-center w-full max-w-md gap-3">
@@ -123,7 +139,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               <Slider
                 value={[imageSize]}
                 min={40}
-                max={520}
+                max={maxSize}
                 step={10}
                 onValueChange={handleSizeChange}
                 className="cursor-pointer"
