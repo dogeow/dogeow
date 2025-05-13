@@ -141,7 +141,6 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
                 max={maxSize}
                 step={10}
                 onValueChange={handleSizeChange}
-                className="cursor-pointer"
               />
             </div>
             <div className="text-base font-medium text-primary">

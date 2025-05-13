@@ -16,7 +16,7 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
   return (
     <div className="flex items-center space-x-4">
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <Music className="h-5 w-5" onClick={() => toggleDisplayMode('music')}/>
+        <Music className="h-5 w-5 cursor-pointer" onClick={() => toggleDisplayMode('music')}/>
         <span className="sr-only">打开音乐</span>
       </motion.div>
       {/* 主题切换按钮 */}
