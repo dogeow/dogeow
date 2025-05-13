@@ -2,17 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Edit, Eye, MoreHorizontal, Trash2, Globe } from "lucide-react"
+import { Globe } from "lucide-react"
 import { format } from 'date-fns'
-import { cn } from "@/lib/utils"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -185,9 +177,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   
   // 构建正确的图片URL
   const getImageUrl = (path: string) => {
-    // 移除URL中可能存在的/api/部分
-    const baseUrl = API_URL.replace('/api', '');
-    return `${baseUrl}/storage/${path}`;
+    return `${API_URL}/storage/${path}`;
   }
   
   // 渲染图片
