@@ -12,6 +12,10 @@ import { useThemeStore } from '@/stores/themeStore'
 import { configs } from '@/app/configs'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { hexToHSL } from '@/lib/color-utils'
+import type { CustomTheme } from '@/app/types'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 type SettingsView = 'main' | 'background' | 'theme';
@@ -38,8 +42,11 @@ export function SettingsPanel({
   customBackgrounds,
   setCustomBackgrounds
 }: SettingsPanelProps) {
-  const { currentTheme, customThemes, setCurrentTheme, removeCustomTheme, followSystem, setFollowSystem } = useThemeStore()
+  const { currentTheme, customThemes, setCurrentTheme, removeCustomTheme, followSystem, setFollowSystem, addCustomTheme } = useThemeStore()
   const [currentView, setCurrentView] = useState<SettingsView>('main')
+  const [isThemeDialogOpen, setIsThemeDialogOpen] = useState(false)
+  const [newThemeName, setNewThemeName] = useState('')
+  const [newThemeColor, setNewThemeColor] = useState('#3b82f6')
   
   // 设置背景图片
   const handleSetBackground = (url: string) => {
@@ -75,6 +82,29 @@ export function SettingsPanel({
   const handleToggleFollowSystem = (checked: boolean) => {
     setFollowSystem(checked)
     toast.success(checked ? "已启用跟随系统主题" : "已关闭跟随系统主题")
+  }
+  
+  // 处理添加自定义主题
+  const handleAddCustomTheme = () => {
+    if (!newThemeName.trim()) {
+      toast.error("请输入主题名称")
+      return
+    }
+    
+    const hslColor = hexToHSL(newThemeColor)
+    const newTheme: CustomTheme = {
+      id: `custom-${Date.now()}`,
+      name: newThemeName,
+      primary: hslColor,
+      color: newThemeColor
+    }
+    
+    addCustomTheme(newTheme)
+    setCurrentTheme(newTheme.id)
+    setIsThemeDialogOpen(false)
+    setNewThemeName('')
+    setNewThemeColor('#3b82f6')
+    toast.success("自定义主题已添加")
   }
   
   // 渲染背景选项按钮
@@ -231,17 +261,72 @@ export function SettingsPanel({
       {renderDivider()}
       
       {/* 预设主题色 */}
-      {!followSystem && themeColors.map(theme => renderThemeButton(theme))}
+      {themeColors.map(theme => renderThemeButton(theme))}
       
       {/* 用户自定义主题 */}
-      {!followSystem && customThemes.map(theme => renderThemeButton(theme, true))}
+      {customThemes.map(theme => renderThemeButton(theme, true))}
       
-      {/* 跟随系统时显示提示 */}
-      {followSystem && (
-        <div className="flex items-center px-3 h-9">
-          <span className="text-sm text-muted-foreground">已启用跟随系统主题，当前主题将根据系统设置自动调整</span>
-        </div>
-      )}
+      {/* 添加自定义主题按钮 */}
+      <Dialog open={isThemeDialogOpen} onOpenChange={setIsThemeDialogOpen}>
+        <DialogTrigger asChild>
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="shrink-0">
+            <Button 
+              variant="ghost"
+              className={cn(
+                "p-1 h-9 w-9 rounded-md overflow-hidden relative flex items-center justify-center",
+                "bg-primary/10 hover:bg-primary/20 border-2 border-dashed border-primary/30"
+              )}
+              title="添加自定义主题"
+            >
+              <Plus className="h-5 w-5 text-primary/70" />
+            </Button>
+          </motion.div>
+        </DialogTrigger>
+        
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>添加自定义主题</DialogTitle>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="theme-name" className="text-right">
+                主题名称
+              </Label>
+              <Input
+                id="theme-name"
+                value={newThemeName}
+                onChange={(e) => setNewThemeName(e.target.value)}
+                className="col-span-3"
+                placeholder="例如：我的主题"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="theme-color" className="text-right">
+                主题颜色
+              </Label>
+              <div className="col-span-3 flex items-center gap-2">
+                <div 
+                  className="h-8 w-8 rounded-md border"
+                  style={{ backgroundColor: newThemeColor }}
+                />
+                <Input
+                  id="theme-color"
+                  type="color"
+                  value={newThemeColor}
+                  onChange={(e) => setNewThemeColor(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <Button onClick={handleAddCustomTheme}>添加主题</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
   
