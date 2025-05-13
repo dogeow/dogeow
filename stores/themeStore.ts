@@ -8,9 +8,11 @@ import type { CustomTheme } from '@/app/types'
 interface ThemeState {
   currentTheme: string
   customThemes: CustomTheme[]
+  followSystem: boolean
   setCurrentTheme: (theme: string) => void
   addCustomTheme: (theme: CustomTheme) => void
   removeCustomTheme: (id: string) => void
+  setFollowSystem: (follow: boolean) => void
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -18,6 +20,7 @@ export const useThemeStore = create<ThemeState>()(
     (set) => ({
       currentTheme: 'default',
       customThemes: [],
+      followSystem: false,
       setCurrentTheme: (theme) => set({ currentTheme: theme }),
       addCustomTheme: (theme) => set((state) => ({ 
         customThemes: [...state.customThemes, theme] 
@@ -26,7 +29,8 @@ export const useThemeStore = create<ThemeState>()(
         customThemes: state.customThemes.filter(theme => theme.id !== id),
         // 如果删除的是当前主题，则切换回默认主题
         currentTheme: state.currentTheme === id ? 'default' : state.currentTheme
-      }))
+      })),
+      setFollowSystem: (follow) => set({ followSystem: follow })
     }),
     {
       name: 'theme-storage',

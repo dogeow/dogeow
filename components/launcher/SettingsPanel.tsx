@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { Plus, Palette, Image as ImageIcon, Check, Trash2 } from 'lucide-react'
+import { Plus, Palette, Image as ImageIcon, Check, Trash2, Computer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
@@ -10,6 +10,8 @@ import { toast } from 'sonner'
 import { BackButton } from '@/components/ui/back-button'
 import { useThemeStore } from '@/stores/themeStore'
 import { configs } from '@/app/configs'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 type SettingsView = 'main' | 'background' | 'theme';
@@ -36,7 +38,7 @@ export function SettingsPanel({
   customBackgrounds,
   setCustomBackgrounds
 }: SettingsPanelProps) {
-  const { currentTheme, customThemes, setCurrentTheme, removeCustomTheme } = useThemeStore()
+  const { currentTheme, customThemes, setCurrentTheme, removeCustomTheme, followSystem, setFollowSystem } = useThemeStore()
   const [currentView, setCurrentView] = useState<SettingsView>('main')
   
   // 设置背景图片
@@ -67,6 +69,12 @@ export function SettingsPanel({
     }
     
     reader.readAsDataURL(file)
+  }
+  
+  // 处理跟随系统选项切换
+  const handleToggleFollowSystem = (checked: boolean) => {
+    setFollowSystem(checked)
+    toast.success(checked ? "已启用跟随系统主题" : "已关闭跟随系统主题")
   }
   
   // 渲染背景选项按钮
@@ -122,6 +130,21 @@ export function SettingsPanel({
         <Palette className="h-4 w-4" />
         <span className="text-sm font-medium">主题</span>
       </Button>
+      
+      {renderDivider()}
+      
+      {/* 跟随系统选项 */}
+      <div className="flex items-center gap-2 h-9 px-3 shrink-0">
+        <Computer className="h-4 w-4" />
+        <Label htmlFor="follow-system" className="text-sm font-medium cursor-pointer">
+          跟随系统
+        </Label>
+        <Switch
+          id="follow-system"
+          checked={followSystem}
+          onCheckedChange={handleToggleFollowSystem}
+        />
+      </div>
     </>
   )
   
@@ -208,10 +231,17 @@ export function SettingsPanel({
       {renderDivider()}
       
       {/* 预设主题色 */}
-      {themeColors.map(theme => renderThemeButton(theme))}
+      {!followSystem && themeColors.map(theme => renderThemeButton(theme))}
       
       {/* 用户自定义主题 */}
-      {customThemes.map(theme => renderThemeButton(theme, true))}
+      {!followSystem && customThemes.map(theme => renderThemeButton(theme, true))}
+      
+      {/* 跟随系统时显示提示 */}
+      {followSystem && (
+        <div className="flex items-center px-3 h-9">
+          <span className="text-sm text-muted-foreground">已启用跟随系统主题，当前主题将根据系统设置自动调整</span>
+        </div>
+      )}
     </>
   )
   

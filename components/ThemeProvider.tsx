@@ -1,21 +1,27 @@
 "use client"
 
 import { ThemeProvider as NextThemesProvider } from "next-themes"
-import { useThemeStore, getCurrentThemeColor } from "@/stores/themeStore"
+import { useThemeStore } from "@/stores/themeStore"
 import { useEffect } from "react"
+import { useTheme } from "next-themes"
+
+// 内部组件用于处理系统主题变化
+function ThemeApplier() {
+  const {followSystem, setCurrentTheme } = useThemeStore()
+  const {setTheme, systemTheme } = useTheme()
+
+  // 处理主题颜色
+  useEffect(() => {
+    if (followSystem) {
+      const systemColorTheme = systemTheme === 'dark' ? 'dark' : 'light';
+      setTheme(systemColorTheme)
+    }
+  }, [followSystem, systemTheme]);
+
+  return null;
+}
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const { currentTheme, customThemes } = useThemeStore()
-  
-  // 应用主题色彩
-  useEffect(() => {
-    const themeColor = getCurrentThemeColor(currentTheme, customThemes)
-    
-    // 设置CSS变量
-    document.documentElement.style.setProperty('--primary', themeColor.primary)
-    document.documentElement.style.setProperty('--primary-color', themeColor.color)
-  }, [currentTheme, customThemes])
-  
   return (
     <NextThemesProvider
       attribute="class"
@@ -23,6 +29,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       enableSystem
       disableTransitionOnChange
     >
+      <ThemeApplier />
       {children}
     </NextThemesProvider>
   )

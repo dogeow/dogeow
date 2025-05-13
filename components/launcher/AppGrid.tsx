@@ -4,7 +4,8 @@ import React from 'react'
 import { Settings, Music  } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { ModeToggle } from './ModeToggle'
+import { Moon, Sun } from "lucide-react"
+import { useTheme } from "next-themes"
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 
@@ -13,6 +14,8 @@ export interface AppGridProps {
 }
 
 export function AppGrid({ toggleDisplayMode }: AppGridProps) {
+  const { theme, setTheme } = useTheme()
+  
   return (
     <div className="flex items-center space-x-4">
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
@@ -21,7 +24,11 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
       </motion.div>
       {/* 主题切换按钮 */}
       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-        <ModeToggle />
+        <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <span className="sr-only">Toggle theme</span>
+        </Button>
       </motion.div>
       
       {/* 设置按钮 */}
