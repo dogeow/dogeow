@@ -136,7 +136,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       />
       
       <p className="text-xs text-muted-foreground">
-        支持JPG、PNG、GIF格式，每张图片不超过5MB，最多上传{maxImages}张
+        支持JPG、PNG、GIF格式，每张图片不超过20MB，最多上传{maxImages}张
       </p>
     </div>
   )
