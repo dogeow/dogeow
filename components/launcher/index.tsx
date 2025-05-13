@@ -72,22 +72,22 @@ export function AppLauncher() {
         const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
         console.log('使用的API基础URL:', apiBaseUrl);
         
-        // 获取HLS音频列表
-        const hlsUrl = `${apiBaseUrl}/music/hls`;
-        console.log('请求HLS音频列表:', hlsUrl);
-        const hlsResponse = await fetch(hlsUrl);
-        const hlsData = await hlsResponse.json();
+        // 获取音频列表
+        const musicUrl = `${apiBaseUrl}/music`;
+        console.log('请求音频列表:', musicUrl);
+        const musicResponse = await fetch(musicUrl);
+        const musicData = await musicResponse.json();
         
-        console.log('获取到HLS音频列表:', hlsData);
+        console.log('获取到音频列表:', musicData);
         
-        setAvailableTracks(hlsData);
+        setAvailableTracks(musicData);
         
         // 如果当前没有选中音轨，选择第一个
         const currentTrackValue = useMusicStore.getState().currentTrack;
         console.log('当前选中音轨:', currentTrackValue);
-        if ((!currentTrackValue || currentTrackValue === '') && hlsData.length > 0) {
-          console.log('选择第一个音轨:', hlsData[0].path);
-          setCurrentTrack(hlsData[0].path);
+        if ((!currentTrackValue || currentTrackValue === '') && musicData.length > 0) {
+          console.log('选择第一个音轨:', musicData[0].path);
+          setCurrentTrack(musicData[0].path);
         }
       } catch (error) {
         console.error('加载音频列表失败:', error);
@@ -269,109 +269,56 @@ export function AppLauncher() {
   // 切换音量控制显示
   const toggleVolumeControl = () => setIsVolumeControlVisible(!isVolumeControlVisible);
   
-  // 重构的setupMediaSource函数，支持HLS播放
+  // 设置音频源
   const setupMediaSource = () => {
-    if (!currentTrack) return;
+    if (!audioRef.current || !currentTrack) return
     
-    console.log('设置音频源:', currentTrack, '是否HLS兼容:', isHlsCompatible(currentTrack));
-    
-    // 清理之前的任何HLS实例
+    // 确保先清理
     if (hlsInstanceRef.current) {
-      hlsInstanceRef.current.destroy();
-      hlsInstanceRef.current = null;
+      hlsInstanceRef.current.destroy()
+      hlsInstanceRef.current = null
     }
     
-    // 阻止任何当前播放
-    if (audioRef.current) {
-      audioRef.current.pause();
+    // 设置音频
+    try {
+      console.log('设置音频源:', currentTrack)
       
-      // 重置音频元素
-      audioRef.current.removeAttribute('src');
-      audioRef.current.load();
-    }
-    
-    // 重置状态
-    setAudioError(null);
-    setCurrentTime(0);
-    
-    // 检查是否支持HLS格式
-    if (isHlsCompatible(currentTrack)) {
-      // 使用buildHlsUrl构建hls-converter.php URL
-      const hlsUrl = buildHlsUrl(currentTrack);
-      console.log('最终使用的HLS URL:', hlsUrl);
+      // 构建音频URL
+      const audioUrl = buildHlsUrl(currentTrack)
+      console.log('最终音频URL:', audioUrl)
       
-      if (!audioRef.current) {
-        setAudioError('音频元素未初始化');
-        return;
-      }
-      
-      // 设置HLS播放器
+      // 直接设置音频元素
       hlsInstanceRef.current = setupHls(
         audioRef.current,
-        hlsUrl,
+        audioUrl,
         (error) => {
-          console.error('HLS播放器错误:', error);
-          setAudioError(error);
-          
-          // 如果HLS失败，回退到直接播放
-          console.log('HLS失败，回退到直接播放');
-          if (audioRef.current) {
-            audioRef.current.src = currentTrack;
-            audioRef.current.load();
-            
-            if (isPlaying) {
-              audioRef.current.play().catch(err => {
-                console.error('回退播放失败:', err);
-              });
-            }
-          }
+          console.error('音频播放错误:', error)
+          setAudioError(error)
         },
-        () => console.log('HLS媒体已附加'),
+        () => console.log('音频元素已设置'),
         () => {
-          console.log('HLS清单已解析，准备播放');
+          console.log('音频元数据已加载，准备播放')
+          
           // 设置音量
           if (audioRef.current) {
-            audioRef.current.volume = isMuted ? 0 : volume;
+            audioRef.current.volume = isMuted ? 0 : volume
             
             // 如果之前是播放状态，则尝试播放
-            if (isPlaying) {
+            if (isPlaying && userInteracted) {
               audioRef.current.play().catch(err => {
-                console.error('播放失败:', err);
-                setAudioError(`播放失败: ${err.message}`);
-                setIsPlaying(false);
-              });
+                console.error('播放失败:', err)
+                setAudioError(`播放失败: ${err.message}`)
+                setIsPlaying(false)
+              })
             }
           }
         }
-      );
-    } else {
-      // 使用传统方式播放非HLS音频
-      console.log('使用传统方式播放:', currentTrack);
-      
-      if (audioRef.current) {
-        // 直接设置src
-        try {
-          audioRef.current.src = currentTrack;
-          audioRef.current.load();
-          
-          // 设置音量
-          audioRef.current.volume = isMuted ? 0 : volume;
-          
-          // 如果之前是播放状态，则尝试播放
-          if (isPlaying) {
-            audioRef.current.play().catch(err => {
-              console.error('播放失败:', err);
-              setAudioError(`播放失败: ${err.message}`);
-              setIsPlaying(false);
-            });
-          }
-        } catch (err) {
-          console.error('设置音频源失败:', err);
-          setAudioError(`设置音频源失败: ${err}`);
-        }
-      }
+      )
+    } catch (err) {
+      console.error('设置音频源失败:', err)
+      setAudioError(`设置音频源失败: ${err}`)
     }
-  };
+  }
 
   // 切换播放/暂停状态
   const togglePlay = () => {
@@ -407,14 +354,8 @@ export function AppLauncher() {
       // 完全匹配
       if (track.path === currentTrack) return true;
       
-      // 对于HLS格式，检查包含关系
-      if (isHlsCompatible(currentTrack) && currentTrack.includes(track.path)) return true;
-      
-      // 对于使用hls-converter.php的情况，提取歌曲名称比较
-      if (currentTrack.includes('hls-converter.php?path=')) {
-        const songName = decodeURIComponent(currentTrack.split('hls-converter.php?path=')[1]);
-        return track.name.includes(songName) || songName.includes(track.name);
-      }
+      // 对于MP3文件路径检查包含关系
+      if (currentTrack.includes(track.path)) return true;
       
       return false;
     });
@@ -425,26 +366,13 @@ export function AppLauncher() {
     }
     
     // 从路径中提取文件名
-    if (currentTrack.includes('hls-converter.php?path=')) {
-      // 从hls-converter.php的path参数中提取歌曲名
-      const songName = decodeURIComponent(currentTrack.split('hls-converter.php?path=')[1]);
-      console.log('从hls-converter URL提取的歌曲名:', songName);
-      return songName.replace(/-/g, ' ').replace(/_/g, ' ');
-    }
-    
     // 传统方式：从路径中提取文件名
     const parts = currentTrack.split('/');
     let fileName = parts[parts.length - 1];
     
-    // 处理HLS格式的特殊情况
-    if (isHlsCompatible(currentTrack) && !fileName.includes('.')) {
-      // 对于HLS格式，可能路径是目录形式，使用上一级目录名
-      fileName = parts[parts.length - 2] || fileName;
-    }
-    
     // 移除扩展名和特殊字符
     return fileName
-      .replace(/\.(mp3|wav|m4a|aac|ogg|flac|m3u8|ts)$/i, '')
+      .replace(/\.(mp3|wav|m4a|aac|ogg|flac)$/i, '')
       .replace(/[_\-]/g, ' ');
   };
   

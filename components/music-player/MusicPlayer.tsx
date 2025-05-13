@@ -1,13 +1,11 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import Hls from 'hls.js';
-import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, Loader2 } from 'lucide-react';
+import { Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Slider } from '@/components/ui/slider';
 import ProgressBar from '../../components/progress-bar';
-import axios from 'axios';
 
 interface PlayerControlButtonProps {
   onClick: () => void;
@@ -39,18 +37,17 @@ const PlayerControlButton = ({
   </motion.div>
 );
 
-interface HLSMusicPlayerProps {
+interface MusicPlayerProps {
   src: string;
   autoPlay?: boolean;
   showControls?: boolean;
   externalAudioRef?: React.RefObject<HTMLAudioElement | null>;
 }
 
-const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAudioRef }: HLSMusicPlayerProps) => {
+const MusicPlayer = ({ src, autoPlay = false, showControls = true, externalAudioRef }: MusicPlayerProps) => {
   // 如果提供了外部audio元素引用，则使用它，否则创建本地引用
   const localAudioRef = useRef<HTMLAudioElement>(null);
   const audioRef = externalAudioRef || localAudioRef;
-  const hlsRef = useRef<Hls | null>(null);
   
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -58,10 +55,8 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [showVolumeControl, setShowVolumeControl] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [progress, setProgress] = useState(0);
-  const [streamInfo, setStreamInfo] = useState<any>(null);
 
   // 处理播放地址，确保它是完整URL
   const processUrl = (urlStr: string) => {
@@ -82,7 +77,7 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
     }
   };
   
-  // 处理HLS直播初始化
+  // 处理音频初始化
   useEffect(() => {
     if (!src) return;
     
@@ -98,192 +93,63 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
       }
       
       const processedUrl = processUrl(src);
+      console.log('设置音频源:', processedUrl);
       
-      // 检查是否支持HLS
-      if (Hls.isSupported()) {
-        const destroyHls = () => {
-          if (hlsRef.current) {
-            hlsRef.current.destroy();
-            hlsRef.current = null;
-          }
-        };
+      try {
+        // 直接设置音频源
+        audioRef.current.src = processedUrl;
+        audioRef.current.preload = "metadata";
         
-        // 清理旧的HLS实例
-        destroyHls();
-        
-        // 创建新的HLS实例，增加额外配置
-        const hls = new Hls({
-          debug: true, // 开启调试模式以便更好排查问题
-          enableWorker: false, // 在某些情况下，禁用worker可以避免某些问题
-          xhrSetup: (xhr, url) => {
-            // 设置CORS头部
-            xhr.withCredentials = false;
-            // 设置请求头以支持CORS
-            xhr.setRequestHeader('Origin', window.location.origin);
-            xhr.setRequestHeader('Accept', 'application/vnd.apple.mpegurl');
-          },
-          // 增加重试和超时配置
-          manifestLoadingTimeOut: 20000, // 增加超时时间
-          manifestLoadingMaxRetry: 3,
-          manifestLoadingRetryDelay: 1000
-        });
-        hlsRef.current = hls;
-        
-        // 添加事件监听器
-        hls.on(Hls.Events.MEDIA_ATTACHED, () => {
-          try {
-            hls.loadSource(processedUrl);
-          } catch (err) {
-            console.error('加载HLS源失败:', err);
-            setError(`加载HLS源失败: ${err}`);
-            setIsLoading(false);
-          }
-        });
-        
-        hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
-          setStreamInfo({
-            levels: data.levels,
-            audioTracks: data.audioTracks
-          });
+        // 监听元数据加载事件
+        const handleLoadedMetadata = () => {
+          console.log('音频元数据已加载，时长:', audioRef.current?.duration);
           setIsLoading(false);
+          setDuration(audioRef.current?.duration || 0);
+          
+          // 自动播放（如果设置）
           if (autoPlay && audioRef.current) {
             audioRef.current.play().catch(err => {
               console.error('自动播放失败:', err);
               setError('自动播放被浏览器阻止，请点击播放按钮');
             });
           }
-        });
-        
-        hls.on(Hls.Events.ERROR, (event, data) => {
-          console.error('HLS错误:', data);
-          
-          // 特别记录CORS相关错误
-          if (data.response && data.response.code === 0) {
-            console.warn('可能的CORS错误:', {
-              url: data.context ? data.context.url : 'unknown',
-              status: data.response.code,
-              details: data.details
-            });
-          }
-          
-          // 特殊处理attachMedia错误
-          if (data.details && (
-              String(data.details).includes('frag') || 
-              String(data.details).includes('buffer') || 
-              String(data.details).includes('codec') ||
-              String(data.details).includes('switch'))) {
-            console.warn('尝试恢复media错误:', data.details);
-            hls.recoverMediaError();
-            return;
-          }
-          
-          if (data.fatal) {
-            switch (data.type) {
-              case Hls.ErrorTypes.NETWORK_ERROR:
-                // 尝试恢复网络错误
-                hls.startLoad();
-                break;
-              case Hls.ErrorTypes.MEDIA_ERROR:
-                // 尝试恢复媒体错误
-                hls.recoverMediaError();
-                break;
-              default:
-                // 无法恢复的错误
-                destroyHls();
-                setError(`播放错误: ${data.details || '未知错误'}`);
-                setIsLoading(false);
-                break;
-            }
-          } else {
-            // 非致命错误，显示但继续播放
-            console.warn('非致命HLS错误:', data);
-          }
-        });
-        
-        // 添加调试信息获取
-        const fetchDebugInfo = async () => {
-          try {
-            const debugUrl = `${processedUrl}${processedUrl.includes('?') ? '&' : '?'}debug=1`;
-            const response = await axios.get(debugUrl, {
-              headers: {
-                'Accept': 'text/html,application/xhtml+xml,application/xml',
-                'Content-Type': 'application/json',
-                'Origin': window.location.origin
-              },
-              withCredentials: false // 不需要凭证
-            });
-            console.log('HLS调试信息已获取', response.data);
-          } catch (err) {
-            console.warn('获取HLS调试信息失败', err);
-          }
         };
         
-        // 获取调试信息（仅开发环境）
-        if (process.env.NODE_ENV === 'development') {
-          fetchDebugInfo().catch(console.error);
-        }
-        
-        try {
-          // 附加到音频元素
-          console.log('尝试附加HLS到音频元素...');
-          if (!audioRef.current) {
-            throw new Error('音频元素丢失，无法附加媒体');
-          }
-          hls.attachMedia(audioRef.current);
-        } catch (err) {
-          console.error('附加媒体失败:', err);
-          setError(`附加媒体失败: ${err}`);
+        // 监听错误事件
+        const handleError = (e: Event) => {
+          const error = audioRef.current?.error;
+          console.error('音频加载失败:', e, error);
+          const errorCode = error ? error.code : 'unknown';
+          const errorMessage = error ? error.message : '未知错误';
+          setError(`播放错误 (${errorCode}): ${errorMessage}`);
           setIsLoading(false);
-          destroyHls();
-        }
+        };
         
-        // 清理函数
-        return destroyHls;
-      } else {
-        // 原生HLS支持 (Safari等)
-        try {
-          if (!audioRef.current) {
-            setError('音频元素未初始化');
-            setIsLoading(false);
-            return;
+        audioRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+        audioRef.current.addEventListener('error', handleError);
+        
+        // 加载音频
+        audioRef.current.load();
+        
+        return () => {
+          if (audioRef.current) {
+            audioRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+            audioRef.current.removeEventListener('error', handleError);
           }
-          
-          audioRef.current.src = processedUrl;
-          audioRef.current.addEventListener('loadedmetadata', () => {
-            setIsLoading(false);
-            if (autoPlay) {
-              audioRef.current?.play().catch(err => {
-                console.error('原生HLS自动播放失败:', err);
-                setError('自动播放被浏览器阻止，请点击播放按钮');
-              });
-            }
-          });
-          
-          audioRef.current.addEventListener('error', (e) => {
-            console.error('原生HLS错误:', e);
-            setError(`播放错误: ${audioRef.current?.error?.message || '未知错误'}`);
-            setIsLoading(false);
-          });
-          
-          return () => {
-            if (audioRef.current) {
-              audioRef.current.src = '';
-            }
-          };
-        } catch (err) {
-          console.error('设置原生HLS播放失败:', err);
-          setError(`设置原生HLS播放失败: ${err}`);
-          setIsLoading(false);
-          return undefined;
-        }
+        };
+      } catch (err) {
+        console.error('设置音频源失败:', err);
+        setError(`设置音频源失败: ${err}`);
+        setIsLoading(false);
       }
-    }, 300); // 添加短延迟确保DOM已加载
+    }, 300);
     
     // 清理函数
     return () => {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-        hlsRef.current = null;
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+        setIsPlaying(false);
       }
     };
   }, [src, autoPlay]);
@@ -398,33 +264,6 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
             重试播放
           </button>
         </div>
-        
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-3 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs overflow-auto max-h-32">
-            <p className="font-medium mb-1">调试信息:</p>
-            <pre>源: {src}</pre>
-            <pre>处理后的地址: {processUrl(src)}</pre>
-            <a 
-              href={`${processUrl(src)}${processUrl(src).includes('?') ? '&' : '?'}debug=1`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 underline block mt-2"
-            >
-              查看HLS调试信息
-            </a>
-            
-            {/* 提供常见问题解决方案 */}
-            <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-              <p className="font-medium mb-1">常见问题:</p>
-              <ul className="list-disc list-inside">
-                <li>确保服务端返回正确的Content-Type: application/vnd.apple.mpegurl</li>
-                <li>检查m3u8文件是否符合HLS规范</li>
-                <li>确保TS文件可以访问（路径正确且存在）</li>
-                <li>检查是否存在CORS跨域问题</li>
-              </ul>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -511,4 +350,4 @@ const HLSMusicPlayer = ({ src, autoPlay = false, showControls = true, externalAu
   );
 };
 
-export default HLSMusicPlayer; 
+export default MusicPlayer; 

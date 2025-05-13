@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import useSWR from 'swr';
-import HLSMusicPlayer from './HLSMusicPlayer';
+import MusicPlayer from './MusicPlayer';
 import MusicList, { MusicItem } from './MusicList';
 import { useMusicStore } from '@/stores/musicStore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,7 +34,7 @@ export default function MusicPlayerPage() {
   
   // 从 API 获取音乐列表
   const { data, error, isLoading } = useSWR(
-    `${process.env.NEXT_PUBLIC_API_BASE_URL}/music/hls`,
+    `${process.env.NEXT_PUBLIC_API_BASE_URL}/music`,
     fetcher
   );
 
@@ -175,28 +175,24 @@ export default function MusicPlayerPage() {
     return path;
   };
   
-  // 构建HLS播放地址
-  const buildHlsUrl = (music: MusicItem) => {
+  // 修改构建播放地址的逻辑，直接返回 MP3 文件路径
+  const buildMp3Url = (music: MusicItem) => {
     if (!music) return '';
     
     // 使用固定的API基础URL，避免环境变量未加载的问题
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
-    // 去除'/api'后缀，因为hls-converter.php直接位于根目录
-    const baseUrl = apiBaseUrl.replace(/\/api$/, '');
-    const songDir = getDirectoryFromPath(music.path);
-    
     // 确保路径正确编码
+    const songDir = getDirectoryFromPath(music.path);
     const encodedPath = encodeURIComponent(songDir);
     
-    const fullUrl = `${baseUrl}/hls-converter.php?path=${encodedPath}`;
-    
-    return fullUrl;
+    // 直接返回 MP3 文件完整路径
+    return `${apiBaseUrl}${music.path}`;
   };
 
   return (
     <div className="container mx-auto py-4 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">HLS 音乐播放器</h1>
-      <p className="text-sm text-muted-foreground">全平台支持的 HLS 流媒体音乐播放器，支持 PC、安卓和 iOS</p>
+      <h1 className="text-2xl font-bold">音乐播放器</h1>
+      <p className="text-sm text-muted-foreground">全平台支持的音乐播放器，支持 PC、安卓和 iOS</p>
       
       {error && (
         <div className="p-4 border border-destructive rounded-md bg-destructive/10 text-destructive">
@@ -223,8 +219,8 @@ export default function MusicPlayerPage() {
         
         <TabsContent value="player" className="pt-4">
           {currentMusic ? (
-            <HLSMusicPlayer
-              src={buildHlsUrl(currentMusic)}
+            <MusicPlayer
+              src={buildMp3Url(currentMusic)}
               autoPlay={isPlaying}
               showControls={true}
               externalAudioRef={audioRef}
@@ -280,12 +276,12 @@ export default function MusicPlayerPage() {
           ) : filteredMusics.length === 0 ? (
             <div className="text-center p-4 border rounded-md">
               <p className="text-muted-foreground">
-                没有找到 HLS 音乐文件，请确保您已将音频文件转换为 HLS 格式。
+                没有找到音乐文件，请确保服务器上有可播放的音频文件。
               </p>
               <p className="text-xs mt-2">
-                您可以使用 FFmpeg 将音频文件转换为 HLS 格式：
+                您可以将音频文件放在服务器的音乐目录中：
                 <code className="block mt-1 p-2 bg-muted rounded-md text-left">
-                  ffmpeg -i input.wav -c:a aac -b:a 192k -hls_time 10 -hls_playlist_type vod -hls_segment_filename "output_%03d.ts" output.m3u8
+                  dogeow-api/public/musics/
                 </code>
               </p>
             </div>
