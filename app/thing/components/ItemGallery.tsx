@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { format } from 'date-fns'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -16,7 +15,7 @@ import { Slider } from "@/components/ui/slider"
 import { API_URL } from '@/utils/api'
 import { useRouter } from 'next/navigation'
 import { cn } from "@/lib/utils"
-import { LayoutGrid, Grid2X2, Grid3X3, ChevronDown, ChevronUp, Globe, LockIcon } from "lucide-react"
+import { Globe, LockIcon } from "lucide-react"
 
 interface ItemGalleryProps {
   items: any[]
@@ -57,8 +56,8 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
   // 构建正确的图片URL
   const getImageUrl = (path: string) => {
     if (!path) return ''
-    // 移除URL中可能存在的/api/部分
-    const baseUrl = API_URL.replace('/api', '')
+    // 移除URL中可能存在的/api/部分，添加空字符串作为默认值
+    const baseUrl = (API_URL || '').replace('/api', '')
     return `${baseUrl}/storage/${path}`
   }
   
