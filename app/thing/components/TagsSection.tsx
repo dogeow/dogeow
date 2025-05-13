@@ -1,18 +1,13 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Plus, Tag } from "lucide-react"
+import { Plus, Tag, Check, ChevronsUpDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import {
-  MultiSelect,
-  MultiSelectContent,
-  MultiSelectItem,
-  MultiSelectTrigger,
-  MultiSelectValue,
-} from "@/components/ui/multi-select"
 import { Tag as TagType } from "../types"
 import CreateTagDialog from './CreateTagDialog'
+import { cn } from "@/lib/utils"
+import { Input } from "@/components/ui/input"
 
 interface TagsSectionProps {
   selectedTags: string[];
@@ -28,6 +23,29 @@ const TagsSection: React.FC<TagsSectionProps> = ({
   onTagCreated
 }) => {
   const [createTagDialogOpen, setCreateTagDialogOpen] = useState(false)
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLDivElement>(null)
+  
+  // 关闭下拉框的点击外部处理
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current && 
+        triggerRef.current && 
+        !dropdownRef.current.contains(event.target as Node) && 
+        !triggerRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false)
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [])
   
   // 获取标签样式
   const getTagStyle = (color: string = "#3b82f6") => {
@@ -46,6 +64,20 @@ const TagsSection: React.FC<TagsSectionProps> = ({
     const brightness = (r * 299 + g * 587 + b * 114) / 1000
     return brightness > 155
   }
+  
+  // 切换标签的选中状态
+  const toggleTag = (tagId: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId) 
+        : [...prev, tagId]
+    )
+  }
+  
+  // 过滤标签
+  const filteredTags = tags.filter(tag => 
+    tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   return (
     <>
@@ -66,33 +98,82 @@ const TagsSection: React.FC<TagsSectionProps> = ({
                   className="h-7 px-2"
                   onClick={() => setCreateTagDialogOpen(true)}
                 >
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  <Tag className="h-3.5 w-3.5 mr-1" />
-                  新建标签
+                  <Plus className="h-3.5 w-3.5" />
+                  <Tag className="h-3.5 w-3.5" />
                 </Button>
               </Label>
-              <div className="relative z-10">
-                <MultiSelect
-                  value={selectedTags}
-                  onValueChange={setSelectedTags}
-                  closeOnSelect={false}
+              
+              {/* 自定义多选下拉菜单 */}
+              <div className="relative">
+                <div 
+                  ref={triggerRef}
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer"
                 >
-                  <MultiSelectTrigger className="w-full">
-                    <MultiSelectValue placeholder="选择标签" />
-                  </MultiSelectTrigger>
-                  <MultiSelectContent position="popper" align="start" side="bottom" className="z-50">
-                    {tags.map((tag) => (
-                      <MultiSelectItem key={tag.id} value={tag.id.toString()}>
-                        <Badge 
-                          style={getTagStyle(tag.color)}
-                          className="mr-2 py-0.5 px-2 my-0.5"
-                        >
-                          {tag.name}
-                        </Badge>
-                      </MultiSelectItem>
-                    ))}
-                  </MultiSelectContent>
-                </MultiSelect>
+                  <div className="flex gap-1 flex-wrap">
+                    {selectedTags.length > 0 ? (
+                      <span className="text-sm">已选择 {selectedTags.length} 项</span>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">选择标签</span>
+                    )}
+                  </div>
+                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                </div>
+                
+                {isDropdownOpen && (
+                  <div 
+                    ref={dropdownRef}
+                    className="absolute top-[calc(100%+5px)] left-0 w-full bg-popover z-[1000] rounded-md border border-border shadow-md"
+                  >
+                    <div className="p-2">
+                      <Input
+                        placeholder="搜索标签..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="h-8 text-sm"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="max-h-[300px] overflow-y-auto p-1">
+                      {filteredTags.length === 0 ? (
+                        <div className="py-6 text-center text-sm text-muted-foreground">
+                          未找到标签
+                        </div>
+                      ) : (
+                        filteredTags.map((tag) => {
+                          const isSelected = selectedTags.includes(tag.id.toString())
+                          return (
+                            <div
+                              key={tag.id}
+                              className={cn(
+                                "relative flex cursor-pointer select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none hover:bg-accent hover:text-accent-foreground",
+                                isSelected && "bg-accent/50"
+                              )}
+                              onClick={() => toggleTag(tag.id.toString())}
+                            >
+                              <div
+                                className={cn(
+                                  "absolute left-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                  isSelected
+                                    ? "bg-primary text-primary-foreground"
+                                    : "opacity-50"
+                                )}
+                              >
+                                {isSelected && <Check className="h-3 w-3" />}
+                              </div>
+                              <Badge 
+                                style={getTagStyle(tag.color)}
+                                className="mr-2 py-0.5 px-2 my-0.5"
+                              >
+                                {tag.name}
+                              </Badge>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             

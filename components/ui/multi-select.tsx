@@ -231,12 +231,27 @@ export function MultiSelectValue({
 export function MultiSelectContent({
   children,
   className,
+  avoidCollisions = false,
+  align = "center",
+  side = "bottom",
+  sideOffset = 4,
+  sticky = "always",
+  collisionPadding = 0,
   ...props
-}: React.ComponentPropsWithoutRef<typeof PopoverContent>) {
+}: React.ComponentPropsWithoutRef<typeof PopoverContent> & { 
+  avoidCollisions?: boolean;
+  sticky?: boolean | 'always' | 'partial';
+  collisionPadding?: number;
+}) {
   return (
     <PopoverContent 
       className={cn("p-0 w-[var(--radix-popover-trigger-width)]", className)} 
-      align="start"
+      align={align}
+      side={side}
+      sideOffset={sideOffset}
+      avoidCollisions={avoidCollisions}
+      sticky={sticky}
+      collisionPadding={collisionPadding}
       {...props}
     >
       <div className="max-h-[300px] overflow-y-auto">
