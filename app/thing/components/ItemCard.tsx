@@ -196,19 +196,6 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
             alt={item.name}
             fill
             className={className}
-            onError={(e) => {
-              setImageError(true);
-              
-              // 尝试使用备用URL
-              if (imageUrl === primaryImage.thumbnail_url && primaryImage.url) {
-                // 如果缩略图加载失败，尝试加载原图
-                e.currentTarget.src = primaryImage.url;
-              } else if (primaryImage.path && !imageUrl.includes(primaryImage.path)) {
-                // 尝试直接构造路径
-                e.currentTarget.src = getImageUrl(primaryImage.path);
-              }
-            }}
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
         </div>
       )
@@ -223,13 +210,8 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   
   // 渲染物品信息网格
   const renderInfoGrid = () => (
-        <div className="font-medium text-sm truncate">{item.description || ''}</div>
+    <div className="font-medium text-sm truncate">{item.description || ''}</div>
   )
-  
-  // 防止item对象有问题
-  if (!item || typeof item !== 'object') {
-    return <Card className="p-4">加载错误</Card>
-  }
   
   return (
     <Card 
@@ -249,14 +231,18 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
             ) : null}
           </div>
           <div className="flex flex-col flex-1 min-w-0 gap-1">
+            {/* 名称和分类 */}
             <div className="flex justify-between items-start">
               <div className="flex w-full justify-between items-center">
                 <h3 className="font-semibold truncate text-base">{item.name}</h3>
                 <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
               </div>
             </div>
+            {/* 描述 */}
             {renderInfoGrid()}
+            {/* 标签 */}
             {renderTags(item)}
+            {/* 位置 */}
             <div className="flex justify-between flex-auto">
               {renderLocation()}
             </div>
