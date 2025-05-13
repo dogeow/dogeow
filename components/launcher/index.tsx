@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button'
 import useAuthStore from '@/stores/authStore'
 import { Input } from '@/components/ui/input'
 import { SearchDialog } from '@/components/search/SearchDialog'
-import { isHlsCompatible, buildHlsUrl, setupHls } from './HLSIntegration'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth';
 
@@ -68,7 +67,7 @@ export function AppLauncher() {
         console.log('使用的API基础URL:', apiBaseUrl);
         
         // 获取音频列表
-        const musicUrl = `${apiBaseUrl}/music`;
+        const musicUrl = `${apiBaseUrl}/musics`;
         console.log('请求音频列表:', musicUrl);
         const musicResponse = await fetch(musicUrl);
         const musicData = await musicResponse.json();
