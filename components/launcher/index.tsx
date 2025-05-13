@@ -64,23 +64,17 @@ export function AppLauncher() {
     const fetchAvailableTracks = async () => {
       try {
         const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
-        console.log('使用的API基础URL:', apiBaseUrl);
         
         // 获取音频列表
         const musicUrl = `${apiBaseUrl}/musics`;
-        console.log('请求音频列表:', musicUrl);
         const musicResponse = await fetch(musicUrl);
         const musicData = await musicResponse.json();
-        
-        console.log('获取到音频列表:', musicData);
         
         setAvailableTracks(musicData);
         
         // 如果当前没有选中音轨，选择第一个
         const currentTrackValue = useMusicStore.getState().currentTrack;
-        console.log('当前选中音轨:', currentTrackValue);
         if ((!currentTrackValue || currentTrackValue === '') && musicData.length > 0) {
-          console.log('选择第一个音轨:', musicData[0].path);
           setCurrentTrack(musicData[0].path);
         }
       } catch (error) {
@@ -278,7 +272,7 @@ export function AppLauncher() {
       console.log('设置音频源:', currentTrack)
       
       // 构建音频URL
-      const audioUrl = currentTrack
+      const audioUrl = process.env.NEXT_PUBLIC_API_URL + currentTrack
       console.log('最终音频URL:', audioUrl)
       
     } catch (err) {
