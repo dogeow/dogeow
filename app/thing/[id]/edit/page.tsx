@@ -593,10 +593,6 @@ export default function EditItem() {
           
           <TabsContent value="details" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>详细信息</CardTitle>
-                <CardDescription>编辑物品的详细信息</CardDescription>
-              </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
