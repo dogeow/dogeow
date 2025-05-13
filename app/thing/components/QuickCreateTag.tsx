@@ -1,87 +1,84 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import React, { useState } from 'react'
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { Plus } from "lucide-react"
-import { toast } from "react-hot-toast"
-import { post } from "@/utils/api"
+import { toast } from "sonner"
+import { Tag } from '../types'
+import { apiRequest } from '@/utils/api'
 
-type QuickCreateTagProps = {
-  onTagCreated: (tag: any) => void
+interface QuickCreateTagProps {
+  onTagCreated: (tag: Tag) => void;
 }
 
-// 生成随机颜色
-const getRandomColor = (): string => {
-  const colors = [
-    "#3b82f6", // 蓝色
-    "#ef4444", // 红色
-    "#10b981", // 绿色
-    "#f59e0b", // 橙色
-    "#8b5cf6", // 紫色
-    "#ec4899", // 粉色
-    "#06b6d4", // 青色
-    "#84cc16", // 黄绿色
-    "#f43f5e", // 玫红色
-    "#6366f1", // 靛蓝色
-  ]
-  return colors[Math.floor(Math.random() * colors.length)]
-}
-
-export default function QuickCreateTag({ onTagCreated }: QuickCreateTagProps) {
-  const [tagName, setTagName] = useState("")
+const QuickCreateTag: React.FC<QuickCreateTagProps> = ({ onTagCreated }) => {
+  const [tagName, setTagName] = useState('')
   const [loading, setLoading] = useState(false)
   
-  const handleCreate = async () => {
+  // 随机生成颜色
+  const getRandomColor = () => {
+    const colors = [
+      '#ef4444', // 红色
+      '#f97316', // 橙色
+      '#eab308', // 黄色
+      '#22c55e', // 绿色
+      '#3b82f6', // 蓝色
+      '#8b5cf6', // 紫色
+      '#ec4899', // 粉色
+    ]
+    return colors[Math.floor(Math.random() * colors.length)]
+  }
+  
+  const handleCreateTag = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
     if (!tagName.trim()) {
+      toast.error('请输入标签名称')
       return
     }
     
     setLoading(true)
+    
     try {
-      // 随机生成一个颜色
-      const color = getRandomColor()
+      const tagData = { 
+        name: tagName.trim(), 
+        color: getRandomColor() 
+      }
       
-      const response = await post("/thing-tags", {
-        name: tagName,
-        color: color
-      })
+      const response = await apiRequest<Tag>('/tags', 'POST', tagData)
       
-      setTagName("")
+      toast.success('标签创建成功')
       onTagCreated(response)
-      toast.success("标签添加成功")
+      setTagName('')
     } catch (error) {
-      toast.error("添加标签失败")
-      console.error(error)
+      console.error('创建标签失败:', error)
+      toast.error(error instanceof Error ? error.message : '创建标签失败，请重试')
     } finally {
       setLoading(false)
     }
   }
-  
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && tagName.trim()) {
-      e.preventDefault()
-      handleCreate()
-    }
-  }
-  
+
   return (
-    <div className="flex items-center space-x-2">
-      <Input 
+    <form onSubmit={handleCreateTag} className="flex gap-2">
+      <Input
+        placeholder="输入标签名称"
         value={tagName}
         onChange={(e) => setTagName(e.target.value)}
-        placeholder="输入标签名称，按回车创建"
-        className="flex-1"
-        onKeyDown={handleKeyDown}
+        disabled={loading}
+        className="h-8 text-sm"
       />
       <Button 
-        size="sm"
-        onClick={handleCreate}
+        type="submit" 
+        size="sm" 
         disabled={loading || !tagName.trim()}
+        className="h-8"
       >
-        <Plus className="h-4 w-4 mr-1" />
+        <Plus className="h-3.5 w-3.5 mr-1" />
         添加
       </Button>
-    </div>
+    </form>
   )
-} 
+}
+
+export default QuickCreateTag 

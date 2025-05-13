@@ -1,146 +1,157 @@
 "use client"
 
-import { useState } from "react"
+import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, X } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { toast } from "react-hot-toast"
-import { post } from "@/utils/api"
+import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog"
+import { Tag } from '../types'
+import { apiRequest } from '@/utils/api'
+import { toast } from 'sonner'
 
-type CreateTagDialogProps = {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onTagCreated: (tag: Tag) => void
+interface CreateTagDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onTagCreated: (tag: Tag) => void;
 }
 
-type Tag = {
-  id: number
-  name: string
-  color: string
-  user_id: number
-}
-
-export default function CreateTagDialog({
-  open,
+const CreateTagDialog: React.FC<CreateTagDialogProps> = ({ 
+  open, 
   onOpenChange,
-  onTagCreated
-}: CreateTagDialogProps) {
-  const [newTag, setNewTag] = useState("")
-  const [newColor, setNewColor] = useState("#3b82f6") // 默认蓝色
+  onTagCreated 
+}) => {
   const [loading, setLoading] = useState(false)
-
-  // 添加标签
-  const addTag = async () => {
-    if (!newTag.trim()) {
-      toast.error("请输入标签名称")
+  const [name, setName] = useState('')
+  const [color, setColor] = useState('#3b82f6') // 默认蓝色
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!name.trim()) {
+      toast.error('请输入标签名称')
       return
     }
-
+    
     setLoading(true)
+    
     try {
-      const response = await post<Tag>("/thing-tags", {
-        name: newTag,
-        color: newColor
-      })
+      const tagData = { name: name.trim(), color }
+      const response = await apiRequest<Tag>('/tags', 'POST', tagData)
       
-      setNewTag("")
-      setNewColor("#3b82f6")
+      toast.success('标签创建成功')
+      
+      // 清空表单
+      setName('')
+      setColor('#3b82f6')
+      
+      // 通知父组件
       onTagCreated(response)
+      
+      // 关闭对话框
       onOpenChange(false)
-      toast.success("标签添加成功")
     } catch (error) {
-      toast.error("添加标签失败")
-      console.error(error)
+      console.error('创建标签失败:', error)
+      toast.error(error instanceof Error ? error.message : '创建标签失败，请重试')
     } finally {
       setLoading(false)
     }
   }
-
-  // 生成标签样式
-  const getTagStyle = (color: string = "#3b82f6") => {
-    return {
-      backgroundColor: color,
-      color: isLightColor(color) ? "#000" : "#fff"
-    }
-  }
-
-  // 判断颜色是否为浅色
-  const isLightColor = (color: string): boolean => {
-    const hex = color.replace("#", "")
-    const r = parseInt(hex.substr(0, 2), 16)
-    const g = parseInt(hex.substr(2, 2), 16)
-    const b = parseInt(hex.substr(4, 2), 16)
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000
-    return brightness > 155
-  }
+  
+  // 预定义颜色选项
+  const colorOptions = [
+    '#ef4444', // 红色
+    '#f97316', // 橙色
+    '#eab308', // 黄色
+    '#22c55e', // 绿色
+    '#3b82f6', // 蓝色
+    '#8b5cf6', // 紫色
+    '#ec4899', // 粉色
+    '#6b7280', // 灰色
+    '#000000', // 黑色
+  ]
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>创建新标签</DialogTitle>
           <DialogDescription>
-            为您的物品创建一个新的标签并设置颜色
+            创建一个新的标签来分类你的物品
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex flex-col space-y-4 py-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">标签名称</label>
+            <Label htmlFor="name">标签名称</Label>
             <Input
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
+              id="name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="输入标签名称"
+              disabled={loading}
+              maxLength={50}
+              autoFocus
             />
           </div>
           
           <div className="space-y-2">
-            <label className="text-sm font-medium">标签颜色</label>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="color"
-                value={newColor}
-                onChange={(e) => setNewColor(e.target.value)}
-                className="w-12 h-10 p-1"
-              />
-              <Input
-                value={newColor}
-                onChange={(e) => setNewColor(e.target.value)}
-                placeholder="#RRGGBB"
-                className="w-36"
-              />
+            <Label>标签颜色</Label>
+            <div className="flex flex-wrap gap-2">
+              {colorOptions.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={`h-8 w-8 rounded-full transition-all ${
+                    color === option ? 'ring-2 ring-offset-2 ring-primary' : ''
+                  }`}
+                  style={{ backgroundColor: option }}
+                  onClick={() => setColor(option)}
+                  disabled={loading}
+                />
+              ))}
+              
+              <div className="relative h-8">
+                <Input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="absolute opacity-0 w-8 h-8 p-0 cursor-pointer"
+                  disabled={loading}
+                />
+                <div 
+                  className="h-8 w-8 rounded-full border cursor-pointer flex items-center justify-center"
+                  style={{ backgroundColor: color }}
+                >
+                  <span className="text-xs text-white">+</span>
+                </div>
+              </div>
             </div>
           </div>
           
-          <div>
-            <label className="text-sm font-medium">预览</label>
-            <div className="mt-2">
-              <Badge style={getTagStyle(newColor)} className="h-6 px-2">
-                {newTag || "标签预览"}
-              </Badge>
-            </div>
-          </div>
-        </div>
-        
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            取消
-          </Button>
-          <Button onClick={addTag} disabled={loading || !newTag.trim()}>
-            <Plus className="h-4 w-4 mr-2" />
-            创建标签
-          </Button>
-        </DialogFooter>
+          <DialogFooter className="mt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
+              取消
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? '创建中...' : '创建标签'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   )
-} 
+}
+
+export default CreateTagDialog 

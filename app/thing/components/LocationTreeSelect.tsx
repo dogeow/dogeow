@@ -1,277 +1,153 @@
 "use client"
 
-import { useState, useEffect, useMemo } from 'react'
-import { ChevronRight, ChevronDown, Home, DoorOpen, MapPin, FolderPlus, FolderMinus } from 'lucide-react'
-import { toast } from 'sonner'
-import { cn } from '@/lib/utils'
+import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { apiRequest } from '@/utils/api'
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Search, FolderOpen, Folder, MapPin, Home, ChevronRight, ChevronDown } from "lucide-react"
+import { useAreas, useRooms, useSpots } from '@/utils/api'
+import { cn } from '@/lib/utils'
+import { LocationSelection } from '../types'
 
-// 定义类型
-type LocationType = 'area' | 'room' | 'spot';
-type LocationNode = {
-  id: string;
-  name: string;
-  type: LocationType;
-  original_id: number;
-  parent_id?: number;
-  children?: LocationNode[];
-  items_count?: number;
-};
-
-type LocationTreeSelectProps = {
-  onSelect: (type: LocationType, id: number, fullPath: string) => void;
-  selectedLocation?: { type: LocationType, id: number };
+interface LocationTreeSelectProps {
+  onSelect: (type: 'area' | 'room' | 'spot', id: number, fullPath: string) => void;
+  selectedLocation?: LocationSelection;
   className?: string;
 }
 
-export default function LocationTreeSelect({ onSelect, selectedLocation, className }: LocationTreeSelectProps) {
-  const [tree, setTree] = useState<LocationNode[]>([])
-  const [loading, setLoading] = useState(false)
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({ onSelect, selectedLocation, className }) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [allNodes, setAllNodes] = useState<LocationNode[]>([])
-  const [allNodeIds, setAllNodeIds] = useState<string[]>([])
+  const [expandedAreas, setExpandedAreas] = useState<number[]>([])
+  const [expandedRooms, setExpandedRooms] = useState<number[]>([])
   
-  // 加载树形结构数据
+  // 使用 SWR hooks 获取数据
+  const { data: areas = [] } = useAreas()
+  const { data: rooms = [] } = useRooms()
+  const { data: spots = [] } = useSpots()
+  
   useEffect(() => {
-    const fetchLocationTree = async () => {
-      setLoading(true)
-      try {
-        const data = await apiRequest<{tree: LocationNode[], spots: any[], rooms: any[]}>('/locations/tree')
+    // 如果有已选位置，将包含该位置的父级节点展开
+    if (selectedLocation) {
+      if (selectedLocation.type === 'room' || selectedLocation.type === 'spot') {
+        // 如果是房间或位置，找到对应的区域并展开
+        const room = rooms.find(r => r.id === (selectedLocation.type === 'room' 
+          ? selectedLocation.id 
+          : spots.find(s => s.id === selectedLocation.id)?.room_id))
         
-        setTree(data.tree)
-        
-        // 存储所有节点的平面列表，用于搜索
-        const flattenNodes: LocationNode[] = []
-        const nodeIds: string[] = []
-        
-        // 递归将树形结构转为平面结构
-        const flattenTree = (nodes: LocationNode[]) => {
-          nodes.forEach(node => {
-            flattenNodes.push(node)
-            if (node.children && node.children.length > 0) {
-              nodeIds.push(node.id)
-              flattenTree(node.children)
-            }
-          })
+        if (room && room.area_id) {
+          setExpandedAreas(prev => [...prev, room.area_id])
         }
-        
-        flattenTree(data.tree)
-        setAllNodes(flattenNodes)
-        setAllNodeIds(nodeIds)
-        
-        // 如果有选中的位置，自动展开其父节点
-        if (selectedLocation) {
-          const newExpandedNodes = new Set<string>()
-          
-          if (selectedLocation.type === 'spot') {
-            // 找到对应的区域和房间
-            data.spots.forEach((spot: any) => {
-              if (spot.id === selectedLocation.id) {
-                const room = data.rooms.find((r: any) => r.id === spot.room_id)
-                if (room) {
-                  newExpandedNodes.add(`area_${room.area_id}`)
-                  newExpandedNodes.add(`room_${room.id}`)
-                }
-              }
-            })
-          } else if (selectedLocation.type === 'room') {
-            // 找到对应的区域
-            data.rooms.forEach((room: any) => {
-              if (room.id === selectedLocation.id) {
-                newExpandedNodes.add(`area_${room.area_id}`)
-              }
-            })
-          }
-          
-          setExpandedNodes(newExpandedNodes)
+      }
+      
+      if (selectedLocation.type === 'spot') {
+        // 如果是位置，找到对应的房间并展开
+        const spot = spots.find(s => s.id === selectedLocation.id)
+        if (spot && spot.room_id) {
+          setExpandedRooms(prev => [...prev, spot.room_id])
         }
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-      } finally {
-        setLoading(false)
       }
     }
-    
-    fetchLocationTree()
-  }, [selectedLocation])
+  }, [selectedLocation, rooms, spots])
   
-  // 过滤搜索结果
-  const filteredNodes = useMemo(() => {
-    if (!searchTerm.trim()) return allNodes
+  // 根据搜索词过滤位置
+  const filteredAreas = areas.filter(area => 
+    searchTerm === '' || area.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+  
+  const filteredRooms = rooms.filter(room => 
+    searchTerm === '' || room.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+  
+  const filteredSpots = spots.filter(spot => 
+    searchTerm === '' || spot.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+  
+  // 显示所有过滤后的位置和它们的父节点
+  const getFilteredAreaIds = () => {
+    if (searchTerm === '') return expandedAreas
     
-    return allNodes.filter(node => 
-      node.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchingRooms = filteredRooms.map(room => room.area_id)
+    const matchingSpotsRooms = filteredSpots
+      .map(spot => rooms.find(room => room.id === spot.room_id))
+      .filter(Boolean)
+      .map(room => room!.area_id)
+    
+    return [...new Set([...filteredAreas.map(area => area.id), ...matchingRooms, ...matchingSpotsRooms])]
+  }
+  
+  const getFilteredRoomIds = () => {
+    if (searchTerm === '') return expandedRooms
+    
+    const matchingSpots = filteredSpots.map(spot => spot.room_id)
+    
+    return [...new Set([...filteredRooms.map(room => room.id), ...matchingSpots])]
+  }
+  
+  const shownAreaIds = getFilteredAreaIds()
+  const shownRoomIds = getFilteredRoomIds()
+  
+  // 处理展开/折叠
+  const toggleArea = (e: React.MouseEvent, areaId: number) => {
+    e.stopPropagation()
+    setExpandedAreas(prev => 
+      prev.includes(areaId) 
+        ? prev.filter(id => id !== areaId)
+        : [...prev, areaId]
     )
-  }, [searchTerm, allNodes])
+  }
   
-  // 一键展开所有节点
+  const toggleRoom = (e: React.MouseEvent, roomId: number) => {
+    e.stopPropagation()
+    setExpandedRooms(prev => 
+      prev.includes(roomId) 
+        ? prev.filter(id => id !== roomId)
+        : [...prev, roomId]
+    )
+  }
+  
+  // 全部展开
   const expandAll = () => {
-    setExpandedNodes(new Set(allNodeIds))
+    setExpandedAreas(areas.map(area => area.id))
+    setExpandedRooms(rooms.map(room => room.id))
   }
   
-  // 一键收起所有节点
+  // 全部折叠
   const collapseAll = () => {
-    setExpandedNodes(new Set())
+    setExpandedAreas([])
+    setExpandedRooms([])
   }
   
-  // 切换节点展开/折叠状态
-  const toggleNode = (nodeId: string) => {
-    const newExpandedNodes = new Set(expandedNodes)
-    if (newExpandedNodes.has(nodeId)) {
-      newExpandedNodes.delete(nodeId)
+  // 构建选择路径
+  const buildPath = (type: 'area' | 'room' | 'spot', id: number): string => {
+    if (type === 'area') {
+      const area = areas.find(a => a.id === id)
+      return area ? area.name : '未知区域'
+    } else if (type === 'room') {
+      const room = rooms.find(r => r.id === id)
+      if (!room) return '未知房间'
+      
+      const area = areas.find(a => a.id === room.area_id)
+      return `${area ? area.name : '未知区域'} / ${room.name}`
     } else {
-      newExpandedNodes.add(nodeId)
-    }
-    setExpandedNodes(newExpandedNodes)
-  }
-  
-  // 搜索时自动展开匹配节点的父节点
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      const matchingNodes = allNodes.filter(node => 
-        node.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      const spot = spots.find(s => s.id === id)
+      if (!spot) return '未知位置'
       
-      // 获取需要展开的父节点ID
-      const parentNodesIds = new Set<string>()
+      const room = rooms.find(r => r.id === spot.room_id)
+      if (!room) return `未知房间 / ${spot.name}`
       
-      // 为每个匹配节点找到其所有父节点
-      matchingNodes.forEach(node => {
-        if (node.type === 'spot') {
-          // 查找房间和区域
-          for (const area of tree) {
-            for (const room of area.children || []) {
-              if (room.children?.some(spot => spot.id === node.id)) {
-                parentNodesIds.add(area.id)
-                parentNodesIds.add(room.id)
-                break
-              }
-            }
-          }
-        } else if (node.type === 'room') {
-          // 查找区域
-          const area = tree.find(area => 
-            area.children?.some(room => room.id === node.id)
-          )
-          if (area) {
-            parentNodesIds.add(area.id)
-          }
-        }
-      })
-      
-      // 更新展开节点
-      setExpandedNodes(parentNodesIds)
-    }
-  }, [searchTerm, allNodes, tree])
-  
-  // 获取节点的完整路径
-  const getNodePath = (node: LocationNode): string => {
-    if (node.type === 'area') {
-      return node.name
-    }
-    
-    // 查找父节点
-    if (node.type === 'room') {
-      const area = tree.find(area => 
-        area.children?.some(room => room.id === node.id)
-      )
-      return area ? `${area.name} > ${node.name}` : node.name
-    }
-    
-    if (node.type === 'spot') {
-      for (const area of tree) {
-        for (const room of area.children || []) {
-          if (room.children?.some(spot => spot.id === node.id)) {
-            return `${area.name} > ${room.name} > ${node.name}`
-          }
-        }
-      }
-    }
-    
-    return node.name
-  }
-  
-  // 选择节点
-  const handleSelect = (node: LocationNode) => {
-    const fullPath = getNodePath(node)
-    onSelect(node.type, node.original_id, fullPath)
-  }
-  
-  // 渲染节点图标
-  const renderIcon = (type: LocationType) => {
-    switch (type) {
-      case 'area':
-        return <Home className="h-3 w-3 mr-0.5" />
-      case 'room':
-        return <DoorOpen className="h-3 w-3 mr-0.5" />
-      case 'spot':
-        return <MapPin className="h-3 w-3 mr-0.5" />
+      const area = areas.find(a => a.id === room.area_id)
+      return `${area ? area.name : '未知区域'} / ${room.name} / ${spot.name}`
     }
   }
   
-  // 判断节点是否被选中
-  const isSelected = (node: LocationNode) => {
-    return selectedLocation?.type === node.type && selectedLocation?.id === node.original_id
+  // 选择位置
+  const handleSelect = (type: 'area' | 'room' | 'spot', id: number) => {
+    const fullPath = buildPath(type, id)
+    onSelect(type, id, fullPath)
   }
-  
-  // 渲染树节点
-  const renderTreeNode = (node: LocationNode, level: number = 0) => {
-    const hasChildren = node.children && node.children.length > 0
-    const isExpanded = expandedNodes.has(node.id)
-    
-    return (
-      <div key={node.id} className="select-none">
-        <div 
-          className={cn(
-            "flex items-center py-0.5 px-2 rounded-md cursor-pointer hover:bg-muted transition-colors text-sm",
-            isSelected(node) && "bg-primary text-primary-foreground hover:bg-primary/90",
-            level > 0 && "ml-2"
-          )}
-          onClick={() => handleSelect(node)}
-        >
-          {hasChildren && (
-            <span 
-              className="mr-0.5 cursor-pointer"
-              onClick={(e) => {
-                e.stopPropagation()
-                toggleNode(node.id)
-              }}
-            >
-              {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-            </span>
-          )}
-          {!hasChildren && <span className="w-3 mr-0.5"></span>}
-          {renderIcon(node.type)}
-          <span className="truncate">{node.name}</span>
-          {node.items_count !== undefined && node.items_count > 0 && (
-            <span className="ml-1 text-xs bg-muted-foreground/20 px-1 py-0.5 rounded-full">
-              {node.items_count}
-            </span>
-          )}
-        </div>
-        
-        {hasChildren && isExpanded && (
-          <div className="ml-2">
-            {node.children!.map(child => renderTreeNode(child, level + 1))}
-          </div>
-        )}
-      </div>
-    )
-  }
-  
-  if (loading && tree.length === 0) {
-    return <div className="py-4 text-center text-muted-foreground">加载位置数据...</div>
-  }
-  
-  if (tree.length === 0) {
-    return <div className="py-4 text-center text-muted-foreground">暂无位置数据</div>
-  }
-  
+
   return (
-    <div className={cn("border rounded-md p-2 max-h-[200px] overflow-y-auto", className)}>
+    <div className={cn("border rounded-md p-2 max-h-[300px] overflow-y-auto", className)}>
       <div className="flex items-center gap-2 mb-2">
         <div className="flex items-center gap-1">
           <Button 
@@ -279,60 +155,113 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
             size="icon"
             onClick={expandAll}
             title="展开所有"
-            className="h-8 w-8 bg-primary/10 border-primary/20"
+            className="h-7 w-7"
           >
-            <FolderPlus className="h-4 w-4" />
+            <FolderOpen className="h-3.5 w-3.5" />
           </Button>
           <Button 
             variant="outline" 
             size="icon"
             onClick={collapseAll}
             title="收起所有"
-            className="h-8 w-8 bg-primary/10 border-primary/20"
+            className="h-7 w-7"
           >
-            <FolderMinus className="h-4 w-4" />
+            <Folder className="h-3.5 w-3.5" />
           </Button>
         </div>
         
-        <div className="flex-1">
+        <div className="relative flex-1">
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="搜索位置..."
+            className="pl-7 h-7 text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-8"
           />
         </div>
       </div>
       
-      <div className="grid grid-cols-1 gap-1 mt-2">
-        {searchTerm.trim() ? (
-          filteredNodes.length > 0 ? (
-            filteredNodes.map(node => (
-              <div 
-                key={node.id}
-                className={cn(
-                  "flex items-center py-1 px-2 rounded-md cursor-pointer hover:bg-muted transition-colors text-sm",
-                  isSelected(node) && "bg-primary text-primary-foreground hover:bg-primary/90"
-                )}
-                onClick={() => handleSelect(node)}
-              >
-                {renderIcon(node.type)}
-                <span className="truncate">{node.name}</span>
-                {node.items_count !== undefined && node.items_count > 0 && (
-                  <span className="ml-1 text-xs bg-muted-foreground/20 px-1 py-0.5 rounded-full">
-                    {node.items_count}
-                  </span>
-                )}
-                <span className="text-xs ml-2 text-muted-foreground">{getNodePath(node)}</span>
-              </div>
-            ))
-          ) : (
-            <div className="py-2 text-center text-sm text-muted-foreground">未找到匹配的位置</div>
-          )
-        ) : (
-          tree.map(node => renderTreeNode(node))
+      <ScrollArea className="h-[200px]">
+        {filteredAreas.length === 0 && (
+          <div className="py-4 text-center text-sm text-muted-foreground">
+            {searchTerm ? "没有匹配的位置" : "没有可用的位置"}
+          </div>
         )}
-      </div>
+        
+        {filteredAreas.map(area => (
+          <div key={area.id} className="mb-1">
+            <div 
+              className={cn(
+                "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
+                selectedLocation?.type === 'area' && selectedLocation.id === area.id && "bg-muted"
+              )}
+              onClick={() => handleSelect('area', area.id)}
+            >
+              <span
+                className="mr-1 cursor-pointer"
+                onClick={(e) => toggleArea(e, area.id)}
+              >
+                {shownAreaIds.includes(area.id) ? (
+                  <ChevronDown className="h-3.5 w-3.5" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5" />
+                )}
+              </span>
+              <Home className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+              <span className="flex-grow cursor-pointer truncate">
+                {area.name}
+              </span>
+            </div>
+            
+            {shownAreaIds.includes(area.id) && rooms
+              .filter(room => room.area_id === area.id)
+              .map(room => (
+                <div key={room.id} className="ml-4 mb-1">
+                  <div 
+                    className={cn(
+                      "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
+                      selectedLocation?.type === 'room' && selectedLocation.id === room.id && "bg-muted"
+                    )}
+                    onClick={() => handleSelect('room', room.id)}
+                  >
+                    <span
+                      className="mr-1 cursor-pointer"
+                      onClick={(e) => toggleRoom(e, room.id)}
+                    >
+                      {shownRoomIds.includes(room.id) ? (
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      ) : (
+                        <ChevronRight className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                    <Folder className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                    <span className="flex-grow cursor-pointer truncate">
+                      {room.name}
+                    </span>
+                  </div>
+                  
+                  {shownRoomIds.includes(room.id) && spots
+                    .filter(spot => spot.room_id === room.id)
+                    .map(spot => (
+                      <div 
+                        key={spot.id} 
+                        className={cn(
+                          "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
+                          selectedLocation?.type === 'spot' && selectedLocation.id === spot.id && "bg-muted"
+                        )}
+                        onClick={() => handleSelect('spot', spot.id)}
+                      >
+                        <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                        <span className="truncate">{spot.name}</span>
+                      </div>
+                    ))}
+                </div>
+              ))}
+          </div>
+        ))}
+      </ScrollArea>
     </div>
   )
-} 
+}
+
+export default LocationTreeSelect 
