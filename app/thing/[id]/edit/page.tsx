@@ -41,7 +41,7 @@ export default function EditItem() {
     status: 'active',
     purchase_date: null,
     expiry_date: null,
-    purchase_price: '',
+    purchase_price: null,
     category_id: '',
     area_id: '',
     room_id: '',
@@ -103,7 +103,7 @@ export default function EditItem() {
           status: item.status,
           purchase_date: item.purchase_date ? new Date(item.purchase_date) : null,
           expiry_date: item.expiry_date ? new Date(item.expiry_date) : null,
-          purchase_price: item.purchase_price?.toString() || '',
+          purchase_price: item.purchase_price || null,
           category_id: item.category_id?.toString() || '',
           area_id: item.spot?.room?.area?.id?.toString() || '',
           room_id: item.spot?.room?.id?.toString() || '',
@@ -225,8 +225,6 @@ export default function EditItem() {
     try {
       const updateData: any = {
         ...formData,
-        purchase_date: formData.purchase_date ? format(formData.purchase_date, 'yyyy-MM-dd') : null,
-        expiry_date: formData.expiry_date ? format(formData.expiry_date, 'yyyy-MM-dd') : null,
         purchase_price: formData.purchase_price ? Number(formData.purchase_price) : null,
         category_id: formData.category_id ? Number(formData.category_id) : null,
         area_id: formData.area_id ? Number(formData.area_id) : null,

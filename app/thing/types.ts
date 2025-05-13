@@ -6,7 +6,7 @@ export interface ItemFormData {
   status: string;
   purchase_date: Date | null;
   expiry_date: Date | null;
-  purchase_price: string;
+  purchase_price: number | null;
   category_id: string;
   area_id: string;
   room_id: string;
@@ -55,4 +55,76 @@ export interface Tag {
   id: number;
   name: string;
   color: string;
+}
+
+// 区域类型
+export interface Area {
+  id: number;
+  name: string;
+  user_id?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// 房间类型
+export interface Room {
+  id: number;
+  name: string;
+  area_id: number;
+  user_id?: number;
+  area?: Area;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// 位置类型
+export interface Spot {
+  id: number;
+  name: string;
+  room_id: number;
+  user_id?: number;
+  room?: Room;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// 物品类型
+export interface Item {
+  id: number;
+  name: string;
+  description: string | null;
+  quantity: number;
+  status: string;
+  purchase_date: string | null;
+  expiry_date: string | null;
+  purchase_price: number | null;
+  category_id: number | null;
+  area_id: number | null;
+  room_id: number | null;
+  spot_id: number | null;
+  is_public: boolean;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: number;
+    name: string;
+  };
+  category?: Category;
+  spot?: Spot & {
+    room?: Room & {
+      area?: Area;
+    };
+  };
+  images?: Array<{
+    id: number;
+    path: string;
+    thumbnail_path: string;
+    is_primary: boolean;
+  }>;
+  primary_image?: {
+    id: number;
+    path: string;
+    thumbnail_path: string;
+  };
+  tags?: Tag[];
 } 

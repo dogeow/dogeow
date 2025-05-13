@@ -60,7 +60,7 @@ const DetailsSection: React.FC<DetailsSectionProps> = ({
               type="number"
               step="0.01"
               min="0"
-              value={formData.purchase_price}
+              value={formData.purchase_price !== null ? formData.purchase_price : ''}
               onChange={handleInputChange}
               placeholder="0.00"
             />

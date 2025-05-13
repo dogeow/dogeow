@@ -10,7 +10,8 @@ import { Plus, Tag as TagIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import ImageUploader from '../ImageUploader'
-import { ItemFormData, TagType } from '../../add/page'
+import { ItemFormData } from '../../types'
+import { TagType } from '../../add/page'
 
 type UploadedImage = {
   path: string;

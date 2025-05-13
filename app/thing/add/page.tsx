@@ -13,14 +13,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import BasicInfoForm from '../components/forms/BasicInfoForm'
 import DetailInfoForm from '../components/forms/DetailInfoForm'
 import CreateTagDialog from '../components/CreateTagDialog'
-
-// 图片上传类型
-export type UploadedImage = {
-  path: string;
-  thumbnail_path: string;
-  url: string;
-  thumbnail_url: string;
-}
+import { UploadedImage, Tag } from '../types'
 
 // 位置相关类型定义
 export type LocationType = 'area' | 'room' | 'spot';
@@ -36,25 +29,18 @@ export type SelectedLocation = {
   id: number;
 } | undefined;
 
-// 标签类型
-export type TagType = {
-  id: number;
-  name: string;
-  color: string;
-  user_id?: number;
-  created_at?: string;
-  updated_at?: string;
-}
+// 重命名标签类型，保持兼容性
+export type TagType = Tag;
 
-// 验证模式
-export const itemSchema = z.object({
+// 使用内部Schema，与现有组件类型保持一致
+const itemSchema = z.object({
   name: z.string().min(1, "名称不能为空"),
-  description: z.string().optional(),
+  description: z.string(),
   quantity: z.number().int().min(1, "数量必须大于0"),
   status: z.string(),
-  purchase_date: z.string().nullable(),
-  expiry_date: z.string().nullable(),
-  purchase_price: z.number().nullable(),
+  purchase_date: z.union([z.date(), z.null()]),
+  expiry_date: z.union([z.date(), z.null()]),
+  purchase_price: z.union([z.number(), z.null()]),
   category_id: z.string(),
   area_id: z.string(),
   room_id: z.string(),
@@ -62,7 +48,8 @@ export const itemSchema = z.object({
   is_public: z.boolean(),
 })
 
-export type ItemFormData = z.infer<typeof itemSchema>
+// 内部表单数据类型
+type FormData = z.infer<typeof itemSchema>;
 
 export default function AddItem() {
   const router = useRouter()
@@ -73,7 +60,7 @@ export default function AddItem() {
   const [createTagDialogOpen, setCreateTagDialogOpen] = useState(false)
   
   // 使用 react-hook-form 管理表单状态
-  const formMethods = useForm<ItemFormData>({
+  const formMethods = useForm<FormData>({
     resolver: zodResolver(itemSchema),
     defaultValues: {
       name: '',
@@ -113,13 +100,15 @@ export default function AddItem() {
   }
   
   // 提交表单
-  const onSubmit = async (data: ItemFormData) => {
+  const onSubmit = async (data: FormData) => {
     setLoading(true)
     
     try {
       // 准备提交数据
       const itemData = {
         ...data,
+        purchase_date: data.purchase_date ? new Date(data.purchase_date.toString()).toISOString().split('T')[0] : null,
+        expiry_date: data.expiry_date ? new Date(data.expiry_date.toString()).toISOString().split('T')[0] : null,
         category_id: data.category_id && data.category_id !== "none" ? Number(data.category_id) : null,
         area_id: data.area_id ? Number(data.area_id) : null,
         room_id: data.room_id ? Number(data.room_id) : null,

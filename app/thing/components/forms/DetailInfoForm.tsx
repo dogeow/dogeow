@@ -7,7 +7,8 @@ import { DatePicker } from "@/components/ui/date-picker"
 import { format } from 'date-fns'
 import LocationTreeSelect from '../LocationTreeSelect'
 import { apiRequest } from '@/utils/api'
-import { ItemFormData, Location, LocationType, SelectedLocation } from '../../add/page'
+import { ItemFormData } from '../../types'
+import { Location, LocationType, SelectedLocation } from '../../add/page'
 
 interface DetailInfoFormProps {
   formMethods: UseFormReturn<ItemFormData>;
