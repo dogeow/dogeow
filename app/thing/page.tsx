@@ -29,7 +29,7 @@ export default function Thing() {
   const { items, categories, loading, error, fetchItems, fetchCategories, meta } = useItemStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
-  const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState<string>('none')
   const [selectedPublicStatus, setSelectedPublicStatus] = useState<string>('none')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
