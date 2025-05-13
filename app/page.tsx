@@ -88,14 +88,16 @@ export default function Home() {
               rowSpan={tile.rowSpan}
               onClick={() => router.push(tile.href)}
             >
-              <IconWrapper>
-                <Image
-                  src={`/images/projects/${tile.icon}`}
-                  alt={tile.name}
-                  fill
-                  className="object-contain"
-                />
-              </IconWrapper>
+              {tile.icon.length > 0 && (  
+                <IconWrapper>
+                  <Image
+                    src={`/images/projects/${tile.icon}`}
+                    alt={tile.name}
+                    fill
+                    className="object-contain"
+                  />
+                </IconWrapper>
+              )}
               <TileName>{tile.name}</TileName>
             </TileItem>
           ))}
@@ -111,14 +113,16 @@ export default function Home() {
               onClick={() => router.push(tile.href)}
               style={{ width: 'calc(33.33% - 0.67rem)' }}
             >
-              <IconWrapper>
-                <Image
-                  src={`/images/projects/${tile.icon}`}
-                  alt={tile.name}
-                  fill
-                  className="object-contain"
-                />
-              </IconWrapper>
+              {tile.icon.length > 0 && (  
+                <IconWrapper>
+                  <Image
+                    src={`/images/projects/${tile.icon}`}
+                    alt={tile.name}
+                    fill
+                    className="object-contain"
+                  />
+                </IconWrapper>
+              )}
               <TileName>{tile.name}</TileName>
             </TileItem>
           ))}
@@ -133,14 +137,16 @@ export default function Home() {
                 onClick={() => router.push(tile.href)}
                 style={{ width: '100%'}}
               >
-                <IconWrapper>
-                  <Image
-                    src={`/images/projects/${tile.icon}`}
-                    alt={tile.name}
-                    fill
-                    className="object-contain"
-                  />
-                </IconWrapper>
+                {tile.icon.length > 0 && (  
+                  <IconWrapper>
+                    <Image
+                      src={`/images/projects/${tile.icon}`}
+                      alt={tile.name}
+                      fill
+                      className="object-contain"
+                    />
+                  </IconWrapper>
+                )}
                 <TileName>{tile.name}</TileName>
               </TileItem>
             ))}
@@ -157,14 +163,16 @@ export default function Home() {
               onClick={() => router.push(tile.href)}
               style={{ width: 'calc(33.33% - 0.67rem)' }}
             >
-              <IconWrapper>
-                <Image
-                  src={`/images/projects/${tile.icon}`}
-                  alt={tile.name}
-                  fill
-                  className="object-contain"
-                />
-              </IconWrapper>
+              {tile.icon.length > 0 && (  
+                <IconWrapper>
+                  <Image
+                    src={`/images/projects/${tile.icon}`}
+                    alt={tile.name}
+                    fill
+                    className="object-contain"
+                  />
+                </IconWrapper>
+              )}
               <TileName>{tile.name}</TileName>
             </TileItem>
           ))}
