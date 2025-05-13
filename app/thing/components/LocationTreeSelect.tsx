@@ -246,7 +246,7 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
           {!hasChildren && <span className="w-3 mr-0.5"></span>}
           {renderIcon(node.type)}
           <span className="truncate">{node.name}</span>
-          {node.type === 'spot' && node.items_count !== undefined && node.items_count > 0 && (
+          {node.items_count !== undefined && node.items_count > 0 && (
             <span className="ml-1 text-xs bg-muted-foreground/20 px-1 py-0.5 rounded-full">
               {node.items_count}
             </span>
@@ -318,6 +318,11 @@ export default function LocationTreeSelect({ onSelect, selectedLocation, classNa
               >
                 {renderIcon(node.type)}
                 <span className="truncate">{node.name}</span>
+                {node.items_count !== undefined && node.items_count > 0 && (
+                  <span className="ml-1 text-xs bg-muted-foreground/20 px-1 py-0.5 rounded-full">
+                    {node.items_count}
+                  </span>
+                )}
                 <span className="text-xs ml-2 text-muted-foreground">{getNodePath(node)}</span>
               </div>
             ))

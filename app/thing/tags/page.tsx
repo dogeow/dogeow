@@ -14,6 +14,7 @@ type Tag = {
   id: number
   name: string
   color?: string
+  items_count: number
   created_at: string
   updated_at: string
 }
@@ -144,6 +145,9 @@ export default function ThingTags() {
                 className="h-8 px-3 flex items-center"
               >
                 {tag.name}
+                <Badge variant="secondary" className="ml-1 text-[10px] px-1 min-w-5 text-center">
+                  {tag.items_count}
+                </Badge>
                 <Button
                   variant="ghost"
                   size="icon"

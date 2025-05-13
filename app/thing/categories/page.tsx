@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2, Check, X } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import ThingNavigation from '../components/ThingNavigation'
-import { post, put, del } from '@/utils/api'
+import { post, put, del, get } from '@/utils/api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function Categories() {
-  const { categories, fetchCategories } = useItemStore()
+  const { categories, fetchCategories, items } = useItemStore()
   const [loading, setLoading] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [editingCategory, setEditingCategory] = useState<{id: number, name: string} | null>(null)
@@ -31,10 +31,12 @@ export default function Categories() {
   const [inlineEditingName, setInlineEditingName] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
+  const [uncategorizedCount, setUncategorizedCount] = useState(0)
   const inlineInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     fetchCategories()
+    fetchUncategorizedCount()
   }, [fetchCategories])
 
   useEffect(() => {
@@ -42,6 +44,16 @@ export default function Categories() {
       inlineInputRef.current.focus()
     }
   }, [inlineEditingId])
+
+  // 获取未分类物品数量
+  const fetchUncategorizedCount = async () => {
+    try {
+      const response: { data: any[], meta?: { total: number } } = await get('/items?uncategorized=true&own=true')
+      setUncategorizedCount(response.meta?.total || 0)
+    } catch (error) {
+      console.error('获取未分类物品数量失败:', error)
+    }
+  }
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
@@ -177,11 +189,23 @@ export default function Categories() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>名称</TableHead>
+                  <TableHead className="w-full">名称</TableHead>
+                  <TableHead className="text-right">物品数量</TableHead>
                   <TableHead className="w-[50px]">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
+                <TableRow>
+                  <TableCell>
+                    <div className="font-medium">未分类</div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {uncategorizedCount}
+                  </TableCell>
+                  <TableCell>
+                    {/* 未分类项无法删除 */}
+                  </TableCell>
+                </TableRow>
                 {categories.map((category) => (
                   <TableRow key={category.id}>
                     <TableCell>
@@ -223,6 +247,9 @@ export default function Categories() {
                           {category.name}
                         </div>
                       )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {category.items_count ?? 0}
                     </TableCell>
                     <TableCell>
                       <div className="flex space-x-2">

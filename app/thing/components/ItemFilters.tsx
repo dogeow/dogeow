@@ -19,6 +19,10 @@ interface ItemFiltersProps {
 
 // 定义筛选条件类型
 interface FilterState {
+  name: string;
+  description: string;
+  status: string;
+  tags: string;
   category_id: string | number;
   purchase_date_from: Date | null;
   purchase_date_to: Date | null;
@@ -45,6 +49,10 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   // 初始筛选条件
   const initialFilters: FilterState = {
+    name: '',
+    description: '',
+    status: 'all',
+    tags: '',
     category_id: 'all',
     purchase_date_from: null,
     purchase_date_to: null,
@@ -179,7 +187,67 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         </TabsList>
 
         <TabsContent value="basic" className="space-y-6">
+          <div className="space-y-3">
+            <Label className="text-base font-medium">名称</Label>
+            <Input
+              placeholder="输入物品名称关键词"
+              value={filters.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              className="h-11"
+            />
+          </div>
+          
+          <Separator className="my-4" />
+          
+          <div className="space-y-3">
+            <Label className="text-base font-medium">描述</Label>
+            <Input
+              placeholder="输入物品描述关键词"
+              value={filters.description}
+              onChange={(e) => handleChange('description', e.target.value)}
+              className="h-11"
+            />
+          </div>
+          
+          <Separator className="my-4" />
+          
+          <div className="space-y-3">
+            <Label className="text-base font-medium">状态</Label>
+            <Select 
+              value={filters.status} 
+              onValueChange={(value) => handleChange('status', value)}
+            >
+              <SelectTrigger className="h-11">
+                <SelectValue placeholder="选择状态" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部状态</SelectItem>
+                <SelectItem value="active">正常</SelectItem>
+                <SelectItem value="archived">已归档</SelectItem>
+                <SelectItem value="expired">已过期</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <Separator className="my-4" />
+          
+          <div className="space-y-3">
+            <Label className="text-base font-medium">标签</Label>
+            <Input
+              placeholder="输入物品标签，用逗号分隔"
+              value={filters.tags}
+              onChange={(e) => handleChange('tags', e.target.value)}
+              className="h-11"
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="detailed" className="space-y-6">
           {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to', 'include_null_purchase_date')}
+          
+          <Separator className="my-4" />
+          
+          {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to', 'include_null_expiry_date')}
           
           <Separator className="my-4" />
           
@@ -208,10 +276,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
               </div>
             </div>
           </div>
-        </TabsContent>
-
-        <TabsContent value="detailed" className="space-y-6">
-          {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to', 'include_null_expiry_date')}
           
           <Separator className="my-4" />
           

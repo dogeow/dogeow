@@ -58,6 +58,7 @@ interface Category {
   id: number;
   name: string;
   user_id: number;
+  items_count?: number;
 }
 
 interface Tag {
