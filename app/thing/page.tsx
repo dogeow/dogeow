@@ -33,6 +33,7 @@ export default function Thing() {
   const [selectedPublicStatus, setSelectedPublicStatus] = useState<string>('none')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [initialLoaded, setInitialLoaded] = useState(false)
   
   // 计算总页数
   const totalPages = meta?.last_page || 1
@@ -57,15 +58,22 @@ export default function Thing() {
     const searchParams = new URLSearchParams(window.location.search)
     const search = searchParams.get('search')
     
-    if (search) {
-      setSearchTerm(search)
-      loadItems({ page: 1 })
-    } else {
-      loadItems()
+    // 只在组件首次加载时执行
+    if (!initialLoaded) {
+      if (search) {
+        setSearchTerm(search)
+        loadItems({ page: 1 })
+      } else {
+        loadItems()
+      }
+      setInitialLoaded(true)
     }
-    
+  }, [fetchItems, initialLoaded])
+  
+  // 单独加载分类
+  useEffect(() => {
     fetchCategories()
-  }, [fetchItems, fetchCategories, selectedPublicStatus])
+  }, [fetchCategories])
 
   // 处理页面变化
   const handlePageChange = (page: number) => {

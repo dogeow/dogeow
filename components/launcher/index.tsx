@@ -62,29 +62,27 @@ export function AppLauncher() {
         NODE_ENV: process.env.NODE_ENV
       });
     }
-    
-    // 加载音频列表
-    const fetchAvailableTracks = async () => {
-      try {
-        // 获取音频列表
-        const musicUrl = `${apiUrl}/api/musics`;
-        const musicResponse = await fetch(musicUrl);
-        const musicData = await musicResponse.json();
-        
-        setAvailableTracks(musicData);
-        
-        // 如果当前没有选中音轨，选择第一个
-        const currentTrackValue = useMusicStore.getState().currentTrack;
-        if ((!currentTrackValue || currentTrackValue === '') && musicData.length > 0) {
-          setCurrentTrack(musicData[0].path);
-        }
-      } catch (error) {
-        console.error('加载音频列表失败:', error);
+  }, []);
+  
+  // 加载音频列表
+  const fetchAvailableTracks = async () => {
+    try {
+      // 获取音频列表
+      const musicUrl = `${apiUrl}/api/musics`;
+      const musicResponse = await fetch(musicUrl);
+      const musicData = await musicResponse.json();
+      
+      setAvailableTracks(musicData);
+      
+      // 如果当前没有选中音轨，选择第一个
+      const currentTrackValue = useMusicStore.getState().currentTrack;
+      if ((!currentTrackValue || currentTrackValue === '') && musicData.length > 0) {
+        setCurrentTrack(musicData[0].path);
       }
-    };
-    
-    fetchAvailableTracks();
-  }, [setCurrentTrack]);
+    } catch (error) {
+      console.error('加载音频列表失败:', error);
+    }
+  };
   
   // 监听currentTrack变化，但不自动初始化播放器
   useEffect(() => {
@@ -357,9 +355,13 @@ export function AppLauncher() {
   const toggleDisplayMode = (mode: DisplayMode) => {
     setDisplayMode(mode)
     
-    // 当切换到音乐模式时，初始化音频源
-    if (mode === 'music' && currentTrack && !audioRef.current?.src) {
-      setupMediaSource()
+    // 当切换到音乐模式时，加载音频列表并初始化音频源
+    if (mode === 'music') {
+      fetchAvailableTracks();
+      
+      if (currentTrack && !audioRef.current?.src) {
+        setupMediaSource()
+      }
     }
   }
   

@@ -56,7 +56,6 @@ export default function Home() {
   const router = useRouter();
   const tiles = configs.tiles as Tile[];
 
-  // 使用useEffect确保只在客户端执行一次
   useEffect(() => {
     // https://patorjk.com/software/taag
     // Font Name: Calvin S
@@ -66,7 +65,7 @@ export default function Home() {
        ║║│ ││ ┬├┤ ║ ║║║║
       ═╩╝└─┘└─┘└─┘╚═╝╚╩╝
   `,
-      "color: pink"
+      "color: yellow"
     );
   }, []);
   
