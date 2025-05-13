@@ -278,36 +278,9 @@ export function AppLauncher() {
       console.log('设置音频源:', currentTrack)
       
       // 构建音频URL
-      const audioUrl = buildHlsUrl(currentTrack)
+      const audioUrl = currentTrack
       console.log('最终音频URL:', audioUrl)
       
-      // 直接设置音频元素
-      hlsInstanceRef.current = setupHls(
-        audioRef.current,
-        audioUrl,
-        (error) => {
-          console.error('音频播放错误:', error)
-          setAudioError(error)
-        },
-        () => console.log('音频元素已设置'),
-        () => {
-          console.log('音频元数据已加载，准备播放')
-          
-          // 设置音量
-          if (audioRef.current) {
-            audioRef.current.volume = isMuted ? 0 : volume
-            
-            // 如果之前是播放状态，则尝试播放
-            if (isPlaying && userInteracted) {
-              audioRef.current.play().catch(err => {
-                console.error('播放失败:', err)
-                setAudioError(`播放失败: ${err.message}`)
-                setIsPlaying(false)
-              })
-            }
-          }
-        }
-      )
     } catch (err) {
       console.error('设置音频源失败:', err)
       setAudioError(`设置音频源失败: ${err}`)
