@@ -416,10 +416,6 @@ export default function AddItem() {
           
           <TabsContent value="basic" className="space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle>基本信息</CardTitle>
-                <CardDescription>填写物品的基本信息</CardDescription>
-              </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-6">
                   <div className="space-y-2">
