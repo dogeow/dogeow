@@ -196,11 +196,6 @@ export async function apiRequest<T>(
         timestamp: new Date().toISOString()
       };
       
-      // 使用自定义函数记录iOS错误
-      if (typeof logErrorToServer === 'function') {
-        logErrorToServer('ios_network_error', `iOS上传错误: ${errorMessage}`, errorContext);
-      }
-      
       // 为用户提供更友好的错误信息
       if (/iPad|iPhone|iPod/.test(navigator.userAgent) && data instanceof FormData) {
         throw new Error('文件上传失败，这可能是由于网络连接问题或iOS设备限制导致的。请尝试：\n1. 使用WiFi网络\n2. 选择较小的图片\n3. 稍后再试');
@@ -270,7 +265,23 @@ export const useUser = () => {
 
 // 物品相关 hooks
 export const useItems = (params?: Record<string, any>) => {
-  const queryString = new URLSearchParams(params || {}).toString();
+  // 使用符合spatie/laravel-query-builder的参数格式
+  const queryParams = new URLSearchParams();
+  
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        // 页码不需要加filter前缀
+        if (key === 'page') {
+          queryParams.append(key, String(value));
+        } else {
+          queryParams.append(`filter[${key}]`, String(value));
+        }
+      }
+    });
+  }
+  
+  const queryString = queryParams.toString();
   const url = `/items${queryString ? `?${queryString}` : ''}`;
   return useSWR<{ data: Item[]; meta: any }>(url, fetcher);
 };
@@ -380,34 +391,6 @@ export default {
   useNavCategories,
   useNavItems
 };
-
-/**
- * 记录错误日志到后端
- */
-export async function logErrorToServer(
-  errorType: string, 
-  errorMessage: string, 
-  errorDetails: Record<string, any> = {}
-): Promise<void> {
-  try {
-    const errorLog = {
-      error_type: errorType,
-      error_message: errorMessage,
-      error_details: errorDetails,
-      user_agent: navigator.userAgent,
-      timestamp: new Date().toISOString(),
-      url: window.location.href
-    };
-    
-    console.log('发送错误日志到服务器:', errorLog);
-    
-    // 发送日志到后端
-    await apiRequest('/debug/log-error', 'POST', errorLog);
-  } catch (err) {
-    // 如果记录日志失败，只在控制台记录，不抛出异常
-    console.error('记录错误日志到服务器失败:', err);
-  }
-}
 
 // 用于构建图片URL的辅助函数
 export const getImageUrl = (path: string) => {

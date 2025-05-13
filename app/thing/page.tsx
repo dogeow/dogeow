@@ -12,6 +12,7 @@ import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ItemGallery from './components/ItemGallery'
 import { useItemStore } from '@/stores/itemStore'
+import { Item } from '@/app/thing/types'
 
 // 定义视图模式类型
 type ViewMode = 'list' | 'gallery';
@@ -21,12 +22,16 @@ interface FilterParams {
   page?: number;
   search?: string;
   category_id?: string | number;
+  include_null_purchase_date?: boolean;
+  include_null_expiry_date?: boolean;
+  purchase_date_from?: Date | null;
+  expiry_date_from?: Date | null;
   [key: string]: any;
 }
 
 export default function Thing() {
   const router = useRouter()
-  const { items, categories, loading, error, fetchItems, fetchCategories, meta } = useItemStore()
+  const { items, categories, loading, error, fetchItems, fetchCategories, meta, filters: savedFilters, saveFilters } = useItemStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string>('none')
@@ -47,10 +52,18 @@ export default function Thing() {
 
   // 加载数据
   const loadItems = (params = {}) => {
-    fetchItems({
+    const allParams = {
       ...getBaseFilterParams(),
       ...params
-    })
+    };
+    
+    fetchItems(allParams);
+    // 保存筛选条件，除了页码
+    const filtersToSave = { ...allParams };
+    if ('page' in filtersToSave) {
+      delete filtersToSave.page;
+    }
+    saveFilters(filtersToSave);
   }
 
   useEffect(() => {
@@ -60,15 +73,35 @@ export default function Thing() {
     
     // 只在组件首次加载时执行
     if (!initialLoaded) {
-      if (search) {
-        setSearchTerm(search)
-        loadItems({ page: 1 })
+      // 从 savedFilters 加载已保存的筛选条件
+      if (Object.keys(savedFilters).length > 0) {
+        // 恢复保存的筛选条件到本地状态
+        if (savedFilters.search) {
+          setSearchTerm(savedFilters.search);
+        }
+        
+        if (savedFilters.category_id) {
+          setSelectedCategory(String(savedFilters.category_id));
+        }
+        
+        if (savedFilters.is_public !== undefined) {
+          setSelectedPublicStatus(savedFilters.is_public === true ? 'true' : 'false');
+        }
+        
+        // 使用已保存的筛选条件加载数据
+        fetchItems(); // 会自动使用已保存的筛选条件
+      } else if (search) {
+        // 如果URL中有搜索参数但没有已保存的筛选条件
+        setSearchTerm(search);
+        const params = { search, page: 1 };
+        loadItems(params);
       } else {
-        loadItems()
+        // 没有筛选条件，加载所有物品
+        loadItems();
       }
-      setInitialLoaded(true)
+      setInitialLoaded(true);
     }
-  }, [fetchItems, initialLoaded])
+  }, [fetchItems, initialLoaded, savedFilters])
   
   // 单独加载分类
   useEffect(() => {
@@ -108,19 +141,76 @@ export default function Thing() {
 
   // 应用筛选条件
   const handleApplyFilters = (filters: FilterParams) => {
-    // 移除undefined、null和空字符串值
+    // 保存用于前端处理的空日期选项
+    const includeNullPurchaseDate = filters.include_null_purchase_date;
+    const includeNullExpiryDate = filters.include_null_expiry_date;
+    
+    // 移除undefined、null和空字符串值，同时移除特殊参数
     const cleanFilters = Object.fromEntries(
-      Object.entries(filters).filter(([_, value]) => 
-        value !== undefined && value !== null && value !== ''
+      Object.entries(filters).filter(([key, value]) => 
+        value !== undefined && value !== null && value !== '' && 
+        key !== 'include_null_purchase_date' && key !== 'include_null_expiry_date' &&
+        key !== 'exclude_null_purchase_date' && key !== 'exclude_null_expiry_date'
       )
     )
     
-    setCurrentPage(1)
-    setFiltersOpen(false)
-    loadItems({
+    setCurrentPage(1);
+    setFiltersOpen(false);
+    
+    // 加载数据，不带特殊参数
+    fetchItems({
       ...cleanFilters,
       page: 1
-    })
+    }).then((result) => {
+      // 处理前端过滤
+      if (result?.data && (
+          (filters.purchase_date_from && !includeNullPurchaseDate) || 
+          (filters.expiry_date_from && !includeNullExpiryDate))
+      ) {
+        // 创建一个新的items数组，应用前端过滤
+        const filteredItems = result.data.filter((item: Item) => {
+          // 如果有购买日期筛选且不包含空日期
+          if (filters.purchase_date_from && !includeNullPurchaseDate && item.purchase_date === null) {
+            return false;
+          }
+          
+          // 如果有过期日期筛选且不包含空日期
+          if (filters.expiry_date_from && !includeNullExpiryDate && item.expiry_date === null) {
+            return false;
+          }
+          
+          return true;
+        });
+        
+        // 更新状态中的items
+        useItemStore.setState({ 
+          items: filteredItems,
+          meta: result.meta
+        });
+      }
+      
+      // 保存筛选条件（包括前端处理的特殊参数）
+      const filtersToSave = {
+        ...cleanFilters,
+        include_null_purchase_date: includeNullPurchaseDate,
+        include_null_expiry_date: includeNullExpiryDate
+      };
+      saveFilters(filtersToSave);
+    });
+  }
+
+  // 在handleReset方法中也要清除保存的筛选条件
+  const handleReset = () => {
+    setSearchTerm('');
+    setSelectedCategory('none');
+    setSelectedPublicStatus('none');
+    setCurrentPage(1);
+    
+    // 清除保存的筛选条件
+    saveFilters({});
+    
+    // 重新加载数据
+    loadItems({});
   }
 
   // 渲染加载状态
@@ -263,7 +353,10 @@ export default function Thing() {
             </SheetDescription>
           </SheetHeader>
           <div className="py-1">
-            <ItemFilters onApply={handleApplyFilters} />
+            <ItemFilters 
+              onApply={handleApplyFilters} 
+              key={JSON.stringify(savedFilters)}
+            />
           </div>
         </SheetContent>
       </Sheet>
@@ -277,9 +370,12 @@ export default function Thing() {
     return items.length === 0 ? renderEmpty() : renderItems()
   }
 
+  // 添加重置按钮到页面顶部
   return (
     <div className="flex flex-col gap-2">
-      {renderFilters()}
+      <div className="flex justify-between items-center">
+        {renderFilters()}
+      </div>
       {renderContent()}
     </div>
   )

@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { useCategories, useAreas, useRooms, useSpots } from '@/utils/api'
 import type { Area, Room, Spot } from '@/app/thing/types'
+import { useItemStore } from '@/stores/itemStore'
 
 interface ItemFiltersProps {
   onApply: (filters: FilterState) => void
@@ -41,6 +42,7 @@ interface FilterState {
 }
 
 export default function ItemFilters({ onApply }: ItemFiltersProps) {
+  const { filters: savedFilters } = useItemStore();
   const { data: categories = [], error: categoriesError } = useCategories()
   const { data: areas = [], error: areasError } = useAreas()
   const { data: rooms = [], error: roomsError } = useRooms()
@@ -68,7 +70,36 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     include_null_expiry_date: true,
   }
   
-  const [filters, setFilters] = useState<FilterState>(initialFilters)
+  // 从保存的筛选条件初始化
+  const getInitialState = () => {
+    if (Object.keys(savedFilters).length === 0) {
+      return initialFilters;
+    }
+    
+    // 合并保存的筛选条件和初始条件
+    const mergedFilters = { ...initialFilters };
+    
+    // 处理普通字段
+    Object.entries(savedFilters).forEach(([key, value]) => {
+      if (key in mergedFilters) {
+        // 特殊处理日期字段
+        if (key.includes('date_from') || key.includes('date_to')) {
+          if (value) {
+            if (key === 'purchase_date_from' || key === 'purchase_date_to' || 
+                key === 'expiry_date_from' || key === 'expiry_date_to') {
+              (mergedFilters as any)[key] = new Date(value as string);
+            }
+          }
+        } else {
+          (mergedFilters as any)[key] = value;
+        }
+      }
+    });
+    
+    return mergedFilters;
+  };
+  
+  const [filters, setFilters] = useState<FilterState>(getInitialState())
   
   // 获取认证令牌
   const getAuthHeaders = () => ({
@@ -111,8 +142,12 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     // 创建一个新的对象，只保留非空、非"all"的值
     const appliedFilters = Object.entries(filters).reduce((acc, [key, value]) => {
       const fieldKey = key as keyof FilterState;
-      // 不包含空值、"all"值和is_public为null的情况
-      if (fieldKey !== 'is_public' && value !== null && value !== '' && value !== 'all') {
+      // 保留包含空日期的控制参数，但过滤不在后端允许的过滤参数
+      if ((fieldKey === 'include_null_purchase_date' || fieldKey === 'include_null_expiry_date') ||
+          (fieldKey !== 'is_public' && 
+           fieldKey !== 'exclude_null_purchase_date' && 
+           fieldKey !== 'exclude_null_expiry_date' && 
+           value !== null && value !== '' && value !== 'all')) {
         acc[fieldKey] = value;
         
         // 特别打印category_id的值
@@ -122,15 +157,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       }
       return acc;
     }, {} as Partial<FilterState>);
-    
-    // 如果有日期筛选条件且不包含空日期，添加特殊标记
-    if (filters.purchase_date_from && !filters.include_null_purchase_date) {
-      appliedFilters.exclude_null_purchase_date = true;
-    }
-    
-    if (filters.expiry_date_from && !filters.include_null_expiry_date) {
-      appliedFilters.exclude_null_expiry_date = true;
-    }
     
     console.log('应用筛选条件:', appliedFilters);
     onApply(appliedFilters as FilterState);

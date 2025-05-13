@@ -74,6 +74,7 @@ interface ItemState {
   loading: boolean;
   error: string | null;
   meta: any | null;
+  filters: Record<string, any>;
   
   fetchItems: (params?: Record<string, any>) => Promise<any>;
   fetchCategories: () => Promise<Category[] | undefined>;
@@ -91,6 +92,7 @@ interface ItemState {
     tags?: number[]
   }) => Promise<Item>;
   deleteItem: (id: number) => Promise<void>;
+  saveFilters: (filters: Record<string, any>) => void;
 }
 
 export const useItemStore = create<ItemState>((set, get) => ({
@@ -100,24 +102,29 @@ export const useItemStore = create<ItemState>((set, get) => ({
   loading: false,
   error: null,
   meta: null,
+  filters: {},
   
   fetchItems: async (params = {}) => {
     set({ loading: true, error: null });
     
     try {
-      // 构建查询参数
+      const finalParams = Object.keys(params).length === 0 ? { ...get().filters } : params;
+      
       const queryParams = new URLSearchParams();
-      Object.entries(params).forEach(([key, value]) => {
-        // 过滤 undefined、null 和空字符串
+      Object.entries(finalParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          // 处理日期对象
           if (value instanceof Date) {
-            queryParams.append(key, format(value, 'yyyy-MM-dd'));
+            queryParams.append(`filter[${key}]`, format(value, 'yyyy-MM-dd'));
           } else {
-            queryParams.append(key, String(value));
+            queryParams.append(`filter[${key}]`, String(value));
           }
         }
       });
+      
+      if (finalParams.page) {
+        queryParams.delete('filter[page]');
+        queryParams.append('page', String(finalParams.page));
+      }
       
       const queryString = queryParams.toString();
       
@@ -186,16 +193,12 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      // 使用FormData处理文件上传
       const formData = new FormData();
       
-      // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
         if (key !== 'images' && key !== 'image_paths' && key !== 'tags' && value !== undefined && value !== null) {
           
-          // 特殊处理is_public字段，确保它是布尔值
           if (key === 'is_public') {
-            // 将布尔值转换为"1"或"0"，这样在PHP端会被正确解析为布尔值
             formData.append(key, value === true ? "1" : "0");
           } else {
             formData.append(key, String(value));
@@ -203,36 +206,30 @@ export const useItemStore = create<ItemState>((set, get) => ({
         }
       });
       
-      // 添加图片（直接上传方式）
       if (data.images && Array.isArray(data.images)) {
         data.images.forEach((image, index) => {
           formData.append(`images[${index}]`, image);
         });
       }
       
-      // 添加图片路径（预上传方式）
       if (data.image_paths && Array.isArray(data.image_paths)) {
         data.image_paths.forEach((path, index) => {
           formData.append(`image_paths[${index}]`, path);
         });
       }
       
-      // 添加标签
       if (data.tags && Array.isArray(data.tags)) {
         data.tags.forEach((tagId, index) => {
           formData.append(`tags[${index}]`, String(tagId));
         });
       }
       
-      // 检查当前的授权token
       const authToken = useAuthStore.getState().token;
       
-      // 使用apiRequest发送请求，它会自动携带认证令牌
       const result = await apiRequest<{item: Item}>(`/items`, 'POST', formData);
       
       set({ loading: false });
       
-      // 刷新物品列表
       get().fetchItems();
       
       return result.item;
@@ -250,18 +247,13 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      // 使用FormData处理文件上传
       const formData = new FormData();
       
-      // 由于使用FormData，需要手动添加_method字段模拟PUT请求
       formData.append('_method', 'PUT');
       
-      // 添加基本字段
       Object.entries(data).forEach(([key, value]) => {
         if (key !== 'images' && key !== 'image_paths' && key !== 'image_ids' && key !== 'tags' && value !== undefined && value !== null) {
-          // 特殊处理is_public字段，确保它是布尔值
           if (key === 'is_public') {
-            // 将布尔值转换为"1"或"0"
             formData.append(key, value === true ? "1" : "0");
           } else {
             formData.append(key, String(value));
@@ -269,40 +261,34 @@ export const useItemStore = create<ItemState>((set, get) => ({
         }
       });
       
-      // 添加图片（直接上传方式）
       if (data.images && Array.isArray(data.images)) {
         data.images.forEach((image, index) => {
           formData.append(`images[${index}]`, image);
         });
       }
       
-      // 添加图片路径（预上传方式）
       if (data.image_paths && Array.isArray(data.image_paths)) {
         data.image_paths.forEach((path, index) => {
           formData.append(`image_paths[${index}]`, path);
         });
       }
       
-      // 添加其他需要的字段
       if (data.image_ids && Array.isArray(data.image_ids)) {
         data.image_ids.forEach((id, index) => {
           formData.append(`image_ids[${index}]`, String(id));
         });
       }
       
-      // 添加标签
       if (data.tags && Array.isArray(data.tags)) {
         data.tags.forEach((tagId, index) => {
           formData.append(`tags[${index}]`, String(tagId));
         });
       }
       
-      // 使用apiRequest发送请求，它会自动携带认证令牌
       const result = await apiRequest<{item: Item}>(`/items/${id}`, 'POST', formData);
       
       set({ loading: false });
       
-      // 刷新物品列表
       get().fetchItems();
       
       return result.item;
@@ -322,13 +308,11 @@ export const useItemStore = create<ItemState>((set, get) => ({
     try {
       await del(`/items/${id}`);
       
-      // 从状态中移除已删除的项目
       set(state => ({
         items: state.items.filter(item => item.id !== id),
         loading: false
       }));
       
-      // 刷新物品列表
       get().fetchItems();
     } catch (error) {
       set({
@@ -337,5 +321,9 @@ export const useItemStore = create<ItemState>((set, get) => ({
       });
       throw error;
     }
+  },
+  
+  saveFilters: (filters) => {
+    set({ filters });
   }
 })); 
