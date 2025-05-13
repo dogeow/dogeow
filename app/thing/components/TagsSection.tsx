@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/multi-select"
 import { Tag as TagType } from "../types"
 import CreateTagDialog from './CreateTagDialog'
-import QuickCreateTag from './QuickCreateTag'
 
 interface TagsSectionProps {
   selectedTags: string[];
@@ -116,11 +115,6 @@ const TagsSection: React.FC<TagsSectionProps> = ({
                 </div>
               </div>
             )}
-            
-            <div className="pt-2 border-t">
-              <div className="text-xs text-muted-foreground mb-2">快速创建标签:</div>
-              <QuickCreateTag onTagCreated={onTagCreated} />
-            </div>
           </div>
         </CardContent>
       </Card>
