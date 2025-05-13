@@ -53,17 +53,18 @@ export function AppLauncher() {
   
   // 组件加载时检查音频文件
   useEffect(() => {
-    // 输出环境变量信息
-    console.log('环境变量:', {
-      API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
-      API_URL: process.env.NEXT_PUBLIC_API_URL,
-      NODE_ENV: process.env.NODE_ENV
-    });
+    // 只在开发环境输出环境变量信息
+    if (process.env.NODE_ENV === 'development') {
+      console.log('环境变量:', {
+        API_URL: process.env.NEXT_PUBLIC_API_URL,
+        NODE_ENV: process.env.NODE_ENV
+      });
+    }
     
     // 加载音频列表
     const fetchAvailableTracks = async () => {
       try {
-        const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+        const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
         
         // 获取音频列表
         const musicUrl = `${apiBaseUrl}/musics`;
@@ -199,6 +200,13 @@ export function AppLauncher() {
     }
   };
 
+  // 检查音频是否支持HLS格式
+  const isHlsCompatible = (trackPath: string | null): boolean => {
+    if (!trackPath) return false;
+    // 检查是否是m3u8格式
+    return trackPath.toLowerCase().endsWith('.m3u8');
+  }
+
   // 处理音频错误
   const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
     const audio = e.currentTarget;
@@ -216,7 +224,7 @@ export function AppLauncher() {
     setIsPlaying(false);
     
     // 尝试使用直接播放模式作为回退方案
-    if (isHlsCompatible(currentTrack) && hlsInstanceRef.current) {
+    if (currentTrack && isHlsCompatible(currentTrack) && hlsInstanceRef.current) {
       console.log('HLS播放失败，尝试直接播放原始文件');
       
       // 清理HLS实例
@@ -269,11 +277,25 @@ export function AppLauncher() {
     
     // 设置音频
     try {
-      console.log('设置音频源:', currentTrack)
+      // 减少不必要的日志
+      // console.log('设置音频源:', currentTrack)
       
       // 构建音频URL
       const audioUrl = process.env.NEXT_PUBLIC_API_URL + currentTrack
-      console.log('最终音频URL:', audioUrl)
+      // 只在开发环境输出日志
+      if (process.env.NODE_ENV === 'development') {
+        console.log('最终音频URL:', audioUrl)
+      }
+      
+      // 设置音频元素的源
+      audioRef.current.src = audioUrl
+      audioRef.current.load()
+      
+      // 重置错误状态
+      setAudioError(null)
+      
+      // 设置是否正在切换音轨的状态
+      setIsTrackChanging(true)
       
     } catch (err) {
       console.error('设置音频源失败:', err)
@@ -307,8 +329,6 @@ export function AppLauncher() {
     
     // 首先尝试从可用轨道中查找
     const allTracks = useMusicStore.getState().availableTracks;
-    console.log('查找当前轨道名称，当前轨道路径:', currentTrack);
-    console.log('可用的轨道列表:', allTracks);
     
     // 查找包含相同path的音乐
     const trackInfo = allTracks.find(track => {
@@ -322,7 +342,6 @@ export function AppLauncher() {
     });
     
     if (trackInfo?.name) {
-      console.log('从轨道列表中找到名称:', trackInfo.name);
       return trackInfo.name;
     }
     

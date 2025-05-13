@@ -14,7 +14,7 @@ import { ArrowLeft, Upload, X, Plus, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import Image from "next/image"
-import { API_BASE_URL } from '@/utils/api'
+import { API_URL } from '@/utils/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
 import LocationTreeSelect from '../../components/LocationTreeSelect'
@@ -145,8 +145,8 @@ export default function EditItem() {
     return images.map(img => ({
       path: img.path || '', 
       thumbnail_path: img.thumbnail_path || '',
-      url: img.url || `${API_BASE_URL.replace('/api', '')}/storage/${img.path || ''}`,
-      thumbnail_url: img.thumbnail_url || `${API_BASE_URL.replace('/api', '')}/storage/${img.thumbnail_path || ''}`,
+      url: img.url || `${API_URL.replace('/api', '')}/storage/${img.path || ''}`,
+      thumbnail_url: img.thumbnail_url || `${API_URL.replace('/api', '')}/storage/${img.thumbnail_path || ''}`,
       id: img.id
     }))
   }, [])

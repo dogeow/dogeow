@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Upload, X, ImageIcon } from "lucide-react"
 import { toast } from "sonner"
 import Image from "next/image"
-import { API_BASE_URL, getImageUrl } from '@/utils/api'
+import { API_URL, getImageUrl } from '@/utils/api'
 import { apiRequest, logErrorToServer } from '@/utils/api'
 
 type UploadedImage = {

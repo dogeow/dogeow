@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Slider } from "@/components/ui/slider"
-import { API_BASE_URL } from '@/utils/api'
+import { API_URL } from '@/utils/api'
 import { useRouter } from 'next/navigation'
 import { cn } from "@/lib/utils"
 import { LayoutGrid, Grid2X2, Grid3X3, ChevronDown, ChevronUp, Globe, LockIcon } from "lucide-react"
@@ -58,7 +58,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
   const getImageUrl = (path: string) => {
     if (!path) return ''
     // 移除URL中可能存在的/api/部分
-    const baseUrl = API_BASE_URL.replace('/api', '')
+    const baseUrl = API_URL.replace('/api', '')
     return `${baseUrl}/storage/${path}`
   }
   

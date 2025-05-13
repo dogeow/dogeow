@@ -3,7 +3,7 @@ import useAuthStore from '../stores/authStore';
 import type { Category, Area, Room, Spot, Item } from '@/app/thing/types';
 import type { User, ApiError } from '@/app';
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 /**
  * 创建带有认证token的请求头
@@ -32,7 +32,7 @@ export async function apiRequest<T>(
   method: string = 'GET', 
   data?: any
 ): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_URL}/${endpoint}`;
   
   const headers = getHeaders();
   const options: RequestInit = {
@@ -365,7 +365,7 @@ export default {
   patch,
   delete: del,
   fetchCurrentUser,
-  API_BASE_URL,
+  API_URL,
   useUser,
   useItems,
   useItem,

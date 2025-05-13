@@ -42,7 +42,7 @@ import { cn } from '@/lib/utils'
 import { CloudFile } from '../../types'
 import { apiRequest, put, del } from '@/utils/api'
 import useFileStore from '../../store/useFileStore'
-import { API_BASE_URL } from '@/utils/api'
+import { API_URL } from '@/utils/api'
 
 interface GridViewProps {
   files: CloudFile[]
@@ -158,7 +158,7 @@ export default function GridView({ files }: GridViewProps) {
   // 下载文件
   const downloadFile = async (file: CloudFile) => {
     try {
-      window.open(`${API_BASE_URL}/cloud/files/${file.id}/download`, '_blank')
+      window.open(`${API_URL}/cloud/files/${file.id}/download`, '_blank')
       toast.success('开始下载')
     } catch (error) {
       toast.error('下载失败')
@@ -169,8 +169,8 @@ export default function GridView({ files }: GridViewProps) {
   // 删除文件/文件夹
   const deleteFile = async (file: CloudFile) => {
     try {
-      await del(`${API_BASE_URL}/cloud/files/${file.id}`)
-      mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
+      await del(`${API_URL}/cloud/files/${file.id}`)
+      mutate(`${API_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
       toast.success('删除成功')
     } catch (error) {
       toast.error('删除失败')
@@ -191,12 +191,12 @@ export default function GridView({ files }: GridViewProps) {
     if (!editingFile) return
 
     try {
-      await put(`${API_BASE_URL}/cloud/files/${editingFile.id}`, {
+      await put(`${API_URL}/cloud/files/${editingFile.id}`, {
         name: fileName,
         description: fileDescription
       })
       
-      mutate(`${API_BASE_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
+      mutate(`${API_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
       toast.success('更新成功')
       setEditingFile(null)
     } catch (error) {
@@ -224,7 +224,7 @@ export default function GridView({ files }: GridViewProps) {
         return;
       }
       
-      const { type, content, url, message } = await apiRequest<any>(`${API_BASE_URL}/cloud/files/${file.id}/preview`)
+      const { type, content, url, message } = await apiRequest<any>(`${API_URL}/cloud/files/${file.id}/preview`)
 
       setPreviewType(type)
       

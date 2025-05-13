@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { API_BASE_URL, getImageUrl } from '@/utils/api'
+import { API_URL, getImageUrl } from '@/utils/api'
 
 export default function ItemDetail() {
   const params = useParams()

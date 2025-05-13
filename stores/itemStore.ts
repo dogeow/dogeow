@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { API_BASE_URL } from '@/utils/api';
 import { format } from 'date-fns';
 import { apiRequest, get, post, put, del } from '@/utils/api';
 import useAuthStore from '@/stores/authStore';

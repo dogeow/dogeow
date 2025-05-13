@@ -20,7 +20,7 @@ import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/utils'
 import { CloudFile, SortField } from '../../types'
 import useFileStore from '../../store/useFileStore'
-import { API_BASE_URL } from '@/utils/api'
+import { API_URL } from '@/utils/api'
 
 interface ListViewProps {
   files: CloudFile[]
@@ -67,7 +67,7 @@ export default function ListView({ files }: ListViewProps) {
       return (
         <div className="w-6 h-6 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted">
           <img 
-            src={`${API_BASE_URL}/cloud/files/${file.id}/preview?thumb=true`} 
+            src={`${API_URL}/cloud/files/${file.id}/preview?thumb=true`} 
             alt={file.name} 
             className="object-cover w-full h-full"
             onError={(e) => {
@@ -131,7 +131,7 @@ export default function ListView({ files }: ListViewProps) {
       navigateToFolder(file.id)
     } else {
       // 下载文件
-      window.open(`${API_BASE_URL}/cloud/files/${file.id}/download`, '_blank')
+      window.open(`${API_URL}/cloud/files/${file.id}/download`, '_blank')
       toast.success('开始下载')
     }
   }

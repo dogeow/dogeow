@@ -26,7 +26,7 @@ import {
 import { toast } from "sonner"
 import Image from "next/image"
 import { useItemStore } from '@/stores/itemStore'
-import { API_BASE_URL } from '@/utils/api'
+import { API_URL } from '@/utils/api'
 import { del } from '@/utils/api'
 
 interface ItemCardProps {
@@ -186,7 +186,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   // 构建正确的图片URL
   const getImageUrl = (path: string) => {
     // 移除URL中可能存在的/api/部分
-    const baseUrl = API_BASE_URL.replace('/api', '');
+    const baseUrl = API_URL.replace('/api', '');
     return `${baseUrl}/storage/${path}`;
   }
   
