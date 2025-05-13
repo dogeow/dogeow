@@ -35,16 +35,6 @@ export const tools: Tool[] = [
     category: "日期时间",
     tags: ["时间戳", "日期", "转换"],
   },
-  {
-    id: "music-player",
-    title: "HLS 音乐播放器",
-    description: "全平台支持的 HLS 流媒体音乐播放器，支持 PC、安卓和 iOS",
-    component: () => null, // 不需要组件，使用独立路由
-    category: "多媒体",
-    tags: ["音乐", "HLS", "流媒体", "播放器"],
-    route: "/tool/music",
-  },
-  // 后续可添加更多工具
 ]
 
 // 获取工具类别列表

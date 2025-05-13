@@ -1,32 +1,27 @@
 "use client"
 
-import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { useMusicStore, MusicTrack } from '@/stores/musicStore'
+import React, { useEffect, useRef, useState } from 'react'
+import { useMusicStore } from '@/stores/musicStore'
 import { toast } from 'sonner'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { MusicPlayer } from './MusicPlayer'
 import { AppGrid } from './AppGrid'
 import { SettingsPanel, CustomBackground } from './SettingsPanel'
-import { configs } from '@/app/configs'
 import Image from 'next/image'
 import Logo from '@/public/images/80.png'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { AuthPanel } from '../auth/AuthPanel'
-import { Settings, User, Search, X, ArrowLeft } from 'lucide-react'
+import { User, Search, X, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import useAuthStore from '@/stores/authStore'
 import { Input } from '@/components/ui/input'
 import { SearchDialog } from '@/components/search/SearchDialog'
-import { isHlsCompatible, buildHlsUrl, setupHls, extractSongName } from './HLSIntegration'
-
-// 可用的音频文件列表
-const availableTracks = configs.availableTracks
+import { isHlsCompatible, buildHlsUrl, setupHls } from './HLSIntegration'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth';
 
 export function AppLauncher() {
   const router = useRouter()
-  const pathname = usePathname()
   
   const { 
     currentTrack, 
