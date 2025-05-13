@@ -298,7 +298,7 @@ export default function ItemDetail() {
                       <div className="bg-background p-3 rounded-lg border shadow-sm">
                         <h3 className="font-medium text-xs text-muted-foreground">具体位置</h3>
                         <p className="text-sm font-semibold truncate">
-                          {item.spot?.name || '未指定'}
+                          {item.spot?.name || ''}
                         </p>
                       </div>
                     </div>
