@@ -58,8 +58,27 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
           />
         </div>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
+        <div className="flex flex-wrap gap-4">
+        <div className="space-y-2">
+            <Label htmlFor="category_id">分类</Label>
+            <Select
+              value={formData.category_id}
+              onValueChange={(value) => handleSelectChange('category_id', value)}
+            >
+              <SelectTrigger id="category_id">
+                <SelectValue placeholder="选择分类" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">未分类</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2 w-1/4">
             <Label htmlFor="quantity">数量</Label>
             <Input
               id="quantity"
@@ -87,28 +106,8 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="category_id">分类</Label>
-            <Select
-              value={formData.category_id}
-              onValueChange={(value) => handleSelectChange('category_id', value)}
-            >
-              <SelectTrigger id="category_id">
-                <SelectValue placeholder="选择分类" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">未分类</SelectItem>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.id.toString()}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
+        </div>
+        <div className="space-y-2">
             <Label htmlFor="is_public" className="flex items-center space-x-2">
               <Switch
                 id="is_public"
@@ -118,7 +117,6 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
               <span>公开物品</span>
             </Label>
           </div>
-        </div>
       </CardContent>
     </Card>
   )

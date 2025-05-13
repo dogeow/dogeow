@@ -255,7 +255,6 @@ export default function EditItem() {
             <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <h1 className="text-2xl md:text-3xl font-bold">编辑物品</h1>
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -289,17 +288,17 @@ export default function EditItem() {
               setFormData={setFormData} 
               categories={categories} 
             />
-            
+
+            <ImageSection 
+              uploadedImages={uploadedImages} 
+              setUploadedImages={setUploadedImages} 
+            />
+
             <TagsSection 
               selectedTags={selectedTags} 
               setSelectedTags={setSelectedTags} 
               tags={tags} 
               onTagCreated={handleTagCreated} 
-            />
-            
-            <ImageSection 
-              uploadedImages={uploadedImages} 
-              setUploadedImages={setUploadedImages} 
             />
           </TabsContent>
           

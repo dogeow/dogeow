@@ -20,16 +20,25 @@ interface CreateTagDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onTagCreated: (tag: Tag) => void;
+  initialName?: string;
 }
 
 const CreateTagDialog: React.FC<CreateTagDialogProps> = ({ 
   open, 
   onOpenChange,
-  onTagCreated 
+  onTagCreated,
+  initialName = ''
 }) => {
   const [loading, setLoading] = useState(false)
-  const [name, setName] = useState('')
+  const [name, setName] = useState(initialName)
   const [color, setColor] = useState('#3b82f6') // 默认蓝色
+  
+  // 当initialName变化时更新name状态
+  React.useEffect(() => {
+    if (initialName) {
+      setName(initialName);
+    }
+  }, [initialName]);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

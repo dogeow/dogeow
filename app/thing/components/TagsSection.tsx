@@ -8,6 +8,7 @@ import { Tag as TagType } from "../types"
 import CreateTagDialog from './CreateTagDialog'
 import { cn } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
+import { isLightColor } from '@/lib/utils'
 
 interface TagsSectionProps {
   selectedTags: string[];
@@ -25,6 +26,7 @@ const TagsSection: React.FC<TagsSectionProps> = ({
   const [createTagDialogOpen, setCreateTagDialogOpen] = useState(false)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [newTagName, setNewTagName] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
   
@@ -55,16 +57,6 @@ const TagsSection: React.FC<TagsSectionProps> = ({
     }
   }
 
-  // 判断颜色是否为浅色
-  const isLightColor = (color: string): boolean => {
-    const hex = color.replace("#", "")
-    const r = parseInt(hex.substr(0, 2), 16)
-    const g = parseInt(hex.substr(2, 2), 16)
-    const b = parseInt(hex.substr(4, 2), 16)
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000
-    return brightness > 155
-  }
-  
   // 切换标签的选中状态
   const toggleTag = (tagId: string) => {
     setSelectedTags(prev => 
@@ -136,8 +128,20 @@ const TagsSection: React.FC<TagsSectionProps> = ({
                     </div>
                     <div className="max-h-[300px] overflow-y-auto p-1">
                       {filteredTags.length === 0 ? (
-                        <div className="py-6 text-center text-sm text-muted-foreground">
-                          未找到标签
+                        <div className="py-3 text-center">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              setNewTagName(searchTerm);
+                              setCreateTagDialogOpen(true);
+                              setIsDropdownOpen(false);
+                            }}
+                            className="w-full"
+                          >
+                            添加标签《{searchTerm}》
+                          </Button>
                         </div>
                       ) : (
                         filteredTags.map((tag) => {
@@ -205,6 +209,7 @@ const TagsSection: React.FC<TagsSectionProps> = ({
         open={createTagDialogOpen} 
         onOpenChange={setCreateTagDialogOpen} 
         onTagCreated={onTagCreated}
+        initialName={newTagName}
       />
     </>
   )

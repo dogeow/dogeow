@@ -20,6 +20,7 @@ import Image from "next/image"
 import { useItemStore } from '@/stores/itemStore'
 import { API_URL } from '@/utils/api'
 import { del } from '@/utils/api'
+import { isLightColor } from '@/lib/utils'
 
 interface ItemCardProps {
   item: any
@@ -32,6 +33,27 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   const { fetchItems } = useItemStore()
   const [imageError, setImageError] = useState(false)
   const [primaryImage, setPrimaryImage] = useState<any>(null)
+
+  const renderTags = (item: any) => {
+    if (!item.tags || item.tags.length === 0) return null;
+    
+    return (
+      <div className="flex flex-wrap gap-2">
+        {item.tags.map((tag: any) => (
+          <Badge
+            key={tag.id}
+            style={{
+              backgroundColor: tag.color || '#3b82f6',
+              color: isLightColor(tag.color) ? '#000' : '#fff'
+            }}
+            className="h-6 px-2"
+          >
+            {tag.name}
+          </Badge>
+        ))}
+      </div>
+    );
+  };
   
   // 从图片数组中找出主图
   useEffect(() => {
@@ -81,33 +103,6 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     } catch (e) {
       return '无效日期'
     }
-  }
-  
-  // 渲染状态标签
-  const renderStatusBadge = () => {
-    const statusText = {
-      'active': '正常',
-      'idle': '闲置',
-      'expired': '过期',
-      'damaged': '损坏',
-      'default': item.status || '未知'
-    }
-    
-    const statusColor = {
-      'active': 'text-green-600',
-      'idle': 'text-amber-500',
-      'expired': 'text-red-500',
-      'damaged': 'text-red-500',
-      'default': 'text-blue-500'
-    }
-    
-    const status = item.status as keyof typeof statusText || 'default'
-    
-    return (
-      <span className={`text-xs font-medium ${statusColor[status] || statusColor.default}`}>
-        {statusText[status] || statusText.default}
-      </span>
-    )
   }
   
   // 渲染位置信息
@@ -202,15 +197,6 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
             fill
             className={className}
             onError={(e) => {
-              // 记录详细的错误信息
-              console.error('图片加载失败:', {
-                url: imageUrl,
-                item: item.id,
-                name: item.name,
-                imageId: primaryImage.id,
-                type: primaryImage.path.split('.').pop(),
-                event: e
-              });
               setImageError(true);
               
               // 尝试使用备用URL
@@ -236,12 +222,8 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   }
   
   // 渲染物品信息网格
-  const renderInfoGrid = (columns: string) => (
-    <div className={`grid ${columns} gap-x-3 gap-y-1 text-sm mb-2`}>
-      <div className="flex flex-col">
-        <p className="font-medium text-sm truncate">{item.description || ''}</p>
-      </div>
-    </div>
+  const renderInfoGrid = () => (
+        <div className="font-medium text-sm truncate">{item.description || ''}</div>
   )
   
   // 防止item对象有问题
@@ -256,7 +238,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     >
       <div className="p-3">
         <div className="flex items-center mb-2 justify-between">
-          <div className={`relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0 border ${getStatusBorderColor(item.status)}`}>
+          <div className={`relative w-20 h-20 bg-muted rounded-md mr-3 flex-shrink-0 border-2 ${getStatusBorderColor(item.status)}`}>
             {renderImage("object-cover rounded-md")}
             {item.is_public ? (
               <div className="absolute top-0 right-0">
@@ -266,16 +248,17 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
               </div>
             ) : null}
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex flex-col min-w-0 gap-1">
             <div className="flex justify-between items-start">
-              <div className="min-w-0 pr-2">
+              <div className="flex w-full justify-between items-center">
                 <h3 className="font-semibold truncate text-base">{item.name}</h3>
+                <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
               </div>
             </div>
-            {renderInfoGrid("grid-cols-2 sm:grid-cols-4 mt-1")}
+            {renderInfoGrid()}
+            {renderTags(item)}
             <div className="flex justify-between flex-auto">
               {renderLocation()}
-              <p className="text-xs text-muted-foreground truncate">{item.category?.name || '未分类'}</p>
             </div>
           </div>
         </div>

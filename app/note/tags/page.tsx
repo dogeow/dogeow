@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import useSWR, { mutate } from "swr"
 import { get, post, del } from "@/utils/api"
 import { toast } from "react-hot-toast"
+import { isLightColor } from '@/lib/utils'
 
 // 标签类型定义
 type Tag = {
@@ -76,17 +77,7 @@ export default function NoteTags() {
       color: isLightColor(color) ? "#000" : "#fff"
     }
   }
-
-  // 判断颜色是否为浅色
-  const isLightColor = (color: string): boolean => {
-    const hex = color.replace("#", "")
-    const r = parseInt(hex.substr(0, 2), 16)
-    const g = parseInt(hex.substr(2, 2), 16)
-    const b = parseInt(hex.substr(4, 2), 16)
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000
-    return brightness > 155
-  }
-
+  
   return (
     <div className="container mx-auto py-4">
       <div className="bg-card p-6 rounded-lg border">

@@ -21,7 +21,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { API_URL, getImageUrl } from '@/utils/api'
+import { getImageUrl } from '@/utils/api'
+import { isLightColor } from '@/lib/utils'
 
 export default function ItemDetail() {
   const params = useParams()
@@ -133,17 +134,7 @@ export default function ItemDetail() {
       </div>
     );
   };
-  
-  const isLightColor = (color: string): boolean => {
-    if (!color) return false;
-    const hex = color.replace("#", "");
-    const r = parseInt(hex.substr(0, 2), 16);
-    const g = parseInt(hex.substr(2, 2), 16);
-    const b = parseInt(hex.substr(4, 2), 16);
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    return brightness > 155;
-  };
-  
+
   return (
     <>
       <div className="container mx-auto py-6 px-4">
@@ -186,6 +177,7 @@ export default function ItemDetail() {
                     </Badge>
                   </div>
                 </div>
+                {renderTags(item)}
               </CardHeader>
               <CardContent className="space-y-6">
                 {item.images && item.images.length > 0 ? (
@@ -246,8 +238,6 @@ export default function ItemDetail() {
                     <p className="text-sm font-semibold">{formatDate(item.purchase_date)}</p>
                   </div>
                 </div>
-                
-                {renderTags(item)}
               </CardContent>
             </Card>
           </TabsContent>
