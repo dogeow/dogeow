@@ -5,7 +5,7 @@ import { ExternalLink } from "@/components/ExternalLink";
 const BEIAN_URL = "http://www.beian.gov.cn/";
 const MIIT_URL = "https://beian.miit.gov.cn/";
 
-const ICP_ICON_PATH = "/images/tech/icp.png";
+const ICP_ICON_PATH = "/images/tech/ICP.png";
 
 const ICP = () => {
     return <div className="flex flex-wrap justify-center gap-2 text-xs opacity-60">
