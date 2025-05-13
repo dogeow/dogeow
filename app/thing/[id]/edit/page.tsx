@@ -10,22 +10,20 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DatePicker } from "@/components/ui/date-picker"
 import { Switch } from "@/components/ui/switch"
-import { ArrowLeft, Upload, X, Plus, Tag } from "lucide-react"
+import { ArrowLeft, Plus, Tag } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
-import Image from "next/image"
 import { API_URL } from '@/utils/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
 import LocationTreeSelect from '../../components/LocationTreeSelect'
-import { useAreas, useRooms, useSpots, useItem } from '@/utils/api'
+import { useAreas, useRooms, useSpots } from '@/utils/api'
 import { apiRequest } from '@/utils/api'
 import ImageUploader from '../../components/ImageUploader'
 import {
   MultiSelect,
   MultiSelectContent,
   MultiSelectItem,
-  MultiSelectLabel,
   MultiSelectTrigger,
   MultiSelectValue,
 } from "@/components/ui/multi-select"
@@ -145,8 +143,8 @@ export default function EditItem() {
     return images.map(img => ({
       path: img.path || '', 
       thumbnail_path: img.thumbnail_path || '',
-      url: img.url || `${API_URL.replace('/api', '')}/storage/${img.path || ''}`,
-      thumbnail_url: img.thumbnail_url || `${API_URL.replace('/api', '')}/storage/${img.thumbnail_path || ''}`,
+      url: img.url || (API_URL ? `${API_URL.replace('/api', '')}/storage/${img.path || ''}` : ''),
+      thumbnail_url: img.thumbnail_url || (API_URL ? `${API_URL.replace('/api', '')}/storage/${img.thumbnail_path || ''}` : ''),
       id: img.id
     }))
   }, [])
