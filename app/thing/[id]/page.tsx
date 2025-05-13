@@ -228,8 +228,8 @@ export default function ItemDetail() {
                 )}
                 
                 <div className="bg-muted/30 p-3 rounded-lg">
-                  <h3 className="font-medium text-xs text-muted-foreground mb-1">描述</h3>
-                  <p className="text-sm">{item.description || '无描述'}</p>
+                  <h3 className="font-medium text-sm text-muted-foreground mb-1">描述</h3>
+                  <p className="text-xs">{item.description || '无描述'}</p>
                 </div>
                 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

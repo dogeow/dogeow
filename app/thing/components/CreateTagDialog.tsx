@@ -43,7 +43,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
     
     try {
       const tagData = { name: name.trim(), color }
-      const response = await apiRequest<Tag>('/tags', 'POST', tagData)
+      const response = await apiRequest<Tag>('/thing-tags', 'POST', tagData)
       
       toast.success('标签创建成功')
       
@@ -87,7 +87,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">标签名称</Label>
             <Input
@@ -144,11 +144,11 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
             >
               取消
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="button" disabled={loading} onClick={handleSubmit}>
               {loading ? '创建中...' : '创建标签'}
             </Button>
           </DialogFooter>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )

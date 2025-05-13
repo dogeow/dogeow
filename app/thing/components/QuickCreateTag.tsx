@@ -30,8 +30,10 @@ const QuickCreateTag: React.FC<QuickCreateTagProps> = ({ onTagCreated }) => {
     return colors[Math.floor(Math.random() * colors.length)]
   }
   
-  const handleCreateTag = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleCreateTag = async (e?: React.FormEvent) => {
+    if (e) {
+      e.preventDefault()
+    }
     
     if (!tagName.trim()) {
       toast.error('请输入标签名称')
@@ -59,25 +61,34 @@ const QuickCreateTag: React.FC<QuickCreateTagProps> = ({ onTagCreated }) => {
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleCreateTag()
+    }
+  }
+
   return (
-    <form onSubmit={handleCreateTag} className="flex gap-2">
+    <div className="flex gap-2">
       <Input
         placeholder="输入标签名称"
         value={tagName}
         onChange={(e) => setTagName(e.target.value)}
+        onKeyDown={handleKeyDown}
         disabled={loading}
         className="h-8 text-sm"
       />
       <Button 
-        type="submit" 
+        type="button" 
         size="sm" 
+        onClick={handleCreateTag}
         disabled={loading || !tagName.trim()}
         className="h-8"
       >
         <Plus className="h-3.5 w-3.5 mr-1" />
         添加
       </Button>
-    </form>
+    </div>
   )
 }
 
