@@ -86,12 +86,11 @@ export function AppLauncher() {
     fetchAvailableTracks();
   }, [setCurrentTrack]);
   
-  // 监听currentTrack变化，初始化播放器
+  // 监听currentTrack变化，但不自动初始化播放器
   useEffect(() => {
     if (!currentTrack) return;
     
-    // 测试HLS功能已经工作正常，移除测试代码
-    setupMediaSource();
+    // 不在此处调用setupMediaSource()，而是在用户交互时调用
   }, [currentTrack]);
   
   // 处理播放/暂停
@@ -300,6 +299,11 @@ export function AppLauncher() {
   const togglePlay = () => {
     if (!audioRef.current || !currentTrack) return;
     
+    // 如果音频还未加载，先加载
+    if (!audioRef.current.src) {
+      setupMediaSource();
+    }
+    
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -352,6 +356,11 @@ export function AppLauncher() {
   // 切换显示模式
   const toggleDisplayMode = (mode: DisplayMode) => {
     setDisplayMode(mode)
+    
+    // 当切换到音乐模式时，初始化音频源
+    if (mode === 'music' && currentTrack && !audioRef.current?.src) {
+      setupMediaSource()
+    }
   }
   
   // 应用背景图片
