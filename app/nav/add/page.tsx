@@ -30,6 +30,18 @@ import {
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 
+// 定义表单数据类型
+type FormData = {
+  nav_category_id: string;
+  name: string;
+  url: string;
+  is_visible: boolean;
+  is_new_window: boolean;
+  sort_order: number;
+  description?: string;
+  icon?: string;
+}
+
 // 创建表单的验证模式
 const navItemSchema = z.object({
   nav_category_id: z.string().min(1, "请选择分类"),
@@ -37,13 +49,10 @@ const navItemSchema = z.object({
   url: z.string().url("请输入有效的URL").min(1, "URL不能为空"),
   description: z.string().optional(),
   icon: z.string().optional(),
-  is_visible: z.boolean().default(true),
-  is_new_window: z.boolean().default(true),
-  sort_order: z.coerce.number().int().nonnegative().default(0)
-})
-
-// 表单数据类型
-type FormData = z.infer<typeof navItemSchema>
+  is_visible: z.boolean(),
+  is_new_window: z.boolean(),
+  sort_order: z.coerce.number().int().nonnegative()
+}) as z.ZodType<FormData>;
 
 export default function AddNavItem() {
   const router = useRouter()
