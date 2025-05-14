@@ -11,9 +11,9 @@ import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { toast } from "react-hot-toast"
 
-// 使用动态导入，避免SSR时的错误
-const SimpleMarkdownEditor = dynamic(
-  () => import('@/app/note/components/SimpleMarkdownEditor'), 
+// 使用动态导入SlateJS编辑器
+const CodeHighlightEditor = dynamic(
+  () => import('@/app/note/components/CodeHighlightEditor'),
   { ssr: false }
 )
 
@@ -84,20 +84,20 @@ export default function NoteEditPage() {
         </div>
       ) : (
         <div>
-          <div className="mb-4 flex items-center gap-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="text-xl font-bold"
+              className="text-xl font-bold max-w-md"
               placeholder="输入笔记标题"
               onBlur={saveTitle}
               onKeyDown={(e) => e.key === 'Enter' && saveTitle()}
             />
             <Button onClick={saveTitle} variant="outline">保存标题</Button>
           </div>
-          <SimpleMarkdownEditor noteId={parseInt(noteId)} initialContent={note?.content} />
+          <CodeHighlightEditor noteId={parseInt(noteId)} initialContent={note?.content} />
         </div>
       )}
     </div>
-  )
+  ) 
 } 
