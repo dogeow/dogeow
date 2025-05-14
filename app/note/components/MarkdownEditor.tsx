@@ -9,7 +9,7 @@ import { Bold, Italic, List, ListOrdered, Code, Save, FileText, Quote, Heading1,
 import { toast } from 'react-hot-toast'
 import { put } from '@/utils/api'
 
-interface CodeHighlightEditorProps {
+interface MarkdownEditorProps {
   noteId: number
   initialContent?: string
 }
@@ -239,7 +239,7 @@ const useDecorate = (editor: ExtendedEditor) => {
   )
 }
 
-const CodeHighlightEditor = ({ noteId, initialContent = '' }: CodeHighlightEditorProps) => {
+const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) => {
   // 创建编辑器
   const [editor] = useState(() => 
     withMarkdownShortcuts(
@@ -764,4 +764,4 @@ const CodeHighlightEditor = ({ noteId, initialContent = '' }: CodeHighlightEdito
   )
 }
 
-export default CodeHighlightEditor 
+export default MarkdownEditor 

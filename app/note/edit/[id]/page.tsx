@@ -12,8 +12,8 @@ import { Input } from "@/components/ui/input"
 import { toast } from "react-hot-toast"
 
 // 使用动态导入SlateJS编辑器
-const CodeHighlightEditor = dynamic(
-  () => import('@/app/note/components/CodeHighlightEditor'),
+const MarkdownEditor = dynamic(
+  () => import('@/app/note/components/MarkdownEditor'),
   { ssr: false }
 )
 
@@ -95,7 +95,7 @@ export default function NoteEditPage() {
             />
             <Button onClick={saveTitle} variant="outline">保存标题</Button>
           </div>
-          <CodeHighlightEditor noteId={parseInt(noteId)} initialContent={note?.content} />
+          <MarkdownEditor noteId={parseInt(noteId)} initialContent={note?.content} />
         </div>
       )}
     </div>
