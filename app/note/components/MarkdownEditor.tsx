@@ -295,34 +295,6 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
         return <ol {...attributes} className="list-decimal ml-5">{children}</ol>
       case 'list-item':
         return <li {...attributes}>{children}</li>
-      case 'code-block':
-        const language = (element as CustomElement).language || 'text'
-        // 获取语言显示名称，使其更用户友好
-        const languageDisplayName = (() => {
-          switch(language) {
-            case 'js': return 'JavaScript'
-            case 'ts': return 'TypeScript'
-            case 'py': return 'Python'
-            case 'php': return 'PHP'
-            case 'css': return 'CSS'
-            case 'html': return 'HTML'
-            case 'md': return 'Markdown'
-            case 'json': return 'JSON'
-            case 'bash': return 'Bash'
-            case 'sql': return 'SQL'
-            default: return language.charAt(0).toUpperCase() + language.slice(1)
-          }
-        })()
-        
-        return (
-          <pre {...attributes} className="code-block">
-            <div className="language-identifier">
-              {languageDisplayName}
-              <span className="exit-hint"> (Shift+Enter 退出代码块)</span>
-            </div>
-            <code className={`language-${language}`}>{children}</code>
-          </pre>
-        )
       default:
         return <p {...attributes} className="my-2">{children}</p>
     }
@@ -334,14 +306,6 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     const { text, ...rest } = leaf as CustomText & { [key: string]: any }
     
     let className = ''
-    
-    // 处理代码高亮
-    if (rest.token) {
-      // 获取所有token类型，构建className
-      className = Object.keys(rest)
-        .filter(key => key !== 'text' && key !== 'token' && rest[key] === true)
-        .join(' ')
-    }
     
     // 使用React.createElement避免直接修改children
     let element = <>{children}</>
@@ -383,9 +347,6 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
       case 'bulleted-list':
       case 'numbered-list':
         toggleBlock(format as ElementType)
-        break
-      case 'code-block':
-        insertCodeBlock()
         break
       default:
         break
@@ -445,21 +406,6 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     })
 
     return !!match
-  }
-
-  // 插入代码块
-  const insertCodeBlock = () => {
-    const language = prompt('输入代码语言 (如: js, ts, php, python, css, html, etc.):')
-    
-    if (language === null) return // 用户取消了输入
-    
-    const codeBlock: CustomElement = {
-      type: 'code-block',
-      language: language || 'text',
-      children: [{ text: '' }],
-    }
-    
-    Transforms.insertNodes(editor, codeBlock)
   }
 
   // 自定义编辑器处理Markdown键盘事件
@@ -582,37 +528,6 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
         return;
       }
     }
-
-    // 从代码块退出：Shift+Enter
-    if (event.key === 'Enter' && event.shiftKey) {
-      const codeBlockEntry = Editor.above(editor, {
-        match: n => 
-          SlateElement.isElement(n) && 
-          (n as CustomElement).type === 'code-block',
-      });
-
-      if (codeBlockEntry) {
-        event.preventDefault();
-        
-        // 获取当前选择位置
-        const { selection } = editor;
-        if (!selection) return;
-        
-        // 在代码块后插入一个新的段落
-        const [, path] = codeBlockEntry;
-        const newPath = Path.next(path);
-        
-        Transforms.insertNodes(
-          editor,
-          { type: 'paragraph', children: [{ text: '' }] },
-          { at: newPath }
-        );
-        
-        // 将光标移动到新段落
-        Transforms.select(editor, Editor.start(editor, newPath));
-        return;
-      }
-    }
   }, [editor]);
 
   return (
@@ -713,17 +628,6 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
           
           <div className="w-px h-8 bg-border mx-1"></div>
           
-          <Button 
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={() => handleFormatClick('code-block')}
-            title="代码块"
-            className="h-9 w-9"
-          >
-            <FileText className="h-5 w-5" />
-          </Button>
-
           <div className="ml-auto flex gap-2">
             <Button 
               variant="default" 
@@ -745,17 +649,11 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
             onChange={value => setValue(value)}
           >
             <Editable
-              className="min-h-[400px] p-4 outline-none font-mono text-base leading-normal"
+              className="min-h-[400px] p-4 outline-none text-base leading-normal"
               renderElement={renderElement}
               renderLeaf={renderLeaf}
-              spellCheck={false}
               onKeyDown={handleKeyDown}
               decorate={decorate}
-              style={{ 
-                lineHeight: '1.5',
-                fontFamily: "'Menlo', 'Monaco', 'Courier New', monospace",
-              }}
-              placeholder=""
             />
           </Slate>
         </div>
