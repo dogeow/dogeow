@@ -13,14 +13,12 @@ import { toast } from "react-hot-toast"
 type Category = {
   id: number
   name: string
-  description?: string
   created_at: string
   updated_at: string
 }
 
 export default function NoteCategories() {
   const [newCategory, setNewCategory] = useState("")
-  const [newDescription, setNewDescription] = useState("")
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -38,10 +36,8 @@ export default function NoteCategories() {
     try {
       await post("/note-categories", {
         name: newCategory,
-        description: newDescription
       })
       setNewCategory("")
-      setNewDescription("")
       mutate("/note-categories")
       toast.success("分类添加成功")
     } catch (error) {
@@ -63,7 +59,6 @@ export default function NoteCategories() {
     try {
       await put(`/note-categories/${editingCategory.id}`, {
         name: editingCategory.name,
-        description: editingCategory.description
       })
       setEditingCategory(null)
       mutate("/note-categories")
@@ -112,14 +107,6 @@ export default function NoteCategories() {
                 placeholder="输入分类名称"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">分类描述（可选）</label>
-              <Input
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="输入分类描述"
-              />
-            </div>
           </div>
         </CardContent>
         <CardFooter>
@@ -140,67 +127,53 @@ export default function NoteCategories() {
           {categories?.map((category) => (
             <Card key={category.id}>
               <CardHeader>
-                <CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>
+                    {editingCategory?.id === category.id ? (
+                      <Input
+                        value={editingCategory.name}
+                        onChange={(e) =>
+                          setEditingCategory({
+                            ...editingCategory,
+                            name: e.target.value
+                          })
+                        }
+                      />
+                    ) : (
+                      category.name
+                    )}
+                  </CardTitle>
                   {editingCategory?.id === category.id ? (
-                    <Input
-                      value={editingCategory.name}
-                      onChange={(e) =>
-                        setEditingCategory({
-                          ...editingCategory,
-                          name: e.target.value
-                        })
-                      }
-                    />
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingCategory(null)}
+                      >
+                        取消
+                      </Button>
+                      <Button size="sm" onClick={updateCategory}>保存</Button>
+                    </div>
                   ) : (
-                    category.name
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => setEditingCategory(category)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => deleteCategory(category.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   )}
-                </CardTitle>
-                {editingCategory?.id === category.id ? (
-                  <Input
-                    value={editingCategory.description || ""}
-                    onChange={(e) =>
-                      setEditingCategory({
-                        ...editingCategory,
-                        description: e.target.value
-                      })
-                    }
-                    placeholder="分类描述"
-                    className="mt-2"
-                  />
-                ) : (
-                  <CardDescription>{category.description || "无描述"}</CardDescription>
-                )}
+                </div>
               </CardHeader>
-              <CardFooter className="flex justify-between">
-                {editingCategory?.id === category.id ? (
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => setEditingCategory(null)}
-                    >
-                      取消
-                    </Button>
-                    <Button onClick={updateCategory}>保存</Button>
-                  </div>
-                ) : (
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => setEditingCategory(category)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => deleteCategory(category.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </CardFooter>
             </Card>
           ))}
         </div>
