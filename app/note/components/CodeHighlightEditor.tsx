@@ -8,15 +8,6 @@ import { Button } from "@/components/ui/button"
 import { Bold, Italic, List, ListOrdered, Code, Save, FileText, Quote, Heading1, Heading2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { put } from '@/utils/api'
-import Prism from 'prismjs'
-
-import { mergeMaps, normalizeTokens } from './utils'
-
-// 确保Prism正确初始化
-if (typeof window !== 'undefined') {
-  window.Prism = window.Prism || {};
-  window.Prism.manual = true;
-}
 
 interface CodeHighlightEditorProps {
   noteId: number
@@ -76,33 +67,8 @@ const initialValue: Descendant[] = [
     children: [
       { 
         text: `<?php
-// PHP示例代码
-function sayHello($name) {
-    return "Hello, " . $name . "!";
-}
-
-echo sayHello("World");
-
-$number = 123;
-$string = "这是一个字符串";
-$boolean = true;
-
-// 类的定义
-class Person {
-    private $name;
-    
-    public function __construct($name) {
-        $this->name = $name;
-    }
-    
-    public function getName() {
-        return $this->name;
-    }
-}
-
-$person = new Person("张三");
-echo $person->getName();
-?>`
+        echo "Hello, World!";
+        `
       }
     ],
   },
