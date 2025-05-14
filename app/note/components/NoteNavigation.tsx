@@ -5,9 +5,6 @@ import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FileText, Tag, FolderTree, Plus } from "lucide-react"
 import { useState } from "react"
-import { toast } from "react-hot-toast"
-import { post } from "@/utils/api"
-import useSWR, { mutate } from "swr"
 
 export default function NoteNavigation() {
   const router = useRouter()

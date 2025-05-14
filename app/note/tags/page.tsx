@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Plus, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import useSWR, { mutate } from "swr"
-import { get, post, del } from "@/utils/api"
-import { toast } from "react-hot-toast"
+import { get, post, del, ApiRequestError } from "@/utils/api"
+import { toast } from "sonner"
 import { isLightColor } from '@/lib/utils'
 
 // 标签类型定义
@@ -44,8 +44,7 @@ export default function NoteTags() {
       mutate("/note-tags")
       toast.success("标签添加成功")
     } catch (error) {
-      toast.error("添加标签失败")
-      console.error(error)
+      // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)
     }
@@ -63,8 +62,7 @@ export default function NoteTags() {
       mutate("/note-tags")
       toast.success("标签删除成功")
     } catch (error) {
-      toast.error("删除标签失败")
-      console.error(error)
+      // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)
     }

@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tag } from '../types'
-import { apiRequest } from '@/utils/api'
+import { apiRequest, ApiRequestError } from '@/utils/api'
 import { toast } from 'sonner'
 
 interface CreateTagDialogProps {
@@ -66,8 +66,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
       // 关闭对话框
       onOpenChange(false)
     } catch (error) {
-      console.error('创建标签失败:', error)
-      toast.error(error instanceof Error ? error.message : '创建标签失败，请重试')
+      // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)
     }

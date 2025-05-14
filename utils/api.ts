@@ -2,8 +2,58 @@ import useSWR, { mutate } from 'swr';
 import useAuthStore from '../stores/authStore';
 import type { Category, Area, Room, Spot, Item } from '@/app/thing/types';
 import type { User, ApiError } from '@/app';
+import { toast } from 'sonner';
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+// 自定义API错误类，包含完整的错误信息
+export class ApiRequestError extends Error {
+  status: number;
+  data?: ApiError;
+  
+  constructor(message: string, status: number, data?: ApiError) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.status = status;
+    this.data = data;
+  }
+}
+
+/**
+ * 统一处理API错误，显示提示信息
+ */
+export const handleApiError = (error: unknown): void => {
+  if (error instanceof ApiRequestError) {
+    const { status, data, message } = error;
+    
+    // 处理400系列错误（客户端错误）
+    if (status >= 400 && status < 500) {
+      // 处理特定的验证错误
+      if (status === 422 && data?.errors) {
+        // 查找第一个验证错误消息
+        const firstErrorField = Object.keys(data.errors)[0];
+        if (firstErrorField && Array.isArray(data.errors[firstErrorField]) && data.errors[firstErrorField].length > 0) {
+          const errorMsg = data.errors[firstErrorField][0];
+            toast.error(errorMsg);
+          return;
+        }
+      }
+      
+      // 处理其他400系列错误
+      toast.error(message || `请求失败 (${status})`);
+    } 
+    // 处理500系列错误（服务器错误）
+    else if (status >= 500) {
+      toast.error('服务器错误，请稍后再试');
+    }
+  } else if (error instanceof Error) {
+    // 处理其他类型的错误
+    toast.error(error.message || '请求失败，请重试');
+  } else {
+    // 处理未知错误
+    toast.error('请求失败，请重试');
+  }
+};
 
 /**
  * 创建带有认证token的请求头
@@ -30,12 +80,16 @@ const getHeaders = () => {
 export async function apiRequest<T>(
   endpoint: string, 
   method: string = 'GET', 
-  data?: any
+  data?: any,
+  options?: {
+    handleError?: boolean; // 是否自动处理错误，默认为true
+  }
 ): Promise<T> {
+  const { handleError = true } = options || {};
   const url = `${API_URL}/api${endpoint}`;
   
   const headers = getHeaders();
-  const options: RequestInit = {
+  const requestOptions: RequestInit = {
     method,
     headers,
   };
@@ -44,21 +98,21 @@ export async function apiRequest<T>(
     // 检查是否为 FormData 类型
     if (data instanceof FormData) {
       // FormData 不需要设置 Content-Type，浏览器会自动设置正确的 boundary
-      const headersObj = options.headers as Record<string, string>;
+      const headersObj = requestOptions.headers as Record<string, string>;
       // 保存授权信息
       const authToken = headersObj['Authorization'];
       // 重新设置headers
-      options.headers = {
+      requestOptions.headers = {
         'Accept': 'application/json',
         'X-Requested-With': 'XMLHttpRequest',
       };
       
       // 确保授权头部被正确设置
       if (authToken) {
-        (options.headers as Record<string, string>)['Authorization'] = authToken;
+        (requestOptions.headers as Record<string, string>)['Authorization'] = authToken;
       }
       
-      options.body = data;
+      requestOptions.body = data;
       
       // 记录FormData详情（不包括文件内容）
       console.log('发送FormData请求:', endpoint);
@@ -77,7 +131,7 @@ export async function apiRequest<T>(
         console.log('包含图片:', imageFiles);
       }
     } else {
-      options.body = JSON.stringify(data);
+      requestOptions.body = JSON.stringify(data);
     }
   }
   
@@ -88,7 +142,7 @@ export async function apiRequest<T>(
     
     // 创建用于取消请求的控制器
     const controller = new AbortController();
-    options.signal = controller.signal;
+    requestOptions.signal = controller.signal;
     
     // 对于图片上传请求使用更长的超时时间
     const timeoutDuration = isFormDataRequest ? 60000 : 30000; // 60秒用于文件上传，30秒用于普通请求
@@ -102,7 +156,7 @@ export async function apiRequest<T>(
     });
     
     // 创建fetch Promise
-    const fetchPromise = fetch(url, options);
+    const fetchPromise = fetch(url, requestOptions);
     
     // 使用Promise.race竞争超时
     const response = await Promise.race([fetchPromise, timeoutPromise]) as Response;
@@ -126,20 +180,61 @@ export async function apiRequest<T>(
     if (!response.ok) {
       // 尝试解析错误信息
       let errorMessage = '请求失败';
+      let errorData: ApiError | undefined;
+      
       try {
-        const errorData = await response.json() as ApiError;
-        errorMessage = errorData.message || `请求失败 (${response.status})`;
+        errorData = await response.json() as ApiError;
+        errorMessage = errorData?.message || `请求失败 (${response.status})`;
         
-        // 如果有详细错误信息，记录到控制台
-        if (errorData.errors) {
-          console.error('API错误详情:', errorData.errors);
+        // 安全地记录错误详情，避免空对象或无效对象导致的问题
+        if (errorData && errorData.errors) {
+          // 只有当 errors 是非空对象时才记录
+          const hasErrors = typeof errorData.errors === 'object' && 
+                           errorData.errors !== null && 
+                           Object.keys(errorData.errors).length > 0;
+          
+          if (hasErrors) {
+            // 对验证错误(422)使用warn级别，对其他错误使用error级别
+            if (response.status === 422) {
+              console.warn('验证失败:', errorData.errors);
+            } else {
+              console.error('API错误详情:', errorData.errors);
+            }
+          }
         }
       } catch (parseError) {
         // 如果无法解析JSON，使用HTTP状态文本
         errorMessage = `请求失败: ${response.statusText || response.status}`;
       }
       
-      throw new Error(errorMessage);
+      // 在开发环境下打印详细的错误信息（避免在生产环境显示过多错误）
+      if (process.env.NODE_ENV !== 'production') {
+        if (response.status === 422) {
+          // 对于验证错误使用warn而不是error
+          console.warn('API请求验证失败:', { 
+            url: endpoint, 
+            status: response.status, 
+            message: errorMessage
+          });
+        } else {
+          console.error('API请求失败:', { 
+            url: endpoint, 
+            status: response.status, 
+            message: errorMessage
+          });
+        }
+      }
+      
+      // 创建API错误对象
+      const apiError = new ApiRequestError(errorMessage, response.status, errorData);
+      
+      // 如果设置了自动处理错误，则显示错误提示
+      if (handleError) {
+        handleApiError(apiError);
+      }
+      
+      // 抛出错误供调用者捕获
+      throw apiError;
     }
     
     // 对于空响应或非JSON响应进行特殊处理
@@ -168,6 +263,15 @@ export async function apiRequest<T>(
     
     return response.json();
   } catch (error) {
+    // 检查是否为自定义API错误，并且未设置自动处理错误
+    if (error instanceof ApiRequestError) {
+      // 如果设置了自动处理错误但尚未处理，则显示错误提示
+      if (handleError && error.status !== 401) { // 401错误已在上面处理
+        handleApiError(error);
+      }
+      throw error;
+    }
+    
     // 检查是否为网络错误或跨域错误
     const errorMessage = error instanceof Error ? error.message : String(error);
     
@@ -177,7 +281,7 @@ export async function apiRequest<T>(
       method,
       error: errorMessage,
       isFormData: data instanceof FormData,
-      hasAbortSignal: options.signal instanceof AbortSignal
+      hasAbortSignal: requestOptions.signal instanceof AbortSignal
     });
     
     // 记录特定iOS错误模式
@@ -198,8 +302,17 @@ export async function apiRequest<T>(
       
       // 为用户提供更友好的错误信息
       if (/iPad|iPhone|iPod/.test(navigator.userAgent) && data instanceof FormData) {
-        throw new Error('文件上传失败，这可能是由于网络连接问题或iOS设备限制导致的。请尝试：\n1. 使用WiFi网络\n2. 选择较小的图片\n3. 稍后再试');
+        const iosError = new Error('文件上传失败，这可能是由于网络连接问题或iOS设备限制导致的。请尝试：\n1. 使用WiFi网络\n2. 选择较小的图片\n3. 稍后再试');
+        if (handleError) {
+          handleApiError(iosError);
+        }
+        throw iosError;
       }
+    }
+    
+    // 处理其他错误
+    if (handleError && error instanceof Error) {
+      handleApiError(error);
     }
     
     throw error;
