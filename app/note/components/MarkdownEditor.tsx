@@ -1,11 +1,11 @@
 "use client"
 
 import { useState, useCallback } from 'react'
-import { createEditor, Descendant, Element as SlateElement, Transforms, Editor, Text, BaseEditor, Node, Range as SlateRange, Path } from 'slate'
-import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps, useSlate } from 'slate-react'
+import { createEditor, Descendant, Element as SlateElement, Transforms, Editor, Text, BaseEditor, Node, Range as SlateRange } from 'slate'
+import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps } from 'slate-react'
 import { withHistory, HistoryEditor } from 'slate-history'
 import { Button } from "@/components/ui/button"
-import { Bold, Italic, List, ListOrdered, Code, Save, FileText, Quote, Heading1, Heading2 } from 'lucide-react'
+import { Bold, Italic, List, ListOrdered, Code, Save, Quote, Heading1, Heading2 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { put } from '@/utils/api'
 
