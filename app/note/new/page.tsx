@@ -10,12 +10,6 @@ import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { toast } from "react-hot-toast"
 
-// 使用动态导入，避免SSR时的错误
-const MarkdownEditor = dynamic(
-  () => import('@/app/note/components/MarkdownEditor'), 
-  { ssr: false, loading: () => <p>加载编辑器中...</p> }
-)
-
 // 笔记类型
 type Note = {
   id: number
@@ -87,17 +81,10 @@ export default function NewNotePage() {
             </Button>
           )}
         </div>
-        
-        {tempNoteId ? (
-          <MarkdownEditor 
-            noteId={tempNoteId} 
-            initialContent={INITIAL_CONTENT} 
-          />
-        ) : (
-          <div className="border rounded-md p-4 min-h-[400px] flex items-center justify-center text-muted-foreground">
-            <p>请先创建笔记，然后就可以编辑内容</p>
-          </div>
-        )}
+      
+        <div className="border rounded-md p-4 min-h-[400px] flex items-center justify-center text-muted-foreground">
+          <p>请先创建笔记，然后就可以编辑内容</p>
+        </div>
       </div>
     </div>
   )
