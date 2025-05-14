@@ -11,7 +11,6 @@ import { HOTKEYS, initialValue as defaultInitialValue, CustomElement, CustomText
 import { deserialize, serialize } from '../utils/markdown'
 import Element from './editor/Element'
 import Leaf from './editor/Leaf'
-import EditorToolbar from './editor/EditorToolbar'
 import LinkDialog from './editor/LinkDialog'
 import useSlateEditor from '../hooks/useSlateEditor'
 
@@ -185,16 +184,7 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
           editor={editor}
           initialValue={value}
           onChange={newValue => setValue(newValue)}
-        >
-          <EditorToolbar 
-            onSave={saveNote}
-            onLinkDialogOpen={() => setIsLinkDialogOpen(true)}
-            onInsertCodeBlock={insertCodeBlock}
-            onInsertTable={insertTable}
-            isSaving={loading}
-            disabled={!currentNoteId}
-          />
-          
+        > 
           <Editable
             className="p-4 min-h-[400px] focus:outline-none"
             renderElement={props => <Element {...props} />}

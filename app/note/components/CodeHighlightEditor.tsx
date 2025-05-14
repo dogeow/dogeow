@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { createEditor, Descendant, Element as SlateElement, Transforms, Editor, Text, BaseEditor, Node, Range as SlateRange, Path } from 'slate'
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps, useSlate } from 'slate-react'
 import { withHistory, HistoryEditor } from 'slate-history'
@@ -99,25 +99,6 @@ const deserializeContent = (content: string): Descendant[] => {
 // 序列化Slate内容为JSON字符串
 const serializeContent = (value: Descendant[]): string => {
   return JSON.stringify(value)
-}
-
-// Prism语言映射
-const PRISM_LANGUAGE_MAP: Record<string, string> = {
-  'js': 'javascript',
-  'ts': 'typescript',
-  'jsx': 'jsx',
-  'tsx': 'tsx',
-  'py': 'python',
-  'php': 'php',
-  'css': 'css',
-  'html': 'html',
-  'md': 'markdown',
-  'json': 'json',
-  'bash': 'bash',
-  'sql': 'sql',
-  'c': 'c',
-  'cpp': 'cpp',
-  'java': 'java',
 }
 
 // 自定义扩展编辑器，添加处理Markdown快捷方式功能
