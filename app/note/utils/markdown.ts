@@ -196,6 +196,13 @@ export const serialize = (nodes: Descendant[]): string => {
     if (Text.isText(node)) {
       let text = node.text
       
+      // 处理换行符，确保它们在代码中保持原样
+      if (node.code && text.includes('\n')) {
+        // 行内代码通常不应包含换行符，但我们提供保存支持
+        // 返回时先处理代码格式
+        return `\`${text}\``
+      }
+      
       if (node.code) {
         text = `\`${text}\``
       }

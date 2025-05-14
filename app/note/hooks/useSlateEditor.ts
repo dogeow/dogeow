@@ -11,40 +11,65 @@ const withShortcuts = (editor: Editor) => {
   editor.insertText = (text) => {
     const { selection } = editor
 
-    // 行内代码处理: 如果输入了第二个反引号且在一对反引号之间有文本，就将其转换为行内代码
+    // 行内代码处理: 如果输入了结束反引号，检查是否有对应的开始反引号
     if (text === '`' && selection && Range.isCollapsed(selection)) {
       const { anchor } = selection
-      const inlineCodeStart = Editor.before(editor, anchor, { unit: 'character' })
+      const block = Editor.above(editor, {
+        match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n),
+      })
       
-      if (inlineCodeStart) {
-        const range = { anchor, focus: inlineCodeStart }
-        const textBefore = Editor.string(editor, range)
-        // 检查文本是否以反引号开始
-        const lastChar = textBefore.charAt(textBefore.length - 1)
+      if (block) {
+        const [, path] = block
+        const blockStart = Editor.start(editor, path)
+        const blockRange = { anchor, focus: blockStart }
+        const blockText = Editor.string(editor, blockRange)
         
-        if (lastChar === '`') {
-          // 选择包含开始反引号的文本范围
-          const fullRange = {
-            anchor,
-            focus: Editor.before(editor, inlineCodeStart, { unit: 'character' }) || inlineCodeStart
+        // 查找最近的未配对反引号
+        let startPos = -1
+        for (let i = blockText.length - 1; i >= 0; i--) {
+          if (blockText[i] === '`') {
+            // 确保这个反引号之前没有另一个反引号配对它
+            let paired = false
+            for (let j = i - 1; j >= 0; j--) {
+              if (blockText[j] === '`') {
+                paired = !paired;
+              }
+            }
+            if (!paired) {
+              startPos = i;
+              break;
+            }
           }
-          const content = Editor.string(editor, { anchor: fullRange.focus, focus: anchor }).slice(1)
+        }
+        
+        if (startPos !== -1) {
+          // 找到了开始反引号，计算位置
+          const offset = blockText.length - startPos
+          const beforeLength = anchor.offset - offset
+          const startPoint = { path: anchor.path, offset: beforeLength }
           
-          if (content.trim().length > 0) {
-            // 删除所有内容包括反引号
-            Transforms.delete(editor, { at: fullRange })
-            
-            // 插入带有code标记的内容
+          // 获取要格式化为代码的文本内容
+          const codeRange = { anchor, focus: startPoint }
+          const codeText = Editor.string(editor, codeRange).slice(1) // 移除开始反引号
+          
+          if (codeText.trim().length > 0) {
+            // 选择整个范围（包括开始反引号）
+            Transforms.select(editor, codeRange)
+            // 删除原始文本
+            Transforms.delete(editor)
+            // 插入带有代码格式的文本
             Transforms.insertNodes(editor, {
-              text: content,
+              text: codeText,
               code: true
             })
-            return
+            
+            return // 阻止插入结束反引号
           }
         }
       }
     }
 
+    // Markdown 标记处理（标题、列表等）
     if (text === ' ' && selection && Range.isCollapsed(selection)) {
       const { anchor } = selection
       const block = Editor.above(editor, {
