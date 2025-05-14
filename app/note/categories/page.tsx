@@ -3,11 +3,12 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Pencil, Trash2 } from "lucide-react"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useSWR, { mutate } from "swr"
 import { get, post, put, del } from "@/utils/api"
-import { toast } from "react-hot-toast"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 // 分类类型定义
 type Category = {
@@ -18,12 +19,13 @@ type Category = {
 }
 
 export default function NoteCategories() {
+  const router = useRouter()
   const [newCategory, setNewCategory] = useState("")
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [loading, setLoading] = useState(false)
 
   // 加载分类数据
-  const { data: categories, error } = useSWR<Category[]>('/note-categories', get)
+  const { data: categories, error, isLoading } = useSWR<Category[]>('/note-categories', get)
 
   // 添加分类
   const addCategory = async () => {
@@ -34,9 +36,7 @@ export default function NoteCategories() {
 
     setLoading(true)
     try {
-      await post("/note-categories", {
-        name: newCategory,
-      })
+      await post("/note-categories", { name: newCategory.trim() })
       setNewCategory("")
       mutate("/note-categories")
       toast.success("分类添加成功")
@@ -58,7 +58,7 @@ export default function NoteCategories() {
     setLoading(true)
     try {
       await put(`/note-categories/${editingCategory.id}`, {
-        name: editingCategory.name,
+        name: editingCategory.name.trim(),
       })
       setEditingCategory(null)
       mutate("/note-categories")
@@ -90,42 +90,68 @@ export default function NoteCategories() {
     }
   }
 
+  // 处理回车键提交
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      if (editingCategory) {
+        updateCategory()
+      } else {
+        addCategory()
+      }
+    }
+  }
+
   return (
     <div className="container mx-auto py-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>添加新分类</CardTitle>
-          <CardDescription>创建新的笔记分类便于整理您的笔记</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col space-y-4">
-            <div>
+      <div className="flex items-center mb-6">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={() => router.push('/note')}
+          className="mr-2"
+        >
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          返回笔记
+        </Button>
+        <h1 className="text-2xl font-bold">笔记分类管理</h1>
+      </div>
+
+      <Card className="mb-8">
+        <CardContent className="pt-6">
+          <div className="flex items-center space-x-4">
+            <div className="flex-1">
               <label className="block text-sm font-medium mb-1">分类名称</label>
               <Input
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="输入分类名称"
+                disabled={loading}
               />
+            </div>
+            <div className="mt-6">
+              <Button 
+                onClick={addCategory} 
+                disabled={loading || !newCategory.trim()}
+                className="bg-green-500 hover:bg-green-600"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                添加分类
+              </Button>
             </div>
           </div>
         </CardContent>
-        <CardFooter>
-          <Button onClick={addCategory} disabled={loading || !newCategory.trim()}>
-            <Plus className="h-4 w-4 mr-2" />
-            添加分类
-          </Button>
-        </CardFooter>
       </Card>
 
-      <div className="mt-8">
+      <div>
         <h2 className="text-xl font-bold mb-4">分类列表</h2>
         {error && <p className="text-red-500">加载分类失败</p>}
-        {!categories && !error && <p>加载中...</p>}
+        {isLoading && <p>加载中...</p>}
         {categories?.length === 0 && <p>暂无分类，请添加</p>}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-col gap-2">
           {categories?.map((category) => (
-            <Card key={category.id}>
+            <Card key={category.id} className="py-1">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle>
@@ -138,6 +164,8 @@ export default function NoteCategories() {
                             name: e.target.value
                           })
                         }
+                        onKeyDown={handleKeyDown}
+                        autoFocus
                       />
                     ) : (
                       category.name
@@ -152,7 +180,13 @@ export default function NoteCategories() {
                       >
                         取消
                       </Button>
-                      <Button size="sm" onClick={updateCategory}>保存</Button>
+                      <Button 
+                        size="sm" 
+                        onClick={updateCategory}
+                        disabled={loading || !editingCategory.name.trim()}
+                      >
+                        保存
+                      </Button>
                     </div>
                   ) : (
                     <div className="flex space-x-2">
@@ -166,6 +200,7 @@ export default function NoteCategories() {
                       <Button
                         variant="outline"
                         size="icon"
+                        className="text-red-500 hover:text-red-700"
                         onClick={() => deleteCategory(category.id)}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -180,4 +215,4 @@ export default function NoteCategories() {
       </div>
     </div>
   )
-} 
+}
