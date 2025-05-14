@@ -292,26 +292,6 @@ const useDecorate = (editor: ExtendedEditor) => {
   )
 }
 
-// 返回代码主题CSS样式
-const prismThemeCss = `
-  /* 确保代码高亮样式 - 主题CSS */
-  .code-block {
-    background-color: #1e1e1e !important;
-    color: #d4d4d4 !important;
-  }
-  
-  .token.comment { color: #6A9955 !important; }
-  .token.keyword { color: #569CD6 !important; }
-  .token.function { color: #DCDCAA !important; }
-  .token.string { color: #CE9178 !important; }
-  .token.number { color: #B5CEA8 !important; }
-  .token.variable { color: #9CDCFE !important; }
-  .token.php-tag { 
-    color: #808080 !important; 
-    background: rgba(255,255,255,0.1);
-  }
-`
-
 const CodeHighlightEditor = ({ noteId, initialContent = '' }: CodeHighlightEditorProps) => {
   // 创建编辑器
   const [editor] = useState(() => 
@@ -830,8 +810,6 @@ const CodeHighlightEditor = ({ noteId, initialContent = '' }: CodeHighlightEdito
               }}
               placeholder=""
             />
-            {/* 添加内联样式，确保高亮生效 */}
-            <style>{prismThemeCss}</style>
           </Slate>
         </div>
       </div>

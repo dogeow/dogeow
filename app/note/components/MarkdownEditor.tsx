@@ -51,129 +51,6 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
     return marks ? !!marks.code : false
   }, [])
 
-  // 手动处理行内代码 - 查找文本中的行内代码模式并应用格式
-  const processInlineCode = useCallback(() => {
-    // 获取当前选中的节点
-    const { selection } = editor
-    if (!selection) return
-    
-    // 如果当前已经在代码模式下，不进行处理
-    const marks = Editor.marks(editor)
-    if (marks && marks.code) return
-    
-    // 遍历文档，查找包含 `text` 格式的文本
-    const inlineCodePattern = /`([^`]+)`/g
-    
-    // 处理当前段落及相邻段落
-    const currentPath = selection.anchor.path.slice(0, 1)
-    
-    // 获取当前段落文本
-    try {
-      const [node] = Editor.node(editor, currentPath)
-      
-      if (!node || !SlateElement.isElement(node) || !node.children) return
-      
-      // 将段落文本转换为纯文本以便于搜索
-      const blockText = node.children
-        .map(child => Text.isText(child) ? child.text : '')
-        .join('')
-      
-      // 搜索行内代码模式
-      let match
-      const matches = []
-      while ((match = inlineCodePattern.exec(blockText)) !== null) {
-        matches.push({
-          start: match.index,
-          end: match.index + match[0].length,
-          content: match[1]
-        })
-      }
-      
-      if (matches.length === 0) return
-      
-      // 从后向前处理，避免位置偏移问题
-      for (let i = matches.length - 1; i >= 0; i--) {
-        const { start, end, content } = matches[i]
-        
-        // 查找对应的文本节点和偏移
-        let currentOffset = 0
-        let startPath = null
-        let startOffset = 0
-        let endPath = null
-        let endOffset = 0
-        
-        for (let j = 0; j < node.children.length; j++) {
-          const child = node.children[j]
-          if (!Text.isText(child)) continue
-          
-          const textLength = child.text.length
-          
-          // 检查开始位置
-          if (startPath === null && currentOffset + textLength > start) {
-            startPath = [...currentPath, j]
-            startOffset = start - currentOffset
-          }
-          
-          // 检查结束位置
-          if (currentOffset + textLength >= end) {
-            endPath = [...currentPath, j]
-            endOffset = end - currentOffset
-            break
-          }
-          
-          currentOffset += textLength
-        }
-        
-        if (startPath && endPath) {
-          // 检查是否已经有代码标记
-          let hasCodeMark = false
-          const range = {
-            anchor: { path: startPath, offset: startOffset },
-            focus: { path: endPath, offset: endOffset }
-          }
-          
-          // 查找范围内的节点是否已有代码标记
-          for (const [node] of Editor.nodes(editor, { at: range, match: n => Text.isText(n) })) {
-            if (Text.isText(node) && node.code) {
-              hasCodeMark = true
-              break
-            }
-          }
-          
-          if (!hasCodeMark) {
-            // 选择包含行内代码的文本
-            Transforms.select(editor, range)
-            
-            // 删除原始文本（包括反引号）
-            Transforms.delete(editor)
-            
-            // 插入带有代码格式的文本
-            Transforms.insertNodes(editor, {
-              text: content,
-              code: true
-            })
-          }
-        }
-      }
-      
-      // 重置选择回原始位置
-      if (selection && Range.isCollapsed(selection)) {
-        Transforms.select(editor, selection)
-      }
-    } catch (err) {
-      console.error('处理行内代码错误:', err)
-    }
-  }, [editor])
-
-  // 定期处理行内代码
-  useEffect(() => {
-    const interval = setInterval(() => {
-      processInlineCode()
-    }, 2000) // 每2秒检查一次
-    
-    return () => clearInterval(interval)
-  }, [processInlineCode])
-
   // 处理编辑器的键盘快捷键
   const handleKeyDown = (event: React.KeyboardEvent) => {
     // 当按下回车键且在代码标记中时，保持代码标记
@@ -185,14 +62,6 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
       return
     }
 
-    // 当用户输入反引号时尝试处理行内代码
-    if (event.key === '`') {
-      // 等待DOM更新后再处理
-      setTimeout(() => {
-        processInlineCode()
-      }, 10)
-    }
-    
     for (const hotkey in HOTKEYS) {
       if (isHotkey(hotkey, event)) {
         event.preventDefault()
@@ -220,12 +89,6 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
     }
   }
 
-  // 更新 Markdown 预览
-  const updateMarkdown = useCallback(() => {
-    const markdown = serialize(value)
-    setMarkdownValue(markdown)
-  }, [value])
-
   // 保存笔记
   const saveNote = useCallback(async () => {
     if (!currentNoteId) {
@@ -234,7 +97,6 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
     }
     
     setLoading(true)
-    updateMarkdown()
     const markdown = serialize(value)
     
     try {
@@ -249,7 +111,7 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
     } finally {
       setLoading(false)
     }
-  }, [value, updateMarkdown, currentNoteId])
+  }, [value, currentNoteId])
 
   // 插入链接
   const insertLink = useCallback(() => {
