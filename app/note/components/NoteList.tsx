@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import useSWR, { mutate } from "swr"
-import { get, post, del } from "@/utils/api"
+import { get, del } from "@/utils/api"
 import { Button } from "@/components/ui/button"
 import { 
   Card, 
@@ -12,15 +12,6 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card"
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { toast } from "react-hot-toast"
 import { Plus, Trash2, Edit } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -38,44 +29,10 @@ type Note = {
 
 export default function NoteList() {
   const router = useRouter()
-  const [isNewNoteDialogOpen, setIsNewNoteDialogOpen] = useState(false)
-  const [newNoteTitle, setNewNoteTitle] = useState("")
   const [loading, setLoading] = useState(false)
   
   // 获取笔记列表
   const { data: notes, error } = useSWR<Note[]>('/notes', get)
-  
-  // 创建新笔记
-  const createNote = async () => {
-    if (!newNoteTitle.trim()) {
-      toast.error("请输入笔记标题")
-      return
-    }
-    
-    setLoading(true)
-    try {
-      const newNote = await post<Note>('/notes', {
-        title: newNoteTitle,
-        content: '# ' + newNoteTitle + '\n\n开始编辑你的新笔记吧！'
-      })
-      
-      setIsNewNoteDialogOpen(false)
-      setNewNoteTitle("")
-      
-      // 更新笔记列表缓存
-      mutate('/notes')
-      
-      toast.success("笔记已创建")
-      
-      // 跳转到编辑页面
-      router.push(`/note/edit/${newNote.id}`)
-    } catch (error) {
-      console.error("创建笔记失败:", error)
-      toast.error("创建笔记失败")
-    } finally {
-      setLoading(false)
-    }
-  }
   
   // 删除笔记
   const deleteNote = async (id: number) => {
@@ -125,45 +82,6 @@ export default function NoteList() {
   
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">我的笔记</h1>
-        
-        <Dialog open={isNewNoteDialogOpen} onOpenChange={setIsNewNoteDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-1" />
-              新建笔记
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>新建笔记</DialogTitle>
-            </DialogHeader>
-            <div className="py-4">
-              <Input
-                placeholder="笔记标题"
-                value={newNoteTitle}
-                onChange={(e) => setNewNoteTitle(e.target.value)}
-              />
-            </div>
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                onClick={() => setIsNewNoteDialogOpen(false)}
-              >
-                取消
-              </Button>
-              <Button 
-                onClick={createNote}
-                disabled={loading || !newNoteTitle.trim()}
-              >
-                创建
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-      
       {error && <p className="text-red-500">加载笔记失败</p>}
       {!notes && !error && <p>加载中...</p>}
       {notes?.length === 0 && <p>暂无笔记，请添加</p>}
