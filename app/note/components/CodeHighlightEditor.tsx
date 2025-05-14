@@ -10,27 +10,6 @@ import { toast } from 'react-hot-toast'
 import { put } from '@/utils/api'
 import Prism from 'prismjs'
 
-// 导入Prism语言支持
-import 'prismjs/components/prism-javascript'
-import 'prismjs/components/prism-typescript'
-import 'prismjs/components/prism-jsx'
-import 'prismjs/components/prism-tsx'
-import 'prismjs/components/prism-python'
-import 'prismjs/components/prism-php'
-import 'prismjs/components/prism-css'
-import 'prismjs/components/prism-markdown'
-import 'prismjs/components/prism-json'
-import 'prismjs/components/prism-bash'
-import 'prismjs/components/prism-sql'
-import 'prismjs/components/prism-c'
-import 'prismjs/components/prism-cpp'
-import 'prismjs/components/prism-java'
-
-// 导入Prism主题样式
-import 'prismjs/themes/prism-okaidia.css'
-
-// 导入自定义样式，用于修复嵌套token的问题
-import './prism-custom.css'
 import { mergeMaps, normalizeTokens } from './utils'
 
 // 确保Prism正确初始化
@@ -296,96 +275,6 @@ const checkInlineFormat = (text: string) => {
     return { format: 'code', text: text.slice(1, -1) };
   }
   return null;
-}
-
-// 为代码块获取装饰范围
-const getChildNodeToDecorations = (
-  [block, blockPath]: NodeEntry
-): Map<Element, TokenRange[]> => {
-  const nodeToDecorations = new Map<Element, TokenRange[]>()
-  
-  // 只处理代码块
-  if (!SlateElement.isElement(block) || (block as CustomElement).type !== 'code-block') {
-    return nodeToDecorations
-  }
-  
-  const language = (block as CustomElement).language || 'text'
-  const prismLanguage = PRISM_LANGUAGE_MAP[language] || language
-  
-  // 如果没有对应的Prism语言定义，直接返回
-  if (!Prism.languages[prismLanguage]) {
-    return nodeToDecorations
-  }
-  
-  // 获取代码块的完整文本
-  const text = Node.string(block)
-  
-  try {
-    // 使用Prism解析文本
-    const tokens = Prism.tokenize(text, Prism.languages[prismLanguage])
-    const normalizedTokens = normalizeTokens(tokens)
-    
-    // 处理代码块中的每一行
-    const blockChildren = block.children
-    
-    for (let index = 0; index < normalizedTokens.length && index < blockChildren.length; index++) {
-      const tokens = normalizedTokens[index]
-      // 使用类型断言转换成Element类型
-      const element = blockChildren[index] as unknown as Element
-      
-      if (!nodeToDecorations.has(element)) {
-        nodeToDecorations.set(element, [])
-      }
-      
-      let start = 0
-      for (const token of tokens) {
-        const length = token.content.length
-        if (!length) {
-          continue
-        }
-        
-        const end = start + length
-        const path = [...blockPath, index, 0]
-        
-        const range = {
-          anchor: { path, offset: start },
-          focus: { path, offset: end },
-          token: true,
-          ...Object.fromEntries(token.types.map(type => [type, true])),
-        }
-        
-        nodeToDecorations.get(element)!.push(range)
-        
-        start = end
-      }
-    }
-  } catch (error) {
-    console.error('Prism token processing error:', error)
-  }
-  
-  return nodeToDecorations
-}
-
-// 预计算所有代码块的装饰
-const SetNodeToDecorations = () => {
-  const editor = useSlate() as ExtendedEditor
-  
-  const blockEntries = Array.from(
-    Editor.nodes(editor, {
-      at: [],
-      mode: 'highest',
-      match: n => SlateElement.isElement(n) && (n as CustomElement).type === 'code-block',
-    })
-  )
-  
-  const nodeToDecorations = mergeMaps(
-    ...blockEntries.map(entry => getChildNodeToDecorations(entry))
-  )
-  
-  // 使用类型断言处理赋值
-  editor.nodeToDecorations = nodeToDecorations as Map<Element, TokenRange[]>
-  
-  return null
 }
 
 // 装饰函数，用于代码高亮
@@ -961,7 +850,6 @@ const CodeHighlightEditor = ({ noteId, initialContent = '' }: CodeHighlightEdito
             initialValue={value}
             onChange={value => setValue(value)}
           >
-            <SetNodeToDecorations />
             <Editable
               className="min-h-[400px] p-4 outline-none font-mono text-base leading-normal"
               renderElement={renderElement}

@@ -74,57 +74,9 @@ const initialValue: Descendant[] = [
   {
     type: 'paragraph',
     children: [
-      { text: '欢迎使用 Markdown 编辑器！' },
+      { text: '' },
     ],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      { text: '这是一个基于 Slate.js 构建的编辑器，支持基本的 Markdown 语法。' },
-    ],
-  },
-  {
-    type: 'heading-one',
-    children: [
-      { text: '标题示例' },
-    ],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      { text: '你可以使用 ' },
-      { text: '粗体', bold: true },
-      { text: '、' },
-      { text: '斜体', italic: true },
-      { text: ' 和 ' },
-      { text: '代码', code: true },
-      { text: ' 格式。' },
-    ],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      { text: '列表:' },
-    ],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      { text: '- 列表项 1' },
-    ],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      { text: '- 列表项 2' },
-    ],
-  },
-  {
-    type: 'paragraph',
-    children: [
-      { text: '开始编辑吧！' },
-    ],
-  },
+  }
 ]
 
 // 将字符串解析为 Slate 编辑器格式的函数（简化版）
@@ -620,7 +572,6 @@ interface MarkdownEditorProps {
 const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
   const [value, setValue] = useState<Descendant[]>(initialValue)
   const [markdownValue, setMarkdownValue] = useState(initialContent || '')
-  const [showMarkdown, setShowMarkdown] = useState(false)
   const [currentNoteId, setCurrentNoteId] = useState<number | null>(noteId)
   const [isLinkDialogOpen, setIsLinkDialogOpen] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
@@ -702,12 +653,6 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
     }
   }, [value, updateMarkdown, currentNoteId])
 
-  // 切换 Markdown 预览
-  const toggleMarkdownView = useCallback(() => {
-    updateMarkdown()
-    setShowMarkdown(!showMarkdown)
-  }, [showMarkdown, updateMarkdown])
-
   // 插入链接
   const insertLink = useCallback(() => {
     if (!linkUrl.trim()) return
@@ -776,93 +721,76 @@ const MarkdownEditor = ({ noteId, initialContent }: MarkdownEditorProps) => {
   return (
     <div className="flex flex-col space-y-4">
       <div className="border rounded-lg overflow-hidden">
-        {showMarkdown ? (
-          <div className="p-4 min-h-[400px] font-mono whitespace-pre-wrap bg-muted/10">
-            {markdownValue || '暂无内容'}
-          </div>
-        ) : (
-          <Slate
-            editor={editor}
-            initialValue={value}
-            onChange={newValue => setValue(newValue)}
-          >
-            <div className="bg-muted/30 p-2 border-b flex flex-wrap gap-1">
-              <ToolbarButton format="bold" icon={Bold} tooltip="粗体 (Ctrl+B)" editor={editor} />
-              <ToolbarButton format="italic" icon={Italic} tooltip="斜体 (Ctrl+I)" editor={editor} />
-              <ToolbarButton format="code" icon={Code} tooltip="代码 (Ctrl+`)" editor={editor} />
-              <div className="w-px h-8 bg-border mx-1"></div>
-              
-              <ToolbarButton format="bulleted-list" icon={List} tooltip="无序列表" editor={editor} />
-              <ToolbarButton format="numbered-list" icon={ListOrdered} tooltip="有序列表" editor={editor} />
-              <div className="w-px h-8 bg-border mx-1"></div>
-              
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsLinkDialogOpen(true)}
-                title="插入链接 (Ctrl+K)"
-                className="h-9 w-9"
+        <Slate
+          editor={editor}
+          initialValue={value}
+          onChange={newValue => setValue(newValue)}
+        >
+          <div className="bg-muted/30 p-2 border-b flex flex-wrap gap-1">
+            <ToolbarButton format="bold" icon={Bold} tooltip="粗体 (Ctrl+B)" editor={editor} />
+            <ToolbarButton format="italic" icon={Italic} tooltip="斜体 (Ctrl+I)" editor={editor} />
+            <ToolbarButton format="code" icon={Code} tooltip="代码 (Ctrl+`)" editor={editor} />
+            <div className="w-px h-8 bg-border mx-1"></div>
+            
+            <ToolbarButton format="bulleted-list" icon={List} tooltip="无序列表" editor={editor} />
+            <ToolbarButton format="numbered-list" icon={ListOrdered} tooltip="有序列表" editor={editor} />
+            <div className="w-px h-8 bg-border mx-1"></div>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsLinkDialogOpen(true)}
+              title="插入链接 (Ctrl+K)"
+              className="h-9 w-9"
+            >
+              <Link className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={insertCodeBlock}
+              title="插入代码块"
+              className="h-9 w-9"
+            >
+              <Square className="h-5 w-5" />
+            </Button>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={insertTable}
+              title="插入表格"
+              className="h-9 w-9"
+            >
+              <Table className="h-5 w-5" />
+            </Button>
+            
+            <div className="ml-auto flex items-center gap-1">
+              <Button 
+                variant="default" 
+                size="sm" 
+                onClick={saveNote}
+                disabled={loading || !currentNoteId}
+                className="flex items-center gap-1"
               >
-                <Link className="h-5 w-5" />
+                <Save className="h-4 w-4" />
+                {loading ? '保存中...' : '保存'}
               </Button>
-              
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={insertCodeBlock}
-                title="插入代码块"
-                className="h-9 w-9"
-              >
-                <Square className="h-5 w-5" />
-              </Button>
-              
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={insertTable}
-                title="插入表格"
-                className="h-9 w-9"
-              >
-                <Table className="h-5 w-5" />
-              </Button>
-              
-              <div className="ml-auto flex items-center gap-1">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={toggleMarkdownView}
-                  className="flex items-center gap-1"
-                >
-                  <FileText className="h-4 w-4" />
-                  {showMarkdown ? '编辑模式' : 'Markdown'}
-                </Button>
-                
-                <Button 
-                  variant="default" 
-                  size="sm" 
-                  onClick={saveNote}
-                  disabled={loading || !currentNoteId}
-                  className="flex items-center gap-1"
-                >
-                  <Save className="h-4 w-4" />
-                  {loading ? '保存中...' : '保存'}
-                </Button>
-              </div>
             </div>
-            <Editable
-              className="p-4 min-h-[400px] focus:outline-none"
-              renderElement={props => <Element {...props} />}
-              renderLeaf={props => <Leaf {...props} />}
-              placeholder="开始输入 Markdown 内容..."
-              spellCheck={false}
-              autoFocus
-              onKeyDown={handleKeyDown}
-            />
-          </Slate>
-        )}
+          </div>
+          <Editable
+            className="p-4 min-h-[400px] focus:outline-none"
+            renderElement={props => <Element {...props} />}
+            renderLeaf={props => <Leaf {...props} />}
+            spellCheck={false}
+            autoFocus
+            onKeyDown={handleKeyDown}
+          />
+        </Slate>
       </div>
       
       {/* 添加链接对话框 */}

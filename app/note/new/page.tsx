@@ -11,8 +11,8 @@ import { Input } from "@/components/ui/input"
 import { toast } from "react-hot-toast"
 
 // 使用动态导入，避免SSR时的错误
-const SimpleMarkdownEditor = dynamic(
-  () => import('@/app/note/components/SimpleMarkdownEditor'), 
+const MarkdownEditor = dynamic(
+  () => import('@/app/note/components/MarkdownEditor'), 
   { ssr: false, loading: () => <p>加载编辑器中...</p> }
 )
 
@@ -89,7 +89,7 @@ export default function NewNotePage() {
         </div>
         
         {tempNoteId ? (
-          <SimpleMarkdownEditor 
+          <MarkdownEditor 
             noteId={tempNoteId} 
             initialContent={INITIAL_CONTENT} 
           />
