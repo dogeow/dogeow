@@ -1,21 +1,23 @@
 "use client"
 
 import { useState, useEffect } from 'react';
-import { getCategories } from './services/api';
 import { NavCategory as CategoryType } from '@/app/nav/types';
 import { NavCategory } from './components/NavCategory';
-import { Folder, Search } from 'lucide-react';
+import { Folder, Search, Plus, Settings } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useNavStore } from '@/stores/navStore';
 
 export default function NavPage() {
-  const [categories, setCategories] = useState<CategoryType[]>([]);
+  const router = useRouter();
+  const { categories, loading: storeLoading, fetchCategories } = useNavStore();
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await getCategories();
-        setCategories(data);
+        await fetchCategories();
       } catch (error) {
         console.error('获取导航分类失败:', error);
       } finally {
@@ -24,7 +26,7 @@ export default function NavPage() {
     };
     
     fetchData();
-  }, []);
+  }, [fetchCategories]);
   
   // 过滤导航项
   const filteredCategories = categories.map(category => {
@@ -44,14 +46,38 @@ export default function NavPage() {
     };
   }).filter(category => category.items && category.items.length > 0);
 
+  const handleAddNav = () => {
+    router.push('/nav/add');
+  };
+
+  const handleManageCategories = () => {
+    router.push('/nav/categories');
+  };
+
   return (
-    <div className="container mx-auto px-2">
-      <div className="mb-6 flex items-center gap-1">
-        <Folder className="h-6 w-6" />
-        <h1 className="text-2xl font-bold">我的导航</h1>
+    <div className="flex flex-col gap-2 mx-4">
+      <div className="flex items-center">
+        <div className="flex items-center gap-1 mt-2">
+          <Folder className="h-6 w-6" />
+          <h1 className="text-2xl font-bold">我的导航</h1>
+        </div>
+        <div className="ml-auto flex items-center gap-2">
+          <Button 
+            onClick={handleManageCategories} 
+            size="sm" 
+            variant="outline"
+            className="flex items-center gap-1"
+          >
+            <Settings className="h-4 w-4" />
+            <span className="hidden sm:inline">管理分类</span>
+          </Button>
+          <Button onClick={handleAddNav} size="sm" variant="default" className="bg-green-500 hover:bg-green-600">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
       
-      <div className="mb-6 relative max-w-md">
+      <div className="relative max-w-md">
         <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
         <input
           type="text"
@@ -62,7 +88,7 @@ export default function NavPage() {
         />
       </div>
       
-      {loading ? (
+      {loading || storeLoading ? (
         <LoadingSkeleton />
       ) : filteredCategories.length > 0 ? (
         filteredCategories.map((category) => (
