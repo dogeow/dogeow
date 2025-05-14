@@ -350,29 +350,6 @@ const CodeHighlightEditor = ({ noteId, initialContent = '' }: CodeHighlightEdito
     }
   }, [value, noteId])
 
-  // 添加调试功能
-  const debugHighlighting = useCallback(() => {
-    const blockEntries = Array.from(
-      Editor.nodes(editor, {
-        at: [],
-        mode: 'highest',
-        match: n => SlateElement.isElement(n) && (n as CustomElement).type === 'code-block',
-      })
-    )
-    
-    console.log('Code blocks:', blockEntries.length)
-    
-    blockEntries.forEach(([node], i) => {
-      console.log(`Block ${i + 1}:`, node)
-      console.log(`Language:`, (node as CustomElement).language)
-      console.log(`Text:`, Node.string(node))
-    })
-    
-    console.log('Decoration map:', editor.nodeToDecorations)
-    
-    // 显示消息
-    toast.success('调试信息已打印到控制台')
-  }, [editor])
 
   // 自定义元素渲染
   const renderElement = useCallback((props: RenderElementProps) => {
@@ -821,16 +798,6 @@ const CodeHighlightEditor = ({ noteId, initialContent = '' }: CodeHighlightEdito
           </Button>
 
           <div className="ml-auto flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={debugHighlighting}
-              title="调试高亮"
-              className="flex items-center gap-1"
-            >
-              调试
-            </Button>
-            
             <Button 
               variant="default" 
               size="sm" 

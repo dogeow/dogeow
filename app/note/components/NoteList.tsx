@@ -13,7 +13,7 @@ import {
   CardTitle 
 } from "@/components/ui/card"
 import { toast } from "react-hot-toast"
-import { Plus, Trash2, Edit } from "lucide-react"
+import { Trash2, Edit } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
@@ -67,8 +67,12 @@ export default function NoteList() {
   
   // 截取内容摘要
   const getExcerpt = (content: string) => {
+    if(content === null) {
+      return '暂无内容'
+    }
+
     // 移除Markdown格式
-    const plainText = content
+    const plainText =  content
       .replace(/#{1,6}\s+/g, '') // 移除标题
       .replace(/\*\*|\*|~~|__/g, '') // 移除粗体、斜体等
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 移除链接，保留链接文本
