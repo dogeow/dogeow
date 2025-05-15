@@ -43,6 +43,7 @@
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.3",
     "react-hot-toast": "^2.5.2",
+    "react-markdown": "^10.1.0",
     "slate": "^0.112.0",
     "slate-history": "^0.113.1",
     "slate-react": "^0.112.1",

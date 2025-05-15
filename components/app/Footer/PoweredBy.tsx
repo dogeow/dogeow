@@ -11,9 +11,10 @@ interface TechLinkProps {
   href: string;
   src: string;
   alt: string;
+  needsInvert?: boolean;
 }
 
-const TechLink: React.FC<TechLinkProps> = ({ href, src, alt }) => (
+const TechLink: React.FC<TechLinkProps> = ({ href, src, alt, needsInvert }) => (
   <Link 
     href={href} 
     target="_blank" 
@@ -25,7 +26,7 @@ const TechLink: React.FC<TechLinkProps> = ({ href, src, alt }) => (
       alt={alt} 
       width={20} 
       height={20} 
-      className="transition-transform hover:scale-110" 
+      className={`transition-transform hover:scale-110 ${needsInvert ? 'dark:invert' : ''}`} 
     />
   </Link>
 );
@@ -33,10 +34,10 @@ const TechLink: React.FC<TechLinkProps> = ({ href, src, alt }) => (
 const PoweredBy: React.FC = () => (
   <div className="flex items-center gap-2 text-sm opacity-80">
     <span>Powered By 🫴</span>
-    <TechLink href="https://nextjs.org" src={NextJsIcon} alt="Next.js" />
-    <TechLink href="https://laravel.com" src={laravelIcon} alt="Laravel" />
-    <TechLink href="https://ui.shadcn.com" src={graphQlIcon} alt="shadcn/ui" />
-    <TechLink href="https://react.dev" src={reactIcon} alt="React" />
+    <TechLink href="https://nextjs.org" src={NextJsIcon} alt="Next.js" needsInvert={true} />
+    <TechLink href="https://laravel.com" src={laravelIcon} alt="Laravel" needsInvert={false} />
+    <TechLink href="https://ui.shadcn.com" src={graphQlIcon} alt="shadcn/ui" needsInvert={true} />
+    <TechLink href="https://react.dev" src={reactIcon} alt="React" needsInvert={false} />
   </div>
 );
 

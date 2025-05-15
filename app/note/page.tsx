@@ -23,11 +23,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { format } from 'date-fns'
 import { toast } from 'react-hot-toast'
+import ReactMarkdown from 'react-markdown'
 
 interface Note {
   id: number
   title: string
   content: string
+  content_markdown: string
   created_at: string
   updated_at: string
 }
@@ -75,10 +77,11 @@ export default function NotePage() {
 
   // 筛选和排序笔记
   const filteredAndSortedNotes = notes
-    .filter(note => 
-      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter(note => {
+      const searchLower = searchTerm.toLowerCase();
+      return note.title.toLowerCase().includes(searchLower) ||
+        (note.content_markdown && note.content_markdown.toLowerCase().includes(searchLower));
+    })
     .sort((a, b) => {
       if (sortBy === 'title') {
         return sortOrder === 'asc' 
@@ -100,6 +103,15 @@ export default function NotePage() {
     } catch (error) {
       return dateString
     }
+  }
+
+  // 获取Markdown摘要
+  const getMarkdownPreview = (markdown: string, maxLength = 150) => {
+    if (!markdown) return '';
+    const plainText = markdown.replace(/[#*`>-]/g, '');
+    return plainText.length > maxLength 
+      ? plainText.substring(0, maxLength) + '...'
+      : plainText;
   }
 
   return (
@@ -206,9 +218,13 @@ export default function NotePage() {
                 </span>
               </div>
               
-              <div className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                {note.content ? (
-                  <div dangerouslySetInnerHTML={{ __html: note.content.replace(/[#*`>-]/g, '') }} />
+              <div className="mt-2 text-sm text-muted-foreground prose prose-sm max-w-none line-clamp-2">
+                {note.content_markdown ? (
+                  <div className="line-clamp-2">
+                    <ReactMarkdown>
+                      {getMarkdownPreview(note.content_markdown)}
+                    </ReactMarkdown>
+                  </div>
                 ) : (
                   <span className="italic">(无内容)</span>
                 )}

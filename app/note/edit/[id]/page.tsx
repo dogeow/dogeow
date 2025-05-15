@@ -15,6 +15,7 @@ interface Note {
   id: number
   title: string
   content: string
+  content_markdown: string
 }
 
 // 笔记编辑页面
@@ -84,6 +85,7 @@ export default function EditNotePage() {
           title={note.title}
           content={note.content}
           isEditing={true}
+          initialMarkdown={note.content_markdown}
         />
       )}
     </div>
