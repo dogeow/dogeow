@@ -6,7 +6,7 @@ import { HistoryEditor } from 'slate-history'
 export type CustomElement = {
   type: 'paragraph' | 'heading-one' | 'heading-two' | 'heading-three' | 
         'bulleted-list' | 'numbered-list' | 'list-item' | 'block-quote' |
-        'code-block' | 'table' | 'table-row' | 'table-cell';
+        'code-block' | 'table' | 'table-row' | 'table-cell' | 'image';
   children: CustomText[] | CustomElement[];
   url?: string;
   language?: string;

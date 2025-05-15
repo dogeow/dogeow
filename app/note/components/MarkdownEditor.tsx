@@ -5,41 +5,19 @@ import { createEditor, Descendant, Element as SlateElement, Transforms, Editor, 
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps } from 'slate-react'
 import { withHistory, HistoryEditor } from 'slate-history'
 import { Button } from "@/components/ui/button"
-import { Bold, Italic, List, ListOrdered, Code, Save, Quote, Heading1, Heading2 } from 'lucide-react'
+import { Bold, Italic, List, ListOrdered, Code, Save, Quote, Heading1, Heading2, ImageIcon } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import { put } from '@/utils/api'
+import NoteImageUploader from './ImageUploader'
+import { CustomElement, CustomText } from '../types/editor'
 
 interface MarkdownEditorProps {
   noteId: number
   initialContent?: string
 }
 
-// 定义元素类型
-type ElementType = 
-  | 'paragraph' 
-  | 'heading-one' 
-  | 'heading-two' 
-  | 'block-quote' 
-  | 'bulleted-list' 
-  | 'numbered-list' 
-  | 'list-item' 
-  | 'code-block'
-
-// 自定义SlateElement类型
-interface CustomElement {
-  type: ElementType
-  language?: string
-  children: CustomText[]
-}
-
-// 自定义Text类型
-interface CustomText {
-  text: string
-  bold?: boolean
-  italic?: boolean
-  code?: boolean
-  [key: string]: any
-}
+// 定义元素类型 - 这是为了保持代码一致性，但我们使用CustomElement中的类型
+type ElementType = CustomElement['type']
 
 // 节点条目类型
 type NodeEntry = [Node, number[]]
@@ -295,6 +273,20 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
         return <ol {...attributes} className="list-decimal ml-5">{children}</ol>
       case 'list-item':
         return <li {...attributes}>{children}</li>
+      case 'image':
+        return (
+          <div {...attributes} className="my-4">
+            <div contentEditable={false} className="text-center">
+              <img 
+                src={(element as CustomElement).url} 
+                alt="图片"
+                className="max-w-full max-h-[500px] inline-block mx-auto"
+              />
+            </div>
+            {/* 这是一个必须的内联子元素，用于使Slate正常工作 */}
+            <span style={{ display: 'none' }}>{children}</span>
+          </div>
+        )
       default:
         return <p {...attributes} className="my-2">{children}</p>
     }
@@ -391,7 +383,7 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     if (!isActive && isList) {
       const block: CustomElement = { 
         type: format, 
-        children: [] 
+        children: [{ text: '' }] 
       }
       Transforms.wrapNodes(editor, block)
     }
@@ -530,6 +522,22 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     }
   }, [editor]);
 
+  // 添加插入图片的函数
+  const insertImage = (url: string) => {
+    const image: CustomElement = {
+      type: 'image',
+      url,
+      children: [{ text: '' }],
+    }
+    
+    Transforms.insertNodes(editor, image)
+    // 插入图片后移动光标到下一行
+    Transforms.insertNodes(editor, {
+      type: 'paragraph',
+      children: [{ text: '' }],
+    })
+  }
+
   return (
     <div className="flex flex-col space-y-4">
       <div className="border rounded-lg overflow-hidden">
@@ -625,6 +633,10 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
           >
             <ListOrdered className="h-5 w-5" />
           </Button>
+          
+          <div className="w-px h-8 bg-border mx-1"></div>
+          
+          <NoteImageUploader onImageUploaded={insertImage} />
           
           <div className="w-px h-8 bg-border mx-1"></div>
           
