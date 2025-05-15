@@ -9,9 +9,9 @@ export default function NoteLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex flex-col h-full gap-2">
+    <div className="flex flex-col min-h-screen">
       <NoteNavigation />
-      <div className="mx-2">
+      <div className="flex-1 mx-2">
         {children}
       </div>
     </div>

@@ -48,7 +48,7 @@ export default function ThingNavigation() {
   }
   
   return (
-    <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+    <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative shadow-sm">
       <nav className="container flex items-center py-2 px-4 overflow-x-auto">
         <div className="flex items-center space-x-1 md:space-x-2">
           <Button size="sm" onClick={handleAddItem} className="mr-2">

@@ -40,8 +40,8 @@ export default function NoteNavigation() {
   }
   
   return (
-    <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-      <nav className="container flex items-center py-2 px-4 overflow-x-auto">
+    <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative shadow-sm h-14">
+      <nav className="container h-full flex items-center py-2 px-4 overflow-x-auto">
         <div className="flex items-center space-x-1 md:space-x-2">
           <Button size="sm" asChild>
             <Link href="/note/new">

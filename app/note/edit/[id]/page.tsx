@@ -1,103 +1,91 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import dynamic from "next/dynamic"
-import { get, put } from "@/utils/api"
-import useSWR from "swr"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
-import Link from "next/link"
-import { Input } from "@/components/ui/input"
-import { toast } from "react-hot-toast"
+import { useState, useEffect } from 'react'
+import { apiRequest } from '@/utils/api'
+import { useParams } from 'next/navigation'
+import dynamic from 'next/dynamic'
 
-// 使用动态导入SlateJS编辑器
-const MarkdownEditor = dynamic(
-  () => import('@/app/note/components/MarkdownEditor'),
+// 使用dynamic import避免服务端渲染问题
+const NoteEditor = dynamic(
+  () => import('../../components/NoteEditor'),
   { ssr: false }
 )
 
-// 笔记类型
-type Note = {
+interface Note {
   id: number
   title: string
   content: string
-  user_id: number
-  created_at: string
-  updated_at: string
 }
 
-export default function NoteEditPage() {
-  const params = useParams()
-  const router = useRouter()
-  const noteId = params.id as string
-  const [isLoading, setIsLoading] = useState(true)
-  const [title, setTitle] = useState("")
-  
-  // 获取笔记数据
-  const { data: note, error, mutate } = useSWR<Note>(`/notes/${noteId}`, get)
-  
-  // 如果笔记不存在，跳转到笔记列表页
+// 笔记编辑页面
+export default function EditNotePage() {
+  const { id } = useParams()
+  const [note, setNote] = useState<Note | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [clientReady, setClientReady] = useState(false)
+
   useEffect(() => {
-    if (error) {
-      console.error("加载笔记失败:", error)
-      router.push("/note")
-    } else if (note) {
-      setTitle(note.title)
-      setIsLoading(false)
-    }
-  }, [note, error, router])
-  
-  // 保存标题
-  const saveTitle = async () => {
-    if (!title.trim()) {
-      toast.error("标题不能为空")
-      return
-    }
-    
-    try {
-      const updatedNote = await put(`/notes/${noteId}`, { title })
-      toast.success("标题已保存")
-      if (note) {
-        mutate({ ...note, title }, false)
+    // 标记客户端组件已加载
+    setClientReady(true)
+
+    const fetchNote = async () => {
+      try {
+        const noteId = Array.isArray(id) ? id[0] : id
+        const data = await apiRequest<Note>(`/notes/${noteId}`)
+        setNote(data)
+      } catch (err) {
+        console.error('获取笔记失败', err)
+        setError('无法加载笔记，请重试')
+      } finally {
+        setLoading(false)
       }
-    } catch (error) {
-      console.error("保存标题失败:", error)
-      toast.error("保存标题失败")
     }
-  }
-  
-  return (
-    <div className="container mx-auto py-4">
-      <div className="mb-4">
-        <Button asChild variant="outline">
-          <Link href="/note">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            返回笔记列表
-          </Link>
-        </Button>
+
+    fetchNote()
+  }, [id])
+
+  if (loading) {
+    return (
+      <div className="container py-8">
+        <div className="animate-pulse">
+          <div className="h-8 w-1/3 mb-4 bg-gray-200 rounded"></div>
+          <div className="h-64 w-full bg-gray-200 rounded"></div>
+        </div>
       </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center items-center min-h-[400px]">
-          <p>加载笔记中...</p>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container py-8">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          {error}
         </div>
-      ) : (
-        <div>
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="text-xl font-bold max-w-md"
-              placeholder="输入笔记标题"
-              onBlur={saveTitle}
-              onKeyDown={(e) => e.key === 'Enter' && saveTitle()}
-            />
-            <Button onClick={saveTitle} variant="outline">保存标题</Button>
-          </div>
-          <MarkdownEditor noteId={parseInt(noteId)} initialContent={note?.content} />
+      </div>
+    )
+  }
+
+  if (!note) {
+    return (
+      <div className="container py-8">
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+          找不到笔记
         </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="container py-4">
+      {clientReady && (
+        <NoteEditor
+          noteId={Number(id)}
+          title={note.title}
+          content={note.content}
+          isEditing={true}
+        />
       )}
     </div>
-  ) 
+  )
 } 
