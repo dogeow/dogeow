@@ -14,23 +14,22 @@ export default function ThingNavigation() {
   const navItems = [
     {
       href: "/thing",
-      label: "所有物品",
+      label: "",
       icon: Package,
       exact: true
     },
     {
       href: "/thing/categories",
-      label: "分类管理",
+      label: "",
       icon: FolderTree
     },
     {
       href: "/thing/locations",
-      label: "位置管理",
+      label: "",
       icon: MapPin
     },
     {
       href: "/thing/tags",
-      label: "标签管理",
       icon: Tag
     }
   ]
