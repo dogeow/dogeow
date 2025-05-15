@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/sonner"
 import { AppLauncher } from "@/components/launcher"
 import { BackgroundWrapper } from "@/components/provider/BackgroundWrapper"
 import "./globals.css";
+import "prismjs/themes/prism.css";
+import "./note/styles/prism.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

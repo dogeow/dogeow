@@ -1,6 +1,7 @@
 "use client"
 
 import NoteNavigation from "./components/NoteNavigation"
+import "./styles/prism.css"
 
 export default function NoteLayout({
   children,

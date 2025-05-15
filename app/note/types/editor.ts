@@ -12,7 +12,7 @@ export type CustomElement = {
   language?: string;
 }
 
-// 定义自定义文本类型
+// 定义自定义文本类型，扩展支持代码高亮
 export type CustomText = {
   text: string;
   bold?: boolean;
@@ -20,6 +20,23 @@ export type CustomText = {
   code?: boolean;
   link?: boolean;
   url?: string;
+  // 代码高亮相关属性
+  token?: boolean;
+  comment?: boolean;
+  operator?: boolean;
+  urlLink?: boolean;
+  keyword?: boolean;
+  variable?: boolean;
+  regex?: boolean;
+  number?: boolean;
+  boolean?: boolean;
+  string?: boolean;
+  function?: boolean;
+  tag?: boolean;
+  selector?: boolean;
+  punctuation?: boolean;
+  builtin?: boolean;
+  important?: boolean;
 }
 
 // 笔记类型
