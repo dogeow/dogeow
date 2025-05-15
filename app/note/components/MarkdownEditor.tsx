@@ -134,52 +134,9 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
       return
     }
 
-    // 处理三个反引号的快捷方式
-    if (text === '`' && selection && SlateRange.isCollapsed(selection)) {
-      const { anchor } = selection;
-      const block = Editor.above(editor, {
-        match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n),
-      });
-      const path = block ? block[1] : [];
-      const start = Editor.start(editor, path);
-      const range = { anchor, focus: start };
-      const beforeText = Editor.string(editor, range);
-      
-      // 检查是否已经输入了两个反引号
-      if (beforeText.endsWith('``')) {
-        // 删除前两个反引号
-        const rangeToDelete = {
-          anchor,
-          focus: { path: anchor.path, offset: anchor.offset - 2 }
-        };
-        Transforms.delete(editor, { at: rangeToDelete });
-        
-        // 检查是否有语言标识
-        const beforeTwoBackticks = beforeText.slice(0, beforeText.length - 2);
-        const languageMatch = /(\w+)$/.exec(beforeTwoBackticks);
-        const language = languageMatch ? languageMatch[1] : 'text';
-        
-        // 如果有匹配的语言标识符，删除它
-        if (languageMatch) {
-          const langRangeToDelete = {
-            anchor: { path: anchor.path, offset: anchor.offset - 2 - language.length },
-            focus: { path: anchor.path, offset: anchor.offset - 2 }
-          };
-          Transforms.delete(editor, { at: langRangeToDelete });
-        }
-        
-        // 插入代码块
-        Transforms.setNodes(editor, { 
-          type: 'code-block',
-          language: language
-        }, { 
-          match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n) 
-        });
-        
-        return;
-      }
-    }
-
+    // 移除对三个反引号的直接处理，让它通过 Enter 键处理
+    // 而不是在输入第三个反引号时就立即转换
+    
     if (text === ' ' && selection && SlateRange.isCollapsed(selection)) {
       const { anchor } = selection
       const block = Editor.above(editor, {
@@ -193,18 +150,18 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
       // 处理Markdown快捷方式
       const beforeMatch = checkMarkdownShortcut(beforeText)
       if (beforeMatch) {
+        // 不处理```，让它通过回车键处理
+        if (beforeMatch[1] === '```') {
+          insertText(text)
+          return
+        }
+        
         // 删除Markdown标记文本
         Transforms.select(editor, range)
         Transforms.delete(editor)
 
         // 根据Markdown标记应用格式
         const type = beforeMatch[1] // 提取匹配的类型，如 #, ##, >, -, *, + 等
-        let languageMatch = type === '```' && beforeMatch[2] // 如果是代码块，提取语言
-        
-        // 默认语言
-        if (type === '```' && !languageMatch) {
-          languageMatch = 'text'
-        }
         
         switch (type) {
           case '#':
@@ -258,14 +215,6 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
               { match: n => SlateElement.isElement(n) && (n as CustomElement).type === 'list-item' }
             )
             break
-          case '```':
-            // 插入代码块
-            Transforms.setNodes(
-              editor,
-              { type: 'code-block', language: languageMatch || 'text' },
-              { match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n) }
-            )
-            break
         }
         return
       }
@@ -275,8 +224,9 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
     insertText(text)
   }
 
-  // 自定义 deleteBackward 以便在代码块末尾删除时不立即转换为段落
+  // 自定义 deleteBackward 不变...
   editor.deleteBackward = unit => {
+    // 原有代码不变...
     const { selection } = editor
     
     if (selection && SlateRange.isCollapsed(selection)) {
@@ -314,11 +264,11 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
   return editor
 }
 
-// 检查Markdown快捷方式，增强对代码块语言的支持
+// 检查Markdown快捷方式，不再检测代码块，只检测其他快捷方式
 const checkMarkdownShortcut = (text: string) => {
   return (
-    // 标题、引用和列表标记的正则，对代码块增加语言匹配组
-    /^(\#\#|\#|\>|\-|\*|\+|1\.|```)((\w+)?)$/.exec(text)
+    // 标题、引用和列表标记的正则，不再包含代码块
+    /^(\#\#|\#|\>|\-|\*|\+|1\.)$/.exec(text)
   )
 }
 
@@ -339,7 +289,30 @@ const checkCodeBlock = (editor: ExtendedEditor, updateHighlighting: () => void):
     // 检查当前文本
     const nodeText = Node.string(currentNode);
     
-    // 匹配 ```语言名(可选) + 内容 + ``` 的模式
+    // 首先，检查是否是 ```语言名 形式的起始代码块行
+    const codeStartMatch = /^```(\w*)$/.exec(nodeText);
+    
+    if (codeStartMatch) {
+      // 获取语言名
+      const language = codeStartMatch[1] || 'text';
+      
+      // 删除当前段落
+      Transforms.removeNodes(editor, { at: currentPath });
+      
+      // 插入代码块
+      Transforms.insertNodes(editor, {
+        type: 'code-block',
+        language,
+        children: [{ text: '' }],
+      });
+      
+      // 强制更新高亮
+      setTimeout(() => updateHighlighting(), 10);
+      
+      return true;
+    }
+    
+    // 匹配 ```语言名(可选) + 内容 + ``` 的完整代码块模式
     const codeBlockMatch = /^```(\w*)\s*\n([\s\S]*?)\n```\s*$/.exec(nodeText);
     
     if (codeBlockMatch) {
@@ -979,9 +952,36 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
       return;
     }
     
-    // 检测并处理完整的代码块 (当按下回车键时)
+    // 检测并处理代码块标记 (当按下回车键时)
     if (event.key === 'Enter' && !event.shiftKey) {
-      // 等待下一个事件循环，以便让 Slate 更新编辑器状态
+      // 获取当前选区
+      const { selection } = editor;
+      if (!selection || !SlateRange.isCollapsed(selection)) return;
+      
+      // 获取当前所在段落
+      const [currentNode, currentPath] = Editor.above(editor, {
+        match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n),
+      }) || [];
+      
+      if (!currentNode) return;
+      
+      // 检查当前行是否是代码块标记行
+      const currentText = Node.string(currentNode);
+      const codeStartMatch = /^```(\w*)$/.test(currentText);
+      
+      if (codeStartMatch) {
+        // 是代码块标记行，阻止默认行为
+        event.preventDefault();
+        
+        // 等待下一个事件循环，以便让 Slate 更新编辑器状态
+        setTimeout(() => {
+          checkCodeBlock(editor, updateCodeHighlighting);
+        }, 0);
+        
+        return;
+      }
+      
+      // 如果不是代码块标记行，延迟检查是否满足代码块条件
       setTimeout(() => {
         checkCodeBlock(editor, updateCodeHighlighting);
       }, 0);
