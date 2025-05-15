@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useCallback, useEffect, useRef } from 'react'
-import { createEditor, Descendant, Element as SlateElement, Transforms, Editor, BaseEditor, Node, Range as SlateRange, Point } from 'slate'
+import { createEditor, Descendant, Element as SlateElement, Transforms, Editor, BaseEditor, Node, Range as SlateRange, Point, Path } from 'slate'
 import { Slate, Editable, withReact, ReactEditor, RenderElementProps, RenderLeafProps } from 'slate-react'
 import { withHistory, HistoryEditor } from 'slate-history'
 import { Button } from "@/components/ui/button"
 import { Bold, Italic, List, ListOrdered, Code, Save, Quote, Heading1, Heading2, ImageIcon } from 'lucide-react'
 import { toast } from 'react-hot-toast'
-import { put } from '@/utils/api'
-import NoteImageUploader from './ImageUploader'
+import { put, apiRequest } from '@/utils/api'
 import { CustomElement, CustomText, HOTKEYS, LIST_TYPES } from '../types/editor'
 import isHotkey from 'is-hotkey'
 import Prism from 'prismjs'
@@ -124,13 +123,61 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
   editor.insertText = (text) => {
     const { selection } = editor
 
-    // 检查是否在代码块中，如果是则使用默认行为
+    // 检查是否在代码块中
     const [codeBlock] = Editor.nodes(editor, {
       match: n => SlateElement.isElement(n) && n.type === 'code-block',
     })
     
+    // 如果在代码块中，先执行默认插入文本
     if (codeBlock) {
-      return insertText(text)
+      insertText(text)
+      return
+    }
+
+    // 处理三个反引号的快捷方式
+    if (text === '`' && selection && SlateRange.isCollapsed(selection)) {
+      const { anchor } = selection;
+      const block = Editor.above(editor, {
+        match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n),
+      });
+      const path = block ? block[1] : [];
+      const start = Editor.start(editor, path);
+      const range = { anchor, focus: start };
+      const beforeText = Editor.string(editor, range);
+      
+      // 检查是否已经输入了两个反引号
+      if (beforeText.endsWith('``')) {
+        // 删除前两个反引号
+        const rangeToDelete = {
+          anchor,
+          focus: { path: anchor.path, offset: anchor.offset - 2 }
+        };
+        Transforms.delete(editor, { at: rangeToDelete });
+        
+        // 检查是否有语言标识
+        const beforeTwoBackticks = beforeText.slice(0, beforeText.length - 2);
+        const languageMatch = /(\w+)$/.exec(beforeTwoBackticks);
+        const language = languageMatch ? languageMatch[1] : 'text';
+        
+        // 如果有匹配的语言标识符，删除它
+        if (languageMatch) {
+          const langRangeToDelete = {
+            anchor: { path: anchor.path, offset: anchor.offset - 2 - language.length },
+            focus: { path: anchor.path, offset: anchor.offset - 2 }
+          };
+          Transforms.delete(editor, { at: langRangeToDelete });
+        }
+        
+        // 插入代码块
+        Transforms.setNodes(editor, { 
+          type: 'code-block',
+          language: language
+        }, { 
+          match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n) 
+        });
+        
+        return;
+      }
     }
 
     if (text === ' ' && selection && SlateRange.isCollapsed(selection)) {
@@ -152,7 +199,12 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
 
         // 根据Markdown标记应用格式
         const type = beforeMatch[1] // 提取匹配的类型，如 #, ##, >, -, *, + 等
-        const languageMatch = type === '```' && beforeMatch[2] // 如果是代码块，提取语言
+        let languageMatch = type === '```' && beforeMatch[2] // 如果是代码块，提取语言
+        
+        // 默认语言
+        if (type === '```' && !languageMatch) {
+          languageMatch = 'text'
+        }
         
         switch (type) {
           case '#':
@@ -239,7 +291,11 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
         // 检查是否在代码块的开始位置
         const isAtStart = Point.equals(selection.anchor, start)
         
-        if (isAtStart) {
+        // 获取代码块内容
+        const text = Node.string(node)
+        
+        // 如果代码块为空，或者在起始位置，则转换为段落
+        if (isAtStart || text.trim() === '') {
           // 在代码块起始位置按退格键时，转换为段落
           Transforms.setNodes(
             editor,
@@ -258,12 +314,59 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
   return editor
 }
 
-// 检查Markdown快捷方式
+// 检查Markdown快捷方式，增强对代码块语言的支持
 const checkMarkdownShortcut = (text: string) => {
   return (
-    // 标题、引用和列表标记的正则
-    /^(\#\#|\#|\>|\-|\*|\+|1\.|```(\w+)?)$/.exec(text)
+    // 标题、引用和列表标记的正则，对代码块增加语言匹配组
+    /^(\#\#|\#|\>|\-|\*|\+|1\.|```)((\w+)?)$/.exec(text)
   )
+}
+
+// 添加代码块检测函数，识别完整的代码块
+const checkCodeBlock = (editor: ExtendedEditor, updateHighlighting: () => void): boolean => {
+  // 获取当前选区
+  const { selection } = editor;
+  if (!selection) return false;
+
+  try {
+    // 获取当前段落
+    const [currentNode, currentPath] = Editor.above(editor, {
+      match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n),
+    }) || [];
+
+    if (!currentNode) return false;
+
+    // 检查当前文本
+    const nodeText = Node.string(currentNode);
+    
+    // 匹配 ```语言名(可选) + 内容 + ``` 的模式
+    const codeBlockMatch = /^```(\w*)\s*\n([\s\S]*?)\n```\s*$/.exec(nodeText);
+    
+    if (codeBlockMatch) {
+      // 提取语言名和代码内容
+      const language = codeBlockMatch[1] || 'text';
+      const codeContent = codeBlockMatch[2];
+      
+      // 删除当前段落
+      Transforms.removeNodes(editor, { at: currentPath });
+      
+      // 插入代码块
+      Transforms.insertNodes(editor, {
+        type: 'code-block',
+        language,
+        children: [{ text: codeContent }],
+      });
+      
+      // 强制更新高亮
+      setTimeout(() => updateHighlighting(), 10);
+      
+      return true;
+    }
+  } catch (error) {
+    console.error('代码块检测错误:', error);
+  }
+  
+  return false;
 }
 
 // 获取代码块节点的装饰范围
@@ -493,7 +596,11 @@ const PrecalculateCodeHighlighting = ({ editor, value }: { editor: ExtendedEdito
 };
 
 // 处理Tab键
-const handleCodeBlockTab = (event: React.KeyboardEvent<HTMLDivElement>, editor: ExtendedEditor) => {
+const handleCodeBlockTab = (
+  event: React.KeyboardEvent<HTMLDivElement>, 
+  editor: ExtendedEditor,
+  updateHighlighting: () => void
+) => {
   // 检查当前是否在代码块中
   const [match] = Editor.nodes(editor, {
     match: n => SlateElement.isElement(n) && n.type === 'code-block',
@@ -504,6 +611,9 @@ const handleCodeBlockTab = (event: React.KeyboardEvent<HTMLDivElement>, editor: 
     if (isHotkey('tab', event)) {
       event.preventDefault();
       Editor.insertText(editor, '  '); // 插入两个空格
+      
+      // 立即更新高亮
+      requestAnimationFrame(() => updateHighlighting());
       return true;
     }
     
@@ -511,7 +621,33 @@ const handleCodeBlockTab = (event: React.KeyboardEvent<HTMLDivElement>, editor: 
     if (isHotkey('enter', event)) {
       event.preventDefault();
       Editor.insertText(editor, '\n'); // 只插入换行符，不创建新块
+      
+      // 立即更新高亮
+      requestAnimationFrame(() => updateHighlighting());
       return true;
+    }
+    
+    // 处理代码块中的退格键，防止在空行时意外删除代码块
+    if (isHotkey('backspace', event)) {
+      const { selection } = editor;
+      if (selection && SlateRange.isCollapsed(selection)) {
+        const [node, path] = match;
+        const start = Editor.start(editor, path);
+        
+        // 获取当前行的文本
+        const lineRange = Editor.range(
+          editor,
+          Editor.before(editor, selection.anchor, { unit: 'line' }) || start,
+          selection.anchor
+        );
+        const lineText = Editor.string(editor, lineRange);
+        
+        // 如果是空行且不是代码块的第一行，只删除换行符
+        if (lineText === '' && !Point.equals(selection.anchor, start)) {
+          // 正常行为，让默认的 deleteBackward 处理
+          return false;
+        }
+      }
     }
   }
   
@@ -533,20 +669,51 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
   // 保存状态
   const [isSaving, setIsSaving] = useState(false)
   
-  // 显示图片上传弹窗状态
-  const [showImageUploader, setShowImageUploader] = useState(false)
+  // 上传状态
+  const [isUploading, setIsUploading] = useState(false)
+  
+  // 文件输入引用
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // 使用 useRef 跟踪上一次高亮更新的时间
   const lastHighlightTime = useRef(0);
   // 防抖定时器 ID
   const highlightTimerRef = useRef<number | null>(null);
   
+  // 在 Markdown 编辑器组件内部添加追踪选择状态的逻辑
+  // 使用 useRef 跟踪当前是否处于选择操作中
+  const isSelectingRef = useRef(false);
+
+  // 选择状态变化处理函数
+  const handleSelectionChange = useCallback((selection: BaseEditor['selection']) => {
+    // 如果是从非选择状态变为选择状态，或者选择区域变大，则设置为选择中
+    if (selection && 
+        (!editor.selection || 
+         !SlateRange.isCollapsed(selection) && 
+         (SlateRange.isCollapsed(editor.selection) || 
+          !SlateRange.equals(selection, editor.selection)))) {
+      isSelectingRef.current = true;
+      
+      // 0.5秒后重置选择状态
+      setTimeout(() => {
+        isSelectingRef.current = false;
+      }, 500);
+    }
+  }, [editor]);
+  
   // 执行高亮更新的函数
   const performHighlightUpdate = useCallback(() => {
+    // 如果正在选择中，跳过高亮更新
+    if (isSelectingRef.current) {
+      return;
+    }
+
     lastHighlightTime.current = Date.now();
     
     try {
-      // 不使用 requestAnimationFrame，确保立即更新
+      // 保存当前选区
+      const savedSelection = editor.selection ? { ...editor.selection } : null;
+      
       // 找到所有代码块
       const entries = Array.from(
         Editor.nodes<SlateElement>(editor, {
@@ -562,15 +729,26 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
         const nodeToDecorations = mergeMaps(...decorationMaps);
         // 更新编辑器
         editor.nodeToDecorations = nodeToDecorations;
+        
+        // 只在非选择状态时执行强制刷新，避免干扰用户选择
+        if (!savedSelection || SlateRange.isCollapsed(savedSelection)) {
+          // 执行一个空操作来触发重新渲染
+          const point = editor.selection ? editor.selection.anchor : { path: [0, 0], offset: 0 };
+          ReactEditor.focus(editor);
+          Transforms.select(editor, { anchor: point, focus: point });
+        } else if (savedSelection) {
+          // 如果有已保存的非折叠选区，恢复它
+          ReactEditor.focus(editor);
+          Transforms.select(editor, savedSelection);
+        }
       }
     } catch (error) {
       console.error('更新代码高亮出错:', error);
     }
   }, [editor]);
   
-  // 更新代码高亮的函数
+  // 更新代码高亮的函数 - 完全移除防抖，确保每次按键都更新
   const updateCodeHighlighting = useCallback(() => {
-    // 为了解决空格键问题，移除防抖处理，立即计算高亮
     performHighlightUpdate();
   }, [performHighlightUpdate]);
   
@@ -624,9 +802,18 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     };
   }, [editor])
   
-  // 处理值变化，每次输入都更新高亮
+  // 处理值变化，优化更新逻辑
   const handleValueChange = useCallback((newValue: Descendant[]) => {
     setValue(newValue);
+    
+    // 检查是否有大范围选择，如果有则跳过高亮更新
+    const hasLargeSelection = editor.selection && 
+      !SlateRange.isCollapsed(editor.selection) && 
+      Path.compare(editor.selection.anchor.path, editor.selection.focus.path) !== 0;
+    
+    if (hasLargeSelection) {
+      return; // 有大范围选择时跳过高亮更新
+    }
     
     // 检查是否有代码块
     const hasCodeBlock = newValue.some(node => 
@@ -638,12 +825,14 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
       )
     );
       
-    // 如果有代码块，则每次输入都更新高亮
+    // 如果有代码块，则触发高亮更新
     if (hasCodeBlock) {
-      // 立即更新高亮
-      updateCodeHighlighting();
+      // 使用 requestAnimationFrame 优化性能
+      requestAnimationFrame(() => {
+        updateCodeHighlighting();
+      });
     }
-  }, [updateCodeHighlighting]);
+  }, [editor, updateCodeHighlighting]);
   
   // 渲染元素
   const renderElement = useCallback((props: RenderElementProps) => {
@@ -768,21 +957,44 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
   
   // 处理快捷键
   const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    // 处理代码块中的Tab键和Enter键
-    if (handleCodeBlockTab(event, editor)) {
+    // 处理全选快捷键 Ctrl+A / Cmd+A
+    if (isHotkey('mod+a', event)) {
+      event.preventDefault();
+      
+      // 获取编辑器内容的范围
+      const start = Editor.start(editor, []);
+      const end = Editor.end(editor, []);
+      
+      // 设置选区为整个文档
+      Transforms.select(editor, {
+        anchor: start,
+        focus: end
+      });
+      
       return;
     }
     
-    // 如果在代码块中按下空格键，手动触发高亮更新
-    if (event.key === ' ') {
-      const [codeBlock] = Editor.nodes(editor, {
-        match: n => SlateElement.isElement(n) && n.type === 'code-block',
-      });
-      
-      if (codeBlock) {
-        // 空格键之后立即强制更新高亮
-        setTimeout(() => updateCodeHighlighting(), 0);
-      }
+    // 处理代码块中的Tab键和Enter键
+    if (handleCodeBlockTab(event, editor, updateCodeHighlighting)) {
+      return;
+    }
+    
+    // 检测并处理完整的代码块 (当按下回车键时)
+    if (event.key === 'Enter' && !event.shiftKey) {
+      // 等待下一个事件循环，以便让 Slate 更新编辑器状态
+      setTimeout(() => {
+        checkCodeBlock(editor, updateCodeHighlighting);
+      }, 0);
+    }
+    
+    // 如果在代码块中按下任何键，都触发高亮更新
+    const [codeBlock] = Editor.nodes(editor, {
+      match: n => SlateElement.isElement(n) && n.type === 'code-block',
+    });
+    
+    if (codeBlock) {
+      // 对于空格键和其他可能导致高亮问题的字符，立即更新
+      requestAnimationFrame(() => updateCodeHighlighting());
     }
     
     // 处理常规快捷键
@@ -865,147 +1077,203 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     return !!match
   }
   
+  // 处理图片上传
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    
+    setIsUploading(true)
+    
+    try {
+      // 准备上传表单数据
+      const formData = new FormData()
+      Array.from(files).forEach(file => {
+        formData.append('images[]', file)
+      })
+      
+      // 调用上传API
+      interface UploadResponse {
+        url: string;
+        path: string;
+        thumbnail_url?: string;
+        thumbnail_path?: string;
+      }
+      
+      const response = await apiRequest<UploadResponse[]>('/upload/images', 'POST', formData)
+      
+      if (response && Array.isArray(response) && response.length > 0) {
+        // 插入图片
+        response.forEach(item => {
+          const image: CustomElement = {
+            type: 'image',
+            url: item.url,
+            children: [{ text: '' }],
+          };
+          Transforms.insertNodes(editor, image);
+        });
+        
+        toast.success(response.length > 1 ? '多张图片上传成功' : '图片上传成功');
+      }
+    } catch (error) {
+      console.error('上传图片失败:', error);
+      toast.error('图片上传失败');
+    } finally {
+      setIsUploading(false);
+      
+      // 清空文件输入框，以便可以重复选择相同的文件
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  }
+  
   return (
-    <>
-      <div className="border rounded-md overflow-hidden">
-        <div className="flex flex-wrap gap-1 p-2 border-b bg-gray-50 dark:bg-gray-800">
-          <Button
-            onClick={() => handleFormatClick('bold')}
-            size="sm"
-            variant={isMarkActive('bold') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleFormatClick('italic')}
-            size="sm"
-            variant={isMarkActive('italic') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleFormatClick('code')}
-            size="sm"
-            variant={isMarkActive('code') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <Code className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleFormatClick('heading-one')}
-            size="sm"
-            variant={isBlockActive('heading-one') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <Heading1 className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleFormatClick('heading-two')}
-            size="sm"
-            variant={isBlockActive('heading-two') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <Heading2 className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleFormatClick('block-quote')}
-            size="sm"
-            variant={isBlockActive('block-quote') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <Quote className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleFormatClick('bulleted-list')}
-            size="sm"
-            variant={isBlockActive('bulleted-list') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleFormatClick('numbered-list')}
-            size="sm"
-            variant={isBlockActive('numbered-list') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <ListOrdered className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={() => handleFormatClick('code-block')}
-            size="sm"
-            variant={isBlockActive('code-block') ? 'default' : 'outline'}
-            className="h-8 px-2 py-1"
-          >
-            <Code className="h-4 w-4" />
-            <span className="ml-1">代码块</span>
-          </Button>
-          <Button
-            onClick={() => setShowImageUploader(true)}
-            size="sm"
-            variant="outline"
-            className="h-8 px-2 py-1"
-          >
-            <ImageIcon className="h-4 w-4" />
-            <span className="ml-1">图片</span>
-          </Button>
-          
-          <div className="ml-auto">
-            <Button
-              onClick={saveNote}
-              disabled={isSaving}
-              size="sm"
-              className="h-8"
-            >
-              <Save className="h-4 w-4 mr-1" />
-              {isSaving ? '保存中...' : '保存笔记'}
-            </Button>
-          </div>
-        </div>
-        
-        <Slate
-          editor={editor}
-          initialValue={value}
-          onChange={handleValueChange}
+    <div className="flex flex-col border border-gray-300 dark:border-gray-700 rounded-md shadow-sm">
+      <div className="flex flex-wrap items-center gap-1 p-2 bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('bold')}
+          className={`px-2 py-1 rounded ${isMarkActive('bold') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="粗体"
         >
-          <Editable
-            className="p-4 min-h-[400px] focus:outline-none"
-            renderElement={renderElement}
-            renderLeaf={renderLeaf}
-            decorate={decorate}
-            onKeyDown={onKeyDown}
-            placeholder="开始编写笔记内容..."
-            spellCheck={false}
-            autoFocus
-            onFocus={() => {
-              // 聚焦时更新代码高亮
-              updateCodeHighlighting();
-            }}
-            onBlur={() => {
-              // 失焦时更新代码高亮
-              updateCodeHighlighting();
-            }}
-          />
-        </Slate>
-        
-        {showImageUploader && (
-          <NoteImageUploader
-            onImageUploaded={(url: string) => {
-              // 插入图片
-              const image: CustomElement = {
-                type: 'image',
-                url,
-                children: [{ text: '' }],
-              }
-              Transforms.insertNodes(editor, image)
-              setShowImageUploader(false)
-            }}
-          />
-        )}
+          <Bold className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('italic')}
+          className={`px-2 py-1 rounded ${isMarkActive('italic') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="斜体"
+        >
+          <Italic className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('code')}
+          className={`px-2 py-1 rounded ${isMarkActive('code') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="行内代码"
+        >
+          <Code className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('heading-one')}
+          className={`px-2 py-1 rounded ${isBlockActive('heading-one') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="一级标题"
+        >
+          <Heading1 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('heading-two')}
+          className={`px-2 py-1 rounded ${isBlockActive('heading-two') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="二级标题"
+        >
+          <Heading2 className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('block-quote')}
+          className={`px-2 py-1 rounded ${isBlockActive('block-quote') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="引用"
+        >
+          <Quote className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('bulleted-list')}
+          className={`px-2 py-1 rounded ${isBlockActive('bulleted-list') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="无序列表"
+        >
+          <List className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('numbered-list')}
+          className={`px-2 py-1 rounded ${isBlockActive('numbered-list') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="有序列表"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleFormatClick('code-block')}
+          className={`px-2 py-1 rounded ${isBlockActive('code-block') ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
+          aria-label="代码块"
+        >
+          <Code className="h-4 w-4" />
+        </Button>
+        <div className="w-px h-6 bg-gray-300 dark:bg-gray-700 mx-1" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => fileInputRef.current?.click()}
+          className="px-2 py-1 rounded"
+          aria-label="上传图片"
+          disabled={isUploading}
+        >
+          <ImageIcon className="h-4 w-4" />
+        </Button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleImageUpload}
+          className="hidden"
+          accept="image/*"
+        />
+        <div className="flex-grow" />
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={saveNote}
+          disabled={isSaving}
+          className="px-2 py-1 rounded"
+          aria-label="保存笔记"
+        >
+          <Save className="h-4 w-4" />
+          <span className="ml-1 hidden sm:inline">保存</span>
+        </Button>
       </div>
-    </>
+      
+      <Slate 
+        editor={editor} 
+        initialValue={value} 
+        onChange={handleValueChange}
+        onSelectionChange={handleSelectionChange}
+      >
+        <PrecalculateCodeHighlighting editor={editor} value={value} />
+        <Editable
+          className="p-4 min-h-[400px] focus:outline-none prose prose-sm dark:prose-invert max-w-none"
+          renderElement={renderElement}
+          renderLeaf={renderLeaf}
+          decorate={decorate}
+          onKeyDown={onKeyDown}
+          spellCheck={false}
+          autoFocus
+        />
+      </Slate>
+    </div>
   )
 }
 
