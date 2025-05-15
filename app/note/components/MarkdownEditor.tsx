@@ -128,9 +128,43 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
       match: n => SlateElement.isElement(n) && n.type === 'code-block',
     })
     
-    // 如果在代码块中，先执行默认插入文本
+    // 如果在代码块中，先执行默认插入文本，然后立即更新高亮
     if (codeBlock) {
       insertText(text)
+      
+      // 使用requestAnimationFrame确保在DOM更新后再更新高亮
+      requestAnimationFrame(() => {
+        try {
+          // 找到所有代码块
+          const entries = Array.from(
+            Editor.nodes<SlateElement>(editor, {
+              at: [],
+              match: n => SlateElement.isElement(n) && n.type === 'code-block',
+            })
+          );
+          
+          if (entries.length > 0) {
+            // 为每个代码块生成装饰范围
+            const decorationMaps = entries.map(getChildNodeToDecorations);
+            // 合并所有装饰范围
+            const nodeToDecorations = mergeMaps(...decorationMaps);
+            // 更新编辑器
+            editor.nodeToDecorations = nodeToDecorations;
+            
+            // 保存当前选区
+            const currentSelection = editor.selection;
+            if (currentSelection) {
+              // 执行一个轻微的操作来触发视图更新，但保持相同的选区
+              const point = { ...currentSelection.anchor };
+              const focus = currentSelection.focus ? { ...currentSelection.focus } : point;
+              Transforms.select(editor, { anchor: point, focus });
+            }
+          }
+        } catch (error) {
+          console.error('更新代码高亮出错:', error);
+        }
+      });
+      
       return
     }
 
@@ -535,31 +569,40 @@ const LanguageSelector = ({ value, onChange }: { value?: string, onChange: (valu
 const PrecalculateCodeHighlighting = ({ editor, value }: { editor: ExtendedEditor, value: Descendant[] }) => {
   // 使用 useEffect 在组件挂载和值变化时更新高亮
   useEffect(() => {
+    // 立即计算代码高亮，不使用requestAnimationFrame
     try {
-      // 使用 requestAnimationFrame 延迟到下一帧执行，避免阻塞 UI
-      const frameId = requestAnimationFrame(() => {
-        // 找到所有代码块
-        const entries = Array.from(
-          Editor.nodes<SlateElement>(editor, {
-            at: [],
-            match: n => SlateElement.isElement(n) && n.type === 'code-block',
-          })
-        );
-        
-        if (entries.length > 0) {
-          // 为每个代码块生成装饰范围
-          const decorationMaps = entries.map(getChildNodeToDecorations);
-          
-          // 合并所有装饰范围
-          const nodeToDecorations = mergeMaps(...decorationMaps);
-          
-          // 更新编辑器
-          editor.nodeToDecorations = nodeToDecorations;
-        }
-      });
+      // 找到所有代码块
+      const entries = Array.from(
+        Editor.nodes<SlateElement>(editor, {
+          at: [],
+          match: n => SlateElement.isElement(n) && n.type === 'code-block',
+        })
+      );
       
-      // 清理函数，取消未执行的动画帧请求
-      return () => cancelAnimationFrame(frameId);
+      if (entries.length > 0) {
+        // 为每个代码块生成装饰范围
+        const decorationMaps = entries.map(getChildNodeToDecorations);
+        
+        // 合并所有装饰范围
+        const nodeToDecorations = mergeMaps(...decorationMaps);
+        
+        // 更新编辑器
+        editor.nodeToDecorations = nodeToDecorations;
+        
+        // 触发一次轻微的选区变化，以确保视图更新
+        // 仅当有活动选区时执行，避免破坏用户当前的选择
+        if (editor.selection) {
+          const savedSelection = { ...editor.selection };
+          
+          // 执行选区更新以触发重新渲染
+          try {
+            ReactEditor.focus(editor);
+            Transforms.select(editor, savedSelection);
+          } catch (error) {
+            console.error('选区设置错误:', error);
+          }
+        }
+      }
     } catch (error) {
       console.error('预计算代码高亮时出错:', error);
     }
@@ -674,13 +717,9 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     }
   }, [editor]);
   
-  // 执行高亮更新的函数
+  // 执行高亮更新的函数，确保高亮效果即时显示
   const performHighlightUpdate = useCallback(() => {
-    // 如果正在选择中，跳过高亮更新
-    if (isSelectingRef.current) {
-      return;
-    }
-
+    // 立即更新代码高亮，无视选择状态
     lastHighlightTime.current = Date.now();
     
     try {
@@ -700,19 +739,22 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
         const decorationMaps = entries.map(getChildNodeToDecorations);
         // 合并所有装饰范围
         const nodeToDecorations = mergeMaps(...decorationMaps);
-        // 更新编辑器
+        // 更新编辑器状态
         editor.nodeToDecorations = nodeToDecorations;
         
-        // 只在非选择状态时执行强制刷新，避免干扰用户选择
-        if (!savedSelection || SlateRange.isCollapsed(savedSelection)) {
-          // 执行一个空操作来触发重新渲染
-          const point = editor.selection ? editor.selection.anchor : { path: [0, 0], offset: 0 };
-          ReactEditor.focus(editor);
-          Transforms.select(editor, { anchor: point, focus: point });
-        } else if (savedSelection) {
-          // 如果有已保存的非折叠选区，恢复它
-          ReactEditor.focus(editor);
-          Transforms.select(editor, savedSelection);
+        // 强制编辑器更新视图
+        if (savedSelection) {
+          // 先保存原选区
+          const point = savedSelection.anchor;
+          const focus = savedSelection.focus || point;
+          
+          try {
+            // 强制视图更新
+            ReactEditor.focus(editor);
+            Transforms.select(editor, { anchor: point, focus });
+          } catch (error) {
+            console.error('选区设置错误:', error);
+          }
         }
       }
     } catch (error) {
@@ -720,7 +762,7 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     }
   }, [editor]);
   
-  // 更新代码高亮的函数 - 完全移除防抖，确保每次按键都更新
+  // 更新代码高亮的函数 - 无防抖，直接执行
   const updateCodeHighlighting = useCallback(() => {
     performHighlightUpdate();
   }, [performHighlightUpdate]);
@@ -779,15 +821,6 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
   const handleValueChange = useCallback((newValue: Descendant[]) => {
     setValue(newValue);
     
-    // 检查是否有大范围选择，如果有则跳过高亮更新
-    const hasLargeSelection = editor.selection && 
-      !SlateRange.isCollapsed(editor.selection) && 
-      Path.compare(editor.selection.anchor.path, editor.selection.focus.path) !== 0;
-    
-    if (hasLargeSelection) {
-      return; // 有大范围选择时跳过高亮更新
-    }
-    
     // 检查是否有代码块
     const hasCodeBlock = newValue.some(node => 
       SlateElement.isElement(node) && 
@@ -798,14 +831,12 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
       )
     );
       
-    // 如果有代码块，则触发高亮更新
+    // 如果有代码块，则立即触发高亮更新
     if (hasCodeBlock) {
-      // 使用 requestAnimationFrame 优化性能
-      requestAnimationFrame(() => {
-        updateCodeHighlighting();
-      });
+      // 立即执行高亮更新，不等待下一帧
+      updateCodeHighlighting();
     }
-  }, [editor, updateCodeHighlighting]);
+  }, [updateCodeHighlighting]);
   
   // 渲染元素
   const renderElement = useCallback((props: RenderElementProps) => {
@@ -891,19 +922,21 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     );
     
     // 代码高亮样式
-    if (hasHighlightProps) {
+    if (hasHighlightProps || leaf.token) {
       // 创建基于token类型的className
       const classNames = tokenTypes
         .filter(type => leaf[type as keyof typeof leaf])
-        .map(type => type);
+        .map(type => `token ${type}`);
       
-      const className = classNames.length > 0 ? classNames.join(' ') : undefined;
+      const className = classNames.length > 0 ? classNames.join(' ') : leaf.token ? 'token' : undefined;
       
       return (
         <span 
           {...attributes} 
           className={className}
-          data-token={true}
+          data-token="true"
+          spellCheck={false}
+          style={{ display: 'inline' }}
         >
           {children}
         </span>
@@ -993,8 +1026,9 @@ const MarkdownEditor = ({ noteId, initialContent = '' }: MarkdownEditorProps) =>
     });
     
     if (codeBlock) {
-      // 对于空格键和其他可能导致高亮问题的字符，立即更新
-      requestAnimationFrame(() => updateCodeHighlighting());
+      // 对于任何按键，立即更新高亮
+      // 不使用requestAnimationFrame，以确保更新更及时
+      updateCodeHighlighting();
     }
     
     // 处理常规快捷键
