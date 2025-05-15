@@ -264,6 +264,7 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
     const { selection } = editor
     
     if (selection && SlateRange.isCollapsed(selection)) {
+      // 检查是否在代码块中
       const [codeBlock] = Editor.nodes(editor, {
         match: n => SlateElement.isElement(n) && n.type === 'code-block',
       })
@@ -285,6 +286,33 @@ const withMarkdownShortcuts = (editor: ExtendedEditor) => {
             editor,
             { type: 'paragraph' },
             { match: n => SlateElement.isElement(n) && n.type === 'code-block' }
+          )
+          return
+        }
+      }
+      
+      // 检查是否在引用块中
+      const [blockQuote] = Editor.nodes(editor, {
+        match: n => SlateElement.isElement(n) && n.type === 'block-quote',
+      })
+      
+      if (blockQuote) {
+        const [node, path] = blockQuote
+        const start = Editor.start(editor, path)
+        
+        // 检查是否在引用块的开始位置
+        const isAtStart = Point.equals(selection.anchor, start)
+        
+        // 获取引用块内容
+        const text = Node.string(node)
+        
+        // 如果引用块为空，则转换为段落
+        if (text.trim() === '') {
+          // 在空引用块中按退格键时，转换为段落
+          Transforms.setNodes(
+            editor,
+            { type: 'paragraph' },
+            { match: n => SlateElement.isElement(n) && n.type === 'block-quote' }
           )
           return
         }
