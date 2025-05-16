@@ -24,7 +24,6 @@ interface ItemGalleryProps {
 export default function ItemGallery({ items }: ItemGalleryProps) {
   const [selectedItem, setSelectedItem] = useState<any>(null)
   const [imageSize, setImageSize] = useState(120) // 默认图片大小为中尺寸
-  const [showSizeControls, setShowSizeControls] = useState(true) // 控制大小调整区域的显示/隐藏
   const [maxSize, setMaxSize] = useState(520) // 默认最大尺寸
   const [currentSizePreset, setCurrentSizePreset] = useState<'small' | 'medium' | 'large'>('medium')
   const router = useRouter()
@@ -34,7 +33,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     const updateSizes = () => {
       const screenWidth = window.innerWidth
       const containerWidth = screenWidth - 40 // 考虑容器边距
-      const gapSize = 8 // 图片之间的间距 (2px * (n-1))
+      const gapSize = 8 // 图片之间的间距
       
       // 计算不同预设的尺寸，考虑每行显示的图片数和间距
       const largeSize = ensureEven(Math.floor((containerWidth - gapSize) / 2)) // 大尺寸，一行2张
@@ -55,20 +54,15 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
       }
     }
     
-    // 初始化时调用一次
-    updateSizes()
+    updateSizes() // 初始化时调用一次
     
-    // 监听窗口大小变化
     window.addEventListener('resize', updateSizes)
-    
-    // 组件卸载时移除监听器
     return () => window.removeEventListener('resize', updateSizes)
-  }, [currentSizePreset]) // 依赖添加 currentSizePreset
+  }, [currentSizePreset])
   
   // 构建正确的图片URL
   const getImageUrl = (path: string) => {
     if (!path) return ''
-    // 移除URL中可能存在的/api/部分，添加空字符串作为默认值
     const baseUrl = (API_URL || '').replace('/api', '')
     return `${baseUrl}/storage/${path}`
   }
@@ -78,23 +72,20 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     if (!date) return '-'
     try {
       return format(new Date(date), 'yyyy-MM-dd')
-    } catch (e) {
+    } catch {
       return '无效日期'
     }
   }
   
   // 获取状态标签
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-green-500">正常</Badge>
-      case 'inactive':
-        return <Badge variant="outline">闲置</Badge>
-      case 'expired':
-        return <Badge variant="destructive">已过期</Badge>
-      default:
-        return <Badge variant="secondary">{status}</Badge>
+    const statusMap = {
+      'active': <Badge className="bg-green-500">正常</Badge>,
+      'inactive': <Badge variant="outline">闲置</Badge>,
+      'expired': <Badge variant="destructive">已过期</Badge>
     }
+    
+    return statusMap[status as keyof typeof statusMap] || <Badge variant="secondary">{status}</Badge>
   }
   
   // 打开物品详情页
@@ -103,10 +94,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
   }
   
   // 确保尺寸为偶数的辅助函数
-  const ensureEven = (size: number) => {
-    // 如果是奇数，则减1使其成为偶数
-    return size % 2 === 0 ? size : size - 1
-  }
+  const ensureEven = (size: number) => size % 2 === 0 ? size : size - 1
   
   // 计算基于屏幕宽度的图片尺寸
   const getCalculatedSize = (preset: 'small' | 'medium' | 'large') => {
@@ -114,36 +102,67 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     const containerWidth = screenWidth - 40 // 考虑容器边距
     const gapSize = 8 // 图片之间的间距
     
-    if (preset === 'large') {
-      return ensureEven(Math.min(Math.floor((containerWidth - gapSize) / 2), maxSize)) // 大尺寸，一行2张
-    } else if (preset === 'medium') {
-      return ensureEven(Math.min(Math.floor((containerWidth - (gapSize * 2)) / 4), maxSize)) // 中尺寸，一行4张
-    } else {
-      return ensureEven(Math.min(Math.floor((containerWidth - (gapSize * 4)) / 8), maxSize)) // 小尺寸，一行8张
+    const sizeMap = {
+      'large': ensureEven(Math.min(Math.floor((containerWidth - gapSize) / 2), maxSize)),
+      'medium': ensureEven(Math.min(Math.floor((containerWidth - (gapSize * 2)) / 4), maxSize)),
+      'small': ensureEven(Math.min(Math.floor((containerWidth - (gapSize * 4)) / 8), maxSize))
     }
+    
+    return sizeMap[preset]
   }
   
   // 处理图片大小变化
   const handleSizeChange = (value: number[]) => {
-    // 确保滑块调整的尺寸也是偶数
     const newSize = ensureEven(value[0])
     setImageSize(newSize)
-    // 清除当前预设选择状态
-    setCurrentSizePreset(newSize === getCalculatedSize('small') ? 'small' : 
-                         newSize === getCalculatedSize('medium') ? 'medium' : 
-                         newSize === getCalculatedSize('large') ? 'large' : null as any)
+    
+    // 根据新尺寸设置当前预设
+    const smallSize = getCalculatedSize('small')
+    const mediumSize = getCalculatedSize('medium')
+    const largeSize = getCalculatedSize('large')
+    
+    if (newSize === smallSize) {
+      setCurrentSizePreset('small')
+    } else if (newSize === mediumSize) {
+      setCurrentSizePreset('medium')
+    } else if (newSize === largeSize) {
+      setCurrentSizePreset('large')
+    }
   }
   
   // 设置预设图片大小
   const setPresetSize = (preset: 'small' | 'medium' | 'large') => {
     setCurrentSizePreset(preset)
-    const newSize = getCalculatedSize(preset)
-    setImageSize(newSize)
+    setImageSize(getCalculatedSize(preset))
   }
   
-  // 切换大小控制区域的显示/隐藏
-  const toggleSizeControls = () => {
-    setShowSizeControls(!showSizeControls)
+  // 获取图片缩略图URL
+  const getThumbnailUrl = (item: any) => {
+    if (item.primary_image?.thumbnail_url) return item.primary_image.thumbnail_url
+    if (item.images?.[0]?.thumbnail_url) return item.images[0].thumbnail_url
+    
+    const path = item.primary_image?.thumbnail_path || item.images?.[0]?.thumbnail_path
+    return path ? getImageUrl(path) : ''
+  }
+  
+  // 获取图片完整URL
+  const getFullImageUrl = (item: any) => {
+    const path = item.primary_image?.path || (item.images?.length > 0 ? item.images[0].path : '')
+    return getImageUrl(path)
+  }
+  
+  // 获取位置完整路径
+  const getLocationPath = (spot: any) => {
+    if (!spot) return ''
+    
+    const roomName = spot.room?.name || ''
+    const areaName = spot.room?.area?.name || ''
+    
+    if (areaName && roomName) {
+      return `${areaName} > ${roomName} > ${spot.name}`
+    }
+    
+    return spot.name
   }
   
   return (
@@ -151,27 +170,16 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
       <div className="mb-6">
         <div className="flex items-center gap-2">
           <div className="flex gap-2 justify-center">
-            <Button 
-              variant="outline" 
-              className={cn("bg-background border-muted px-3", currentSizePreset === 'small' && "bg-muted text-foreground")}
-              onClick={() => setPresetSize('small')}
-            >
-              小
-            </Button>
-            <Button 
-              variant="outline" 
-              className={cn("bg-background border-muted px-3", currentSizePreset === 'medium' && "bg-muted text-foreground")}
-              onClick={() => setPresetSize('medium')}
-            >
-              中
-            </Button>
-            <Button 
-              variant="outline" 
-              className={cn("bg-background border-muted px-3", currentSizePreset === 'large' && "bg-muted text-foreground")}
-              onClick={() => setPresetSize('large')}
-            >
-              大
-            </Button>
+            {['small', 'medium', 'large'].map((size) => (
+              <Button 
+                key={size}
+                variant="outline" 
+                className={cn("bg-background border-muted px-3", currentSizePreset === size && "bg-muted text-foreground")}
+                onClick={() => setPresetSize(size as 'small' | 'medium' | 'large')}
+              >
+                {size === 'small' ? '小' : size === 'medium' ? '中' : '大'}
+              </Button>
+            ))}
           </div>
           <div className="flex items-center w-full max-w-md gap-3">
             <div className="flex-grow">
@@ -190,9 +198,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
         </div>
       </div>
       
-      <div className={cn(
-        "flex flex-wrap gap-2 justify-center"
-      )}>
+      <div className="flex flex-wrap gap-2 justify-center">
         {items.map((item) => (
           <div 
             key={item.id} 
@@ -200,9 +206,9 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             style={{ width: `${imageSize}px`, height: `${imageSize}px` }}
             onClick={() => setSelectedItem(item)}
           >
-            {item.primary_image || (item.images && item.images.length > 0) ? (
+            {getThumbnailUrl(item) ? (
               <Image
-                src={item.primary_image?.thumbnail_url || item.images[0]?.thumbnail_url || getImageUrl(item.primary_image?.thumbnail_path || item.images[0].thumbnail_path)}
+                src={getThumbnailUrl(item)}
                 alt={item.name}
                 fill
                 className="object-cover"
@@ -213,13 +219,13 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               </div>
             )}
             
-            {item.is_public && imageSize >= 150 ? (
+            {item.is_public && imageSize >= 150 && (
               <div className="absolute top-2 left-2">
                 <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
                   <Globe className="h-3.5 w-3.5" />
                 </Badge>
               </div>
-            ) : null}
+            )}
             
             {imageSize >= 150 && (
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
@@ -240,7 +246,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             <div className="space-y-4">
               <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-sm">
                 <Image
-                  src={getImageUrl(selectedItem.primary_image?.path || (selectedItem.images && selectedItem.images.length > 0 ? selectedItem.images[0].path : ''))}
+                  src={getFullImageUrl(selectedItem)}
                   alt={selectedItem.name}
                   fill
                   className="object-contain"
@@ -249,7 +255,9 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               
               <div className="flex flex-wrap gap-2">
                 <Badge variant={selectedItem.is_public ? "default" : "outline"}>
-                  {selectedItem.is_public ? <><Globe className="h-3.5 w-3.5 mr-1" /> 公开</> : <><LockIcon className="h-3.5 w-3.5 mr-1" /> 私有</>}
+                  {selectedItem.is_public ? 
+                    <><Globe className="h-3.5 w-3.5 mr-1" /> 公开</> : 
+                    <><LockIcon className="h-3.5 w-3.5 mr-1" /> 私有</>}
                 </Badge>
                 {selectedItem.category && (
                   <Badge variant="secondary" className="bg-primary/20 text-primary">
@@ -276,9 +284,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               
               {selectedItem.spot && (
                 <div className="text-sm">
-                  <span className="text-muted-foreground">位置:</span> {selectedItem.spot.room?.area?.name && selectedItem.spot.room?.name ? 
-                    `${selectedItem.spot.room.area.name} > ${selectedItem.spot.room.name} > ${selectedItem.spot.name}` : 
-                    selectedItem.spot.name}
+                  <span className="text-muted-foreground">位置:</span> {getLocationPath(selectedItem.spot)}
                 </div>
               )}
               

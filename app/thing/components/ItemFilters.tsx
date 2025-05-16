@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { CalendarIcon, FilterX } from "lucide-react"
+import { CalendarIcon } from "lucide-react"
 import type { Area, Room, Spot } from '@/app/thing/types'
 import { useItemStore } from '@/stores/itemStore'
 import { TagSelector, Tag } from '@/components/ui/tag-selector'
@@ -62,27 +62,39 @@ function useDebounce<T>(value: T, delay: number = 500): T {
   return debouncedValue;
 }
 
+// 初始筛选条件
+const initialFilters: FilterState = {
+  name: '',
+  description: '',
+  status: 'all',
+  tags: '',
+  category_id: 'all',
+  purchase_date_from: null,
+  purchase_date_to: null,
+  expiry_date_from: null,
+  expiry_date_to: null,
+  price_from: '',
+  price_to: '',
+  area_id: 'all',
+  room_id: 'all',
+  spot_id: 'all',
+  is_public: null,
+  include_null_purchase_date: true,
+  include_null_expiry_date: true,
+}
+
 export default function ItemFilters({ onApply }: ItemFiltersProps) {
   const { filters: savedFilters } = useItemStore();
-  const { data: categories = [], error: categoriesError } = useSWR<any[]>('/categories', get);
-  const { data: areas = [], error: areasError } = useSWR<Area[]>('/areas', get);
-  const { data: rooms = [], error: roomsError } = useSWR<Room[]>('/rooms', get);
-  const { data: spots = [], error: spotsError } = useSWR<Spot[]>('/spots', get);
+  const { data: categories = [] } = useSWR<any[]>('/categories', get);
+  const { data: areas = [] } = useSWR<Area[]>('/areas', get);
+  const { data: rooms = [] } = useSWR<Room[]>('/rooms', get);
+  const { data: spots = [] } = useSWR<Spot[]>('/spots', get);
   const [activeTab, setActiveTab] = useState("basic");
+  
   // 获取标签数据
   const { data: tags = [] } = useSWR<Tag[]>('/thing-tags', (url: string) => {
-    console.log("获取标签数据", url);
-    // 从localStorage中获取token，确保有身份验证
-    let token = '';
-    if (typeof window !== 'undefined') {
-      token = localStorage.getItem('auth-token') || '';
-    }
-    
-    console.log("使用token获取数据", token ? "有token" : "无token");
-    
     return get<Tag[]>(url).catch(error => {
       console.error("获取标签失败:", error);
-      // 返回一些测试数据，以防API调用失败
       return [
         { id: '1', name: '测试1' },
         { id: '2', name: '测试2' },
@@ -92,29 +104,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     });
   });
   
-  // 初始筛选条件
-  const initialFilters: FilterState = {
-    name: '',
-    description: '',
-    status: 'all',
-    tags: '',
-    category_id: 'all',
-    purchase_date_from: null,
-    purchase_date_to: null,
-    expiry_date_from: null,
-    expiry_date_to: null,
-    price_from: '',
-    price_to: '',
-    area_id: 'all',
-    room_id: 'all',
-    spot_id: 'all',
-    is_public: null,
-    include_null_purchase_date: true,
-    include_null_expiry_date: true,
-  }
-  
   // 从保存的筛选条件初始化
-  const getInitialState = () => {
+  const getInitialState = useCallback(() => {
     if (Object.keys(savedFilters).length === 0) {
       return initialFilters;
     }
@@ -140,7 +131,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     });
     
     return mergedFilters;
-  };
+  }, [savedFilters]);
   
   const [filters, setFilters] = useState<FilterState>(getInitialState())
   
@@ -149,47 +140,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   // 添加一个标志位，用于跟踪是否是首次渲染
   const [isInitialRender, setIsInitialRender] = useState(true);
-  
-  // 在筛选条件防抖后触发应用，但跳过初始渲染
-  useEffect(() => {
-    // 跳过初始渲染
-    if (isInitialRender) {
-      setIsInitialRender(false);
-      return;
-    }
-    
-    console.log('应用防抖后的筛选条件');
-    applyFilters(debouncedFilters);
-  }, [debouncedFilters, isInitialRender]);
-  
-  // 处理字段变更的函数 - 不再直接应用，而是通过防抖机制应用
-  const handleChange = (field: keyof FilterState, value: any) => {
-    console.log(`更改字段 ${field}:`, value);
-    
-    setFilters(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  }
-  
-  // 处理标签选择 - 标签选择保持即时应用
-  const handleTagsChange = (selectedTags: string[]) => {
-    console.log("选择的标签改变: ", selectedTags);
-    
-    // 更新过滤器状态
-    setFilters(prev => {
-      const updated = {
-        ...prev,
-        tags: selectedTags.join(',')
-      };
-      console.log("更新后的过滤器: ", updated);
-      
-      // 标签选择立即应用筛选
-      applyFilters(updated);
-      
-      return updated;
-    });
-  }
   
   // 提取应用筛选逻辑为单独函数
   const applyFilters = useCallback((currentFilters: FilterState) => {
@@ -218,20 +168,52 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       return acc;
     }, {} as Partial<FilterState>);
     
-    console.log('自动应用筛选条件:', appliedFilters);
     onApply(appliedFilters as FilterState);
   }, [onApply]);
   
-  const handleReset = () => {
-    const resetFilters = initialFilters;
-    setFilters(resetFilters);
+  // 在筛选条件防抖后触发应用，但跳过初始渲染
+  useEffect(() => {
+    // 跳过初始渲染
+    if (isInitialRender) {
+      setIsInitialRender(false);
+      return;
+    }
+    
+    applyFilters(debouncedFilters);
+  }, [debouncedFilters, isInitialRender, applyFilters]);
+  
+  // 处理字段变更的函数 - 不再直接应用，而是通过防抖机制应用
+  const handleChange = useCallback((field: keyof FilterState, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  }, []);
+  
+  // 处理标签选择 - 标签选择保持即时应用
+  const handleTagsChange = useCallback((selectedTags: string[]) => {
+    setFilters(prev => {
+      const updated = {
+        ...prev,
+        tags: selectedTags.join(',')
+      };
+      
+      // 标签选择立即应用筛选
+      applyFilters(updated);
+      
+      return updated;
+    });
+  }, [applyFilters]);
+  
+  const handleReset = useCallback(() => {
+    setFilters(initialFilters);
     
     // 重置后自动应用
-    applyFilters(resetFilters);
-  }
+    applyFilters(initialFilters);
+  }, [applyFilters]);
   
   // 检查是否有激活的筛选条件
-  const hasActiveFilters = () => {
+  const hasActiveFilters = useCallback(() => {
     // 检查是否有任何非默认值的筛选条件
     return Object.entries(filters).some(([key, value]) => {
       // 对于字符串类型的值，检查是否非空且不等于'all'
@@ -261,9 +243,9 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       }
       return false;
     });
-  };
+  }, [filters]);
   
-  const renderDateRangePicker = (
+  const renderDateRangePicker = useCallback((
     label: string, 
     fromField: 'purchase_date_from' | 'expiry_date_from', 
     toField: 'purchase_date_to' | 'expiry_date_to',
@@ -334,7 +316,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         </div>
       </div>
     </div>
-  )
+  ), [filters, handleChange]);
   
   return (
     <div className="space-y-4 px-1">
@@ -409,10 +391,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                     Array.isArray(filters.tags) ? 
                       filters.tags.map(t => t.toString()) : 
                       []}
-                  onChange={(newTags) => {
-                    console.log("标签选择回调触发，新选中标签:", newTags);
-                    handleTagsChange(newTags);
-                  }}
+                  onChange={handleTagsChange}
                   placeholder="选择标签"
                 />
               </div>

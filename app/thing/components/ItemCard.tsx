@@ -22,8 +22,67 @@ import { API_URL } from '@/utils/api'
 import { del } from '@/utils/api'
 import { isLightColor } from '@/lib/utils'
 
+interface Tag {
+  id: number
+  name: string
+  color: string
+}
+
+interface ImageData {
+  id?: number
+  path?: string
+  url?: string
+  thumbnail_path?: string
+  thumbnail_url?: string
+  is_primary?: boolean
+}
+
+interface Location {
+  area?: {
+    id?: number
+    name?: string
+  }
+  room?: {
+    id?: number
+    name?: string
+    area?: {
+      id?: number
+      name?: string
+    }
+  }
+  spot?: {
+    id?: number
+    name?: string
+    room?: {
+      id?: number
+      name?: string
+      area?: {
+        id?: number
+        name?: string
+      }
+    }
+  }
+  area_id?: number
+  room_id?: number
+}
+
+interface Item extends Location {
+  id: number
+  name: string
+  description?: string
+  status: string
+  is_public: boolean
+  category?: {
+    id: number
+    name: string
+  }
+  tags?: Tag[]
+  images?: ImageData[]
+  primary_image?: ImageData
+}
+
 interface ItemCardProps {
-  item: any
+  item: Item
   onEdit: () => void
   onView: () => void
 }
@@ -32,14 +91,65 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const { fetchItems } = useItemStore()
   const [imageError, setImageError] = useState(false)
-  const [primaryImage, setPrimaryImage] = useState<any>(null)
+  const [primaryImage, setPrimaryImage] = useState<ImageData | null>(null)
 
-  const renderTags = (item: any) => {
+  // 状态对应的边框颜色
+  const statusColors = {
+    'active': 'border-transparent',
+    'idle': 'border-amber-500',
+    'expired': 'border-red-500',
+    'damaged': 'border-orange-500',
+    'inactive': 'border-gray-500',
+    'default': 'border-transparent'
+  }
+
+  // 从图片数组中找出主图
+  useEffect(() => {
+    if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+      // 优先查找 is_primary 为 true 的图片
+      const primary = item.images.find(img => img.is_primary === true)
+      
+      // 如果没有找到主图，则使用第一张图片
+      setPrimaryImage(primary || item.images[0])
+    } else if (item.primary_image) {
+      // 如果已经有 primary_image 属性，直接使用
+      setPrimaryImage(item.primary_image)
+    }
+  }, [item.images, item.primary_image])
+  
+  const handleDelete = async () => {
+    try {
+      await del(`/items/${item.id}`)
+      toast.success("物品已成功删除")
+      // 刷新物品列表，使用 Zustand store 而不是刷新页面
+      fetchItems()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+    } finally {
+      setDeleteDialogOpen(false)
+    }
+  }
+  
+  const getStatusBorderColor = (status: string) => {
+    return statusColors[status as keyof typeof statusColors] || statusColors.default
+  }
+  
+  const formatDate = (date: string) => {
+    if (!date) return '-'
+    try {
+      return format(new Date(date), 'yyyy-MM-dd')
+    } catch (e) {
+      return '无效日期'
+    }
+  }
+  
+  // 渲染标签
+  const renderTags = (item: Item) => {
     if (!item.tags || item.tags.length === 0) return null;
     
     return (
       <div className="flex flex-wrap gap-2">
-        {item.tags.map((tag: any) => (
+        {item.tags.map(tag => (
           <Badge
             key={tag.id}
             style={{
@@ -54,56 +164,6 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
       </div>
     );
   };
-  
-  // 从图片数组中找出主图
-  useEffect(() => {
-    if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-      // 优先查找 is_primary 为 true 的图片
-      const primary = item.images.find((img: any) => img.is_primary === true)
-      
-      // 如果没有找到主图，则使用第一张图片
-      setPrimaryImage(primary || item.images[0])
-    } else if (item.primary_image) {
-      // 如果已经有 primary_image 属性，直接使用
-      setPrimaryImage(item.primary_image)
-    }
-  }, [item.images, item.primary_image])
-  
-  const handleDelete = async () => {
-    try {
-      await del(`/items/${item.id}`)
-      
-      toast.success("物品已成功删除")
-      
-      // 刷新物品列表，使用 Zustand store 而不是刷新页面
-      fetchItems()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-    } finally {
-      setDeleteDialogOpen(false)
-    }
-  }
-  
-  const getStatusBorderColor = (status: string) => {
-    const statusColors = {
-      'active': 'border-transparent',
-      'idle': 'border-amber-500',
-      'expired': 'border-red-500',
-      'damaged': 'border-orange-500',
-      'inactive': 'border-gray-500',
-      'default': 'border-transparent'
-    }
-    return statusColors[status as keyof typeof statusColors] || statusColors.default
-  }
-  
-  const formatDate = (date: string) => {
-    if (!date) return '-'
-    try {
-      return format(new Date(date), 'yyyy-MM-dd')
-    } catch (e) {
-      return '无效日期'
-    }
-  }
   
   // 渲染位置信息
   const renderLocation = () => {
@@ -206,7 +266,9 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   const renderImage = (className: string) => {
     if (primaryImage && !imageError) {
       // 优先使用thumbnail_url，然后是url，最后才构造URL
-      const imageUrl = primaryImage.thumbnail_url || primaryImage.url || getImageUrl(primaryImage.thumbnail_path || primaryImage.path)
+      const imageUrl = primaryImage.thumbnail_url || primaryImage.url || 
+        (primaryImage.thumbnail_path || primaryImage.path ? 
+          getImageUrl(primaryImage.thumbnail_path || primaryImage.path || '') : null)
       
       if (!imageUrl) {
         return (
@@ -223,6 +285,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
             alt={item.name}
             fill
             className={className}
+            onError={() => setImageError(true)}
           />
         </div>
       )
@@ -235,11 +298,6 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     )
   }
   
-  // 渲染物品信息网格
-  const renderInfoGrid = () => (
-    <div className="font-medium text-sm truncate">{item.description || ''}</div>
-  )
-  
   return (
     <Card 
       className="hover:shadow-md transition-shadow py-0 cursor-pointer"
@@ -249,13 +307,13 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
         <div className="flex items-center mb-1 justify-between">
           <div className={`relative w-16 h-16 bg-muted rounded-md mr-2 flex-shrink-0 border-2 ${getStatusBorderColor(item.status)}`}>
             {renderImage("object-cover rounded-md")}
-            {item.is_public ? (
+            {item.is_public && (
               <div className="absolute top-0 right-0">
                 <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
                   <Globe className="h-3 w-3" />
                 </Badge>
               </div>
-            ) : null}
+            )}
           </div>
           <div className="flex flex-col flex-1 min-w-0 gap-0.5">
             {/* 名称和分类 */}
@@ -266,7 +324,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
               </div>
             </div>
             {/* 描述 */}
-            {renderInfoGrid()}
+            <div className="font-medium text-sm truncate">{item.description || ''}</div>
             {/* 标签 */}
             {renderTags(item)}
             {/* 位置 */}
@@ -295,4 +353,4 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
       </AlertDialog>
     </Card>
   )
-} 
+}
