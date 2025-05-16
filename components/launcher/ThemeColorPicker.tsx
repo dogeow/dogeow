@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { hexToHSL } from '@/lib/utils'
 
 interface ThemeColorPickerProps {
   currentTheme: string
@@ -182,47 +183,3 @@ export function ThemeColorPicker({
     </div>
   )
 }
-
-// 辅助函数：将十六进制颜色转换为HSL格式
-function hexToHSL(hex: string): string {
-  // 移除#号
-  hex = hex.replace(/^#/, '');
-  
-  // 解析RGB值
-  let r = parseInt(hex.substring(0, 2), 16) / 255;
-  let g = parseInt(hex.substring(2, 4), 16) / 255;
-  let b = parseInt(hex.substring(4, 6), 16) / 255;
-  
-  // 找出最大和最小RGB值
-  let max = Math.max(r, g, b);
-  let min = Math.min(r, g, b);
-  
-  // 计算亮度
-  let l = (max + min) / 2;
-  
-  let h = 0;
-  let s = 0;
-  
-  if (max !== min) {
-    // 计算饱和度
-    s = l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
-    
-    // 计算色相
-    if (max === r) {
-      h = (g - b) / (max - min) + (g < b ? 6 : 0);
-    } else if (max === g) {
-      h = (b - r) / (max - min) + 2;
-    } else {
-      h = (r - g) / (max - min) + 4;
-    }
-    
-    h = h * 60;
-  }
-  
-  // 转换为百分比格式
-  s = s * 100;
-  l = l * 100;
-  
-  // 返回HSL格式
-  return `hsl(${h.toFixed(1)} ${s.toFixed(1)}% ${l.toFixed(1)}%)`;
-} 
