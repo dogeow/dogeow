@@ -389,7 +389,6 @@ export default function Thing() {
           }}
         >
           <SlidersHorizontal className="h-4 w-4 mr-2" />
-          筛选
           {hasActiveFilters() && <Badge variant="secondary" className="ml-1 h-4 px-1">●</Badge>}
         </Button>
       </SheetTrigger>
@@ -531,7 +530,7 @@ export default function Thing() {
 
   // 渲染视图切换和筛选按钮
   const renderViewControls = () => (
-    <div className="ml-auto flex items-center gap-2">
+    <div className="flex items-center gap-2">
       <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
         <TabsList className="grid grid-cols-2 bg-primary/10 dark:bg-primary/20">
           <TabsTrigger 
@@ -548,19 +547,6 @@ export default function Thing() {
           </TabsTrigger>
         </TabsList>
       </Tabs>
-
-      <Sheet open={filtersOpen} onOpenChange={handleFiltersOpenChange}>
-        <SheetTrigger asChild>
-          <Button 
-            variant="outline" 
-            size="icon" 
-            className="bg-primary/10 border-primary/20 hover:bg-primary/20 dark:bg-primary/20 dark:border-primary/30 dark:hover:bg-primary/30"
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
-        </SheetTrigger>
-        {renderFilterSidebar()}
-      </Sheet>
     </div>
   )
 
@@ -571,17 +557,16 @@ export default function Thing() {
         {renderTagDropdown()}
       </div>
       {renderViewControls()}
+      {renderFilterSidebar()}
     </div>
   )
 
   // 返回组件
   return (
-    <div className="container mx-auto px-4 py-6">
+    <div className="container mx-auto py-6">
       <div className="flex flex-col space-y-4">
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          <div className="flex flex-wrap gap-2 mb-2 w-full">
-            {renderFilters()}
-          </div>
+        <div className="flex flex-wrap items-center gap-2 mb-4 w-full">
+          {renderFilters()}
         </div>
         
         {/* 内容区域 */}
