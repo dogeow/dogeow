@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon, FilterX } from "lucide-react"
+import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon, FilterX, ChevronDownIcon } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import ItemCard from './components/ItemCard'
@@ -57,10 +57,12 @@ export default function Thing() {
   const [selectedCategory, setSelectedCategory] = useState<string>('none')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [tagMenuOpen, setTagMenuOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [initialLoaded, setInitialLoaded] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
   const [initialDataLoaded, setInitialDataLoaded] = useState(false)
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
   
   // 修改标签加载方式，不使用禁用自动重新请求的方式
   const { data: tags, error: tagsError } = useSWR<Tag[]>(
@@ -82,12 +84,47 @@ export default function Thing() {
   // 计算总页数
   const totalPages = meta?.last_page || 1
 
-  // 获取基础筛选参数
-  const getBaseFilterParams = () => ({
+  // 获取基础筛选参数，使用useCallback包装
+  const getBaseFilterParams = useCallback(() => ({
     search: searchTerm || undefined,
     category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined,
-    tags: selectedTags.length > 0 ? selectedTags : undefined
-  })
+    tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined
+  }), [searchTerm, selectedCategory, selectedTags]);
+
+  // 处理点击外部关闭标签菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagMenuOpen) {
+        const target = event.target as HTMLElement;
+        // 检查点击事件是否在菜单外部
+        if (!target.closest('.tag-dropdown-container')) {
+          setTagMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [tagMenuOpen]);
+
+  // 处理点击外部关闭分类菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryMenuOpen) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.category-dropdown-container')) {
+          setCategoryMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [categoryMenuOpen]);
 
   // 在组件初始化时加载基础数据，仅执行一次
   useEffect(() => {
@@ -101,6 +138,11 @@ export default function Thing() {
           
           // 标记初始数据已加载完成
           setInitialDataLoaded(true);
+          
+          // 在初始加载完成后确保 selectedTags 是字符串数组
+          if (selectedTags.length > 0) {
+            setSelectedTags(selectedTags.map(tag => tag.toString()));
+          }
         } catch (error) {
           console.error('初始数据加载失败:', error);
         }
@@ -108,12 +150,7 @@ export default function Thing() {
       
       loadAllData();
     }
-
-    // 在初始加载完成后确保 selectedTags 是字符串数组
-    if (selectedTags.length > 0) {
-      setSelectedTags(selectedTags.map(tag => tag.toString()));
-    }
-  }, [categories.length, fetchCategories, initialDataLoaded, selectedTags]);
+  }, [categories.length, fetchCategories, initialDataLoaded]);
 
   useEffect(() => {
     // 从URL获取搜索参数
@@ -150,10 +187,10 @@ export default function Thing() {
       }
       setInitialLoaded(true);
     }
-  }, [fetchItems, initialLoaded, savedFilters])
+  }, [initialLoaded, savedFilters])
 
-  // 优化后的加载数据函数
-  const loadItems = (params = {}) => {
+  // 优化后的加载数据函数，使用useCallback包装
+  const loadItems = useCallback((params = {}) => {
     // 防止重复请求
     if (isSearching) return Promise.resolve();
     
@@ -179,7 +216,7 @@ export default function Thing() {
       .finally(() => {
         setIsSearching(false); // 标记搜索状态结束
       });
-  }
+  }, [fetchItems, getBaseFilterParams, isSearching, saveFilters]);
 
   // 处理页面变化
   const handlePageChange = (page: number) => {
@@ -187,15 +224,15 @@ export default function Thing() {
     loadItems({ page })
   }
 
-  // 处理分类变化
-  const handleCategoryChange = (value: string) => {
-    setSelectedCategory(value)
-    setCurrentPage(1)
+  // 处理分类变化，使用useCallback包装
+  const handleCategoryChange = useCallback((value: string) => {
+    setSelectedCategory(value);
+    setCurrentPage(1);
     loadItems({ 
       category_id: value === "none" ? undefined : value === "uncategorized" ? null : value,
       page: 1
-    })
-  }
+    });
+  }, [loadItems]);
 
   // 在handleReset方法中也要清除保存的筛选条件
   const handleReset = () => {
@@ -211,27 +248,6 @@ export default function Thing() {
     loadItems({});
   }
 
-  // 切换标签的选中状态
-  const toggleTag = (tagId: string) => {
-    const numericId = Number(tagId);
-    setSelectedTags(prev => 
-      prev.includes(tagId) 
-        ? prev.filter(id => id !== tagId) 
-        : [...prev, tagId]
-    )
-    
-    // 触发搜索
-    setCurrentPage(1)
-    const updatedTags = selectedTags.includes(tagId)
-      ? selectedTags.filter(id => id !== tagId)
-      : [...selectedTags, tagId]
-    
-    loadItems({
-      tags: updatedTags.length > 0 ? updatedTags.map(Number) : undefined,
-      page: 1
-    })
-  }
-  
   // 检查是否有激活的筛选条件
   const hasActiveFilters = () => {
     // 检查是否有实际有效的筛选条件
@@ -442,6 +458,27 @@ export default function Thing() {
     </SheetContent>
   )
 
+  // 使用useCallback包装处理函数
+  const handleTagClick = useCallback((tagId: string) => {
+    const updatedTags = selectedTags.includes(tagId)
+      ? selectedTags.filter(id => id !== tagId)
+      : [...selectedTags, tagId];
+      
+    setSelectedTags(updatedTags);
+    loadItems({
+      tags: updatedTags.length > 0 ? updatedTags.join(',') : undefined,
+      page: 1
+    });
+    
+    // 选择后关闭下拉菜单
+    setTagMenuOpen(false);
+  }, [selectedTags, loadItems, setTagMenuOpen]);
+
+  // 使用useCallback包装分类点击处理函数
+  const handleCategoryClick = useCallback((value: string) => {
+    handleCategoryChange(value);
+    setCategoryMenuOpen(false);
+  }, [handleCategoryChange, setCategoryMenuOpen]);
   // 条件渲染内容
   const renderContent = () => {
     if (loading) return renderLoading()
@@ -452,87 +489,107 @@ export default function Thing() {
   const renderFilters = () => (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-2">
-        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-          <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
-            <SelectValue placeholder="所有分类" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">所有分类</SelectItem>
-            <SelectItem value="uncategorized">未分类</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id.toString()}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select
-          onValueChange={(value) => {
-            if (value === "clear") {
-              setSelectedTags([]);
-              loadItems({ tags: undefined, page: 1 });
-            } else {
-              toggleTag(value);
-            }
-          }}
-          value={selectedTags.length > 0 ? "selected" : "placeholder"}
-        >
-          <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
-            <div className="flex items-center">
-              <SelectValue placeholder={selectedTags.length > 0 ? `${selectedTags.length}个标签` : "选择标签"} />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="placeholder" disabled>
-              选择标签
-            </SelectItem>
-            {selectedTags.length > 0 && (
-              <SelectItem value="clear">
-                <span className="flex items-center">
-                  <X className="h-3 w-3 mr-1" />
-                  清除所有标签
-                </span>
-              </SelectItem>
-            )}
-            <div className="py-2">
-              <div className="flex flex-wrap gap-1 max-h-[300px] overflow-y-auto p-1">
-                {!tags ? (
-                  <div className="flex justify-center py-2 w-full">
-                    <span className="text-sm text-muted-foreground">加载中...</span>
+        <div className="relative category-dropdown-container">
+          <Button 
+            variant="outline" 
+            onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
+            className="w-[110px] bg-primary/10 border-primary/20 flex items-center justify-between"
+          >
+            {selectedCategory === 'none' ? "所有分类" : 
+             selectedCategory === 'uncategorized' ? "未分类" : 
+             categories.find(c => c.id.toString() === selectedCategory)?.name || "所有分类"}
+            <ChevronDownIcon className="ml-2 h-4 w-4" />
+          </Button>
+          
+          {categoryMenuOpen && (
+            <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg">
+              <div className="p-2">
+                <div 
+                  className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'none' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+                  onClick={() => handleCategoryClick('none')}
+                >
+                  所有分类
+                </div>
+                <div 
+                  className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'uncategorized' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+                  onClick={() => handleCategoryClick('uncategorized')}
+                >
+                  未分类
+                </div>
+                {categories.map((category) => (
+                  <div 
+                    key={category.id}
+                    className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === category.id.toString() ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+                    onClick={() => handleCategoryClick(category.id.toString())}
+                  >
+                    {category.name}
                   </div>
-                ) : tags.length === 0 ? (
-                  <div className="flex justify-center py-2 w-full">
-                    <span className="text-sm text-muted-foreground">暂无标签</span>
-                  </div>
-                ) : (
-                  tags.map((tag) => (
-                    <div 
-                      key={tag.id} 
-                      className={`relative cursor-pointer rounded-md p-0.5 ${selectedTags.includes(tag.id.toString()) ? 'bg-accent/50' : ''}`}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleTag(tag.id.toString());
-                      }}
-                    >
-                      <Badge
-                        style={getTagStyle(tag.color, selectedTags.includes(tag.id.toString()))}
-                        variant={selectedTags.includes(tag.id.toString()) ? "default" : "outline"}
-                        className="text-xs h-6 px-2"
-                      >
-                        {tag.name}
-                        {selectedTags.includes(tag.id.toString()) && (
-                          <X className="ml-1 h-3 w-3" />
-                        )}
-                      </Badge>
-                    </div>
-                  ))
-                )}
+                ))}
               </div>
             </div>
-          </SelectContent>
-        </Select>
+          )}
+        </div>
+
+        <div className="relative tag-dropdown-container">
+          <Button 
+            variant="outline" 
+            onClick={() => setTagMenuOpen(!tagMenuOpen)}
+            className="w-[110px] bg-primary/10 border-primary/20 flex items-center justify-between"
+          >
+            {selectedTags.length > 0 ? `${selectedTags.length}个标签` : "选择标签"}
+            <ChevronDownIcon className="ml-2 h-4 w-4" />
+          </Button>
+          
+          {tagMenuOpen && (
+            <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg">
+              <div className="p-2">
+                {selectedTags.length > 0 && (
+                  <div 
+                    className="flex items-center text-sm text-gray-600 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
+                    onClick={() => {
+                      setSelectedTags([]);
+                      loadItems({ tags: undefined, page: 1 });
+                      setTagMenuOpen(false);
+                    }}
+                  >
+                    <X className="h-3 w-3 mr-2" />
+                    清除所有标签
+                  </div>
+                )}
+                
+                <div className="py-2">
+                  <div className="flex flex-wrap gap-1 max-h-[300px] overflow-y-auto p-1">
+                    {!tags ? (
+                      <div className="flex justify-center py-2 w-full">
+                        <span className="text-sm text-muted-foreground">加载中...</span>
+                      </div>
+                    ) : tags.length === 0 ? (
+                      <div className="flex justify-center py-2 w-full">
+                        <span className="text-sm text-muted-foreground">暂无标签</span>
+                      </div>
+                    ) : (
+                      tags.map((tag) => (
+                        <div 
+                          key={tag.id} 
+                          className={`relative cursor-pointer rounded-md p-0.5 ${selectedTags.includes(tag.id.toString()) ? 'bg-accent/50' : ''}`}
+                          onClick={() => handleTagClick(tag.id.toString())}
+                        >
+                          <Badge
+                            style={getTagStyle(tag.color, selectedTags.includes(tag.id.toString()))}
+                            variant={selectedTags.includes(tag.id.toString()) ? "default" : "outline"}
+                            className="text-xs h-6 px-2"
+                          >
+                            {tag.name}
+                          </Badge>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="ml-auto flex items-center gap-2">
@@ -607,7 +664,14 @@ export default function Thing() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>取消</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => toggleTag(tagId)}>
+                      <AlertDialogAction onClick={() => {
+                        const updatedTags = selectedTags.filter(t => t !== tagId);
+                        setSelectedTags(updatedTags);
+                        loadItems({
+                          tags: updatedTags.length > 0 ? updatedTags.join(',') : undefined,
+                          page: 1
+                        });
+                      }}>
                         确定
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -642,6 +706,7 @@ export default function Thing() {
                     onClick={() => {
                       setSelectedTags([]);
                       loadItems({ tags: undefined, page: 1 });
+                      setTagMenuOpen(false);
                     }}
                   >
                     确定
