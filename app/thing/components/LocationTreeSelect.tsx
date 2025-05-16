@@ -117,29 +117,76 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
     return matchesSearch
   })
   
+  // 在搜索模式下，我们需要显示所有包含匹配结果的区域，即使区域名称本身不匹配
+  const visibleAreas = searchTerm === ''
+    ? filteredAreas
+    : areas.filter(area => {
+        // 区域名称匹配
+        if (area.name.toLowerCase().includes(searchTerm.toLowerCase())) return true
+        
+        // 区域包含匹配的房间
+        const hasMatchingRoom = rooms.some(room => 
+          room.area_id === area.id && room.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+        if (hasMatchingRoom) return true
+        
+        // 区域包含匹配的位置
+        const hasMatchingSpot = spots.some(spot => {
+          const room = rooms.find(r => r.id === spot.room_id)
+          return room?.area_id === area.id && spot.name.toLowerCase().includes(searchTerm.toLowerCase())
+        })
+        
+        return hasMatchingSpot
+      })
+  
+  // 在搜索模式下，我们需要显示所有包含匹配结果的房间，即使房间名称本身不匹配
+  const getVisibleRoomsForArea = (areaId: number) => {
+    const areaRooms = rooms.filter(room => room.area_id === areaId)
+    
+    if (searchTerm === '') {
+      return areaRooms
+    }
+    
+    return areaRooms.filter(room => {
+      // 房间名称匹配
+      if (room.name.toLowerCase().includes(searchTerm.toLowerCase())) return true
+      
+      // 房间包含匹配的位置
+      return spots.some(spot => 
+        spot.room_id === room.id && spot.name.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    })
+  }
+  
   // 显示所有过滤后的位置和它们的父节点
   const getFilteredAreaIds = () => {
-    if (searchTerm === '') return expandedAreas
+    // 搜索模式下，展开所有可见区域
+    if (searchTerm !== '') {
+      return visibleAreas.map(area => area.id)
+    }
     
-    const matchingRooms = filteredRooms.map(room => room.area_id)
-    const matchingSpotsRooms = filteredSpots
-      .map(spot => rooms.find(room => room.id === spot.room_id))
-      .filter(Boolean)
-      .map(room => room!.area_id)
-    
-    return [...new Set([...filteredAreas.map(area => area.id), ...matchingRooms, ...matchingSpotsRooms])]
+    return expandedAreas
   }
   
   const getFilteredRoomIds = () => {
-    if (searchTerm === '') return expandedRooms
+    // 搜索模式下，展开所有可见房间
+    if (searchTerm !== '') {
+      return rooms
+        .filter(room => visibleAreas.some(area => area.id === room.area_id))
+        .filter(room => {
+          // 房间名称匹配
+          if (room.name.toLowerCase().includes(searchTerm.toLowerCase())) return true
+          
+          // 房间包含匹配的位置
+          return spots.some(spot => 
+            spot.room_id === room.id && spot.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        })
+        .map(room => room.id)
+    }
     
-    const matchingSpots = filteredSpots.map(spot => spot.room_id)
-    
-    return [...new Set([...filteredRooms.map(room => room.id), ...matchingSpots])]
+    return expandedRooms
   }
-  
-  const shownAreaIds = getFilteredAreaIds()
-  const shownRoomIds = getFilteredRoomIds()
   
   // 处理展开/折叠
   const toggleArea = (e: React.MouseEvent, areaId: number) => {
@@ -210,7 +257,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
           </div>
         )}
         
-        {filterType !== 'room' && filteredAreas.map(area => (
+        {filterType !== 'room' && visibleAreas.map(area => (
           <div key={area.id}>
             <div 
               className={cn(
@@ -224,7 +271,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                 className="flex items-center"
               >
                 <FolderIcon 
-                  isOpen={shownAreaIds.includes(area.id)}
+                  isOpen={getFilteredAreaIds().includes(area.id)}
                   size={14}
                   className="mr-1"
                 />
@@ -234,8 +281,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
               </span>
             </div>
             
-            {shownAreaIds.includes(area.id) && rooms
-              .filter(room => room.area_id === area.id)
+            {getFilteredAreaIds().includes(area.id) && getVisibleRoomsForArea(area.id)
               .map(room => (
                 <div key={room.id} className="ml-4">
                   <div 
@@ -250,7 +296,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                       className="flex items-center"
                     >
                       <FolderIcon 
-                        isOpen={shownRoomIds.includes(room.id)} 
+                        isOpen={getFilteredRoomIds().includes(room.id)} 
                         size={14}
                         className="mr-1"
                       />
@@ -260,8 +306,9 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                     </span>
                   </div>
                   
-                  {filterType !== 'area' && shownRoomIds.includes(room.id) && spots
+                  {filterType !== 'area' && getFilteredRoomIds().includes(room.id) && spots
                     .filter(spot => spot.room_id === room.id)
+                    .filter(spot => searchTerm === '' || spot.name.toLowerCase().includes(searchTerm.toLowerCase()))
                     .map(spot => (
                       <div 
                         key={spot.id} 
@@ -291,7 +338,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
               onClick={() => handleSelect('room', room.id)}
             >
               <FolderIcon 
-                isOpen={shownRoomIds.includes(room.id)} 
+                isOpen={getFilteredRoomIds().includes(room.id)} 
                 size={14}
                 className="mr-1"
               />
@@ -305,7 +352,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
               )}
             </div>
             
-            {shownRoomIds.includes(room.id) && spots
+            {getFilteredRoomIds().includes(room.id) && spots
               .filter(spot => spot.room_id === room.id)
               .map(spot => (
                 <div 
