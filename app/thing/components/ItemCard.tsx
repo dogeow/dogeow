@@ -307,13 +307,13 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
         <div className="flex items-center mb-1 justify-between">
           <div className={`relative w-16 h-16 bg-muted rounded-md mr-2 flex-shrink-0 border-2 ${getStatusBorderColor(item.status)}`}>
             {renderImage("object-cover rounded-md")}
-            {item.is_public && (
+            {item.is_public ? (
               <div className="absolute top-0 right-0">
                 <Badge variant="outline" className="bg-background/80 backdrop-blur-sm p-0.5">
                   <Globe className="h-3 w-3" />
                 </Badge>
               </div>
-            )}
+            ) : null}
           </div>
           <div className="flex flex-col flex-1 min-w-0 gap-0.5">
             {/* 名称和分类 */}
