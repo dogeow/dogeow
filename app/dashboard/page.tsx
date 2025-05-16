@@ -1,11 +1,9 @@
 "use client"
 
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { useState } from 'react';
 import useAuthStore from '@/stores/authStore';
 
 export default function Dashboard() {
-  const [loading, ] = useState(true);
   const { user, isAuthenticated } = useAuthStore();
 
   // 显示加载状态，直到确认用户已加载
@@ -17,15 +15,9 @@ export default function Dashboard() {
     <ProtectedRoute>
       <div>
         <h1>仪表盘</h1>
-        {user && <p>欢迎, {user.name}!</p>}
         
-        {loading ? (
-          <p>加载数据中...</p>
-        ) : (
-          <div>
-            还没写
-          </div>
-        )}
+        <div>User-Agent</div> 
+        <div>{navigator.userAgent}</div>
       </div>
     </ProtectedRoute>
   );

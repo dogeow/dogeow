@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { User, LogOut, ChevronLeft } from 'lucide-react'
+import { User, LogOut, ChevronLeft, X, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
@@ -16,6 +16,7 @@ export interface AuthPanelProps {
 export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmingLogout, setConfirmingLogout] = useState(false);
   const { login, loading, isAuthenticated, user, logout } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,10 +35,19 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogoutStart = () => {
+    setConfirmingLogout(true);
+  };
+
+  const handleLogoutConfirm = () => {
     logout();
     toast.success("已退出登录");
+    setConfirmingLogout(false);
     toggleDisplayMode('apps');
+  };
+
+  const handleLogoutCancel = () => {
+    setConfirmingLogout(false);
   };
 
   // 渲染登录视图 - 简洁一行式
@@ -96,14 +106,37 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
           <span className="text-base font-medium">{user?.name}</span>
         </div>
         
-        <Button 
-          variant="ghost" 
-          className="flex items-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-          onClick={handleLogout}
-        >
-          <LogOut className="h-4 w-4" />
-          <span>退出登录</span>
-        </Button>
+        {confirmingLogout ? (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">确认退出？</span>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              className="flex items-center gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={handleLogoutConfirm}
+            >
+              <Check className="h-4 w-4" />
+              <span>确认</span>
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={handleLogoutCancel}
+            >
+              <X className="h-4 w-4" />
+              <span>取消</span>
+            </Button>
+          </div>
+        ) : (
+          <Button 
+            variant="ghost" 
+            className="flex items-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+            onClick={handleLogoutStart}
+          >
+            <LogOut className="h-4 w-4" />
+            <span>退出登录</span>
+          </Button>
+        )}
       </div>
     </div>
   );
