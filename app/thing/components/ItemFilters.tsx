@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { CalendarIcon } from "lucide-react"
+import { CalendarIcon, FilterX } from "lucide-react"
 import type { Area, Room, Spot } from '@/app/thing/types'
 import { useItemStore } from '@/stores/itemStore'
 import { TagSelector, Tag } from '@/components/ui/tag-selector'
@@ -43,6 +43,23 @@ interface FilterState {
   include_null_expiry_date: boolean;
   exclude_null_purchase_date?: boolean;
   exclude_null_expiry_date?: boolean;
+}
+
+// 添加防抖函数
+function useDebounce<T>(value: T, delay: number = 500): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
 }
 
 export default function ItemFilters({ onApply }: ItemFiltersProps) {
@@ -127,14 +144,26 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   const [filters, setFilters] = useState<FilterState>(getInitialState())
   
+  // 使用防抖后的筛选条件
+  const debouncedFilters = useDebounce(filters, 500);
+  
+  // 在筛选条件防抖后触发应用
+  useEffect(() => {
+    console.log('应用防抖后的筛选条件');
+    applyFilters(debouncedFilters);
+  }, [debouncedFilters]);
+  
+  // 处理字段变更的函数 - 不再直接应用，而是通过防抖机制应用
   const handleChange = (field: keyof FilterState, value: any) => {
+    console.log(`更改字段 ${field}:`, value);
+    
     setFilters(prev => ({
       ...prev,
       [field]: value
-    }))
+    }));
   }
   
-  // 处理标签选择
+  // 处理标签选择 - 标签选择保持即时应用
   const handleTagsChange = (selectedTags: string[]) => {
     console.log("选择的标签改变: ", selectedTags);
     
@@ -145,24 +174,25 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         tags: selectedTags.join(',')
       };
       console.log("更新后的过滤器: ", updated);
+      
+      // 标签选择立即应用筛选
+      applyFilters(updated);
+      
       return updated;
     });
   }
   
-  const handleReset = () => {
-    setFilters(initialFilters)
-  }
-  
-  const handleApply = () => {
+  // 提取应用筛选逻辑为单独函数
+  const applyFilters = useCallback((currentFilters: FilterState) => {
     // 创建一个新的对象，只保留非空、非"all"的值
-    const appliedFilters = Object.entries(filters).reduce((acc, [key, value]) => {
+    const appliedFilters = Object.entries(currentFilters).reduce((acc, [key, value]) => {
       const fieldKey = key as keyof FilterState;
       // 保留包含空日期的控制参数和公开状态参数，但过滤不在后端允许的过滤参数
       if ((fieldKey === 'include_null_purchase_date' || fieldKey === 'include_null_expiry_date') ||
           (fieldKey === 'is_public' || 
-           (fieldKey !== 'exclude_null_purchase_date' && 
-           fieldKey !== 'exclude_null_expiry_date' && 
-           value !== null && value !== '' && value !== 'all'))) {
+            (fieldKey !== 'exclude_null_purchase_date' && 
+            fieldKey !== 'exclude_null_expiry_date' && 
+            value !== null && value !== '' && value !== 'all'))) {
         
         // 特殊处理标签字段，将逗号分隔的字符串转换为数组
         if (fieldKey === 'tags' && typeof value === 'string' && value.trim() !== '') {
@@ -175,18 +205,54 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         } else {
           acc[fieldKey] = value;
         }
-        
-        // 特别打印category_id的值
-        if (key === 'category_id') {
-          console.log('FilterFilters - 添加分类ID:', value, typeof value);
-        }
       }
       return acc;
     }, {} as Partial<FilterState>);
     
-    console.log('应用筛选条件:', appliedFilters);
+    console.log('自动应用筛选条件:', appliedFilters);
     onApply(appliedFilters as FilterState);
+  }, [onApply]);
+  
+  const handleReset = () => {
+    const resetFilters = initialFilters;
+    setFilters(resetFilters);
+    
+    // 重置后自动应用
+    applyFilters(resetFilters);
   }
+  
+  // 检查是否有激活的筛选条件
+  const hasActiveFilters = () => {
+    // 检查是否有任何非默认值的筛选条件
+    return Object.entries(filters).some(([key, value]) => {
+      // 对于字符串类型的值，检查是否非空且不等于'all'
+      if (typeof value === 'string') {
+        return value !== '' && value !== 'all' && initialFilters[key as keyof FilterState] !== value;
+      }
+      // 对于数组或字符串类型的标签
+      if (key === 'tags') {
+        if (typeof value === 'string') {
+          return value !== '';
+        }
+        if (Array.isArray(value)) {
+          return value.length > 0;
+        }
+      }
+      // 对于日期类型的值，检查是否非空
+      if (value instanceof Date) {
+        return true;
+      }
+      // 对于数值类型，检查是否非空
+      if (typeof value === 'number') {
+        return value !== 0 && initialFilters[key as keyof FilterState] !== value;
+      }
+      // 对于布尔类型，检查是否与初始值不同
+      if (typeof value === 'boolean') {
+        return initialFilters[key as keyof FilterState] !== value;
+      }
+      return false;
+    });
+  };
   
   const renderDateRangePicker = (
     label: string, 
@@ -443,11 +509,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
-      
-      <div className="flex justify-between pt-4 pb-2 gap-3">
-        <Button variant="outline" onClick={handleReset} className="flex-1 h-11">重置</Button>
-        <Button onClick={handleApply} className="flex-1 h-11">筛选</Button>
       </div>
     </div>
   )

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon } from "lucide-react"
+import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon, FilterX } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
@@ -178,6 +178,12 @@ export default function Thing() {
     })
   }
   
+  // 检查是否有激活的筛选条件
+  const hasActiveFilters = () => {
+    // 检查是否有保存的筛选条件
+    return Object.keys(savedFilters).length > 0;
+  };
+
   // 获取标签样式
   const getTagStyle = (color: string = "#3b82f6", isSelected: boolean = false) => {
     return {
@@ -208,7 +214,7 @@ export default function Thing() {
     )
     
     setCurrentPage(1);
-    setFiltersOpen(false);
+    // 不自动关闭侧边栏
     
     // 加载数据，不带特殊参数
     fetchItems({
@@ -238,7 +244,10 @@ export default function Thing() {
         // 更新状态中的items
         useItemStore.setState({ 
           items: filteredItems,
-          meta: result.meta
+          meta: {
+            ...result.meta,
+            total: filteredItems.length
+          }
         });
       }
       
@@ -340,9 +349,20 @@ export default function Thing() {
   // 渲染筛选侧边栏
   const renderFilterSidebar = () => (
     <SheetContent className="overflow-y-auto pb-10 max-w-[50%] sm:max-w-[300px]">
-      <SheetHeader>
-        <SheetTitle className="sr-only">物品筛选</SheetTitle>
-      </SheetHeader>
+      <div className="flex items-center px-4 pt-5 pb-2 mr-8">
+        <SheetTitle className="text-base font-medium">筛选</SheetTitle>
+        {hasActiveFilters() && (
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={handleReset}
+            className="h-7 ml-2 px-2 flex items-center gap-1 text-xs"
+          >
+            <FilterX className="h-3.5 w-3.5" />
+            <span>清除</span>
+          </Button>
+        )}
+      </div>
       <div className="py-1">
         <ItemFilters 
           onApply={handleApplyFilters} 
@@ -452,7 +472,12 @@ export default function Thing() {
 
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="bg-primary/10 border-primary/20 hover:bg-primary/20">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="bg-primary/10 border-primary/20 hover:bg-primary/20"
+              onClick={() => setFiltersOpen(true)}
+            >
               <SlidersHorizontal className="h-4 w-4" />
             </Button>
           </SheetTrigger>

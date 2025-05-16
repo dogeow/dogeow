@@ -123,8 +123,8 @@ export default function Categories() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-full">名称</TableHead>
-                  <TableHead className="text-right">物品数量</TableHead>
+                  <TableHead className="w-full">分类名称</TableHead>
+                  <TableHead className="text-center">物品数量</TableHead>
                   <TableHead className="w-[50px]">操作</TableHead>
                 </TableRow>
               </TableHeader>
@@ -133,7 +133,7 @@ export default function Categories() {
                   <TableCell>
                     <div className="font-medium">未分类</div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-center">
                     {uncategorizedCount}
                   </TableCell>
                   <TableCell>
@@ -182,7 +182,7 @@ export default function Categories() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-center">
                       {category.items_count ?? 0}
                     </TableCell>
                     <TableCell>
