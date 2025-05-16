@@ -1,11 +1,12 @@
 "use client"
 
 import React, { useState } from 'react'
-import { User, LogOut, ChevronLeft, X, Check } from 'lucide-react'
+import { User, LogOut, ChevronLeft, X, Check, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import useAuthStore from '@/stores/authStore'
+import { useRouter } from 'next/navigation'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 
@@ -18,6 +19,7 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
   const [password, setPassword] = useState('');
   const [confirmingLogout, setConfirmingLogout] = useState(false);
   const { login, loading, isAuthenticated, user, logout } = useAuthStore();
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +50,11 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
 
   const handleLogoutCancel = () => {
     setConfirmingLogout(false);
+  };
+
+  const handleGoToDashboard = () => {
+    router.push('/dashboard');
+    toggleDisplayMode('apps');
   };
 
   // 渲染登录视图 - 简洁一行式
@@ -106,37 +113,46 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
           <span className="text-base font-medium">{user?.name}</span>
         </div>
         
-        {confirmingLogout ? (
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">确认退出？</span>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              className="flex items-center gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-              onClick={handleLogoutConfirm}
-            >
-              <Check className="h-4 w-4" />
-              <span>确认</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={handleLogoutCancel}
-            >
-              <X className="h-4 w-4" />
-              <span>取消</span>
-            </Button>
-          </div>
-        ) : (
+        <div className="flex items-center gap-2">
+          {/* 仪表盘按钮 */}
           <Button 
             variant="ghost" 
-            className="flex items-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={handleLogoutStart}
+            className="flex items-center gap-2 text-primary hover:text-primary hover:bg-primary/10"
+            onClick={handleGoToDashboard}
           >
-            <LogOut className="h-4 w-4" />
-            <span>退出登录</span>
+            <LayoutDashboard className="h-4 w-4" />
           </Button>
-        )}
+          
+          {confirmingLogout ? (
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="sm"
+                className="flex items-center gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleLogoutConfirm}
+              >
+                <Check className="h-4 w-4" />
+                <span>确认</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={handleLogoutCancel}
+              >
+                <X className="h-4 w-4" />
+                <span>取消</span>
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="ghost" 
+              className="flex items-center gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={handleLogoutStart}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

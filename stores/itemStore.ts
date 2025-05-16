@@ -115,6 +115,8 @@ export const useItemStore = create<ItemState>((set, get) => ({
         if (value !== undefined && value !== null && value !== '') {
           if (value instanceof Date) {
             queryParams.append(`filter[${key}]`, format(value, 'yyyy-MM-dd'));
+          } else if (Array.isArray(value)) {
+            queryParams.append(`filter[${key}]`, value.join(','));
           } else {
             queryParams.append(`filter[${key}]`, String(value));
           }

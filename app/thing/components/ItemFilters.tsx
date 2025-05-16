@@ -23,7 +23,7 @@ interface FilterState {
   name: string;
   description: string;
   status: string;
-  tags: string;
+  tags: string[] | number[] | string;
   category_id: string | number;
   purchase_date_from: Date | null;
   purchase_date_to: Date | null;
@@ -148,7 +148,17 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
            fieldKey !== 'exclude_null_purchase_date' && 
            fieldKey !== 'exclude_null_expiry_date' && 
            value !== null && value !== '' && value !== 'all')) {
-        acc[fieldKey] = value;
+        
+        // 特殊处理标签字段，将逗号分隔的字符串转换为数组
+        if (fieldKey === 'tags' && typeof value === 'string' && value.trim() !== '') {
+          // 分割字符串并转换为数字数组
+          acc[fieldKey] = value.split(',')
+            .map(tag => tag.trim())
+            .filter(tag => tag !== '')
+            .map(Number);
+        } else {
+          acc[fieldKey] = value;
+        }
         
         // 特别打印category_id的值
         if (key === 'category_id') {
@@ -260,7 +270,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
           <div className="space-y-3">
             <Label className="text-base font-medium">标签</Label>
             <Input
-              placeholder="输入物品标签，用逗号分隔"
+              placeholder="输入标签ID，用逗号分隔(如: 5,4,2)"
               value={filters.tags}
               onChange={(e) => handleChange('tags', e.target.value)}
               className="h-11"

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { SlidersHorizontal, LayoutList, Grid } from "lucide-react"
+import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
@@ -14,6 +14,10 @@ import ItemGallery from './components/ItemGallery'
 import { useItemStore } from '@/stores/itemStore'
 import { Item } from '@/app/thing/types'
 import ThingSpeedDial from './components/SpeedDial'
+import { Badge } from "@/components/ui/badge"
+import useSWR from "swr"
+import { get } from "@/utils/api"
+import { isLightColor } from '@/lib/utils'
 
 // 定义视图模式类型
 type ViewMode = 'list' | 'gallery';
@@ -23,11 +27,22 @@ interface FilterParams {
   page?: number;
   search?: string;
   category_id?: string | number;
+  tags?: string[] | number[] | string;
   include_null_purchase_date?: boolean;
   include_null_expiry_date?: boolean;
   purchase_date_from?: Date | null;
   expiry_date_from?: Date | null;
   [key: string]: any;
+}
+
+// 标签类型定义
+type Tag = {
+  id: number
+  name: string
+  color?: string
+  items_count?: number
+  created_at?: string
+  updated_at?: string
 }
 
 export default function Thing() {
@@ -37,9 +52,13 @@ export default function Thing() {
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string>('none')
   const [selectedPublicStatus, setSelectedPublicStatus] = useState<string>('none')
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [initialLoaded, setInitialLoaded] = useState(false)
+  
+  // 加载标签数据
+  const { data: tags } = useSWR<Tag[]>('/thing-tags', get)
   
   // 计算总页数
   const totalPages = meta?.last_page || 1
@@ -48,7 +67,8 @@ export default function Thing() {
   const getBaseFilterParams = () => ({
     search: searchTerm || undefined,
     category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined,
-    is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true'
+    is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true',
+    tags: selectedTags.length > 0 ? selectedTags : undefined
   })
 
   // 加载数据
@@ -87,6 +107,10 @@ export default function Thing() {
         
         if (savedFilters.is_public !== undefined) {
           setSelectedPublicStatus(savedFilters.is_public === true ? 'true' : 'false');
+        }
+        
+        if (savedFilters.tags && Array.isArray(savedFilters.tags)) {
+          setSelectedTags(savedFilters.tags);
         }
         
         // 使用已保存的筛选条件加载数据
@@ -133,6 +157,36 @@ export default function Thing() {
       is_public: value === 'none' ? undefined : value === 'true',
       page: 1
     })
+  }
+  
+  // 切换标签的选中状态
+  const toggleTag = (tagId: string) => {
+    const numericId = Number(tagId);
+    setSelectedTags(prev => 
+      prev.includes(tagId) 
+        ? prev.filter(id => id !== tagId) 
+        : [...prev, tagId]
+    )
+    
+    // 触发搜索
+    setCurrentPage(1)
+    const updatedTags = selectedTags.includes(tagId)
+      ? selectedTags.filter(id => id !== tagId)
+      : [...selectedTags, tagId]
+    
+    loadItems({
+      tags: updatedTags.length > 0 ? updatedTags.map(Number) : undefined,
+      page: 1
+    })
+  }
+  
+  // 获取标签样式
+  const getTagStyle = (color: string = "#3b82f6", isSelected: boolean = false) => {
+    return {
+      backgroundColor: isSelected ? color : 'transparent',
+      color: isSelected ? (isLightColor(color) ? "#000" : "#fff") : color,
+      borderColor: color
+    }
   }
 
   // 添加新物品
@@ -205,6 +259,7 @@ export default function Thing() {
     setSearchTerm('');
     setSelectedCategory('none');
     setSelectedPublicStatus('none');
+    setSelectedTags([]);
     setCurrentPage(1);
     
     // 清除保存的筛选条件
@@ -299,20 +354,44 @@ export default function Thing() {
     </>
   )
 
+  // 渲染筛选侧边栏
+  const renderFilterSidebar = () => (
+    <SheetContent className="overflow-y-auto pb-10 max-w-[50%] sm:max-w-[300px]">
+      <SheetHeader className="pb-1">
+        <SheetTitle className="text-xl">筛选物品</SheetTitle>
+        <SheetDescription className="text-sm">
+          设置筛选条件以查找特定物品
+        </SheetDescription>
+      </SheetHeader>
+      
+      <div className="py-4 border-b mb-2 space-y-4">
+        <div className="space-y-2">
+          <h3 className="text-sm font-medium">物品状态</h3>
+          <Select value={selectedPublicStatus} onValueChange={handlePublicStatusChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="所有物品" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">所有物品</SelectItem>
+              <SelectItem value="true">公开</SelectItem>
+              <SelectItem value="false">私有</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      
+      <div className="py-1">
+        <ItemFilters 
+          onApply={handleApplyFilters} 
+          key={JSON.stringify(savedFilters)}
+        />
+      </div>
+    </SheetContent>
+  )
+
   const renderFilters = () => (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-2">
-        <Select value={selectedPublicStatus} onValueChange={handlePublicStatusChange}>
-          <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
-            <SelectValue placeholder="所有物品" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">所有物品</SelectItem>
-            <SelectItem value="true">公开</SelectItem>
-            <SelectItem value="false">私有</SelectItem>
-          </SelectContent>
-        </Select>
-
         <Select value={selectedCategory} onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
             <SelectValue placeholder="所有分类" />
@@ -327,40 +406,96 @@ export default function Thing() {
             ))}
           </SelectContent>
         </Select>
+
+        <Select
+          onValueChange={(value) => {
+            if (value === "clear") {
+              setSelectedTags([]);
+              loadItems({ tags: undefined, page: 1 });
+            } else {
+              toggleTag(value);
+            }
+          }}
+          value={selectedTags.length > 0 ? "selected" : "placeholder"}
+        >
+          <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
+            <div className="flex items-center">
+              <SelectValue placeholder={selectedTags.length > 0 ? `${selectedTags.length}个标签` : "选择标签"} />
+            </div>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="placeholder" disabled>
+              选择标签
+            </SelectItem>
+            {selectedTags.length > 0 && (
+              <SelectItem value="clear">
+                <span className="flex items-center">
+                  <X className="h-3 w-3 mr-1" />
+                  清除所有标签
+                </span>
+              </SelectItem>
+            )}
+            <div className="py-2">
+              <div className="flex flex-wrap gap-1 max-h-[300px] overflow-y-auto p-1">
+                {!tags ? (
+                  <div className="flex justify-center py-2 w-full">
+                    <span className="text-sm text-muted-foreground">加载中...</span>
+                  </div>
+                ) : tags.length === 0 ? (
+                  <div className="flex justify-center py-2 w-full">
+                    <span className="text-sm text-muted-foreground">暂无标签</span>
+                  </div>
+                ) : (
+                  tags.map((tag) => (
+                    <div 
+                      key={tag.id} 
+                      className={`relative cursor-pointer rounded-md p-0.5 ${selectedTags.includes(tag.id.toString()) ? 'bg-accent/50' : ''}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleTag(tag.id.toString());
+                      }}
+                    >
+                      <Badge
+                        style={getTagStyle(tag.color, selectedTags.includes(tag.id.toString()))}
+                        variant={selectedTags.includes(tag.id.toString()) ? "default" : "outline"}
+                        className="text-xs h-6 px-2"
+                      >
+                        {tag.name}
+                        {selectedTags.includes(tag.id.toString()) && (
+                          <X className="ml-1 h-3 w-3" />
+                        )}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </SelectContent>
+        </Select>
       </div>
 
-      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
-        <TabsList className="grid grid-cols-2 bg-primary/10">
-          <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <LayoutList className="h-4 w-4" />
-          </TabsTrigger>
-          <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Grid className="h-4 w-4" />
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
+      <div className="ml-auto flex items-center gap-2">
+        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+          <TabsList className="grid grid-cols-2 bg-primary/10">
+            <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <LayoutList className="h-4 w-4" />
+            </TabsTrigger>
+            <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Grid className="h-4 w-4" />
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-      <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <SheetTrigger asChild>
-          <Button variant="outline" size="icon" className="bg-primary/10 border-primary/20 hover:bg-primary/20">
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent className="overflow-y-auto pb-10 max-w-[50%] sm:max-w-[300px]">
-          <SheetHeader className="pb-1">
-            <SheetTitle className="text-xl sr-only">筛选物品</SheetTitle>
-            <SheetDescription className="text-sm sr-only">
-              设置筛选条件以查找特定物品
-            </SheetDescription>
-          </SheetHeader>
-          <div className="py-1">
-            <ItemFilters 
-              onApply={handleApplyFilters} 
-              key={JSON.stringify(savedFilters)}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="bg-primary/10 border-primary/20 hover:bg-primary/20">
+              <SlidersHorizontal className="h-4 w-4" />
+            </Button>
+          </SheetTrigger>
+          {renderFilterSidebar()}
+        </Sheet>
+      </div>
     </div>
   )
 
