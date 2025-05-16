@@ -51,7 +51,6 @@ export default function Thing() {
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string>('none')
-  const [selectedPublicStatus, setSelectedPublicStatus] = useState<string>('none')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
@@ -67,7 +66,6 @@ export default function Thing() {
   const getBaseFilterParams = () => ({
     search: searchTerm || undefined,
     category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined,
-    is_public: selectedPublicStatus === 'none' ? undefined : selectedPublicStatus === 'true',
     tags: selectedTags.length > 0 ? selectedTags : undefined
   })
 
@@ -103,10 +101,6 @@ export default function Thing() {
         
         if (savedFilters.category_id) {
           setSelectedCategory(String(savedFilters.category_id));
-        }
-        
-        if (savedFilters.is_public !== undefined) {
-          setSelectedPublicStatus(savedFilters.is_public === true ? 'true' : 'false');
         }
         
         if (savedFilters.tags && Array.isArray(savedFilters.tags)) {
@@ -149,16 +143,20 @@ export default function Thing() {
     })
   }
 
-  // 处理公开状态变化
-  const handlePublicStatusChange = (value: string) => {
-    setSelectedPublicStatus(value)
-    setCurrentPage(1)
-    loadItems({ 
-      is_public: value === 'none' ? undefined : value === 'true',
-      page: 1
-    })
+  // 在handleReset方法中也要清除保存的筛选条件
+  const handleReset = () => {
+    setSearchTerm('');
+    setSelectedCategory('none');
+    setSelectedTags([]);
+    setCurrentPage(1);
+    
+    // 清除保存的筛选条件
+    saveFilters({});
+    
+    // 重新加载数据
+    loadItems({});
   }
-  
+
   // 切换标签的选中状态
   const toggleTag = (tagId: string) => {
     const numericId = Number(tagId);
@@ -254,21 +252,6 @@ export default function Thing() {
     });
   }
 
-  // 在handleReset方法中也要清除保存的筛选条件
-  const handleReset = () => {
-    setSearchTerm('');
-    setSelectedCategory('none');
-    setSelectedPublicStatus('none');
-    setSelectedTags([]);
-    setCurrentPage(1);
-    
-    // 清除保存的筛选条件
-    saveFilters({});
-    
-    // 重新加载数据
-    loadItems({});
-  }
-
   // 渲染加载状态
   const renderLoading = () => (
     <div className="flex justify-center items-center h-64">
@@ -357,29 +340,9 @@ export default function Thing() {
   // 渲染筛选侧边栏
   const renderFilterSidebar = () => (
     <SheetContent className="overflow-y-auto pb-10 max-w-[50%] sm:max-w-[300px]">
-      <SheetHeader className="pb-1">
-        <SheetTitle className="text-xl">筛选物品</SheetTitle>
-        <SheetDescription className="text-sm">
-          设置筛选条件以查找特定物品
-        </SheetDescription>
+      <SheetHeader>
+        <SheetTitle className="sr-only">物品筛选</SheetTitle>
       </SheetHeader>
-      
-      <div className="py-4 border-b mb-2 space-y-4">
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium">物品状态</h3>
-          <Select value={selectedPublicStatus} onValueChange={handlePublicStatusChange}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="所有物品" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">所有物品</SelectItem>
-              <SelectItem value="true">公开</SelectItem>
-              <SelectItem value="false">私有</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
       <div className="py-1">
         <ItemFilters 
           onApply={handleApplyFilters} 

@@ -1,18 +1,22 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { DatePicker } from "@/components/ui/date-picker"
-import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toast } from "sonner"
-import { useCategories, useAreas, useRooms, useSpots } from '@/utils/api'
+import { Switch } from "@/components/ui/switch"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Calendar } from "@/components/ui/calendar"
+import { format } from "date-fns"
+import { cn } from "@/lib/utils"
+import { CalendarIcon } from "lucide-react"
 import type { Area, Room, Spot } from '@/app/thing/types'
 import { useItemStore } from '@/stores/itemStore'
+import { TagSelector, Tag } from '@/components/ui/tag-selector'
+import useSWR from 'swr'
+import { get } from '@/utils/api'
 
 interface ItemFiltersProps {
   onApply: (filters: FilterState) => void
@@ -43,11 +47,19 @@ interface FilterState {
 
 export default function ItemFilters({ onApply }: ItemFiltersProps) {
   const { filters: savedFilters } = useItemStore();
-  const { data: categories = [], error: categoriesError } = useCategories()
-  const { data: areas = [], error: areasError } = useAreas()
-  const { data: rooms = [], error: roomsError } = useRooms()
-  const { data: spots = [], error: spotsError } = useSpots()
-  const [activeTab, setActiveTab] = useState("basic")
+  const { data: categories = [], error: categoriesError } = useSWR<any[]>('/categories', get);
+  const { data: areas = [], error: areasError } = useSWR<Area[]>('/areas', get);
+  const { data: rooms = [], error: roomsError } = useSWR<Room[]>('/rooms', get);
+  const { data: spots = [], error: spotsError } = useSWR<Spot[]>('/spots', get);
+  const [activeTab, setActiveTab] = useState("basic");
+  // 获取标签数据
+  const { data: tags = [] } = useSWR<Tag[]>('/thing-tags', (url: string) => {
+    console.log("获取标签数据", url);
+    return get<Tag[]>(url).catch(error => {
+      console.error("获取标签失败:", error);
+      return [] as Tag[];
+    });
+  });
   
   // 初始筛选条件
   const initialFilters: FilterState = {
@@ -101,37 +113,26 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   const [filters, setFilters] = useState<FilterState>(getInitialState())
   
-  // 获取认证令牌
-  const getAuthHeaders = () => ({
-    'Authorization': `Bearer ${localStorage.getItem('auth-token')}`,
-    'Accept': 'application/json',
-  })
-  
-  // 处理错误
-  useEffect(() => {
-    if (categoriesError) {
-      toast.error("加载分类数据失败")
-      console.error("加载分类数据失败:", categoriesError)
-    }
-    if (areasError) {
-      toast.error("加载区域数据失败")
-      console.error("加载区域数据失败:", areasError)
-    }
-    if (roomsError) {
-      toast.error("加载房间数据失败")
-      console.error("加载房间数据失败:", roomsError)
-    }
-    if (spotsError) {
-      toast.error("加载位置数据失败")
-      console.error("加载位置数据失败:", spotsError)
-    }
-  }, [categoriesError, areasError, roomsError, spotsError])
-  
   const handleChange = (field: keyof FilterState, value: any) => {
+    setFilters(prev => ({
+      ...prev,
+      [field]: value
+    }))
+  }
+  
+  // 处理标签选择
+  const handleTagsChange = (selectedTags: string[]) => {
+    console.log("选择的标签改变: ", selectedTags);
+    
+    // 更新过滤器状态
     setFilters(prev => {
-      const newFilters = { ...prev, [field]: value }
-      return newFilters
-    })
+      const updated = {
+        ...prev,
+        tags: selectedTags.join(',')
+      };
+      console.log("更新后的过滤器: ", updated);
+      return updated;
+    });
   }
   
   const handleReset = () => {
@@ -142,20 +143,21 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     // 创建一个新的对象，只保留非空、非"all"的值
     const appliedFilters = Object.entries(filters).reduce((acc, [key, value]) => {
       const fieldKey = key as keyof FilterState;
-      // 保留包含空日期的控制参数，但过滤不在后端允许的过滤参数
+      // 保留包含空日期的控制参数和公开状态参数，但过滤不在后端允许的过滤参数
       if ((fieldKey === 'include_null_purchase_date' || fieldKey === 'include_null_expiry_date') ||
-          (fieldKey !== 'is_public' && 
-           fieldKey !== 'exclude_null_purchase_date' && 
+          (fieldKey === 'is_public' || 
+           (fieldKey !== 'exclude_null_purchase_date' && 
            fieldKey !== 'exclude_null_expiry_date' && 
-           value !== null && value !== '' && value !== 'all')) {
+           value !== null && value !== '' && value !== 'all'))) {
         
         // 特殊处理标签字段，将逗号分隔的字符串转换为数组
         if (fieldKey === 'tags' && typeof value === 'string' && value.trim() !== '') {
           // 分割字符串并转换为数字数组
-          acc[fieldKey] = value.split(',')
+          const tagArray = value.split(',')
             .map(tag => tag.trim())
             .filter(tag => tag !== '')
             .map(Number);
+          acc[fieldKey] = tagArray as any; // 使用类型断言处理复杂类型
         } else {
           acc[fieldKey] = value;
         }
@@ -172,7 +174,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
     onApply(appliedFilters as FilterState);
   }
   
-  // 渲染日期选择器组件
   const renderDateRangePicker = (
     label: string, 
     fromField: 'purchase_date_from' | 'expiry_date_from', 
@@ -181,24 +182,56 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   ) => (
     <div className="space-y-3">
       <Label className="text-base font-medium">{label}</Label>
-      <div className="flex flex-col gap-3 items-center">
-        <div className="space-y-1.5 w-full">
-          <Label className="text-xs text-muted-foreground">从</Label>
-          <DatePicker
-            date={filters[fromField]}
-            setDate={(date) => handleChange(fromField, date)}
-            placeholder="开始日期"
-            className="h-11"
-          />
+      <div className="space-y-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">开始日期</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full h-11 justify-start text-left font-normal",
+                  !filters[fromField] && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {filters[fromField] ? format(new Date(filters[fromField] as Date), 'yyyy-MM-dd') : <span>开始日期</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={filters[fromField] as Date}
+                onSelect={(date) => handleChange(fromField, date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
-        <div className="space-y-1.5 w-full">
-          <Label className="text-xs text-muted-foreground">至</Label>
-          <DatePicker
-            date={filters[toField]}
-            setDate={(date) => handleChange(toField, date)}
-            placeholder="结束日期"
-            className="h-11"
-          />
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">结束日期</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full h-11 justify-start text-left font-normal",
+                  !filters[toField] && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {filters[toField] ? format(new Date(filters[toField] as Date), 'yyyy-MM-dd') : <span>结束日期</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0">
+              <Calendar
+                mode="single"
+                selected={filters[toField] as Date}
+                onSelect={(date) => handleChange(toField, date)}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
         </div>
         <div className="flex items-center space-x-2 w-full mt-1">
           <Switch 
@@ -216,177 +249,196 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   return (
     <div className="space-y-4 px-1">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid grid-cols-2 w-full mb-4">
-          <TabsTrigger value="basic">基础筛选</TabsTrigger>
-          <TabsTrigger value="detailed">详细筛选</TabsTrigger>
-        </TabsList>
+      <div className="pr-10">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-2 w-full mb-4">
+            <TabsTrigger value="basic" className="text-sm">基础</TabsTrigger>
+            <TabsTrigger value="detailed" className="text-sm">详细</TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="basic" className="space-y-6">
-          <div className="space-y-3">
-            <Label className="text-base font-medium">名称</Label>
-            <Input
-              placeholder="输入物品名称关键词"
-              value={filters.name}
-              onChange={(e) => handleChange('name', e.target.value)}
-              className="h-11"
-            />
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <div className="space-y-3">
-            <Label className="text-base font-medium">描述</Label>
-            <Input
-              placeholder="输入物品描述关键词"
-              value={filters.description}
-              onChange={(e) => handleChange('description', e.target.value)}
-              className="h-11"
-            />
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <div className="space-y-3">
-            <Label className="text-base font-medium">状态</Label>
-            <Select 
-              value={filters.status} 
-              onValueChange={(value) => handleChange('status', value)}
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="选择状态" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="active">正常</SelectItem>
-                <SelectItem value="archived">已归档</SelectItem>
-                <SelectItem value="expired">已过期</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <div className="space-y-3">
-            <Label className="text-base font-medium">标签</Label>
-            <Input
-              placeholder="输入标签ID，用逗号分隔(如: 5,4,2)"
-              value={filters.tags}
-              onChange={(e) => handleChange('tags', e.target.value)}
-              className="h-11"
-            />
-          </div>
-        </TabsContent>
-
-        <TabsContent value="detailed" className="space-y-6">
-          {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to', 'include_null_purchase_date')}
-          
-          <Separator className="my-4" />
-          
-          {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to', 'include_null_expiry_date')}
-          
-          <Separator className="my-4" />
-          
-          <div className="space-y-3">
-            <Label className="text-base font-medium">价格范围</Label>
+          <TabsContent value="basic" className="space-y-6">
             <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">最低价</Label>
-                <Input
-                  type="number"
-                  placeholder="最低价"
-                  value={filters.price_from}
-                  onChange={(e) => handleChange('price_from', e.target.value)}
-                  className="h-11"
+              <Label className="text-base font-medium">名称</Label>
+              <Input
+                value={filters.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                className="h-11"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-base font-medium">描述</Label>
+              <Input
+                value={filters.description}
+                onChange={(e) => handleChange('description', e.target.value)}
+                className="h-11"
+              />
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-base font-medium">状态</Label>
+              <Select 
+                value={filters.status} 
+                onValueChange={(value) => handleChange('status', value)}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="选择状态" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="active">正常</SelectItem>
+                  <SelectItem value="archived">已归档</SelectItem>
+                  <SelectItem value="expired">已过期</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-base font-medium">公开状态</Label>
+              <Select 
+                value={filters.is_public === null ? 'null' : filters.is_public === true ? 'true' : 'false'} 
+                onValueChange={(value) => handleChange('is_public', value === 'null' ? null : value === 'true')}
+              >
+                <SelectTrigger className="h-11">
+                  <SelectValue placeholder="所有物品" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="null">所有物品</SelectItem>
+                  <SelectItem value="true">公开</SelectItem>
+                  <SelectItem value="false">私有</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-3">
+              <Label className="text-base font-medium">标签</Label>
+              <div className="bg-background rounded-md relative">
+                <TagSelector
+                  tags={tags || []}
+                  selectedTags={typeof filters.tags === 'string' ? 
+                    filters.tags.split(',').filter(Boolean) : 
+                    Array.isArray(filters.tags) ? 
+                      filters.tags.map(t => t.toString()) : 
+                      []}
+                  onChange={(newTags) => {
+                    console.log("标签选择回调触发，新选中标签:", newTags);
+                    handleTagsChange(newTags);
+                  }}
+                  placeholder="选择标签"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">最高价</Label>
-                <Input
-                  type="number"
-                  placeholder="最高价"
-                  value={filters.price_to}
-                  onChange={(e) => handleChange('price_to', e.target.value)}
-                  className="h-11"
-                />
+                {tags.length > 0 && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    可用标签: {tags.map(tag => tag.name).join(', ')}
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-          
-          <Separator className="my-4" />
-          
-          <div className="space-y-3">
-            <Label className="text-base font-medium">位置</Label>
+          </TabsContent>
+
+          <TabsContent value="detailed" className="space-y-6">
+            {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to', 'include_null_purchase_date')}
+            
+            {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to', 'include_null_expiry_date')}
+            
             <div className="space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">区域</Label>
-                <Select 
-                  value={typeof filters.area_id === 'number' ? filters.area_id.toString() : filters.area_id.toString()} 
-                  onValueChange={(value) => handleChange('area_id', value)}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="选择区域" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部区域</SelectItem>
-                    {areas.map((area: Area) => (
-                      <SelectItem key={area.id} value={area.id.toString()}>
-                        {area.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">房间</Label>
-                <Select 
-                  value={typeof filters.room_id === 'number' ? filters.room_id.toString() : filters.room_id.toString()} 
-                  onValueChange={(value) => handleChange('room_id', value)}
-                  disabled={filters.area_id === 'all'}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="选择房间" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部房间</SelectItem>
-                    {rooms.map((room: Room) => (
-                      <SelectItem key={room.id} value={room.id.toString()}>
-                        {room.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">具体位置</Label>
-                <Select 
-                  value={typeof filters.spot_id === 'number' ? filters.spot_id.toString() : filters.spot_id.toString()} 
-                  onValueChange={(value) => handleChange('spot_id', value)}
-                  disabled={filters.room_id === 'all'}
-                >
-                  <SelectTrigger className="h-11">
-                    <SelectValue placeholder="选择位置" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部位置</SelectItem>
-                    {spots.map((spot: Spot) => (
-                      <SelectItem key={spot.id} value={spot.id.toString()}>
-                        {spot.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <Label className="text-base font-medium">价格范围</Label>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">最低价</Label>
+                  <Input
+                    type="number"
+                    placeholder="最低价"
+                    value={filters.price_from}
+                    onChange={(e) => handleChange('price_from', e.target.value)}
+                    className="h-11"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">最高价</Label>
+                  <Input
+                    type="number"
+                    placeholder="最高价"
+                    value={filters.price_to}
+                    onChange={(e) => handleChange('price_to', e.target.value)}
+                    className="h-11"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+            
+            <div className="space-y-3">
+              <Label className="text-base font-medium">位置</Label>
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">区域</Label>
+                  <Select 
+                    value={typeof filters.area_id === 'number' ? filters.area_id.toString() : filters.area_id.toString()} 
+                    onValueChange={(value) => handleChange('area_id', value)}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="选择区域" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部区域</SelectItem>
+                      {areas.map((area: Area) => (
+                        <SelectItem key={area.id} value={area.id.toString()}>
+                          {area.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">房间</Label>
+                  <Select 
+                    value={typeof filters.room_id === 'number' ? filters.room_id.toString() : filters.room_id.toString()} 
+                    onValueChange={(value) => handleChange('room_id', value)}
+                    disabled={filters.area_id === 'all'}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="选择房间" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部房间</SelectItem>
+                      {rooms.map((room: Room) => (
+                        <SelectItem key={room.id} value={room.id.toString()}>
+                          {room.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">具体位置</Label>
+                  <Select 
+                    value={typeof filters.spot_id === 'number' ? filters.spot_id.toString() : filters.spot_id.toString()} 
+                    onValueChange={(value) => handleChange('spot_id', value)}
+                    disabled={filters.room_id === 'all'}
+                  >
+                    <SelectTrigger className="h-11">
+                      <SelectValue placeholder="选择位置" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部位置</SelectItem>
+                      {spots.map((spot: Spot) => (
+                        <SelectItem key={spot.id} value={spot.id.toString()}>
+                          {spot.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
       
       <div className="flex justify-between pt-4 pb-2 gap-3">
         <Button variant="outline" onClick={handleReset} className="flex-1 h-11">重置</Button>
-        <Button onClick={handleApply} className="flex-1 h-11">应用筛选</Button>
+        <Button onClick={handleApply} className="flex-1 h-11">筛选</Button>
       </div>
     </div>
   )

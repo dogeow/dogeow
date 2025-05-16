@@ -138,17 +138,17 @@ export default function ItemDetail() {
   return (
     <>
       <div className="container mx-auto py-6 px-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
           <div className="flex items-center w-full">
-            <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">
+            <Button variant="ghost" size="icon" onClick={() => router.push('/thing')} className="mr-2 p-1">
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <h1 className="text-2xl md:text-3xl font-bold truncate">{item.name}</h1>
-            <div className="flex justify-end gap-2 ml-auto">
-              <Button variant="outline" onClick={handleEdit} className="flex-1 sm:flex-auto">
+            <div className="flex justify-end gap-1 ml-auto">
+              <Button variant="ghost" onClick={handleEdit} className="flex-1 sm:flex-auto p-1">
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button variant="destructive" onClick={() => setDeleteDialogOpen(true)} className="flex-1 sm:flex-auto">
+              <Button variant="ghost" className="flex-1 sm:flex-auto text-destructive hover:text-destructive hover:bg-destructive/10 p-1" onClick={() => setDeleteDialogOpen(true)}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             </div>
