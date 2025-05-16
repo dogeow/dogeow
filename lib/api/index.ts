@@ -373,8 +373,8 @@ export const useCategory = (id: number) => {
 };
 
 // 区域相关
-export const useAreas = () => {
-  return useSWR('/areas', fetcher);
+export const useAreas = <T = any>() => {
+  return useSWR<T>('/areas', fetcher);
 };
 
 export const useArea = (id: number) => {
@@ -382,8 +382,8 @@ export const useArea = (id: number) => {
 };
 
 // 房间相关
-export const useRooms = (areaId?: number) => {
-  return useSWR(areaId ? `/areas/${areaId}/rooms` : '/rooms', fetcher);
+export const useRooms = <T = any>(areaId?: number) => {
+  return useSWR<T>(areaId ? `/areas/${areaId}/rooms` : '/rooms', fetcher);
 };
 
 export const useRoom = (id: number) => {
@@ -391,8 +391,8 @@ export const useRoom = (id: number) => {
 };
 
 // 位置相关
-export const useSpots = (roomId?: number) => {
-  return useSWR(roomId ? `/rooms/${roomId}/spots` : '/spots', fetcher);
+export const useSpots = <T = any>(roomId?: number) => {
+  return useSWR<T>(roomId ? `/rooms/${roomId}/spots` : '/spots', fetcher);
 };
 
 export const useSpot = (id: number) => {

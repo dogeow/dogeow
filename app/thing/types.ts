@@ -1,9 +1,4 @@
-// 用户类型
-export interface User {
-  id: number;
-  name: string;
-  email: string;
-}
+import { User } from '@/app';
 
 // 物品表单数据类型
 export interface ItemFormData {
@@ -37,6 +32,7 @@ export type UploadedImage = {
   url: string;
   thumbnail_url: string;
   id?: number;
+  is_primary?: boolean;
 }
 
 // 图片预览类型
@@ -55,6 +51,8 @@ export type LocationSelection = {
 export interface Category {
   id: number;
   name: string;
+  user_id?: number;
+  items_count?: number;
 }
 
 // 标签类型

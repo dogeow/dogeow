@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { MapPin } from "lucide-react"
 import { useAreas, useRooms, useSpots } from '@/lib/api'
 import { cn } from '@/lib/helpers'
-import { LocationSelection } from '../types'
+import { LocationSelection, Area, Room, Spot } from '../types'
 import FolderIcon from './FolderIcon'
 
 interface LocationTreeSelectProps {
@@ -30,9 +30,14 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
   const prevSelectionRef = useRef<{type?: string, id?: number}>({});
   
   // 使用 SWR hooks 获取数据
-  const { data: areas = [] } = useAreas()
-  const { data: rooms = [] } = useRooms()
-  const { data: spots = [] } = useSpots()
+  const { data: areasData = [] } = useAreas()
+  const { data: roomsData = [] } = useRooms()
+  const { data: spotsData = [] } = useSpots()
+  
+  // 添加类型断言
+  const areas = areasData as Area[];
+  const rooms = roomsData as Room[];
+  const spots = spotsData as Spot[];
   
   // 处理初始展开状态
   useEffect(() => {

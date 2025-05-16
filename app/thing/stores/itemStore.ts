@@ -1,98 +1,7 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
 import { apiRequest } from '@/lib/api';
-
-interface Item {
-  id: number;
-  name: string;
-  description: string | null;
-  quantity: number;
-  status: string;
-  purchase_date: string | null;
-  expiry_date: string | null;
-  purchase_price: number | null;
-  category_id: number | null;
-  area_id: number | null;
-  room_id: number | null;
-  spot_id: number | null;
-  is_public: boolean;
-  created_at: string;
-  updated_at: string;
-  user?: {
-    id: number;
-    name: string;
-  };
-  category?: {
-    id: number;
-    name: string;
-  };
-  spot?: {
-    id: number;
-    name: string;
-    room?: {
-      id: number;
-      name: string;
-      area?: {
-        id: number;
-        name: string;
-      };
-    };
-  };
-  images?: Array<{
-    id: number;
-    path: string;
-    thumbnail_path: string;
-    is_primary: boolean;
-  }>;
-  primary_image?: {
-    id: number;
-    path: string;
-    thumbnail_path: string;
-  };
-  tags?: Tag[];
-}
-
-interface Category {
-  id: number;
-  name: string;
-  user_id: number;
-  items_count?: number;
-}
-
-interface Tag {
-  id: number;
-  name: string;
-  color: string;
-  user_id: number;
-}
-
-interface ItemState {
-  items: Item[];
-  categories: Category[];
-  tags: Tag[];
-  loading: boolean;
-  error: string | null;
-  meta: any | null;
-  filters: Record<string, any>;
-  
-  fetchItems: (params?: Record<string, any>, itemsOnly?: boolean) => Promise<any>;
-  fetchCategories: () => Promise<Category[] | undefined>;
-  fetchTags: () => Promise<Tag[] | undefined>;
-  getItem: (id: number) => Promise<Item | null>;
-  createItem: (data: Omit<Partial<Item>, 'images'> & { 
-    images?: File[],
-    image_paths?: string[],
-    tags?: number[]
-  }) => Promise<Item>;
-  updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { 
-    images?: File[], 
-    image_ids?: number[],
-    image_paths?: string[],
-    tags?: number[]
-  }) => Promise<Item>;
-  deleteItem: (id: number) => Promise<void>;
-  saveFilters: (filters: Record<string, any>) => void;
-}
+import { Item, Category, Tag } from '@/app/thing/types';
 
 // 前端专用过滤器，不发送到后端
 const FRONTEND_ONLY_FILTERS = [
@@ -154,6 +63,34 @@ const prepareFormData = (data: Record<string, any>) => {
   
   return formData;
 };
+
+interface ItemState {
+  items: Item[];
+  categories: Category[];
+  tags: Tag[];
+  loading: boolean;
+  error: string | null;
+  meta: any | null;
+  filters: Record<string, any>;
+  
+  fetchItems: (params?: Record<string, any>, itemsOnly?: boolean) => Promise<any>;
+  fetchCategories: () => Promise<Category[] | undefined>;
+  fetchTags: () => Promise<Tag[] | undefined>;
+  getItem: (id: number) => Promise<Item | null>;
+  createItem: (data: Omit<Partial<Item>, 'images'> & { 
+    images?: File[],
+    image_paths?: string[],
+    tags?: number[]
+  }) => Promise<Item>;
+  updateItem: (id: number, data: Omit<Partial<Item>, 'images'> & { 
+    images?: File[], 
+    image_ids?: number[],
+    image_paths?: string[],
+    tags?: number[]
+  }) => Promise<Item>;
+  deleteItem: (id: number) => Promise<void>;
+  saveFilters: (filters: Record<string, any>) => void;
+}
 
 export const useItemStore = create<ItemState>((set, get) => ({
   items: [],

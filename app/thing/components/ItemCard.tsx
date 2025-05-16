@@ -21,13 +21,9 @@ import { useItemStore } from '@/app/thing/stores/itemStore'
 import { API_URL } from '@/lib/api'
 import { del } from '@/lib/api'
 import { isLightColor } from '@/lib/helpers'
+import { Item, Tag } from '@/app/thing/types'
 
-interface Tag {
-  id: number
-  name: string
-  color: string
-}
-
+// 本地图片数据类型（用于组件内部状态）
 interface ImageData {
   id?: number
   path?: string
@@ -35,50 +31,6 @@ interface ImageData {
   thumbnail_path?: string
   thumbnail_url?: string
   is_primary?: boolean
-}
-
-interface Location {
-  area?: {
-    id?: number
-    name?: string
-  }
-  room?: {
-    id?: number
-    name?: string
-    area?: {
-      id?: number
-      name?: string
-    }
-  }
-  spot?: {
-    id?: number
-    name?: string
-    room?: {
-      id?: number
-      name?: string
-      area?: {
-        id?: number
-        name?: string
-      }
-    }
-  }
-  area_id?: number
-  room_id?: number
-}
-
-interface Item extends Location {
-  id: number
-  name: string
-  description?: string
-  status: string
-  is_public: boolean
-  category?: {
-    id: number
-    name: string
-  }
-  tags?: Tag[]
-  images?: ImageData[]
-  primary_image?: ImageData
 }
 
 interface ItemCardProps {
@@ -209,51 +161,6 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
       );
     }
     
-    // 直接检查area_id和room_id (即使spot为null)
-    if (item.area_id || item.room_id) {
-      // 位置显示组件数组
-      const locationComponents = [];
-      
-      // 添加区域组件
-      if (item.area?.name) {
-        locationComponents.push(
-          <span key="area" className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
-            {item.area.name}
-          </span>
-        );
-      } else if (item.area_id) {
-        locationComponents.push(
-          <span key="area-id" className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
-            区域 {item.area_id}
-          </span>
-        );
-      }
-      
-      // 添加房间组件
-      if (item.room?.name) {
-        locationComponents.push(
-          <span key="room" className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-green-50">
-            {item.room.name}
-          </span>
-        );
-      } else if (item.room_id && !item.room?.name) {
-        locationComponents.push(
-          <span key="room-id" className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-green-50">
-            房间 {item.room_id}
-          </span>
-        );
-      }
-      
-      if (locationComponents.length > 0) {
-        return (
-          <div className="flex gap-1 items-center">
-            {locationComponents}
-          </div>
-        );
-      }
-    }
-    
-    // 如果没有任何位置信息
     return null;
   }
   

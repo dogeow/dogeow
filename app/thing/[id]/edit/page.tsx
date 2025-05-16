@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
 import { useAreas, useRooms, useSpots } from '@/lib/api'
 import { apiRequest } from '@/lib/api'
-import { ItemFormData, UploadedImage } from '@/app/thing/types'
+import { ItemFormData, UploadedImage, Room, Spot } from '@/app/thing/types'
 import BasicInfoForm from '@/app/thing/components/BasicInfoForm'
 import TagsSection from '@/app/thing/components/TagsSection'
 import ImageSection from '@/app/thing/components/ImageSection'
@@ -30,8 +30,8 @@ export default function EditItem() {
   
   // 使用 SWR hooks 获取数据
   const { data: areas = [], mutate: refreshAreas } = useAreas();
-  const { data: rooms = [], mutate: refreshRooms } = useRooms();
-  const { data: spots = [], mutate: refreshSpots } = useSpots();
+  const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>();
+  const { data: spots = [], mutate: refreshSpots } = useSpots<Spot[]>();
   
   // 表单数据
   const [formData, setFormData] = useState<ItemFormData>({
