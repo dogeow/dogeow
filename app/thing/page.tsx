@@ -31,6 +31,7 @@ interface FilterParams {
   include_null_expiry_date?: boolean;
   purchase_date_from?: Date | null;
   expiry_date_from?: Date | null;
+  isFilterToggle?: boolean;
   [key: string]: any;
 }
 
@@ -80,7 +81,7 @@ export default function Thing() {
   const totalPages = meta?.last_page || 1
 
   // 获取基础筛选参数
-  const getBaseFilterParams = useCallback(() => ({
+  const getBaseFilterParams = useCallback((): Partial<FilterParams> => ({
     search: searchTerm || undefined,
     category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined,
     tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined
@@ -174,8 +175,19 @@ export default function Thing() {
   }, [initialLoaded, savedFilters, fetchItems])
 
   // 加载数据函数
-  const loadItems = useCallback((params = {}) => {
-    if (isSearching) return Promise.resolve();
+  const loadItems = useCallback((params: Partial<FilterParams> = {}) => {
+    if (isSearching) {
+      console.log('已有搜索正在进行，跳过重复请求');
+      return Promise.resolve();
+    }
+    
+    console.log('loadItems 被调用，参数:', params, '当前侧边栏状态:', filtersOpen);
+    
+    // 如果是侧边栏状态变化引起的，且没有传入特定参数，则不重新加载
+    if (params.isFilterToggle && Object.keys(params).length === 1) {
+      console.log('侧边栏状态变化，跳过数据加载');
+      return Promise.resolve();
+    }
     
     setIsSearching(true);
     
@@ -184,19 +196,27 @@ export default function Thing() {
       ...params
     };
     
-    const filtersToSave = { ...allParams };
-    if ('page' in filtersToSave) {
-      delete filtersToSave.page;
+    // 移除非API参数
+    if ('isFilterToggle' in allParams) {
+      delete allParams.isFilterToggle;
     }
-    saveFilters(filtersToSave);
     
     const itemsOnly = params.hasOwnProperty('search') || params.hasOwnProperty('itemsOnly');
     
     return fetchItems(allParams, itemsOnly)
+      .then(result => {
+        // 请求成功后再保存筛选条件
+        const filtersToSave = { ...allParams };
+        if ('page' in filtersToSave) {
+          delete filtersToSave.page;
+        }
+        saveFilters(filtersToSave);
+        return result;
+      })
       .finally(() => {
         setIsSearching(false);
       });
-  }, [fetchItems, getBaseFilterParams, isSearching, saveFilters]);
+  }, [fetchItems, getBaseFilterParams, isSearching, filtersOpen, saveFilters]);
 
   // 处理页面变化
   const handlePageChange = useCallback((page: number) => {
@@ -213,6 +233,33 @@ export default function Thing() {
       page: 1
     });
   }, [loadItems]);
+
+  // 处理侧边栏状态变化
+  const handleFiltersOpenChange = useCallback((open: boolean) => {
+    console.log('筛选侧边栏状态变化:', open, '当前物品数量:', items.length);
+    setFiltersOpen(open);
+    // 添加标记告知 loadItems 这是由侧边栏状态变化引起的
+    // loadItems({ isFilterToggle: true });
+  }, [items.length]);
+
+  // 筛选条件应用
+  const handleApplyFilters = useCallback((filters: FilterParams) => {
+    console.log('应用筛选条件:', filters);
+    
+    // 避免重复调用
+    if (isSearching) {
+      console.log('已有搜索正在进行，跳过');
+      return;
+    }
+    
+    setCurrentPage(1);
+    
+    // 保存当前的筛选条件
+    saveFilters(filters);
+    
+    // 使用指定的页码和筛选条件加载数据
+    loadItems({ ...filters, page: 1 });
+  }, [loadItems, saveFilters, isSearching]);
 
   // 重置筛选条件
   const handleReset = useCallback(() => {
@@ -258,59 +305,6 @@ export default function Thing() {
   const handleAddItem = useCallback(() => {
     router.push('/thing/add')
   }, [router]);
-
-  // 应用筛选条件
-  const handleApplyFilters = useCallback((filters: FilterParams) => {
-    const includeNullPurchaseDate = filters.include_null_purchase_date;
-    const includeNullExpiryDate = filters.include_null_expiry_date;
-    
-    const cleanFilters = Object.fromEntries(
-      Object.entries(filters).filter(([key, value]) => 
-        value !== undefined && value !== null && value !== '' && 
-        key !== 'include_null_purchase_date' && key !== 'include_null_expiry_date' &&
-        key !== 'exclude_null_purchase_date' && key !== 'exclude_null_expiry_date'
-      )
-    )
-    
-    setCurrentPage(1);
-    
-    fetchItems({
-      ...cleanFilters,
-      page: 1
-    }).then((result) => {
-      if (result?.data && (
-          (filters.purchase_date_from && !includeNullPurchaseDate) || 
-          (filters.expiry_date_from && !includeNullExpiryDate))
-      ) {
-        const filteredItems = result.data.filter((item: Item) => {
-          if (filters.purchase_date_from && !includeNullPurchaseDate && item.purchase_date === null) {
-            return false;
-          }
-          
-          if (filters.expiry_date_from && !includeNullExpiryDate && item.expiry_date === null) {
-            return false;
-          }
-          
-          return true;
-        });
-        
-        useItemStore.setState({ 
-          items: filteredItems,
-          meta: {
-            ...result.meta,
-            total: filteredItems.length
-          }
-        });
-      }
-      
-      const filtersToSave = {
-        ...cleanFilters,
-        include_null_purchase_date: includeNullPurchaseDate,
-        include_null_expiry_date: includeNullExpiryDate
-      };
-      saveFilters(filtersToSave);
-    });
-  }, [fetchItems, saveFilters]);
 
   // 处理标签点击
   const handleTagClick = useCallback((tagId: string) => {
@@ -420,27 +414,53 @@ export default function Thing() {
 
   // 渲染筛选侧边栏
   const renderFilterSidebar = () => (
-    <SheetContent className="overflow-y-auto pb-10 max-w-[150px] sm:max-w-[150px]">
-      <div className="flex items-center px-4 pt-5 pb-2 mr-8">
-        <SheetTitle className="text-base font-medium">筛选</SheetTitle>
-        {hasActiveFilters() && (
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={handleReset}
-            className="h-7 ml-2 px-2 flex items-center gap-1 text-xs"
-          >
-            <FilterX className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </div>
-      <div className="py-1">
+    <Sheet 
+      open={filtersOpen} 
+      onOpenChange={(open) => {
+        console.log('筛选侧边栏开关状态变更:', open);
+        // 只有状态确实发生变化时才触发handleFiltersOpenChange
+        if (open !== filtersOpen) {
+          handleFiltersOpenChange(open);
+        }
+      }}
+    >
+      <SheetTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="mr-1"
+          data-state={filtersOpen ? "open" : "closed"}
+          onClick={(e) => {
+            e.preventDefault(); // 防止按钮点击事件冒泡
+            console.log('筛选按钮点击, 当前状态:', filtersOpen);
+            // 切换侧边栏状态，但不触发数据加载
+            handleFiltersOpenChange(!filtersOpen);
+          }}
+        >
+          <SlidersHorizontal className="h-4 w-4 mr-2" />
+          筛选
+          {hasActiveFilters() && <Badge variant="secondary" className="ml-1 h-4 px-1">●</Badge>}
+        </Button>
+      </SheetTrigger>
+      <SheetContent 
+        className="sm:max-w-md p-4" 
+        side="right" 
+        onEscapeKeyDown={() => handleFiltersOpenChange(false)}
+        onPointerDownOutside={() => handleFiltersOpenChange(false)}
+      >
+        <SheetTitle className="flex justify-between mb-3">
+          筛选
+          <X 
+            className="h-5 w-5 cursor-pointer hover:opacity-70" 
+            onClick={() => handleFiltersOpenChange(false)} 
+          />
+        </SheetTitle>
         <ItemFilters 
           onApply={handleApplyFilters} 
-          key={JSON.stringify(savedFilters)}
+          key={`filters-${filtersOpen ? 'open' : 'closed'}`} // 每次打开侧边栏都重新渲染组件
         />
-      </div>
-    </SheetContent>
+      </SheetContent>
+    </Sheet>
   )
 
   // 条件渲染内容
@@ -596,12 +616,23 @@ export default function Thing() {
 
   // 返回组件
   return (
-    <div className="flex flex-col gap-2 pb-20">
-      <div className="flex justify-between items-center">
-        {renderFilters()}
+    <div className="container mx-auto px-4 py-6">
+      <div className="flex flex-col space-y-4">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <div className="flex flex-wrap gap-2 mb-2 w-full">
+            {renderFilters()}
+            
+            {/* 其他控件 */}
+            {/* ... 这里是其他代码 ... */}
+          </div>
+          
+          {/* 高级筛选区域，如果有显示在这里 */}
+          {/* ... 这里是其他代码 ... */}
+        </div>
+        
+        {/* 内容区域 */}
+        {renderContent()}
       </div>
-      
-      {renderContent()}
       
       <ThingSpeedDial />
     </div>

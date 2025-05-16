@@ -102,6 +102,12 @@ export const useItemStore = create<ItemState>((set, get) => ({
   filters: {},
   
   fetchItems: async (params = {}, itemsOnly = false) => {
+    // 如果已经在加载中，则不重复请求
+    if (get().loading) {
+      console.log('ItemStore: 已有请求正在进行，跳过重复请求');
+      return Promise.resolve(get().items);
+    }
+    
     set({ loading: true, error: null });
     
     try {
@@ -124,6 +130,11 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       // 构建查询字符串
       const queryParams = new URLSearchParams();
+      
+      // 添加请求去重标记
+      const requestId = Date.now().toString();
+      console.log('ItemStore: 请求ID:', requestId);
+      
       Object.entries(backendParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           if (value instanceof Date) {

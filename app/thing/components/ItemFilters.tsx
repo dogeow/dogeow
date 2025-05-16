@@ -83,13 +83,27 @@ const initialFilters: FilterState = {
   include_null_expiry_date: true,
 }
 
+// 在组件外部添加调试函数
+function debugFilterState(label: string, filters: FilterState) {
+  console.log(`[调试] ${label}:`, {
+    hasActiveFilters: Object.keys(filters).some(key => 
+      filters[key as keyof FilterState] !== initialFilters[key as keyof FilterState]),
+    fieldsWithValues: Object.keys(filters).filter(key => 
+      filters[key as keyof FilterState] !== initialFilters[key as keyof FilterState]),
+    filters
+  });
+}
+
 export default function ItemFilters({ onApply }: ItemFiltersProps) {
+  console.log('[ItemFilters] 组件被渲染');
+  
   const { filters: savedFilters } = useItemStore();
   const { data: categories = [] } = useSWR<any[]>('/categories', get);
   const { data: areas = [] } = useSWR<Area[]>('/areas', get);
   const { data: rooms = [] } = useSWR<Room[]>('/rooms', get);
   const { data: spots = [] } = useSWR<Spot[]>('/spots', get);
   const [activeTab, setActiveTab] = useState("basic");
+  const [preventAutoApply, setPreventAutoApply] = useState(true); // 添加状态防止自动应用
   
   // 获取标签数据
   const { data: tags = [] } = useSWR<Tag[]>('/thing-tags', (url: string) => {
@@ -106,6 +120,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   // 从保存的筛选条件初始化
   const getInitialState = useCallback(() => {
+    console.log('[ItemFilters] 获取初始状态, 保存的筛选条件:', savedFilters);
+    
     if (Object.keys(savedFilters).length === 0) {
       return initialFilters;
     }
@@ -130,6 +146,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       }
     });
     
+    debugFilterState('合并后的初始筛选条件', mergedFilters);
     return mergedFilters;
   }, [savedFilters]);
   
@@ -175,12 +192,28 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   useEffect(() => {
     // 跳过初始渲染
     if (isInitialRender) {
+      console.log('跳过初始渲染, 防止筛选侧边栏打开时自动触发筛选');
       setIsInitialRender(false);
       return;
     }
     
-    applyFilters(debouncedFilters);
-  }, [debouncedFilters, isInitialRender, applyFilters]);
+    console.log('筛选条件变化(防抖后):', debouncedFilters, '是否阻止自动应用:', preventAutoApply);
+    // 只有当不阻止自动应用时，才自动应用筛选条件
+    if (!preventAutoApply) {
+      applyFilters(debouncedFilters);
+    }
+  }, [debouncedFilters, isInitialRender, applyFilters, preventAutoApply]);
+  
+  // 显式应用筛选的按钮处理函数
+  const handleApplyButtonClick = useCallback(() => {
+    console.log('显式应用筛选按钮点击，应用筛选条件:', filters);
+    
+    // 应用筛选条件，但保持阻止自动应用状态
+    applyFilters(filters);
+    
+    // 保持阻止自动应用，避免后续状态变化导致重复请求
+    // setPreventAutoApply(false); - 注释掉这行，保持阻止自动应用
+  }, [filters, applyFilters]);
   
   // 处理字段变更的函数 - 不再直接应用，而是通过防抖机制应用
   const handleChange = useCallback((field: keyof FilterState, value: any) => {
@@ -207,9 +240,12 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   const handleReset = useCallback(() => {
     setFilters(initialFilters);
+    console.log('重置筛选条件');
     
-    // 重置后自动应用
+    // 重置后显式应用筛选条件
     applyFilters(initialFilters);
+    // 重置后再次阻止自动应用，直到用户下次点击应用按钮
+    setPreventAutoApply(true);
   }, [applyFilters]);
   
   // 检查是否有激活的筛选条件
@@ -317,6 +353,11 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       </div>
     </div>
   ), [filters, handleChange]);
+  
+  // 在组件每次渲染时执行，仅用于调试
+  useEffect(() => {
+    debugFilterState('当前筛选条件', filters);
+  }, [filters]);
   
   return (
     <div className="space-y-4 px-1">
@@ -497,6 +538,15 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
             </div>
           </TabsContent>
         </Tabs>
+      </div>
+      
+      <div className="flex justify-between mt-6">
+        <Button variant="outline" onClick={handleReset}>
+          重置
+        </Button>
+        <Button onClick={handleApplyButtonClick}>
+          应用筛选
+        </Button>
       </div>
     </div>
   )
