@@ -348,7 +348,7 @@ export default function Thing() {
 
   // 渲染筛选侧边栏
   const renderFilterSidebar = () => (
-    <SheetContent className="overflow-y-auto pb-10 max-w-[50%] sm:max-w-[300px]">
+    <SheetContent className="overflow-y-auto pb-10 max-w-[150px] sm:max-w-[150px]">
       <div className="flex items-center px-4 pt-5 pb-2 mr-8">
         <SheetTitle className="text-base font-medium">筛选</SheetTitle>
         {hasActiveFilters() && (
@@ -359,7 +359,6 @@ export default function Thing() {
             className="h-7 ml-2 px-2 flex items-center gap-1 text-xs"
           >
             <FilterX className="h-3.5 w-3.5" />
-            <span>清除</span>
           </Button>
         )}
       </div>
