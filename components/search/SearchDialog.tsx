@@ -63,31 +63,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
     { id: "nav", name: "导航", path: "/nav" },
   ]
 
-  // 模拟搜索结果
-  const mockResults: SearchResult[] = [
-    {
-      id: 1,
-      title: "示例物品",
-      content: "这是一个示例物品的描述内容",
-      url: "/thing/1",
-      category: "thing"
-    },
-    {
-      id: 2,
-      title: "实验室项目",
-      content: "这是一个实验室项目的描述内容",
-      url: "/lab/project1",
-      category: "lab"
-    },
-    {
-      id: 3,
-      title: "笔记示例",
-      content: "这是一个笔记的内容示例",
-      url: "/note/1",
-      category: "note"
-    }
-  ]
-
   // 执行搜索
   const performSearch = async () => {
     if (!searchTerm.trim()) {
