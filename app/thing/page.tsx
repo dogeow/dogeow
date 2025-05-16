@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon, FilterX } from "lucide-react"
+import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon, FilterX, Search } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
 import { get } from "@/utils/api"
 import { isLightColor } from '@/lib/utils'
+import SearchInput from './components/SearchInput'
 
 // 定义视图模式类型
 type ViewMode = 'list' | 'gallery';
@@ -388,8 +389,22 @@ export default function Thing() {
     </SheetContent>
   )
 
+  // 处理搜索提交
+  const handleSearch = (value: string) => {
+    setCurrentPage(1)
+    loadItems({ search: value, page: 1 })
+  }
+
   const renderFilters = () => (
     <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2 flex-1 max-w-md">
+        <SearchInput 
+          value={searchTerm}
+          onChange={setSearchTerm}
+          onSearch={handleSearch}
+        />
+      </div>
+
       <div className="flex items-center gap-2">
         <Select value={selectedCategory} onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
