@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, X, ArrowRight, Loader2 } from "lucide-react"
-import { get } from "@/utils/api"
+import { get } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 
 // 定义分类类型

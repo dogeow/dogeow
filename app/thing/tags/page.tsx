@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import useSWR, { mutate } from "swr"
-import { get, del } from "@/utils/api"
+import { get, del } from "@/lib/api"
 import { toast } from "sonner"
 import { isLightColor } from '@/lib/helpers'
 import TagSpeedDial from './components/TagSpeedDial'

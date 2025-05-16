@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import useSWR, { mutate } from "swr"
-import { get, post, put, del } from "@/utils/api"
+import { get, post, put, del } from "@/lib/api"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 

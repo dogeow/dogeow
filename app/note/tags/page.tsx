@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Plus, X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import useSWR, { mutate } from "swr"
-import { get, post, del, ApiRequestError } from "@/utils/api"
+import { get, post, del, ApiRequestError } from "@/lib/api"
 import { toast } from "sonner"
 import { isLightColor } from '@/lib/helpers'
 

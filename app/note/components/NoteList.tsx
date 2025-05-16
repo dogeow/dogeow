@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import useSWR, { mutate } from "swr"
-import { get, del } from "@/utils/api"
+import { get, del } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { 
   Card, 

@@ -15,7 +15,7 @@ import { Item } from '@/app/thing/types'
 import ThingSpeedDial from './components/SpeedDial'
 import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
-import { get } from "@/utils/api"
+import { get } from "@/lib/api"
 import { isLightColor } from '@/lib/helpers'
 
 // 定义视图模式类型
