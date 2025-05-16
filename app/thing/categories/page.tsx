@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Pencil, Trash2, Check, X } from "lucide-react"
@@ -22,7 +22,7 @@ import { put, del, get } from '@/utils/api'
 import CategorySpeedDial from './components/CategorySpeedDial'
 
 export default function Categories() {
-  const { categories, fetchCategories, items } = useItemStore()
+  const { categories, fetchCategories } = useItemStore()
   const [loading, setLoading] = useState(false)
   const [inlineEditingId, setInlineEditingId] = useState<number | null>(null)
   const [inlineEditingName, setInlineEditingName] = useState('')
@@ -30,6 +30,16 @@ export default function Categories() {
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
   const [uncategorizedCount, setUncategorizedCount] = useState(0)
   const inlineInputRef = useRef<HTMLInputElement>(null)
+
+  // 获取未分类物品数量
+  const fetchUncategorizedCount = async () => {
+    try {
+      const response: { data: any[], meta?: { total: number } } = await get('/items?uncategorized=true&own=true')
+      setUncategorizedCount(response.meta?.total || 0)
+    } catch (error) {
+      console.error('获取未分类物品数量失败:', error)
+    }
+  }
 
   useEffect(() => {
     fetchCategories()
@@ -41,16 +51,6 @@ export default function Categories() {
       inlineInputRef.current.focus()
     }
   }, [inlineEditingId])
-
-  // 获取未分类物品数量
-  const fetchUncategorizedCount = async () => {
-    try {
-      const response: { data: any[], meta?: { total: number } } = await get('/items?uncategorized=true&own=true')
-      setUncategorizedCount(response.meta?.total || 0)
-    } catch (error) {
-      console.error('获取未分类物品数量失败:', error)
-    }
-  }
 
   const handleInlineEdit = (category: {id: number, name: string}) => {
     setInlineEditingId(category.id)
@@ -66,7 +66,6 @@ export default function Categories() {
     setLoading(true)
     try {
       await put(`/categories/${inlineEditingId}`, { name: inlineEditingName })
-      
       toast.success("分类更新成功")
       fetchCategories()
     } catch (error) {
@@ -89,7 +88,6 @@ export default function Categories() {
     setLoading(true)
     try {
       await del(`/categories/${categoryToDelete}`)
-      
       toast.success("分类删除成功")
       fetchCategories()
     } catch (error) {
@@ -106,13 +104,8 @@ export default function Categories() {
     setDeleteDialogOpen(true)
   }
 
-  const handleCategoryAdded = () => {
-    fetchCategories()
-  }
-
   return (
     <div className="container mx-auto py-4 pb-24">
-      {/* 分类列表卡片 */}
       <Card>
         <CardContent>
           {categories.length === 0 ? (
@@ -162,6 +155,7 @@ export default function Categories() {
                             variant="ghost" 
                             size="icon"
                             onClick={saveInlineEdit}
+                            disabled={loading}
                           >
                             <Check className="h-4 w-4 text-green-500" />
                           </Button>
@@ -169,6 +163,7 @@ export default function Categories() {
                             variant="ghost" 
                             size="icon"
                             onClick={cancelInlineEdit}
+                            disabled={loading}
                           >
                             <X className="h-4 w-4 text-red-500" />
                           </Button>
@@ -191,6 +186,7 @@ export default function Categories() {
                           variant="ghost" 
                           size="icon"
                           onClick={() => confirmDelete(category.id)}
+                          disabled={loading}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -204,7 +200,6 @@ export default function Categories() {
         </CardContent>
       </Card>
 
-      {/* 删除确认对话框 */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -214,16 +209,19 @@ export default function Categories() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground">
+            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteCategory} 
+              className="bg-destructive text-destructive-foreground"
+              disabled={loading}
+            >
               删除
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 添加分类Speed Dial */}
-      <CategorySpeedDial onCategoryAdded={handleCategoryAdded} />
+      <CategorySpeedDial onCategoryAdded={fetchCategories} />
     </div>
   )
-} 
+}

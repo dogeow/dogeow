@@ -594,11 +594,17 @@ export default function Thing() {
 
       <div className="ml-auto flex items-center gap-2">
         <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
-          <TabsList className="grid grid-cols-2 bg-primary/10">
-            <TabsTrigger value="list" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+          <TabsList className="grid grid-cols-2 bg-primary/10 dark:bg-primary/20">
+            <TabsTrigger 
+              value="list" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+            >
               <LayoutList className="h-4 w-4" />
             </TabsTrigger>
-            <TabsTrigger value="gallery" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <TabsTrigger 
+              value="gallery" 
+              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+            >
               <Grid className="h-4 w-4" />
             </TabsTrigger>
           </TabsList>
@@ -614,7 +620,7 @@ export default function Thing() {
             <Button 
               variant="outline" 
               size="icon" 
-              className={`bg-primary/10 border-primary/20 hover:bg-primary/20`}
+              className={`bg-primary/10 border-primary/20 hover:bg-primary/20 dark:bg-primary/20 dark:border-primary/30 dark:hover:bg-primary/30`}
             >
               <SlidersHorizontal className="h-4 w-4" />
             </Button>
