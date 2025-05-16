@@ -4,15 +4,14 @@ import {
   useAreas, 
   useRooms, 
   useSpots, 
-  createArea, 
   updateArea, 
   deleteArea,
-  createRoom,
   updateRoom,
   deleteRoom,
-  createSpot,
   updateSpot,
-  deleteSpot
+  deleteSpot,
+  createMutation,
+  post
 } from '@/lib/api'
 
 // 定义类型
@@ -81,7 +80,7 @@ export const useLocationManagement = () => {
   const handleAddArea = async (name: string) => {
     if (!validateName(name, "区域")) return false;
     return handleOperation(
-      () => createArea({ name }),
+      () => post<Area>('/areas', { name }),
       "区域创建成功",
       "创建区域失败",
       refreshAreas
@@ -107,7 +106,7 @@ export const useLocationManagement = () => {
       return false;
     }
     return handleOperation(
-      () => createRoom({ name, area_id }),
+      () => post<Room>('/rooms', { name, area_id }),
       "房间创建成功",
       "创建房间失败",
       refreshRooms
@@ -133,7 +132,7 @@ export const useLocationManagement = () => {
       return false;
     }
     return handleOperation(
-      () => createSpot({ name, room_id }),
+      () => post<Spot>('/spots', { name, room_id }),
       "位置创建成功",
       "创建位置失败",
       refreshSpots

@@ -6,7 +6,7 @@ import { Plus, Tag, Check, ChevronsUpDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tag as TagType } from "../types"
 import CreateTagDialog from './CreateTagDialog'
-import { cn, isLightColor } from "@/lib/utils"
+import { cn, isLightColor } from "@/lib/helpers"
 import { Input } from "@/components/ui/input"
 
 interface TagsSectionProps {
