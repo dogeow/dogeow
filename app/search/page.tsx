@@ -108,7 +108,7 @@ function SearchContent() {
               className="pl-10"
             />
           </div>
-          <Button type="submit">搜索</Button>
+          <Button type="submit" disabled={!searchTerm.trim()}>搜索</Button>
         </form>
       </div>
 

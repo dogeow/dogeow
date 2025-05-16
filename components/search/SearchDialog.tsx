@@ -311,20 +311,8 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
               if (currentApp && categories.some(c => c.id === currentApp)) {
                 const categoryName = categories.find(c => c.id === currentApp)?.name
                 
-                // 如果当前在物品页面，显示更简洁的标题
-                if (currentApp === 'thing') {
-                  return `搜索${categoryName}`
-                }
-                
-                // 其他应用页面
-                if (activeCategory === "all") {
-                  return `搜索所有内容 (当前位置: ${categoryName})`
-                } else if (activeCategory === currentApp) {
-                  return `搜索${categoryName}内容`
-                } else {
-                  const activeCategoryName = categories.find(c => c.id === activeCategory)?.name
-                  return `搜索${activeCategoryName}内容 (跳转)`
-                }
+                // 更加简洁的标题
+                return `搜索${activeCategory === "all" ? "所有内容" : categories.find(c => c.id === activeCategory)?.name || ""}`
               }
               
               // 默认标题
@@ -368,170 +356,140 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
             </Button>
           </form>
         </div>
-
-        <Tabs defaultValue="all" value={activeCategory} onValueChange={setActiveCategory} className="mt-4">
-          {/* 只在非应用页面显示标签列表，或者当前不在当前类别的应用页面 */}
-          {(() => {
-            // 获取当前路径
-            const currentPath = pathname
-            const currentApp = currentPath.split('/')[1]
-            
-            // 如果不在应用页面或者当前类别不是当前应用，则显示标签列表
-            const showTabs = !currentApp || 
-              !categories.some(c => c.id === currentApp) || 
-              (currentApp && activeCategory !== currentApp && activeCategory !== 'all');
-            
-            if (showTabs) {
-              return (
-                <TabsList className="w-full">
-                  {categories.map((category) => {
-                    // 在应用页面只显示全部和当前应用分类
-                    if (currentApp && categories.some(c => c.id === currentApp)) {
-                      if (category.id !== 'all' && category.id !== currentApp) {
-                        return null
-                      }
-                    }
-                    
-                    return (
-                      <TabsTrigger 
-                        key={category.id} 
-                        value={category.id}
-                        className="flex-1"
-                      >
-                        {category.name}
-                        {getCountByCategory(category.id) > 0 && (
-                          <span className="ml-1 text-xs bg-primary/20 px-1.5 py-0.5 rounded-full">
-                            {getCountByCategory(category.id)}
-                          </span>
-                        )}
-                      </TabsTrigger>
-                    )
-                  })}
-                </TabsList>
-              );
-            }
-            
-            return null;
-          })()}
+        
+        <div className="flex gap-2 flex-wrap mt-4">
+          <div className="flex items-center gap-2 mr-4">
+            <label htmlFor="category-select" className="text-sm font-medium">
+              搜索范围:
+            </label>
+            <select
+              id="category-select"
+              className="h-8 rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={activeCategory}
+              onChange={(e) => setActiveCategory(e.target.value)}
+            >
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name} {getCountByCategory(category.id) > 0 ? `(${getCountByCategory(category.id)})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
           
           {/* 物品筛选选项 - 仅当选择了"物品"分类或"全部"分类时显示，或当前在物品页面 */}
           {(activeCategory === "thing" || activeCategory === "all" || pathname.startsWith('/thing')) && (
-            <div className="mt-3 p-2 bg-muted/30 rounded-md">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
-                <span className="text-sm font-medium whitespace-nowrap">物品筛选:</span>
-                <div className="flex flex-wrap items-center gap-1 w-full sm:w-auto">
-                  <Button 
-                    size="sm" 
-                    variant={thingPublicStatus === 'all' ? "secondary" : "outline"}
-                    onClick={() => {
-                      setThingPublicStatus('all')
-                      if (searchTerm.trim()) {
-                        performSearch()
-                      } else {
-                        loadRandomItems()
-                      }
-                    }}
-                    className="h-7 px-3 text-xs flex-1 sm:flex-none"
-                  >
-                    所有物品
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant={thingPublicStatus === 'public' ? "secondary" : "outline"}
-                    onClick={() => {
-                      setThingPublicStatus('public')
-                      if (searchTerm.trim()) {
-                        performSearch()
-                      } else {
-                        loadRandomItems()
-                      }
-                    }}
-                    className="h-7 px-3 text-xs flex-1 sm:flex-none"
-                  >
-                    公开
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant={thingPublicStatus === 'private' ? "secondary" : "outline"}
-                    onClick={() => {
-                      setThingPublicStatus('private')
-                      if (searchTerm.trim()) {
-                        performSearch()
-                      } else {
-                        loadRandomItems()
-                      }
-                    }}
-                    className="h-7 px-3 text-xs flex-1 sm:flex-none"
-                  >
-                    私有
-                  </Button>
-                </div>
-              </div>
+            <div className="flex items-center flex-wrap gap-1">
+              <span className="text-sm font-medium">物品筛选:</span>
+              <Button 
+                size="sm" 
+                variant={thingPublicStatus === 'all' ? "secondary" : "outline"}
+                onClick={() => {
+                  setThingPublicStatus('all')
+                  if (searchTerm.trim()) {
+                    performSearch()
+                  } else {
+                    loadRandomItems()
+                  }
+                }}
+                className="h-7 px-2 text-xs"
+              >
+                全部
+              </Button>
+              <Button 
+                size="sm" 
+                variant={thingPublicStatus === 'public' ? "secondary" : "outline"}
+                onClick={() => {
+                  setThingPublicStatus('public')
+                  if (searchTerm.trim()) {
+                    performSearch()
+                  } else {
+                    loadRandomItems()
+                  }
+                }}
+                className="h-7 px-2 text-xs"
+              >
+                公开
+              </Button>
+              <Button 
+                size="sm" 
+                variant={thingPublicStatus === 'private' ? "secondary" : "outline"}
+                onClick={() => {
+                  setThingPublicStatus('private')
+                  if (searchTerm.trim()) {
+                    performSearch()
+                  } else {
+                    loadRandomItems()
+                  }
+                }}
+                className="h-7 px-2 text-xs"
+              >
+                私密
+              </Button>
             </div>
           )}
-          
-          <TabsContent value={activeCategory} className="mt-4">
-            {loading ? (
-              <div className="text-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">搜索中...</p>
-              </div>
-            ) : searchTerm && filteredResults.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">未找到相关结果</p>
-              </div>
-            ) : searchTerm ? (
-              filteredResults.map((result) => (
-                <div
-                  key={`${result.category}-${result.id}`}
-                  className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
-                  onClick={() => handleResultClick(result.url)}
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                    <h3 className="font-semibold truncate">{result.title}</h3>
-                    <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
-                      {categories.find(c => c.id === result.category)?.name || result.category}
-                      {result.category === 'thing' && 'isPublic' in result && (
-                        <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
-                      )}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground line-clamp-2">{result.content}</p>
+        </div>
+
+        <div className="mt-4">
+          {loading ? (
+            <div className="text-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+              <p className="mt-2 text-sm text-muted-foreground">搜索中...</p>
+            </div>
+          ) : searchTerm && filteredResults.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">未找到相关结果</p>
+            </div>
+          ) : searchTerm ? (
+            filteredResults.map((result) => (
+              <div
+                key={`${result.category}-${result.id}`}
+                className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
+                onClick={() => handleResultClick(result.url)}
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <h3 className="font-semibold truncate">{result.title}</h3>
+                  <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
+                    {categories.find(c => c.id === result.category)?.name || result.category}
+                    {result.category === 'thing' && 'isPublic' in result && (
+                      <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
+                    )}
+                  </Badge>
                 </div>
-              ))
-            ) : randomLoading ? (
-              <div className="text-center py-4">
-                <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                <p className="mt-2 text-sm text-muted-foreground">加载推荐中...</p>
+                <p className="text-sm text-muted-foreground line-clamp-2">{result.content}</p>
               </div>
-            ) : randomItems.length > 0 ? (
-              <>
-                <div className="mb-4">
-                  <p className="text-sm text-muted-foreground mb-2">随机推荐物品：</p>
-                  {randomItems.map((item) => (
-                    <div
-                      key={`random-${item.id}`}
-                      className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
-                      onClick={() => handleResultClick(item.url)}
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                        <h3 className="font-semibold truncate">{item.title}</h3>
-                        <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
-                          {item.isPublic ? '公开' : '私有'}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
+            ))
+          ) : randomLoading ? (
+            <div className="text-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+              <p className="mt-2 text-sm text-muted-foreground">加载推荐中...</p>
+            </div>
+          ) : randomItems.length > 0 ? (
+            <>
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground mb-2">随机推荐物品：</p>
+                {randomItems.map((item) => (
+                  <div
+                    key={`random-${item.id}`}
+                    className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
+                    onClick={() => handleResultClick(item.url)}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                      <h3 className="font-semibold truncate">{item.title}</h3>
+                      <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
+                        {item.isPublic ? '公开' : '私有'}
+                      </Badge>
                     </div>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground">请输入搜索关键词</p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
+                  </div>
+                ))}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-muted-foreground">请输入搜索关键词</p>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

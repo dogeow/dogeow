@@ -404,31 +404,30 @@ export function AppLauncher() {
   
   // 点击搜索按钮时展开搜索框并聚焦
   const toggleSearch = () => {
-    // 直接打开搜索弹窗
-    setIsSearchDialogOpen(true)
-  }
+    if (isSearchVisible) {
+      setIsSearchVisible(false);
+    } else {
+      // 使用SearchDialog替代搜索框
+      setIsSearchDialogOpen(true);
+      setIsSearchVisible(false);
+    }
+  };
   
-  // 点击外部区域时关闭搜索框
+  // 监听点击事件，点击搜索框外部时关闭
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isSearchVisible && 
-        searchInputRef.current && 
-        !searchInputRef.current.contains(event.target as Node)
-      ) {
-        // 检查点击的是否是搜索按钮
-        const target = event.target as HTMLElement
-        if (!target.closest('button[data-search-toggle]')) {
-          setIsSearchVisible(false)
-        }
-      }
-    }
+    if (!isSearchVisible) return;
     
-    document.addEventListener('mousedown', handleClickOutside)
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+        setIsSearchVisible(false);
+      }
+    };
+    
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isSearchVisible])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSearchVisible]);
   
   // 切换曲目
   const switchTrack = (direction: 'next' | 'prev') => {
@@ -586,6 +585,7 @@ export function AppLauncher() {
                       variant="ghost" 
                       size="icon"
                       className="h-7 w-7"
+                      disabled={!searchTerm.trim()}
                     >
                       <Search className="h-3 w-3" />
                     </Button>

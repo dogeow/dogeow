@@ -39,10 +39,10 @@ export default function RootLayout({
     <html lang="zh-CN" suppressHydrationWarning>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen flex flex-col`}>
         <ThemeProvider>
-          <div id="header-container" className="flex-none sticky top-0 z-10 bg-background" >
+          <div id="header-container" className="flex-none sticky top-0 z-30 bg-background border-b shadow-sm" >
             <AppLauncher />
           </div>
-          <div id="main-container">
+          <div id="main-container" className="flex-1 overflow-x-hidden">
             <BackgroundWrapper>
               {children}
             </BackgroundWrapper>

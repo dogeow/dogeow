@@ -474,7 +474,7 @@ export default function Thing() {
             <Button 
               variant="outline" 
               size="icon" 
-              className="bg-primary/10 border-primary/20 hover:bg-primary/20"
+              className={`bg-primary/10 border-primary/20 hover:bg-primary/20`}
               onClick={() => setFiltersOpen(true)}
             >
               <SlidersHorizontal className="h-4 w-4" />
