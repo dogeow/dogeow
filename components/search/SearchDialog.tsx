@@ -229,12 +229,15 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
   useEffect(() => {
     const delaySearch = setTimeout(() => {
       if (searchTerm.trim()) {
-        performSearch()
+        performSearch();
+      } else {
+        // 搜索词为空时，清空搜索结果
+        setResults([]);
       }
-    }, 300)
+    }, 300);
     
-    return () => clearTimeout(delaySearch)
-  }, [searchTerm, activeCategory, thingPublicStatus])
+    return () => clearTimeout(delaySearch);
+  }, [searchTerm, activeCategory, thingPublicStatus]);
   
   // 加载随机物品
   useEffect(() => {
@@ -294,7 +297,9 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
 
   // 获取特定分类的结果数量
   const getCountByCategory = (category: string) => {
-    return results.filter(item => category === "all" || item.category === category).length
+    // 如果没有搜索词，不显示任何结果数量
+    if (!searchTerm.trim()) return 0;
+    return results.filter(item => category === "all" || item.category === category).length;
   }
 
   return (
@@ -339,8 +344,9 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
                 size="icon"
                 className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8"
                 onClick={() => {
-                  setSearchTerm("")
-                  loadRandomItems()
+                  setSearchTerm("");
+                  setResults([]); // 清空搜索结果
+                  loadRandomItems();
                 }}
               >
                 <X className="h-4 w-4" />
@@ -357,76 +363,21 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
           </form>
         </div>
         
-        <div className="flex gap-2 flex-wrap mt-4">
-          <div className="flex items-center gap-2 mr-4">
-            <label htmlFor="category-select" className="text-sm font-medium">
-              搜索范围:
-            </label>
-            <select
-              id="category-select"
-              className="h-8 rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={activeCategory}
-              onChange={(e) => setActiveCategory(e.target.value)}
-            >
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name} {getCountByCategory(category.id) > 0 ? `(${getCountByCategory(category.id)})` : ''}
-                </option>
-              ))}
-            </select>
+        <div className="mt-4">
+          <div className="text-sm font-medium mb-2">搜索范围:</div>
+          <div className="flex gap-1 flex-wrap">
+            {categories.map((category) => (
+              <Button 
+                key={category.id} 
+                size="sm" 
+                variant={activeCategory === category.id ? "secondary" : "outline"}
+                onClick={() => setActiveCategory(category.id)}
+                className="h-7 px-2 text-xs"
+              >
+                {category.name} {getCountByCategory(category.id) > 0 ? `(${getCountByCategory(category.id)})` : ''}
+              </Button>
+            ))}
           </div>
-          
-          {/* 物品筛选选项 - 仅当选择了"物品"分类或"全部"分类时显示，或当前在物品页面 */}
-          {(activeCategory === "thing" || activeCategory === "all" || pathname.startsWith('/thing')) && (
-            <div className="flex items-center flex-wrap gap-1">
-              <span className="text-sm font-medium">物品筛选:</span>
-              <Button 
-                size="sm" 
-                variant={thingPublicStatus === 'all' ? "secondary" : "outline"}
-                onClick={() => {
-                  setThingPublicStatus('all')
-                  if (searchTerm.trim()) {
-                    performSearch()
-                  } else {
-                    loadRandomItems()
-                  }
-                }}
-                className="h-7 px-2 text-xs"
-              >
-                全部
-              </Button>
-              <Button 
-                size="sm" 
-                variant={thingPublicStatus === 'public' ? "secondary" : "outline"}
-                onClick={() => {
-                  setThingPublicStatus('public')
-                  if (searchTerm.trim()) {
-                    performSearch()
-                  } else {
-                    loadRandomItems()
-                  }
-                }}
-                className="h-7 px-2 text-xs"
-              >
-                公开
-              </Button>
-              <Button 
-                size="sm" 
-                variant={thingPublicStatus === 'private' ? "secondary" : "outline"}
-                onClick={() => {
-                  setThingPublicStatus('private')
-                  if (searchTerm.trim()) {
-                    performSearch()
-                  } else {
-                    loadRandomItems()
-                  }
-                }}
-                className="h-7 px-2 text-xs"
-              >
-                私密
-              </Button>
-            </div>
-          )}
         </div>
 
         <div className="mt-4">
