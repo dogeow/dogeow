@@ -37,7 +37,7 @@ export default function AreaTab({ areas, loading, onAddArea, onUpdateArea, onDel
           ) : (
             <div className="space-y-2">
               {areas.map((area) => (
-                <div key={area.id} className="flex items-center justify-between p-2 border rounded-md">
+                <div key={area.id} className="flex items-center justify-between p-2 border rounded-md bg-blue-50">
                   {editingInlineAreaId === area.id ? (
                     <div className="flex items-center flex-1 mr-2">
                       <Input

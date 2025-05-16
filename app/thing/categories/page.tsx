@@ -114,10 +114,6 @@ export default function Categories() {
     <div className="container mx-auto py-4 pb-24">
       {/* 分类列表卡片 */}
       <Card>
-        <CardHeader>
-          <CardTitle>分类列表</CardTitle>
-          <CardDescription>管理您的物品分类</CardDescription>
-        </CardHeader>
         <CardContent>
           {categories.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">

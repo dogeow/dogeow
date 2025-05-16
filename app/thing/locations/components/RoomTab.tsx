@@ -105,7 +105,7 @@ export default function RoomTab({ rooms, areas, loading, onAddRoom, onUpdateRoom
           ) : (
             <div className="space-y-2">
               {rooms.map((room) => (
-                <div key={room.id} className="flex items-center justify-between p-2 border rounded-md">
+                <div key={room.id} className="flex items-center justify-between p-2 border rounded-md bg-green-50">
                   <div>
                     <span className="font-medium">{room.name}</span>
                     <p className="text-xs text-muted-foreground">

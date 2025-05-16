@@ -214,8 +214,8 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
           <div key={area.id}>
             <div 
               className={cn(
-                "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                selectedLocation?.type === 'area' && selectedLocation.id === area.id && "bg-muted"
+                "flex items-center py-1 px-2 rounded hover:bg-blue-100 cursor-pointer text-sm bg-blue-50",
+                selectedLocation?.type === 'area' && selectedLocation.id === area.id && "bg-blue-100"
               )}
               onClick={() => handleSelect('area', area.id)}
             >
@@ -240,8 +240,8 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                 <div key={room.id} className="ml-4">
                   <div 
                     className={cn(
-                      "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                      selectedLocation?.type === 'room' && selectedLocation.id === room.id && "bg-muted"
+                      "flex items-center py-1 px-2 rounded hover:bg-green-100 cursor-pointer text-sm bg-green-50",
+                      selectedLocation?.type === 'room' && selectedLocation.id === room.id && "bg-green-100"
                     )}
                     onClick={() => handleSelect('room', room.id)}
                   >
@@ -266,8 +266,8 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                       <div 
                         key={spot.id} 
                         className={cn(
-                          "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                          selectedLocation?.type === 'spot' && selectedLocation.id === spot.id && "bg-muted"
+                          "ml-4 flex items-center py-1 px-2 rounded hover:bg-purple-100 cursor-pointer text-sm bg-purple-50",
+                          selectedLocation?.type === 'spot' && selectedLocation.id === spot.id && "bg-purple-100"
                         )}
                         onClick={() => handleSelect('spot', spot.id)}
                       >
@@ -285,8 +285,8 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
           <div key={room.id}>
             <div 
               className={cn(
-                "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                selectedLocation?.type === 'room' && selectedLocation.id === room.id && "bg-muted"
+                "flex items-center py-1 px-2 rounded hover:bg-green-100 cursor-pointer text-sm bg-green-50",
+                selectedLocation?.type === 'room' && selectedLocation.id === room.id && "bg-green-100"
               )}
               onClick={() => handleSelect('room', room.id)}
             >
@@ -311,8 +311,8 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                 <div 
                   key={spot.id} 
                   className={cn(
-                    "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                    selectedLocation?.type === 'spot' && selectedLocation.id === spot.id && "bg-muted"
+                    "ml-4 flex items-center py-1 px-2 rounded hover:bg-purple-100 cursor-pointer text-sm bg-purple-50",
+                    selectedLocation?.type === 'spot' && selectedLocation.id === spot.id && "bg-purple-100"
                   )}
                   onClick={() => handleSelect('spot', spot.id)}
                 >

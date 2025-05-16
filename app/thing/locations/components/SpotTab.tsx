@@ -105,7 +105,7 @@ export default function SpotTab({ spots, rooms, loading, onAddSpot, onUpdateSpot
           ) : (
             <div className="space-y-2">
               {spots.map((spot) => (
-                <div key={spot.id} className="flex items-center justify-between p-2 border rounded-md">
+                <div key={spot.id} className="flex items-center justify-between p-2 border rounded-md bg-purple-50">
                   <div>
                     <span className="font-medium">{spot.name}</span>
                     <p className="text-xs text-muted-foreground">

@@ -110,64 +110,91 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     // 检查是否有spot对象，并且有完整的位置路径
     if (item.spot?.room?.area?.name && item.spot?.room?.name && item.spot?.name) {
       return (
-        <p className="text-xs text-muted-foreground truncate">
-          <span className="inline-block mr-1">📍</span>
-          {item.spot.room.area.name} &gt; {item.spot.room.name} &gt; {item.spot.name}
-        </p>
+        <div className="flex gap-1 items-center">
+          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
+            {item.spot.room.area.name}
+          </span>
+          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-green-50">
+            {item.spot.room.name}
+          </span>
+          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-purple-50">
+            {item.spot.name}
+          </span>
+        </div>
       );
     }
     
     // 检查是否有spot对象，并且有区域和房间
     if (item.spot?.room?.area?.name && item.spot?.room?.name) {
       return (
-        <p className="text-xs text-muted-foreground truncate">
-          <span className="inline-block mr-1">📍</span>
-          {item.spot.room.area.name} &gt; {item.spot.room.name}
-        </p>
+        <div className="flex gap-1 items-center">
+          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
+            {item.spot.room.area.name}
+          </span>
+          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-green-50">
+            {item.spot.room.name}
+          </span>
+        </div>
       );
     }
     
     // 检查是否有spot对象，并且只有区域
     if (item.spot?.room?.area?.name) {
       return (
-        <p className="text-xs text-muted-foreground truncate">
-          <span className="inline-block mr-1">📍</span>
-          {item.spot.room.area.name}
-        </p>
+        <div className="flex gap-1 items-center">
+          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
+            {item.spot.room.area.name}
+          </span>
+        </div>
       );
     }
     
     // 直接检查area_id和room_id (即使spot为null)
     if (item.area_id || item.room_id) {
-      // 尝试获取区域名称
-      let locationText = '';
+      // 位置显示组件数组
+      const locationComponents = [];
       
-      // 尝试从不同来源获取区域名称
+      // 添加区域组件
       if (item.area?.name) {
-        locationText = item.area.name;
+        locationComponents.push(
+          <span key="area" className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
+            {item.area.name}
+          </span>
+        );
       } else if (item.area_id) {
-        // 如果只有ID没有名称，至少显示"区域" + ID
-        locationText = `区域 ${item.area_id}`;
+        locationComponents.push(
+          <span key="area-id" className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
+            区域 {item.area_id}
+          </span>
+        );
       }
       
-      // 尝试获取房间名称
+      // 添加房间组件
       if (item.room?.name) {
-        locationText += locationText ? ` > ${item.room.name}` : item.room.name;
+        locationComponents.push(
+          <span key="room" className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-green-50">
+            {item.room.name}
+          </span>
+        );
       } else if (item.room_id && !item.room?.name) {
-        // 如果只有ID没有名称
-        locationText += locationText ? ` > 房间 ${item.room_id}` : `房间 ${item.room_id}`;
+        locationComponents.push(
+          <span key="room-id" className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-green-50">
+            房间 {item.room_id}
+          </span>
+        );
       }
       
-      return (
-        <p className="text-xs text-muted-foreground truncate">
-          <span className="inline-block mr-1">📍</span>
-          {locationText || '位置ID存在但名称未知'}
-        </p>
-      );
+      if (locationComponents.length > 0) {
+        return (
+          <div className="flex gap-1 items-center">
+            {locationComponents}
+          </div>
+        );
+      }
     }
     
     // 如果没有任何位置信息
-    return <p className="text-xs text-muted-foreground"></p>;
+    return null;
   }
   
   // 构建正确的图片URL
