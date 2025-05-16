@@ -76,7 +76,7 @@ interface ItemState {
   meta: any | null;
   filters: Record<string, any>;
   
-  fetchItems: (params?: Record<string, any>) => Promise<any>;
+  fetchItems: (params?: Record<string, any>, itemsOnly?: boolean) => Promise<any>;
   fetchCategories: () => Promise<Category[] | undefined>;
   fetchTags: () => Promise<Tag[] | undefined>;
   getItem: (id: number) => Promise<Item | null>;
@@ -104,14 +104,26 @@ export const useItemStore = create<ItemState>((set, get) => ({
   meta: null,
   filters: {},
   
-  fetchItems: async (params = {}) => {
+  fetchItems: async (params = {}, itemsOnly = false) => {
     set({ loading: true, error: null });
     
     try {
       const finalParams = Object.keys(params).length === 0 ? { ...get().filters } : params;
       
+      if ('itemsOnly' in finalParams) {
+        delete finalParams.itemsOnly;
+      }
+      
+      const backendParams = { ...finalParams };
+      const frontendOnlyFilters = ['include_null_purchase_date', 'include_null_expiry_date', 'exclude_null_purchase_date', 'exclude_null_expiry_date'];
+      frontendOnlyFilters.forEach(filter => {
+        if (filter in backendParams) {
+          delete backendParams[filter];
+        }
+      });
+      
       const queryParams = new URLSearchParams();
-      Object.entries(finalParams).forEach(([key, value]) => {
+      Object.entries(backendParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
           if (value instanceof Date) {
             queryParams.append(`filter[${key}]`, format(value, 'yyyy-MM-dd'));

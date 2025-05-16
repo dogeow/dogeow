@@ -147,11 +147,20 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   // 使用防抖后的筛选条件
   const debouncedFilters = useDebounce(filters, 500);
   
-  // 在筛选条件防抖后触发应用
+  // 添加一个标志位，用于跟踪是否是首次渲染
+  const [isInitialRender, setIsInitialRender] = useState(true);
+  
+  // 在筛选条件防抖后触发应用，但跳过初始渲染
   useEffect(() => {
+    // 跳过初始渲染
+    if (isInitialRender) {
+      setIsInitialRender(false);
+      return;
+    }
+    
     console.log('应用防抖后的筛选条件');
     applyFilters(debouncedFilters);
-  }, [debouncedFilters]);
+  }, [debouncedFilters, isInitialRender]);
   
   // 处理字段变更的函数 - 不再直接应用，而是通过防抖机制应用
   const handleChange = (field: keyof FilterState, value: any) => {

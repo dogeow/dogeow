@@ -9,6 +9,7 @@ import { get, del } from "@/utils/api"
 import { toast } from "sonner"
 import { isLightColor } from '@/lib/utils'
 import TagSpeedDial from './components/TagSpeedDial'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 // 标签类型定义
 type Tag = {
@@ -54,39 +55,41 @@ export default function ThingTags() {
 
   return (
     <div className="container mx-auto py-4 pb-24">
-      <div>
-        {error && <p className="text-red-500">加载标签失败</p>}
-        {!tags && !error && <p>加载中...</p>}
-        {tags?.length === 0 && <p>暂无标签，请添加</p>}
+      <Card className="border border-gray-200 bg-white shadow-sm rounded-lg">
+        <CardContent>
+          {error && <p className="text-red-500">加载标签失败</p>}
+          {!tags && !error && <p>加载中...</p>}
+          {tags?.length === 0 && <p>暂无标签，请添加</p>}
 
-        <div className="flex flex-wrap gap-2 mt-4">
-          {tags?.map((tag) => (
-            <div key={tag.id} className="relative flex items-center">
-              {tag.items_count > 0 && (
-                <div 
-                  className="absolute -top-3 -right-1 z-10 flex items-center justify-center w-5 h-5 text-sm font-medium text-primary"
+          <div className="flex flex-wrap gap-2 mt-2">
+            {tags?.map((tag) => (
+              <div key={tag.id} className="relative flex items-center">
+                {tag.items_count > 0 && (
+                  <div 
+                    className="absolute -top-3 -right-1 z-10 flex items-center justify-center w-5 h-5 text-sm font-medium text-primary"
+                  >
+                    {tag.items_count}
+                  </div>
+                )}
+                <Badge
+                  style={getTagStyle(tag.color)}
+                  className="h-8 px-3 flex items-center"
                 >
-                  {tag.items_count}
-                </div>
-              )}
-              <Badge
-                style={getTagStyle(tag.color)}
-                className="h-8 px-3 flex items-center"
-              >
-                {tag.name}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
-                  onClick={() => deleteTag(tag.id)}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </div>
+                  {tag.name}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
+                    onClick={() => deleteTag(tag.id)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 添加标签Speed Dial */}
       <TagSpeedDial />

@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon, FilterX, Search } from "lucide-react"
+import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon, FilterX } from "lucide-react"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ItemGallery from './components/ItemGallery'
@@ -19,6 +20,8 @@ import useSWR from "swr"
 import { get } from "@/utils/api"
 import { isLightColor } from '@/lib/utils'
 import SearchInput from './components/SearchInput'
+import TagCard from './components/TagCard'
+import { Card } from "@/components/ui/card"
 
 // 定义视图模式类型
 type ViewMode = 'list' | 'gallery';
@@ -56,9 +59,25 @@ export default function Thing() {
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [initialLoaded, setInitialLoaded] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false)
   
-  // 加载标签数据
-  const { data: tags } = useSWR<Tag[]>('/thing-tags', get)
+  // 修改标签加载方式，不使用禁用自动重新请求的方式
+  const { data: tags, error: tagsError } = useSWR<Tag[]>(
+    '/thing-tags', 
+    get,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      refreshWhenOffline: false,
+      refreshWhenHidden: false,
+      refreshInterval: 0,
+      dedupingInterval: 3600000, // 1小时不重复请求
+      onSuccess: () => {
+        setInitialDataLoaded(true)
+      }
+    }
+  )
   
   // 计算总页数
   const totalPages = meta?.last_page || 1
@@ -70,21 +89,31 @@ export default function Thing() {
     tags: selectedTags.length > 0 ? selectedTags : undefined
   })
 
-  // 加载数据
-  const loadItems = (params = {}) => {
-    const allParams = {
-      ...getBaseFilterParams(),
-      ...params
-    };
-    
-    fetchItems(allParams);
-    // 保存筛选条件，除了页码
-    const filtersToSave = { ...allParams };
-    if ('page' in filtersToSave) {
-      delete filtersToSave.page;
+  // 在组件初始化时加载基础数据，仅执行一次
+  useEffect(() => {
+    if (!initialDataLoaded) {
+      // 一次性加载所有必要的数据
+      const loadAllData = async () => {
+        try {
+          if (categories.length === 0) {
+            await fetchCategories();
+          }
+          
+          // 标记初始数据已加载完成
+          setInitialDataLoaded(true);
+        } catch (error) {
+          console.error('初始数据加载失败:', error);
+        }
+      };
+      
+      loadAllData();
     }
-    saveFilters(filtersToSave);
-  }
+
+    // 在初始加载完成后确保 selectedTags 是字符串数组
+    if (selectedTags.length > 0) {
+      setSelectedTags(selectedTags.map(tag => tag.toString()));
+    }
+  }, [categories.length, fetchCategories, initialDataLoaded, selectedTags]);
 
   useEffect(() => {
     // 从URL获取搜索参数
@@ -122,11 +151,35 @@ export default function Thing() {
       setInitialLoaded(true);
     }
   }, [fetchItems, initialLoaded, savedFilters])
-  
-  // 单独加载分类
-  useEffect(() => {
-    fetchCategories()
-  }, [fetchCategories])
+
+  // 优化后的加载数据函数
+  const loadItems = (params = {}) => {
+    // 防止重复请求
+    if (isSearching) return Promise.resolve();
+    
+    setIsSearching(true); // 标记搜索状态开始
+    
+    const allParams = {
+      ...getBaseFilterParams(),
+      ...params
+    };
+    
+    // 保存筛选条件，除了页码
+    const filtersToSave = { ...allParams };
+    if ('page' in filtersToSave) {
+      delete filtersToSave.page;
+    }
+    saveFilters(filtersToSave);
+    
+    // 设置itemsOnly参数，确保只加载物品数据
+    const itemsOnly = params.hasOwnProperty('search') || params.hasOwnProperty('itemsOnly');
+    
+    // 使用Promise，确保搜索完成后设置状态
+    return fetchItems(allParams, itemsOnly)
+      .finally(() => {
+        setIsSearching(false); // 标记搜索状态结束
+      });
+  }
 
   // 处理页面变化
   const handlePageChange = (page: number) => {
@@ -389,22 +442,15 @@ export default function Thing() {
     </SheetContent>
   )
 
-  // 处理搜索提交
-  const handleSearch = (value: string) => {
-    setCurrentPage(1)
-    loadItems({ search: value, page: 1 })
+  // 条件渲染内容
+  const renderContent = () => {
+    if (loading) return renderLoading()
+    if (error) return renderError()
+    return items.length === 0 ? renderEmpty() : renderItems()
   }
 
   const renderFilters = () => (
     <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-2 flex-1 max-w-md">
-        <SearchInput 
-          value={searchTerm}
-          onChange={setSearchTerm}
-          onSearch={handleSearch}
-        />
-      </div>
-
       <div className="flex items-center gap-2">
         <Select value={selectedCategory} onValueChange={handleCategoryChange}>
           <SelectTrigger className="w-[110px] bg-primary/10 border-primary/20">
@@ -501,13 +547,17 @@ export default function Thing() {
           </TabsList>
         </Tabs>
 
-        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <Sheet open={filtersOpen} onOpenChange={(open) => {
+          // 只在状态变化时设置，避免不必要的渲染和数据请求
+          if (open !== filtersOpen) {
+            setFiltersOpen(open);
+          }
+        }}>
           <SheetTrigger asChild>
             <Button 
               variant="outline" 
               size="icon" 
               className={`bg-primary/10 border-primary/20 hover:bg-primary/20`}
-              onClick={() => setFiltersOpen(true)}
             >
               <SlidersHorizontal className="h-4 w-4" />
             </Button>
@@ -518,19 +568,91 @@ export default function Thing() {
     </div>
   )
 
-  // 条件渲染内容
-  const renderContent = () => {
-    if (loading) return renderLoading()
-    if (error) return renderError()
-    return items.length === 0 ? renderEmpty() : renderItems()
-  }
-
   // 返回组件
   return (
-    <div className="flex flex-col gap-2 pb-24">
+    <div className="flex flex-col gap-2 pb-20">
       <div className="flex justify-between items-center">
         {renderFilters()}
       </div>
+      
+      {/* 显示选中的标签 */}
+      {selectedTags.length > 0 && tags && (
+        <div className="flex flex-wrap gap-2 mt-1 mb-2">
+          {selectedTags.map(tagId => {
+            const tag = tags?.find(t => t.id.toString() === tagId);
+            if (!tag) return null;
+            
+            return (
+              <Badge
+                key={tagId}
+                style={getTagStyle(tag.color)}
+                className="px-2 py-1 flex items-center gap-1"
+                variant="default"
+              >
+                {tag.name}
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button 
+                      className="ml-1 rounded-full hover:bg-primary-foreground/20 p-0.5 inline-flex items-center justify-center"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>确定要删除此标签吗?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        删除此标签将从当前筛选条件中移除 "{tag.name}" 标签。
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>取消</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => toggleTag(tagId)}>
+                        确定
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </Badge>
+            );
+          })}
+          
+          {selectedTags.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="h-8 px-2 text-xs flex items-center gap-1"
+                >
+                  清除全部
+                  <X className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>确定要清除所有标签吗?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    这将清除当前筛选条件中的所有标签。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>取消</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={() => {
+                      setSelectedTags([]);
+                      loadItems({ tags: undefined, page: 1 });
+                    }}
+                  >
+                    确定
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
+      )}
+      
       {renderContent()}
       
       {/* 添加Speed Dial组件 */}
