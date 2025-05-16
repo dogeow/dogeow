@@ -1,17 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { ChevronsUpDown } from "lucide-react"
+import { ChevronsUpDown, X, Check } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
+import { Input } from "@/components/ui/input"
 import {
   Popover,
   PopoverContent,
@@ -51,6 +44,7 @@ export function TagSelector({
 }: TagSelectorProps) {
   const [open, setOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("basic")
+  const [searchTerm, setSearchTerm] = React.useState("")
   const [localSelectedTags, setLocalSelectedTags] = React.useState<string[]>(selectedTags)
 
   // 当外部selectedTags发生变化时，更新本地状态
@@ -61,8 +55,6 @@ export function TagSelector({
   // 处理标签点击
   const toggleTag = (tagId: string) => {
     console.log("标签点击: ", tagId)
-    console.log("当前本地已选标签: ", localSelectedTags)
-    console.log("当前传入的已选标签: ", selectedTags)
     
     let newSelected: string[]
     
@@ -82,14 +74,14 @@ export function TagSelector({
     // 通知父组件
     onChange(newSelected)
   }
-  
-  // 选择命令项处理
-  const handleCommandSelect = (value: string) => {
-    console.log("Command选择值: ", value)
-    toggleTag(value)
-  }
 
-  console.log("渲染TagSelector, 标签数:", tags.length, "已选标签:", selectedTags)
+  // 过滤标签
+  const filteredTags = React.useMemo(() => {
+    if (!searchTerm) return tags;
+    return tags.filter(tag => 
+      tag.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [tags, searchTerm]);
 
   const selectorContent = (
     <>
@@ -101,9 +93,9 @@ export function TagSelector({
             aria-expanded={open}
             className={cn("w-full justify-between", className)}
           >
-            {selectedTags.length > 0 ? (
+            {localSelectedTags.length > 0 ? (
               <div className="flex flex-wrap gap-1">
-                {selectedTags.map(tagId => {
+                {localSelectedTags.map(tagId => {
                   const tag = tags.find(t => t.id.toString() === tagId)
                   return tag ? (
                     <Badge key={tag.id} variant="secondary">
@@ -118,75 +110,56 @@ export function TagSelector({
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-0" align="start">
-          <Command>
-            <CommandInput placeholder="搜索标签..." />
-            <CommandList>
-              <CommandEmpty>{emptyText}</CommandEmpty>
-              <CommandGroup>
-                {tags.map(tag => {
-                  const tagId = tag.id.toString()
-                  const isSelected = localSelectedTags.includes(tagId)
-                  return (
-                    <CommandItem
-                      key={tagId}
-                      value={tagId}
-                      onSelect={handleCommandSelect}
-                    >
+        <PopoverContent className="w-[200px] p-0" align="start">
+          <div className="flex flex-col">
+            {/* 搜索框 */}
+            <div className="p-2 border-b">
+              <Input
+                placeholder="搜索标签..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-8"
+              />
+            </div>
+            
+            {/* 标签列表 */}
+            <div className="max-h-[200px] overflow-y-auto p-1">
+              {filteredTags.length === 0 ? (
+                <div className="py-6 text-center text-sm text-muted-foreground">
+                  {emptyText}
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  {filteredTags.map(tag => {
+                    const tagId = tag.id.toString();
+                    const isSelected = localSelectedTags.includes(tagId);
+                    return (
                       <div
-                        className={cn(
-                          "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                          isSelected
-                            ? "bg-primary text-primary-foreground"
-                            : "opacity-50 [&_svg]:invisible"
-                        )}
+                        key={tagId}
+                        onClick={() => toggleTag(tagId)}
+                        className="flex items-center gap-2 px-2 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm cursor-pointer"
                       >
-                        <svg
-                          className="h-4 w-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                          strokeWidth={2}
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
+                        <div className={cn(
+                          "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                          isSelected 
+                            ? "bg-primary text-primary-foreground" 
+                            : "opacity-50"
+                        )}>
+                          {isSelected && <Check className="h-3 w-3" />}
+                        </div>
+                        <span className="text-sm">{tag.name}</span>
                       </div>
-                      <span>{tag.name}</span>
-                    </CommandItem>
-                  )
-                })}
-              </CommandGroup>
-            </CommandList>
-          </Command>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
         </PopoverContent>
       </Popover>
 
-      {/* 备用标签列表，以防下拉菜单不工作 */}
-      <div className="flex flex-wrap gap-1 mt-3 border-t pt-2">
-        <span className="text-xs text-muted-foreground mb-1 w-full">点击直接选择标签:</span>
-        {tags.map(tag => {
-          const tagId = tag.id.toString()
-          const isSelected = localSelectedTags.includes(tagId)
-          return (
-            <Badge
-              key={tagId}
-              variant={isSelected ? "default" : "outline"}
-              className="cursor-pointer"
-              onClick={() => toggleTag(tagId)}
-            >
-              {tag.name}
-            </Badge>
-          )
-        })}
-      </div>
-
       {localSelectedTags.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2 border-t pt-2">
-          <span className="text-xs text-muted-foreground mb-1 w-full">已选标签:</span>
+        <div className="flex flex-wrap gap-1 mt-2">
           {localSelectedTags.map(tagId => {
             const tag = tags.find(t => t.id.toString() === tagId)
             return tag ? (
@@ -197,7 +170,7 @@ export function TagSelector({
                 onClick={() => toggleTag(tagId)}
               >
                 <span>{tag.name}</span>
-                <span className="ml-1 opacity-60">×</span>
+                <X className="ml-1 h-3 w-3 opacity-60" />
               </Badge>
             ) : null
           })}

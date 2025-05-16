@@ -263,7 +263,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
   
   return (
     <div className="space-y-4 px-1">
-      <div className="pr-10">
+      <div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4">
             <TabsTrigger value="basic" className="text-sm">基础</TabsTrigger>
@@ -340,11 +340,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                   }}
                   placeholder="选择标签"
                 />
-                {tags.length > 0 && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    可用标签: {tags.map(tag => tag.name).join(', ')}
-                  </div>
-                )}
               </div>
             </div>
           </TabsContent>
