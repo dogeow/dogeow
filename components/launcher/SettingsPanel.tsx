@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { hexToHSL } from '@/lib/color-utils'
+import { hexToHSL } from '@/lib/utils'
 import type { CustomTheme } from '@/app/types'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
