@@ -52,7 +52,7 @@ export default function ThingNavigation() {
   
   return (
     <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative shadow-sm">
-      <nav className="flex items-center py-2 px-4 overflow-x-auto">
+      <nav className="flex items-center py-2 px-2 overflow-x-auto">
         <div className="flex items-center space-x-2">
           {navItems.map((item) => (
             <Button
