@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Search, X, ArrowRight, Loader2 } from "lucide-react"
 import { get } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
@@ -73,15 +72,10 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
     setLoading(true)
     
     try {
-      // 获取当前URL路径，判断用户所在的应用
-      const currentPath = pathname
-      const currentApp = currentPath.split('/')[1]
-      
       // 清除之前的搜索结果
       setResults([])
       
       // 根据激活的分类执行对应的搜索
-      // 如果是全部分类或当前分类是thing，则搜索物品
       if (activeCategory === "all" || activeCategory === "thing") {
         // 搜索物品
         interface SearchApiResponse {
@@ -97,7 +91,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
         // 构建查询参数
         let queryParams = `q=${encodeURIComponent(searchTerm)}`;
         
-        // 添加公开/私有筛选
         if (thingPublicStatus !== 'all') {
           queryParams += `&is_public=${thingPublicStatus === 'public' ? 'true' : 'false'}`;
         }
@@ -118,31 +111,22 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
         }
       }
       
-      // 实验室搜索
+      // 其他分类搜索逻辑
       if (activeCategory === "all" || activeCategory === "lab") {
-        // 这里实现实验室搜索
         // TODO: 添加实验室搜索API调用
       }
       
-      // 笔记搜索
       if (activeCategory === "all" || activeCategory === "note") {
-        // 这里实现笔记搜索
         // TODO: 添加笔记搜索API调用
       }
       
-      // 文件搜索
       if (activeCategory === "all" || activeCategory === "file") {
-        // 这里实现文件搜索
         // TODO: 添加文件搜索API调用
       }
       
-      // 游戏搜索
       if (activeCategory === "all" || activeCategory === "game") {
-        // 这里实现游戏搜索
         // TODO: 添加游戏搜索API调用
       }
-      
-      // 其他分类搜索...
       
     } catch (error) {
       console.error('搜索出错:', error)
@@ -157,25 +141,13 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
     
     if (!searchTerm.trim()) return
     
-    // 获取当前URL路径，判断用户所在的应用
-    const currentPath = pathname
-    // 提取主路径部分（例如/thing/123 -> thing）
-    const currentApp = currentPath.split('/')[1]
-    
-    // 判断决策逻辑：
-    // 1. 如果用户在首页，且选择了全部，则进行全局搜索
-    // 2. 如果用户在应用内，且选择了当前应用的分类，则在应用内搜索
-    // 3. 如果用户在应用内，但选择了其他应用的分类，则转到相应应用搜索
-    // 4. 如果用户在应用内，但选择了全部，则进行全局搜索
+    const currentApp = pathname.split('/')[1]
     
     if (activeCategory === "all") {
-      // 全局搜索
       router.push(`/search?q=${encodeURIComponent(searchTerm)}`)
     } else if (currentApp && currentApp === activeCategory) {
-      // 当前应用内搜索
       router.push(`/${currentApp}?search=${encodeURIComponent(searchTerm)}`)
     } else {
-      // 其他应用搜索
       const category = categories.find(c => c.id === activeCategory)
       if (category) {
         router.push(`${category.path}?search=${encodeURIComponent(searchTerm)}`)
@@ -206,7 +178,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
       if (searchTerm.trim()) {
         performSearch();
       } else {
-        // 搜索词为空时，清空搜索结果
         setResults([]);
       }
     }, 300);
@@ -226,10 +197,8 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
     try {
       setRandomLoading(true)
       
-      // 构建查询参数
       let queryParams = 'random=true&limit=5';
       
-      // 添加公开/私有筛选
       if (thingPublicStatus !== 'all') {
         queryParams += `&is_public=${thingPublicStatus === 'public' ? 'true' : 'false'}`;
       }
@@ -272,33 +241,105 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
 
   // 获取特定分类的结果数量
   const getCountByCategory = (category: string) => {
-    // 如果没有搜索词，不显示任何结果数量
     if (!searchTerm.trim()) return 0;
     return results.filter(item => category === "all" || item.category === category).length;
+  }
+
+  // 获取对话框标题
+  const getDialogTitle = () => {
+    const currentApp = pathname.split('/')[1]
+    
+    if (currentApp && categories.some(c => c.id === currentApp)) {
+      return `搜索${activeCategory === "all" ? "所有内容" : categories.find(c => c.id === activeCategory)?.name || ""}`
+    }
+    
+    return activeCategory === "all" ? "搜索所有内容" : `搜索${categories.find(c => c.id === activeCategory)?.name}内容`
+  }
+
+  // 渲染搜索结果
+  const renderSearchResults = () => {
+    if (loading) {
+      return (
+        <div className="text-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+          <p className="mt-2 text-sm text-muted-foreground">搜索中...</p>
+        </div>
+      )
+    }
+    
+    if (searchTerm && filteredResults.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">未找到相关结果</p>
+        </div>
+      )
+    }
+    
+    if (searchTerm) {
+      return filteredResults.map((result) => (
+        <div
+          key={`${result.category}-${result.id}`}
+          className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
+          onClick={() => handleResultClick(result.url)}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <h3 className="font-semibold truncate">{result.title}</h3>
+            <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
+              {categories.find(c => c.id === result.category)?.name || result.category}
+              {result.category === 'thing' && 'isPublic' in result && (
+                <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
+              )}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground line-clamp-2">{result.content}</p>
+        </div>
+      ))
+    }
+    
+    if (randomLoading) {
+      return (
+        <div className="text-center py-4">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+          <p className="mt-2 text-sm text-muted-foreground">加载推荐中...</p>
+        </div>
+      )
+    }
+    
+    if (randomItems.length > 0) {
+      return (
+        <div className="mb-4">
+          <p className="text-sm text-muted-foreground mb-2">随机推荐物品：</p>
+          {randomItems.map((item) => (
+            <div
+              key={`random-${item.id}`}
+              className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
+              onClick={() => handleResultClick(item.url)}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <h3 className="font-semibold truncate">{item.title}</h3>
+                <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
+                  {item.isPublic ? '公开' : '私有'}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    
+    return (
+      <div className="text-center py-4">
+        <p className="text-muted-foreground">请输入搜索关键词</p>
+      </div>
+    )
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[90%] md:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-center">
-            {(() => {
-              // 获取当前路径
-              const currentPath = pathname
-              const currentApp = currentPath.split('/')[1]
-              
-              // 如果当前在应用内
-              if (currentApp && categories.some(c => c.id === currentApp)) {
-                const categoryName = categories.find(c => c.id === currentApp)?.name
-                
-                // 更加简洁的标题
-                return `搜索${activeCategory === "all" ? "所有内容" : categories.find(c => c.id === activeCategory)?.name || ""}`
-              }
-              
-              // 默认标题
-              return activeCategory === "all" ? "搜索所有内容" : `搜索${categories.find(c => c.id === activeCategory)?.name}内容`
-            })()}
-          </DialogTitle>
+          <DialogTitle className="text-center">{getDialogTitle()}</DialogTitle>
         </DialogHeader>
         
         <div className="mt-4">
@@ -320,7 +361,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
                 className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8"
                 onClick={() => {
                   setSearchTerm("");
-                  setResults([]); // 清空搜索结果
+                  setResults([]);
                   loadRandomItems();
                 }}
               >
@@ -356,65 +397,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
         </div>
 
         <div className="mt-4">
-          {loading ? (
-            <div className="text-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">搜索中...</p>
-            </div>
-          ) : searchTerm && filteredResults.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">未找到相关结果</p>
-            </div>
-          ) : searchTerm ? (
-            filteredResults.map((result) => (
-              <div
-                key={`${result.category}-${result.id}`}
-                className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
-                onClick={() => handleResultClick(result.url)}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                  <h3 className="font-semibold truncate">{result.title}</h3>
-                  <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
-                    {categories.find(c => c.id === result.category)?.name || result.category}
-                    {result.category === 'thing' && 'isPublic' in result && (
-                      <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
-                    )}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground line-clamp-2">{result.content}</p>
-              </div>
-            ))
-          ) : randomLoading ? (
-            <div className="text-center py-4">
-              <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-              <p className="mt-2 text-sm text-muted-foreground">加载推荐中...</p>
-            </div>
-          ) : randomItems.length > 0 ? (
-            <>
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground mb-2">随机推荐物品：</p>
-                {randomItems.map((item) => (
-                  <div
-                    key={`random-${item.id}`}
-                    className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
-                    onClick={() => handleResultClick(item.url)}
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                      <h3 className="font-semibold truncate">{item.title}</h3>
-                      <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
-                        {item.isPublic ? '公开' : '私有'}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
-                  </div>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div className="text-center py-4">
-              <p className="text-muted-foreground">请输入搜索关键词</p>
-            </div>
-          )}
+          {renderSearchResults()}
         </div>
       </DialogContent>
     </Dialog>
