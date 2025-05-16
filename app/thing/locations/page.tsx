@@ -47,25 +47,6 @@ export default function Locations() {
   
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold">位置管理</h1>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="rounded-full p-1 hover:bg-muted">
-                <HelpCircle className="h-5 w-5 text-muted-foreground" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="left">
-              <p className="max-w-xs">
-                在树形视图中，点击右下角加号按钮添加新位置。<br />
-                点击文件夹按钮可以筛选显示区域或房间。
-              </p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
-
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="mt-2">
         <TabsList className="w-full">
           <TabsTrigger value="tree" className="flex-1">
