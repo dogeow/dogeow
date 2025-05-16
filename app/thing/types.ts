@@ -1,3 +1,10 @@
+// 用户类型
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
 // 物品表单数据类型
 export interface ItemFormData {
   name: string;
@@ -105,10 +112,7 @@ export interface Item {
   is_public: boolean;
   created_at: string;
   updated_at: string;
-  user?: {
-    id: number;
-    name: string;
-  };
+  user?: User;
   category?: Category;
   spot?: Spot & {
     room?: Room & {

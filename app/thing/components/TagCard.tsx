@@ -3,31 +3,27 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 import { cn, isLightColor } from '@/lib/utils';
+import { Tag } from '../types';
 
 interface TagCardProps {
-  tag: {
+  tag: Partial<Tag> & {
     id: string | number;
     name: string;
-    color?: string;
   };
-  count?: number; // 可选的计数显示
+  count?: number;
   onDelete?: () => void;
   className?: string;
 }
 
 export default function TagCard({ tag, count, onDelete, className }: TagCardProps) {
-  // 检查tag是否存在，防止渲染错误
-  if (!tag || !tag.name) {
-    return null;
-  }
+  // 防止渲染错误
+  if (!tag?.name) return null;
   
-  // 设置标签样式，使用提供的颜色或默认色
-  const getTagStyle = (color: string = "#3b82f6") => {
-    return {
-      backgroundColor: color,
-      color: isLightColor(color) ? '#000' : '#fff',
-      borderColor: 'transparent'
-    };
+  // 设置标签样式
+  const tagStyle = {
+    backgroundColor: tag.color || "#3b82f6",
+    color: isLightColor(tag.color || "#3b82f6") ? '#000' : '#fff',
+    borderColor: 'transparent'
   };
 
   return (
@@ -35,13 +31,11 @@ export default function TagCard({ tag, count, onDelete, className }: TagCardProp
       <CardContent className="p-0">
         <div className="flex items-center">
           <Badge
-            style={getTagStyle(tag.color)}
+            style={tagStyle}
             className="rounded-r-none text-xs font-medium px-2 py-0.5 h-full flex-grow"
           >
             {tag.name}
-            {count !== undefined && (
-              <span className="ml-1 opacity-80">{count}</span>
-            )}
+            {count !== undefined && <span className="ml-1 opacity-80">{count}</span>}
           </Badge>
           
           {onDelete && (
@@ -60,4 +54,4 @@ export default function TagCard({ tag, count, onDelete, className }: TagCardProp
       </CardContent>
     </Card>
   );
-} 
+}

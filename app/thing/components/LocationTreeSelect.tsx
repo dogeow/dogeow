@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Search, MapPin, Home } from "lucide-react"
+import { MapPin } from "lucide-react"
 import { useAreas, useRooms, useSpots } from '@/utils/api'
 import { cn } from '@/lib/utils'
 import { LocationSelection } from '../types'
@@ -28,12 +27,14 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
   const [expandedAreas, setExpandedAreas] = useState<number[]>([])
   const [expandedRooms, setExpandedRooms] = useState<number[]>([])
   const prevIsExpandedRef = useRef(isExpanded)
+  const prevSelectionRef = useRef<{type?: string, id?: number}>({});
   
   // 使用 SWR hooks 获取数据
   const { data: areas = [] } = useAreas()
   const { data: rooms = [] } = useRooms()
   const { data: spots = [] } = useSpots()
   
+  // 处理初始展开状态
   useEffect(() => {
     if (areas.length > 0 && rooms.length > 0 && prevIsExpandedRef.current !== isExpanded) {
       prevIsExpandedRef.current = isExpanded
@@ -48,199 +49,187 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
     }
   }, [isExpanded, areas, rooms])
   
-  const prevSelectionRef = useRef<{type?: string, id?: number}>({});
-  
+  // 处理选中位置的展开状态
   useEffect(() => {
-    if (selectedLocation && areas.length && rooms.length && spots.length) {
-      const hasChanged = 
-        prevSelectionRef.current.type !== selectedLocation.type || 
-        prevSelectionRef.current.id !== selectedLocation.id;
+    if (!selectedLocation || !areas.length || !rooms.length || !spots.length) return;
+    
+    const hasChanged = 
+      prevSelectionRef.current.type !== selectedLocation.type || 
+      prevSelectionRef.current.id !== selectedLocation.id;
+    
+    if (!hasChanged) return;
+
+    prevSelectionRef.current = { 
+      type: selectedLocation.type, 
+      id: selectedLocation.id 
+    };
+
+    const newAreaIds = [...expandedAreas];
+    const newRoomIds = [...expandedRooms];
+    let hasUpdates = false;
+
+    if (selectedLocation.type === 'room' || selectedLocation.type === 'spot') {
+      const room = rooms.find(r => r.id === (selectedLocation.type === 'room' 
+        ? selectedLocation.id 
+        : spots.find(s => s.id === selectedLocation.id)?.room_id));
       
-      if (!hasChanged) return;
-
-      prevSelectionRef.current = { 
-        type: selectedLocation.type, 
-        id: selectedLocation.id 
-      };
-
-      let shouldUpdateAreaIds = false;
-      let shouldUpdateRoomIds = false;
-      let newAreaIds = [...expandedAreas];
-      let newRoomIds = [...expandedRooms];
-
-      if (selectedLocation.type === 'room' || selectedLocation.type === 'spot') {
-        const room = rooms.find(r => r.id === (selectedLocation.type === 'room' 
-          ? selectedLocation.id 
-          : spots.find(s => s.id === selectedLocation.id)?.room_id));
-        
-        if (room && room.area_id && !newAreaIds.includes(room.area_id)) {
-          newAreaIds.push(room.area_id);
-          shouldUpdateAreaIds = true;
-        }
-      }
-      
-      if (selectedLocation.type === 'spot') {
-        const spot = spots.find(s => s.id === selectedLocation.id);
-        if (spot && spot.room_id && !newRoomIds.includes(spot.room_id)) {
-          newRoomIds.push(spot.room_id);
-          shouldUpdateRoomIds = true;
-        }
-      }
-
-      if (shouldUpdateAreaIds) {
-        setExpandedAreas(newAreaIds);
-      }
-      
-      if (shouldUpdateRoomIds) {
-        setExpandedRooms(newRoomIds);
+      if (room?.area_id && !newAreaIds.includes(room.area_id)) {
+        newAreaIds.push(room.area_id);
+        hasUpdates = true;
       }
     }
-  }, [selectedLocation, areas, rooms, spots]);
+    
+    if (selectedLocation.type === 'spot') {
+      const spot = spots.find(s => s.id === selectedLocation.id);
+      if (spot?.room_id && !newRoomIds.includes(spot.room_id)) {
+        newRoomIds.push(spot.room_id);
+        hasUpdates = true;
+      }
+    }
+
+    if (hasUpdates) {
+      setExpandedAreas(newAreaIds);
+      setExpandedRooms(newRoomIds);
+    }
+  }, [selectedLocation, areas, rooms, spots, expandedAreas, expandedRooms]);
   
   // 根据搜索词和过滤类型过滤位置
   const filteredAreas = areas.filter(area => {
-    const matchesSearch = searchTerm === '' || area.name.toLowerCase().includes(searchTerm.toLowerCase())
-    // 如果仅显示房间，不显示区域
-    if (filterType === 'room') return false
-    return matchesSearch
-  })
+    if (filterType === 'room') return false;
+    return searchTerm === '' || area.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
   
-  const filteredRooms = rooms.filter(room => {
-    const matchesSearch = searchTerm === '' || room.name.toLowerCase().includes(searchTerm.toLowerCase())
-    return matchesSearch
-  })
+  const filteredRooms = rooms.filter(room => 
+    searchTerm === '' || room.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   const filteredSpots = spots.filter(spot => {
-    const matchesSearch = searchTerm === '' || spot.name.toLowerCase().includes(searchTerm.toLowerCase())
-    // 如果仅显示区域，不显示位置
-    if (filterType === 'area') return false
-    return matchesSearch
-  })
+    if (filterType === 'area') return false;
+    return searchTerm === '' || spot.name.toLowerCase().includes(searchTerm.toLowerCase());
+  });
   
-  // 在搜索模式下，我们需要显示所有包含匹配结果的区域，即使区域名称本身不匹配
-  const visibleAreas = searchTerm === ''
-    ? filteredAreas
+  // 在搜索模式下，显示所有包含匹配结果的区域
+  const visibleAreas = searchTerm === '' 
+    ? filteredAreas 
     : areas.filter(area => {
         // 区域名称匹配
-        if (area.name.toLowerCase().includes(searchTerm.toLowerCase())) return true
+        if (area.name.toLowerCase().includes(searchTerm.toLowerCase())) return true;
         
         // 区域包含匹配的房间
         const hasMatchingRoom = rooms.some(room => 
           room.area_id === area.id && room.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        if (hasMatchingRoom) return true
+        );
+        if (hasMatchingRoom) return true;
         
         // 区域包含匹配的位置
-        const hasMatchingSpot = spots.some(spot => {
-          const room = rooms.find(r => r.id === spot.room_id)
-          return room?.area_id === area.id && spot.name.toLowerCase().includes(searchTerm.toLowerCase())
-        })
-        
-        return hasMatchingSpot
-      })
+        return spots.some(spot => {
+          const room = rooms.find(r => r.id === spot.room_id);
+          return room?.area_id === area.id && spot.name.toLowerCase().includes(searchTerm.toLowerCase());
+        });
+      });
   
-  // 在搜索模式下，我们需要显示所有包含匹配结果的房间，即使房间名称本身不匹配
+  // 获取区域下可见的房间
   const getVisibleRoomsForArea = (areaId: number) => {
-    const areaRooms = rooms.filter(room => room.area_id === areaId)
+    const areaRooms = rooms.filter(room => room.area_id === areaId);
     
-    if (searchTerm === '') {
-      return areaRooms
-    }
+    if (searchTerm === '') return areaRooms;
     
     return areaRooms.filter(room => {
       // 房间名称匹配
-      if (room.name.toLowerCase().includes(searchTerm.toLowerCase())) return true
+      if (room.name.toLowerCase().includes(searchTerm.toLowerCase())) return true;
       
       // 房间包含匹配的位置
       return spots.some(spot => 
         spot.room_id === room.id && spot.name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    })
-  }
+      );
+    });
+  };
   
-  // 显示所有过滤后的位置和它们的父节点
-  const getFilteredAreaIds = () => {
-    // 搜索模式下，展开所有可见区域
-    if (searchTerm !== '') {
-      return visibleAreas.map(area => area.id)
-    }
-    
-    return expandedAreas
-  }
+  // 获取应该展开的区域ID
+  const getFilteredAreaIds = () => 
+    searchTerm !== '' ? visibleAreas.map(area => area.id) : expandedAreas;
   
+  // 获取应该展开的房间ID
   const getFilteredRoomIds = () => {
-    // 搜索模式下，展开所有可见房间
-    if (searchTerm !== '') {
-      return rooms
-        .filter(room => visibleAreas.some(area => area.id === room.area_id))
-        .filter(room => {
-          // 房间名称匹配
-          if (room.name.toLowerCase().includes(searchTerm.toLowerCase())) return true
-          
-          // 房间包含匹配的位置
-          return spots.some(spot => 
-            spot.room_id === room.id && spot.name.toLowerCase().includes(searchTerm.toLowerCase())
-          )
-        })
-        .map(room => room.id)
-    }
+    if (searchTerm === '') return expandedRooms;
     
-    return expandedRooms
-  }
+    return rooms
+      .filter(room => 
+        visibleAreas.some(area => area.id === room.area_id) && (
+          room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          spots.some(spot => 
+            spot.room_id === room.id && 
+            spot.name.toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        )
+      )
+      .map(room => room.id);
+  };
   
   // 处理展开/折叠
   const toggleArea = (e: React.MouseEvent, areaId: number) => {
-    e.stopPropagation()
+    e.stopPropagation();
     setExpandedAreas(prev => 
       prev.includes(areaId) 
         ? prev.filter(id => id !== areaId)
         : [...prev, areaId]
-    )
-  }
+    );
+  };
   
   const toggleRoom = (e: React.MouseEvent, roomId: number) => {
-    e.stopPropagation()
+    e.stopPropagation();
     setExpandedRooms(prev => 
       prev.includes(roomId) 
         ? prev.filter(id => id !== roomId)
         : [...prev, roomId]
-    )
-  }
+    );
+  };
   
   // 构建选择路径
   const buildPath = (type: 'area' | 'room' | 'spot', id: number): string => {
     if (type === 'area') {
-      const area = areas.find(a => a.id === id)
-      return area ? area.name : '未知区域'
-    } else if (type === 'room') {
-      const room = rooms.find(r => r.id === id)
-      if (!room) return '未知房间'
+      const area = areas.find(a => a.id === id);
+      return area?.name || '未知区域';
+    } 
+    
+    if (type === 'room') {
+      const room = rooms.find(r => r.id === id);
+      if (!room) return '未知房间';
       
-      const area = areas.find(a => a.id === room.area_id)
-      return `${area ? area.name : '未知区域'} / ${room.name}`
-    } else {
-      const spot = spots.find(s => s.id === id)
-      if (!spot) return '未知位置'
-      
-      const room = rooms.find(r => r.id === spot.room_id)
-      if (!room) return `未知房间 / ${spot.name}`
-      
-      const area = areas.find(a => a.id === room.area_id)
-      return `${area ? area.name : '未知区域'} / ${room.name} / ${spot.name}`
-    }
-  }
+      const area = areas.find(a => a.id === room.area_id);
+      return `${area?.name || '未知区域'} / ${room.name}`;
+    } 
+    
+    // spot
+    const spot = spots.find(s => s.id === id);
+    if (!spot) return '未知位置';
+    
+    const room = rooms.find(r => r.id === spot.room_id);
+    if (!room) return `未知房间 / ${spot.name}`;
+    
+    const area = areas.find(a => a.id === room.area_id);
+    return `${area?.name || '未知区域'} / ${room.name} / ${spot.name}`;
+  };
   
   // 选择位置
   const handleSelect = (type: 'area' | 'room' | 'spot', id: number) => {
-    const fullPath = buildPath(type, id)
-    onSelect(type, id, fullPath)
-  }
+    onSelect(type, id, buildPath(type, id));
+  };
+
+  const filteredAreaIds = getFilteredAreaIds();
+  const filteredRoomIds = getFilteredRoomIds();
+  const hasNoResults = filteredAreas.length === 0 && filteredRooms.length === 0 && filteredSpots.length === 0;
 
   return (
     <div className={cn("border rounded-md p-2", className)}>
       <div className="flex items-center gap-2 mb-2">
         <div className="relative flex-1">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <div className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.3-4.3"></path>
+            </svg>
+          </div>
           <Input
             placeholder="搜索位置..."
             className="pl-7 h-8 text-sm"
@@ -251,7 +240,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
       </div>
       
       <div className="h-[300px] overflow-y-auto pr-1">
-        {filteredAreas.length === 0 && filteredRooms.length === 0 && filteredSpots.length === 0 && (
+        {hasNoResults && (
           <div className="py-2 text-center text-sm text-muted-foreground">
             {searchTerm ? "没有匹配的位置" : "没有可用的位置"}
           </div>
@@ -271,7 +260,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                 className="flex items-center"
               >
                 <FolderIcon 
-                  isOpen={getFilteredAreaIds().includes(area.id)}
+                  isOpen={filteredAreaIds.includes(area.id)}
                   size={14}
                   className="mr-1"
                 />
@@ -281,7 +270,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
               </span>
             </div>
             
-            {getFilteredAreaIds().includes(area.id) && getVisibleRoomsForArea(area.id)
+            {filteredAreaIds.includes(area.id) && getVisibleRoomsForArea(area.id)
               .map(room => (
                 <div key={room.id} className="ml-4">
                   <div 
@@ -296,7 +285,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                       className="flex items-center"
                     >
                       <FolderIcon 
-                        isOpen={getFilteredRoomIds().includes(room.id)} 
+                        isOpen={filteredRoomIds.includes(room.id)} 
                         size={14}
                         className="mr-1"
                       />
@@ -306,7 +295,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                     </span>
                   </div>
                   
-                  {filterType !== 'area' && getFilteredRoomIds().includes(room.id) && spots
+                  {filterType !== 'area' && filteredRoomIds.includes(room.id) && spots
                     .filter(spot => spot.room_id === room.id)
                     .filter(spot => searchTerm === '' || spot.name.toLowerCase().includes(searchTerm.toLowerCase()))
                     .map(spot => (
@@ -338,7 +327,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
               onClick={() => handleSelect('room', room.id)}
             >
               <FolderIcon 
-                isOpen={getFilteredRoomIds().includes(room.id)} 
+                isOpen={filteredRoomIds.includes(room.id)} 
                 size={14}
                 className="mr-1"
               />
@@ -352,8 +341,9 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
               )}
             </div>
             
-            {getFilteredRoomIds().includes(room.id) && spots
+            {filteredRoomIds.includes(room.id) && spots
               .filter(spot => spot.room_id === room.id)
+              .filter(spot => searchTerm === '' || spot.name.toLowerCase().includes(searchTerm.toLowerCase()))
               .map(spot => (
                 <div 
                   key={spot.id} 

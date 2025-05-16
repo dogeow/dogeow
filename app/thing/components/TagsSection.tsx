@@ -6,9 +6,8 @@ import { Plus, Tag, Check, ChevronsUpDown } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Tag as TagType } from "../types"
 import CreateTagDialog from './CreateTagDialog'
-import { cn } from "@/lib/utils"
+import { cn, isLightColor } from "@/lib/utils"
 import { Input } from "@/components/ui/input"
-import { isLightColor } from '@/lib/utils'
 
 interface TagsSectionProps {
   selectedTags: string[];
@@ -30,7 +29,6 @@ const TagsSection: React.FC<TagsSectionProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
   
-  // 关闭下拉框的点击外部处理
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -44,20 +42,14 @@ const TagsSection: React.FC<TagsSectionProps> = ({
     }
     
     document.addEventListener('mousedown', handleClickOutside)
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
-  // 获取标签样式
-  const getTagStyle = (color: string = "#3b82f6") => {
-    return {
-      backgroundColor: color,
-      color: isLightColor(color) ? "#000" : "#fff"
-    }
-  }
+  const getTagStyle = (color: string = "#3b82f6") => ({
+    backgroundColor: color,
+    color: isLightColor(color) ? "#000" : "#fff"
+  })
 
-  // 切换标签的选中状态
   const toggleTag = (tagId: string) => {
     setSelectedTags(prev => 
       prev.includes(tagId) 
@@ -66,10 +58,15 @@ const TagsSection: React.FC<TagsSectionProps> = ({
     )
   }
   
-  // 过滤标签
   const filteredTags = tags.filter(tag => 
     tag.name.toLowerCase().includes(searchTerm.toLowerCase())
   )
+
+  const handleCreateNewTag = () => {
+    setNewTagName(searchTerm)
+    setCreateTagDialogOpen(true)
+    setIsDropdownOpen(false)
+  }
 
   return (
     <>
@@ -95,7 +92,6 @@ const TagsSection: React.FC<TagsSectionProps> = ({
                 </Button>
               </Label>
               
-              {/* 自定义多选下拉菜单 */}
               <div className="relative">
                 <div 
                   ref={triggerRef}
@@ -133,11 +129,7 @@ const TagsSection: React.FC<TagsSectionProps> = ({
                             type="button" 
                             variant="outline" 
                             size="sm"
-                            onClick={() => {
-                              setNewTagName(searchTerm);
-                              setCreateTagDialogOpen(true);
-                              setIsDropdownOpen(false);
-                            }}
+                            onClick={handleCreateNewTag}
                             className="w-full"
                           >
                             添加标签《{searchTerm}》
@@ -204,7 +196,6 @@ const TagsSection: React.FC<TagsSectionProps> = ({
         </CardContent>
       </Card>
       
-      {/* 创建标签对话框 */}
       <CreateTagDialog 
         open={createTagDialogOpen} 
         onOpenChange={setCreateTagDialogOpen} 
