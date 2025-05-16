@@ -1,5 +1,6 @@
 import { Editor, Element as SlateElement, Range as SlateRange, Transforms, Node, Point } from 'slate'
-import { CustomElement, ExtendedEditor } from '../types'
+import { ExtendedEditor } from '../types'
+import { CustomElement } from '@/app/note/types/editor'
 import { checkCodeBlock, getChildNodeToDecorations, mergeMaps } from '../prism-utils'
 
 // 检查Markdown快捷方式
@@ -122,7 +123,7 @@ export const withMarkdownShortcuts = (editor: ExtendedEditor) => {
             // 包裹在无序列表中
             Transforms.wrapNodes(
               editor,
-              { type: 'bulleted-list', children: [] } as CustomElement,
+              { type: 'bulleted-list', children: [] } as unknown as CustomElement,
               { match: n => SlateElement.isElement(n) && (n as CustomElement).type === 'list-item' }
             )
             break
@@ -136,7 +137,7 @@ export const withMarkdownShortcuts = (editor: ExtendedEditor) => {
             // 包裹在有序列表中
             Transforms.wrapNodes(
               editor,
-              { type: 'numbered-list', children: [] } as CustomElement,
+              { type: 'numbered-list', children: [] } as unknown as CustomElement,
               { match: n => SlateElement.isElement(n) && (n as CustomElement).type === 'list-item' }
             )
             break

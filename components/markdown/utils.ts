@@ -1,5 +1,6 @@
 import { Editor, Element as SlateElement, Point, Range, Transforms } from 'slate'
-import { ExtendedEditor, CustomElement } from './types'
+import { ExtendedEditor } from './types'
+import { CustomElement } from '@/app/note/types/editor'
 
 // 处理代码块中的Tab键
 export const handleCodeBlockTab = (
@@ -30,7 +31,16 @@ export const handleCodeBlockTab = (
     if (!Point.equals(selection.anchor, selection.focus)) {
       // 有选中的文本，处理多行缩进/反缩进
       const fragment = Editor.fragment(editor, selection);
-      const text = fragment.map(n => Editor.string(editor, n)).join('\n');
+      const text = fragment.map(node => {
+        if ('text' in node) {
+          return node.text;
+        }
+        try {
+          return serializeToText([node]);
+        } catch (e) {
+          return '';
+        }
+      }).join('\n');
       const lines = text.split('\n');
       
       // 对选中的每一行应用缩进/反缩进

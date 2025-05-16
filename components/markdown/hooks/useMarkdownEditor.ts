@@ -3,7 +3,8 @@ import { createEditor, Descendant, Editor, Element as SlateElement, Transforms }
 import { withHistory } from 'slate-history'
 import { withReact } from 'slate-react'
 import isHotkey from 'is-hotkey'
-import { ElementType, HOTKEYS, LIST_TYPES, initialValue, ExtendedEditor, CustomElement } from '../types'
+import { ElementType, HOTKEYS, LIST_TYPES, initialValue, ExtendedEditor, CustomText } from '../types'
+import { CustomElement } from '@/app/note/types/editor'
 import { withMarkdownShortcuts } from '../plugins/withMarkdownShortcuts'
 import { checkCodeBlock, handleCodeBlockTab } from '../prism-utils'
 
@@ -165,7 +166,7 @@ export const useMarkdownEditor = ({
   }, [editor, updateHighlighting]);
 
   // 格式切换
-  const toggleMark = useCallback((format: string) => {
+  const toggleMark = useCallback((format: keyof Omit<CustomText, 'text'>) => {
     const isActive = isMarkActive(format);
     if (isActive) {
       Editor.removeMark(editor, format);
@@ -175,7 +176,7 @@ export const useMarkdownEditor = ({
   }, [editor]);
   
   // 检查标记是否激活
-  const isMarkActive = useCallback((format: string) => {
+  const isMarkActive = useCallback((format: keyof Omit<CustomText, 'text'>) => {
     const marks = Editor.marks(editor);
     return marks ? marks[format] === true : false;
   }, [editor]);
@@ -199,7 +200,7 @@ export const useMarkdownEditor = ({
     );
     
     if (!isActive && isList) {
-      const block = { type: format, children: [] } as CustomElement;
+      const block = { type: format, children: [] } as unknown as CustomElement;
       Transforms.wrapNodes(editor, block);
     }
   }, [editor]);

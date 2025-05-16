@@ -55,7 +55,7 @@ export type ExtendedEditor = BaseEditor & ReactEditor & HistoryEditor & {
 export type ElementType = CustomElement['type']
 
 // 热键定义
-export const HOTKEYS = {
+export const HOTKEYS: Record<string, keyof Omit<CustomText, 'text'>> = {
   'mod+b': 'bold',
   'mod+i': 'italic',
   'mod+`': 'code',
