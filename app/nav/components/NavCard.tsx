@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card"
 import { NavItem } from '@/app/nav/types';
-import { useNavStore } from '@/stores/navStore';
+import { useNavStore } from '@/app/nav/stores/navStore';
 import { useRouter } from 'next/navigation';
 import { ExternalLink, MoreVertical, Pencil, Trash } from 'lucide-react';
 import { 

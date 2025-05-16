@@ -6,7 +6,7 @@ import { NavCategory } from './components/NavCategory';
 import { Folder, Search, Plus, Settings } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useNavStore } from '@/stores/navStore';
+import { useNavStore } from '@/app/nav/stores/navStore';
 
 export default function NavPage() {
   const router = useRouter();
