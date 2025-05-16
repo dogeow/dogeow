@@ -25,7 +25,30 @@ export default function NoteCategories() {
   const [loading, setLoading] = useState(false)
 
   // 加载分类数据
-  const { data: categories, error, isLoading } = useSWR<Category[]>('/note-categories', get)
+  const { data: categories = [], error, isLoading } = useSWR<Category[]>('/note-categories', get)
+
+  // 处理API请求的通用函数
+  const handleApiRequest = async (
+    apiCall: () => Promise<any>,
+    successMessage: string,
+    errorMessage: string
+  ) => {
+    if (loading) return
+    
+    setLoading(true)
+    try {
+      await apiCall()
+      mutate("/note-categories")
+      toast.success(successMessage)
+      return true
+    } catch (error) {
+      toast.error(errorMessage)
+      console.error(error)
+      return false
+    } finally {
+      setLoading(false)
+    }
+  }
 
   // 添加分类
   const addCategory = async () => {
@@ -34,17 +57,14 @@ export default function NoteCategories() {
       return
     }
 
-    setLoading(true)
-    try {
-      await post("/note-categories", { name: newCategory.trim() })
+    const success = await handleApiRequest(
+      () => post("/note-categories", { name: newCategory.trim() }),
+      "分类添加成功",
+      "添加分类失败"
+    )
+    
+    if (success) {
       setNewCategory("")
-      mutate("/note-categories")
-      toast.success("分类添加成功")
-    } catch (error) {
-      toast.error("添加分类失败")
-      console.error(error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -55,19 +75,16 @@ export default function NoteCategories() {
       return
     }
 
-    setLoading(true)
-    try {
-      await put(`/note-categories/${editingCategory.id}`, {
+    const success = await handleApiRequest(
+      () => put(`/note-categories/${editingCategory.id}`, {
         name: editingCategory.name.trim(),
-      })
+      }),
+      "分类更新成功",
+      "更新分类失败"
+    )
+    
+    if (success) {
       setEditingCategory(null)
-      mutate("/note-categories")
-      toast.success("分类更新成功")
-    } catch (error) {
-      toast.error("更新分类失败")
-      console.error(error)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -77,28 +94,85 @@ export default function NoteCategories() {
       return
     }
 
-    setLoading(true)
-    try {
-      await del(`/note-categories/${id}`)
-      mutate("/note-categories")
-      toast.success("分类删除成功")
-    } catch (error) {
-      toast.error("删除分类失败")
-      console.error(error)
-    } finally {
-      setLoading(false)
-    }
+    await handleApiRequest(
+      () => del(`/note-categories/${id}`),
+      "分类删除成功",
+      "删除分类失败"
+    )
   }
 
   // 处理回车键提交
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      if (editingCategory) {
-        updateCategory()
-      } else {
-        addCategory()
-      }
+      editingCategory ? updateCategory() : addCategory()
     }
+  }
+
+  // 渲染分类项
+  const renderCategoryItem = (category: Category) => {
+    const isEditing = editingCategory?.id === category.id
+    
+    return (
+      <Card key={category.id} className="py-1">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>
+              {isEditing ? (
+                <Input
+                  value={editingCategory.name}
+                  onChange={(e) =>
+                    setEditingCategory({
+                      ...editingCategory,
+                      name: e.target.value
+                    })
+                  }
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                />
+              ) : (
+                category.name
+              )}
+            </CardTitle>
+            {isEditing ? (
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEditingCategory(null)}
+                >
+                  取消
+                </Button>
+                <Button 
+                  size="sm" 
+                  onClick={updateCategory}
+                  disabled={loading || !editingCategory.name.trim()}
+                >
+                  保存
+                </Button>
+              </div>
+            ) : (
+              <div className="flex space-x-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setEditingCategory(category)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="text-red-500 hover:text-red-700"
+                  onClick={() => deleteCategory(category.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+      </Card>
+    )
   }
 
   return (
@@ -147,70 +221,10 @@ export default function NoteCategories() {
         <h2 className="text-xl font-bold mb-4">分类列表</h2>
         {error && <p className="text-red-500">加载分类失败</p>}
         {isLoading && <p>加载中...</p>}
-        {categories?.length === 0 && <p>暂无分类，请添加</p>}
+        {categories.length === 0 && !isLoading && <p>暂无分类，请添加</p>}
 
         <div className="flex flex-col gap-2">
-          {categories?.map((category) => (
-            <Card key={category.id} className="py-1">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>
-                    {editingCategory?.id === category.id ? (
-                      <Input
-                        value={editingCategory.name}
-                        onChange={(e) =>
-                          setEditingCategory({
-                            ...editingCategory,
-                            name: e.target.value
-                          })
-                        }
-                        onKeyDown={handleKeyDown}
-                        autoFocus
-                      />
-                    ) : (
-                      category.name
-                    )}
-                  </CardTitle>
-                  {editingCategory?.id === category.id ? (
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setEditingCategory(null)}
-                      >
-                        取消
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        onClick={updateCategory}
-                        disabled={loading || !editingCategory.name.trim()}
-                      >
-                        保存
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => setEditingCategory(category)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="text-red-500 hover:text-red-700"
-                        onClick={() => deleteCategory(category.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
+          {categories.map(renderCategoryItem)}
         </div>
       </div>
     </div>
