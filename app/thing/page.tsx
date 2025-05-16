@@ -180,8 +180,25 @@ export default function Thing() {
   
   // 检查是否有激活的筛选条件
   const hasActiveFilters = () => {
-    // 检查是否有保存的筛选条件
-    return Object.keys(savedFilters).length > 0;
+    // 检查是否有实际有效的筛选条件
+    const activeFilters = Object.entries(savedFilters).filter(([key, value]) => {
+      // 忽略这些值，认为它们不是有效的筛选条件
+      if (value === undefined || value === null || value === '' || value === 'all' || 
+          (Array.isArray(value) && value.length === 0) ||
+          (key === 'include_null_purchase_date' && value === true) ||
+          (key === 'include_null_expiry_date' && value === true)) {
+        return false;
+      }
+      
+      // 特殊处理category_id
+      if (key === 'category_id' && (value === 'none' || value === '')) {
+        return false;
+      }
+      
+      return true;
+    });
+    
+    return activeFilters.length > 0;
   };
 
   // 获取标签样式

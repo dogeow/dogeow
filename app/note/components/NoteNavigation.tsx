@@ -40,33 +40,35 @@ export default function NoteNavigation() {
   }
   
   return (
-    <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative shadow-sm h-14">
-      <nav className="container h-full flex items-center py-2 px-4 overflow-x-auto">
-        <div className="flex items-center space-x-1 md:space-x-2">
-          <Button size="sm" asChild>
+    <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative shadow-sm">
+      <nav className="flex items-center py-2 px-4 overflow-x-auto">
+        <div className="flex items-center space-x-2">
+          <Button variant="ghost" size="sm" asChild>
             <Link href="/note/new">
-              <Plus className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">新建笔记</span>
+              <Plus className="h-4 w-4" />
             </Link>
           </Button>
           
-          {navItems.map((item) => {
-            const Icon = item.icon
-            return (
-              <Button
-                key={item.href}
-                variant={isActive(item) ? "default" : "ghost"}
-                size="sm"
-                className="whitespace-nowrap"
-                asChild
-              >
-                <Link href={item.href}>
-                  <Icon className="h-4 w-4" />
-                  <span className="ml-1">{item.label}</span>
-                </Link>
-              </Button>
-            )
-          })}
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/note">
+              <FileText className="h-4 w-4 mr-2" />
+              我的笔记
+            </Link>
+          </Button>
+          
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/note/categories">
+              <FolderTree className="h-4 w-4 mr-2" />
+              分类
+            </Link>
+          </Button>
+          
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/note/tags">
+              <Tag className="h-4 w-4 mr-2" />
+              标签
+            </Link>
+          </Button>
         </div>
       </nav>
     </div>
