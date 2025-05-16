@@ -201,7 +201,7 @@ export default function Thing() {
     setSelectedCategory(value);
     setCurrentPage(1);
     loadItems({ 
-      category_id: value === "none" ? undefined : value === "uncategorized" ? null : value,
+      category_id: value === "none" ? undefined : value === "uncategorized" ? undefined : value,
       page: 1
     });
   }, [loadItems]);
