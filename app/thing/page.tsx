@@ -4,11 +4,9 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { SlidersHorizontal, LayoutList, Grid, X, Tag as TagIcon, FilterX, ChevronDownIcon } from "lucide-react"
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { SlidersHorizontal, LayoutList, Grid, X, FilterX, ChevronDownIcon } from "lucide-react"
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ItemGallery from './components/ItemGallery'
@@ -18,10 +16,7 @@ import ThingSpeedDial from './components/SpeedDial'
 import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
 import { get } from "@/utils/api"
-import { isLightColor } from '@/lib/utils'
-import SearchInput from './components/SearchInput'
-import TagCard from './components/TagCard'
-import { Card } from "@/components/ui/card"
+import { isLightColor } from '@/lib/helpers'
 
 // 定义视图模式类型
 type ViewMode = 'list' | 'gallery';
@@ -64,8 +59,8 @@ export default function Thing() {
   const [initialDataLoaded, setInitialDataLoaded] = useState(false)
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
   
-  // 修改标签加载方式，不使用禁用自动重新请求的方式
-  const { data: tags, error: tagsError } = useSWR<Tag[]>(
+  // 标签加载
+  const { data: tags } = useSWR<Tag[]>(
     '/thing-tags', 
     get,
     {
@@ -84,7 +79,7 @@ export default function Thing() {
   // 计算总页数
   const totalPages = meta?.last_page || 1
 
-  // 获取基础筛选参数，使用useCallback包装
+  // 获取基础筛选参数
   const getBaseFilterParams = useCallback(() => ({
     search: searchTerm || undefined,
     category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined,
@@ -96,7 +91,6 @@ export default function Thing() {
     const handleClickOutside = (event: MouseEvent) => {
       if (tagMenuOpen) {
         const target = event.target as HTMLElement;
-        // 检查点击事件是否在菜单外部
         if (!target.closest('.tag-dropdown-container')) {
           setTagMenuOpen(false);
         }
@@ -126,20 +120,17 @@ export default function Thing() {
     };
   }, [categoryMenuOpen]);
 
-  // 在组件初始化时加载基础数据，仅执行一次
+  // 在组件初始化时加载基础数据
   useEffect(() => {
     if (!initialDataLoaded) {
-      // 一次性加载所有必要的数据
       const loadAllData = async () => {
         try {
           if (categories.length === 0) {
             await fetchCategories();
           }
           
-          // 标记初始数据已加载完成
           setInitialDataLoaded(true);
           
-          // 在初始加载完成后确保 selectedTags 是字符串数组
           if (selectedTags.length > 0) {
             setSelectedTags(selectedTags.map(tag => tag.toString()));
           }
@@ -150,18 +141,15 @@ export default function Thing() {
       
       loadAllData();
     }
-  }, [categories.length, fetchCategories, initialDataLoaded]);
+  }, [categories.length, fetchCategories, initialDataLoaded, selectedTags]);
 
+  // 初始加载数据
   useEffect(() => {
-    // 从URL获取搜索参数
-    const searchParams = new URLSearchParams(window.location.search)
-    const search = searchParams.get('search')
-    
-    // 只在组件首次加载时执行
     if (!initialLoaded) {
-      // 从 savedFilters 加载已保存的筛选条件
+      const searchParams = new URLSearchParams(window.location.search)
+      const search = searchParams.get('search')
+      
       if (Object.keys(savedFilters).length > 0) {
-        // 恢复保存的筛选条件到本地状态
         if (savedFilters.search) {
           setSearchTerm(savedFilters.search);
         }
@@ -174,57 +162,49 @@ export default function Thing() {
           setSelectedTags(savedFilters.tags);
         }
         
-        // 使用已保存的筛选条件加载数据
-        fetchItems(); // 会自动使用已保存的筛选条件
+        fetchItems();
       } else if (search) {
-        // 如果URL中有搜索参数但没有已保存的筛选条件
         setSearchTerm(search);
-        const params = { search, page: 1 };
-        loadItems(params);
+        loadItems({ search, page: 1 });
       } else {
-        // 没有筛选条件，加载所有物品
         loadItems();
       }
       setInitialLoaded(true);
     }
-  }, [initialLoaded, savedFilters])
+  }, [initialLoaded, savedFilters, fetchItems])
 
-  // 优化后的加载数据函数，使用useCallback包装
+  // 加载数据函数
   const loadItems = useCallback((params = {}) => {
-    // 防止重复请求
     if (isSearching) return Promise.resolve();
     
-    setIsSearching(true); // 标记搜索状态开始
+    setIsSearching(true);
     
     const allParams = {
       ...getBaseFilterParams(),
       ...params
     };
     
-    // 保存筛选条件，除了页码
     const filtersToSave = { ...allParams };
     if ('page' in filtersToSave) {
       delete filtersToSave.page;
     }
     saveFilters(filtersToSave);
     
-    // 设置itemsOnly参数，确保只加载物品数据
     const itemsOnly = params.hasOwnProperty('search') || params.hasOwnProperty('itemsOnly');
     
-    // 使用Promise，确保搜索完成后设置状态
     return fetchItems(allParams, itemsOnly)
       .finally(() => {
-        setIsSearching(false); // 标记搜索状态结束
+        setIsSearching(false);
       });
   }, [fetchItems, getBaseFilterParams, isSearching, saveFilters]);
 
   // 处理页面变化
-  const handlePageChange = (page: number) => {
+  const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page)
     loadItems({ page })
-  }
+  }, [loadItems]);
 
-  // 处理分类变化，使用useCallback包装
+  // 处理分类变化
   const handleCategoryChange = useCallback((value: string) => {
     setSelectedCategory(value);
     setCurrentPage(1);
@@ -234,25 +214,20 @@ export default function Thing() {
     });
   }, [loadItems]);
 
-  // 在handleReset方法中也要清除保存的筛选条件
-  const handleReset = () => {
+  // 重置筛选条件
+  const handleReset = useCallback(() => {
     setSearchTerm('');
     setSelectedCategory('none');
     setSelectedTags([]);
     setCurrentPage(1);
     
-    // 清除保存的筛选条件
     saveFilters({});
-    
-    // 重新加载数据
     loadItems({});
-  }
+  }, [loadItems, saveFilters]);
 
   // 检查是否有激活的筛选条件
-  const hasActiveFilters = () => {
-    // 检查是否有实际有效的筛选条件
+  const hasActiveFilters = useCallback(() => {
     const activeFilters = Object.entries(savedFilters).filter(([key, value]) => {
-      // 忽略这些值，认为它们不是有效的筛选条件
       if (value === undefined || value === null || value === '' || value === 'all' || 
           (Array.isArray(value) && value.length === 0) ||
           (key === 'include_null_purchase_date' && value === true) ||
@@ -260,7 +235,6 @@ export default function Thing() {
         return false;
       }
       
-      // 特殊处理category_id
       if (key === 'category_id' && (value === 'none' || value === '')) {
         return false;
       }
@@ -269,29 +243,27 @@ export default function Thing() {
     });
     
     return activeFilters.length > 0;
-  };
+  }, [savedFilters]);
 
   // 获取标签样式
-  const getTagStyle = (color: string = "#3b82f6", isSelected: boolean = false) => {
+  const getTagStyle = useCallback((color: string = "#3b82f6", isSelected: boolean = false) => {
     return {
       backgroundColor: isSelected ? color : 'transparent',
       color: isSelected ? (isLightColor(color) ? "#000" : "#fff") : color,
       borderColor: color
     }
-  }
+  }, []);
 
   // 添加新物品
-  const handleAddItem = () => {
+  const handleAddItem = useCallback(() => {
     router.push('/thing/add')
-  }
+  }, [router]);
 
   // 应用筛选条件
-  const handleApplyFilters = (filters: FilterParams) => {
-    // 保存用于前端处理的空日期选项
+  const handleApplyFilters = useCallback((filters: FilterParams) => {
     const includeNullPurchaseDate = filters.include_null_purchase_date;
     const includeNullExpiryDate = filters.include_null_expiry_date;
     
-    // 移除undefined、null和空字符串值，同时移除特殊参数
     const cleanFilters = Object.fromEntries(
       Object.entries(filters).filter(([key, value]) => 
         value !== undefined && value !== null && value !== '' && 
@@ -301,26 +273,20 @@ export default function Thing() {
     )
     
     setCurrentPage(1);
-    // 不自动关闭侧边栏
     
-    // 加载数据，不带特殊参数
     fetchItems({
       ...cleanFilters,
       page: 1
     }).then((result) => {
-      // 处理前端过滤
       if (result?.data && (
           (filters.purchase_date_from && !includeNullPurchaseDate) || 
           (filters.expiry_date_from && !includeNullExpiryDate))
       ) {
-        // 创建一个新的items数组，应用前端过滤
         const filteredItems = result.data.filter((item: Item) => {
-          // 如果有购买日期筛选且不包含空日期
           if (filters.purchase_date_from && !includeNullPurchaseDate && item.purchase_date === null) {
             return false;
           }
           
-          // 如果有过期日期筛选且不包含空日期
           if (filters.expiry_date_from && !includeNullExpiryDate && item.expiry_date === null) {
             return false;
           }
@@ -328,7 +294,6 @@ export default function Thing() {
           return true;
         });
         
-        // 更新状态中的items
         useItemStore.setState({ 
           items: filteredItems,
           meta: {
@@ -338,7 +303,6 @@ export default function Thing() {
         });
       }
       
-      // 保存筛选条件（包括前端处理的特殊参数）
       const filtersToSave = {
         ...cleanFilters,
         include_null_purchase_date: includeNullPurchaseDate,
@@ -346,7 +310,28 @@ export default function Thing() {
       };
       saveFilters(filtersToSave);
     });
-  }
+  }, [fetchItems, saveFilters]);
+
+  // 处理标签点击
+  const handleTagClick = useCallback((tagId: string) => {
+    const updatedTags = selectedTags.includes(tagId)
+      ? selectedTags.filter(id => id !== tagId)
+      : [...selectedTags, tagId];
+      
+    setSelectedTags(updatedTags);
+    loadItems({
+      tags: updatedTags.length > 0 ? updatedTags.join(',') : undefined,
+      page: 1
+    });
+    
+    setTagMenuOpen(false);
+  }, [selectedTags, loadItems]);
+
+  // 处理分类点击
+  const handleCategoryClick = useCallback((value: string) => {
+    handleCategoryChange(value);
+    setCategoryMenuOpen(false);
+  }, [handleCategoryChange]);
 
   // 渲染加载状态
   const renderLoading = () => (
@@ -458,27 +443,6 @@ export default function Thing() {
     </SheetContent>
   )
 
-  // 使用useCallback包装处理函数
-  const handleTagClick = useCallback((tagId: string) => {
-    const updatedTags = selectedTags.includes(tagId)
-      ? selectedTags.filter(id => id !== tagId)
-      : [...selectedTags, tagId];
-      
-    setSelectedTags(updatedTags);
-    loadItems({
-      tags: updatedTags.length > 0 ? updatedTags.join(',') : undefined,
-      page: 1
-    });
-    
-    // 选择后关闭下拉菜单
-    setTagMenuOpen(false);
-  }, [selectedTags, loadItems, setTagMenuOpen]);
-
-  // 使用useCallback包装分类点击处理函数
-  const handleCategoryClick = useCallback((value: string) => {
-    handleCategoryChange(value);
-    setCategoryMenuOpen(false);
-  }, [handleCategoryChange, setCategoryMenuOpen]);
   // 条件渲染内容
   const renderContent = () => {
     if (loading) return renderLoading()
@@ -611,7 +575,6 @@ export default function Thing() {
         </Tabs>
 
         <Sheet open={filtersOpen} onOpenChange={(open) => {
-          // 只在状态变化时设置，避免不必要的渲染和数据请求
           if (open !== filtersOpen) {
             setFiltersOpen(open);
           }
@@ -640,7 +603,6 @@ export default function Thing() {
       
       {renderContent()}
       
-      {/* 添加Speed Dial组件 */}
       <ThingSpeedDial />
     </div>
   )

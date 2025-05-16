@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 import { Plus, Check, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { configs } from '@/app/configs'
@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { hexToHSL } from '@/lib/utils'
+import { hexToHSL } from '@/lib/helpers'
 
 interface ThemeColorPickerProps {
   currentTheme: string

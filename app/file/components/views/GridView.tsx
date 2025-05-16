@@ -38,11 +38,11 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 import { CloudFile } from '../../types'
-import { apiRequest, put, del } from '@/utils/api'
+import { apiRequest, put, del } from '@/lib/api'
 import useFileStore from '../../store/useFileStore'
-import { API_URL } from '@/utils/api'
+import { API_URL } from '@/lib/api'
 
 interface GridViewProps {
   files: CloudFile[]

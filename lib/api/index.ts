@@ -1,5 +1,5 @@
 import useSWR, { mutate } from 'swr';
-import useAuthStore from '../stores/authStore';
+import useAuthStore from '../../stores/authStore';
 import type { Category, Area, Room, Spot, Item } from '@/app/thing/types';
 import type { User, ApiError } from '@/app';
 import { toast } from 'sonner';
@@ -248,70 +248,54 @@ export async function apiRequest<T>(
       // 尝试获取响应文本
       const text = await response.text();
       console.warn('收到非JSON响应:', {
+        url: endpoint,
         status: response.status,
         contentType,
-        text: text.substring(0, 100) // 只显示前100个字符
+        text: text.substring(0, 200) // 只记录前200个字符
       });
       
-      // 尝试将其解析为JSON，如果失败则返回空对象
-      try {
-        return JSON.parse(text) as T;
-      } catch (e) {
-        return {} as T;
+      // 如果响应为文本且不为空，尝试将其作为响应返回
+      if (text) {
+        return text as unknown as T;
       }
+      
+      // 返回空对象
+      return {} as T;
     }
     
-    return response.json();
+    // 尝试解析JSON响应
+    try {
+      return await response.json() as T;
+    } catch (error) {
+      console.error('解析JSON响应失败:', error);
+      throw new Error('解析服务器响应失败');
+    }
   } catch (error) {
-    // 检查是否为自定义API错误，并且未设置自动处理错误
-    if (error instanceof ApiRequestError) {
-      // 如果设置了自动处理错误但尚未处理，则显示错误提示
-      if (handleError && error.status !== 401) { // 401错误已在上面处理
-        handleApiError(error);
+    // 处理AbortError（由于超时或手动取消而被中止的请求）
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      const timeoutError = new Error('请求超时，请重试');
+      if (options?.handleError !== false) {
+        handleApiError(timeoutError);
       }
+      throw timeoutError;
+    }
+    
+    // 处理网络错误或其他未处理的错误
+    if (error instanceof Error && error.message === 'Failed to fetch') {
+      const networkError = new Error('网络连接失败，请检查您的网络连接');
+      if (options?.handleError !== false) {
+        handleApiError(networkError);
+      }
+      throw networkError;
+    }
+    
+    // 重新抛出ApiRequestError类型的错误而不进一步处理
+    if (error instanceof ApiRequestError) {
       throw error;
     }
     
-    // 检查是否为网络错误或跨域错误
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    
-    // 记录详细错误信息
-    console.error('API请求错误:', {
-      url,
-      method,
-      error: errorMessage,
-      isFormData: data instanceof FormData,
-      hasAbortSignal: requestOptions.signal instanceof AbortSignal
-    });
-    
-    // 记录特定iOS错误模式
-    if (errorMessage.includes('Load failed') || 
-        errorMessage.includes('network error') || 
-        errorMessage.includes('aborted')) {
-      
-      // 收集错误上下文
-      const errorContext = {
-        url,
-        method,
-        isFormData: data instanceof FormData,
-        userAgent: navigator.userAgent,
-        isIOS: /iPad|iPhone|iPod/.test(navigator.userAgent),
-        connectionType: (navigator as any).connection ? (navigator as any).connection.effectiveType : 'unknown',
-        timestamp: new Date().toISOString()
-      };
-      
-      // 为用户提供更友好的错误信息
-      if (/iPad|iPhone|iPod/.test(navigator.userAgent) && data instanceof FormData) {
-        const iosError = new Error('文件上传失败，这可能是由于网络连接问题或iOS设备限制导致的。请尝试：\n1. 使用WiFi网络\n2. 选择较小的图片\n3. 稍后再试');
-        if (handleError) {
-          handleApiError(iosError);
-        }
-        throw iosError;
-      }
-    }
-    
-    // 处理其他错误
-    if (handleError && error instanceof Error) {
+    // 处理其他类型的错误
+    if (options?.handleError !== false && error instanceof Error) {
       handleApiError(error);
     }
     
@@ -319,204 +303,161 @@ export async function apiRequest<T>(
   }
 }
 
-/**
- * GET 请求
- */
+// 简便的HTTP方法包装器
 export function get<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, 'GET');
 }
 
-/**
- * POST 请求
- */
 export function post<T>(endpoint: string, data: any): Promise<T> {
   return apiRequest<T>(endpoint, 'POST', data);
 }
 
-/**
- * PUT 请求
- */
 export function put<T>(endpoint: string, data: any): Promise<T> {
   return apiRequest<T>(endpoint, 'PUT', data);
 }
 
-/**
- * PATCH 请求
- */
 export function patch<T>(endpoint: string, data: any): Promise<T> {
   return apiRequest<T>(endpoint, 'PATCH', data);
 }
 
-/**
- * DELETE 请求
- */
 export function del<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, 'DELETE');
 }
 
-/**
- * 文件上传请求
- */
 export function uploadFile<T>(endpoint: string, formData: FormData): Promise<T> {
   return apiRequest<T>(endpoint, 'POST', formData);
 }
 
-// 通用 fetcher 函数 (用于 SWR)
+// SWR fetcher
 const fetcher = async <T>(url: string): Promise<T> => {
-  return apiRequest<T>(url);
+  return get<T>(url);
 };
 
-/**
- * 获取当前用户信息
- */
+// 用户相关
 export const fetchCurrentUser = () => get<User>('/user');
 
-// 用户相关 hooks
 export const useUser = () => {
   return useSWR<User>('/user', fetcher);
 };
 
-// 物品相关 hooks
+// 物品相关
 export const useItems = (params?: Record<string, any>) => {
-  // 使用符合spatie/laravel-query-builder的参数格式
-  const queryParams = new URLSearchParams();
-  
+  // 构建查询字符串
+  let queryString = '';
   if (params) {
+    const urlParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        // 页码不需要加filter前缀
-        if (key === 'page') {
-          queryParams.append(key, String(value));
-        } else {
-          queryParams.append(`filter[${key}]`, String(value));
-        }
+      // 过滤掉undefined和null值
+      if (value !== undefined && value !== null) {
+        urlParams.append(key, String(value));
       }
     });
+    queryString = urlParams.toString();
   }
   
-  const queryString = queryParams.toString();
-  const url = `/items${queryString ? `?${queryString}` : ''}`;
-  return useSWR<{ data: Item[]; meta: any }>(url, fetcher);
+  const endpoint = `/items${queryString ? `?${queryString}` : ''}`;
+  return useSWR(endpoint, fetcher);
 };
 
 export const useItem = (id: number) => {
-  return useSWR<Item>(id ? `/items/${id}` : null, fetcher);
+  return useSWR(id ? `/items/${id}` : null, fetcher);
 };
 
-// 分类相关 hooks
+// 分类相关
 export const useCategories = () => {
-  return useSWR<Category[]>('/categories', fetcher);
+  return useSWR('/categories', fetcher);
 };
 
 export const useCategory = (id: number) => {
-  return useSWR<Category>(id ? `/categories/${id}` : null, fetcher);
+  return useSWR(id ? `/categories/${id}` : null, fetcher);
 };
 
-// 区域相关 hooks
+// 区域相关
 export const useAreas = () => {
-  return useSWR<Area[]>('/areas', fetcher);
+  return useSWR('/areas', fetcher);
 };
 
 export const useArea = (id: number) => {
-  return useSWR<Area>(id ? `/areas/${id}` : null, fetcher);
+  return useSWR(id ? `/areas/${id}` : null, fetcher);
 };
 
-// 房间相关 hooks
+// 房间相关
 export const useRooms = (areaId?: number) => {
-  const url = areaId ? `/areas/${areaId}/rooms` : '/rooms';
-  return useSWR<Room[]>(url, fetcher);
+  return useSWR(areaId ? `/areas/${areaId}/rooms` : '/rooms', fetcher);
 };
 
 export const useRoom = (id: number) => {
-  return useSWR<Room>(id ? `/rooms/${id}` : null, fetcher);
+  return useSWR(id ? `/rooms/${id}` : null, fetcher);
 };
 
-// 位置相关 hooks
+// 位置相关
 export const useSpots = (roomId?: number) => {
-  const url = roomId ? `/rooms/${roomId}/spots` : '/spots';
-  return useSWR<Spot[]>(url, fetcher);
+  return useSWR(roomId ? `/rooms/${roomId}/spots` : '/spots', fetcher);
 };
 
 export const useSpot = (id: number) => {
-  return useSWR<Spot>(id ? `/spots/${id}` : null, fetcher);
+  return useSWR(id ? `/spots/${id}` : null, fetcher);
 };
 
-// 导航相关 hooks
+// 导航相关
 export const useNavCategories = () => {
-  return useSWR<Category[]>('/nav/categories', fetcher);
+  return useSWR('/nav-categories', fetcher);
 };
 
 export const useNavItems = (categoryId?: number) => {
-  const url = categoryId ? `/nav/items?category_id=${categoryId}` : '/nav/items';
-  return useSWR<Item[]>(url, fetcher);
+  return useSWR(categoryId ? `/nav-categories/${categoryId}/items` : null, fetcher);
 };
 
-// 通用 mutation 函数
+// 创建通用的变更函数
 export const createMutation = <T>(endpoint: string, method: string = 'POST') => {
-  return async (data: any) => {
+  return async (data: any): Promise<T> => {
     const result = await apiRequest<T>(endpoint, method, data);
-    // 重新验证相关数据
-    await mutate(endpoint);
+    // 自动重新验证相关资源
+    await mutate((key) => {
+      // 精确匹配或前缀匹配
+      return typeof key === 'string' && (key === endpoint || key.startsWith(endpoint.split('/')[1]));
+    });
     return result;
   };
 };
 
-// 导出一些常用的 mutation
-export const createItem = createMutation<Item>('/items', 'POST');
+// 物品操作
 export const updateItem = (id: number) => createMutation<Item>(`/items/${id}`, 'PUT');
 export const deleteItem = (id: number) => createMutation<void>(`/items/${id}`, 'DELETE');
 
-export const createCategory = createMutation<Category>('/categories', 'POST');
+// 分类操作
 export const updateCategory = (id: number) => createMutation<Category>(`/categories/${id}`, 'PUT');
 export const deleteCategory = (id: number) => createMutation<void>(`/categories/${id}`, 'DELETE');
 
-export const createArea = createMutation<Area>('/areas', 'POST');
+// 区域操作
 export const updateArea = (id: number) => createMutation<Area>(`/areas/${id}`, 'PUT');
 export const deleteArea = (id: number) => createMutation<void>(`/areas/${id}`, 'DELETE');
 
-export const createRoom = createMutation<Room>('/rooms', 'POST');
+// 房间操作
 export const updateRoom = (id: number) => createMutation<Room>(`/rooms/${id}`, 'PUT');
 export const deleteRoom = (id: number) => createMutation<void>(`/rooms/${id}`, 'DELETE');
 
-export const createSpot = createMutation<Spot>('/spots', 'POST');
+// 位置操作
 export const updateSpot = (id: number) => createMutation<Spot>(`/spots/${id}`, 'PUT');
 export const deleteSpot = (id: number) => createMutation<void>(`/spots/${id}`, 'DELETE');
 
-export default {
-  get,
-  post,
-  put,
-  patch,
-  delete: del,
-  fetchCurrentUser,
-  API_URL,
-  useUser,
-  useItems,
-  useItem,
-  useCategories,
-  useCategory,
-  useAreas,
-  useArea,
-  useRooms,
-  useRoom,
-  useSpots,
-  useSpot,
-  useNavCategories,
-  useNavItems
-};
-
-// 用于构建图片URL的辅助函数
+/**
+ * 获取完整的API图片URL
+ * 将相对路径转换为完整的图片URL
+ * 
+ * @param path 图片相对路径，通常从API返回的数据中获取
+ * @returns 完整的图片URL
+ */
 export const getImageUrl = (path: string) => {
+  // 如果路径为空或已经是完整URL，则直接返回
   if (!path) return '';
-  
-  // 如果已经是完整URL，则直接返回（但需要清理掉错误的参数格式）
   if (path.startsWith('http://') || path.startsWith('https://')) {
-    // 移除错误格式的参数，如&w=3D1200&q=3D75
-    return path.replace(/&w=3D\d+&q=3D\d+/g, '');
+    return path;
   }
-
-  // 确保path不以斜杠开头
-  const normalizedPath = path.startsWith('/') ? path.substring(1) : path;
   
-  return `${API_URL}/storage/${normalizedPath}`;
+  // 确保路径以斜杠开头
+  const formattedPath = path.startsWith('/') ? path : `/${path}`;
+  
+  // 返回完整URL
+  return `${API_URL}${formattedPath}`;
 }; 

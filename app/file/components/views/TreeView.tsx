@@ -14,10 +14,10 @@ import {
   Folder,
   FolderOpen,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 import { CloudFile, FolderNode } from '../../types'
 import useFileStore from '../../store/useFileStore'
-import { API_URL } from '@/utils/api'
+import { API_URL } from '@/lib/api'
 
 interface TreeViewProps {
   folderTree: FolderNode[]

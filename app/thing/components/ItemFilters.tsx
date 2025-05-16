@@ -16,7 +16,7 @@ import type { Area, Room, Spot } from '@/app/thing/types'
 import { useItemStore } from '@/stores/itemStore'
 import { TagSelector, Tag } from '@/components/ui/tag-selector'
 import useSWR from 'swr'
-import { get } from '@/utils/api'
+import { get } from '@/lib/api'
 
 interface ItemFiltersProps {
   onApply: (filters: FilterState) => void

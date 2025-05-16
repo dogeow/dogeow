@@ -1,5 +1,5 @@
 import { NavCategory, NavItem } from '@/app/nav/types';
-import { apiRequest, post, put, del } from '@/utils/api';
+import { apiRequest, post, put, del } from '@/lib/api';
 
 // 获取所有导航分类（及其导航项）
 export async function getCategories() {

@@ -3,7 +3,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { FolderOpen, FolderClosed } from "lucide-react"
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 
 interface FolderIconProps {
   isOpen: boolean;

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { apiRequest } from '@/utils/api'
+import { apiRequest } from '@/lib/api'
 import { useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 

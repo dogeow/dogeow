@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Slider } from "@/components/ui/slider"
-import { API_URL } from '@/utils/api'
+import { API_URL } from '@/lib/api'
 import { useRouter } from 'next/navigation'
 import { cn } from "@/lib/utils"
 import { Globe, LockIcon } from "lucide-react"

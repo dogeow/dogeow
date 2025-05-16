@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
-import { apiRequest, get, post, put, del } from '@/utils/api';
-import useAuthStore from '@/stores/authStore';
+import { apiRequest } from '@/lib/api';
 
 interface Item {
   id: number;
@@ -95,6 +94,67 @@ interface ItemState {
   saveFilters: (filters: Record<string, any>) => void;
 }
 
+// 前端专用过滤器，不发送到后端
+const FRONTEND_ONLY_FILTERS = [
+  'include_null_purchase_date', 
+  'include_null_expiry_date', 
+  'exclude_null_purchase_date', 
+  'exclude_null_expiry_date'
+];
+
+// 处理表单数据的辅助函数
+const prepareFormData = (data: Record<string, any>) => {
+  const formData = new FormData();
+  
+  // 处理基本字段
+  Object.entries(data).forEach(([key, value]) => {
+    if (
+      key !== 'images' && 
+      key !== 'image_paths' && 
+      key !== 'image_ids' && 
+      key !== 'tags' && 
+      value !== undefined && 
+      value !== null
+    ) {
+      if (key === 'is_public') {
+        formData.append(key, value === true ? "1" : "0");
+      } else {
+        formData.append(key, String(value));
+      }
+    }
+  });
+  
+  // 处理图片文件
+  if (data.images && Array.isArray(data.images)) {
+    data.images.forEach((image, index) => {
+      formData.append(`images[${index}]`, image);
+    });
+  }
+  
+  // 处理图片路径
+  if (data.image_paths && Array.isArray(data.image_paths)) {
+    data.image_paths.forEach((path, index) => {
+      formData.append(`image_paths[${index}]`, path);
+    });
+  }
+  
+  // 处理图片ID
+  if (data.image_ids && Array.isArray(data.image_ids)) {
+    data.image_ids.forEach((id, index) => {
+      formData.append(`image_ids[${index}]`, String(id));
+    });
+  }
+  
+  // 处理标签
+  if (data.tags && Array.isArray(data.tags)) {
+    data.tags.forEach((tagId, index) => {
+      formData.append(`tags[${index}]`, String(tagId));
+    });
+  }
+  
+  return formData;
+};
+
 export const useItemStore = create<ItemState>((set, get) => ({
   items: [],
   categories: [],
@@ -110,18 +170,22 @@ export const useItemStore = create<ItemState>((set, get) => ({
     try {
       const finalParams = Object.keys(params).length === 0 ? { ...get().filters } : params;
       
+      // 移除itemsOnly参数
       if ('itemsOnly' in finalParams) {
         delete finalParams.itemsOnly;
       }
       
+      // 准备发送到后端的参数
       const backendParams = { ...finalParams };
-      const frontendOnlyFilters = ['include_null_purchase_date', 'include_null_expiry_date', 'exclude_null_purchase_date', 'exclude_null_expiry_date'];
-      frontendOnlyFilters.forEach(filter => {
+      
+      // 移除前端专用过滤器
+      FRONTEND_ONLY_FILTERS.forEach(filter => {
         if (filter in backendParams) {
           delete backendParams[filter];
         }
       });
       
+      // 构建查询字符串
       const queryParams = new URLSearchParams();
       Object.entries(backendParams).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
@@ -135,15 +199,14 @@ export const useItemStore = create<ItemState>((set, get) => ({
         }
       });
       
+      // 处理分页参数
       if (finalParams.page) {
         queryParams.delete('filter[page]');
         queryParams.append('page', String(finalParams.page));
       }
       
       const queryString = queryParams.toString();
-      
       const url = `/items${queryString ? `?${queryString}` : ''}`;
-
       
       const data = await apiRequest<{data: Item[], meta: any}>(url);
       
@@ -166,7 +229,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
     try {
       const data = await apiRequest<Category[]>(`/categories`);
       set({ categories: data });
-      
       return data;
     } catch (error) {
       console.error('获取分类失败:', error);
@@ -178,7 +240,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
     try {
       const data = await apiRequest<Tag[]>(`/thing-tags`);
       set({ tags: data });
-      
       return data;
     } catch (error) {
       console.error('获取标签失败:', error);
@@ -192,7 +253,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
     try {
       const item = await apiRequest<Item>(`/items/${id}`);
       set({ loading: false });
-      
       return item;
     } catch (error) {
       set({
@@ -207,43 +267,10 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      const formData = new FormData();
-      
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'images' && key !== 'image_paths' && key !== 'tags' && value !== undefined && value !== null) {
-          
-          if (key === 'is_public') {
-            formData.append(key, value === true ? "1" : "0");
-          } else {
-            formData.append(key, String(value));
-          }
-        }
-      });
-      
-      if (data.images && Array.isArray(data.images)) {
-        data.images.forEach((image, index) => {
-          formData.append(`images[${index}]`, image);
-        });
-      }
-      
-      if (data.image_paths && Array.isArray(data.image_paths)) {
-        data.image_paths.forEach((path, index) => {
-          formData.append(`image_paths[${index}]`, path);
-        });
-      }
-      
-      if (data.tags && Array.isArray(data.tags)) {
-        data.tags.forEach((tagId, index) => {
-          formData.append(`tags[${index}]`, String(tagId));
-        });
-      }
-      
-      const authToken = useAuthStore.getState().token;
-      
+      const formData = prepareFormData(data);
       const result = await apiRequest<{item: Item}>(`/items`, 'POST', formData);
       
       set({ loading: false });
-      
       get().fetchItems();
       
       return result.item;
@@ -261,48 +288,12 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      const formData = new FormData();
-      
-      formData.append('_method', 'PUT');
-      
-      Object.entries(data).forEach(([key, value]) => {
-        if (key !== 'images' && key !== 'image_paths' && key !== 'image_ids' && key !== 'tags' && value !== undefined && value !== null) {
-          if (key === 'is_public') {
-            formData.append(key, value === true ? "1" : "0");
-          } else {
-            formData.append(key, String(value));
-          }
-        }
-      });
-      
-      if (data.images && Array.isArray(data.images)) {
-        data.images.forEach((image, index) => {
-          formData.append(`images[${index}]`, image);
-        });
-      }
-      
-      if (data.image_paths && Array.isArray(data.image_paths)) {
-        data.image_paths.forEach((path, index) => {
-          formData.append(`image_paths[${index}]`, path);
-        });
-      }
-      
-      if (data.image_ids && Array.isArray(data.image_ids)) {
-        data.image_ids.forEach((id, index) => {
-          formData.append(`image_ids[${index}]`, String(id));
-        });
-      }
-      
-      if (data.tags && Array.isArray(data.tags)) {
-        data.tags.forEach((tagId, index) => {
-          formData.append(`tags[${index}]`, String(tagId));
-        });
-      }
+      const formData = prepareFormData(data);
+      formData.append('_method', 'PUT'); // 添加PUT方法模拟
       
       const result = await apiRequest<{item: Item}>(`/items/${id}`, 'POST', formData);
       
       set({ loading: false });
-      
       get().fetchItems();
       
       return result.item;
@@ -320,7 +311,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      await del(`/items/${id}`);
+      await apiRequest(`/items/${id}`, 'DELETE');
       
       set(state => ({
         items: state.items.filter(item => item.id !== id),
@@ -340,4 +331,4 @@ export const useItemStore = create<ItemState>((set, get) => ({
   saveFilters: (filters) => {
     set({ filters });
   }
-})); 
+}));

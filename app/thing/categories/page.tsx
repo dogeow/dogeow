@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { put, del, get } from '@/utils/api'
+import { put, del, get } from '@/lib/api'
 import CategorySpeedDial from './components/CategorySpeedDial'
 
 export default function Categories() {

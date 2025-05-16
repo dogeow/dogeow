@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { ChevronRight, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CloudFile } from '../types'
-import { apiRequest } from '@/utils/api'
+import { apiRequest } from '@/lib/api'
 import useFileStore from '../store/useFileStore'
 
 interface Breadcrumb {

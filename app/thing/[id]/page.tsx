@@ -21,8 +21,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { getImageUrl } from '@/utils/api'
-import { isLightColor } from '@/lib/utils'
+import { getImageUrl } from '@/lib/api'
+import { isLightColor } from '@/lib/helpers'
 
 export default function ItemDetail() {
   const params = useParams()

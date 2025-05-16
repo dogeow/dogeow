@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { apiRequest } from '@/utils/api'
+import { apiRequest } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { 
   Plus, 

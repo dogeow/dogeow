@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { isLightColor } from '@/lib/utils'
+import { isLightColor } from '@/lib/helpers'
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { post } from '@/utils/api'
+import { post } from '@/lib/api'
 import { mutate } from "swr"
 
 interface AddTagDialogProps {

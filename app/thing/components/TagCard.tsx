@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
-import { cn, isLightColor } from '@/lib/utils';
+import { cn, isLightColor } from '@/lib/helpers';
 import { Tag } from '../types';
 
 interface TagCardProps {

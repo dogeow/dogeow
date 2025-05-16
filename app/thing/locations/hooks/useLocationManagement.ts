@@ -13,7 +13,7 @@ import {
   createSpot,
   updateSpot,
   deleteSpot
-} from '@/utils/api'
+} from '@/lib/api'
 
 // 定义类型
 export type LocationType = 'area' | 'room' | 'spot';

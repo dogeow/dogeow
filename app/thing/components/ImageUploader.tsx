@@ -6,7 +6,7 @@ import { Upload, X } from "lucide-react"
 import { toast } from "sonner"
 import { UploadedImage } from "../types"
 import useSWRMutation from 'swr/mutation'
-import { post } from '@/utils/api'
+import { post } from '@/lib/api'
 
 interface ImageUploaderProps {
   onImagesChange: (images: UploadedImage[]) => void;

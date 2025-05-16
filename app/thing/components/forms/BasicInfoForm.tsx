@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge"
 import ImageUploader from '../ImageUploader'
 import { ItemFormData } from '../../types'
 import { TagType } from '../../add/page'
-import { isLightColor } from '@/lib/utils'
+import { isLightColor } from '@/lib/helpers'
 
 type UploadedImage = {
   path: string;

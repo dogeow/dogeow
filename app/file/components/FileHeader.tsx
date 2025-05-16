@@ -25,7 +25,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
-import { post, del, uploadFile } from '@/utils/api'
+import { post, del, uploadFile } from '@/lib/api'
 import useFileStore from '../store/useFileStore'
 
 export default function FileHeader() {

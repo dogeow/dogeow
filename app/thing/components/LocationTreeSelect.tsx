@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Input } from "@/components/ui/input"
 import { MapPin } from "lucide-react"
-import { useAreas, useRooms, useSpots } from '@/utils/api'
-import { cn } from '@/lib/utils'
+import { useAreas, useRooms, useSpots } from '@/lib/api'
+import { cn } from '@/lib/helpers'
 import { LocationSelection } from '../types'
 import FolderIcon from './FolderIcon'
 

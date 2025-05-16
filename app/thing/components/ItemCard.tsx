@@ -18,9 +18,9 @@ import {
 import { toast } from "sonner"
 import Image from "next/image"
 import { useItemStore } from '@/stores/itemStore'
-import { API_URL } from '@/utils/api'
-import { del } from '@/utils/api'
-import { isLightColor } from '@/lib/utils'
+import { API_URL } from '@/lib/api'
+import { del } from '@/lib/api'
+import { isLightColor } from '@/lib/helpers'
 
 interface Tag {
   id: number

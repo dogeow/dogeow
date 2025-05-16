@@ -7,7 +7,7 @@ import { motion } from 'framer-motion'
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useThemeStore } from '@/stores/themeStore'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 

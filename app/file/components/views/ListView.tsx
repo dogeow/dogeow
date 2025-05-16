@@ -17,10 +17,10 @@ import {
 import { Button } from '@/components/ui/button'
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 import { CloudFile, SortField } from '../../types'
 import useFileStore from '../../store/useFileStore'
-import { API_URL } from '@/utils/api'
+import { API_URL } from '@/lib/api'
 
 interface ListViewProps {
   files: CloudFile[]

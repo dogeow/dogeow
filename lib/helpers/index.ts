@@ -1,6 +1,10 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+/**
+ * 合并 Tailwind CSS 类名
+ * 使用 clsx 和 tailwind-merge 组合类名并解决冲突
+ */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -72,4 +76,4 @@ export function isLightColor(color: string): boolean {
   // 这个公式考虑了人眼对不同颜色的敏感度
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
   return brightness > 155; // 亮度阈值为155，高于此值视为浅色
-}
+} 

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import useSWR, { mutate } from "swr"
 import { get, del } from "@/utils/api"
 import { toast } from "sonner"
-import { isLightColor } from '@/lib/utils'
+import { isLightColor } from '@/lib/helpers'
 import TagSpeedDial from './components/TagSpeedDial'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 

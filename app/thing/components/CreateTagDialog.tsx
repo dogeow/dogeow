@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tag } from '../types'
-import { apiRequest } from '@/utils/api'
+import { apiRequest } from '@/lib/api'
 import { toast } from 'sonner'
 
 interface CreateTagDialogProps {

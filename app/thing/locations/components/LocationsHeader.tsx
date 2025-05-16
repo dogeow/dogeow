@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Folder, FolderOpen, FolderClosed, Search } from "lucide-react"
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 import FolderIcon from '../../components/FolderIcon'
 
 interface LocationsHeaderProps {

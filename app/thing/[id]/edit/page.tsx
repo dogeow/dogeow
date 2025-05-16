@@ -9,8 +9,8 @@ import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
-import { useAreas, useRooms, useSpots } from '@/utils/api'
-import { apiRequest } from '@/utils/api'
+import { useAreas, useRooms, useSpots } from '@/lib/api'
+import { apiRequest } from '@/lib/api'
 import { ItemFormData, UploadedImage } from '@/app/thing/types'
 import BasicInfoForm from '@/app/thing/components/BasicInfoForm'
 import TagsSection from '@/app/thing/components/TagsSection'

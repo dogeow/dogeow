@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { useBackgroundStore } from '@/stores/backgroundStore'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 
 interface BackgroundWrapperProps {
   children: React.ReactNode

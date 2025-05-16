@@ -8,7 +8,7 @@ import GridView from './views/GridView'
 import ListView from './views/ListView'
 import TreeView from './views/TreeView'
 import BreadcrumbNav from './BreadcrumbNav'
-import { apiRequest } from '@/utils/api'
+import { apiRequest } from '@/lib/api'
 import useFileStore from '../store/useFileStore'
 import useSWR from 'swr'
 

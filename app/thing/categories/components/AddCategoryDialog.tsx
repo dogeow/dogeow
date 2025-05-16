@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { post } from '@/utils/api'
+import { post } from '@/lib/api'
 
 interface AddCategoryDialogProps {
   open: boolean

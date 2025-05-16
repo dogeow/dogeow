@@ -13,7 +13,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/helpers'
 import { ReactEditor } from 'slate-react'
 import { Editor, Element as SlateElement, Path, Transforms } from 'slate'
 

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiRequest } from '@/utils/api'
+import { apiRequest } from '@/lib/api'
 import MarkdownEditor from '@/components/markdown'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
