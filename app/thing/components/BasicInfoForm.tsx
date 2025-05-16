@@ -20,7 +20,6 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
   }
   
   const handleSelectChange = (name: string, value: string) => {
-    // 将 "none" 值转换为空字符串
     const actualValue = value === "none" ? "" : value;
     setFormData(prev => ({ ...prev, [name]: actualValue }))
   }
@@ -59,7 +58,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
         </div>
         
         <div className="flex flex-wrap gap-4">
-        <div className="space-y-2">
+          <div className="space-y-2">
             <Label htmlFor="category_id">分类</Label>
             <Select
               value={formData.category_id}
@@ -78,6 +77,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
               </SelectContent>
             </Select>
           </div>
+          
           <div className="space-y-2 w-1/4">
             <Label htmlFor="quantity">数量</Label>
             <Input
@@ -107,19 +107,20 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
             </Select>
           </div>
         </div>
+        
         <div className="space-y-2">
-            <Label htmlFor="is_public" className="flex items-center space-x-2">
-              <Switch
-                id="is_public"
-                checked={formData.is_public}
-                onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
-              />
-              <span>公开物品</span>
-            </Label>
-          </div>
+          <Label htmlFor="is_public" className="flex items-center space-x-2">
+            <Switch
+              id="is_public"
+              checked={formData.is_public}
+              onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
+            />
+            <span>公开物品</span>
+          </Label>
+        </div>
       </CardContent>
     </Card>
   )
 }
 
-export default BasicInfoForm 
+export default BasicInfoForm

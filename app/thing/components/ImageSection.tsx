@@ -9,12 +9,7 @@ interface ImageSectionProps {
   setUploadedImages: React.Dispatch<React.SetStateAction<UploadedImage[]>>;
 }
 
-const ImageSection: React.FC<ImageSectionProps> = ({ uploadedImages, setUploadedImages }) => {
-  // 处理上传图片变化
-  const handleUploadedImagesChange = (images: UploadedImage[]) => {
-    setUploadedImages(images)
-  }
-
+const ImageSection = ({ uploadedImages, setUploadedImages }: ImageSectionProps) => {
   return (
     <Card>
       <CardHeader>
@@ -25,7 +20,7 @@ const ImageSection: React.FC<ImageSectionProps> = ({ uploadedImages, setUploaded
         <div className="space-y-4">
           <Label>物品图片</Label>
           <ImageUploader 
-            onImagesChange={handleUploadedImagesChange}
+            onImagesChange={setUploadedImages}
             existingImages={uploadedImages}
             maxImages={10}
           />
@@ -35,4 +30,4 @@ const ImageSection: React.FC<ImageSectionProps> = ({ uploadedImages, setUploaded
   )
 }
 
-export default ImageSection 
+export default ImageSection

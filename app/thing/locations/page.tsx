@@ -2,9 +2,7 @@
 
 import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Home, DoorOpen, MapPin, FolderTree, HelpCircle } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import ThingNavigation from '../components/ThingNavigation'
+import { Home, DoorOpen, MapPin, FolderTree } from "lucide-react"
 import AreaTab from './components/AreaTab'
 import RoomTab from './components/RoomTab'
 import SpotTab from './components/SpotTab'
@@ -24,7 +22,6 @@ export default function Locations() {
     setDeleteDialogOpen,
     itemToDelete,
     selectedLocation,
-    setSelectedLocation,
     handleAddArea,
     handleUpdateArea,
     handleAddRoom,
@@ -45,70 +42,69 @@ export default function Locations() {
     setActiveTab(type);
   };
   
+  const tabItems = [
+    { value: 'tree', icon: <FolderTree className="h-4 w-4 mr-2"/>, label: '树形视图' },
+    { value: 'area', icon: <Home className="h-4 w-4 mr-2"/>, label: '区域' },
+    { value: 'room', icon: <DoorOpen className="h-4 w-4 mr-2"/>, label: '房间' },
+    { value: 'spot', icon: <MapPin className="h-4 w-4 mr-2"/>, label: '具体位置' }
+  ];
+
+  // Tab内容配置
+  const tabContents = {
+    tree: (
+      <TreeViewTab
+        selectedLocation={selectedLocation}
+        onLocationSelect={handleTabLocationSelect}
+      />
+    ),
+    area: (
+      <AreaTab
+        areas={areas}
+        loading={loading}
+        onAddArea={handleAddArea}
+        onUpdateArea={handleUpdateArea}
+        onDeleteArea={(areaId) => confirmDelete(areaId, 'area')}
+      />
+    ),
+    room: (
+      <RoomTab
+        rooms={rooms}
+        areas={areas}
+        loading={loading}
+        onAddRoom={handleAddRoom}
+        onUpdateRoom={handleUpdateRoom}
+        onDeleteRoom={(roomId) => confirmDelete(roomId, 'room')}
+      />
+    ),
+    spot: (
+      <SpotTab
+        spots={spots}
+        rooms={rooms}
+        loading={loading}
+        onAddSpot={handleAddSpot}
+        onUpdateSpot={handleUpdateSpot}
+        onDeleteSpot={(spotId) => confirmDelete(spotId, 'spot')}
+      />
+    )
+  };
+  
   return (
     <>
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="mt-2">
         <TabsList className="w-full">
-          <TabsTrigger value="tree" className="flex-1">
-            <FolderTree className="h-4 w-4 mr-2"/>
-            树形视图
-          </TabsTrigger>
-          <TabsTrigger value="area" className="flex-1">
-            <Home className="h-4 w-4 mr-2"/>
-            区域
-          </TabsTrigger>
-          <TabsTrigger value="room" className="flex-1">
-            <DoorOpen className="h-4 w-4 mr-2"/>
-            房间
-          </TabsTrigger>
-          <TabsTrigger value="spot" className="flex-1">
-            <MapPin className="h-4 w-4 mr-2"/>
-            具体位置
-          </TabsTrigger>
+          {tabItems.map(tab => (
+            <TabsTrigger key={tab.value} value={tab.value} className="flex-1">
+              {tab.icon}
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
         
-        {/* 树形视图 */}
-        <TabsContent value="tree" className="mt-4">
-          <TreeViewTab
-            selectedLocation={selectedLocation}
-            onLocationSelect={handleTabLocationSelect}
-          />
-        </TabsContent>
-        
-        {/* 区域管理 */}
-        <TabsContent value="area" className="mt-4">
-          <AreaTab
-            areas={areas}
-            loading={loading}
-            onAddArea={handleAddArea}
-            onUpdateArea={handleUpdateArea}
-            onDeleteArea={(areaId) => confirmDelete(areaId, 'area')}
-          />
-        </TabsContent>
-        
-        {/* 房间管理 */}
-        <TabsContent value="room" className="mt-4">
-          <RoomTab
-            rooms={rooms}
-            areas={areas}
-            loading={loading}
-            onAddRoom={handleAddRoom}
-            onUpdateRoom={handleUpdateRoom}
-            onDeleteRoom={(roomId) => confirmDelete(roomId, 'room')}
-          />
-        </TabsContent>
-        
-        {/* 位置管理 */}
-        <TabsContent value="spot" className="mt-4">
-          <SpotTab
-            spots={spots}
-            rooms={rooms}
-            loading={loading}
-            onAddSpot={handleAddSpot}
-            onUpdateSpot={handleUpdateSpot}
-            onDeleteSpot={(spotId) => confirmDelete(spotId, 'spot')}
-          />
-        </TabsContent>
+        {Object.entries(tabContents).map(([key, content]) => (
+          <TabsContent key={key} value={key} className="mt-4">
+            {content}
+          </TabsContent>
+        ))}
       </Tabs>
 
       {/* 删除确认对话框 */}

@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
-import { Plus, Tag as TagIcon } from "lucide-react"
+import { Plus, Tag as TagIcon, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import ImageUploader from '../ImageUploader'
@@ -43,11 +43,17 @@ export default function BasicInfoForm({
   const { control, formState: { errors } } = formMethods
 
   // 获取标签样式
-  const getTagStyle = (color: string = "#3b82f6") => {
-    return {
-      backgroundColor: color,
-      color: isLightColor(color) ? "#000" : "#fff"
-    }
+  const getTagStyle = (color: string = "#3b82f6") => ({
+    backgroundColor: color,
+    color: isLightColor(color) ? "#000" : "#fff"
+  })
+
+  const toggleTag = (tagId: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tagId)
+        ? prev.filter(id => id !== tagId)
+        : [...prev, tagId]
+    )
   }
 
   return (
@@ -212,9 +218,9 @@ export default function BasicInfoForm({
                           variant="ghost"
                           size="sm"
                           className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
-                          onClick={() => setSelectedTags(prev => prev.filter(id => id !== tagId))}
+                          onClick={() => toggleTag(tagId)}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                          <X size={12} />
                         </Button>
                       </Badge>
                     ) : null;
@@ -233,13 +239,7 @@ export default function BasicInfoForm({
                     className={`py-0.5 px-2 my-0.5 cursor-pointer transition-opacity ${
                       selectedTags.includes(tag.id.toString()) ? 'opacity-50' : ''
                     }`}
-                    onClick={() => {
-                      if (selectedTags.includes(tag.id.toString())) {
-                        setSelectedTags(prev => prev.filter(id => id !== tag.id.toString()));
-                      } else {
-                        setSelectedTags(prev => [...prev, tag.id.toString()]);
-                      }
-                    }}
+                    onClick={() => toggleTag(tag.id.toString())}
                   >
                     {tag.name}
                   </Badge>

@@ -26,15 +26,15 @@ const DetailsSection: React.FC<DetailsSectionProps> = ({
     setFormData(prev => ({ ...prev, [name]: value }))
   }
   
-  const handleDateChange = (name: string, date: Date | null) => {
+  const handleDateChange = (name: keyof ItemFormData, date: Date | null) => {
     setFormData(prev => ({ ...prev, [name]: date }))
   }
 
   return (
     <Card>
-      <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-2">
+      <CardContent className="space-y-6">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 space-y-2">
             <Label htmlFor="purchase_date">购买日期</Label>
             <DatePicker
               date={formData.purchase_date}
@@ -43,7 +43,7 @@ const DetailsSection: React.FC<DetailsSectionProps> = ({
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex-1 space-y-2">
             <Label htmlFor="expiry_date">过期日期</Label>
             <DatePicker
               date={formData.expiry_date}
@@ -52,7 +52,7 @@ const DetailsSection: React.FC<DetailsSectionProps> = ({
             />
           </div>
           
-          <div className="space-y-2">
+          <div className="flex-1 space-y-2">
             <Label htmlFor="purchase_price">购买价格</Label>
             <Input
               id="purchase_price"
@@ -67,7 +67,7 @@ const DetailsSection: React.FC<DetailsSectionProps> = ({
           </div>
         </div>
         
-        <div className="mt-6">
+        <div>
           <Label className="mb-2 block">存放位置</Label>
           <LocationTreeSelect
             onSelect={onLocationSelect}

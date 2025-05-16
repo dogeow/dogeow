@@ -1,24 +1,33 @@
+"use client"
+
 import React, { useState, useRef } from 'react'
 import { Button } from "@/components/ui/button"
 import { Upload, X } from "lucide-react"
 import { toast } from "sonner"
 import { UploadedImage } from "../types"
-import { apiRequest } from '@/utils/api'
+import useSWRMutation from 'swr/mutation'
+import { post } from '@/utils/api'
 
 interface ImageUploaderProps {
   onImagesChange: (images: UploadedImage[]) => void;
   existingImages?: UploadedImage[];
   maxImages?: number;
+  maxSize?: number; // 单位：MB
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImagesChange,
   existingImages = [],
-  maxImages = 10
+  maxImages = 10,
+  maxSize = 20
 }) => {
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [images, setImages] = useState<UploadedImage[]>(existingImages)
+  
+  const { trigger: uploadImages } = useSWRMutation('/upload/images', async (url, { arg }: { arg: FormData }) => {
+    return post<UploadedImage[]>(url, arg)
+  })
   
   // 处理文件选择
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,6 +37,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     // 检查文件数量限制
     if (images.length + files.length > maxImages) {
       toast.error(`最多只能上传${maxImages}张图片`)
+      return
+    }
+    
+    // 检查文件大小
+    const oversizedFiles = Array.from(files).filter(file => file.size > maxSize * 1024 * 1024)
+    if (oversizedFiles.length > 0) {
+      toast.error(`有${oversizedFiles.length}个文件超过${maxSize}MB限制`)
       return
     }
     
@@ -41,7 +57,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     
     try {
       // 调用上传API
-      const response = await apiRequest<UploadedImage[]>('/upload/images', 'POST', formData)
+      const response = await uploadImages(formData)
       
       // 更新图片列表
       const newImages = [...images, ...response]
@@ -49,15 +65,15 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       onImagesChange(newImages)
       
       toast.success('图片上传成功')
-      // 清空文件输入框，以便可以重复选择相同的文件
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
     } catch (error) {
       toast.error('图片上传失败')
       console.error('上传图片失败:', error)
     } finally {
       setUploading(false)
+      // 清空文件输入框，以便可以重复选择相同的文件
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
   }
   
@@ -69,6 +85,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     onImagesChange(newImages)
   }
   
+  // 设置主图
+  const setPrimaryImage = (index: number) => {
+    const newImages = images.map((img, idx) => ({
+      ...img,
+      is_primary: idx === index
+    }))
+    setImages(newImages)
+    onImagesChange(newImages)
+  }
+  
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -76,13 +102,20 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
           <div key={index} className="relative group aspect-square">
             <img
               src={image.thumbnail_url || image.url}
-              alt={`Uploaded ${index + 1}`}
-              className="w-full h-full object-cover rounded-md border"
+              alt={`上传图片 ${index + 1}`}
+              className={`w-full h-full object-cover rounded-md border ${image.is_primary ? 'ring-2 ring-primary' : ''}`}
+              onClick={() => setPrimaryImage(index)}
             />
+            {image.is_primary && (
+              <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded-md">
+                主图
+              </div>
+            )}
             <button
               onClick={() => removeImage(index)}
               className="absolute top-2 right-2 bg-black/70 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               type="button"
+              aria-label="删除图片"
             >
               <X className="w-4 h-4" />
             </button>
@@ -136,10 +169,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       />
       
       <p className="text-xs text-muted-foreground">
-        支持JPG、PNG、GIF格式，每张图片不超过20MB，最多上传{maxImages}张
+        支持JPG、PNG、GIF格式，每张图片不超过{maxSize}MB，最多上传{maxImages}张。点击图片可设为主图。
       </p>
     </div>
   )
 }
 
-export default ImageUploader 
+export default ImageUploader

@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Folder, FolderOpen, FolderClosed } from "lucide-react"
+import { FolderOpen, FolderClosed } from "lucide-react"
 import { cn } from '@/lib/utils'
 
 interface FolderIconProps {
@@ -18,6 +18,8 @@ const FolderIcon: React.FC<FolderIconProps> = ({
   className,
   size = 20
 }) => {
+  const transition = { duration: 0.2 };
+  
   return (
     <div 
       onClick={onClick} 
@@ -30,7 +32,7 @@ const FolderIcon: React.FC<FolderIconProps> = ({
       <motion.div
         animate={{ opacity: isOpen ? 0 : 1 }}
         initial={{ opacity: isOpen ? 0 : 1 }}
-        transition={{ duration: 0.2 }}
+        transition={transition}
         className="absolute"
       >
         <FolderClosed size={size} />
@@ -38,7 +40,7 @@ const FolderIcon: React.FC<FolderIconProps> = ({
       <motion.div
         animate={{ opacity: isOpen ? 1 : 0 }}
         initial={{ opacity: isOpen ? 1 : 0 }}
-        transition={{ duration: 0.2 }}
+        transition={transition}
       >
         <FolderOpen size={size} />
       </motion.div>

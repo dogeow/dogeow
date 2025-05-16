@@ -94,7 +94,7 @@ export default function DetailInfoForm({
       
       // 查找该房间所属的区域
       const room = rooms.find(r => r.id === id)
-      if (room && room.area_id) {
+      if (room?.area_id) {
         setValue('area_id', room.area_id.toString())
       }
     } else if (type === 'spot') {
@@ -102,12 +102,12 @@ export default function DetailInfoForm({
       
       // 查找该位置所属的房间
       const spot = spots.find(s => s.id === id)
-      if (spot && spot.room_id) {
+      if (spot?.room_id) {
         setValue('room_id', spot.room_id.toString())
         
         // 查找该房间所属的区域
         const room = rooms.find(r => r.id === spot.room_id)
-        if (room && room.area_id) {
+        if (room?.area_id) {
           setValue('area_id', room.area_id.toString())
         }
       }
@@ -169,25 +169,42 @@ export default function DetailInfoForm({
     }
   };
 
-  // 加载区域数据
+  // 初始加载区域数据
   useEffect(() => {
-    loadAreas()
-  }, [])
+    loadAreas();
+  }, []);
 
   // 当选择区域时加载房间
   useEffect(() => {
-    loadRooms(watchAreaId)
-  }, [watchAreaId])
+    loadRooms(watchAreaId);
+  }, [watchAreaId]);
   
   // 当选择房间时加载位置
   useEffect(() => {
-    loadSpots(watchRoomId)
-  }, [watchRoomId])
+    loadSpots(watchRoomId);
+  }, [watchRoomId]);
   
   // 当位置信息变化时，更新位置路径显示
   useEffect(() => {
-    updateLocationPath(watchAreaId, watchRoomId, watchSpotId)
+    updateLocationPath(watchAreaId, watchRoomId, watchSpotId);
   }, [watchAreaId, watchRoomId, watchSpotId, areas, rooms, spots]);
+
+  // 渲染位置信息提示
+  const renderLocationInfo = () => {
+    if (locationPath) {
+      return <p className="text-sm text-muted-foreground mt-2">{locationPath}</p>;
+    }
+    
+    if (isLocationLoading(watchAreaId, watchRoomId, watchSpotId)) {
+      return <p className="text-sm text-amber-500 mt-2">位置信息加载中...</p>;
+    }
+    
+    if (watchAreaId || watchRoomId || watchSpotId) {
+      return <p className="text-sm text-orange-500 mt-2">位置数据不完整，请重新选择</p>;
+    }
+    
+    return <p className="text-sm text-muted-foreground mt-2">未指定位置</p>;
+  };
 
   return (
     <Card>
@@ -249,29 +266,9 @@ export default function DetailInfoForm({
             onSelect={handleLocationSelect}
             selectedLocation={selectedLocation}
           />
-          {locationPath ? (
-            <p className="text-sm text-muted-foreground mt-2">
-              {locationPath}
-            </p>
-          ) : (
-            isLocationLoading(watchAreaId, watchRoomId, watchSpotId) ? (
-              <p className="text-sm text-amber-500 mt-2">
-                位置信息加载中...
-              </p>
-            ) : (
-              watchAreaId || watchRoomId || watchSpotId ? (
-                <p className="text-sm text-orange-500 mt-2">
-                  位置数据不完整，请重新选择
-                </p>
-              ) : (
-                <p className="text-sm text-muted-foreground mt-2">
-                  未指定位置
-                </p>
-              )
-            )
-          )}
+          {renderLocationInfo()}
         </div>
       </CardContent>
     </Card>
   )
-} 
+}

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tag } from '../types'
-import { apiRequest, ApiRequestError } from '@/utils/api'
+import { apiRequest } from '@/utils/api'
 import { toast } from 'sonner'
 
 interface CreateTagDialogProps {
@@ -23,6 +23,21 @@ interface CreateTagDialogProps {
   initialName?: string;
 }
 
+// 预定义颜色选项
+const COLOR_OPTIONS = [
+  '#ef4444', // 红色
+  '#f97316', // 橙色
+  '#eab308', // 黄色
+  '#22c55e', // 绿色
+  '#3b82f6', // 蓝色
+  '#8b5cf6', // 紫色
+  '#ec4899', // 粉色
+  '#6b7280', // 灰色
+  '#000000', // 黑色
+]
+
+const DEFAULT_COLOR = '#3b82f6' // 默认蓝色
+
 const CreateTagDialog: React.FC<CreateTagDialogProps> = ({ 
   open, 
   onOpenChange,
@@ -31,14 +46,19 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
 }) => {
   const [loading, setLoading] = useState(false)
   const [name, setName] = useState(initialName)
-  const [color, setColor] = useState('#3b82f6') // 默认蓝色
+  const [color, setColor] = useState(DEFAULT_COLOR)
   
   // 当initialName变化时更新name状态
-  React.useEffect(() => {
+  useEffect(() => {
     if (initialName) {
       setName(initialName);
     }
   }, [initialName]);
+  
+  const resetForm = () => {
+    setName('')
+    setColor(DEFAULT_COLOR)
+  }
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -57,8 +77,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
       toast.success('标签创建成功')
       
       // 清空表单
-      setName('')
-      setColor('#3b82f6')
+      resetForm()
       
       // 通知父组件
       onTagCreated(response)
@@ -71,19 +90,18 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
       setLoading(false)
     }
   }
-  
-  // 预定义颜色选项
-  const colorOptions = [
-    '#ef4444', // 红色
-    '#f97316', // 橙色
-    '#eab308', // 黄色
-    '#22c55e', // 绿色
-    '#3b82f6', // 蓝色
-    '#8b5cf6', // 紫色
-    '#ec4899', // 粉色
-    '#6b7280', // 灰色
-    '#000000', // 黑色
-  ]
+
+  const ColorButton = ({ colorValue }: { colorValue: string }) => (
+    <button
+      type="button"
+      className={`h-8 w-8 rounded-full transition-all ${
+        color === colorValue ? 'ring-2 ring-offset-2 ring-primary' : ''
+      }`}
+      style={{ backgroundColor: colorValue }}
+      onClick={() => setColor(colorValue)}
+      disabled={loading}
+    />
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -95,7 +113,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">标签名称</Label>
             <Input
@@ -112,17 +130,8 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
           <div className="space-y-2">
             <Label>标签颜色</Label>
             <div className="flex flex-wrap gap-2">
-              {colorOptions.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  className={`h-8 w-8 rounded-full transition-all ${
-                    color === option ? 'ring-2 ring-offset-2 ring-primary' : ''
-                  }`}
-                  style={{ backgroundColor: option }}
-                  onClick={() => setColor(option)}
-                  disabled={loading}
-                />
+              {COLOR_OPTIONS.map((option) => (
+                <ColorButton key={option} colorValue={option} />
               ))}
               
               <div className="relative h-8">
@@ -152,14 +161,14 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
             >
               取消
             </Button>
-            <Button type="button" disabled={loading} onClick={handleSubmit}>
+            <Button type="submit" disabled={loading}>
               {loading ? '创建中...' : '创建标签'}
             </Button>
           </DialogFooter>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   )
 }
 
-export default CreateTagDialog 
+export default CreateTagDialog
