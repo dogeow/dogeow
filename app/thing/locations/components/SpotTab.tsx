@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Pencil, Trash2 } from "lucide-react"
@@ -25,17 +24,7 @@ interface SpotTabProps {
 }
 
 export default function SpotTab({ spots, rooms, loading, onAddSpot, onUpdateSpot, onDeleteSpot }: SpotTabProps) {
-  const [newSpotName, setNewSpotName] = useState('')
-  const [selectedRoomId, setSelectedRoomId] = useState<string>('')
   const [editingSpot, setEditingSpot] = useState<Spot | null>(null)
-
-  const handleAddSpot = async () => {
-    if (!selectedRoomId) return;
-    const success = await onAddSpot(newSpotName, parseInt(selectedRoomId));
-    if (success) {
-      setNewSpotName('');
-    }
-  };
 
   const handleUpdateSpot = async () => {
     if (!editingSpot) return;
@@ -49,79 +38,69 @@ export default function SpotTab({ spots, rooms, loading, onAddSpot, onUpdateSpot
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      {/* 添加/编辑位置卡片 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{editingSpot ? '编辑位置' : '添加位置'}</CardTitle>
-          <CardDescription>
-            {editingSpot ? '修改现有位置的信息' : '创建新的位置'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="spotName">位置名称</Label>
-              <Input
-                id="spotName"
-                placeholder="输入具体位置名称，如：书柜、抽屉"
-                value={editingSpot ? editingSpot.name : newSpotName}
-                onChange={(e) => editingSpot 
-                  ? setEditingSpot({...editingSpot, name: e.target.value})
-                  : setNewSpotName(e.target.value)
-                }
-                onKeyDown={(e) => e.key === 'Enter' && (editingSpot ? handleUpdateSpot() : handleAddSpot())}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="roomSelect">所属房间</Label>
-              <Select
-                value={editingSpot ? String(editingSpot.room_id) : selectedRoomId}
-                onValueChange={(value) => editingSpot 
-                  ? setEditingSpot({...editingSpot, room_id: parseInt(value)})
-                  : setSelectedRoomId(value)
-                }
-              >
-                <SelectTrigger id="roomSelect">
-                  <SelectValue placeholder="选择房间" />
-                </SelectTrigger>
-                <SelectContent>
-                  {rooms.map((room) => (
-                    <SelectItem key={room.id} value={room.id.toString()}>
-                      {room.name} {room.area?.name ? `(${room.area.name})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+    <div className="flex flex-col">
+      {/* 编辑位置卡片，仅在编辑时显示 */}
+      {editingSpot && (
+        <div className="mb-6 border-b pb-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold">编辑位置</h3>
+            <p className="text-sm text-muted-foreground">
+              修改位置的信息
+            </p>
+          </div>
+          <div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="spotName">位置名称</Label>
+                <Input
+                  id="spotName"
+                  placeholder="输入具体位置名称，如：书柜、抽屉"
+                  value={editingSpot.name}
+                  onChange={(e) => setEditingSpot({...editingSpot, name: e.target.value})}
+                  onKeyDown={(e) => e.key === 'Enter' && handleUpdateSpot()}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="roomSelect">所属房间</Label>
+                <Select
+                  value={String(editingSpot.room_id)}
+                  onValueChange={(value) => setEditingSpot({...editingSpot, room_id: parseInt(value)})}
+                >
+                  <SelectTrigger id="roomSelect">
+                    <SelectValue placeholder="选择房间" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {rooms.map((room) => (
+                      <SelectItem key={room.id} value={room.id.toString()}>
+                        {room.name} {room.area?.name ? `(${room.area.name})` : ''}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
-        </CardContent>
-        <CardFooter className="flex justify-between">
-          {editingSpot && (
+          <div className="flex justify-between mt-4">
             <Button variant="outline" onClick={() => setEditingSpot(null)}>
               取消
             </Button>
-          )}
-          <Button 
-            onClick={editingSpot ? handleUpdateSpot : handleAddSpot}
-            disabled={loading || (!editingSpot && !selectedRoomId) || (!!editingSpot && !editingSpot.room_id)}
-          >
-            {loading ? '处理中...' : editingSpot ? '更新位置' : '添加位置'}
-          </Button>
-        </CardFooter>
-      </Card>
+            <Button 
+              onClick={handleUpdateSpot}
+              disabled={loading || !editingSpot.room_id || !editingSpot.name.trim()}
+            >
+              {loading ? '处理中...' : '更新位置'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* 位置列表卡片 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>位置列表</CardTitle>
-          <CardDescription>管理您的具体位置</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
           {spots.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
-              暂无位置，请添加您的第一个位置
+              暂无位置，请点击右下角的"+"按钮添加位置
             </div>
           ) : (
             <div className="space-y-2">
@@ -158,8 +137,8 @@ export default function SpotTab({ spots, rooms, loading, onAddSpot, onUpdateSpot
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 } 

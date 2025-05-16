@@ -13,6 +13,7 @@ import ItemFilters from './components/ItemFilters'
 import ItemGallery from './components/ItemGallery'
 import { useItemStore } from '@/stores/itemStore'
 import { Item } from '@/app/thing/types'
+import ThingSpeedDial from './components/SpeedDial'
 
 // 定义视图模式类型
 type ViewMode = 'list' | 'gallery';
@@ -370,13 +371,16 @@ export default function Thing() {
     return items.length === 0 ? renderEmpty() : renderItems()
   }
 
-  // 添加重置按钮到页面顶部
+  // 返回组件
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 pb-24">
       <div className="flex justify-between items-center">
         {renderFilters()}
       </div>
       {renderContent()}
+      
+      {/* 添加Speed Dial组件 */}
+      <ThingSpeedDial />
     </div>
   )
 }

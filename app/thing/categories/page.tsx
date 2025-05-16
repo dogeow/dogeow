@@ -2,15 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, Pencil, Trash2, Check, X } from "lucide-react"
+import { Pencil, Trash2, Check, X } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/stores/itemStore'
-import ThingNavigation from '../components/ThingNavigation'
-import { post, put, del, get } from '@/utils/api'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,12 +18,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { put, del, get } from '@/utils/api'
+import CategorySpeedDial from './components/CategorySpeedDial'
 
 export default function Categories() {
   const { categories, fetchCategories, items } = useItemStore()
   const [loading, setLoading] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState('')
-  const [editingCategory, setEditingCategory] = useState<{id: number, name: string} | null>(null)
   const [inlineEditingId, setInlineEditingId] = useState<number | null>(null)
   const [inlineEditingName, setInlineEditingName] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -52,46 +49,6 @@ export default function Categories() {
       setUncategorizedCount(response.meta?.total || 0)
     } catch (error) {
       console.error('获取未分类物品数量失败:', error)
-    }
-  }
-
-  const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) {
-      toast.error("分类名称不能为空")
-      return
-    }
-
-    setLoading(true)
-    try {
-      await post('/categories', { name: newCategoryName })
-      
-      toast.success("分类创建成功")
-      setNewCategoryName('')
-      fetchCategories()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleUpdateCategory = async () => {
-    if (!editingCategory || !editingCategory.name.trim()) {
-      toast.error("分类名称不能为空")
-      return
-    }
-
-    setLoading(true)
-    try {
-      await put(`/categories/${editingCategory.id}`, { name: editingCategory.name })
-      
-      toast.success("分类更新成功")
-      setEditingCategory(null)
-      fetchCategories()
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -149,31 +106,12 @@ export default function Categories() {
     setDeleteDialogOpen(true)
   }
 
-  return (
-    <div className="grid gap-6 md:grid-cols-2">
-      {/* 添加/编辑分类卡片 */}
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <Input
-            id="categoryName"
-            placeholder="输入分类名称"
-            value={editingCategory ? editingCategory.name : newCategoryName}
-            onChange={(e) => editingCategory ? setEditingCategory({...editingCategory, name: e.target.value}) : setNewCategoryName(e.target.value)}
-          />
-        </div>
-        <div className="flex gap-2">
-          {editingCategory && (
-            <Button variant="outline" onClick={() => setEditingCategory(null)}>取消</Button>
-          )}
-          <Button 
-            onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
-            disabled={loading}
-          >
-            {loading ? '处理中...' : editingCategory ? '更新分类' : '添加分类'}
-          </Button>
-        </div>
-      </div>
+  const handleCategoryAdded = () => {
+    fetchCategories()
+  }
 
+  return (
+    <div className="container mx-auto py-4 pb-24">
       {/* 分类列表卡片 */}
       <Card>
         <CardHeader>
@@ -270,6 +208,7 @@ export default function Categories() {
         </CardContent>
       </Card>
 
+      {/* 删除确认对话框 */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -286,6 +225,9 @@ export default function Categories() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 添加分类Speed Dial */}
+      <CategorySpeedDial onCategoryAdded={handleCategoryAdded} />
     </div>
   )
 } 

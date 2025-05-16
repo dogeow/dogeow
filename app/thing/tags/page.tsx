@@ -2,13 +2,13 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Plus, X } from "lucide-react"
+import { X } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import useSWR, { mutate } from "swr"
-import { get, post, del, ApiRequestError } from "@/utils/api"
+import { get, del } from "@/utils/api"
 import { toast } from "sonner"
 import { isLightColor } from '@/lib/utils'
+import TagSpeedDial from './components/TagSpeedDial'
 
 // 标签类型定义
 type Tag = {
@@ -21,35 +21,10 @@ type Tag = {
 }
 
 export default function ThingTags() {
-  const [newTag, setNewTag] = useState("")
-  const [newColor, setNewColor] = useState("#3b82f6") // 默认蓝色
   const [loading, setLoading] = useState(false)
 
   // 加载标签数据
   const { data: tags, error } = useSWR<Tag[]>('/thing-tags', get)
-
-  // 添加标签
-  const addTag = async () => {
-    if (!newTag.trim()) {
-      toast.error("请输入标签名称")
-      return
-    }
-
-    setLoading(true)
-    try {
-      await post("/thing-tags", {
-        name: newTag,
-        color: newColor
-      })
-      setNewTag("")
-      mutate("/thing-tags")
-      toast.success("标签添加成功")
-    } catch (error) {
-      // API的统一错误处理已经显示了错误提示，这里不需要重复显示
-    } finally {
-      setLoading(false)
-    }
-  }
 
   // 删除标签
   const deleteTag = async (id: number) => {
@@ -78,49 +53,8 @@ export default function ThingTags() {
   }
 
   return (
-    <div className="container mx-auto py-4">
+    <div className="container mx-auto py-4 pb-24">
       <div className="bg-card p-6 rounded-lg border">
-        <h2 className="text-xl font-bold mb-4">添加新标签</h2>
-        <div className="flex flex-col space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">标签名称</label>
-            <Input
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              placeholder="输入标签名称"
-              className="w-full"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">标签颜色</label>
-            <div className="flex items-center space-x-2">
-              <Input
-                type="color"
-                value={newColor}
-                onChange={(e) => setNewColor(e.target.value)}
-                className="w-12 h-10 p-1"
-              />
-              <Input
-                value={newColor}
-                onChange={(e) => setNewColor(e.target.value)}
-                placeholder="#RRGGBB"
-                className="w-32"
-              />
-              <Badge style={getTagStyle(newColor)} className="h-6 px-2 ml-2">
-                {newTag || "预览"}
-              </Badge>
-            </div>
-          </div>
-          <div>
-            <Button onClick={addTag} disabled={loading || !newTag.trim()}>
-              <Plus className="h-4 w-4 mr-2" />
-              添加标签
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8">
         <h2 className="text-xl font-bold mb-4">标签列表</h2>
         {error && <p className="text-red-500">加载标签失败</p>}
         {!tags && !error && <p>加载中...</p>}
@@ -128,15 +62,19 @@ export default function ThingTags() {
 
         <div className="flex flex-wrap gap-2 mt-4">
           {tags?.map((tag) => (
-            <div key={tag.id} className="flex items-center">
+            <div key={tag.id} className="relative flex items-center">
+              {tag.items_count > 0 && (
+                <div 
+                  className="absolute -top-3 -right-1 z-10 flex items-center justify-center w-5 h-5 text-sm font-medium text-primary"
+                >
+                  {tag.items_count}
+                </div>
+              )}
               <Badge
                 style={getTagStyle(tag.color)}
                 className="h-8 px-3 flex items-center"
               >
                 {tag.name}
-                <Badge variant="secondary" className="ml-1 text-[10px] px-1 min-w-5 text-center">
-                  {tag.items_count}
-                </Badge>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -150,6 +88,9 @@ export default function ThingTags() {
           ))}
         </div>
       </div>
+
+      {/* 添加标签Speed Dial */}
+      <TagSpeedDial />
     </div>
   )
 } 

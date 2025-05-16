@@ -2,9 +2,7 @@
 
 import { useState } from 'react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Pencil, Trash2, X, Check } from "lucide-react"
 import { Area } from '../hooks/useLocationManagement'
 
@@ -17,16 +15,8 @@ interface AreaTabProps {
 }
 
 export default function AreaTab({ areas, loading, onAddArea, onUpdateArea, onDeleteArea }: AreaTabProps) {
-  const [newAreaName, setNewAreaName] = useState('')
   const [editingInlineAreaId, setEditingInlineAreaId] = useState<number | null>(null)
   const [editingAreaName, setEditingAreaName] = useState('')
-
-  const handleAddArea = async () => {
-    const success = await onAddArea(newAreaName);
-    if (success) {
-      setNewAreaName('');
-    }
-  };
 
   const handleUpdateArea = async (areaId: number, newName: string) => {
     const success = await onUpdateArea(areaId, newName);
@@ -36,47 +26,13 @@ export default function AreaTab({ areas, loading, onAddArea, onUpdateArea, onDel
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-6">
-      {/* 添加区域卡片 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>添加区域</CardTitle>
-          <CardDescription>
-            创建新的区域
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center space-x-2">
-            <div className="flex-grow">
-              <Label htmlFor="areaName" className="sr-only">区域名称</Label>
-              <Input
-                id="areaName"
-                placeholder="输入区域名称，如：家、办公室"
-                value={newAreaName}
-                onChange={(e) => setNewAreaName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAddArea()}
-              />
-            </div>
-            <Button 
-              onClick={handleAddArea}
-              disabled={loading}
-            >
-              {loading ? '处理中...' : '添加'}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 区域列表卡片 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>区域列表</CardTitle>
-          <CardDescription>管理您的区域</CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="flex flex-col">
+      {/* 区域列表 */}
+      <div>
+        <div>
           {areas.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
-              暂无区域，请添加您的第一个区域
+              暂无区域，请点击右下角的"+"按钮添加区域
             </div>
           ) : (
             <div className="space-y-2">
@@ -147,8 +103,8 @@ export default function AreaTab({ areas, loading, onAddArea, onUpdateArea, onDel
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 } 
