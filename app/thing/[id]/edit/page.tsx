@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
-import { useItemStore } from '@/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from 'date-fns'
 import { useAreas, useRooms, useSpots } from '@/lib/api'

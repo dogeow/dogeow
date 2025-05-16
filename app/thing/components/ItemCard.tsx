@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
 import Image from "next/image"
-import { useItemStore } from '@/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
 import { API_URL } from '@/lib/api'
 import { del } from '@/lib/api'
 import { isLightColor } from '@/lib/helpers'

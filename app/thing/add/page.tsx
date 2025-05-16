@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
-import { useItemStore } from '@/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'

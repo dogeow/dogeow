@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Pencil, Trash2, Check, X } from "lucide-react"
 import { toast } from "sonner"
-import { useItemStore } from '@/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
 import {
   AlertDialog,
   AlertDialogAction,

@@ -10,7 +10,7 @@ import { ArrowLeft, Edit, Trash2 } from "lucide-react"
 import { format } from 'date-fns'
 import Image from "next/image"
 import { toast } from "sonner"
-import { useItemStore } from '@/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
 import {
   AlertDialog,
   AlertDialogAction,

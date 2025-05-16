@@ -13,7 +13,7 @@ import { format } from "date-fns"
 import { cn } from "@/lib/utils"
 import { CalendarIcon } from "lucide-react"
 import type { Area, Room, Spot } from '@/app/thing/types'
-import { useItemStore } from '@/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
 import { TagSelector, Tag } from '@/components/ui/tag-selector'
 import useSWR from 'swr'
 import { get } from '@/lib/api'

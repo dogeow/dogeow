@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ItemGallery from './components/ItemGallery'
-import { useItemStore } from '@/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
 import { Item } from '@/app/thing/types'
 import ThingSpeedDial from './components/SpeedDial'
 import { Badge } from "@/components/ui/badge"
