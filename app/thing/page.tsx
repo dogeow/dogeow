@@ -5,17 +5,16 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination"
-import { SlidersHorizontal, LayoutList, Grid, X, FilterX, ChevronDownIcon } from "lucide-react"
+import { SlidersHorizontal, LayoutList, Grid, X, ChevronDownIcon } from "lucide-react"
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ItemGallery from './components/ItemGallery'
 import { useItemStore } from '@/app/thing/stores/itemStore'
-import { Item } from '@/app/thing/types'
 import ThingSpeedDial from './components/SpeedDial'
 import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
-import { get } from "@/lib/api"
+import { apiRequest } from "@/lib/api"
 import { isLightColor } from '@/lib/helpers'
 
 // 定义视图模式类型
@@ -61,21 +60,7 @@ export default function Thing() {
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
   
   // 标签加载
-  const { data: tags } = useSWR<Tag[]>(
-    '/thing-tags', 
-    get,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      refreshWhenOffline: false,
-      refreshWhenHidden: false,
-      refreshInterval: 0,
-      dedupingInterval: 3600000, // 1小时不重复请求
-      onSuccess: () => {
-        setInitialDataLoaded(true)
-      }
-    }
-  )
+  const { data: tags } = useSWR<Tag[]>('/thing-tags', apiRequest)
   
   // 计算总页数
   const totalPages = meta?.last_page || 1
@@ -87,39 +72,30 @@ export default function Thing() {
     tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined
   }), [searchTerm, selectedCategory, selectedTags]);
 
-  // 处理点击外部关闭标签菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (tagMenuOpen) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('.tag-dropdown-container')) {
-          setTagMenuOpen(false);
+  // 处理点击外部关闭菜单的通用函数
+  const useOutsideClickHandler = (isOpen: boolean, setIsOpen: (open: boolean) => void, containerClass: string) => {
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (isOpen) {
+          const target = event.target as HTMLElement;
+          if (!target.closest(`.${containerClass}`)) {
+            setIsOpen(false);
+          }
         }
-      }
-    };
+      };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [tagMenuOpen]);
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, [isOpen]);
+  };
+
+  // 处理点击外部关闭标签菜单
+  useOutsideClickHandler(tagMenuOpen, setTagMenuOpen, 'tag-dropdown-container');
 
   // 处理点击外部关闭分类菜单
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (categoryMenuOpen) {
-        const target = event.target as HTMLElement;
-        if (!target.closest('.category-dropdown-container')) {
-          setCategoryMenuOpen(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [categoryMenuOpen]);
+  useOutsideClickHandler(categoryMenuOpen, setCategoryMenuOpen, 'category-dropdown-container');
 
   // 在组件初始化时加载基础数据
   useEffect(() => {
@@ -177,15 +153,11 @@ export default function Thing() {
   // 加载数据函数
   const loadItems = useCallback((params: Partial<FilterParams> = {}) => {
     if (isSearching) {
-      console.log('已有搜索正在进行，跳过重复请求');
       return Promise.resolve();
     }
     
-    console.log('loadItems 被调用，参数:', params, '当前侧边栏状态:', filtersOpen);
-    
     // 如果是侧边栏状态变化引起的，且没有传入特定参数，则不重新加载
     if (params.isFilterToggle && Object.keys(params).length === 1) {
-      console.log('侧边栏状态变化，跳过数据加载');
       return Promise.resolve();
     }
     
@@ -216,7 +188,7 @@ export default function Thing() {
       .finally(() => {
         setIsSearching(false);
       });
-  }, [fetchItems, getBaseFilterParams, isSearching, filtersOpen, saveFilters]);
+  }, [fetchItems, getBaseFilterParams, isSearching, saveFilters]);
 
   // 处理页面变化
   const handlePageChange = useCallback((page: number) => {
@@ -236,28 +208,15 @@ export default function Thing() {
 
   // 处理侧边栏状态变化
   const handleFiltersOpenChange = useCallback((open: boolean) => {
-    console.log('筛选侧边栏状态变化:', open, '当前物品数量:', items.length);
     setFiltersOpen(open);
-    // 添加标记告知 loadItems 这是由侧边栏状态变化引起的
-    // loadItems({ isFilterToggle: true });
-  }, [items.length]);
+  }, []);
 
   // 筛选条件应用
   const handleApplyFilters = useCallback((filters: FilterParams) => {
-    console.log('应用筛选条件:', filters);
-    
-    // 避免重复调用
-    if (isSearching) {
-      console.log('已有搜索正在进行，跳过');
-      return;
-    }
+    if (isSearching) return;
     
     setCurrentPage(1);
-    
-    // 保存当前的筛选条件
     saveFilters(filters);
-    
-    // 使用指定的页码和筛选条件加载数据
     loadItems({ ...filters, page: 1 });
   }, [loadItems, saveFilters, isSearching]);
 
@@ -416,13 +375,7 @@ export default function Thing() {
   const renderFilterSidebar = () => (
     <Sheet 
       open={filtersOpen} 
-      onOpenChange={(open) => {
-        console.log('筛选侧边栏开关状态变更:', open);
-        // 只有状态确实发生变化时才触发handleFiltersOpenChange
-        if (open !== filtersOpen) {
-          handleFiltersOpenChange(open);
-        }
-      }}
+      onOpenChange={handleFiltersOpenChange}
     >
       <SheetTrigger asChild>
         <Button 
@@ -431,9 +384,7 @@ export default function Thing() {
           className="mr-1"
           data-state={filtersOpen ? "open" : "closed"}
           onClick={(e) => {
-            e.preventDefault(); // 防止按钮点击事件冒泡
-            console.log('筛选按钮点击, 当前状态:', filtersOpen);
-            // 切换侧边栏状态，但不触发数据加载
+            e.preventDefault();
             handleFiltersOpenChange(!filtersOpen);
           }}
         >
@@ -457,7 +408,7 @@ export default function Thing() {
         </SheetTitle>
         <ItemFilters 
           onApply={handleApplyFilters} 
-          key={`filters-${filtersOpen ? 'open' : 'closed'}`} // 每次打开侧边栏都重新渲染组件
+          key={`filters-${filtersOpen ? 'open' : 'closed'}`}
         />
       </SheetContent>
     </Sheet>
@@ -470,147 +421,156 @@ export default function Thing() {
     return items.length === 0 ? renderEmpty() : renderItems()
   }
 
+  // 渲染分类下拉菜单
+  const renderCategoryDropdown = () => (
+    <div className="relative category-dropdown-container">
+      <Button 
+        variant="outline" 
+        onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
+        className="w-[110px] bg-primary/10 border-primary/20 flex items-center justify-between"
+      >
+        {selectedCategory === 'none' ? "所有分类" : 
+         selectedCategory === 'uncategorized' ? "未分类" : 
+         categories.find(c => c.id.toString() === selectedCategory)?.name || "所有分类"}
+        <ChevronDownIcon className="ml-2 h-4 w-4" />
+      </Button>
+      
+      {categoryMenuOpen && (
+        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg">
+          <div className="p-2">
+            <div 
+              className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'none' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+              onClick={() => handleCategoryClick('none')}
+            >
+              所有分类
+            </div>
+            <div 
+              className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'uncategorized' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+              onClick={() => handleCategoryClick('uncategorized')}
+            >
+              未分类
+            </div>
+            {categories.map((category) => (
+              <div 
+                key={category.id}
+                className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === category.id.toString() ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+                onClick={() => handleCategoryClick(category.id.toString())}
+              >
+                {category.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  // 渲染标签下拉菜单
+  const renderTagDropdown = () => (
+    <div className="relative tag-dropdown-container">
+      <Button 
+        variant="outline" 
+        onClick={() => setTagMenuOpen(!tagMenuOpen)}
+        className="w-[110px] bg-primary/10 border-primary/20 flex items-center justify-between"
+      >
+        {selectedTags.length > 0 ? `${selectedTags.length}个标签` : "选择标签"}
+        <ChevronDownIcon className="ml-2 h-4 w-4" />
+      </Button>
+      
+      {tagMenuOpen && (
+        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg">
+          <div className="p-2">
+            {selectedTags.length > 0 && (
+              <div 
+                className="flex items-center text-sm text-gray-600 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
+                onClick={() => {
+                  setSelectedTags([]);
+                  loadItems({ tags: undefined, page: 1 });
+                  setTagMenuOpen(false);
+                }}
+              >
+                <X className="h-3 w-3 mr-2" />
+                清除所有标签
+              </div>
+            )}
+            
+            <div className="py-2">
+              <div className="flex flex-wrap gap-1 max-h-[300px] overflow-y-auto p-1">
+                {!tags ? (
+                  <div className="flex justify-center py-2 w-full">
+                    <span className="text-sm text-muted-foreground">加载中...</span>
+                  </div>
+                ) : tags.length === 0 ? (
+                  <div className="flex justify-center py-2 w-full">
+                    <span className="text-sm text-muted-foreground">暂无标签</span>
+                  </div>
+                ) : (
+                  tags.map((tag) => (
+                    <div 
+                      key={tag.id} 
+                      className={`relative cursor-pointer rounded-md p-0.5 ${selectedTags.includes(tag.id.toString()) ? 'bg-accent/50' : ''}`}
+                      onClick={() => handleTagClick(tag.id.toString())}
+                    >
+                      <Badge
+                        style={getTagStyle(tag.color, selectedTags.includes(tag.id.toString()))}
+                        variant={selectedTags.includes(tag.id.toString()) ? "default" : "outline"}
+                        className="text-xs h-6 px-2"
+                      >
+                        {tag.name}
+                      </Badge>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  // 渲染视图切换和筛选按钮
+  const renderViewControls = () => (
+    <div className="ml-auto flex items-center gap-2">
+      <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+        <TabsList className="grid grid-cols-2 bg-primary/10 dark:bg-primary/20">
+          <TabsTrigger 
+            value="list" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+          >
+            <LayoutList className="h-4 w-4" />
+          </TabsTrigger>
+          <TabsTrigger 
+            value="gallery" 
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
+          >
+            <Grid className="h-4 w-4" />
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      <Sheet open={filtersOpen} onOpenChange={handleFiltersOpenChange}>
+        <SheetTrigger asChild>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="bg-primary/10 border-primary/20 hover:bg-primary/20 dark:bg-primary/20 dark:border-primary/30 dark:hover:bg-primary/30"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
+        {renderFilterSidebar()}
+      </Sheet>
+    </div>
+  )
+
   const renderFilters = () => (
     <div className="flex flex-wrap items-center gap-2">
       <div className="flex items-center gap-2">
-        <div className="relative category-dropdown-container">
-          <Button 
-            variant="outline" 
-            onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
-            className="w-[110px] bg-primary/10 border-primary/20 flex items-center justify-between"
-          >
-            {selectedCategory === 'none' ? "所有分类" : 
-             selectedCategory === 'uncategorized' ? "未分类" : 
-             categories.find(c => c.id.toString() === selectedCategory)?.name || "所有分类"}
-            <ChevronDownIcon className="ml-2 h-4 w-4" />
-          </Button>
-          
-          {categoryMenuOpen && (
-            <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg">
-              <div className="p-2">
-                <div 
-                  className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'none' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
-                  onClick={() => handleCategoryClick('none')}
-                >
-                  所有分类
-                </div>
-                <div 
-                  className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'uncategorized' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
-                  onClick={() => handleCategoryClick('uncategorized')}
-                >
-                  未分类
-                </div>
-                {categories.map((category) => (
-                  <div 
-                    key={category.id}
-                    className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === category.id.toString() ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
-                    onClick={() => handleCategoryClick(category.id.toString())}
-                  >
-                    {category.name}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="relative tag-dropdown-container">
-          <Button 
-            variant="outline" 
-            onClick={() => setTagMenuOpen(!tagMenuOpen)}
-            className="w-[110px] bg-primary/10 border-primary/20 flex items-center justify-between"
-          >
-            {selectedTags.length > 0 ? `${selectedTags.length}个标签` : "选择标签"}
-            <ChevronDownIcon className="ml-2 h-4 w-4" />
-          </Button>
-          
-          {tagMenuOpen && (
-            <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg">
-              <div className="p-2">
-                {selectedTags.length > 0 && (
-                  <div 
-                    className="flex items-center text-sm text-gray-600 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
-                    onClick={() => {
-                      setSelectedTags([]);
-                      loadItems({ tags: undefined, page: 1 });
-                      setTagMenuOpen(false);
-                    }}
-                  >
-                    <X className="h-3 w-3 mr-2" />
-                    清除所有标签
-                  </div>
-                )}
-                
-                <div className="py-2">
-                  <div className="flex flex-wrap gap-1 max-h-[300px] overflow-y-auto p-1">
-                    {!tags ? (
-                      <div className="flex justify-center py-2 w-full">
-                        <span className="text-sm text-muted-foreground">加载中...</span>
-                      </div>
-                    ) : tags.length === 0 ? (
-                      <div className="flex justify-center py-2 w-full">
-                        <span className="text-sm text-muted-foreground">暂无标签</span>
-                      </div>
-                    ) : (
-                      tags.map((tag) => (
-                        <div 
-                          key={tag.id} 
-                          className={`relative cursor-pointer rounded-md p-0.5 ${selectedTags.includes(tag.id.toString()) ? 'bg-accent/50' : ''}`}
-                          onClick={() => handleTagClick(tag.id.toString())}
-                        >
-                          <Badge
-                            style={getTagStyle(tag.color, selectedTags.includes(tag.id.toString()))}
-                            variant={selectedTags.includes(tag.id.toString()) ? "default" : "outline"}
-                            className="text-xs h-6 px-2"
-                          >
-                            {tag.name}
-                          </Badge>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        {renderCategoryDropdown()}
+        {renderTagDropdown()}
       </div>
-
-      <div className="ml-auto flex items-center gap-2">
-        <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
-          <TabsList className="grid grid-cols-2 bg-primary/10 dark:bg-primary/20">
-            <TabsTrigger 
-              value="list" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
-            >
-              <LayoutList className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger 
-              value="gallery" 
-              className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground dark:data-[state=active]:bg-primary dark:data-[state=active]:text-primary-foreground"
-            >
-              <Grid className="h-4 w-4" />
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <Sheet open={filtersOpen} onOpenChange={(open) => {
-          if (open !== filtersOpen) {
-            setFiltersOpen(open);
-          }
-        }}>
-          <SheetTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className={`bg-primary/10 border-primary/20 hover:bg-primary/20 dark:bg-primary/20 dark:border-primary/30 dark:hover:bg-primary/30`}
-            >
-              <SlidersHorizontal className="h-4 w-4" />
-            </Button>
-          </SheetTrigger>
-          {renderFilterSidebar()}
-        </Sheet>
-      </div>
+      {renderViewControls()}
     </div>
   )
 
@@ -621,13 +581,7 @@ export default function Thing() {
         <div className="flex flex-wrap items-center gap-2 mb-4">
           <div className="flex flex-wrap gap-2 mb-2 w-full">
             {renderFilters()}
-            
-            {/* 其他控件 */}
-            {/* ... 这里是其他代码 ... */}
           </div>
-          
-          {/* 高级筛选区域，如果有显示在这里 */}
-          {/* ... 这里是其他代码 ... */}
         </div>
         
         {/* 内容区域 */}
