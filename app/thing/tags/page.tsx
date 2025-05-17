@@ -55,7 +55,7 @@ export default function ThingTags() {
 
   return (
     <div className="container mx-auto py-4 pb-24">
-      <Card className="border border-gray-200 bg-white shadow-sm rounded-lg">
+      <Card className="border">
         <CardContent>
           {error && <p className="text-red-500">加载标签失败</p>}
           {!tags && !error && <p>加载中...</p>}
