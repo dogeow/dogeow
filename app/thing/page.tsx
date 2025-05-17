@@ -651,7 +651,7 @@ export default function Thing() {
 
   // 返回组件
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-2">
       <div className="flex flex-col space-y-4">
         <div className="flex flex-wrap items-center gap-2 mb-4 w-full">
           {renderFilters()}

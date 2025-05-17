@@ -81,7 +81,7 @@ export default function ItemDetail() {
   if (loading) {
     return (
       <>
-        <div className="container mx-auto py-6 px-4">
+        <div className="container mx-auto py-2 px-4">
           <div className="flex justify-center items-center h-64">
             <p>加载中...</p>
           </div>
@@ -93,7 +93,7 @@ export default function ItemDetail() {
   if (error || !item) {
     return (
       <>
-        <div className="container mx-auto py-6 px-4">
+        <div className="container mx-auto py-2 px-4">
           <div className="flex flex-col justify-center items-center h-64">
             <p className="text-red-500 mb-4">{error || '物品不存在'}</p>
             <Button onClick={() => router.push('/thing')}>
@@ -137,7 +137,7 @@ export default function ItemDetail() {
 
   return (
     <>
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-2 px-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
           <div className="flex items-center w-full">
             <Button variant="ghost" size="icon" onClick={() => router.push('/thing')} className="mr-2 p-1">

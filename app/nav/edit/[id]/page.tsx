@@ -162,7 +162,7 @@ export default function EditNavItem() {
   
   if (initialLoading) {
     return (
-      <div className="container mx-auto py-6 px-4">
+      <div className="container mx-auto py-2 px-4">
         <div className="flex justify-center items-center h-40">
           <p className="text-muted-foreground">加载中...</p>
         </div>
@@ -171,7 +171,7 @@ export default function EditNavItem() {
   }
   
   return (
-    <div className="container mx-auto py-6 px-4">
+    <div className="container mx-auto py-2 px-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Button variant="outline" size="icon" onClick={() => router.push('/nav')} className="mr-4">

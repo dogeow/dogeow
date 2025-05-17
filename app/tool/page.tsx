@@ -32,7 +32,7 @@ export default function ToolPage() {
   }
   
   return (
-    <div className="container mx-auto py-6">
+    <div className="container mx-auto py-2">
      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {/* 工具导航侧栏 */}
         <div className="col-span-1">
