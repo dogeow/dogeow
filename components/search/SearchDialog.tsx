@@ -376,7 +376,21 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[90%] md:max-w-[550px] max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent 
+        className="sm:max-w-[90%] md:max-w-[550px] max-h-[90vh] overflow-y-auto p-6"
+        style={{ '--dialog-close-display': 'none' } as React.CSSProperties}
+      >
+        {/* 手动添加关闭按钮，确保行为正确 */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
+          onClick={() => onOpenChange(false)}
+        >
+          <X className="h-4 w-4" />
+          <span className="sr-only">关闭</span>
+        </Button>
+        
         <DialogHeader>
           <DialogTitle className="text-center">{getDialogTitle()}</DialogTitle>
         </DialogHeader>
@@ -397,14 +411,29 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                onClick={() => {
+                className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
+                data-clear-button="true"
+                onClick={(e) => {
+                  // 阻止事件冒泡，防止关闭对话框
+                  e.stopPropagation();
+                  e.preventDefault();
+                  
+                  // 保证不关闭对话框
+                  const dialog = e.currentTarget.closest('div[role="dialog"]');
+                  if (dialog) {
+                    // 确保任何对话框事件都不会被触发
+                    e.nativeEvent.stopImmediatePropagation();
+                  }
+                  
                   setSearchTerm("");
                   setResults([]);
                   loadRandomItems();
+                  setTimeout(() => {
+                    inputRef.current?.focus();
+                  }, 10);
                 }}
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5 text-slate-500" />
               </Button>
             )}
             <Button

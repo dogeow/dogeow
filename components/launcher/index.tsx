@@ -449,6 +449,16 @@ export function AppLauncher() {
     if (!isSearchVisible) return;
     
     const handleClickOutside = (event: MouseEvent) => {
+      // 检查是否点击了清除按钮
+      const target = event.target as HTMLElement;
+      const isClearButton = target.closest('div[class*="right-2 top-1/2"]') || 
+                            target.closest('div.rounded-full > svg.h-3');
+      
+      if (isClearButton) {
+        // 如果点击的是清除按钮，不要关闭搜索框
+        return;
+      }
+      
       if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
         setIsSearchVisible(false);
       }
@@ -638,17 +648,23 @@ export function AppLauncher() {
                       {/* 只在有输入内容时显示清除按钮 */}
                       {searchTerm && (
                         <div 
-                          className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer rounded-full p-1 hover:bg-gray-200 dark:hover:bg-gray-700"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer rounded-full p-1 hover:bg-gray-200 dark:hover:bg-gray-700 border border-transparent hover:border-gray-300 dark:hover:border-gray-600"
+                          data-clear-button="true"
+                          title="清除搜索内容"
                           onClick={(e) => {
+                            // 阻止所有形式的事件传播
                             e.stopPropagation();
                             e.preventDefault();
+                            e.nativeEvent.stopImmediatePropagation();
                             
                             // 清空输入内容
                             setSearchTerm('');
                             
                             // 保持输入框焦点
                             setTimeout(() => {
-                              searchInputRef.current?.focus();
+                              if (searchInputRef.current) {
+                                searchInputRef.current.focus();
+                              }
                             }, 10);
                             
                             // 清空后也触发搜索事件，显示所有物品
