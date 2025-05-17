@@ -639,11 +639,9 @@ export default function Thing() {
   )
 
   const renderFilters = () => (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex items-center gap-2">
-        {renderCategoryDropdown()}
-        {renderTagDropdown()}
-      </div>
+    <div className="flex items-center gap-2">
+      {renderCategoryDropdown()}
+      {renderTagDropdown()}
       {renderViewControls()}
       {renderFilterSidebar()}
     </div>
