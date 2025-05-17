@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useState, useEffect } from 'react'
+import { useRef, useState, useEffect, useCallback } from 'react'
 import { Input } from "@/components/ui/input"
 import { Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -9,11 +9,47 @@ interface SearchInputProps {
   value: string
   onChange: (value: string) => void
   onSearch: (value: string) => void
+  debounceTime?: number // 添加防抖时间参数，默认值在下面
 }
 
-export default function SearchInput({ value, onChange, onSearch }: SearchInputProps) {
+export default function SearchInput({ 
+  value, 
+  onChange, 
+  onSearch, 
+  debounceTime = 300 // 默认300ms防抖
+}: SearchInputProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isFocused, setIsFocused] = useState(false)
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // 使用防抖处理搜索
+  const debouncedSearch = useCallback((searchValue: string) => {
+    // 取消之前的定时器
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
+    
+    // 只有在有值时才执行搜索
+    if (searchValue.trim()) {
+      // 设置新的定时器
+      debounceTimerRef.current = setTimeout(() => {
+        console.log('执行防抖搜索:', searchValue)
+        onSearch(searchValue)
+      }, debounceTime)
+    } else if (value && !searchValue.trim()) {
+      // 如果从有值变成无值，执行一次搜索清除结果
+      debounceTimerRef.current = setTimeout(() => {
+        console.log('清空搜索')
+        onSearch('')
+      }, debounceTime)
+    }
+  }, [onSearch, debounceTime, value])
+  
+  // 处理输入变化
+  const handleChange = (newValue: string) => {
+    onChange(newValue)
+    debouncedSearch(newValue)
+  }
   
   // 处理搜索表单提交
   const handleSubmit = (e: React.FormEvent) => {
@@ -22,7 +58,12 @@ export default function SearchInput({ value, onChange, onSearch }: SearchInputPr
     if (!value.trim()) return
     
     // 添加调试日志
-    console.log('执行搜索:', value)
+    console.log('表单提交搜索:', value)
+    
+    // 立即执行搜索，取消防抖
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
     
     // 记录当前元素的焦点状态
     const activeElement = document.activeElement
@@ -42,6 +83,7 @@ export default function SearchInput({ value, onChange, onSearch }: SearchInputPr
   // 清除搜索内容
   const handleClear = () => {
     onChange('')
+    onSearch('') // 清除时立即执行空搜索
     requestAnimationFrame(() => {
       inputRef.current?.focus()
     })
@@ -50,6 +92,15 @@ export default function SearchInput({ value, onChange, onSearch }: SearchInputPr
   // 使用事件记录焦点状态
   const handleFocus = () => setIsFocused(true)
   const handleBlur = () => setIsFocused(false)
+  
+  // 组件卸载时清除定时器
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
   
   // 组件挂载时设置焦点
   useEffect(() => {
@@ -73,7 +124,7 @@ export default function SearchInput({ value, onChange, onSearch }: SearchInputPr
         type="text"
         placeholder="搜索物品..."
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
         onFocus={handleFocus}
         onBlur={handleBlur}
         className="pl-10 pr-16 h-10"

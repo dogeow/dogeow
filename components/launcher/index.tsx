@@ -51,6 +51,7 @@ export function AppLauncher() {
   const audioRef = useRef<HTMLAudioElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const hlsInstanceRef = useRef<{ hls: any; destroy: () => void } | null>(null);
+  const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
@@ -541,6 +542,12 @@ export function AppLauncher() {
         hlsInstanceRef.current.destroy();
         hlsInstanceRef.current = null;
       }
+      
+      // 清除搜索防抖定时器
+      if (searchDebounceTimerRef.current) {
+        clearTimeout(searchDebounceTimerRef.current);
+        searchDebounceTimerRef.current = null;
+      }
     };
   }, []);
   
@@ -591,7 +598,23 @@ export function AppLauncher() {
                     type="text"
                     placeholder={`搜索${currentApp ? currentApp + '...' : '...'}`}
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      // 在物品页面启用即时搜索
+                      if (currentApp === 'thing') {
+                        // 使用防抖处理搜索，避免频繁触发
+                        if (searchDebounceTimerRef.current) {
+                          clearTimeout(searchDebounceTimerRef.current);
+                        }
+                        searchDebounceTimerRef.current = setTimeout(() => {
+                          // 无论是否有值都触发搜索，空搜索会显示所有物品
+                          const searchEvent = new CustomEvent('thing-search', { 
+                            detail: { searchTerm: e.target.value } 
+                          });
+                          document.dispatchEvent(searchEvent);
+                        }, 500); // 500ms延迟
+                      }
+                    }}
                     className="w-full h-9 pl-8 border-primary/20 animate-in fade-in duration-150"
                   />
                   <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary" />
@@ -604,6 +627,20 @@ export function AppLauncher() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setSearchTerm('');
+                        
+                        // 清空后也触发搜索事件，显示所有物品
+                        if (currentApp === 'thing') {
+                          // 取消可能正在进行的防抖
+                          if (searchDebounceTimerRef.current) {
+                            clearTimeout(searchDebounceTimerRef.current);
+                            searchDebounceTimerRef.current = null;
+                          }
+                          
+                          const searchEvent = new CustomEvent('thing-search', { 
+                            detail: { searchTerm: '' } 
+                          });
+                          document.dispatchEvent(searchEvent);
+                        }
                       }}
                     >
                       <X className="h-3 w-3" />
