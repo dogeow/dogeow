@@ -4,7 +4,19 @@ import type { Category, Area, Room, Spot, Item } from '@/app/thing/types';
 import type { User, ApiError } from '@/app';
 import { toast } from 'sonner';
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL;
+// 确保API URL正确设置，避免环境变量问题
+let API_URL = process.env.NEXT_PUBLIC_API_URL;
+// 如果环境变量不可用，使用默认值
+if (!API_URL) {
+  API_URL = 'http://127.0.0.1:8000';
+  console.warn('未找到NEXT_PUBLIC_API_URL环境变量，使用默认值:', API_URL);
+}
+// 移除末尾的斜杠，确保统一格式
+if (API_URL.endsWith('/')) {
+  API_URL = API_URL.slice(0, -1);
+}
+
+export { API_URL };
 
 // 自定义API错误类，包含完整的错误信息
 export class ApiRequestError extends Error {
@@ -86,7 +98,12 @@ export async function apiRequest<T>(
   }
 ): Promise<T> {
   const { handleError = true } = options || {};
-  const url = `${API_URL}/api${endpoint}`;
+  
+  // 标准化 endpoint：确保它不以斜杠开头
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
+  
+  // 构建完整的 URL
+  const url = `${API_URL}/api/${normalizedEndpoint}`;
   
   const headers = getHeaders();
   const requestOptions: RequestInit = {

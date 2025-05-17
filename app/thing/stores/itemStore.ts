@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { format } from 'date-fns';
-import { apiRequest } from '@/lib/api';
+import { apiRequest, API_URL } from '@/lib/api';
 import { Item, Category, Tag } from '@/app/thing/types';
 
 // 前端专用过滤器，不发送到后端
@@ -142,11 +142,12 @@ export const useItemStore = create<ItemState>((set, get) => ({
           } else if (Array.isArray(value)) {
             queryParams.append(`filter[${key}]`, value.join(','));
           } else {
-            // 特殊处理search参数，不放入filter[]中
+            // 特殊处理search参数，发送名称过滤器
             if (key === 'search') {
-              queryParams.append('search', String(value));
+              // 使用filter[name]来过滤名称，这是后端API的预期格式
+              queryParams.append('filter[name]', String(value));
               // 记录日志，便于调试
-              console.log('添加搜索参数:', value);
+              console.log('添加过滤参数 filter[name]:', value);
             } else {
               queryParams.append(`filter[${key}]`, String(value));
             }
@@ -163,15 +164,27 @@ export const useItemStore = create<ItemState>((set, get) => ({
       const queryString = queryParams.toString();
       const url = `/items${queryString ? `?${queryString}` : ''}`;
       
-      const data = await apiRequest<{data: Item[], meta: any}>(url);
+      // 记录完整请求URL，方便调试
+      console.log(`请求后端API: ${API_URL}/api/items${queryString ? `?${queryString}` : ''}`);
       
-      set({
-        items: data.data || [],
-        loading: false,
-        meta: data.meta || null,
-      });
-      
-      return data;
+      try {
+        const data = await apiRequest<{data: Item[], meta: any}>(url);
+        console.log('API请求成功，获取到数据:', data);
+        
+        set({
+          items: data.data || [],
+          loading: false,
+          meta: data.meta || null,
+        });
+        
+        return data;
+      } catch (error) {
+        console.error('API请求失败:', error);
+        set({
+          loading: false,
+          error: error instanceof Error ? error.message : '未知错误',
+        });
+      }
     } catch (error) {
       set({
         loading: false,

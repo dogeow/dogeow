@@ -402,13 +402,20 @@ export function AppLauncher() {
     
     if (!searchTerm.trim()) return
     
-    // 在首页使用弹窗搜索，非首页直接搜索当前路由下的内容
+    // 在首页使用弹窗搜索，其他页面直接导航到物品页面
     if (isHomePage) {
       // 打开搜索弹窗
       setIsSearchDialogOpen(true)
-    } else if (currentApp) {
-      // 直接跳转到当前应用的搜索结果页面
-      router.push(`/${currentApp}?search=${encodeURIComponent(searchTerm)}`)
+    } else if (currentApp === 'thing') {
+      // 如果已经在物品页面，使用全局事件触发搜索而不是路由导航
+      // 创建自定义事件通知物品页面执行搜索
+      const searchEvent = new CustomEvent('thing-search', { 
+        detail: { searchTerm } 
+      });
+      document.dispatchEvent(searchEvent);
+    } else {
+      // 不在物品页面时，导航到物品页面并带上搜索参数
+      router.push(`/thing?search=${encodeURIComponent(searchTerm)}`)
     }
     
     // 关闭顶部搜索框

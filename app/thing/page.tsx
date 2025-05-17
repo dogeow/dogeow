@@ -178,10 +178,12 @@ export default function Thing() {
   useEffect(() => {
     if (!initialLoaded) {
       const searchParams = new URLSearchParams(window.location.search)
-      const search = searchParams.get('search')
+      const searchFromURL = searchParams.get('search')
       
       if (Object.keys(savedFilters).length > 0) {
-        if (savedFilters.search) {
+        // 应用已保存的筛选条件
+        if (savedFilters.search && searchTerm !== savedFilters.search) {
+          // store里的searchTerm会在setSearchTerm时自动更新
           setSearchTerm(savedFilters.search);
         }
         
@@ -193,22 +195,33 @@ export default function Thing() {
           setSelectedTags(savedFilters.tags);
         }
         
+        // 使用store加载数据
         fetchItems();
-      } else if (search) {
-        setSearchTerm(search);
-        // 使用新的search参数直接加载数据，确保立即执行搜索
-        loadItems({ search, page: 1 });
+      } else if (searchFromURL) {
+        // URL中有搜索参数，直接传递给后端API
+        console.log('从URL获取搜索参数:', searchFromURL);
         
-        // 更新URL，但不重载页面（可选）
+        if (searchTerm !== searchFromURL) {
+          setSearchTerm(searchFromURL);
+        }
+        
+        // 直接调用API加载搜索结果
+        loadItems({ 
+          search: searchFromURL, 
+          page: 1 
+        });
+        
+        // 记录到URL以便分享
         const updatedUrl = new URL(window.location.href);
-        updatedUrl.searchParams.set('search', search);
+        updatedUrl.searchParams.set('search', searchFromURL);
         window.history.replaceState({}, '', updatedUrl);
       } else {
+        // 没有筛选条件，加载所有数据
         loadItems();
       }
       setInitialLoaded(true);
     }
-  }, [initialLoaded, savedFilters, fetchItems, loadItems])
+  }, [initialLoaded, savedFilters, fetchItems, loadItems, searchTerm])
 
   // 监听URL中search参数的变化
   useEffect(() => {
@@ -229,8 +242,21 @@ export default function Thing() {
       // 监听popstate事件（历史记录导航，比如前进后退按钮）
       window.addEventListener('popstate', handleUrlChange);
       
+      // 监听自定义搜索事件
+      const handleCustomSearch = (event: CustomEvent) => {
+        const { searchTerm: newSearchTerm } = event.detail;
+        if (newSearchTerm && newSearchTerm !== searchTerm) {
+          setSearchTerm(newSearchTerm);
+          loadItems({ search: newSearchTerm, page: 1 });
+        }
+      };
+      
+      // 添加自定义事件监听器
+      document.addEventListener('thing-search', handleCustomSearch as EventListener);
+      
       return () => {
         window.removeEventListener('popstate', handleUrlChange);
+        document.removeEventListener('thing-search', handleCustomSearch as EventListener);
       };
     }
   }, [initialLoaded, loadItems, searchTerm]);

@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import ThingNavigation from "./components/ThingNavigation"
 
 export default function ThingLayout({
