@@ -21,6 +21,9 @@ export default function SearchInput({ value, onChange, onSearch }: SearchInputPr
     
     if (!value.trim()) return
     
+    // 添加调试日志
+    console.log('执行搜索:', value)
+    
     // 记录当前元素的焦点状态
     const activeElement = document.activeElement
     

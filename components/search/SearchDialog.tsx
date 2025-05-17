@@ -36,9 +36,10 @@ interface SearchDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   initialSearchTerm?: string
+  currentRoute?: string
 }
 
-export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: SearchDialogProps) {
+export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", currentRoute }: SearchDialogProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
@@ -61,6 +62,19 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
     { id: "mc", name: "MC", path: "/mc" },
     { id: "nav", name: "导航", path: "/nav" },
   ]
+
+  // 设置初始活动分类基于当前路由
+  useEffect(() => {
+    if (currentRoute) {
+      // 从路由中获取分类
+      const routeCategory = currentRoute.split('/')[1]
+      const matchedCategory = categories.find(c => c.path.startsWith(`/${routeCategory}`))
+      
+      if (matchedCategory) {
+        setActiveCategory(matchedCategory.id)
+      }
+    }
+  }, [currentRoute])
 
   // 执行搜索
   const performSearch = async () => {
@@ -141,6 +155,19 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
     
     if (!searchTerm.trim()) return
     
+    // 如果提供了当前路由，且与活动分类匹配，则使用该路由搜索
+    if (currentRoute && activeCategory !== "all") {
+      const routeCategory = currentRoute.split('/')[1]
+      const matchedCategory = categories.find(c => c.id === activeCategory)
+      
+      if (matchedCategory && matchedCategory.path.startsWith(`/${routeCategory}`)) {
+        router.push(`${currentRoute}?search=${encodeURIComponent(searchTerm)}`)
+        onOpenChange(false)
+        return
+      }
+    }
+    
+    // 默认搜索行为
     const currentApp = pathname.split('/')[1]
     
     if (activeCategory === "all") {
@@ -247,13 +274,25 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
 
   // 获取对话框标题
   const getDialogTitle = () => {
-    const currentApp = pathname.split('/')[1]
-    
-    if (currentApp && categories.some(c => c.id === currentApp)) {
-      return `搜索${activeCategory === "all" ? "所有内容" : categories.find(c => c.id === activeCategory)?.name || ""}`
+    // 如果提供了当前路由，则使用该路由的分类作为标题
+    if (currentRoute) {
+      const routeCategory = currentRoute.split('/')[1]
+      const matchedCategory = categories.find(c => c.path.startsWith(`/${routeCategory}`))
+      
+      if (matchedCategory) {
+        return `搜索${matchedCategory.name}`
+      }
     }
     
-    return activeCategory === "all" ? "搜索所有内容" : `搜索${categories.find(c => c.id === activeCategory)?.name}内容`
+    // 默认标题逻辑
+    const currentApp = pathname.split('/')[1]
+    
+    if (!currentApp) {
+      return "全站搜索"
+    }
+    
+    const category = categories.find(c => c.id === currentApp)
+    return category ? `搜索${category.name}` : "搜索"
   }
 
   // 渲染搜索结果
@@ -337,12 +376,12 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[90%] md:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[90%] md:max-w-[550px] max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle className="text-center">{getDialogTitle()}</DialogTitle>
         </DialogHeader>
         
-        <div className="mt-4">
+        <div className="mt-4 px-1">
           <form onSubmit={handleSearch} className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -379,7 +418,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
           </form>
         </div>
         
-        <div className="mt-4">
+        <div className="mt-4 px-1">
           <div className="text-sm font-medium mb-2">搜索范围:</div>
           <div className="flex gap-1 flex-wrap">
             {categories.map((category) => (
@@ -396,7 +435,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "" }: Sea
           </div>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 px-1">
           {renderSearchResults()}
         </div>
       </DialogContent>

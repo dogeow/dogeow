@@ -142,7 +142,14 @@ export const useItemStore = create<ItemState>((set, get) => ({
           } else if (Array.isArray(value)) {
             queryParams.append(`filter[${key}]`, value.join(','));
           } else {
-            queryParams.append(`filter[${key}]`, String(value));
+            // 特殊处理search参数，不放入filter[]中
+            if (key === 'search') {
+              queryParams.append('search', String(value));
+              // 记录日志，便于调试
+              console.log('添加搜索参数:', value);
+            } else {
+              queryParams.append(`filter[${key}]`, String(value));
+            }
           }
         }
       });

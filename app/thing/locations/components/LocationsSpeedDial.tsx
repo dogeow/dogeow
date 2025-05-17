@@ -67,28 +67,28 @@ export default function LocationsSpeedDial({
       type: 'area' as const,
       label: '区域',
       icon: <Home className="h-5 w-5" />,
-      y: -140,
+      y: -190,
       delay: 0
     },
     {
       type: 'room' as const,
       label: '房间',
       icon: <DoorOpen className="h-5 w-5" />,
-      y: -80,
+      y: -130,
       delay: 0.05
     },
     {
       type: 'spot' as const,
       label: '位置',
       icon: <MapPin className="h-5 w-5" />,
-      y: -20,
+      y: -70,
       delay: 0.1
     }
   ]
 
   return (
     <>
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-24 right-6 z-50">
         <AnimatePresence>
           {isExpanded && (
             <>

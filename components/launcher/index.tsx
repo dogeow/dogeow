@@ -9,9 +9,9 @@ import { AppGrid } from './AppGrid'
 import { SettingsPanel, CustomBackground } from './SettingsPanel'
 import Image from 'next/image'
 import Logo from '@/public/images/80.png'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { AuthPanel } from '../auth/AuthPanel'
-import { User, Search, X, ArrowLeft } from 'lucide-react'
+import { User, Search, X, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import useAuthStore from '@/stores/authStore'
 import { Input } from '@/components/ui/input'
@@ -21,6 +21,7 @@ type DisplayMode = 'music' | 'apps' | 'settings' | 'auth';
 
 export function AppLauncher() {
   const router = useRouter()
+  const pathname = usePathname()
   
   const { 
     currentTrack, 
@@ -390,26 +391,46 @@ export function AppLauncher() {
     }
   }, [backgroundImage]);
   
+  // 检查是否在首页
+  const isHomePage = pathname === '/'
+  
+  // 获取当前路由的第一段作为当前应用
+  const currentApp = pathname?.split('/')[1] || ''
+  
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!searchTerm.trim()) return
     
-    // 打开搜索弹窗而不是直接跳转
-    setIsSearchDialogOpen(true)
+    // 在首页使用弹窗搜索，非首页直接搜索当前路由下的内容
+    if (isHomePage) {
+      // 打开搜索弹窗
+      setIsSearchDialogOpen(true)
+    } else if (currentApp) {
+      // 直接跳转到当前应用的搜索结果页面
+      router.push(`/${currentApp}?search=${encodeURIComponent(searchTerm)}`)
+    }
     
     // 关闭顶部搜索框
     setIsSearchVisible(false)
   }
   
-  // 点击搜索按钮时展开搜索框并聚焦
+  // 点击搜索按钮时展开搜索框或打开搜索弹窗
   const toggleSearch = () => {
     if (isSearchVisible) {
       setIsSearchVisible(false);
-    } else {
-      // 使用SearchDialog替代搜索框
+    } else if (isHomePage) {
+      // 在首页使用搜索弹窗
       setIsSearchDialogOpen(true);
       setIsSearchVisible(false);
+    } else {
+      // 在非首页显示搜索框
+      setIsSearchVisible(true);
+      
+      // 确保输入框获得焦点
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 100);
     }
   };
   
@@ -542,7 +563,7 @@ export function AppLauncher() {
       case 'apps':
         return (
           <div className="h-full flex items-center justify-between">
-            {/* 左侧：应用切换按钮 */}
+            {/* 左侧：应用切换按钮 - 始终显示 */}
             <div className="flex items-center shrink-0 mr-6">
               <Image src={Logo} alt="apps" className="h-10 w-10" onClick={() => router.push('/')}/>
             </div>
@@ -561,7 +582,7 @@ export function AppLauncher() {
                   <Input
                     ref={searchInputRef}
                     type="text"
-                    placeholder="搜索..."
+                    placeholder={`搜索${currentApp ? currentApp + '...' : '...'}`}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full h-9 pl-8 border-primary/20 animate-in fade-in duration-150"
@@ -587,52 +608,41 @@ export function AppLauncher() {
                       className="h-7 w-7"
                       disabled={!searchTerm.trim()}
                     >
-                      <Search className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      type="button"
-                      variant="ghost" 
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => setIsSearchVisible(false)}
-                    >
-                      <ArrowLeft className="h-3 w-3" />
+                      <ArrowRight className="h-3 w-3" />
                     </Button>
                   </div>
                 </form>
               ) : (
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={toggleSearch}
-                  data-search-toggle="true"
+                <Button
+                  variant="ghost"
+                  size="icon"
                   className="h-9 w-9"
+                  onClick={toggleSearch}
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-5 w-5" />
                 </Button>
               )}
               
-              {/* 用户按钮 - 在搜索时隐藏 */}
-              {!isSearchVisible && (
-                <div className="flex-shrink-0">
+              {/* 用户按钮 - 在非首页搜索状态时隐藏 */}
+              {!(isSearchVisible && !isHomePage) && (
+                isAuthenticated ? (
                   <Button
                     variant="ghost"
-                    className="flex items-center gap-2 h-9 px-3"
+                    size="icon"
+                    className="h-9 w-9"
                     onClick={() => toggleDisplayMode('auth')}
                   >
-                    {isAuthenticated && user ? (
-                      <>
-                        <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">
-                          {user.name.charAt(0).toUpperCase()}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <User className="h-4 w-4" />
-                      </>
-                    )}
+                    <User className="h-5 w-5" />
                   </Button>
-                </div>
+                ) : (
+                  <Button
+                    variant="default"
+                    className="h-9"
+                    onClick={() => toggleDisplayMode('auth')}
+                  >
+                    登录
+                  </Button>
+                )
               )}
             </div>
           </div>
@@ -667,6 +677,7 @@ export function AppLauncher() {
         open={isSearchDialogOpen} 
         onOpenChange={setIsSearchDialogOpen}
         initialSearchTerm={searchTerm}
+        currentRoute={!isHomePage ? pathname : undefined}
       />
       
       <div 

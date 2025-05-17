@@ -275,6 +275,7 @@
 .dark [role="menu"] {
   background-color: #111 !important;
   color: white !important;
+  border-color: #333 !important;
 }
 
 .dark [role="option"],
@@ -298,18 +299,24 @@
 .dark *[class*="Dropdown-content"],
 .dark *[class*="Popover-content"],
 .dark *[data-state="open"][role="presentation"],
-.dark div[style*="position: absolute"][style*="z-index: 5"] {
+.dark div[style*="position: absolute"][style*="z-index: 5"],
+.dark div[class*="DropdownMenuContent-"],
+.dark div[class*="SelectContent-"] {
   background-color: #111 !important;
   border-color: #333 !important;
   color: white !important;
 }
 
-.dark div[style*="position: absolute"][style*="z-index: 5"] * {
-  background-color: #111 !important;
+.dark div[style*="position: absolute"][style*="z-index: 5"] *,
+.dark div[class*="DropdownMenuContent-"] *,
+.dark div[class*="SelectContent-"] * {
+  background-color: transparent !important;
   color: white !important;
 }
 
-.dark div[style*="position: absolute"][style*="z-index: 5"] *:hover {
+.dark div[style*="position: absolute"][style*="z-index: 5"] *:hover,
+.dark div[class*="DropdownMenuContent-"] *:hover,
+.dark div[class*="SelectContent-"] *:hover {
   background-color: #333 !important;
 }
 
@@ -318,5 +325,26 @@
 .dark div[style*="position: absolute"][style*="z-index"] div {
   background-color: #111 !important;
   color: white !important;
+}
+
+/* 直接追加Radix UI组件选择器 */
+.dark [data-radix-select-viewport],
+.dark [data-radix-dropdown-menu-viewport],
+.dark [data-slot="select-content"],
+.dark [data-slot="dropdown-menu-content"] {
+  background-color: #111 !important;
+  color: white !important;
+}
+
+.dark [data-slot="select-item"],
+.dark [data-slot="dropdown-menu-item"] {
+  background-color: transparent !important;
+}
+
+.dark [data-slot="select-item"]:hover,
+.dark [data-slot="select-item"]:focus,
+.dark [data-slot="dropdown-menu-item"]:hover,
+.dark [data-slot="dropdown-menu-item"]:focus {
+  background-color: #333 !important;
 }
 

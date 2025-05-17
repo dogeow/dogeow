@@ -349,13 +349,21 @@ export const useItems = (params?: Record<string, any>) => {
     Object.entries(params).forEach(([key, value]) => {
       // 过滤掉undefined和null值
       if (value !== undefined && value !== null) {
-        urlParams.append(key, String(value));
+        // 特殊处理search参数，不加前缀
+        if (key === 'search') {
+          urlParams.append('search', String(value));
+          console.log('API添加搜索参数:', value);
+        } else {
+          // 其他参数添加filter前缀
+          urlParams.append(`filter[${key}]`, String(value));
+        }
       }
     });
     queryString = urlParams.toString();
   }
   
   const endpoint = `/items${queryString ? `?${queryString}` : ''}`;
+  console.log('API请求URL:', endpoint);
   return useSWR(endpoint, fetcher);
 };
 

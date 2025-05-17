@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ItemGallery from './components/ItemGallery'
+import SearchInput from './components/SearchInput'
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import ThingSpeedDial from './components/SpeedDial'
 import { Badge } from "@/components/ui/badge"
@@ -71,6 +72,59 @@ export default function Thing() {
     category_id: selectedCategory !== 'none' && selectedCategory !== '' ? selectedCategory : undefined,
     tags: selectedTags.length > 0 ? selectedTags.join(',') : undefined
   }), [searchTerm, selectedCategory, selectedTags]);
+
+  // 加载数据函数
+  const loadItems = useCallback((params: Partial<FilterParams> = {}) => {
+    // 添加调试日志
+    console.log('加载物品数据，参数:', params);
+    
+    if (isSearching) {
+      console.log('已有搜索请求正在进行，跳过');
+      return Promise.resolve();
+    }
+    
+    // 如果是侧边栏状态变化引起的，且没有传入特定参数，则不重新加载
+    if (params.isFilterToggle && Object.keys(params).length === 1) {
+      console.log('仅过滤器切换，不重新加载');
+      return Promise.resolve();
+    }
+    
+    setIsSearching(true);
+    
+    const allParams = {
+      ...getBaseFilterParams(),
+      ...params
+    };
+    
+    // 打印最终参数
+    console.log('最终请求参数:', allParams);
+    
+    // 移除非API参数
+    if ('isFilterToggle' in allParams) {
+      delete allParams.isFilterToggle;
+    }
+    
+    const itemsOnly = params.hasOwnProperty('search') || params.hasOwnProperty('itemsOnly');
+    
+    return fetchItems(allParams, itemsOnly)
+      .then(result => {
+        console.log('请求成功，结果:', result);
+        // 请求成功后再保存筛选条件
+        const filtersToSave = { ...allParams };
+        if ('page' in filtersToSave) {
+          delete filtersToSave.page;
+        }
+        saveFilters(filtersToSave);
+        return result;
+      })
+      .catch(error => {
+        console.error('请求失败:', error);
+        throw error;
+      })
+      .finally(() => {
+        setIsSearching(false);
+      });
+  }, [fetchItems, getBaseFilterParams, isSearching, saveFilters]);
 
   // 处理点击外部关闭菜单的通用函数
   const useOutsideClickHandler = (isOpen: boolean, setIsOpen: (open: boolean) => void, containerClass: string) => {
@@ -142,53 +196,44 @@ export default function Thing() {
         fetchItems();
       } else if (search) {
         setSearchTerm(search);
+        // 使用新的search参数直接加载数据，确保立即执行搜索
         loadItems({ search, page: 1 });
+        
+        // 更新URL，但不重载页面（可选）
+        const updatedUrl = new URL(window.location.href);
+        updatedUrl.searchParams.set('search', search);
+        window.history.replaceState({}, '', updatedUrl);
       } else {
         loadItems();
       }
       setInitialLoaded(true);
     }
-  }, [initialLoaded, savedFilters, fetchItems])
+  }, [initialLoaded, savedFilters, fetchItems, loadItems])
 
-  // 加载数据函数
-  const loadItems = useCallback((params: Partial<FilterParams> = {}) => {
-    if (isSearching) {
-      return Promise.resolve();
-    }
-    
-    // 如果是侧边栏状态变化引起的，且没有传入特定参数，则不重新加载
-    if (params.isFilterToggle && Object.keys(params).length === 1) {
-      return Promise.resolve();
-    }
-    
-    setIsSearching(true);
-    
-    const allParams = {
-      ...getBaseFilterParams(),
-      ...params
-    };
-    
-    // 移除非API参数
-    if ('isFilterToggle' in allParams) {
-      delete allParams.isFilterToggle;
-    }
-    
-    const itemsOnly = params.hasOwnProperty('search') || params.hasOwnProperty('itemsOnly');
-    
-    return fetchItems(allParams, itemsOnly)
-      .then(result => {
-        // 请求成功后再保存筛选条件
-        const filtersToSave = { ...allParams };
-        if ('page' in filtersToSave) {
-          delete filtersToSave.page;
+  // 监听URL中search参数的变化
+  useEffect(() => {
+    if (initialLoaded) {
+      const handleUrlChange = () => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const search = searchParams.get('search');
+        
+        if (search && search !== searchTerm) {
+          setSearchTerm(search);
+          loadItems({ search, page: 1 });
         }
-        saveFilters(filtersToSave);
-        return result;
-      })
-      .finally(() => {
-        setIsSearching(false);
-      });
-  }, [fetchItems, getBaseFilterParams, isSearching, saveFilters]);
+      };
+
+      // 初始检查
+      handleUrlChange();
+
+      // 监听popstate事件（历史记录导航，比如前进后退按钮）
+      window.addEventListener('popstate', handleUrlChange);
+      
+      return () => {
+        window.removeEventListener('popstate', handleUrlChange);
+      };
+    }
+  }, [initialLoaded, loadItems, searchTerm]);
 
   // 处理页面变化
   const handlePageChange = useCallback((page: number) => {
@@ -388,8 +433,7 @@ export default function Thing() {
             handleFiltersOpenChange(!filtersOpen);
           }}
         >
-          <SlidersHorizontal className="h-4 w-4 mr-2" />
-          {hasActiveFilters() && <Badge variant="secondary" className="ml-1 h-4 px-1">●</Badge>}
+          <SlidersHorizontal className={`h-4 w-4 mr-2 ${hasActiveFilters() ? 'text-primary' : ''}`} />
         </Button>
       </SheetTrigger>
       <SheetContent 
@@ -435,7 +479,7 @@ export default function Thing() {
       </Button>
       
       {categoryMenuOpen && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg dark:bg-gray-800">
           <div className="p-2">
             <div 
               className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'none' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
@@ -475,9 +519,9 @@ export default function Thing() {
         {selectedTags.length > 0 ? `${selectedTags.length}个标签` : "选择标签"}
         <ChevronDownIcon className="ml-2 h-4 w-4" />
       </Button>
-      
+
       {tagMenuOpen && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg">
+        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg dark:bg-gray-800">
           <div className="p-2">
             {selectedTags.length > 0 && (
               <div 
