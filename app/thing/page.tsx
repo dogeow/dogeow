@@ -393,7 +393,7 @@ export default function Thing() {
         </Button>
       </SheetTrigger>
       <SheetContent 
-        className="sm:max-w-md p-4 max-w-[200px]" 
+        className="sm:max-w-md p-4 max-w-[200px] overflow-y-auto h-full" 
         side="right" 
         onEscapeKeyDown={() => handleFiltersOpenChange(false)}
         onPointerDownOutside={() => handleFiltersOpenChange(false)}

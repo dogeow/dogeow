@@ -1,11 +1,12 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
-import { isLightColor } from '@/lib/helpers'
+import { isLightColor, generateRandomColor } from '@/lib/helpers'
+import { RefreshCw } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,18 @@ export default function AddTagDialog({
   const [tagName, setTagName] = useState("")
   const [tagColor, setTagColor] = useState("#3b82f6") // 默认蓝色
   const [loading, setLoading] = useState(false)
+  
+  // 当对话框打开时，生成随机颜色
+  useEffect(() => {
+    if (open) {
+      setTagColor(generateRandomColor())
+    }
+  }, [open])
+  
+  // 刷新颜色
+  const refreshColor = () => {
+    setTagColor(generateRandomColor())
+  }
 
   // 生成标签样式
   const getTagStyle = (color: string = "#3b82f6") => {
@@ -101,6 +114,16 @@ export default function AddTagDialog({
                   placeholder="#RRGGBB"
                   className="w-32"
                 />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={refreshColor} 
+                  className="h-10 w-10"
+                  title="生成随机颜色"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
                 <Badge style={getTagStyle(tagColor)} className="h-6 px-2 ml-2">
                   {tagName || "预览"}
                 </Badge>
