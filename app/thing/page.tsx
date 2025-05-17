@@ -245,9 +245,27 @@ export default function Thing() {
       // 监听自定义搜索事件
       const handleCustomSearch = (event: CustomEvent) => {
         const { searchTerm: newSearchTerm } = event.detail;
-        if (newSearchTerm && newSearchTerm !== searchTerm) {
+        // 添加调试日志
+        console.log('接收搜索事件:', newSearchTerm, 
+                    'isString:', typeof newSearchTerm === 'string',
+                    '长度:', newSearchTerm?.length,
+                    'charCode[0]:', newSearchTerm ? newSearchTerm.charCodeAt(0) : 'N/A',
+                    'currentSearch:', searchTerm);
+        
+        // 标准化两个字符串再进行比较
+        const normalizedCurrent = String(searchTerm || '').trim();
+        const normalizedNew = String(newSearchTerm || '').trim();
+        
+        // 确保即使是单个字符"我"也能触发搜索
+        const hasChanged = normalizedCurrent !== normalizedNew;
+        console.log('比较结果:', hasChanged, '标准化后当前:', normalizedCurrent, '新:', normalizedNew);
+        
+        if (hasChanged) {
+          console.log('搜索词已变化，执行搜索');
           setSearchTerm(newSearchTerm);
-          loadItems({ search: newSearchTerm, page: 1 });
+          loadItems({ search: newSearchTerm || undefined, page: 1 });
+        } else {
+          console.log('搜索词未变化，跳过搜索');
         }
       };
       

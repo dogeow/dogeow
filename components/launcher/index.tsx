@@ -600,6 +600,9 @@ export function AppLauncher() {
                     value={searchTerm}
                     onChange={(e) => {
                       setSearchTerm(e.target.value);
+                      // 添加调试日志
+                      console.log('搜索输入:', e.target.value, '长度:', e.target.value.length);
+                      
                       // 在物品页面启用即时搜索
                       if (currentApp === 'thing') {
                         // 使用防抖处理搜索，避免频繁触发
@@ -607,6 +610,9 @@ export function AppLauncher() {
                           clearTimeout(searchDebounceTimerRef.current);
                         }
                         searchDebounceTimerRef.current = setTimeout(() => {
+                          // 添加调试日志
+                          console.log('触发搜索事件:', e.target.value, '长度:', e.target.value.length);
+                          
                           // 无论是否有值都触发搜索，空搜索会显示所有物品
                           const searchEvent = new CustomEvent('thing-search', { 
                             detail: { searchTerm: e.target.value } 
