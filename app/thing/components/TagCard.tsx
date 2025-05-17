@@ -45,9 +45,9 @@ export default function TagCard({ tag, count, onDelete, className }: TagCardProp
                 e.stopPropagation();
                 onDelete();
               }}
-              className="group bg-white flex items-center justify-center h-full p-0.5 rounded-r-md border border-l-0 hover:bg-gray-100"
+              className="group bg-background flex items-center justify-center h-full p-0.5 rounded-r-md border border-l-0 hover:bg-accent"
             >
-              <X className="h-3 w-3 text-gray-500 group-hover:text-gray-700" />
+              <X className="h-3 w-3 text-muted-foreground group-hover:text-foreground" />
             </button>
           )}
         </div>

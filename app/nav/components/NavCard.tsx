@@ -80,7 +80,7 @@ export function NavCard({ item }: NavCardProps) {
 
   return (
     <>
-      <Card className="overflow-hidden hover:shadow-md transition-shadow">
+      <Card className="overflow-hidden hover:shadow-md transition-shadow py-1">
         <CardContent className="p-3 relative flex">
           <div className="mr-3 flex-shrink-0">
             {item.icon ? (

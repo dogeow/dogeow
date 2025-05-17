@@ -442,8 +442,6 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
           <TabsContent value="detailed" className="space-y-6">
             {renderDateRangePicker('购买日期', 'purchase_date_from', 'purchase_date_to', 'include_null_purchase_date')}
             
-            {renderDateRangePicker('过期日期', 'expiry_date_from', 'expiry_date_to', 'include_null_expiry_date')}
-            
             <div className="space-y-3">
               <Label className="text-base font-medium">价格范围</Label>
               <div className="space-y-3">

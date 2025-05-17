@@ -115,15 +115,15 @@ export function TagSelector({
       </Button>
       
       {open && (
-        <div className="absolute left-0 z-10 w-full mt-1 bg-popover rounded-md border shadow-md overflow-hidden">
+        <div className="absolute left-0 z-10 w-full mt-1 bg-popover dark:!bg-[#111] text-popover-foreground dark:!text-white rounded-md border shadow-md overflow-hidden">
           <div className="flex flex-col">
             {/* 搜索框 */}
-            <div className="p-2 border-b">
+            <div className="p-2 border-b dark:border-gray-700">
               <input
                 placeholder="搜索标签..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-9 px-2 text-sm rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+                className="w-full h-9 px-2 text-sm rounded-md border border-input bg-background dark:bg-[#222]/70 focus:outline-none focus:ring-1 focus:ring-ring"
               />
             </div>
             
@@ -142,7 +142,7 @@ export function TagSelector({
                       <div
                         key={tagId}
                         onClick={() => toggleTag(tagId)}
-                        className="flex items-center gap-2 px-2 py-1.5 hover:bg-accent hover:text-accent-foreground rounded-sm cursor-pointer"
+                        className="flex items-center gap-2 px-2 py-1.5 hover:bg-accent dark:hover:bg-gray-700 hover:text-accent-foreground rounded-sm cursor-pointer"
                       >
                         <div className={cn(
                           "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
@@ -199,11 +199,13 @@ export function TagSelector({
               <Badge
                 key={tagId}
                 variant="secondary"
-                className="cursor-pointer"
+                className="cursor-pointer pr-0 overflow-hidden flex items-center"
                 onClick={() => toggleTag(tagId)}
               >
-                <span>{tag.name}</span>
-                <X className="ml-1 h-3 w-3 opacity-60" />
+                <span className="mr-1">{tag.name}</span>
+                <span className="flex items-center justify-center bg-transparent dark:bg-transparent p-1 ml-1">
+                  <X className="h-3 w-3 text-gray-500 hover:text-gray-700 dark:text-foreground dark:hover:text-white" />
+                </span>
               </Badge>
             ) : null
           })}

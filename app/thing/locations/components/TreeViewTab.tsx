@@ -1,9 +1,8 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import LocationTreeSelect from '../../components/LocationTreeSelect'
 import { LocationType } from '../hooks/useLocationManagement'
-import { Folder, FolderOpen } from "lucide-react"
 import FolderIcon from '../../components/FolderIcon'
 
 interface TreeViewTabProps {
@@ -13,6 +12,35 @@ interface TreeViewTabProps {
 
 export default function TreeViewTab({ selectedLocation, onLocationSelect }: TreeViewTabProps) {
   const [isTreeExpanded, setIsTreeExpanded] = useState(true)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+  
+  // 检测是否是暗色模式
+  useEffect(() => {
+    const checkDarkMode = () => {
+      if (typeof window !== 'undefined') {
+        setIsDarkMode(document.documentElement.classList.contains('dark'))
+      }
+    }
+    
+    checkDarkMode()
+    
+    // 创建一个MutationObserver来监听类名变化
+    if (typeof window !== 'undefined') {
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.attributeName === 'class') {
+            checkDarkMode()
+          }
+        })
+      })
+      
+      observer.observe(document.documentElement, { attributes: true })
+      
+      return () => {
+        observer.disconnect()
+      }
+    }
+  }, [])
   
   // 处理树形展开/折叠
   const toggleTreeExpanded = () => {
@@ -22,11 +50,12 @@ export default function TreeViewTab({ selectedLocation, onLocationSelect }: Tree
   return (
     <div className="flex flex-col">
       <div className="w-full border rounded-lg shadow-sm overflow-hidden">
-        <div className="p-3 border-b bg-gray-50">
+        <div className="p-3 border-b bg-gray-50 dark:bg-gray-800" 
+          style={{ backgroundColor: isDarkMode ? 'rgb(31 41 55)' : 'rgb(249 250 251)' }}>
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium">位置树形结构</h2>
             <button 
-              className="p-1.5 rounded-full hover:bg-gray-200 transition-colors"
+              className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               onClick={toggleTreeExpanded}
               title={isTreeExpanded ? "折叠所有" : "展开所有"}
             >

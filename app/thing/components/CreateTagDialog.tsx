@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { RefreshCw } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import {
 import { Tag } from '../types'
 import { apiRequest } from '@/lib/api'
 import { toast } from 'sonner'
+import { generateRandomColor } from '@/lib/helpers'
 
 interface CreateTagDialogProps {
   open: boolean;
@@ -54,6 +56,18 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
       setName(initialName);
     }
   }, [initialName]);
+  
+  // 当对话框打开时，生成随机颜色
+  useEffect(() => {
+    if (open) {
+      setColor(generateRandomColor())
+    }
+  }, [open]);
+  
+  // 刷新颜色
+  const refreshColor = () => {
+    setColor(generateRandomColor())
+  }
   
   const resetForm = () => {
     setName('')
@@ -149,6 +163,18 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
                   <span className="text-xs text-white">+</span>
                 </div>
               </div>
+              
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                onClick={refreshColor} 
+                className="h-8 w-8"
+                title="生成随机颜色"
+                disabled={loading}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             </div>
           </div>
           

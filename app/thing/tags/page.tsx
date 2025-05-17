@@ -9,7 +9,17 @@ import { get, del } from "@/lib/api"
 import { toast } from "sonner"
 import { isLightColor } from '@/lib/helpers'
 import TagSpeedDial from './components/TagSpeedDial'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // 标签类型定义
 type Tag = {
@@ -23,25 +33,33 @@ type Tag = {
 
 export default function ThingTags() {
   const [loading, setLoading] = useState(false)
+  const [tagToDelete, setTagToDelete] = useState<number | null>(null)
+  const [alertOpen, setAlertOpen] = useState(false)
 
   // 加载标签数据
   const { data: tags, error } = useSWR<Tag[]>('/thing-tags', get)
 
-  // 删除标签
-  const deleteTag = async (id: number) => {
-    if (!confirm("确定要删除此标签吗？")) {
-      return
-    }
+  // 打开删除确认弹窗
+  const openDeleteDialog = (id: number) => {
+    setTagToDelete(id)
+    setAlertOpen(true)
+  }
 
+  // 删除标签
+  const deleteTag = async () => {
+    if (!tagToDelete) return
+    
     setLoading(true)
     try {
-      await del(`/thing-tags/${id}`)
+      await del(`/thing-tags/${tagToDelete}`)
       mutate("/thing-tags")
       toast.success("标签删除成功")
     } catch (error) {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)
+      setAlertOpen(false)
+      setTagToDelete(null)
     }
   }
 
@@ -80,7 +98,7 @@ export default function ThingTags() {
                     variant="ghost"
                     size="icon"
                     className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
-                    onClick={() => deleteTag(tag.id)}
+                    onClick={() => openDeleteDialog(tag.id)}
                   >
                     <X className="h-3 w-3" />
                   </Button>
@@ -90,6 +108,28 @@ export default function ThingTags() {
           </div>
         </CardContent>
       </Card>
+
+      {/* 自定义删除确认弹窗 */}
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确定要删除此标签吗？</AlertDialogTitle>
+            <AlertDialogDescription>
+              删除后将无法恢复，与标签关联的物品将解除标签关联。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={deleteTag}
+              disabled={loading}
+              className={loading ? "opacity-50 cursor-not-allowed" : ""}
+            >
+              {loading ? "删除中..." : "确定"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* 添加标签Speed Dial */}
       <TagSpeedDial />

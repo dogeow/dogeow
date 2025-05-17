@@ -10,6 +10,25 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * 生成一个随机的HTML颜色
+ * @returns 一个格式为 #RRGGBB 的十六进制颜色值
+ */
+export function generateRandomColor(): string {
+  // 生成随机的R、G、B值(0-255)
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
+  
+  // 转换为十六进制并确保两位数 (例如: '0A' 而不是 'A')
+  const rHex = r.toString(16).padStart(2, '0');
+  const gHex = g.toString(16).padStart(2, '0');
+  const bHex = b.toString(16).padStart(2, '0');
+  
+  // 组合为 #RRGGBB 格式
+  return `#${rHex}${gHex}${bHex}`;
+}
+
+/**
  * 将十六进制颜色值转换为HSL格式
  * @param hex 十六进制颜色值，格式为 #RRGGBB
  * @returns HSL格式的颜色字符串，如 "hsl(0, 0%, 0%)"

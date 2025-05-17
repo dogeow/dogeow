@@ -1,14 +1,24 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, X } from "lucide-react"
+import { Plus, X, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import useSWR, { mutate } from "swr"
 import { get, post, del, ApiRequestError } from "@/lib/api"
 import { toast } from "sonner"
-import { isLightColor } from '@/lib/helpers'
+import { isLightColor, generateRandomColor } from '@/lib/helpers'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // 标签类型定义
 type Tag = {
@@ -23,6 +33,18 @@ export default function NoteTags() {
   const [newTag, setNewTag] = useState("")
   const [newColor, setNewColor] = useState("#3b82f6") // 默认蓝色
   const [loading, setLoading] = useState(false)
+  const [tagToDelete, setTagToDelete] = useState<number | null>(null)
+  const [alertOpen, setAlertOpen] = useState(false)
+
+  // 页面加载时生成随机颜色
+  useEffect(() => {
+    setNewColor(generateRandomColor())
+  }, []);
+  
+  // 刷新颜色
+  const refreshColor = () => {
+    setNewColor(generateRandomColor())
+  }
 
   // 加载标签数据
   const { data: tags, error } = useSWR<Tag[]>('/note-tags', get)
@@ -41,6 +63,7 @@ export default function NoteTags() {
         color: newColor
       })
       setNewTag("")
+      setNewColor(generateRandomColor()) // 添加成功后重新生成随机颜色
       mutate("/note-tags")
       toast.success("标签添加成功")
     } catch (error) {
@@ -50,21 +73,27 @@ export default function NoteTags() {
     }
   }
 
-  // 删除标签
-  const deleteTag = async (id: number) => {
-    if (!confirm("确定要删除此标签吗？")) {
-      return
-    }
+  // 打开删除确认弹窗
+  const openDeleteDialog = (id: number) => {
+    setTagToDelete(id)
+    setAlertOpen(true)
+  }
 
+  // 删除标签
+  const deleteTag = async () => {
+    if (!tagToDelete) return
+    
     setLoading(true)
     try {
-      await del(`/note-tags/${id}`)
+      await del(`/note-tags/${tagToDelete}`)
       mutate("/note-tags")
       toast.success("标签删除成功")
     } catch (error) {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)
+      setAlertOpen(false)
+      setTagToDelete(null)
     }
   }
 
@@ -105,6 +134,17 @@ export default function NoteTags() {
                 placeholder="#RRGGBB"
                 className="w-32"
               />
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="icon" 
+                onClick={refreshColor} 
+                className="h-10 w-10"
+                title="生成随机颜色"
+                disabled={loading}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
               <Badge style={getTagStyle(newColor)} className="h-6 px-2 ml-2">
                 {newTag || "预览"}
               </Badge>
@@ -137,7 +177,7 @@ export default function NoteTags() {
                   variant="ghost"
                   size="icon"
                   className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
-                  onClick={() => deleteTag(tag.id)}
+                  onClick={() => openDeleteDialog(tag.id)}
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -146,6 +186,28 @@ export default function NoteTags() {
           ))}
         </div>
       </div>
+
+      {/* 自定义删除确认弹窗 */}
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确定要删除此标签吗？</AlertDialogTitle>
+            <AlertDialogDescription>
+              删除后将无法恢复，与此标签关联的笔记将解除标签关联。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={deleteTag}
+              disabled={loading}
+              className={loading ? "opacity-50 cursor-not-allowed" : ""}
+            >
+              {loading ? "删除中..." : "确定"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 } 
