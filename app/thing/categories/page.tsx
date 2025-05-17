@@ -105,7 +105,7 @@ export default function Categories() {
   }
 
   return (
-    <div className="container mx-auto py-2 pb-24">
+    <div className="py-2 pb-24">
       <Card>
         <CardContent>
           {categories.length === 0 ? (
