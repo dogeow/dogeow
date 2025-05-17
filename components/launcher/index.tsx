@@ -398,7 +398,7 @@ export function AppLauncher() {
   // 获取当前路由的第一段作为当前应用
   const currentApp = pathname?.split('/')[1] || ''
   
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent, keepSearchOpen: boolean = false) => {
     e.preventDefault()
     
     if (!searchTerm.trim()) return
@@ -419,8 +419,10 @@ export function AppLauncher() {
       router.push(`/thing?search=${encodeURIComponent(searchTerm)}`)
     }
     
-    // 关闭顶部搜索框
-    setIsSearchVisible(false)
+    // 根据参数决定是否关闭顶部搜索框
+    if (!keepSearchOpen) {
+      setIsSearchVisible(false)
+    }
   }
   
   // 点击搜索按钮时展开搜索框或打开搜索弹窗
@@ -592,76 +594,100 @@ export function AppLauncher() {
             {/* 右侧：搜索按钮和用户 */}
             <div className={`flex items-center gap-3 ${isSearchVisible ? 'flex-1 justify-between' : 'ml-auto'}`}>
               {isSearchVisible ? (
-                <form onSubmit={handleSearch} className="relative flex items-center flex-1 max-w-md mx-auto">
-                  <Input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder={`搜索${currentApp ? currentApp + '...' : '...'}`}
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      // 添加调试日志
-                      console.log('搜索输入:', e.target.value, '长度:', e.target.value.length);
-                      
-                      // 在物品页面启用即时搜索
-                      if (currentApp === 'thing') {
-                        // 使用防抖处理搜索，避免频繁触发
-                        if (searchDebounceTimerRef.current) {
-                          clearTimeout(searchDebounceTimerRef.current);
-                        }
-                        searchDebounceTimerRef.current = setTimeout(() => {
-                          // 添加调试日志
-                          console.log('触发搜索事件:', e.target.value, '长度:', e.target.value.length);
-                          
-                          // 无论是否有值都触发搜索，空搜索会显示所有物品
-                          const searchEvent = new CustomEvent('thing-search', { 
-                            detail: { searchTerm: e.target.value } 
-                          });
-                          document.dispatchEvent(searchEvent);
-                        }, 500); // 500ms延迟
-                      }
-                    }}
-                    className="w-full h-9 pl-8 border-primary/20 animate-in fade-in duration-150"
-                  />
-                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary" />
-                  <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-                    <Button 
-                      type="button"
-                      variant="ghost" 
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={(e) => {
+                <div className="flex items-center gap-2 flex-1 max-w-md mx-auto">
+                  <div className="relative flex-1">
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
-                        setSearchTerm('');
-                        
-                        // 清空后也触发搜索事件，显示所有物品
-                        if (currentApp === 'thing') {
-                          // 取消可能正在进行的防抖
-                          if (searchDebounceTimerRef.current) {
-                            clearTimeout(searchDebounceTimerRef.current);
-                            searchDebounceTimerRef.current = null;
-                          }
+                        handleSearch(e, true);
+                      }} 
+                      className="flex items-center w-full"
+                    >
+                      <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary" />
+                      <Input
+                        ref={searchInputRef}
+                        type="text"
+                        placeholder={`搜索${currentApp ? currentApp + '...' : '...'}`}
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          // 添加调试日志
+                          console.log('搜索输入:', e.target.value, '长度:', e.target.value.length);
                           
-                          const searchEvent = new CustomEvent('thing-search', { 
-                            detail: { searchTerm: '' } 
-                          });
-                          document.dispatchEvent(searchEvent);
-                        }
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      type="submit"
-                      variant="ghost" 
-                      size="icon"
-                      className="h-7 w-7"
-                      disabled={!searchTerm.trim()}
-                    >
-                      <ArrowRight className="h-3 w-3" />
-                    </Button>
+                          // 在物品页面启用即时搜索
+                          if (currentApp === 'thing') {
+                            // 使用防抖处理搜索，避免频繁触发
+                            if (searchDebounceTimerRef.current) {
+                              clearTimeout(searchDebounceTimerRef.current);
+                            }
+                            searchDebounceTimerRef.current = setTimeout(() => {
+                              // 添加调试日志
+                              console.log('触发搜索事件:', e.target.value, '长度:', e.target.value.length);
+                              
+                              // 无论是否有值都触发搜索，空搜索会显示所有物品
+                              const searchEvent = new CustomEvent('thing-search', { 
+                                detail: { searchTerm: e.target.value } 
+                              });
+                              document.dispatchEvent(searchEvent);
+                            }, 500); // 500ms延迟
+                          }
+                        }}
+                        className="w-full h-9 pl-8 pr-8 border-primary/20 animate-in fade-in duration-150"
+                      />
+                      
+                      {/* 只在有输入内容时显示清除按钮 */}
+                      {searchTerm && (
+                        <div 
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer rounded-full p-1 hover:bg-gray-200 dark:hover:bg-gray-700"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            
+                            // 清空输入内容
+                            setSearchTerm('');
+                            
+                            // 保持输入框焦点
+                            setTimeout(() => {
+                              searchInputRef.current?.focus();
+                            }, 10);
+                            
+                            // 清空后也触发搜索事件，显示所有物品
+                            if (currentApp === 'thing') {
+                              // 取消可能正在进行的防抖
+                              if (searchDebounceTimerRef.current) {
+                                clearTimeout(searchDebounceTimerRef.current);
+                                searchDebounceTimerRef.current = null;
+                              }
+                              
+                              const searchEvent = new CustomEvent('thing-search', { 
+                                detail: { searchTerm: '' } 
+                              });
+                              document.dispatchEvent(searchEvent);
+                            }
+                          }}
+                        >
+                          <X className="h-3 w-3 text-gray-500" />
+                        </div>
+                      )}
+                    </form>
                   </div>
-                </form>
+                  
+                  {/* 关闭搜索框按钮 */}
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="icon"
+                    className="h-9 w-9 shrink-0"
+                    onClick={(e) => {
+                      // 阻止事件冒泡
+                      e.stopPropagation();
+                      // 关闭搜索框
+                      setIsSearchVisible(false);
+                    }}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               ) : (
                 <Button
                   variant="ghost"

@@ -31,7 +31,7 @@ const FolderIcon: React.FC<FolderIconProps> = ({
     >
       <motion.div
         animate={{ opacity: isOpen ? 0 : 1 }}
-        initial={{ opacity: isOpen ? 0 : 1 }}
+        initial={{ opacity: 1 }}
         transition={transition}
         className="absolute"
       >
@@ -39,7 +39,7 @@ const FolderIcon: React.FC<FolderIconProps> = ({
       </motion.div>
       <motion.div
         animate={{ opacity: isOpen ? 1 : 0 }}
-        initial={{ opacity: isOpen ? 1 : 0 }}
+        initial={{ opacity: 0 }}
         transition={transition}
       >
         <FolderOpen size={size} />

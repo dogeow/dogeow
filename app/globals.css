@@ -1,76 +1,6 @@
 @import "tailwindcss";
 
-/* 使用标准的方式处理深色模式 */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.145 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.145 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
-    --border: oklch(0.269 0 0);
-    --input: oklch(0.269 0 0);
-    --ring: oklch(0.439 0 0);
-    --chart-1: oklch(0.488 0.243 264.376);
-    --chart-2: oklch(0.696 0.17 162.48);
-    --chart-3: oklch(0.769 0.188 70.08);
-    --chart-4: oklch(0.627 0.265 303.9);
-    --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: oklch(0.439 0 0);
-  }
-}
-
-/* 当明确设置了深色模式类时 */
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-}
+@custom-variant dark (&:is(.dark *));
 
 @plugin "tailwindcss-animate";
 
@@ -111,6 +41,40 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.145 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.145 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.396 0.141 25.723);
+  --destructive-foreground: oklch(0.637 0.237 25.331);
+  --border: oklch(0.269 0 0);
+  --input: oklch(0.269 0 0);
+  --ring: oklch(0.439 0 0);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(0.269 0 0);
+  --sidebar-ring: oklch(0.439 0 0);
 }
 
 @theme inline {
@@ -265,86 +229,5 @@
   margin-left: 0;
   margin-right: auto;
   padding: 0.5rem 0;
-}
-
-/* 添加夜间模式下拉菜单的样式 */
-.dark [data-radix-select-content],
-.dark [data-radix-dropdown-menu-content],
-.dark [data-radix-popper-content],
-.dark [role="listbox"],
-.dark [role="menu"] {
-  background-color: #111 !important;
-  color: white !important;
-  border-color: #333 !important;
-}
-
-.dark [role="option"],
-.dark [role="menuitem"] {
-  background-color: #111 !important;
-  color: white !important;
-}
-
-.dark [role="option"]:hover,
-.dark [role="menuitem"]:hover,
-.dark [role="option"]:focus,
-.dark [role="menuitem"]:focus {
-  background-color: #333 !important;
-}
-
-/* 添加更强力的选择器来覆盖所有可能的下拉菜单样式 */
-.dark *[class*="select-content"],
-.dark *[class*="dropdown-content"],
-.dark *[class*="popover-content"],
-.dark *[class*="Select-content"],
-.dark *[class*="Dropdown-content"],
-.dark *[class*="Popover-content"],
-.dark *[data-state="open"][role="presentation"],
-.dark div[style*="position: absolute"][style*="z-index: 5"],
-.dark div[class*="DropdownMenuContent-"],
-.dark div[class*="SelectContent-"] {
-  background-color: #111 !important;
-  border-color: #333 !important;
-  color: white !important;
-}
-
-.dark div[style*="position: absolute"][style*="z-index: 5"] *,
-.dark div[class*="DropdownMenuContent-"] *,
-.dark div[class*="SelectContent-"] * {
-  background-color: transparent !important;
-  color: white !important;
-}
-
-.dark div[style*="position: absolute"][style*="z-index: 5"] *:hover,
-.dark div[class*="DropdownMenuContent-"] *:hover,
-.dark div[class*="SelectContent-"] *:hover {
-  background-color: #333 !important;
-}
-
-.dark div[style*="position: absolute"][style*="z-index"] ul,
-.dark div[style*="position: absolute"][style*="z-index"] li,
-.dark div[style*="position: absolute"][style*="z-index"] div {
-  background-color: #111 !important;
-  color: white !important;
-}
-
-/* 直接追加Radix UI组件选择器 */
-.dark [data-radix-select-viewport],
-.dark [data-radix-dropdown-menu-viewport],
-.dark [data-slot="select-content"],
-.dark [data-slot="dropdown-menu-content"] {
-  background-color: #111 !important;
-  color: white !important;
-}
-
-.dark [data-slot="select-item"],
-.dark [data-slot="dropdown-menu-item"] {
-  background-color: transparent !important;
-}
-
-.dark [data-slot="select-item"]:hover,
-.dark [data-slot="select-item"]:focus,
-.dark [data-slot="dropdown-menu-item"]:hover,
-.dark [data-slot="dropdown-menu-item"]:focus {
-  background-color: #333 !important;
 }
 

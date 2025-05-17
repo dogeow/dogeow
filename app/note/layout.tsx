@@ -11,7 +11,7 @@ export default function NoteLayout({
   return (
     <div className="flex flex-col min-h-screen">
       <NoteNavigation />
-      <div className="flex-1 mx-2">
+      <div className="flex-1 px-4">
         {children}
       </div>
     </div>

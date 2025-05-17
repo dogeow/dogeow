@@ -11,7 +11,7 @@ export default function ThingLayout({
   return (
     <div className="flex flex-col gap-2">
       <ThingNavigation />
-      <div className="mx-2">
+      <div className="px-4">
         {children}
       </div>
     </div>

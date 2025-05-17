@@ -89,7 +89,7 @@ export default function Locations() {
   };
   
   return (
-    <>
+    <div className="px-4">
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="mt-2">
         <TabsList className="w-full">
           {tabItems.map(tab => (
@@ -125,6 +125,6 @@ export default function Locations() {
         onAddRoom={handleAddRoom}
         onAddSpot={handleAddSpot}
       />
-    </>
+    </div>
   )
 } 
