@@ -54,6 +54,12 @@ export function AppLauncher() {
   const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  
+  // 判断当前是否在首页
+  const isHomePage = pathname === '/';
+  
+  // 获取当前页面所属的应用类型
+  const currentApp = pathname.split('/')[1];
 
   // 组件加载时检查音频文件
   useEffect(() => {
@@ -392,12 +398,6 @@ export function AppLauncher() {
     }
   }, [backgroundImage]);
   
-  // 检查是否在首页
-  const isHomePage = pathname === '/'
-  
-  // 获取当前路由的第一段作为当前应用
-  const currentApp = pathname?.split('/')[1] || ''
-  
   const handleSearch = (e: React.FormEvent, keepSearchOpen: boolean = false) => {
     e.preventDefault()
     
@@ -414,8 +414,14 @@ export function AppLauncher() {
         detail: { searchTerm } 
       });
       document.dispatchEvent(searchEvent);
+    } else if (currentApp === 'tool') {
+      // 如果在工具页面，发送自定义事件触发工具搜索
+      const toolSearchEvent = new CustomEvent('tool-search', { 
+        detail: { searchTerm } 
+      });
+      document.dispatchEvent(toolSearchEvent);
     } else {
-      // 不在物品页面时，导航到物品页面并带上搜索参数
+      // 不在物品或工具页面时，导航到物品页面并带上搜索参数
       router.push(`/thing?search=${encodeURIComponent(searchTerm)}`)
     }
     
@@ -546,6 +552,46 @@ export function AppLauncher() {
       }
     };
   }, [currentTrack, switchToNextTrack]);
+  
+  // 添加全局键盘快捷键处理
+  useEffect(() => {
+    const handleKeyboardShortcuts = (e: KeyboardEvent) => {
+      // Ctrl+K 快捷键打开或关闭搜索对话框（也兼容 macOS 的 Command+K）
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault(); // 阻止默认行为
+        
+        // 如果搜索对话框已经打开，则关闭
+        if (isSearchDialogOpen) {
+          setIsSearchDialogOpen(false);
+          return;
+        }
+        
+        // 如果已经打开搜索框，则关闭搜索框
+        if (isSearchVisible) {
+          setIsSearchVisible(false);
+          return;
+        }
+        
+        // 在首页直接打开搜索对话框
+        if (isHomePage) {
+          setIsSearchDialogOpen(true);
+        } 
+        // 在其他页面显示顶部搜索框
+        else {
+          setIsSearchVisible(true);
+          // 确保输入框获得焦点
+          setTimeout(() => {
+            searchInputRef.current?.focus();
+          }, 100);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyboardShortcuts);
+    return () => {
+      window.removeEventListener('keydown', handleKeyboardShortcuts);
+    };
+  }, [isSearchVisible, isHomePage, isSearchDialogOpen]);
   
   // 在组件卸载时清理HLS实例
   useEffect(() => {

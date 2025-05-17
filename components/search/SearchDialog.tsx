@@ -46,9 +46,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const [activeCategory, setActiveCategory] = useState("all")
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [randomLoading, setRandomLoading] = useState(false)
   const [thingPublicStatus, setThingPublicStatus] = useState<'all' | 'public' | 'private'>('all')
-  const [randomItems, setRandomItems] = useState<SearchResult[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
   // 定义分类列表
@@ -72,7 +70,13 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       
       if (matchedCategory) {
         setActiveCategory(matchedCategory.id)
+      } else {
+        // 如果没有匹配的分类，默认选择"全部"
+        setActiveCategory("all")
       }
+    } else {
+      // 如果没有当前路由，默认选择"全部"
+      setActiveCategory("all")
     }
   }, [currentRoute])
 
@@ -212,55 +216,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     return () => clearTimeout(delaySearch);
   }, [searchTerm, activeCategory, thingPublicStatus]);
   
-  // 加载随机物品
-  useEffect(() => {
-    if (open) {
-      loadRandomItems()
-    }
-  }, [open, thingPublicStatus])
-  
-  // 获取随机物品
-  const loadRandomItems = async () => {
-    try {
-      setRandomLoading(true)
-      
-      let queryParams = 'random=true&limit=5';
-      
-      if (thingPublicStatus !== 'all') {
-        queryParams += `&is_public=${thingPublicStatus === 'public' ? 'true' : 'false'}`;
-      }
-      
-      interface RandomItemsResponse {
-        data: Array<{
-          id: number;
-          name: string;
-          description?: string;
-          is_public?: boolean;
-          [key: string]: any;
-        }>;
-      }
-      
-      const response = await get<RandomItemsResponse>(`/things?${queryParams}`)
-      
-      if (response.data && Array.isArray(response.data)) {
-        const randomItemResults = response.data.map((item) => ({
-          id: item.id,
-          title: item.name,
-          content: item.description || '无描述',
-          url: `/thing/${item.id}`,
-          category: 'thing',
-          isPublic: item.is_public
-        }))
-        
-        setRandomItems(randomItemResults)
-      }
-    } catch (error) {
-      console.error('获取随机物品失败:', error)
-    } finally {
-      setRandomLoading(false)
-    }
-  }
-
   // 根据当前选中的分类过滤结果
   const filteredResults = results.filter(
     item => activeCategory === "all" || item.category === activeCategory
@@ -335,38 +290,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       ))
     }
     
-    if (randomLoading) {
-      return (
-        <div className="text-center py-4">
-          <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-          <p className="mt-2 text-sm text-muted-foreground">加载推荐中...</p>
-        </div>
-      )
-    }
-    
-    if (randomItems.length > 0) {
-      return (
-        <div className="mb-4">
-          <p className="text-sm text-muted-foreground mb-2">随机推荐物品：</p>
-          {randomItems.map((item) => (
-            <div
-              key={`random-${item.id}`}
-              className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
-              onClick={() => handleResultClick(item.url)}
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <h3 className="font-semibold truncate">{item.title}</h3>
-                <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
-                  {item.isPublic ? '公开' : '私有'}
-                </Badge>
-              </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{item.content}</p>
-            </div>
-          ))}
-        </div>
-      )
-    }
-    
     return (
       <div className="text-center py-4">
         <p className="text-muted-foreground">请输入搜索关键词</p>
@@ -378,19 +301,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="sm:max-w-[90%] md:max-w-[550px] max-h-[90vh] overflow-y-auto p-6"
-        style={{ '--dialog-close-display': 'none' } as React.CSSProperties}
       >
-        {/* 手动添加关闭按钮，确保行为正确 */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute right-4 top-4 rounded-sm opacity-70 hover:opacity-100"
-          onClick={() => onOpenChange(false)}
-        >
-          <X className="h-4 w-4" />
-          <span className="sr-only">关闭</span>
-        </Button>
-        
         <DialogHeader>
           <DialogTitle className="text-center">{getDialogTitle()}</DialogTitle>
         </DialogHeader>
@@ -427,7 +338,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                   
                   setSearchTerm("");
                   setResults([]);
-                  loadRandomItems();
                   setTimeout(() => {
                     inputRef.current?.focus();
                   }, 10);

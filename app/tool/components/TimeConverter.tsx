@@ -64,17 +64,13 @@ const TimeConverter = () => {
       if (cleanTimestamp.length >= 13) {
         // 毫秒级时间戳
         date = new Date(timestampNum)
-      } else if (cleanTimestamp.length >= 10) {
-        // 秒级时间戳
-        date = new Date(timestampNum * 1000)
       } else {
-        // 时间戳位数不足
-        setDateTime("时间戳位数不足")
-        return
+        // 秒级时间戳（包括小于10位的有效时间戳）
+        date = new Date(timestampNum * 1000)
       }
       
       // 验证日期是否有效（检查是否超出了JavaScript Date支持的范围）
-      if (isNaN(date.getTime()) || date.getTime() <= 0) {
+      if (isNaN(date.getTime()) || date.getTime() < 0) {
         setDateTime("无效的时间戳")
         return
       }
@@ -106,15 +102,39 @@ const TimeConverter = () => {
         return
       }
       
-      // 验证日期时间格式
-      const dateTimePattern = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+      // 更宽松的日期格式正则表达式，支持缩写格式
+      const dateTimePattern = /^\d{4}-\d{1,2}-\d{1,2}( \d{1,2}:\d{1,2}:\d{1,2})?$/
       if (!dateTimePattern.test(inputDateTime)) {
-        setOutputTimestamp("日期格式应为 yyyy-MM-dd HH:mm:ss")
+        setOutputTimestamp("日期格式应为 yyyy-M-d 或 yyyy-MM-dd HH:mm:ss")
         return
       }
       
+      // 标准化日期格式
+      let standardDateTime = inputDateTime
+      const parts = inputDateTime.split(' ')
+      if (parts.length > 0) {
+        const dateParts = parts[0].split('-')
+        if (dateParts.length === 3) {
+          // 确保月和日都是两位数
+          const year = dateParts[0]
+          const month = dateParts[1].padStart(2, '0')
+          const day = dateParts[2].padStart(2, '0')
+          
+          standardDateTime = `${year}-${month}-${day}`
+          if (parts.length > 1) {
+            standardDateTime += ` ${parts[1]}`
+          }
+        }
+      }
+      
       // 使用date-fns解析日期时间字符串
-      const date = parse(inputDateTime, "yyyy-MM-dd HH:mm:ss", new Date())
+      let date
+      if (!standardDateTime.includes(' ')) {
+        // 只有日期部分，添加默认时间 00:00:00
+        date = parse(`${standardDateTime} 00:00:00`, "yyyy-MM-dd HH:mm:ss", new Date())
+      } else {
+        date = parse(standardDateTime, "yyyy-MM-dd HH:mm:ss", new Date())
+      }
       
       // 检查日期是否有效
       if (isNaN(date.getTime())) {
@@ -245,7 +265,6 @@ const TimeConverter = () => {
                   <div className="flex space-x-2">
                     <Input 
                       id="timestamp" 
-                      placeholder="输入10位或13位时间戳" 
                       value={timestamp}
                       onChange={(e) => setTimestamp(e.target.value)}
                     />
@@ -298,7 +317,7 @@ const TimeConverter = () => {
                   <div className="flex space-x-2">
                     <Input 
                       id="input-datetime" 
-                      placeholder="yyyy-MM-dd HH:mm:ss" 
+                      placeholder="yyyy-M-d 或 yyyy-MM-dd HH:mm:ss" 
                       value={inputDateTime}
                       onChange={(e) => setInputDateTime(e.target.value)}
                     />
