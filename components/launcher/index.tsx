@@ -92,11 +92,14 @@ export function AppLauncher() {
     }
   };
   
-  // 监听currentTrack变化，但不自动初始化播放器
+  // 监听currentTrack变化
   useEffect(() => {
     if (!currentTrack) return;
     
-    // 不在此处调用setupMediaSource()，而是在用户交互时调用
+    // 检查当前音频是否已加载，如果未加载则加载
+    if (audioRef.current && (!audioRef.current.src || !audioRef.current.src.includes(currentTrack))) {
+      setupMediaSource();
+    }
   }, [currentTrack]);
   
   // 处理播放/暂停
@@ -272,7 +275,12 @@ export function AppLauncher() {
   
   // 设置音频源
   const setupMediaSource = () => {
-    if (!audioRef.current || !currentTrack) return
+    if (!audioRef.current || !currentTrack) {
+      console.warn('无法设置音频源：audioRef 或 currentTrack 不存在');
+      return;
+    }
+    
+    console.log('设置音频源:', currentTrack);
     
     // 确保先清理
     if (hlsInstanceRef.current) {
@@ -284,6 +292,7 @@ export function AppLauncher() {
     try {
       // 构建音频URL
       const audioUrl = apiUrl + currentTrack
+      console.log('音频URL:', audioUrl);
       
       // 设置音频元素的源
       audioRef.current.src = audioUrl
@@ -298,6 +307,9 @@ export function AppLauncher() {
     } catch (err) {
       console.error('设置音频源失败:', err)
       setAudioError(`设置音频源失败: ${err}`)
+      toast.error("音频源设置失败", {
+        description: String(err)
+      })
     }
   }
 
@@ -506,6 +518,11 @@ export function AppLauncher() {
     // 更新状态
     setAudioError(null);
     setIsPlaying(true);
+    
+    // 设置新的音频源
+    setTimeout(() => {
+      setupMediaSource();
+    }, 0);
   };
   
   const switchToNextTrack = () => switchTrack('next')
@@ -833,9 +850,11 @@ export function AppLauncher() {
           onLoadedMetadata={handleLoadedMetadata}
           onTimeUpdate={handleTimeUpdate}
           onError={handleAudioError}
+          onEnded={() => switchToNextTrack()}
+          onCanPlay={() => setReadyToPlay(true)}
           loop={false}
           hidden
-          preload="none"
+          preload="auto"
         />
       </div>
     </>
