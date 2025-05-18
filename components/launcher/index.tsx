@@ -16,8 +16,9 @@ import useAuthStore from '@/stores/authStore'
 import { SearchBar } from './SearchBar'
 import { SearchDialog } from '@/components/search/SearchDialog'
 import { AudioController } from './AudioController'
+import ReactMarkdown from 'react-markdown'
 
-type DisplayMode = 'music' | 'apps' | 'settings' | 'auth';
+type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'markdown';
 
 export function AppLauncher() {
   const router = useRouter()
@@ -47,6 +48,7 @@ export function AppLauncher() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isSearchVisible, setIsSearchVisible] = useState(false)
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false)
+  const [markdownText, setMarkdownText] = useState<string>('')
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
   
@@ -141,7 +143,7 @@ export function AppLauncher() {
   
   // 设置音乐播放器高度变量
   useEffect(() => {
-    document.documentElement.style.setProperty('--music-player-height', '3rem')
+    document.documentElement.style.setProperty('--music-player-height', '2.5rem')
   }, [])
 
   // 阻止用户输入事件冒泡到 body，避免全局热键影响
@@ -317,6 +319,41 @@ export function AppLauncher() {
     };
   }, [isSearchVisible, isHomePage, isSearchDialogOpen]);
   
+  // 添加一个监听剪贴板事件的处理函数
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      // 只在首页处理粘贴事件
+      if (pathname !== '/') return
+      
+      const clipboardText = e.clipboardData?.getData('text/plain')
+      
+      // 检查文本是否包含Markdown标记
+      if (clipboardText && (
+        clipboardText.includes('#') || 
+        clipboardText.includes('*') || 
+        clipboardText.includes('```') ||
+        clipboardText.includes('>') ||
+        clipboardText.includes('-') ||
+        clipboardText.includes('|')
+      )) {
+        setMarkdownText(clipboardText)
+        // 如果不是在markdown模式，切换到markdown模式
+        if (displayMode !== 'markdown') {
+          setDisplayMode('markdown')
+        }
+        // 阻止默认粘贴行为
+        e.preventDefault()
+      }
+    }
+    
+    // 添加粘贴事件监听器
+    document.addEventListener('paste', handlePaste)
+    
+    return () => {
+      document.removeEventListener('paste', handlePaste)
+    }
+  }, [pathname, displayMode])
+  
   const renderContent = () => {
     switch (displayMode) {
       case 'music':
@@ -408,6 +445,43 @@ export function AppLauncher() {
             <AuthPanel toggleDisplayMode={toggleDisplayMode} />
           </div>
         );
+      case 'markdown':
+        return (
+          <div className="h-full flex items-center justify-between w-full">
+            <div className="flex items-center shrink-0 mr-6">
+              <Image 
+                src={Logo} 
+                alt="apps" 
+                className="h-10 w-10 cursor-pointer" 
+                onClick={() => {
+                  setDisplayMode('apps')
+                  setMarkdownText('')
+                }}
+              />
+            </div>
+            
+            <div className="flex-1 overflow-auto px-4 py-1">
+              <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-li:my-0">
+                <ReactMarkdown>
+                  {markdownText}
+                </ReactMarkdown>
+              </div>
+            </div>
+            
+            <div className="ml-auto">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDisplayMode('apps')
+                  setMarkdownText('')
+                }}
+              >
+                关闭
+              </Button>
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -427,7 +501,7 @@ export function AppLauncher() {
         id="app-launcher-bar"
         className="bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2"
         style={{ 
-          height: '3rem',
+          height: '2.5rem',
           width: '100%'
         }}
       >
