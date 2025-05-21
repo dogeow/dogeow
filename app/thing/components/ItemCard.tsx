@@ -119,49 +119,26 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   
   // 渲染位置信息
   const renderLocation = () => {
-    // 检查是否有spot对象，并且有完整的位置路径
-    if (item.spot?.room?.area?.name && item.spot?.room?.name && item.spot?.name) {
-      return (
-        <div className="flex gap-1 items-center">
-          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
-            {item.spot.room.area.name}
+    const locationParts = [
+      { name: item.spot?.room?.area?.name, bgColor: 'bg-blue-50' },
+      { name: item.spot?.room?.name, bgColor: 'bg-green-50' },
+      { name: item.spot?.name, bgColor: 'bg-purple-50' }
+    ].filter(part => part.name);
+
+    if (locationParts.length === 0) return null;
+
+    return (
+      <div className="flex gap-1 items-center">
+        {locationParts.map((part, index) => (
+          <span 
+            key={index}
+            className={`inline-flex items-center px-1.5 py-0.5 text-xs rounded ${part.bgColor}`}
+          >
+            {part.name}
           </span>
-          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-green-50">
-            {item.spot.room.name}
-          </span>
-          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-purple-50">
-            {item.spot.name}
-          </span>
-        </div>
-      );
-    }
-    
-    // 检查是否有spot对象，并且有区域和房间
-    if (item.spot?.room?.area?.name && item.spot?.room?.name) {
-      return (
-        <div className="flex gap-1 items-center">
-          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
-            {item.spot.room.area.name}
-          </span>
-          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-green-50">
-            {item.spot.room.name}
-          </span>
-        </div>
-      );
-    }
-    
-    // 检查是否有spot对象，并且只有区域
-    if (item.spot?.room?.area?.name) {
-      return (
-        <div className="flex gap-1 items-center">
-          <span className="inline-flex items-center px-1.5 py-0.5 text-xs rounded bg-blue-50">
-            {item.spot.room.area.name}
-          </span>
-        </div>
-      );
-    }
-    
-    return null;
+        ))}
+      </div>
+    );
   }
   
   // 构建正确的图片URL

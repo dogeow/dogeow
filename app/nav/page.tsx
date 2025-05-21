@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { NavCategory as CategoryType } from '@/app/nav/types';
 import { NavCategory } from './components/NavCategory';
 import { Folder, Plus, Settings } from 'lucide-react';
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNavStore } from '@/app/nav/stores/navStore';
 
-export default function NavPage() {
+// 创建一个新的组件来处理搜索参数
+function NavContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const filterName = searchParams.get('filter[name]') || '';
@@ -171,19 +172,28 @@ export default function NavPage() {
   );
 }
 
+// 主页面组件
+export default function NavPage() {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <NavContent />
+    </Suspense>
+  );
+}
+
+// 加载骨架屏组件
 function LoadingSkeleton() {
   return (
-    <div>
-      {[1, 2].map((i) => (
-        <div key={i} className="mb-8">
-          <div className="mb-3 flex items-center gap-2">
-            <div className="h-6 w-6 rounded-full bg-gray-200 animate-pulse" />
-            <div className="h-7 w-40 bg-gray-200 animate-pulse" />
-          </div>
-          
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {[1, 2, 3, 4, 5, 6].map((j) => (
-              <div key={j} className="h-24 rounded-lg bg-gray-200 animate-pulse" />
+    <div className="space-y-4">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/4 mb-2"></div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map((j) => (
+              <div key={j} className="bg-gray-100 rounded-lg p-4">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+              </div>
             ))}
           </div>
         </div>
