@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import {
   ChevronRight,
   ChevronDown,
@@ -33,7 +33,7 @@ interface FolderNodeComponentProps {
   currentFolderId: number | null
 }
 
-const FolderNodeComponent: React.FC<FolderNodeComponentProps> = ({
+const FolderNodeComponent = memo<FolderNodeComponentProps>(({
   node,
   level,
   expandedNodes,
@@ -43,7 +43,16 @@ const FolderNodeComponent: React.FC<FolderNodeComponentProps> = ({
 }) => {
   const isExpanded = expandedNodes[node.id] || false
   const isSelected = currentFolderId === node.id
-  const hasChildren = node.children && node.children.length > 0
+  const hasChildren = node.children?.length > 0
+
+  const handleToggle = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    toggleNode(node.id)
+  }, [node.id, toggleNode])
+
+  const handleSelect = useCallback(() => {
+    onSelectFolder(node.id)
+  }, [node.id, onSelectFolder])
 
   return (
     <div>
@@ -53,15 +62,12 @@ const FolderNodeComponent: React.FC<FolderNodeComponentProps> = ({
           isSelected && "bg-muted/70 font-medium"
         )}
         style={{ paddingLeft: `${level * 12 + 4}px` }}
-        onClick={() => onSelectFolder(node.id)}
+        onClick={handleSelect}
       >
         {hasChildren ? (
           <span 
             className="mr-1 p-1 rounded-sm hover:bg-muted" 
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleNode(node.id)
-            }}
+            onClick={handleToggle}
           >
             {isExpanded ? 
               <ChevronDown className="h-4 w-4 text-muted-foreground" /> : 
@@ -69,7 +75,7 @@ const FolderNodeComponent: React.FC<FolderNodeComponentProps> = ({
             }
           </span>
         ) : (
-          <span className="w-6"></span>
+          <span className="w-6" />
         )}
         
         {isExpanded ? 
@@ -80,7 +86,7 @@ const FolderNodeComponent: React.FC<FolderNodeComponentProps> = ({
         <span className="truncate">{node.name}</span>
       </div>
 
-      {isExpanded && node.children && node.children.length > 0 && (
+      {isExpanded && hasChildren && (
         <div>
           {node.children.map(childNode => (
             <FolderNodeComponent
@@ -97,127 +103,107 @@ const FolderNodeComponent: React.FC<FolderNodeComponentProps> = ({
       )}
     </div>
   )
+})
+
+FolderNodeComponent.displayName = 'FolderNodeComponent'
+
+const FileIcon = memo<{ file: CloudFile }>(({ file }) => {
+  if (file.is_folder) return <Folder className="h-4 w-4 text-yellow-500" />
+  
+  if (file.type === 'image') {
+    return (
+      <div className="w-5 h-5 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted">
+        <img 
+          src={`${API_URL}/cloud/files/${file.id}/preview?thumb=true`} 
+          alt={file.name} 
+          className="object-cover w-full h-full"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none'
+            e.currentTarget.parentElement?.classList.add('flex')
+            e.currentTarget.parentElement?.appendChild(
+              Object.assign(document.createElement('div'), {
+                className: 'flex items-center justify-center',
+                innerHTML: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-blue-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="10" cy="13" r="2"></circle><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"></path></svg>'
+              })
+            )
+          }}
+        />
+      </div>
+    )
+  }
+  
+  const iconMap = {
+    pdf: <FileType className="h-4 w-4 text-red-500" />,
+    document: <FileText className="h-4 w-4 text-green-500" />,
+    spreadsheet: <FileSpreadsheet className="h-4 w-4 text-green-500" />,
+    archive: <FileArchive className="h-4 w-4 text-orange-500" />,
+    audio: <FileAudio className="h-4 w-4 text-purple-500" />,
+    video: <FileVideo className="h-4 w-4 text-pink-500" />,
+  }
+  
+  return iconMap[file.type as keyof typeof iconMap] || <File className="h-4 w-4 text-gray-500" />
+})
+
+FileIcon.displayName = 'FileIcon'
+
+const formatSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
 }
 
 export default function TreeView({ folderTree, files }: TreeViewProps) {
   const { currentFolderId, navigateToFolder } = useFileStore()
   const [expandedNodes, setExpandedNodes] = useState<Record<number, boolean>>({})
 
-  // 获取文件图标或缩略图
-  const getFileIcon = (file: CloudFile) => {
-    if (file.is_folder) return <Folder className="h-4 w-4 text-yellow-500" />
-    
-    // 如果是图片，显示缩略图
-    if (file.type === 'image') {
-      return (
-        <div className="w-5 h-5 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted">
-          <img 
-            src={`${API_URL}/cloud/files/${file.id}/preview?thumb=true`} 
-            alt={file.name} 
-            className="object-cover w-full h-full"
-            onError={(e) => {
-              // 如果缩略图加载失败，显示默认图标
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.classList.add('flex');
-              e.currentTarget.parentElement?.appendChild(
-                Object.assign(document.createElement('div'), {
-                  className: 'flex items-center justify-center',
-                  innerHTML: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-blue-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="10" cy="13" r="2"></circle><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"></path></svg>'
-                })
-              );
-            }}
-          />
-        </div>
-      );
-    }
-    
-    switch (file.type) {
-      case 'pdf':
-        return <FileType className="h-4 w-4 text-red-500" />
-      case 'document':
-        return <FileText className="h-4 w-4 text-green-500" />
-      case 'spreadsheet':
-        return <FileSpreadsheet className="h-4 w-4 text-green-500" />
-      case 'archive':
-        return <FileArchive className="h-4 w-4 text-orange-500" />
-      case 'audio':
-        return <FileAudio className="h-4 w-4 text-purple-500" />
-      case 'video':
-        return <FileVideo className="h-4 w-4 text-pink-500" />
-      default:
-        return <File className="h-4 w-4 text-gray-500" />
-    }
-  }
-
-  // 格式化文件大小
-  const formatSize = (bytes: number) => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
-  }
-
-  // 切换节点展开/折叠状态
-  const toggleNode = (id: number) => {
+  const toggleNode = useCallback((id: number) => {
     setExpandedNodes(prev => ({
       ...prev,
       [id]: !prev[id]
     }))
-  }
+  }, [])
 
-  // 自动展开当前选中文件夹的父节点
-  const expandToNode = (nodeId: number) => {
-    // 递归查找节点并展开路径
+  const expandToNode = useCallback((nodeId: number) => {
     const findAndExpandPath = (nodes: FolderNode[], targetId: number, path: number[] = []): number[] | null => {
       for (const node of nodes) {
-        if (node.id === targetId) {
-          return [...path, node.id]
-        }
-        
-        if (node.children && node.children.length > 0) {
+        if (node.id === targetId) return [...path, node.id]
+        if (node.children?.length) {
           const foundPath = findAndExpandPath(node.children, targetId, [...path, node.id])
-          if (foundPath) {
-            return foundPath
-          }
+          if (foundPath) return foundPath
         }
       }
-      
       return null
     }
     
     const path = findAndExpandPath(folderTree, nodeId)
     if (path) {
-      const newExpanded = { ...expandedNodes }
-      path.forEach(id => {
-        newExpanded[id] = true
+      setExpandedNodes(prev => {
+        const newExpanded = { ...prev }
+        path.forEach(id => newExpanded[id] = true)
+        return newExpanded
       })
-      setExpandedNodes(newExpanded)
     }
-  }
+  }, [folderTree])
 
-  // 选择文件夹
-  const handleSelectFolder = (id: number) => {
+  const handleSelectFolder = useCallback((id: number) => {
     navigateToFolder(id)
-  }
+  }, [navigateToFolder])
 
-  // 处理文件点击
-  const handleFileClick = (file: CloudFile) => {
+  const handleFileClick = useCallback((file: CloudFile) => {
     if (file.is_folder) {
       navigateToFolder(file.id)
       expandToNode(file.id)
     } else {
-      // 下载文件
       window.open(`${API_URL}/cloud/files/${file.id}/download`, '_blank')
     }
-  }
+  }, [navigateToFolder, expandToNode])
 
   return (
     <div className="flex h-[70vh]">
-      {/* 左侧文件夹树 */}
       <div className="w-1/3 overflow-auto border-r pr-2">
         <div className="font-medium text-sm mb-2">文件夹</div>
-        {/* 根目录 */}
         <div 
           className={cn(
             "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors",
@@ -229,7 +215,6 @@ export default function TreeView({ folderTree, files }: TreeViewProps) {
           <span>根目录</span>
         </div>
         
-        {/* 文件夹树 */}
         {folderTree.map(node => (
           <FolderNodeComponent 
             key={node.id}
@@ -261,7 +246,7 @@ export default function TreeView({ folderTree, files }: TreeViewProps) {
                 className="flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
                 onClick={() => handleFileClick(file)}
               >
-                {getFileIcon(file)}
+                <FileIcon file={file} />
                 <span className="ml-2 flex-1 truncate">{file.name}</span>
                 {!file.is_folder && (
                   <span className="text-xs text-muted-foreground">

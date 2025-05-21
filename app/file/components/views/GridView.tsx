@@ -43,6 +43,7 @@ import { CloudFile } from '../../types'
 import { apiRequest, put, del } from '@/lib/api'
 import useFileStore from '../../store/useFileStore'
 import { API_URL } from '@/lib/api'
+import Image from "next/image";
 
 interface GridViewProps {
   files: CloudFile[]
@@ -82,25 +83,18 @@ export default function GridView({ files }: GridViewProps) {
       
       return (
         <div className="w-16 h-16 relative overflow-hidden rounded-md flex items-center justify-center bg-muted">
-          <img 
+          <Image 
             src={storageUrl}
-            alt={file.name} 
-            className="object-cover w-full h-full"
+            alt={file.name}
+            fill
+            className="object-cover"
             loading="lazy"
             onLoad={() => console.log('图片加载成功:', file.name)}
             onError={(e) => {
               console.error('图片加载失败:', file.name);
               console.error('图片URL:', storageUrl);
-              
               // 显示默认图标
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.classList.add('flex');
-              e.currentTarget.parentElement?.appendChild(
-                Object.assign(document.createElement('div'), {
-                  className: 'flex-center',
-                  innerHTML: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-12 w-12 text-blue-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="10" cy="13" r="2"></circle><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"></path></svg>'
-                })
-              );
+              // 这里建议用状态控制显示默认图标
             }}
           />
         </div>

@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { UploadedImage } from "../types"
 import useSWRMutation from 'swr/mutation'
 import { post } from '@/lib/api'
+import Image from "next/image"
 
 interface ImageUploaderProps {
   onImagesChange: (images: UploadedImage[]) => void;
@@ -100,11 +101,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
         {images.map((image, index) => (
           <div key={index} className="relative group aspect-square">
-            <img
+            <Image
               src={image.thumbnail_url || image.url}
               alt={`上传图片 ${index + 1}`}
-              className={`w-full h-full object-cover rounded-md border ${image.is_primary ? 'ring-2 ring-primary' : ''}`}
+              fill
+              className={`object-cover rounded-md border ${image.is_primary ? 'ring-2 ring-primary' : ''}`}
               onClick={() => setPrimaryImage(index)}
+              style={{ objectFit: "cover" }}
             />
             {image.is_primary && (
               <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded-md">

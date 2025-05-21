@@ -1,6 +1,7 @@
 import { RenderElementProps } from 'slate-react'
 import { LanguageSelector } from './LanguageSelector'
 import { Node } from 'slate'
+import Image from "next/image";
 
 // 自定义组件选项
 type CustomRenderElementProps = RenderElementProps & {
@@ -86,10 +87,13 @@ export const Element = (props: CustomRenderElementProps) => {
         <div {...attributes} className="my-4 relative">
           {children}
           <div contentEditable={false} className="flex justify-center">
-            <img
-              src={element.url}
+            <Image
+              src={element.url || '/images/placeholder.png'}
               alt="上传的图片"
-              className="max-w-full max-h-[500px] object-contain rounded-md"
+              width={500}
+              height={500}
+              className="object-contain rounded-md"
+              style={{ maxWidth: "100%", maxHeight: 500 }}
             />
           </div>
         </div>
