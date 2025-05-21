@@ -235,32 +235,20 @@ export function AppLauncher() {
   
   const handleSearch = (e: React.FormEvent, keepSearchOpen: boolean = false) => {
     e.preventDefault()
-    
     if (!searchTerm.trim()) return
-    
-    // 在首页使用弹窗搜索，其他页面直接导航到物品页面
     if (isHomePage) {
-      // 打开搜索弹窗
       setIsSearchDialogOpen(true)
     } else if (currentApp === 'thing') {
-      // 如果已经在物品页面，使用全局事件触发搜索而不是路由导航
-      // 创建自定义事件通知物品页面执行搜索
-      const searchEvent = new CustomEvent('thing-search', { 
-        detail: { searchTerm } 
-      });
+      const searchEvent = new CustomEvent('thing-search', { detail: { searchTerm } });
       document.dispatchEvent(searchEvent);
     } else if (currentApp === 'tool') {
-      // 如果在工具页面，发送自定义事件触发工具搜索
-      const toolSearchEvent = new CustomEvent('tool-search', { 
-        detail: { searchTerm } 
-      });
+      const toolSearchEvent = new CustomEvent('tool-search', { detail: { searchTerm } });
       document.dispatchEvent(toolSearchEvent);
+    } else if (pathname.startsWith('/nav')) {
+      router.push(`/nav?filter[name]=${encodeURIComponent(searchTerm)}`)
     } else {
-      // 不在物品或工具页面时，导航到物品页面并带上搜索参数
       router.push(`/thing?search=${encodeURIComponent(searchTerm)}`)
     }
-    
-    // 根据参数决定是否关闭顶部搜索框
     if (!keepSearchOpen) {
       setIsSearchVisible(false)
     }
