@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useMusicStore } from '@/stores/musicStore'
 import { toast } from 'sonner'
 
@@ -34,45 +34,68 @@ export function AudioController({
   setIsTrackChanging
 }: AudioControllerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
-  
   const { currentTrack, setCurrentTrack, availableTracks } = useMusicStore()
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
+
+  // 构建音频URL
+  const buildAudioUrl = useCallback((track: string) => {
+    if (track.startsWith('http://') || track.startsWith('https://')) {
+      return track
+    }
+    const trackPath = track.startsWith('/') ? track.slice(1) : track
+    const baseUrl = apiUrl?.endsWith('/') ? apiUrl : apiUrl + '/'
+    return baseUrl + trackPath
+  }, [apiUrl])
+
+  // 设置音频源
+  const setupMediaSource = useCallback(() => {
+    if (!audioRef.current || !currentTrack) return
+
+    try {
+      const audioUrl = buildAudioUrl(currentTrack)
+      
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      audioRef.current.src = audioUrl
+      audioRef.current.load()
+      
+      setAudioError(null)
+      setIsTrackChanging(true)
+      audioRef.current.volume = isMuted ? 0 : volume
+    } catch (err) {
+      setAudioError(`设置音频源失败: ${err}`)
+      toast.error("音频源设置失败", { description: String(err) })
+    }
+  }, [currentTrack, buildAudioUrl, isMuted, volume, setAudioError, setIsTrackChanging])
+
+  // 处理播放错误
+  const handlePlayError = useCallback((error: Error) => {
+    setIsPlaying(false)
+    setReadyToPlay(false)
+    setAudioError(`播放失败: ${error.message}`)
+    toast.error("音乐播放失败", { description: error.message })
+  }, [setIsPlaying, setReadyToPlay, setAudioError])
 
   // 监听currentTrack变化
   useEffect(() => {
     if (!currentTrack) return
-    
-    // 检查当前音频是否已加载，如果未加载则加载
     if (audioRef.current && (!audioRef.current.src || !audioRef.current.src.includes(currentTrack))) {
       setupMediaSource()
     }
-  }, [currentTrack])
-  
+  }, [currentTrack, setupMediaSource])
+
   // 处理播放/暂停
   useEffect(() => {
     if (!audioRef.current) return
     
     if (isPlaying && readyToPlay && userInteracted) {
-      audioRef.current.play().catch(error => {
-        setIsPlaying(false)
-        setReadyToPlay(false)
-        setAudioError(`播放失败: ${error.message}`)
-        toast.error("音乐播放失败", {
-          description: error.message
-        })
-      })
-    } else if (!isPlaying && audioRef.current) {
+      audioRef.current.play().catch(handlePlayError)
+    } else if (!isPlaying) {
       audioRef.current.pause()
     }
-  }, [isPlaying, userInteracted, readyToPlay, setIsPlaying, setReadyToPlay, setAudioError])
-  
-  // 监听全局用户交互
-  useEffect(() => {
-    // 已在父组件处理
-    return () => {}
-  }, [])
-  
-  // 监听音轨变化，在元数据加载后准备播放
+  }, [isPlaying, userInteracted, readyToPlay, handlePlayError])
+
+  // 监听音轨变化
   useEffect(() => {
     if (!isTrackChanging || !audioRef.current || !userInteracted) return
     
@@ -80,11 +103,8 @@ export function AudioController({
       setReadyToPlay(true)
       setIsTrackChanging(false)
       
-      // 如果状态是播放状态，尝试自动播放
       if (isPlaying && audioRef.current) {
-        audioRef.current.play().catch(err => {
-          setAudioError(`播放失败: ${err.message}`)
-        })
+        audioRef.current.play().catch(err => setAudioError(`播放失败: ${err.message}`))
       }
       
       audioRef.current?.removeEventListener('canplay', handleCanPlay)
@@ -92,122 +112,41 @@ export function AudioController({
     
     audioRef.current.addEventListener('canplay', handleCanPlay)
     return () => audioRef.current?.removeEventListener('canplay', handleCanPlay)
-  }, [isTrackChanging, userInteracted, setReadyToPlay, setIsTrackChanging, isPlaying])
-  
-  // 监听currentTrack变化，确保音频源正确加载
-  useEffect(() => {
-    if (!currentTrack) return
-    
-    // 构建预期的URL
-    let expectedUrl = ''
-    if (currentTrack.startsWith('http://') || currentTrack.startsWith('https://')) {
-      expectedUrl = currentTrack
-    } else {
-      const trackPath = currentTrack.startsWith('/') ? currentTrack.slice(1) : currentTrack
-      const baseUrl = apiUrl?.endsWith('/') ? apiUrl : apiUrl + '/'
-      expectedUrl = baseUrl + trackPath
-    }
-    
-    // 检查当前音频URL是否与预期URL匹配
-    const currentSrc = audioRef.current?.src || ''
-    
-    // 简化URL比较，去除可能的域名差异
-    const needsReload = !currentSrc.includes(currentTrack.replace(/^\//, ''))
-    
-    if (audioRef.current && needsReload) {
-      setupMediaSource()
-    }
-  }, [currentTrack, apiUrl])
+  }, [isTrackChanging, userInteracted, setReadyToPlay, setIsTrackChanging, isPlaying, setAudioError])
 
-  // 更新音频状态 - 处理音频元素的各种事件
-  const handleLoadedMetadata = () => {
-    if (audioRef.current) {
-      setDuration(audioRef.current.duration)
-      setAudioError(null)
-      
-      // 如果处于播放状态，尝试播放
-      if (isPlaying && audioRef.current.paused) {
-        audioRef.current.play().catch(err => {
-          setAudioError(`播放失败: ${err.message}`)
-        })
-      }
+  // 更新音频状态
+  const handleLoadedMetadata = useCallback(() => {
+    if (!audioRef.current) return
+    
+    setDuration(audioRef.current.duration)
+    setAudioError(null)
+    
+    if (isPlaying && audioRef.current.paused) {
+      audioRef.current.play().catch(err => setAudioError(`播放失败: ${err.message}`))
     }
-  }
+  }, [isPlaying, setDuration, setAudioError])
 
   // 处理音频错误
-  const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
+  const handleAudioError = useCallback((e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
     const audio = e.currentTarget
-    
-    // 获取更详细的错误信息
-    const errorCode = audio.error ? audio.error.code : 'unknown'
-    const errorMessage = audio.error ? audio.error.message : 'Unknown error'
+    const errorCode = audio.error?.code ?? 'unknown'
+    const errorMessage = audio.error?.message ?? 'Unknown error'
     
     setAudioError(`播放错误 (${errorCode}): ${errorMessage}`)
     setIsPlaying(false)
-  }
+  }, [setAudioError, setIsPlaying])
 
-  // 更新当前播放时间
-  const handleTimeUpdate = () => {
+  // 更新播放时间
+  const handleTimeUpdate = useCallback(() => {
     if (audioRef.current) {
       setCurrentTime(audioRef.current.currentTime)
     }
-  }
-  
-  // 设置音频源
-  const setupMediaSource = () => {
-    if (!audioRef.current || !currentTrack) {
-      return
-    }
-    
-    // 设置音频
-    try {
-      // 构建音频URL - 确保正确处理路径
-      // 首先检查currentTrack是否已经是完整URL
-      let audioUrl = ''
-      
-      if (currentTrack.startsWith('http://') || currentTrack.startsWith('https://')) {
-        audioUrl = currentTrack
-      } else {
-        // 去除开头的斜杠，避免双斜杠问题
-        const trackPath = currentTrack.startsWith('/') ? currentTrack.slice(1) : currentTrack
-        
-        // 确保apiUrl以斜杠结尾
-        const baseUrl = apiUrl?.endsWith('/') ? apiUrl : apiUrl + '/'
-        
-        // 构建完整URL
-        audioUrl = baseUrl + trackPath
-      }
-      
-      // 完全重置音频元素
-      audioRef.current.pause()
-      audioRef.current.currentTime = 0
-      
-      // 设置音频元素的源
-      audioRef.current.src = audioUrl
-      audioRef.current.load()
-      
-      // 重置错误状态
-      setAudioError(null)
-      
-      // 设置是否正在切换音轨的状态
-      setIsTrackChanging(true)
-      
-      // 直接设置音量
-      audioRef.current.volume = isMuted ? 0 : volume
-      
-    } catch (err) {
-      setAudioError(`设置音频源失败: ${err}`)
-      toast.error("音频源设置失败", {
-        description: String(err)
-      })
-    }
-  }
+  }, [setCurrentTime])
 
-  // 切换播放/暂停状态
-  const togglePlay = () => {
+  // 切换播放/暂停
+  const togglePlay = useCallback(() => {
     if (!audioRef.current || !currentTrack) return
     
-    // 如果音频还未加载，先加载
     if (!audioRef.current.src) {
       setupMediaSource()
     }
@@ -216,93 +155,57 @@ export function AudioController({
       audioRef.current.pause()
       setIsPlaying(false)
     } else {
-      // 确保音量正确设置
       audioRef.current.volume = isMuted ? 0 : volume
-      
-      audioRef.current.play().catch((err) => {
-        setAudioError(`播放失败: ${err.message}`)
-      })
-      
+      audioRef.current.play().catch(err => setAudioError(`播放失败: ${err.message}`))
       setIsPlaying(true)
     }
-  }
-  
+  }, [currentTrack, isPlaying, isMuted, volume, setupMediaSource, setIsPlaying, setAudioError])
+
   // 切换曲目
-  const switchTrack = (direction: 'next' | 'prev') => {
-    if (!currentTrack) return
+  const switchTrack = useCallback((direction: 'next' | 'prev') => {
+    if (!currentTrack || !availableTracks.length) return
     
-    // 如果没有曲目，不执行任何操作
-    if (!availableTracks.length) return
+    audioRef.current?.pause()
     
-    // 确保先停止当前播放
-    if (audioRef.current) {
-      audioRef.current.pause()
-    }
-    
-    // 查找当前曲目在列表中的位置
     const currentIndex = availableTracks.findIndex(track => track.path === currentTrack)
-    
-    // 如果当前曲目不在列表中，使用第一首或最后一首
-    let nextIndex
-    if (currentIndex === -1) {
-      nextIndex = direction === 'next' ? 0 : availableTracks.length - 1
-    } else {
-      // 计算下一首/上一首索引，循环播放
-      nextIndex = direction === 'next'
+    const nextIndex = currentIndex === -1
+      ? direction === 'next' ? 0 : availableTracks.length - 1
+      : direction === 'next'
         ? (currentIndex + 1) % availableTracks.length
         : (currentIndex - 1 + availableTracks.length) % availableTracks.length
-    }
     
-    // 设置新的当前曲目
     setCurrentTrack(availableTracks[nextIndex].path)
-    
-    // 更新状态
     setAudioError(null)
     setIsPlaying(true)
-    
-    // 立即设置新的音频源，不使用 setTimeout
     setupMediaSource()
-    
-    // 为确保音频源已加载，可以监听 canplay 事件再播放
-    // 在 useEffect 中已设置了监听
-  }
+  }, [currentTrack, availableTracks, setCurrentTrack, setAudioError, setIsPlaying, setupMediaSource])
 
-  // 处理进度条拖动
-  const handleProgressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 处理进度条
+  const handleProgressChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newTime = parseFloat(e.target.value)
     setCurrentTime(newTime)
     if (audioRef.current) {
       audioRef.current.currentTime = newTime
     }
-  }
-  
+  }, [setCurrentTime])
+
   // 同步音量
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = isMuted ? 0 : volume
     }
   }, [volume, isMuted])
-  
-  // 监听音频播放结束
+
+  // 监听播放结束
   useEffect(() => {
     const handleAudioEnded = () => {
-      // 重置播放状态但保留音轨
       setCurrentTime(0)
-      
-      // 自动切换到下一曲
       switchTrack('next')
     }
     
-    if (audioRef.current) {
-      audioRef.current.addEventListener('ended', handleAudioEnded)
-    }
-    
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener('ended', handleAudioEnded)
-      }
-    }
-  }, [currentTrack, setCurrentTime])
+    audioRef.current?.addEventListener('ended', handleAudioEnded)
+    return () => audioRef.current?.removeEventListener('ended', handleAudioEnded)
+  }, [setCurrentTime, switchTrack])
 
   return {
     audioRef,
@@ -314,4 +217,4 @@ export function AudioController({
     handleAudioError,
     setupMediaSource
   }
-} 
+}
