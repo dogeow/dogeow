@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Combobox } from "@/components/ui/combobox"
+import { apiRequest } from '@/lib/api'
 
 // 定义表单数据类型
 type FormData = {
@@ -175,22 +176,7 @@ export default function AddNavItem() {
                 )}
               />
               
-              {/* 名称 */}
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>网站名称</FormLabel>
-                    <FormControl>
-                      <Input placeholder="输入网站名称" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              {/* URL */}
+              {/* URL 先于名称 */}
               <FormField
                 control={form.control}
                 name="url"
@@ -204,20 +190,52 @@ export default function AddNavItem() {
                   </FormItem>
                 )}
               />
-              
-              {/* 图标 */}
+              {/* 名称，右侧加自动获取按钮 */}
               <FormField
                 control={form.control}
-                name="icon"
+                name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>图标地址</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/favicon.ico (选填)" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      网站图标的URL地址，留空则使用默认图标
-                    </FormDescription>
+                    <FormLabel>网站名称</FormLabel>
+                    <div className="flex gap-2 items-center">
+                      {/* 图标预览在最左侧 */}
+                      {form.watch('icon') && (
+                        <img
+                          src={form.watch('icon')}
+                          alt="网站图标"
+                          className="w-8 h-8 rounded border bg-white"
+                          style={{ minWidth: 32, minHeight: 32 }}
+                        />
+                      )}
+                      <FormControl>
+                        <Input placeholder="输入网站名称" {...field} />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={async () => {
+                          const url = form.getValues("url");
+                          if (!url) {
+                            toast.error("请先填写网站地址");
+                            return;
+                          }
+                          try {
+                            const data = await apiRequest<{ title?: string }>(`fetch-title?url=${encodeURIComponent(url)}`, 'GET');
+                            if (data.title) {
+                              form.setValue("name", data.title);
+                              toast.success("已自动获取网站名称");
+                              const urlObj = new URL(url);
+                              const faviconUrl = urlObj.origin + '/favicon.ico';
+                              form.setValue("icon", faviconUrl);
+                            } else {
+                              toast.error("未获取到网站标题");
+                            }
+                          } catch (e) {
+                            toast.error("获取失败");
+                          }
+                        }}
+                      >自动获取</Button>
+                    </div>
                     <FormMessage />
                   </FormItem>
                 )}
