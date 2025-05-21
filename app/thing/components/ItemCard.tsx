@@ -106,7 +106,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
             key={tag.id}
             style={{
               backgroundColor: tag.color || '#3b82f6',
-              color: isLightColor(tag.color) ? '#000' : '#fff'
+              color: isLightColor(tag.color || '#3b82f6') ? '#000' : '#fff'
             }}
             className="h-6 px-2"
           >
