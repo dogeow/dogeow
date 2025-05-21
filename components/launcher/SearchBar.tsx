@@ -35,11 +35,9 @@ export function SearchBar({
     }
   }, [])
 
-  // 监听路由变化，在非搜索页面时清除搜索内容
+  // 监听路由变化，变化后，清除搜索内容
   useEffect(() => {
-    if (!pathname.startsWith('/thing') && !pathname.startsWith('/nav')) {
       setSearchTerm('')
-    }
   }, [pathname, setSearchTerm])
 
   // 监听点击事件，点击搜索框外部时关闭
@@ -70,7 +68,7 @@ export function SearchBar({
     const newValue = e.target.value
     setSearchTerm(newValue)
     
-    if (currentApp === 'thing') {
+    if (currentApp === 'thing' || currentApp === 'nav') {
       clearDebounceTimer()
       searchDebounceTimerRef.current = setTimeout(() => {
         triggerSearch(newValue)
@@ -90,10 +88,8 @@ export function SearchBar({
       setTimeout(() => searchInputRef.current?.focus(), 10)
     }
     
-    if (currentApp === 'thing') {
-      clearDebounceTimer()
-      triggerSearch('')
-    }
+    clearDebounceTimer()
+    triggerSearch('')
   }, [currentApp, setSearchTerm, clearDebounceTimer, triggerSearch])
 
   if (!isVisible) {
