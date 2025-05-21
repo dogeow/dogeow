@@ -55,13 +55,6 @@ export interface Category {
   items_count?: number;
 }
 
-// 标签类型
-export interface Tag {
-  id: number;
-  name: string;
-  color: string;
-}
-
 // 区域类型
 export interface Area {
   id: number;
@@ -130,3 +123,31 @@ export interface Item {
   };
   tags?: Tag[];
 } 
+
+
+// 定义视图模式类型
+export type ViewMode = 'list' | 'gallery';
+
+// 定义过滤器类型
+export interface FilterParams {
+  page?: number;
+  search?: string;
+  category_id?: string | number;
+  tags?: string[] | number[] | string;
+  include_null_purchase_date?: boolean;
+  include_null_expiry_date?: boolean;
+  purchase_date_from?: Date | null;
+  expiry_date_from?: Date | null;
+  isFilterToggle?: boolean;
+  [key: string]: any;
+}
+
+// 标签类型定义
+export type Tag = {
+  id: number
+  name: string
+  color?: string
+  items_count?: number
+  created_at?: string
+  updated_at?: string
+}

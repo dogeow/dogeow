@@ -10,40 +10,13 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import ItemCard from './components/ItemCard'
 import ItemFilters from './components/ItemFilters'
 import ItemGallery from './components/ItemGallery'
-import SearchInput from './components/SearchInput'
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import ThingSpeedDial from './components/SpeedDial'
 import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
 import { apiRequest } from "@/lib/api"
 import { isLightColor } from '@/lib/helpers'
-
-// 定义视图模式类型
-type ViewMode = 'list' | 'gallery';
-
-// 定义过滤器类型
-interface FilterParams {
-  page?: number;
-  search?: string;
-  category_id?: string | number;
-  tags?: string[] | number[] | string;
-  include_null_purchase_date?: boolean;
-  include_null_expiry_date?: boolean;
-  purchase_date_from?: Date | null;
-  expiry_date_from?: Date | null;
-  isFilterToggle?: boolean;
-  [key: string]: any;
-}
-
-// 标签类型定义
-type Tag = {
-  id: number
-  name: string
-  color?: string
-  items_count?: number
-  created_at?: string
-  updated_at?: string
-}
+import { ViewMode, Tag, FilterParams } from '@/app/thing/types'
 
 export default function Thing() {
   const router = useRouter()
