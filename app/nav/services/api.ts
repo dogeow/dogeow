@@ -2,14 +2,17 @@ import { NavCategory, NavItem } from '@/app/nav/types';
 import { apiRequest, post, put, del } from '@/lib/api';
 
 // 获取所有导航分类（及其导航项）
-export async function getCategories() {
+export async function getCategories(filterName?: string) {
   try {
-    const result = await apiRequest<NavCategory[]>(`/nav/categories`);
-    // 确保返回结果是一个数组
+    let url = `/nav/items`;
+    if (filterName) {
+      url += `?filter[name]=${encodeURIComponent(filterName)}`;
+    }
+    const result = await apiRequest<NavCategory[]>(url);
     return Array.isArray(result) ? result : [];
   } catch (error) {
     console.error("获取分类API错误:", error);
-    return []; // 失败时返回空数组
+    return [];
   }
 }
 

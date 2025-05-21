@@ -10,7 +10,7 @@ interface NavStore {
   error: string | null
   
   // 获取数据
-  fetchCategories: () => Promise<NavCategory[]>
+  fetchCategories: (filterName?: string) => Promise<NavCategory[]>
   fetchItems: (categoryId?: number) => Promise<NavItem[]>
   
   // 分类管理
@@ -32,18 +32,18 @@ export const useNavStore = create<NavStore>((set, get) => ({
   error: null,
   
   // 获取所有导航分类
-  fetchCategories: async () => {
+  fetchCategories: async (filterName?: string) => {
     try {
       set({ loading: true, error: null })
       console.log("开始从API获取分类数据");
-      const categories = await navApi.getCategories() || [];
+      const categories = await navApi.getCategories(filterName) || [];
       console.log("API返回分类数据:", categories);
       set({ categories, loading: false })
       return categories
     } catch (error) {
       console.error("获取分类数据错误:", error);
       const errorMessage = error instanceof Error ? error.message : '获取导航分类失败'
-      set({ loading: false, error: errorMessage, categories: [] }) // 确保失败时设置空数组
+      set({ loading: false, error: errorMessage, categories: [] })
       throw error
     }
   },

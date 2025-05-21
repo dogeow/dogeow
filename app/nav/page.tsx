@@ -5,20 +5,21 @@ import { NavCategory as CategoryType } from '@/app/nav/types';
 import { NavCategory } from './components/NavCategory';
 import { Folder, Search, Plus, Settings } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useNavStore } from '@/app/nav/stores/navStore';
 
 export default function NavPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const filterName = searchParams.get('filter[name]') || '';
   const { categories, loading: storeLoading, fetchCategories } = useNavStore();
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<'all' | number>('all');
   
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await fetchCategories();
+        await fetchCategories(filterName);
       } catch (error) {
         console.error('获取导航分类失败:', error);
       } finally {
@@ -27,7 +28,7 @@ export default function NavPage() {
     };
     
     fetchData();
-  }, [fetchCategories]);
+  }, [fetchCategories, filterName]);
   
   // 分类侧边栏
   const renderCategorySidebar = () => (
@@ -49,14 +50,6 @@ export default function NavPage() {
   // 分类筛选
   const filteredCategories = categories
     .filter(category => selectedCategory === 'all' || category.id === selectedCategory)
-    .map(category => {
-      if (!searchTerm.trim()) return category;
-      const filteredItems = category.items?.filter(item =>
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.description && item.description.toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      return { ...category, items: filteredItems };
-    })
     .filter(category => category.items && category.items.length > 0);
 
   const handleAddNav = () => {
@@ -102,7 +95,7 @@ export default function NavPage() {
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-xl font-semibold text-gray-700">没有找到匹配的导航</p>
             <p className="mt-2 text-gray-500">
-              {searchTerm ? '请尝试其他搜索词' : '请添加一些导航分类和导航项'}
+              {filterName ? '请尝试其他搜索词' : '请添加一些导航分类和导航项'}
             </p>
           </div>
         )}
