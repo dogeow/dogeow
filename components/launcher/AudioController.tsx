@@ -34,7 +34,6 @@ export function AudioController({
   setIsTrackChanging
 }: AudioControllerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
-  const hlsInstanceRef = useRef<{ hls: any; destroy: () => void } | null>(null)
   
   const { currentTrack, setCurrentTrack, availableTracks } = useMusicStore()
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
@@ -128,13 +127,6 @@ export function AudioController({
       setupMediaSource()
     }
   }, [currentTrack, apiUrl])
-  
-  // 检查音频是否支持HLS格式
-  const isHlsCompatible = (trackPath: string | null): boolean => {
-    if (!trackPath) return false
-    // 检查是否是m3u8格式
-    return trackPath.toLowerCase().endsWith('.m3u8')
-  }
 
   // 更新音频状态 - 处理音频元素的各种事件
   const handleLoadedMetadata = () => {
@@ -172,21 +164,6 @@ export function AudioController({
     
     setAudioError(`播放错误 (${errorCode}): ${errorMessage}`)
     setIsPlaying(false)
-    
-    // 尝试使用直接播放模式作为回退方案
-    if (currentTrack && isHlsCompatible(currentTrack) && hlsInstanceRef.current) {
-      console.log('HLS播放失败，尝试直接播放原始文件')
-      
-      // 清理HLS实例
-      hlsInstanceRef.current.destroy()
-      hlsInstanceRef.current = null
-      
-      // 尝试直接播放源文件
-      if (audioRef.current) {
-        audioRef.current.src = currentTrack
-        audioRef.current.load()
-      }
-    }
   }
 
   // 更新当前播放时间
@@ -204,12 +181,6 @@ export function AudioController({
     }
     
     console.log('设置音频源:', currentTrack)
-    
-    // 确保先清理
-    if (hlsInstanceRef.current) {
-      hlsInstanceRef.current.destroy()
-      hlsInstanceRef.current = null
-    }
     
     // 设置音频
     try {
@@ -370,16 +341,6 @@ export function AudioController({
       }
     }
   }, [currentTrack, setCurrentTime])
-  
-  // 在组件卸载时清理HLS实例
-  useEffect(() => {
-    return () => {
-      if (hlsInstanceRef.current) {
-        hlsInstanceRef.current.destroy()
-        hlsInstanceRef.current = null
-      }
-    }
-  }, [])
 
   return {
     audioRef,
