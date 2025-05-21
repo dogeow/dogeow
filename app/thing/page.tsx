@@ -59,6 +59,7 @@ export default function Thing() {
   const [isSearching, setIsSearching] = useState(false)
   const [initialDataLoaded, setInitialDataLoaded] = useState(false)
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
+  const [uncategorizedCount, setUncategorizedCount] = useState<number>(0)
   
   // 标签加载
   const { data: tags } = useSWR<Tag[]>('/thing-tags', apiRequest)
@@ -375,6 +376,21 @@ export default function Thing() {
     setCategoryMenuOpen(false);
   }, [handleCategoryChange]);
 
+  // 获取未分类物品数量
+  const fetchUncategorizedCount = async () => {
+    try {
+      const response: { data: any[], meta?: { total: number } } = await apiRequest('/items?uncategorized=true&own=true')
+      setUncategorizedCount(response.meta?.total || 0)
+    } catch (error) {
+      console.error('获取未分类物品数量失败:', error)
+    }
+  }
+
+  // 初始化时拉取未分类数量
+  useEffect(() => {
+    fetchUncategorizedCount()
+  }, [])
+
   // 渲染加载状态
   const renderLoading = () => (
     <div className="flex justify-center items-center h-64">
@@ -535,7 +551,8 @@ export default function Thing() {
               className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'uncategorized' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
               onClick={() => handleCategoryClick('uncategorized')}
             >
-              未分类
+              <span className="flex-1">未分类</span>
+              <span className="ml-2 text-xs text-muted-foreground">{uncategorizedCount}</span>
             </div>
             {categories.map((category) => (
               <div 
@@ -543,7 +560,8 @@ export default function Thing() {
                 className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === category.id.toString() ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
                 onClick={() => handleCategoryClick(category.id.toString())}
               >
-                {category.name}
+                <span className="flex-1">{category.name}</span>
+                <span className="ml-2 text-xs text-muted-foreground">{category.items_count ?? 0}</span>
               </div>
             ))}
           </div>
