@@ -390,11 +390,11 @@ export const useItem = (id: number) => {
 
 // 分类相关
 export const useCategories = () => {
-  return useSWR('/categories', fetcher);
+  return useSWR('/things/categories', fetcher);
 };
 
 export const useCategory = (id: number) => {
-  return useSWR(id ? `/categories/${id}` : null, fetcher);
+  return useSWR(id ? `/things/categories/${id}` : null, fetcher);
 };
 
 // 区域相关
@@ -451,8 +451,8 @@ export const updateItem = (id: number) => createMutation<Item>(`/items/${id}`, '
 export const deleteItem = (id: number) => createMutation<void>(`/items/${id}`, 'DELETE');
 
 // 分类操作
-export const updateCategory = (id: number) => createMutation<Category>(`/categories/${id}`, 'PUT');
-export const deleteCategory = (id: number) => createMutation<void>(`/categories/${id}`, 'DELETE');
+export const updateCategory = (id: number) => createMutation<Category>(`/things/categories/${id}`, 'PUT');
+export const deleteCategory = (id: number) => createMutation<void>(`/things/categories/${id}`, 'DELETE');
 
 // 区域操作
 export const updateArea = (id: number) => createMutation<Area>(`/areas/${id}`, 'PUT');
