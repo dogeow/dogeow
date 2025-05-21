@@ -465,24 +465,3 @@ export const deleteRoom = (id: number) => createMutation<void>(`/rooms/${id}`, '
 // 位置操作
 export const updateSpot = (id: number) => createMutation<Spot>(`/spots/${id}`, 'PUT');
 export const deleteSpot = (id: number) => createMutation<void>(`/spots/${id}`, 'DELETE');
-
-/**
- * 获取完整的API图片URL
- * 将相对路径转换为完整的图片URL
- * 
- * @param path 图片相对路径，通常从API返回的数据中获取
- * @returns 完整的图片URL
- */
-export const getImageUrl = (path: string) => {
-  // 如果路径为空或已经是完整URL，则直接返回
-  if (!path) return '';
-  if (path.startsWith('http://') || path.startsWith('https://')) {
-    return path;
-  }
-  
-  // 确保路径以斜杠开头
-  const formattedPath = path.startsWith('/') ? path : `/${path}`;
-  
-  // 返回完整URL
-  return `${API_URL}${formattedPath}`;
-}; 

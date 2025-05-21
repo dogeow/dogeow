@@ -141,18 +141,11 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
     );
   }
   
-  // 构建正确的图片URL
-  const getImageUrl = (path: string) => {
-    return `${API_URL}/storage/${path}`;
-  }
-  
   // 渲染图片
   const renderImage = (className: string) => {
     if (primaryImage && !imageError) {
       // 优先使用thumbnail_url，然后是url，最后才构造URL
-      const imageUrl = primaryImage.thumbnail_url || primaryImage.url || 
-        (primaryImage.thumbnail_path || primaryImage.path ? 
-          getImageUrl(primaryImage.thumbnail_path || primaryImage.path || '') : null)
+      const imageUrl = primaryImage.thumbnail_url || primaryImage.url;
       
       if (!imageUrl) {
         return (

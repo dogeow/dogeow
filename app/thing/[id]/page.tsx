@@ -21,7 +21,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { getImageUrl } from '@/lib/api'
 import { isLightColor } from '@/lib/helpers'
 
 export default function ItemDetail() {
@@ -184,7 +183,7 @@ export default function ItemDetail() {
                   <div className="space-y-3">
                     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-sm">
                       <Image
-                        src={item.images[activeImageIndex].url || getImageUrl(item.images[activeImageIndex].path)}
+                        src={item.images[activeImageIndex].url || item.images[activeImageIndex].path}
                         alt={item.name}
                         fill
                         className="object-contain"
@@ -203,7 +202,7 @@ export default function ItemDetail() {
                             onClick={() => setActiveImageIndex(index)}
                           >
                             <Image
-                              src={image.thumbnail_url || getImageUrl(image.thumbnail_path)}
+                              src={image.thumbnail_url}
                               alt={`${item.name} 图片 ${index + 1}`}
                               fill
                               className="object-cover rounded-sm"

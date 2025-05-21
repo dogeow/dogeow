@@ -60,13 +60,6 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     return () => window.removeEventListener('resize', updateSizes)
   }, [currentSizePreset])
   
-  // 构建正确的图片URL
-  const getImageUrl = (path: string) => {
-    if (!path) return ''
-    const baseUrl = (API_URL || '').replace('/api', '')
-    return `${baseUrl}/storage/${path}`
-  }
-  
   // 格式化日期
   const formatDate = (date: string) => {
     if (!date) return '-'
@@ -141,14 +134,12 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     if (item.primary_image?.thumbnail_url) return item.primary_image.thumbnail_url
     if (item.images?.[0]?.thumbnail_url) return item.images[0].thumbnail_url
     
-    const path = item.primary_image?.thumbnail_path || item.images?.[0]?.thumbnail_path
-    return path ? getImageUrl(path) : ''
+    return item.primary_image?.thumbnail_path || item.images?.[0]?.thumbnail_path
   }
   
   // 获取图片完整URL
   const getFullImageUrl = (item: any) => {
-    const path = item.primary_image?.path || (item.images?.length > 0 ? item.images[0].path : '')
-    return getImageUrl(path)
+    return item.primary_image?.path || (item.images?.length > 0 ? item.images[0].path : '')
   }
   
   // 获取位置完整路径
