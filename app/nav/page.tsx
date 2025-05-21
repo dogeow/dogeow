@@ -92,17 +92,6 @@ export default function NavPage() {
           </div>
         </div>
         
-        <div className="relative max-w-md">
-          <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
-          <input
-            type="text"
-            placeholder="搜索网站..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-          />
-        </div>
-        
         {loading || storeLoading ? (
           <LoadingSkeleton />
         ) : filteredCategories.length > 0 ? (
