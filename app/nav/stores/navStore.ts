@@ -35,12 +35,15 @@ export const useNavStore = create<NavStore>((set, get) => ({
   fetchCategories: async () => {
     try {
       set({ loading: true, error: null })
-      const categories = await navApi.getCategories()
+      console.log("开始从API获取分类数据");
+      const categories = await navApi.getCategories() || [];
+      console.log("API返回分类数据:", categories);
       set({ categories, loading: false })
       return categories
     } catch (error) {
+      console.error("获取分类数据错误:", error);
       const errorMessage = error instanceof Error ? error.message : '获取导航分类失败'
-      set({ loading: false, error: errorMessage })
+      set({ loading: false, error: errorMessage, categories: [] }) // 确保失败时设置空数组
       throw error
     }
   },
@@ -62,15 +65,21 @@ export const useNavStore = create<NavStore>((set, get) => ({
   // 创建分类
   createCategory: async (category: Partial<NavCategory>) => {
     try {
-      const newCategory = await navApi.createCategory(category)
+      console.log("开始创建分类:", category);
+      const newCategory = await navApi.createCategory(category);
+      console.log("API返回创建分类结果:", newCategory);
+      
+      // 更新categories状态
       set(state => ({
         categories: [...state.categories, newCategory]
-      }))
-      return newCategory
+      }));
+      
+      return newCategory;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '创建导航分类失败'
-      set({ error: errorMessage })
-      throw error
+      console.error("创建分类失败:", error);
+      const errorMessage = error instanceof Error ? error.message : '创建导航分类失败';
+      set({ error: errorMessage });
+      throw error;
     }
   },
   

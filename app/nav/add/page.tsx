@@ -20,15 +20,9 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
+import { Combobox } from "@/components/ui/combobox"
 
 // 定义表单数据类型
 type FormData = {
@@ -56,7 +50,7 @@ const navItemSchema = z.object({
 
 export default function AddNavItem() {
   const router = useRouter()
-  const { createItem, fetchCategories, categories } = useNavStore()
+  const { createItem, fetchCategories, categories, createCategory } = useNavStore()
   const [loading, setLoading] = useState(false)
 
   // 使用 react-hook-form 管理表单状态
@@ -76,8 +70,38 @@ export default function AddNavItem() {
 
   // 加载分类数据
   useEffect(() => {
+    console.log("开始加载分类...");
     fetchCategories()
+      .then(result => {
+        console.log("分类加载成功:", result);
+      })
+      .catch(error => {
+        console.error("加载分类失败:", error);
+      });
   }, [fetchCategories])
+
+  // 处理创建新分类
+  const handleCreateCategory = async (categoryName: string) => {
+    console.log("创建分类:", categoryName);
+    
+    try {
+      const newCategory = await createCategory({
+        name: categoryName,
+        is_visible: true,
+        sort_order: 0
+      });
+      
+      console.log("创建分类返回结果:", newCategory);
+      
+      // 设置表单值为新创建的分类ID
+      form.setValue('nav_category_id', newCategory.id.toString());
+      
+      toast.success(`已创建分类 "${categoryName}"`);
+    } catch (error) {
+      console.error("创建分类失败:", error);
+      toast.error("创建分类失败：" + (error instanceof Error ? error.message : "未知错误"));
+    }
+  }
 
   // 提交表单
   const onSubmit = async (data: FormData) => {
@@ -104,6 +128,14 @@ export default function AddNavItem() {
     }
   }
   
+  // 将分类数据转换为Combobox选项格式
+  const categoryOptions = (categories || [])
+    .filter(category => category && typeof category === 'object' && category.id !== undefined)
+    .map(category => ({
+      value: category.id.toString(),
+      label: category.name || '未命名分类'
+    })) || []
+  
   return (
     <div className="container mx-auto py-2 px-4">
       <div className="flex justify-between items-center mb-6">
@@ -126,23 +158,18 @@ export default function AddNavItem() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>分类</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="选择分类" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {categories.map(category => (
-                          <SelectItem key={category.id} value={category.id.toString()}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Combobox
+                        options={categoryOptions}
+                        value={field.value}
+                        onChange={field.onChange}
+                        onCreateOption={handleCreateCategory}
+                        placeholder="选择分类"
+                        emptyText="没有找到分类"
+                        createText="创建分类"
+                        searchText="搜索分类..."
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -259,7 +286,7 @@ export default function AddNavItem() {
                   </FormItem>
                 )}
               />
-
+              
               {/* 排序 */}
               <FormField
                 control={form.control}
@@ -268,21 +295,23 @@ export default function AddNavItem() {
                   <FormItem>
                     <FormLabel>排序</FormLabel>
                     <FormControl>
-                      <Input type="number" min="0" step="1" {...field} />
+                      <Input 
+                        type="number" 
+                        min="0"
+                        {...field} 
+                      />
                     </FormControl>
                     <FormDescription>
-                      数字越小排序越靠前，相同则按添加时间排序
+                      数字越小，排序越靠前
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              <div className="flex justify-end pt-4">
-                <Button type="submit" disabled={loading}>
-                  {loading ? "创建中..." : "创建导航"}
-                </Button>
-              </div>
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? '创建中...' : '创建导航项'}
+              </Button>
             </form>
           </Form>
         </CardContent>
