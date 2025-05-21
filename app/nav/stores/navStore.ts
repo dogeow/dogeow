@@ -8,10 +8,17 @@ interface NavStore {
   items: NavItem[]
   loading: boolean
   error: string | null
+  searchTerm: string
+  filteredItems: NavItem[]
   
   // 获取数据
   fetchCategories: (filterName?: string) => Promise<NavCategory[]>
   fetchItems: (categoryId?: number) => Promise<NavItem[]>
+  
+  // 搜索
+  setSearchTerm: (term: string) => void
+  searchItems: (term: string) => void
+  handleSearch: (term: string) => void
   
   // 分类管理
   createCategory: (category: Partial<NavCategory>) => Promise<NavCategory>
@@ -30,6 +37,38 @@ export const useNavStore = create<NavStore>((set, get) => ({
   items: [],
   loading: false,
   error: null,
+  searchTerm: '',
+  filteredItems: [],
+  
+  // 设置搜索词
+  setSearchTerm: (term: string) => {
+    set({ searchTerm: term })
+    get().searchItems(term)
+  },
+  
+  // 搜索导航项
+  searchItems: (term: string) => {
+    const { items } = get()
+    if (!term.trim()) {
+      set({ filteredItems: items })
+      return
+    }
+    
+    const searchTermLower = term.toLowerCase()
+    const filtered = items.filter(item => 
+      item.name.toLowerCase().includes(searchTermLower) ||
+      item.description?.toLowerCase().includes(searchTermLower) ||
+      item.url.toLowerCase().includes(searchTermLower)
+    )
+    console.log('搜索结果:', filtered.length, '项')
+    set({ filteredItems: filtered })
+  },
+
+  // 处理搜索事件
+  handleSearch: (term: string) => {
+    console.log('处理搜索:', term)
+    get().setSearchTerm(term)
+  },
   
   // 获取所有导航分类
   fetchCategories: async (filterName?: string) => {

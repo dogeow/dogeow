@@ -238,16 +238,12 @@ export function AppLauncher() {
     if (!searchTerm.trim()) return
     if (isHomePage) {
       setIsSearchDialogOpen(true)
-    } else if (currentApp === 'thing') {
-      const searchEvent = new CustomEvent('thing-search', { detail: { searchTerm } });
-      document.dispatchEvent(searchEvent);
-    } else if (currentApp === 'tool') {
-      const toolSearchEvent = new CustomEvent('tool-search', { detail: { searchTerm } });
-      document.dispatchEvent(toolSearchEvent);
-    } else if (pathname.startsWith('/nav')) {
-      router.push(`/nav?filter[name]=${encodeURIComponent(searchTerm)}`)
     } else {
-      router.push(`/thing?search=${encodeURIComponent(searchTerm)}`)
+      // 触发应用特定的搜索事件
+      const searchEvent = new CustomEvent(`${currentApp}-search`, { 
+        detail: { searchTerm } 
+      });
+      document.dispatchEvent(searchEvent);
     }
     if (!keepSearchOpen) {
       setIsSearchVisible(false)

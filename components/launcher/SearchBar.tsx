@@ -21,11 +21,12 @@ export function SearchBar({
 
   // 触发搜索事件
   const triggerSearch = useCallback((term: string) => {
-    const searchEvent = new CustomEvent('thing-search', { 
+    const eventName = `${currentApp}-search`
+    const searchEvent = new CustomEvent(eventName, { 
       detail: { searchTerm: term } 
     })
     document.dispatchEvent(searchEvent)
-  }, [])
+  }, [currentApp])
 
   // 清理防抖定时器
   const clearDebounceTimer = useCallback(() => {
