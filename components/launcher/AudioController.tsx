@@ -54,7 +54,6 @@ export function AudioController({
     
     if (isPlaying && readyToPlay && userInteracted) {
       audioRef.current.play().catch(error => {
-        console.error("播放失败:", error)
         setIsPlaying(false)
         setReadyToPlay(false)
         setAudioError(`播放失败: ${error.message}`)
@@ -78,14 +77,12 @@ export function AudioController({
     if (!isTrackChanging || !audioRef.current || !userInteracted) return
     
     const handleCanPlay = () => {
-      console.log('音频可以播放了', audioRef.current?.src)
       setReadyToPlay(true)
       setIsTrackChanging(false)
       
       // 如果状态是播放状态，尝试自动播放
       if (isPlaying && audioRef.current) {
         audioRef.current.play().catch(err => {
-          console.error('canplay 事件后播放失败:', err)
           setAudioError(`播放失败: ${err.message}`)
         })
       }
@@ -100,8 +97,6 @@ export function AudioController({
   // 监听currentTrack变化，确保音频源正确加载
   useEffect(() => {
     if (!currentTrack) return
-    
-    console.log('监听到 currentTrack 变化:', currentTrack)
     
     // 构建预期的URL
     let expectedUrl = ''
@@ -120,10 +115,6 @@ export function AudioController({
     const needsReload = !currentSrc.includes(currentTrack.replace(/^\//, ''))
     
     if (audioRef.current && needsReload) {
-      console.log('当前音频与预期不匹配，重新加载音频源', {
-        当前URL: currentSrc,
-        预期URL: expectedUrl
-      })
       setupMediaSource()
     }
   }, [currentTrack, apiUrl])
@@ -131,18 +122,12 @@ export function AudioController({
   // 更新音频状态 - 处理音频元素的各种事件
   const handleLoadedMetadata = () => {
     if (audioRef.current) {
-      console.log('音频元数据已加载:', {
-        duration: audioRef.current.duration,
-        src: audioRef.current.src
-      })
-      
       setDuration(audioRef.current.duration)
       setAudioError(null)
       
       // 如果处于播放状态，尝试播放
       if (isPlaying && audioRef.current.paused) {
         audioRef.current.play().catch(err => {
-          console.error('元数据加载后播放失败:', err)
           setAudioError(`播放失败: ${err.message}`)
         })
       }
@@ -152,11 +137,6 @@ export function AudioController({
   // 处理音频错误
   const handleAudioError = (e: React.SyntheticEvent<HTMLAudioElement, Event>) => {
     const audio = e.currentTarget
-    console.error('音频播放错误:', audio.error, {
-      src: audio.src,
-      readyState: audio.readyState,
-      networkState: audio.networkState
-    })
     
     // 获取更详细的错误信息
     const errorCode = audio.error ? audio.error.code : 'unknown'
@@ -176,11 +156,8 @@ export function AudioController({
   // 设置音频源
   const setupMediaSource = () => {
     if (!audioRef.current || !currentTrack) {
-      console.warn('无法设置音频源：audioRef 或 currentTrack 不存在')
       return
     }
-    
-    console.log('设置音频源:', currentTrack)
     
     // 设置音频
     try {
@@ -201,8 +178,6 @@ export function AudioController({
         audioUrl = baseUrl + trackPath
       }
       
-      console.log('完整音频URL:', audioUrl)
-      
       // 完全重置音频元素
       audioRef.current.pause()
       audioRef.current.currentTime = 0
@@ -221,7 +196,6 @@ export function AudioController({
       audioRef.current.volume = isMuted ? 0 : volume
       
     } catch (err) {
-      console.error('设置音频源失败:', err)
       setAudioError(`设置音频源失败: ${err}`)
       toast.error("音频源设置失败", {
         description: String(err)
@@ -246,7 +220,6 @@ export function AudioController({
       audioRef.current.volume = isMuted ? 0 : volume
       
       audioRef.current.play().catch((err) => {
-        console.error('播放失败:', err)
         setAudioError(`播放失败: ${err.message}`)
       })
       
@@ -279,15 +252,6 @@ export function AudioController({
         ? (currentIndex + 1) % availableTracks.length
         : (currentIndex - 1 + availableTracks.length) % availableTracks.length
     }
-    
-    // 输出调试信息
-    console.log('切换曲目:', {
-      当前曲目: currentTrack,
-      当前索引: currentIndex,
-      方向: direction,
-      下一索引: nextIndex,
-      下一曲目: availableTracks[nextIndex].path
-    })
     
     // 设置新的当前曲目
     setCurrentTrack(availableTracks[nextIndex].path)
@@ -322,8 +286,6 @@ export function AudioController({
   // 监听音频播放结束
   useEffect(() => {
     const handleAudioEnded = () => {
-      console.log('音频播放已结束')
-      
       // 重置播放状态但保留音轨
       setCurrentTime(0)
       
