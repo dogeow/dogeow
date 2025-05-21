@@ -162,10 +162,10 @@ export const useItemStore = create<ItemState>((set, get) => ({
       }
       
       const queryString = queryParams.toString();
-      const url = `/items${queryString ? `?${queryString}` : ''}`;
+      const url = `/things/items${queryString ? `?${queryString}` : ''}`;
       
       // 记录完整请求URL，方便调试
-      console.log(`请求后端API: ${API_URL}/api/items${queryString ? `?${queryString}` : ''}`);
+      console.log(`请求后端API: ${API_URL}/api/things/items${queryString ? `?${queryString}` : ''}`);
       
       try {
         const data = await apiRequest<{data: Item[], meta: any}>(url);
@@ -195,7 +195,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
   
   fetchCategories: async () => {
     try {
-      const data = await apiRequest<Category[]>(`/categories`);
+      const data = await apiRequest<Category[]>(`/things/categories`);
       set({ categories: data });
       return data;
     } catch (error) {
@@ -206,7 +206,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
   
   fetchTags: async () => {
     try {
-      const data = await apiRequest<Tag[]>(`/thing-tags`);
+      const data = await apiRequest<Tag[]>(`/things/tags`);
       set({ tags: data });
       return data;
     } catch (error) {
@@ -219,7 +219,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      const item = await apiRequest<Item>(`/items/${id}`);
+      const item = await apiRequest<Item>(`/things/items/${id}`);
       set({ loading: false });
       return item;
     } catch (error) {
@@ -236,7 +236,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     
     try {
       const formData = prepareFormData(data);
-      const result = await apiRequest<{item: Item}>(`/items`, 'POST', formData);
+      const result = await apiRequest<{item: Item}>(`/things/items`, 'POST', formData);
       
       set({ loading: false });
       get().fetchItems();
@@ -259,7 +259,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       const formData = prepareFormData(data);
       formData.append('_method', 'PUT'); // 添加PUT方法模拟
       
-      const result = await apiRequest<{item: Item}>(`/items/${id}`, 'POST', formData);
+      const result = await apiRequest<{item: Item}>(`/things/items/${id}`, 'POST', formData);
       
       set({ loading: false });
       get().fetchItems();
@@ -279,7 +279,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      await apiRequest(`/items/${id}`, 'DELETE');
+      await apiRequest(`/things/items/${id}`, 'DELETE');
       
       set(state => ({
         items: state.items.filter(item => item.id !== id),

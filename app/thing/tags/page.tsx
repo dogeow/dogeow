@@ -37,7 +37,7 @@ export default function ThingTags() {
   const [alertOpen, setAlertOpen] = useState(false)
 
   // 加载标签数据
-  const { data: tags, error } = useSWR<Tag[]>('/thing-tags', get)
+  const { data: tags, error } = useSWR<Tag[]>('/things/tags', get)
 
   // 打开删除确认弹窗
   const openDeleteDialog = (id: number) => {
@@ -51,8 +51,8 @@ export default function ThingTags() {
     
     setLoading(true)
     try {
-      await del(`/thing-tags/${tagToDelete}`)
-      mutate("/thing-tags")
+      await del(`/things/tags/${tagToDelete}`)
+      mutate("/things/tags")
       toast.success("标签删除成功")
     } catch (error) {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示

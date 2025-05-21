@@ -34,7 +34,7 @@ export default function Categories() {
   // 获取未分类物品数量
   const fetchUncategorizedCount = async () => {
     try {
-      const response: { data: any[], meta?: { total: number } } = await get('/items?uncategorized=true&own=true')
+      const response: { data: any[], meta?: { total: number } } = await get('/things/items?uncategorized=true&own=true')
       setUncategorizedCount(response.meta?.total || 0)
     } catch (error) {
       console.error('获取未分类物品数量失败:', error)
@@ -65,7 +65,7 @@ export default function Categories() {
 
     setLoading(true)
     try {
-      await put(`/categories/${inlineEditingId}`, { name: inlineEditingName })
+      await put(`/things/categories/${inlineEditingId}`, { name: inlineEditingName })
       toast.success("分类更新成功")
       fetchCategories()
     } catch (error) {
@@ -87,7 +87,7 @@ export default function Categories() {
 
     setLoading(true)
     try {
-      await del(`/categories/${categoryToDelete}`)
+      await del(`/things/categories/${categoryToDelete}`)
       toast.success("分类删除成功")
       fetchCategories()
     } catch (error) {

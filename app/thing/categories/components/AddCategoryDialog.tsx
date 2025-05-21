@@ -38,7 +38,7 @@ export default function AddCategoryDialog({
 
     setLoading(true)
     try {
-      await post('/categories', { name: categoryName })
+      await post('/things/categories', { name: categoryName })
       
       toast.success("分类创建成功")
       setCategoryName("")

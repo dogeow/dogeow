@@ -61,7 +61,7 @@ export default function AddTagDialog({
 
     setLoading(true)
     try {
-      await post('/thing-tags', { 
+      await post('/things/tags', { 
         name: tagName,
         color: tagColor
       })
@@ -69,7 +69,7 @@ export default function AddTagDialog({
       toast.success("标签创建成功")
       setTagName("")
       setTagColor("#3b82f6")
-      mutate("/thing-tags") // 刷新标签列表
+      mutate("/things/tags") // 刷新标签列表
       onOpenChange(false)
     } catch (error) {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示

@@ -86,7 +86,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
     
     try {
       const tagData = { name: name.trim(), color }
-      const response = await apiRequest<Tag>('/thing-tags', 'POST', tagData)
+      const response = await apiRequest<Tag>('/things/tags', 'POST', tagData)
       
       toast.success('标签创建成功')
       

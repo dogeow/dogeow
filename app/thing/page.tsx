@@ -35,7 +35,7 @@ export default function Thing() {
   const [uncategorizedCount, setUncategorizedCount] = useState<number>(0)
   
   // 标签加载
-  const { data: tags } = useSWR<Tag[]>('/thing-tags', apiRequest)
+  const { data: tags } = useSWR<Tag[]>('/things/tags', apiRequest)
   
   // 计算总页数
   const totalPages = meta?.last_page || 1
@@ -352,7 +352,7 @@ export default function Thing() {
   // 获取未分类物品数量
   const fetchUncategorizedCount = async () => {
     try {
-      const response: { data: any[], meta?: { total: number } } = await apiRequest('/items?uncategorized=true&own=true')
+      const response: { data: any[], meta?: { total: number } } = await apiRequest('/things/items?uncategorized=true&own=true')
       setUncategorizedCount(response.meta?.total || 0)
     } catch (error) {
       console.error('获取未分类物品数量失败:', error)
