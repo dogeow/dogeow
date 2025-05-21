@@ -4,7 +4,7 @@ import { apiRequest, post, put, del } from '@/lib/api';
 // 获取所有导航分类（及其导航项）
 export async function getCategories(filterName?: string) {
   try {
-    let url = `/nav/items`;
+    let url = `/nav/categories`;
     if (filterName) {
       url += `?filter[name]=${encodeURIComponent(filterName)}`;
     }
