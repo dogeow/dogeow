@@ -53,6 +53,7 @@ export default function AddNavItem() {
   const router = useRouter()
   const { createItem, fetchCategories, categories, createCategory } = useNavStore()
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(false);
 
   // 使用 react-hook-form 管理表单状态
   const form = useForm<FormData>({
@@ -213,28 +214,32 @@ export default function AddNavItem() {
                       <Button
                         type="button"
                         variant="outline"
+                        disabled={fetching}
                         onClick={async () => {
                           const url = form.getValues("url");
                           if (!url) {
                             toast.error("请先填写网站地址");
                             return;
                           }
+                          setFetching(true);
                           try {
-                            const data = await apiRequest<{ title?: string }>(`fetch-title?url=${encodeURIComponent(url)}`, 'GET');
+                            const data = await apiRequest<{ title?: string, favicon?: string }>(`fetch-title?url=${encodeURIComponent(url)}`, 'GET');
                             if (data.title) {
                               form.setValue("name", data.title);
                               toast.success("已自动获取网站名称");
-                              const urlObj = new URL(url);
-                              const faviconUrl = urlObj.origin + '/favicon.ico';
-                              form.setValue("icon", faviconUrl);
-                            } else {
-                              toast.error("未获取到网站标题");
+                            }
+                            if (data.favicon) {
+                              form.setValue("icon", data.favicon);
                             }
                           } catch (e) {
                             toast.error("获取失败");
+                          } finally {
+                            setFetching(false);
                           }
                         }}
-                      >自动获取</Button>
+                      >
+                        {fetching ? '获取中...' : '自动获取'}
+                      </Button>
                     </div>
                     <FormMessage />
                   </FormItem>
