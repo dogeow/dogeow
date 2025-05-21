@@ -47,7 +47,7 @@ export default function NoteTags() {
   }
 
   // 加载标签数据
-  const { data: tags, error } = useSWR<Tag[]>('/note-tags', get)
+  const { data: tags, error } = useSWR<Tag[]>('/notes/tags', get)
 
   // 添加标签
   const addTag = async () => {
@@ -58,13 +58,13 @@ export default function NoteTags() {
 
     setLoading(true)
     try {
-      await post("/note-tags", {
+      await post("/notes/tags", {
         name: newTag,
         color: newColor
       })
       setNewTag("")
       setNewColor(generateRandomColor()) // 添加成功后重新生成随机颜色
-      mutate("/note-tags")
+      mutate("/notes/tags")
       toast.success("标签添加成功")
     } catch (error) {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
@@ -85,8 +85,8 @@ export default function NoteTags() {
     
     setLoading(true)
     try {
-      await del(`/note-tags/${tagToDelete}`)
-      mutate("/note-tags")
+      await del(`/notes/tags/${tagToDelete}`)
+      mutate("/notes/tags")
       toast.success("标签删除成功")
     } catch (error) {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示

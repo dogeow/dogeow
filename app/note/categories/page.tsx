@@ -25,7 +25,7 @@ export default function NoteCategories() {
   const [loading, setLoading] = useState(false)
 
   // 加载分类数据
-  const { data: categories = [], error, isLoading } = useSWR<Category[]>('/note-categories', get)
+  const { data: categories = [], error, isLoading } = useSWR<Category[]>('/notes/categories', get)
 
   // 处理API请求的通用函数
   const handleApiRequest = async (
@@ -38,7 +38,7 @@ export default function NoteCategories() {
     setLoading(true)
     try {
       await apiCall()
-      mutate("/note-categories")
+      mutate("/notes/categories")
       toast.success(successMessage)
       return true
     } catch (error) {
@@ -58,7 +58,7 @@ export default function NoteCategories() {
     }
 
     const success = await handleApiRequest(
-      () => post("/note-categories", { name: newCategory.trim() }),
+      () => post("/notes/categories", { name: newCategory.trim() }),
       "分类添加成功",
       "添加分类失败"
     )
@@ -76,7 +76,7 @@ export default function NoteCategories() {
     }
 
     const success = await handleApiRequest(
-      () => put(`/note-categories/${editingCategory.id}`, {
+      () => put(`/notes/categories/${editingCategory.id}`, {
         name: editingCategory.name.trim(),
       }),
       "分类更新成功",
@@ -95,7 +95,7 @@ export default function NoteCategories() {
     }
 
     await handleApiRequest(
-      () => del(`/note-categories/${id}`),
+      () => del(`/notes/categories/${id}`),
       "分类删除成功",
       "删除分类失败"
     )
