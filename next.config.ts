@@ -2,20 +2,26 @@ import type { NextConfig } from "next";
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '10mb',
-    },
-  },
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['127.0.0.1', 'localhost', 'next-api.dogeow.com'],
-    minimumCacheTTL: 60,
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840, 4096, 5120],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 768, 1024],
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: 'next-api.dogeow.com',
+      },
+    ],
+    deviceSizes: [80, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200],
   },
 };
 
