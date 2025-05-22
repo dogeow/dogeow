@@ -1,4 +1,4 @@
-import { Tag } from "@/lib/types/tag"; // Assuming Tag type is defined here
+import { Tag } from "@/app/thing/types";
 import { isLightColor } from "@/lib/helpers/colorUtils"; // Updated import path
 import { Badge } from "@/components/ui/badge"; // Assuming Badge component is here
 
