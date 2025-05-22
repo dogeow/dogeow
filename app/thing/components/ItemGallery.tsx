@@ -51,9 +51,10 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     setSelectedItem(null);
   };
   
-  const handleImageSizeChange = (newSize: number) => {
+  const handleImageSizeChange = useCallback((newSize: number) => {
+    console.log('Image size changed:', newSize); // 添加调试日志
     setImageSize(newSize);
-  };
+  }, []);
 
   // Determine max size for ImageSizeControl based on container width
   // This ensures the slider's max value is reasonable.
@@ -61,7 +62,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
 
 
   return (
-    <div id="item-gallery-container">
+    <div id="item-gallery-container" className="w-full">
       <ImageSizeControl
         initialSize={120}
         maxSize={maxImageSizeForControl} // Dynamic max size based on container
@@ -73,7 +74,10 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
             No items to display.
          </div>
       ) : (
-        <div className="flex flex-wrap gap-2 justify-center">
+        <div className="grid gap-2" style={{
+          gridTemplateColumns: `repeat(auto-fill, minmax(${imageSize}px, 1fr))`,
+          justifyItems: 'center'
+        }}>
           {items.map((item) => (
             <GalleryItem
               key={item.id}

@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ImageDownIcon, ImageUpIcon, Columns2Icon, Columns3Icon, Columns4Icon, GripIcon } from "lucide-react";
-import { ensureEven } from "@/lib/helpers/mathUtils"; // Import ensureEven
+import { ensureEven } from "@/lib/helpers/mathUtils";
 
 interface ImageSizeControlProps {
   initialSize: number;
@@ -19,41 +19,39 @@ export function ImageSizeControl({
 }: ImageSizeControlProps) {
   const [imageSize, setImageSize] = useState(initialSize);
   const [currentSizePreset, setCurrentSizePreset] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const getCalculatedSize = useCallback((preset: string, containerWidth: number): number => {
+    console.log('Calculating size for preset:', preset, 'container width:', containerWidth);
     let columns;
     switch (preset) {
-      case "xs": columns = 6; break; // Example: 6 columns for extra small
-      case "sm": columns = 4; break; // Example: 4 columns for small
-      case "md": columns = 3; break; // Example: 3 columns for medium
-      case "lg": columns = 2; break; // Example: 2 columns for large
-      case "xl": columns = 1; break; // Example: 1 column for extra large
-      default: columns = Math.floor(containerWidth / initialSize) || 1; // Fallback to initialSize based columns
+      case "xs": columns = 6; break;
+      case "sm": columns = 4; break;
+      case "md": columns = 3; break;
+      case "lg": columns = 2; break;
+      default: columns = Math.floor(containerWidth / initialSize) || 1;
     }
-    const gap = 8; // Assuming 0.5rem gap (8px)
+    const gap = 8;
     const newSize = ensureEven((containerWidth - (columns - 1) * gap) / columns);
-    return Math.max(60, Math.min(newSize, maxSize)); // Ensure min and max bounds
+    const finalSize = Math.max(60, Math.min(newSize, maxSize));
+    console.log('Calculated size:', finalSize, 'for columns:', columns);
+    return finalSize;
   }, [initialSize, maxSize]);
 
   useEffect(() => {
-    // Initialize with a medium preset or based on initialSize
-    const container = document.getElementById("item-gallery-container");
-    if (container) {
-        const newSize = getCalculatedSize("md", container.offsetWidth);
-        setImageSize(newSize);
-        onSizeChange(newSize);
-        setCurrentSizePreset("md");
+    if (containerRef.current) {
+      const newSize = getCalculatedSize("md", containerRef.current.offsetWidth);
+      setImageSize(newSize);
+      onSizeChange(newSize);
+      setCurrentSizePreset("md");
     }
   }, [getCalculatedSize, onSizeChange]);
 
-
   useEffect(() => {
     const handleResize = () => {
-      const container = document.getElementById("item-gallery-container");
-      if (container) {
-        // Recalculate based on current preset or a default if none active
+      if (containerRef.current) {
         const presetToUse = currentSizePreset || "md";
-        const newSize = getCalculatedSize(presetToUse, container.offsetWidth);
+        const newSize = getCalculatedSize(presetToUse, containerRef.current.offsetWidth);
         setImageSize(newSize);
         onSizeChange(newSize);
       }
@@ -64,9 +62,10 @@ export function ImageSizeControl({
   }, [currentSizePreset, getCalculatedSize, onSizeChange]);
 
   const handlePresetClick = (preset: string) => {
-    const container = document.getElementById("item-gallery-container");
-    if (container) {
-      const newSize = getCalculatedSize(preset, container.offsetWidth);
+    console.log('Preset clicked:', preset);
+    if (containerRef.current) {
+      const newSize = getCalculatedSize(preset, containerRef.current.offsetWidth);
+      console.log('Preset - new size:', newSize);
       setImageSize(newSize);
       onSizeChange(newSize);
       setCurrentSizePreset(preset);
@@ -77,7 +76,7 @@ export function ImageSizeControl({
     const newSize = ensureEven(value[0]);
     setImageSize(newSize);
     onSizeChange(newSize);
-    setCurrentSizePreset(null); // Clear preset when slider is used manually
+    setCurrentSizePreset(null);
   };
 
   const sizePresets = [
@@ -85,11 +84,10 @@ export function ImageSizeControl({
     { id: "sm", label: "S", icon: <Columns4Icon className="h-4 w-4" /> },
     { id: "md", label: "M", icon: <Columns3Icon className="h-4 w-4" /> },
     { id: "lg", label: "L", icon: <Columns2Icon className="h-4 w-4" /> },
-    // { id: "xl", label: "XL", icon: <ImageIcon className="h-4 w-4" /> }, // Placeholder, adjust icon
   ];
 
   return (
-    <div className="flex items-center gap-2 mb-4 p-2 bg-background/80 backdrop-blur-sm sticky top-0 z-10 rounded-md border">
+    <div ref={containerRef} className="flex items-center gap-2 mb-4 p-2 bg-background/80 backdrop-blur-sm sticky top-0 z-10 rounded-md border">
       <div className="flex items-center gap-1">
         {sizePresets.map((preset) => (
           <Button
@@ -109,7 +107,7 @@ export function ImageSizeControl({
       <Slider
         min={60}
         max={maxSize}
-        step={2} // Ensure even numbers
+        step={2}
         value={[imageSize]}
         onValueChange={handleSliderChange}
         className="w-full max-w-xs"
