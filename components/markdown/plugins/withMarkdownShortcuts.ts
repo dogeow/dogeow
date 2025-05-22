@@ -4,11 +4,11 @@ import { CustomElement } from '@/app/note/types/editor'
 import { getChildNodeToDecorations, mergeMaps } from '../prism-utils'
 
 // Markdown 快捷方式类型定义
-type MarkdownShortcut = '#' | '##' | '>' | '-' | '*' | '+' | '1.'
+type MarkdownShortcut = '#' | '##' | '>' | '-' | '*' | '+' | '1.' | '```'
 
 // 检查 Markdown 快捷方式
 const checkMarkdownShortcut = (text: string): RegExpExecArray | null => {
-  return /^(\#\#|\#|\>|\-|\*|\+|1\.)$/.exec(text)
+  return /^(\#\#|\#|\>|\-|\*|\+|1\.|\`\`\`)$/.exec(text)
 }
 
 // 更新代码高亮
@@ -66,6 +66,13 @@ const handleMarkdownShortcut = (editor: ExtendedEditor, type: MarkdownShortcut) 
     '*': () => handleListTransform(editor, 'bulleted-list'),
     '+': () => handleListTransform(editor, 'bulleted-list'),
     '1.': () => handleListTransform(editor, 'numbered-list'),
+    '```': () => {
+      Transforms.setNodes(
+        editor,
+        { type: 'code-block' },
+        { match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n) }
+      )
+    }
   }
 
   transforms[type]?.()
