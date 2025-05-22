@@ -247,37 +247,24 @@ export function AppLauncher() {
   // 添加全局键盘快捷键处理
   useEffect(() => {
     const handleKeyboardShortcuts = (e: KeyboardEvent) => {
-      // Ctrl+K 快捷键打开或关闭搜索对话框（也兼容 macOS 的 Command+K）
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault(); // 阻止默认行为
-        
-        // 如果搜索对话框已经打开，则关闭
-        if (isSearchDialogOpen) {
-          setIsSearchDialogOpen(false);
-          return;
-        }
-        
-        // 如果已经打开搜索框，则关闭搜索框
-        if (isSearchVisible) {
-          setIsSearchVisible(false);
-          return;
-        }
-        
-        // 在首页直接打开搜索对话框
-        if (isHomePage) {
-          setIsSearchDialogOpen(true);
-        } 
-        // 在其他页面显示顶部搜索框
-        else {
-          setIsSearchVisible(true);
-        }
+      // 只处理 Ctrl+K 或 Command+K 快捷键
+      if (!((e.ctrlKey || e.metaKey) && e.key === 'k')) return;
+      
+      e.preventDefault();
+      
+      // 根据当前状态切换搜索界面
+      if (isSearchDialogOpen) {
+        setIsSearchDialogOpen(false);
+      } else if (isSearchVisible) {
+        setIsSearchVisible(false);
+      } else {
+        // 根据页面类型决定打开搜索对话框还是搜索框
+        isHomePage ? setIsSearchDialogOpen(true) : setIsSearchVisible(true);
       }
     };
     
     window.addEventListener('keydown', handleKeyboardShortcuts);
-    return () => {
-      window.removeEventListener('keydown', handleKeyboardShortcuts);
-    };
+    return () => window.removeEventListener('keydown', handleKeyboardShortcuts);
   }, [isSearchVisible, isHomePage, isSearchDialogOpen]);
   
   const renderContent = () => {
