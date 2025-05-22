@@ -82,6 +82,7 @@ export interface Spot {
   room_id: number;
   user_id?: number;
   room?: Room;
+  parent_spot?: Spot;
   created_at?: string;
   updated_at?: string;
 }

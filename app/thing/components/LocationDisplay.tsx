@@ -1,4 +1,4 @@
-import { Spot } from "@/lib/types/spot"; // Assuming Spot type is defined here
+import { Spot } from "@/app/thing/types";
 import FolderIcon from "./FolderIcon"; // 改为默认导入
 
 interface LocationDisplayProps {
@@ -22,7 +22,7 @@ export function LocationDisplay({ spot }: LocationDisplayProps) {
 
   return (
     <div className="flex items-center text-sm text-muted-foreground">
-      <FolderIcon className="mr-2 h-4 w-4" />
+      <FolderIcon className="mr-2 h-4 w-4" isOpen={false} />
       <span>{fullLocationPath}</span>
     </div>
   );
