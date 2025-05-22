@@ -7,6 +7,7 @@ import { Folder, Plus, Settings } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNavStore } from '@/app/nav/stores/navStore';
+import { useThemeStore, getCurrentThemeColor } from '@/stores/themeStore';
 
 // 创建一个新的组件来处理搜索参数
 function NavContent() {
@@ -25,6 +26,8 @@ function NavContent() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<'all' | number>('all');
   const [initialLoaded, setInitialLoaded] = useState(false);
+  const { currentTheme, customThemes } = useThemeStore();
+  const themeColor = getCurrentThemeColor(currentTheme, customThemes);
   
   // 监听URL中filter[name]参数的变化
   useEffect(() => {
@@ -97,13 +100,15 @@ function NavContent() {
   const renderCategorySidebar = () => (
     <aside className="w-20 shrink-0 flex flex-col gap-0 py-2">
       <button
-        className={`px-2 py-1 rounded text-left font-bold text-sm ${selectedCategory === 'all' ? 'bg-blue-500 text-white' : 'hover:bg-gray-100'}`}
+        className={`px-2 py-1 rounded text-left font-bold text-sm ${selectedCategory === 'all' ? '' : 'hover:bg-gray-100'}`}
+        style={selectedCategory === 'all' ? { background: themeColor.color, color: '#fff' } : {}}
         onClick={() => setSelectedCategory('all')}
       >全部</button>
       {categories.map((cat: any) => (
         <button
           key={cat.id}
-          className={`px-2 py-1 rounded text-left text-sm ${selectedCategory === cat.id ? 'bg-blue-500 text-white font-bold' : 'hover:bg-gray-100'}`}
+          className={`px-2 py-1 rounded text-left text-sm ${selectedCategory === cat.id ? 'font-bold' : 'hover:bg-gray-100'}`}
+          style={selectedCategory === cat.id ? { background: themeColor.color, color: '#fff' } : {}}
           onClick={() => setSelectedCategory(cat.id)}
         >{cat.name}</button>
       ))}

@@ -513,11 +513,11 @@ export default function Thing() {
       <Button 
         variant="outline" 
         onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
-        className="w-[110px] bg-primary/10 border-primary/20 flex items-center justify-between"
+        className="w-[110px] bg-white/90 rounded-lg shadow border-primary/20 flex items-center justify-between"
       >
         {selectedCategory === 'none' ? "所有分类" : 
          selectedCategory === 'uncategorized' ? "未分类" : 
-         categoriesFromStore.find(c => c.id.toString() === selectedCategory)?.name || "所有分类"} {/* Use categoriesFromStore */}
+         categoriesFromStore.find(c => c.id.toString() === selectedCategory)?.name || "所有分类"}
         <ChevronDownIcon className="ml-2 h-4 w-4" />
       </Button>
       
@@ -560,7 +560,7 @@ export default function Thing() {
       <Button 
         variant="outline" 
         onClick={() => setTagMenuOpen(!tagMenuOpen)}
-        className="w-[110px] bg-primary/10 border-primary/20 flex items-center justify-between"
+        className="w-[110px] bg-white/90 rounded-lg shadow border-primary/20 flex items-center justify-between"
       >
         {selectedTags.length > 0 ? `${selectedTags.length}个标签` : "选择标签"}
         <ChevronDownIcon className="ml-2 h-4 w-4" />

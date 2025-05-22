@@ -386,20 +386,22 @@ export default function ItemFilters({
             
             <div className="space-y-3">
               <Label className="text-base font-medium">状态</Label>
-              <Select 
-                value={filters.status} 
-                onValueChange={(value) => handleChange('status', value)}
-              >
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="选择状态" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部状态</SelectItem>
-                  <SelectItem value="active">正常</SelectItem>
-                  <SelectItem value="archived">已归档</SelectItem>
-                  <SelectItem value="expired">已过期</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="bg-white/90 rounded-lg shadow px-2 py-1">
+                <Select 
+                  value={filters.status} 
+                  onValueChange={(value) => handleChange('status', value)}
+                >
+                  <SelectTrigger className="h-11">
+                    <SelectValue placeholder="选择状态" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">全部状态</SelectItem>
+                    <SelectItem value="active">正常</SelectItem>
+                    <SelectItem value="archived">已归档</SelectItem>
+                    <SelectItem value="expired">已过期</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="space-y-3">
@@ -421,9 +423,9 @@ export default function ItemFilters({
             
             <div className="space-y-3">
               <Label className="text-base font-medium">标签</Label>
-              <div className="bg-background rounded-md relative">
+              <div className="bg-white/90 rounded-lg shadow px-2 py-1">
                 <TagSelector
-                  tags={tags} // Use tags from props
+                  tags={tags}
                   selectedTags={typeof filters.tags === 'string' ? 
                     filters.tags.split(',').filter(Boolean) : 
                     Array.isArray(filters.tags) ? 
