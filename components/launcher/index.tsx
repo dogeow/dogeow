@@ -49,8 +49,6 @@ export function AppLauncher() {
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false)
   const [searchText, setSearchText] = useState<string>('')
   
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL
-  
   // 判断当前是否在首页
   const isHomePage = pathname === '/'
   
@@ -81,17 +79,6 @@ export function AppLauncher() {
     isTrackChanging,
     setIsTrackChanging
   })
-
-  // 组件加载时检查音频文件
-  useEffect(() => {
-    // 只在开发环境输出环境变量信息
-    if (process.env.NODE_ENV === 'development') {
-      console.log('环境变量:', {
-        API_URL: apiUrl,
-        NODE_ENV: process.env.NODE_ENV
-      });
-    }
-  }, []);
   
   // 加载音频列表
   const fetchAvailableTracks = async () => {
