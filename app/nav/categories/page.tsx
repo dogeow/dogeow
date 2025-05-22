@@ -21,16 +21,6 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table"
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react"
 import { NavCategory } from "@/app/nav/types"
 import { useRouter } from "next/navigation"

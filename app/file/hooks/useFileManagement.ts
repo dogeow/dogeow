@@ -1,5 +1,5 @@
 import useSWR, { KeyedMutator } from 'swr';
-import { apiRequest } from '@/lib/apiRequest';
+import {apiRequest} from '@/lib/api';
 import { CloudFile, FolderNode } from '@/types';
 
 interface UseFileManagementProps {
@@ -36,14 +36,17 @@ export const useFileManagement = ({
     mutate: mutateFiles,
   } = useSWR<CloudFile[]>(
     `/cloud/files?parent_id=${currentFolderId || ''}&search=${searchQuery}&sort_by=${sortField}&sort_direction=${sortDirection}`,
-    apiRequest,
+    (url: string) => apiRequest.get<CloudFile[]>(url),
   );
 
   const {
     data: folderTree,
     error: isErrorTree,
     isLoading: isLoadingTree,
-  } = useSWR<FolderNode[]>(currentView === 'tree' ? '/cloud/tree' : null, apiRequest);
+  } = useSWR<FolderNode[]>(
+    currentView === 'tree' ? '/cloud/tree' : null,
+    (url: string | null) => url ? apiRequest.get<FolderNode[]>(url) : null,
+  );
 
   const isLoading = isLoadingFiles || isLoadingTree;
   const error = isErrorFiles || isErrorTree;

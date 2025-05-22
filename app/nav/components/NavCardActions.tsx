@@ -2,8 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { NavItem } from '@/types'
-import useNavStore from '../store/useNavStore'
+import { NavItem } from '../types'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { MoreVertical, Pencil, Trash } from 'lucide-react'
-import DeleteConfirmationDialog from '@/components/DeleteConfirmationDialog'
+import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
 import { toast } from 'react-hot-toast'
 
 interface NavCardActionsProps {
@@ -65,12 +64,10 @@ export default function NavCardActions({ item, deleteItem }: NavCardActionsProps
       </DropdownMenu>
 
       <DeleteConfirmationDialog
-        isOpen={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
+        open={confirmOpen}
+        onOpenChange={() => setConfirmOpen(false)}
         onConfirm={handleDelete}
-        isLoading={loading}
         itemName={item.name}
-        itemType="导航项"
       />
     </>
   )

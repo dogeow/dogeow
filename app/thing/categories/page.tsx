@@ -5,19 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Pencil, Trash2, Check, X } from "lucide-react"
+import { Trash2, Check, X } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/app/thing/stores/itemStore'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { put, del, get } from '@/lib/api'
 import CategorySpeedDial from './components/CategorySpeedDial'
 import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"

@@ -1,3 +1,5 @@
+'use client'
+
 import useSWR, { mutate } from 'swr';
 import useAuthStore from '../../stores/authStore';
 import type { Category, Area, Room, Spot, Item } from '@/app/thing/types';
@@ -322,6 +324,7 @@ export async function apiRequest<T>(
 
 // 简便的HTTP方法包装器
 export function get<T>(endpoint: string): Promise<T> {
+  console.log('[SWR GET]', endpoint); // 调试用
   return apiRequest<T>(endpoint, 'GET');
 }
 

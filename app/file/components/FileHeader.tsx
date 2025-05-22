@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
+import useSWRMutation from 'swr/mutation'
 import { post, del, uploadFile } from '@/lib/api'
 import useFileStore from '../store/useFileStore'
 
@@ -44,9 +45,17 @@ export default function FileHeader() {
   const [isUploading, setIsUploading] = useState(false)
   const { mutate } = useSWRConfig()
 
-  const createFolder = async () => {
+  const { trigger: createFolder } = useSWRMutation(
+    `/cloud/folders`,
+    async (url, { arg }: { arg: { name: string; parent_id: number | null; description: string } }) => {
+      const response = await post(url, arg)
+      return response
+    }
+  )
+
+  const handleCreateFolder = async () => {
     try {
-      await post(`/cloud/folders`, {
+      await createFolder({
         name: folderName,
         parent_id: currentFolderId,
         description: folderDescription
@@ -76,7 +85,6 @@ export default function FileHeader() {
         formData.append('file', file)
         formData.append('parent_id', currentFolderId ? currentFolderId.toString() : '')
 
-        // 使用新的 uploadFile 函数处理文件上传
         await uploadFile('/cloud/files', formData)
       }
       
@@ -87,7 +95,6 @@ export default function FileHeader() {
       console.error(error)
     } finally {
       setIsUploading(false)
-      // 清除文件选择器
       event.target.value = ''
     }
   }
@@ -188,7 +195,7 @@ export default function FileHeader() {
                 <Button variant="outline">取消</Button>
               </DialogClose>
               <DialogClose asChild>
-                <Button onClick={createFolder} disabled={!folderName.trim()}>创建</Button>
+                <Button onClick={handleCreateFolder} disabled={!folderName.trim()}>创建</Button>
               </DialogClose>
             </DialogFooter>
           </DialogContent>
