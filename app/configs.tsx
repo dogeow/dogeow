@@ -31,12 +31,17 @@ export const configs = {
       primary: "hsl(35 97% 55%)",
       color: "#fc9d1c"
     },
-    // 我的世界风格
     {
       id: "minecraft",
       name: "我的世界",
       primary: "hsl(101 50% 43%)",
       color: "#5d9c32"
     },
+     {
+      id: "zelda",
+      name: "塞尔达传说",
+      primary: "hsl(35 97% 55%)",
+      color: "#b99f65"
+    }
   ]
 };
