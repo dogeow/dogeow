@@ -230,6 +230,7 @@ export default function EditItem() {
         area_id: formData.area_id ? Number(formData.area_id) : null,
         room_id: formData.room_id ? Number(formData.room_id) : null,
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
+        image_ids: uploadedImages.filter(img => img.id).map(img => img.id),
         image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
         tags: selectedTags.length > 0 ? selectedTags.map(id => Number(id)) : []
       }
