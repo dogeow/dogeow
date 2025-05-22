@@ -9,7 +9,7 @@ import { useItemStore } from '@/app/thing/stores/itemStore'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAreas, useRooms, useSpots } from '@/lib/api'
 import { apiRequest } from '@/lib/api'
-import { ItemFormData, UploadedImage, Room, Spot, Item } from '@/app/thing/types'
+import { ItemFormData, UploadedImage, Room, Spot, Item, Tag } from '@/app/thing/types'
 import BasicInfoForm from '@/app/thing/components/BasicInfoForm'
 import TagsSection from '@/app/thing/components/TagsSection'
 import ImageSection from '@/app/thing/components/ImageSection'
@@ -128,7 +128,7 @@ export default function EditItem() {
         spot_id: formData.spot_id ? Number(formData.spot_id) : null,
         image_ids: uploadedImages.filter(img => img.id).map(img => img.id!).filter((id): id is number => id !== undefined),
         image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
-        tags: selectedTags.map(id => Number(id))
+        tags: selectedTags.map(id => tags.find(tag => tag.id.toString() === id)).filter((tag): tag is Tag => tag !== undefined)
       }
       
       const toast_id = toast.loading("正在更新物品...")

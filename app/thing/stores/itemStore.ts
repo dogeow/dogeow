@@ -86,7 +86,7 @@ interface ItemState {
     images?: File[], 
     image_ids?: number[],
     image_paths?: string[],
-    tags?: number[]
+    tags?: Tag[]
   }) => Promise<Item>;
   deleteItem: (id: number) => Promise<void>;
   saveFilters: (filters: Record<string, any>) => void;
