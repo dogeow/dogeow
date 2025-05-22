@@ -444,7 +444,6 @@ const MarkdownEditor = ({
               title="保存 (Ctrl+S)"
             >
               <Save className="h-4 w-4 mr-1" />
-              保存
             </Button>
           )}
         </Toolbar>
