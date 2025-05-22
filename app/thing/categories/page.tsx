@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { put, del, get } from '@/lib/api'
 import CategorySpeedDial from './components/CategorySpeedDial'
+import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 
 export default function Categories() {
   const { categories, fetchCategories } = useItemStore()
@@ -200,26 +201,12 @@ export default function Categories() {
         </CardContent>
       </Card>
 
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              您确定要删除此分类吗？此操作无法撤销，且可能影响已分类的物品。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={loading}>取消</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteCategory} 
-              className="bg-destructive text-destructive-foreground"
-              disabled={loading}
-            >
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteCategory}
+        itemName={categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''}
+      />
 
       <CategorySpeedDial onCategoryAdded={fetchCategories} />
     </div>

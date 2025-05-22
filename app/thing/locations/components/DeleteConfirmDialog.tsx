@@ -1,15 +1,6 @@
 "use client"
 
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 import { LocationType } from '../hooks/useLocationManagement'
 
 interface DeleteConfirmDialogProps {
@@ -25,24 +16,18 @@ export default function DeleteConfirmDialog({
   itemToDelete, 
   onConfirm 
 }: DeleteConfirmDialogProps) {
+  const getItemName = () => {
+    if (!itemToDelete) return ''
+    const typeText = itemToDelete.type === 'area' ? '区域' : itemToDelete.type === 'room' ? '房间' : '位置'
+    return `${typeText} ${itemToDelete.id}`
+  }
+
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>确认删除</AlertDialogTitle>
-          <AlertDialogDescription>
-            {itemToDelete?.type === 'area' && '删除区域将同时删除其下所有房间和位置。'}
-            {itemToDelete?.type === 'room' && '删除房间将同时删除其下所有位置。'}
-            此操作无法撤销，且可能影响已存储的物品。
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} className="bg-destructive">
-            删除
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <DeleteConfirmationDialog
+      open={open}
+      onOpenChange={onOpenChange}
+      onConfirm={onConfirm}
+      itemName={getItemName()}
+    />
   )
 } 

@@ -11,17 +11,9 @@ import { format } from 'date-fns'
 import Image from "next/image"
 import { toast } from "sonner"
 import { useItemStore } from '@/app/thing/stores/itemStore'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 import { isLightColor } from '@/lib/helpers'
+import { statusMap } from '../config/status'
 
 export default function ItemDetail() {
   const params = useParams()
@@ -102,12 +94,6 @@ export default function ItemDetail() {
         </div>
       </>
     )
-  }
-  
-  const statusMap = {
-    active: { label: '正常', variant: 'bg-green-500' },
-    inactive: { label: '闲置', variant: 'outline' },
-    expired: { label: '已过期', variant: 'destructive' }
   }
   
   const status = statusMap[item.status as keyof typeof statusMap] || { label: item.status, variant: 'secondary' }
@@ -301,22 +287,12 @@ export default function ItemDetail() {
           </TabsContent>
         </Tabs>
         
-        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>确认删除</AlertDialogTitle>
-              <AlertDialogDescription>
-                您确定要删除 "{item.name}" 吗？此操作无法撤销。
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>取消</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} className="bg-destructive">
-                删除
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDelete}
+          itemName={item.name}
+        />
       </div>
     </>
   )

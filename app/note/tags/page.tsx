@@ -9,16 +9,7 @@ import useSWR, { mutate } from "swr"
 import { get, post, del, ApiRequestError } from "@/lib/api"
 import { toast } from "sonner"
 import { isLightColor, generateRandomColor } from '@/lib/helpers'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 
 // 标签类型定义
 type Tag = {
@@ -188,26 +179,12 @@ export default function NoteTags() {
       </div>
 
       {/* 自定义删除确认弹窗 */}
-      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确定要删除此标签吗？</AlertDialogTitle>
-            <AlertDialogDescription>
-              删除后将无法恢复，与此标签关联的笔记将解除标签关联。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={deleteTag}
-              disabled={loading}
-              className={loading ? "opacity-50 cursor-not-allowed" : ""}
-            >
-              {loading ? "删除中..." : "确定"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={alertOpen}
+        onOpenChange={setAlertOpen}
+        onConfirm={deleteTag}
+        itemName={tagToDelete ? tags?.find(t => t.id === tagToDelete)?.name || '' : ''}
+      />
     </div>
   )
 } 

@@ -35,6 +35,7 @@ import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react"
 import { NavCategory } from "@/app/nav/types"
 import { useRouter } from "next/navigation"
 import { Textarea } from "@/components/ui/textarea"
+import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 
 export default function CategoryManager() {
   const router = useRouter()
@@ -273,22 +274,12 @@ export default function CategoryManager() {
       </div>
 
       {/* 删除确认对话框 */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              您确定要删除此分类吗？此操作无法撤销，关联的导航项将不再显示在此分类下。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground">
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDeleteCategory}
+        itemName={categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''}
+      />
     </div>
   )
 } 
