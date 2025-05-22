@@ -16,11 +16,11 @@ import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
 import { apiRequest } from "@/lib/api"
 import { isLightColor } from '@/lib/helpers'
-import { ViewMode, Tag, FilterParams } from '@/app/thing/types'
+import { ViewMode, Tag, FilterParams, Area, Room, Spot } from '@/app/thing/types' // Added Area, Room, Spot
 
 export default function Thing() {
   const router = useRouter()
-  const { items, categories, loading, error, fetchItems, fetchCategories, meta, filters: savedFilters, saveFilters } = useItemStore()
+  const { items, categories: categoriesFromStore, loading, error, fetchItems, fetchCategories, meta, filters: savedFilters, saveFilters } = useItemStore() // Renamed categories to categoriesFromStore
   const [searchTerm, setSearchTerm] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState<string>('none')
@@ -35,7 +35,11 @@ export default function Thing() {
   const [uncategorizedCount, setUncategorizedCount] = useState<number>(0)
   
   // 标签加载
-  const { data: tags } = useSWR<Tag[]>('/things/tags', apiRequest)
+  const { data: tags } = useSWR<Tag[]>('/things/tags', apiRequest);
+  // SWR calls for areas, rooms, spots
+  const { data: areas } = useSWR<Area[]>('/areas', apiRequest);
+  const { data: rooms } = useSWR<Room[]>('/rooms', apiRequest);
+  const { data: spots } = useSWR<Spot[]>('/spots', apiRequest);
   
   // 计算总页数
   const totalPages = meta?.last_page || 1
@@ -130,7 +134,8 @@ export default function Thing() {
     if (!initialDataLoaded) {
       const loadAllData = async () => {
         try {
-          if (categories.length === 0) {
+          // Use categoriesFromStore here
+          if (categoriesFromStore.length === 0) { 
             await fetchCategories();
           }
           
@@ -146,7 +151,7 @@ export default function Thing() {
       
       loadAllData();
     }
-  }, [categories.length, fetchCategories, initialDataLoaded, selectedTags]);
+  }, [categoriesFromStore.length, fetchCategories, initialDataLoaded, selectedTags]); // Updated dependency
 
   // 初始加载数据
   useEffect(() => {
@@ -485,6 +490,11 @@ export default function Thing() {
         <ItemFilters 
           onApply={handleApplyFilters} 
           key={`filters-${filtersOpen ? 'open' : 'closed'}`}
+          categories={categoriesFromStore || []}
+          tags={tags || []}
+          areas={areas || []}
+          rooms={rooms || []}
+          spots={spots || []}
         />
       </SheetContent>
     </Sheet>
@@ -507,7 +517,7 @@ export default function Thing() {
       >
         {selectedCategory === 'none' ? "所有分类" : 
          selectedCategory === 'uncategorized' ? "未分类" : 
-         categories.find(c => c.id.toString() === selectedCategory)?.name || "所有分类"}
+         categoriesFromStore.find(c => c.id.toString() === selectedCategory)?.name || "所有分类"} {/* Use categoriesFromStore */}
         <ChevronDownIcon className="ml-2 h-4 w-4" />
       </Button>
       
@@ -527,7 +537,8 @@ export default function Thing() {
               <span className="flex-1">未分类</span>
               <span className="ml-2 text-xs text-muted-foreground">{uncategorizedCount}</span>
             </div>
-            {categories.map((category) => (
+            {/* Use categoriesFromStore */}
+            {categoriesFromStore.map((category) => ( 
               <div 
                 key={category.id}
                 className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === category.id.toString() ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
