@@ -441,7 +441,7 @@ export function AppLauncher() {
       
       <div 
         id="app-launcher-bar"
-        className="bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2 h-full w-full relative"
+        className="bg-background/80 backdrop-blur-md z-50 flex flex-col px-2 h-full w-full relative"
       >
         {renderContent()}
         
