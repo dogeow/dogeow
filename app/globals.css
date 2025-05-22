@@ -6,8 +6,8 @@
 
 :root {
   /* 默认主题色彩 - 会被ThemeProvider动态覆盖 */
-  --primary: hsl(221.2 83.2% 53.3%);
-  --primary-color: #3b82f6;
+  --primary: hsl(35 97% 55%);
+  --primary-color: #fc9d1c;
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

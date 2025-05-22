@@ -40,7 +40,7 @@ export const configs = {
      {
       id: "zelda",
       name: "塞尔达传说",
-      primary: "hsl(35 97% 55%)",
+      primary: "hsl(41 38% 56%)",
       color: "#b99f65"
     }
   ]
