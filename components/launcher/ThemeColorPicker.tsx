@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/helpers'
@@ -9,22 +9,17 @@ import { toast } from 'sonner'
 import { configs } from '@/app/configs'
 import { CustomTheme } from '@/app/types'
 import { AddThemeDialog } from './AddThemeDialog'
+import { useThemeStore } from '@/stores/themeStore'
 
-interface ThemeColorPickerProps {
-  currentTheme: string
-  customThemes: CustomTheme[]
-  setCurrentTheme: (theme: string) => void
-  addCustomTheme: (theme: CustomTheme) => void
-  removeCustomTheme: (id: string) => void
-}
+export function ThemeColorPicker() {
+  const { currentTheme, customThemes, setCurrentTheme, addCustomTheme, removeCustomTheme } = useThemeStore()
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [newThemeName, setNewThemeName] = useState('')
+  const [newThemeColor, setNewThemeColor] = useState('#3b82f6')
 
-export function ThemeColorPicker({
-  currentTheme,
-  customThemes,
-  setCurrentTheme,
-  addCustomTheme,
-  removeCustomTheme
-}: ThemeColorPickerProps) {
+  // 计算当前选中的主题id，没选过时默认第一个
+  const selectedThemeId = currentTheme || configs.themeColors[0].id;
+
   // 处理主题选择
   const handleSelectTheme = (themeId: string) => {
     setCurrentTheme(themeId)
@@ -46,18 +41,22 @@ export function ThemeColorPicker({
       whileTap={{ scale: 0.95 }}
       className="shrink-0 relative"
     >
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className={cn(
-          "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-          currentTheme === theme.id && "ring-2 ring-primary"
+          "p-1 h-9 w-9 rounded-md overflow-hidden relative border-2 border-transparent flex items-center justify-center transition-colors duration-150",
+          selectedThemeId === theme.id && "ring-2 ring-primary border-primary"
         )}
         onClick={() => handleSelectTheme(theme.id)}
         title={theme.name}
-        style={{ backgroundColor: theme.color }}
+        style={{ background: "none", minWidth: 36, minHeight: 36 }}
       >
-        {currentTheme === theme.id && (
-          <Check className="h-5 w-5 text-white" />
+        <div
+          className="absolute inset-0 rounded-md"
+          style={{ backgroundColor: theme.color, zIndex: 0 }}
+        />
+        {selectedThemeId === theme.id && (
+          <Check className="h-5 w-5 text-white z-10 relative" />
         )}
       </Button>
       

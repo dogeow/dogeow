@@ -18,7 +18,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     (set) => ({
-      currentTheme: 'default',
+      currentTheme: configs.themeColors[0].id,
       customThemes: [],
       followSystem: false,
       setCurrentTheme: (theme) => set({ currentTheme: theme }),
