@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState } from 'react'
-import { useMusicStore } from '@/stores/musicStore'
+import { useMusicStore, MusicTrack } from '@/stores/musicStore'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { MusicPlayer } from './MusicPlayer'
 import { AppGrid } from './AppGrid'
@@ -10,13 +10,14 @@ import Image from 'next/image'
 import Logo from '@/public/images/80.png'
 import { useRouter, usePathname } from 'next/navigation'
 import { AuthPanel } from '../auth/AuthPanel'
-import { User, ArrowRight } from 'lucide-react'
+import { User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import useAuthStore from '@/stores/authStore'
 import { SearchBar } from './SearchBar'
 import { SearchDialog } from '@/components/search/SearchDialog'
 import { AudioController } from './AudioController'
 import ReactMarkdown from 'react-markdown'
+import { apiRequest } from '@/lib/api'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'markdown';
 
@@ -27,24 +28,22 @@ export function AppLauncher() {
   const { 
     currentTrack, 
     volume: musicVolume, 
-    setVolume, 
     setCurrentTrack,
     setAvailableTracks
   } = useMusicStore()
   const { backgroundImage, setBackgroundImage } = useBackgroundStore()
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
-  const [volume, setVolumeState] = useState(musicVolume || 0.5)
+  const [volume] = useState(musicVolume || 0.5)
   const [duration, setDuration] = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
   const [audioError, setAudioError] = useState<string | null>(null)
   const [userInteracted, setUserInteracted] = useState(false)
   const [isTrackChanging, setIsTrackChanging] = useState(false)
   const [readyToPlay, setReadyToPlay] = useState(false)
-  const [isVolumeControlVisible, setIsVolumeControlVisible] = useState(false)
   const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [isSearchVisible, setIsSearchVisible] = useState(false)
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false)
@@ -98,9 +97,7 @@ export function AppLauncher() {
   const fetchAvailableTracks = async () => {
     try {
       // 获取音频列表
-      const musicUrl = `${apiUrl}/api/musics`;
-      const musicResponse = await fetch(musicUrl);
-      const musicData = await musicResponse.json();
+      const musicData = await apiRequest<MusicTrack[]>('/musics');
       
       setAvailableTracks(musicData);
       
@@ -139,20 +136,12 @@ export function AppLauncher() {
     document.documentElement.style.setProperty('--music-player-height', '2.5rem')
   }, [])
 
-  // 阻止用户输入事件冒泡到 body，避免全局热键影响
-  const stopPropagation = (e: React.SyntheticEvent) => {
-    e.stopPropagation();
-  };
-
   // 格式化时间显示
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
-
-  // 切换音量控制显示
-  const toggleVolumeControl = () => setIsVolumeControlVisible(!isVolumeControlVisible);
   
   // 获取当前音频文件名称
   const getCurrentTrackName = () => {
