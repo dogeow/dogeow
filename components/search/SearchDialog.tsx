@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import { 
   Dialog, 
@@ -14,7 +14,6 @@ import { Search, X, ArrowRight, Loader2 } from "lucide-react"
 import { get } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 
-// 定义分类类型
 interface Category {
   id: string
   name: string
@@ -22,7 +21,6 @@ interface Category {
   icon?: React.ReactNode
 }
 
-// 定义搜索结果类型
 interface SearchResult {
   id: number
   title: string
@@ -49,8 +47,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const [thingPublicStatus, setThingPublicStatus] = useState<'all' | 'public' | 'private'>('all')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // 定义分类列表
-  const categories: Category[] = [
+  const categories: Category[] = useMemo(() => [
     { id: "all", name: "全部", path: "/search" },
     { id: "thing", name: "物品", path: "/thing" },
     { id: "lab", name: "实验室", path: "/lab" },
@@ -59,29 +56,19 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     { id: "game", name: "游戏", path: "/game" },
     { id: "mc", name: "MC", path: "/mc" },
     { id: "nav", name: "导航", path: "/nav" },
-  ]
+  ], [])
 
-  // 设置初始活动分类基于当前路由
   useEffect(() => {
     if (currentRoute) {
-      // 从路由中获取分类
       const routeCategory = currentRoute.split('/')[1]
       const matchedCategory = categories.find(c => c.path.startsWith(`/${routeCategory}`))
-      
-      if (matchedCategory) {
-        setActiveCategory(matchedCategory.id)
-      } else {
-        // 如果没有匹配的分类，默认选择"全部"
-        setActiveCategory("all")
-      }
+      setActiveCategory(matchedCategory?.id || "all")
     } else {
-      // 如果没有当前路由，默认选择"全部"
       setActiveCategory("all")
     }
-  }, [currentRoute])
+  }, [currentRoute, categories])
 
-  // 执行搜索
-  const performSearch = async () => {
+  const performSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
       setResults([])
       return
@@ -90,12 +77,9 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     setLoading(true)
     
     try {
-      // 清除之前的搜索结果
       setResults([])
       
-      // 根据激活的分类执行对应的搜索
       if (activeCategory === "all" || activeCategory === "thing") {
-        // 搜索物品
         interface SearchApiResponse {
           results: Array<{
             id: number;
@@ -106,16 +90,14 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
           }>;
         }
         
-        // 构建查询参数
-        let queryParams = `q=${encodeURIComponent(searchTerm)}`;
-        
-        if (thingPublicStatus !== 'all') {
-          queryParams += `&is_public=${thingPublicStatus === 'public' ? 'true' : 'false'}`;
-        }
+        const queryParams = new URLSearchParams({
+          q: searchTerm,
+          ...(thingPublicStatus !== 'all' && { is_public: thingPublicStatus === 'public' ? 'true' : 'false' })
+        })
         
         const response = await get<SearchApiResponse>(`/db-search?${queryParams}`)
         
-        if (response.results && Array.isArray(response.results)) {
+        if (response.results?.length) {
           const thingResults = response.results.map((item) => ({
             id: item.id,
             title: item.name,
@@ -129,129 +111,92 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
         }
       }
       
-      // 其他分类搜索逻辑
-      if (activeCategory === "all" || activeCategory === "lab") {
-        // TODO: 添加实验室搜索API调用
-      }
-      
-      if (activeCategory === "all" || activeCategory === "note") {
-        // TODO: 添加笔记搜索API调用
-      }
-      
-      if (activeCategory === "all" || activeCategory === "file") {
-        // TODO: 添加文件搜索API调用
-      }
-      
-      if (activeCategory === "all" || activeCategory === "game") {
-        // TODO: 添加游戏搜索API调用
-      }
+      // TODO: Implement other category searches
       
     } catch (error) {
       console.error('搜索出错:', error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [searchTerm, activeCategory, thingPublicStatus])
 
-  // 处理搜索表单提交
-  const handleSearch = (e?: React.FormEvent) => {
+  const handleSearch = useCallback((e?: React.FormEvent) => {
     if (e) e.preventDefault()
     
     if (!searchTerm.trim()) return
     
-    // 如果提供了当前路由，且与活动分类匹配，则使用该路由搜索
     if (currentRoute && activeCategory !== "all") {
       const routeCategory = currentRoute.split('/')[1]
       const matchedCategory = categories.find(c => c.id === activeCategory)
       
-      if (matchedCategory && matchedCategory.path.startsWith(`/${routeCategory}`)) {
+      if (matchedCategory?.path.startsWith(`/${routeCategory}`)) {
         router.push(`${currentRoute}?search=${encodeURIComponent(searchTerm)}`)
         onOpenChange(false)
         return
       }
     }
     
-    // 默认搜索行为
     const currentApp = pathname.split('/')[1]
+    const searchUrl = activeCategory === "all" 
+      ? `/search?q=${encodeURIComponent(searchTerm)}`
+      : currentApp === activeCategory
+        ? `/${currentApp}?search=${encodeURIComponent(searchTerm)}`
+        : categories.find(c => c.id === activeCategory)?.path + `?search=${encodeURIComponent(searchTerm)}`
     
-    if (activeCategory === "all") {
-      router.push(`/search?q=${encodeURIComponent(searchTerm)}`)
-    } else if (currentApp && currentApp === activeCategory) {
-      router.push(`/${currentApp}?search=${encodeURIComponent(searchTerm)}`)
-    } else {
-      const category = categories.find(c => c.id === activeCategory)
-      if (category) {
-        router.push(`${category.path}?search=${encodeURIComponent(searchTerm)}`)
-      }
+    if (searchUrl) {
+      router.push(searchUrl)
+      onOpenChange(false)
     }
-    
-    onOpenChange(false)
-  }
+  }, [searchTerm, activeCategory, currentRoute, pathname, categories, router, onOpenChange])
 
-  // 处理结果项点击
-  const handleResultClick = (url: string) => {
+  const handleResultClick = useCallback((url: string) => {
     router.push(url)
     onOpenChange(false)
-  }
+  }, [router, onOpenChange])
 
-  // 当弹窗打开时聚焦到搜索框
   useEffect(() => {
     if (open && inputRef.current) {
-      setTimeout(() => {
-        inputRef.current?.focus()
-      }, 100)
+      setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [open])
 
-  // 当搜索词变化时执行搜索
   useEffect(() => {
     const delaySearch = setTimeout(() => {
       if (searchTerm.trim()) {
-        performSearch();
+        performSearch()
       } else {
-        setResults([]);
+        setResults([])
       }
-    }, 300);
+    }, 300)
     
-    return () => clearTimeout(delaySearch);
-  }, [searchTerm, activeCategory, thingPublicStatus]);
+    return () => clearTimeout(delaySearch)
+  }, [searchTerm, activeCategory, thingPublicStatus, performSearch])
   
-  // 根据当前选中的分类过滤结果
-  const filteredResults = results.filter(
-    item => activeCategory === "all" || item.category === activeCategory
+  const filteredResults = useMemo(() => 
+    results.filter(item => activeCategory === "all" || item.category === activeCategory),
+    [results, activeCategory]
   )
 
-  // 获取特定分类的结果数量
-  const getCountByCategory = (category: string) => {
-    if (!searchTerm.trim()) return 0;
-    return results.filter(item => category === "all" || item.category === category).length;
-  }
+  const getCountByCategory = useCallback((category: string) => {
+    if (!searchTerm.trim()) return 0
+    return results.filter(item => category === "all" || item.category === category).length
+  }, [searchTerm, results])
 
-  // 获取对话框标题
-  const getDialogTitle = () => {
-    // 如果提供了当前路由，则使用该路由的分类作为标题
+  const getDialogTitle = useCallback(() => {
     if (currentRoute) {
       const routeCategory = currentRoute.split('/')[1]
       const matchedCategory = categories.find(c => c.path.startsWith(`/${routeCategory}`))
-      
-      if (matchedCategory) {
-        return `搜索${matchedCategory.name}`
-      }
+      if (matchedCategory) return `搜索${matchedCategory.name}`
     }
     
-    // 默认标题逻辑
     const currentApp = pathname.split('/')[1]
-    
-    if (!currentApp) {
-      return "全站搜索"
-    }
+    if (!currentApp) return "全站搜索"
     
     const category = categories.find(c => c.id === currentApp)
     return category ? `搜索${category.name}` : "搜索"
-  }
+  }, [currentRoute, pathname, categories])
 
-  // 渲染搜索结果
-  const renderSearchResults = () => {
+  const renderSearchResults = useCallback(() => {
     if (loading) {
       return (
         <div className="text-center py-8">
@@ -295,7 +240,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
         <p className="text-muted-foreground">请输入搜索关键词</p>
       </div>
     )
-  }
+  }, [loading, searchTerm, filteredResults, categories, handleResultClick])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
