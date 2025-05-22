@@ -475,7 +475,7 @@ export default function Thing() {
         </Button>
       </SheetTrigger>
       <SheetContent 
-        className="sm:max-w-md p-4 max-w-[200px] overflow-y-auto h-full" 
+        className="sm:max-w-md p-4 max-w-[200px] overflow-y-auto h-full bg-white text-gray-900 border-l border-gray-200 shadow-xl dark:bg-[#23272f] dark:text-white dark:border-[#2d323b]"
         side="right" 
         onEscapeKeyDown={() => handleFiltersOpenChange(false)}
         onPointerDownOutside={() => handleFiltersOpenChange(false)}
