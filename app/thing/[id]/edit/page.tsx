@@ -117,12 +117,7 @@ export default function EditItem() {
     setLoading(true)
     
     try {
-      const updateData: Omit<Partial<Item>, 'images'> & {
-        images?: File[],
-        image_ids?: number[],
-        image_paths?: string[],
-        tags?: number[]
-      } = {
+      const updateData: Parameters<typeof updateItem>[1] = {
         ...formData,
         purchase_date: formData.purchase_date?.toISOString() || null,
         expiry_date: formData.expiry_date?.toISOString() || null,
