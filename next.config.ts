@@ -2,11 +2,6 @@ import type { NextConfig } from "next";
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
-  experimental: {
-    // ... any other experimental flags you might have
-    imgOptTimeoutInSeconds: 30, // Increase this value (e.g., to 30 seconds)
-    imgOptMaxInputPixels: 20000000000000, // 这是你要配置的图片最大像素数，单位：像素
-  },
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
