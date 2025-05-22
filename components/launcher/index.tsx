@@ -131,11 +131,6 @@ export function AppLauncher() {
     }
   }, [userInteracted])
   
-  // 设置音乐播放器高度变量
-  useEffect(() => {
-    document.documentElement.style.setProperty('--music-player-height', '2.5rem')
-  }, [])
-
   // 格式化时间显示
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
