@@ -50,6 +50,9 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     
     setUploading(true)
     
+    // 先同步当前图片到父组件，防止父组件丢失旧图片
+    onImagesChange(images)
+    
     // 准备上传表单数据
     const formData = new FormData()
     Array.from(files).forEach(file => {
