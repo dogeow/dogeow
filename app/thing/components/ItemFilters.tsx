@@ -12,14 +12,19 @@ import { Calendar } from "@/components/ui/calendar"
 import { format } from "date-fns"
 import { cn } from "@/lib/helpers"
 import { CalendarIcon } from "lucide-react"
-import type { Area, Room, Spot } from '@/app/thing/types'
-import { useItemStore } from '@/app/thing/stores/itemStore'
-import { TagSelector, Tag } from '@/components/ui/tag-selector'
-import useSWR from 'swr'
-import { get } from '@/lib/api'
+import type { Area, Room, Spot } from '@/app/thing/types';
+import { useItemStore } from '@/app/thing/stores/itemStore';
+import { TagSelector, Tag } from '@/components/ui/tag-selector';
+// import useSWR from 'swr' // SWR will be removed
+// import { get } from '@/lib/api' // get will be removed
 
 interface ItemFiltersProps {
-  onApply: (filters: FilterState) => void
+  onApply: (filters: FilterState) => void;
+  categories: any[]; // As per current useSWR<any[]>
+  areas: Area[];
+  rooms: Room[];
+  spots: Spot[];
+  tags: Tag[];
 }
 
 // 定义筛选条件类型
@@ -94,29 +99,21 @@ function debugFilterState(label: string, filters: FilterState) {
   });
 }
 
-export default function ItemFilters({ onApply }: ItemFiltersProps) {
+export default function ItemFilters({ 
+  onApply,
+  categories = [], // Default to empty array if not provided
+  areas = [],
+  rooms = [],
+  spots = [],
+  tags = [] 
+}: ItemFiltersProps) {
   console.log('[ItemFilters] 组件被渲染');
   
   const { filters: savedFilters } = useItemStore();
-  const { data: categories = [] } = useSWR<any[]>('/categories', get);
-  const { data: areas = [] } = useSWR<Area[]>('/areas', get);
-  const { data: rooms = [] } = useSWR<Room[]>('/rooms', get);
-  const { data: spots = [] } = useSWR<Spot[]>('/spots', get);
+  // SWR hooks for categories, areas, rooms, spots, tags are removed.
+  // These are now passed as props.
   const [activeTab, setActiveTab] = useState("basic");
   const [preventAutoApply, setPreventAutoApply] = useState(true); // 添加状态防止自动应用
-  
-  // 获取标签数据
-  const { data: tags = [] } = useSWR<Tag[]>('/thing-tags', (url: string) => {
-    return get<Tag[]>(url).catch(error => {
-      console.error("获取标签失败:", error);
-      return [
-        { id: '1', name: '测试1' },
-        { id: '2', name: '测试2' },
-        { id: '3', name: '测试3' },
-        { id: '4', name: '及格' }
-      ];
-    });
-  });
   
   // 从保存的筛选条件初始化
   const getInitialState = useCallback(() => {
@@ -426,7 +423,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
               <Label className="text-base font-medium">标签</Label>
               <div className="bg-background rounded-md relative">
                 <TagSelector
-                  tags={tags || []}
+                  tags={tags} // Use tags from props
                   selectedTags={typeof filters.tags === 'string' ? 
                     filters.tags.split(',').filter(Boolean) : 
                     Array.isArray(filters.tags) ? 
@@ -482,7 +479,8 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">全部区域</SelectItem>
-                      {areas.map((area: Area) => (
+                      {/* Use areas from props */}
+                      {areas.map((area: Area) => ( 
                         <SelectItem key={area.id} value={area.id.toString()}>
                           {area.name}
                         </SelectItem>
@@ -496,14 +494,17 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                   <Select 
                     value={typeof filters.room_id === 'number' ? filters.room_id.toString() : filters.room_id.toString()} 
                     onValueChange={(value) => handleChange('room_id', value)}
-                    disabled={filters.area_id === 'all'}
+                    disabled={filters.area_id === 'all' || filters.area_id === null || filters.area_id === ''}
                   >
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="选择房间" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">全部房间</SelectItem>
-                      {rooms.map((room: Room) => (
+                      {/* Use rooms from props, potentially filtered by area_id if necessary */}
+                      {rooms
+                        .filter(room => filters.area_id === 'all' || room.area_id?.toString() === filters.area_id?.toString())
+                        .map((room: Room) => (
                         <SelectItem key={room.id} value={room.id.toString()}>
                           {room.name}
                         </SelectItem>
@@ -517,14 +518,17 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
                   <Select 
                     value={typeof filters.spot_id === 'number' ? filters.spot_id.toString() : filters.spot_id.toString()} 
                     onValueChange={(value) => handleChange('spot_id', value)}
-                    disabled={filters.room_id === 'all'}
+                    disabled={filters.room_id === 'all' || filters.room_id === null || filters.room_id === ''}
                   >
                     <SelectTrigger className="h-11">
                       <SelectValue placeholder="选择位置" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">全部位置</SelectItem>
-                      {spots.map((spot: Spot) => (
+                      {/* Use spots from props, potentially filtered by room_id if necessary */}
+                      {spots
+                        .filter(spot => filters.room_id === 'all' || spot.room_id?.toString() === filters.room_id?.toString())
+                        .map((spot: Spot) => (
                         <SelectItem key={spot.id} value={spot.id.toString()}>
                           {spot.name}
                         </SelectItem>
@@ -538,7 +542,7 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
         </Tabs>
       </div>
       
-      <div className="flex justify-between mt-6">
+      <div className="flex justify-between mt-6 sticky bottom-0 bg-background py-3 border-t border-border"> {/* Made buttons sticky */}
         <Button variant="outline" onClick={handleReset}>
           重置
         </Button>
@@ -548,4 +552,4 @@ export default function ItemFilters({ onApply }: ItemFiltersProps) {
       </div>
     </div>
   )
-} 
+}

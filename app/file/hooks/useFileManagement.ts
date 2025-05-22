@@ -1,0 +1,62 @@
+import useSWR, { KeyedMutator } from 'swr';
+import { apiRequest } from '@/lib/apiRequest';
+import { CloudFile, FolderNode } from '@/types';
+
+interface UseFileManagementProps {
+  currentFolderId: number | null;
+  searchQuery: string;
+  sortField: string;
+  sortDirection: string;
+  currentView: string;
+}
+
+interface UseFileManagementReturn {
+  files: CloudFile[] | undefined;
+  folderTree: FolderNode[] | undefined;
+  isLoadingFiles: boolean;
+  isErrorFiles: any;
+  mutateFiles: KeyedMutator<CloudFile[]>;
+  isLoadingTree: boolean;
+  isErrorTree: any;
+  isLoading: boolean;
+  error: any;
+}
+
+export const useFileManagement = ({
+  currentFolderId,
+  searchQuery,
+  sortField,
+  sortDirection,
+  currentView,
+}: UseFileManagementProps): UseFileManagementReturn => {
+  const {
+    data: files,
+    error: isErrorFiles,
+    isLoading: isLoadingFiles,
+    mutate: mutateFiles,
+  } = useSWR<CloudFile[]>(
+    `/cloud/files?parent_id=${currentFolderId || ''}&search=${searchQuery}&sort_by=${sortField}&sort_direction=${sortDirection}`,
+    apiRequest,
+  );
+
+  const {
+    data: folderTree,
+    error: isErrorTree,
+    isLoading: isLoadingTree,
+  } = useSWR<FolderNode[]>(currentView === 'tree' ? '/cloud/tree' : null, apiRequest);
+
+  const isLoading = isLoadingFiles || isLoadingTree;
+  const error = isErrorFiles || isErrorTree;
+
+  return {
+    files,
+    folderTree,
+    isLoadingFiles,
+    isErrorFiles,
+    mutateFiles,
+    isLoadingTree,
+    isErrorTree,
+    isLoading,
+    error,
+  };
+};

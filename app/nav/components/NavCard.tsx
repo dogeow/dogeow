@@ -1,30 +1,31 @@
 "use client"
 
-import { useState } from 'react';
+// import { useState } from 'react'; // No longer needed for confirmOpen, loading
 import { Card, CardContent } from "@/components/ui/card"
 import { NavItem } from '@/app/nav/types';
 import { useNavStore } from '@/app/nav/stores/navStore';
-import { useRouter } from 'next/navigation';
-import { ExternalLink, MoreVertical, Pencil, Trash } from 'lucide-react';
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
+// import { useRouter } from 'next/navigation'; // Moved to NavCardActions
+import { ExternalLink } from 'lucide-react';
+// import { 
+//   DropdownMenu,
+//   DropdownMenuContent,
+//   DropdownMenuItem,
+//   DropdownMenuTrigger,
+// } from "@/components/ui/dropdown-menu" // Moved to NavCardActions
+// import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog" // Moved to NavCardActions
+// import { Button } from '@/components/ui/button'; // Button for dropdown trigger moved
+// import { toast } from 'sonner'; // Toast for delete moved to NavCardActions
+import NavCardActions from './NavCardActions';
 
 interface NavCardProps {
   item: NavItem;
 }
 
 export function NavCard({ item }: NavCardProps) {
-  const router = useRouter();
+  // const router = useRouter(); // Moved to NavCardActions
   const { recordClick, deleteItem } = useNavStore();
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // const [confirmOpen, setConfirmOpen] = useState(false); // Moved to NavCardActions
+  // const [loading, setLoading] = useState(false); // Moved to NavCardActions
   
   // 记录点击
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -50,29 +51,16 @@ export function NavCard({ item }: NavCardProps) {
     }
   };
   
-  // 编辑导航项
-  const handleEdit = () => {
-    router.push(`/nav/edit/${item.id}`);
-  };
-  
-  // 删除导航项
-  const handleDelete = async () => {
-    setLoading(true);
-    try {
-      await deleteItem(item.id);
-      toast.success('导航项删除成功');
-    } catch (error) {
-      toast.error('删除失败: ' + (error instanceof Error ? error.message : '未知错误'));
-    } finally {
-      setLoading(false);
-      setConfirmOpen(false);
-    }
-  };
+  // Edit and delete handlers are now in NavCardActions
 
   return (
-    <>
+    // DeleteConfirmationDialog is now inside NavCardActions, so the fragment <> might not be needed
+    // if NavCardActions doesn't require being at the same level for a dialog portal.
+    // For now, keeping it, but it might be removable.
+    // Update: NavCardActions returns a fragment, so this outer fragment is fine.
+    <> 
       <Card className="overflow-hidden hover:shadow-md transition-shadow py-1">
-        <CardContent className="p-3 relative flex">
+        <CardContent className="p-3 relative flex items-center"> {/* Added items-center for vertical alignment */}
           <div className="mr-3 flex-shrink-0">
             {item.icon ? (
               <div className="h-10 w-10 flex items-center justify-center">
@@ -100,38 +88,13 @@ export function NavCard({ item }: NavCardProps) {
             </a>
           </div>
           
-          <div className="ml-auto flex-shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                  <span className="sr-only">更多选项</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleEdit}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  <span>编辑</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => setConfirmOpen(true)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash className="mr-2 h-4 w-4" />
-                  <span>删除</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <div className="ml-auto flex-shrink-0 pl-2"> {/* Added pl-2 for spacing */}
+            <NavCardActions item={item} deleteItem={deleteItem} />
           </div>
         </CardContent>
       </Card>
       
-      <DeleteConfirmationDialog
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        onConfirm={handleDelete}
-        itemName={item.name}
-      />
+      {/* DeleteConfirmationDialog is now rendered by NavCardActions */}
     </>
   );
-} 
+}
