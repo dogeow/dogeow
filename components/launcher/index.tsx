@@ -255,136 +255,131 @@ export function AppLauncher() {
   }, [isSearchVisible, isHomePage, isSearchDialogOpen]);
   
   const renderContent = () => {
-    switch (displayMode) {
-      case 'music':
-        return (
-          <div className="h-full flex items-center">
-            <MusicPlayer
-              isPlaying={isPlaying}
-              audioError={audioError}
-              currentTime={currentTime}
-              duration={duration}
-              volume={volume}
-              isMuted={isMuted}
-              toggleMute={toggleMute}
-              switchToPrevTrack={switchToPrevTrack}
-              switchToNextTrack={switchToNextTrack}
-              togglePlay={togglePlay}
-              handleProgressChange={handleProgressChange}
-              getCurrentTrackName={getCurrentTrackName}
-              formatTime={formatTime}
-              toggleDisplayMode={toggleDisplayMode}
-            />
+    const contentMap = {
+      music: (
+        <div className="h-full flex items-center">
+          <MusicPlayer
+            isPlaying={isPlaying}
+            audioError={audioError}
+            currentTime={currentTime}
+            duration={duration}
+            volume={volume}
+            isMuted={isMuted}
+            toggleMute={toggleMute}
+            switchToPrevTrack={switchToPrevTrack}
+            switchToNextTrack={switchToNextTrack}
+            togglePlay={togglePlay}
+            handleProgressChange={handleProgressChange}
+            getCurrentTrackName={getCurrentTrackName}
+            formatTime={formatTime}
+            toggleDisplayMode={toggleDisplayMode}
+          />
+        </div>
+      ),
+      apps: (
+        <div className="h-full flex items-center justify-between">
+          {/* 左侧：应用切换按钮 - 始终显示 */}
+          <div className="flex items-center shrink-0 mr-6">
+            <Image src={Logo} alt="apps" className="h-10 w-10" onClick={() => router.push('/')}/>
           </div>
-        );
-      case 'apps':
-        return (
-          <div className="h-full flex items-center justify-between">
-            {/* 左侧：应用切换按钮 - 始终显示 */}
-            <div className="flex items-center shrink-0 mr-6">
-              <Image src={Logo} alt="apps" className="h-10 w-10" onClick={() => router.push('/')}/>
+          
+          {/* 中间：应用图标 - 在搜索时隐藏 */}
+          {!isSearchVisible && (
+            <div className="flex-1 flex items-center justify-start">
+              <AppGrid toggleDisplayMode={toggleDisplayMode} />
             </div>
+          )}
+          
+          {/* 右侧：搜索按钮和用户 */}
+          <div className={`flex items-center gap-3 ${isSearchVisible ? 'flex-1 justify-between' : 'ml-auto'}`}>
+            <SearchBar 
+              isVisible={isSearchVisible}
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              onSearch={handleSearch}
+              onToggleSearch={toggleSearch}
+              currentApp={currentApp}
+            />
             
-            {/* 中间：应用图标 - 在搜索时隐藏 */}
-            {!isSearchVisible && (
-              <div className="flex-1 flex items-center justify-start">
-                <AppGrid toggleDisplayMode={toggleDisplayMode} />
-              </div>
+            {/* 用户按钮 - 在非首页搜索状态时隐藏 */}
+            {!(isSearchVisible && !isHomePage) && (
+              isAuthenticated ? (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => toggleDisplayMode('auth')}
+                >
+                  <User className="h-5 w-5" />
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  className="h-9"
+                  onClick={() => toggleDisplayMode('auth')}
+                >
+                  登录
+                </Button>
+              )
             )}
-            
-            {/* 右侧：搜索按钮和用户 */}
-            <div className={`flex items-center gap-3 ${isSearchVisible ? 'flex-1 justify-between' : 'ml-auto'}`}>
-              <SearchBar 
-                isVisible={isSearchVisible}
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                onSearch={handleSearch}
-                onToggleSearch={toggleSearch}
-                currentApp={currentApp}
-              />
-              
-              {/* 用户按钮 - 在非首页搜索状态时隐藏 */}
-              {!(isSearchVisible && !isHomePage) && (
-                isAuthenticated ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9"
-                    onClick={() => toggleDisplayMode('auth')}
-                  >
-                    <User className="h-5 w-5" />
-                  </Button>
-                ) : (
-                  <Button
-                    variant="default"
-                    className="h-9"
-                    onClick={() => toggleDisplayMode('auth')}
-                  >
-                    登录
-                  </Button>
-                )
-              )}
-            </div>
           </div>
-        );
-      case 'settings':
-        return (
-          <div className="h-full flex items-center">
-            <SettingsPanel 
-              toggleDisplayMode={toggleDisplayMode}
-              backgroundImage={backgroundImage}
-              setBackgroundImage={setBackgroundImage}
-              customBackgrounds={customBackgrounds}
-              setCustomBackgrounds={setCustomBackgrounds}
+        </div>
+      ),
+      settings: (
+        <div className="h-full flex items-center">
+          <SettingsPanel 
+            toggleDisplayMode={toggleDisplayMode}
+            backgroundImage={backgroundImage}
+            setBackgroundImage={setBackgroundImage}
+            customBackgrounds={customBackgrounds}
+            setCustomBackgrounds={setCustomBackgrounds}
+          />
+        </div>
+      ),
+      auth: (
+        <div className="h-full flex items-center">
+          <AuthPanel toggleDisplayMode={toggleDisplayMode} />
+        </div>
+      ),
+      markdown: (
+        <div className="h-full flex items-center justify-between w-full">
+          <div className="flex items-center shrink-0 mr-6">
+            <Image 
+              src={Logo} 
+              alt="apps" 
+              className="h-10 w-10 cursor-pointer" 
+              onClick={() => {
+                setDisplayMode('apps')
+                setSearchText('')
+              }}
             />
           </div>
-        );
-      case 'auth':
-        return (
-          <div className="h-full flex items-center">
-            <AuthPanel toggleDisplayMode={toggleDisplayMode} />
-          </div>
-        );
-      case 'markdown':
-        return (
-          <div className="h-full flex items-center justify-between w-full">
-            <div className="flex items-center shrink-0 mr-6">
-              <Image 
-                src={Logo} 
-                alt="apps" 
-                className="h-10 w-10 cursor-pointer" 
-                onClick={() => {
-                  setDisplayMode('apps')
-                  setSearchText('')
-                }}
-              />
-            </div>
-            
-            <div className="flex-1 overflow-auto px-4 py-1">
-              <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-li:my-0">
-                <ReactMarkdown>
-                  {searchText}
-                </ReactMarkdown>
-              </div>
-            </div>
-            
-            <div className="ml-auto">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setDisplayMode('apps')
-                  setSearchText('')
-                }}
-              >
-                关闭
-              </Button>
+          
+          <div className="flex-1 overflow-auto px-4 py-1">
+            <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-li:my-0">
+              <ReactMarkdown>
+                {searchText}
+              </ReactMarkdown>
             </div>
           </div>
-        );
-      default:
-        return null;
-    }
+          
+          <div className="ml-auto">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setDisplayMode('apps')
+                setSearchText('')
+              }}
+            >
+              关闭
+            </Button>
+          </div>
+        </div>
+      )
+    };
+
+    return contentMap[displayMode] || null;
   };
   
   return (
