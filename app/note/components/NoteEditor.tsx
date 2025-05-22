@@ -119,71 +119,30 @@ export default function NoteEditor({
 
   return (
     <div className="w-full max-w-5xl mx-auto">
-      <div className="mb-4">
+      <div className="mb-4 flex items-center gap-2">
         <Button 
           variant="ghost" 
           onClick={() => router.push('/note')}
-          className="mb-4"
         >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          返回
+          <ArrowLeft className="w-4 h-4" />
         </Button>
-        
-        <div className="mb-4">
-          <Label htmlFor="title" className="text-base font-medium">
-            笔记标题
-          </Label>
-          <Input
-            id="title"
-            value={noteTitle}
-            onChange={(e) => setNoteTitle(e.target.value)}
-            className="mt-1"
-            placeholder="请输入笔记标题"
-          />
-        </div>
+        <h1 className="flex-1 text-xl font-bold">创建新笔记</h1>
       </div>
-      
-      <Tabs defaultValue="edit" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="edit">
-            <Edit className="w-4 h-4 mr-2" />
-            编辑
-          </TabsTrigger>
-          <TabsTrigger value="preview">
-            <Eye className="w-4 h-4 mr-2" />
-            预览
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="edit" className="mt-0">
-          <MarkdownEditor
-            initialContent={content}
-            onSave={handleSave}
-            onImageUpload={handleImageUpload}
-            minHeight="400px"
-          />
-        </TabsContent>
-        
-        <TabsContent value="preview" className="mt-0">
-          <div className="border rounded-md p-4 min-h-[400px] prose max-w-none dark:prose-invert">
-            {isEditing && noteId ? (
-              markdownPreview ? (
-                <ReactMarkdown>
-                  {markdownPreview}
-                </ReactMarkdown>
-              ) : (
-                <div className="text-center text-muted-foreground py-8">
-                  <p>保存内容后可查看预览</p>
-                </div>
-              )
-            ) : (
-              <div className="text-center text-muted-foreground py-8">
-                <p>保存内容后可查看预览</p>
-              </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+      <div className="mb-4">
+        <Input
+          id="title"
+          value={noteTitle}
+          onChange={(e) => setNoteTitle(e.target.value)}
+          className="mt-1"
+          placeholder="请输入笔记标题"
+        />
+      </div>
+      <MarkdownEditor
+        initialContent={content}
+        onSave={handleSave}
+        onImageUpload={handleImageUpload}
+        minHeight="400px"
+      />
     </div>
   )
 } 

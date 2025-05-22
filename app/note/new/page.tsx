@@ -20,7 +20,6 @@ export default function NewNotePage() {
   
   return (
     <div className="container py-4">
-      <h1 className="text-2xl font-bold mb-6">创建新笔记</h1>
       {isLoaded && <NoteEditor />}
     </div>
   )
