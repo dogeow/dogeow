@@ -89,7 +89,7 @@ export default function Locations() {
   };
   
   return (
-    <div className="px-4">
+    <div>
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="mt-2">
         <TabsList className="w-full">
           {tabItems.map(tab => (
