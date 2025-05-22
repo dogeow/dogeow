@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,7 @@ interface ItemDetailDialogProps {
 
 // getFullImageUrl removed, will use imported version
 // Helper for status badge, can be centralized later
-const getStatusBadge = (status: string): JSX.Element => {
+const getStatusBadge = (status: string): React.ReactElement => {
   let colorClass = "";
   let text = status;
   switch (status) {

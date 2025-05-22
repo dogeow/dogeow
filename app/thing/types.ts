@@ -122,6 +122,7 @@ export interface Item {
     thumbnail_path: string;
   };
   tags?: Tag[];
+  notes?: string;
 } 
 
 
