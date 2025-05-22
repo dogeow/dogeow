@@ -1,5 +1,5 @@
 import { Spot } from "@/lib/types/spot"; // Assuming Spot type is defined here
-import { FolderIcon } from "./FolderIcon"; // Assuming FolderIcon component is here
+import FolderIcon from "./FolderIcon"; // 改为默认导入
 
 interface LocationDisplayProps {
   spot?: Spot | null;
