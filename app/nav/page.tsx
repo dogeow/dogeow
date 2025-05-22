@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNavStore } from '@/app/nav/stores/navStore';
 import { useThemeStore, getCurrentThemeColor } from '@/stores/themeStore';
+import { NavCard } from './components/NavCard';
 
 // 创建一个新的组件来处理搜索参数
 function NavContent() {
@@ -16,8 +17,10 @@ function NavContent() {
   const filterName = searchParams.get('filter[name]') || '';
   const { 
     categories, 
+    items,
     loading: storeLoading, 
     fetchCategories,
+    fetchItems,
     searchTerm,
     setSearchTerm,
     filteredItems,
@@ -85,6 +88,7 @@ function NavContent() {
     const fetchData = async () => {
       try {
         await fetchCategories(filterName);
+        await fetchItems();
         setInitialLoaded(true);
       } catch (error) {
         console.error('获取导航分类失败:', error);
@@ -94,22 +98,31 @@ function NavContent() {
     };
     
     fetchData();
-  }, [fetchCategories, filterName]);
+  }, [fetchCategories, fetchItems, filterName]);
   
   // 分类侧边栏
+  const handleCategoryClick = async (catId: number | 'all') => {
+    setSelectedCategory(catId);
+    if (catId === 'all') {
+      await fetchItems(); // 获取全部
+    } else {
+      await fetchItems(catId); // 获取该分类
+    }
+  };
+
   const renderCategorySidebar = () => (
     <aside className="w-20 shrink-0 flex flex-col gap-0 py-2">
       <button
         className={`px-2 py-1 rounded text-left font-bold text-sm ${selectedCategory === 'all' ? '' : 'hover:bg-gray-100'}`}
         style={selectedCategory === 'all' ? { background: themeColor.color, color: '#fff' } : {}}
-        onClick={() => setSelectedCategory('all')}
+        onClick={() => handleCategoryClick('all')}
       >全部</button>
       {categories.map((cat: any) => (
         <button
           key={cat.id}
           className={`px-2 py-1 rounded text-left text-sm ${selectedCategory === cat.id ? 'font-bold' : 'hover:bg-gray-100'}`}
           style={selectedCategory === cat.id ? { background: themeColor.color, color: '#fff' } : {}}
-          onClick={() => setSelectedCategory(cat.id)}
+          onClick={() => handleCategoryClick(cat.id)}
         >{cat.name}</button>
       ))}
     </aside>
@@ -162,10 +175,12 @@ function NavContent() {
         
         {loading || storeLoading ? (
           <LoadingSkeleton />
-        ) : categories.length > 0 ? (
-          categories.map(category => (
-            <NavCategory key={category.id} category={category} />
-          ))
+        ) : items.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {items.map(item => (
+              <NavCard key={item.id} item={item} />
+            ))}
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <p className="text-xl font-semibold text-gray-700">没有找到匹配的导航</p>
