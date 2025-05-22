@@ -4,24 +4,15 @@ import { useState, useEffect } from 'react'
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Globe } from "lucide-react"
-import { format } from 'date-fns'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+// format from date-fns is no longer needed here directly
 import { toast } from "sonner"
 import Image from "next/image"
 import { useItemStore } from '@/app/thing/stores/itemStore'
-import { API_URL } from '@/lib/api'
 import { del } from '@/lib/api'
-import { isLightColor } from '@/lib/helpers'
-import { Item, Tag } from '@/app/thing/types'
+import { Item } from '@/app/thing/types'
+import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog" // Updated path
+import { TagList } from "./TagList"
+import { LocationDisplay } from "./LocationDisplay"
 
 // 本地图片数据类型（用于组件内部状态）
 interface ImageData {
@@ -46,7 +37,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   const [primaryImage, setPrimaryImage] = useState<ImageData | null>(null)
 
   // 状态对应的边框颜色
-  const statusColors = {
+  const itemStatusColors = {
     'active': 'border-transparent',
     'idle': 'border-amber-500',
     'expired': 'border-red-500',
@@ -57,17 +48,15 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
 
   // 从图片数组中找出主图
   useEffect(() => {
-    if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-      // 优先查找 is_primary 为 true 的图片
-      const primary = item.images.find(img => img.is_primary === true)
-      
-      // 如果没有找到主图，则使用第一张图片
-      setPrimaryImage(primary || item.images[0])
-    } else if (item.primary_image) {
-      // 如果已经有 primary_image 属性，直接使用
-      setPrimaryImage(item.primary_image)
+    if (item.primary_image) {
+      setPrimaryImage(item.primary_image);
+    } else if (item.images && item.images.length > 0) {
+      const primary = item.images.find(img => img.is_primary === true);
+      setPrimaryImage(primary || item.images[0]);
+    } else {
+      setPrimaryImage(null); // Ensure it's reset if no images
     }
-  }, [item.images, item.primary_image])
+  }, [item.primary_image, item.images]);
   
   const handleDelete = async () => {
     try {
@@ -83,62 +72,7 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   }
   
   const getStatusBorderColor = (status: string) => {
-    return statusColors[status as keyof typeof statusColors] || statusColors.default
-  }
-  
-  const formatDate = (date: string) => {
-    if (!date) return '-'
-    try {
-      return format(new Date(date), 'yyyy-MM-dd')
-    } catch (e) {
-      return '无效日期'
-    }
-  }
-  
-  // 渲染标签
-  const renderTags = (item: Item) => {
-    if (!item.tags || item.tags.length === 0) return null;
-    
-    return (
-      <div className="flex flex-wrap gap-2">
-        {item.tags.map(tag => (
-          <Badge
-            key={tag.id}
-            style={{
-              backgroundColor: tag.color || '#3b82f6',
-              color: isLightColor(tag.color || '#3b82f6') ? '#000' : '#fff'
-            }}
-            className="h-6 px-2"
-          >
-            {tag.name}
-          </Badge>
-        ))}
-      </div>
-    );
-  };
-  
-  // 渲染位置信息
-  const renderLocation = () => {
-    const locationParts = [
-      { name: item.spot?.room?.area?.name, bgColor: 'bg-blue-50' },
-      { name: item.spot?.room?.name, bgColor: 'bg-green-50' },
-      { name: item.spot?.name, bgColor: 'bg-purple-50' }
-    ].filter(part => part.name);
-
-    if (locationParts.length === 0) return null;
-
-    return (
-      <div className="flex gap-1 items-center">
-        {locationParts.map((part, index) => (
-          <span 
-            key={index}
-            className={`inline-flex items-center px-1.5 py-0.5 text-xs rounded ${part.bgColor}`}
-          >
-            {part.name}
-          </span>
-        ))}
-      </div>
-    );
+    return itemStatusColors[status as keyof typeof itemStatusColors] || itemStatusColors.default
   }
   
   // 渲染图片
@@ -203,31 +137,21 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
             {/* 描述 */}
             <div className="font-medium text-sm truncate">{item.description || ''}</div>
             {/* 标签 */}
-            {renderTags(item)}
+            <TagList tags={item.tags || []} />
             {/* 位置 */}
             <div className="flex justify-between flex-auto">
-              {renderLocation()}
+              <LocationDisplay spot={item.spot} />
             </div>
           </div>
         </div>
       </div>
       
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>确认删除</AlertDialogTitle>
-            <AlertDialogDescription>
-              您确定要删除 "{item.name}" 吗？此操作无法撤销。
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>取消</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive">
-              删除
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={handleDelete}
+        itemName={item.name}
+      />
     </Card>
   )
 }
