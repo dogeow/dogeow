@@ -331,7 +331,7 @@ export function SettingsPanel({
   )
   
   return (
-    <div className="w-full flex items-center space-x-3 overflow-x-auto scrollbar-none">
+    <div className="w-full h-full flex items-center space-x-3 overflow-x-auto scrollbar-none">
       {currentView === 'main' ? (
         <>
           {/* 返回按钮 */}

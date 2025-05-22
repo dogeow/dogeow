@@ -48,7 +48,7 @@ export function AppLauncher() {
   const [searchTerm, setSearchTerm] = useState('')
   const [isSearchVisible, setIsSearchVisible] = useState(false)
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false)
-  const [markdownText, setMarkdownText] = useState<string>('')
+  const [searchText, setSearchText] = useState<string>('')
   
   const apiUrl = process.env.NEXT_PUBLIC_API_URL
   
@@ -112,13 +112,6 @@ export function AppLauncher() {
     } catch (error) {
       console.error('加载音频列表失败:', error);
     }
-  };
-  
-  // 处理音量变化
-  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVolume = parseFloat(e.target.value);
-    setVolumeState(newVolume);
-    setVolume(newVolume);
   };
 
   // 切换静音状态
@@ -303,41 +296,6 @@ export function AppLauncher() {
     };
   }, [isSearchVisible, isHomePage, isSearchDialogOpen]);
   
-  // 添加一个监听剪贴板事件的处理函数
-  useEffect(() => {
-    const handlePaste = (e: ClipboardEvent) => {
-      // 只在首页处理粘贴事件
-      if (pathname !== '/') return
-      
-      const clipboardText = e.clipboardData?.getData('text/plain')
-      
-      // 检查文本是否包含Markdown标记
-      if (clipboardText && (
-        clipboardText.includes('#') || 
-        clipboardText.includes('*') || 
-        clipboardText.includes('```') ||
-        clipboardText.includes('>') ||
-        clipboardText.includes('-') ||
-        clipboardText.includes('|')
-      )) {
-        setMarkdownText(clipboardText)
-        // 如果不是在markdown模式，切换到markdown模式
-        if (displayMode !== 'markdown') {
-          setDisplayMode('markdown')
-        }
-        // 阻止默认粘贴行为
-        e.preventDefault()
-      }
-    }
-    
-    // 添加粘贴事件监听器
-    document.addEventListener('paste', handlePaste)
-    
-    return () => {
-      document.removeEventListener('paste', handlePaste)
-    }
-  }, [pathname, displayMode])
-  
   const renderContent = () => {
     switch (displayMode) {
       case 'music':
@@ -439,7 +397,7 @@ export function AppLauncher() {
                 className="h-10 w-10 cursor-pointer" 
                 onClick={() => {
                   setDisplayMode('apps')
-                  setMarkdownText('')
+                  setSearchText('')
                 }}
               />
             </div>
@@ -447,7 +405,7 @@ export function AppLauncher() {
             <div className="flex-1 overflow-auto px-4 py-1">
               <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-li:my-0">
                 <ReactMarkdown>
-                  {markdownText}
+                  {searchText}
                 </ReactMarkdown>
               </div>
             </div>
@@ -458,7 +416,7 @@ export function AppLauncher() {
                 size="sm"
                 onClick={() => {
                   setDisplayMode('apps')
-                  setMarkdownText('')
+                  setSearchText('')
                 }}
               >
                 关闭
@@ -483,11 +441,7 @@ export function AppLauncher() {
       
       <div 
         id="app-launcher-bar"
-        className="bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2"
-        style={{ 
-          height: '2.5rem',
-          width: '100%'
-        }}
+        className="bg-background/80 backdrop-blur-md border-b z-50 flex flex-col px-2 h-full w-full relative"
       >
         {renderContent()}
         
