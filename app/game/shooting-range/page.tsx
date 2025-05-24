@@ -53,7 +53,9 @@ export default function ShootingRangePage() {
   }
 
   return (
-    <div className="w-full">
+    <div className="flex flex-col items-center py-4 px-2">
+      <h1 className="text-2xl font-bold mb-4">射击游戏</h1>
+
       {!isStarted ? (
         <Card className="p-6 max-w-md mx-auto">
           <h2 className="text-2xl font-semibold mb-4">游戏设置</h2>
