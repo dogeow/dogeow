@@ -41,13 +41,17 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen flex flex-col`}>
         <SWRProvider>
           <ThemeProvider>
-            <div id="header-container" className="flex-none sticky top-0 z-30 h-[50px] bg-background border-b shadow-sm" >
-              <AppLauncher />
+            <div id="header-container" className="flex-none sticky top-0 z-30 h-[50px] bg-background border-b shadow-sm">
+              <div className="content-container flex h-full items-center">
+                <AppLauncher />
+              </div>
             </div>
             <div id="main-container" className="flex-1 overflow-x-hidden">
-              <BackgroundWrapper>
-                {children}
-              </BackgroundWrapper>
+              <div className="content-container p-0 h-full">
+                <BackgroundWrapper>
+                  {children}
+                </BackgroundWrapper>
+              </div>
             </div>
             <Toaster />
           </ThemeProvider>
