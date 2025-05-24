@@ -230,3 +230,9 @@
   padding: 0.5rem 0;
 }
 
+/* 禁用 Radix UI 所有 animate-in/animate-out/slide/zoom/fade 动画和过渡 */
+[data-state], [data-side], [data-motion] {
+  animation: none !important;
+  transition: none !important;
+}
+
