@@ -1,0 +1,58 @@
+/* Markdown编辑器样式 */
+[data-slate-editor] {
+  position: relative;
+  outline: none;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* 多选标签选择器样式修复 */
+.multi-select-content {
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+.multi-select-item {
+  padding: 0.5rem;
+  cursor: pointer;
+}
+
+/* 编辑器内容样式 */
+.slate-editor-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+[data-slate-placeholder] {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  top: 0;
+  left: 0;
+  opacity: 0.5;
+  padding: inherit;
+  text-align: left;
+}
+
+/* 确保光标和文本对齐 */
+.slate-cursor {
+  display: inline-block;
+  vertical-align: text-bottom;
+}
+
+/* 列表项样式 */
+.editor-list-item {
+  margin-left: 2rem;
+  position: relative;
+}
+
+/* 保证编辑器内容靠左对齐 */
+.editor-paragraph {
+  text-align: left;
+  max-width: 750px;
+  margin-left: 0;
+  margin-right: auto;
+  padding: 0.5rem 0;
+} 

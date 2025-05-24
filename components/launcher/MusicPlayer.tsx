@@ -47,9 +47,27 @@ const TrackInfo = React.memo(({
     <div className="overflow-hidden">
       {isPlaying ? (
         <div className="whitespace-nowrap overflow-hidden">
-          <span className="scrolling-text text-sm font-medium">
+          <motion.span 
+            className="text-sm font-medium inline-block"
+            animate={{ 
+              x: [0, -1000],
+            }}
+            transition={{ 
+              duration: 15,
+              repeat: Infinity,
+              repeatType: "loop",
+              ease: "linear",
+              delay: 3
+            }}
+            whileHover={{ 
+              animationPlayState: 'paused'
+            }}
+            style={{
+              animationPlayState: 'running'
+            }}
+          >
             {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
+          </motion.span>
         </div>
       ) : (
         <span className="text-sm font-medium truncate block">

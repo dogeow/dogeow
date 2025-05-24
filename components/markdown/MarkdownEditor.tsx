@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast'
 import { ElementType, CustomElement, CustomText } from './types'
 import { useMarkdownEditor } from './hooks/useMarkdownEditor'
 import { handleCodeBlockTab, handleCopyWithSyntaxHighlighting } from './utils'
+import './styles.css'
 
 export interface MarkdownEditorProps {
   initialContent?: string;
