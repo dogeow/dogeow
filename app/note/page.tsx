@@ -212,58 +212,60 @@ export default function NotePage() {
       ) : (
         <div className="space-y-4">
           {filteredAndSortedNotes.map(note => (
-            <Card 
-              key={note.id} 
-              className={`${getNoteBackground(note.id)} hover:shadow-md transition-all duration-200 border-transparent hover:border-primary dark:text-slate-200`}
-            >
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <Link 
-                    href={`/note/edit/${note.id}`}
-                    className="font-medium text-lg hover:underline"
-                  >
-                    {note.title || '(无标题)'}
-                  </Link>
+             <Link key={note.id} href={`/note/${note.id}`} passHref legacyBehavior>
+              <Card 
+                key={note.id} 
+                className={`${getNoteBackground(note.id)} hover:shadow-md transition-all duration-200 border-transparent hover:border-primary dark:text-slate-200`}
+              >
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-start">
+                    <Link 
+                      href={`/note/edit/${note.id}`}
+                      className="font-medium text-lg hover:underline"
+                    >
+                      {note.title || '(无标题)'}
+                    </Link>
+                    
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => router.push(`/note/edit/${note.id}`)}>
+                          <Edit className="mr-2 h-4 w-4" /> 编辑
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => deleteNote(note.id)}>
+                          <Trash className="mr-2 h-4 w-4" /> 删除
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                   
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => router.push(`/note/edit/${note.id}`)}>
-                        <Edit className="mr-2 h-4 w-4" /> 编辑
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => deleteNote(note.id)}>
-                        <Trash className="mr-2 h-4 w-4" /> 删除
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                  <div className="text-sm text-muted-foreground dark:text-slate-400 mt-1 flex items-center">
+                    <Calendar className="mr-1 h-3 w-3" />
+                    <span>
+                      更新于 {formatDate(note.updated_at)}
+                    </span>
+                  </div>
+                </CardHeader>
                 
-                <div className="text-sm text-muted-foreground dark:text-slate-400 mt-1 flex items-center">
-                  <Calendar className="mr-1 h-3 w-3" />
-                  <span>
-                    更新于 {formatDate(note.updated_at)}
-                  </span>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="py-2">
-                <div className="text-sm text-muted-foreground dark:text-slate-300 prose prose-sm max-w-none line-clamp-2">
-                  {note.content_markdown ? (
-                    <div className="line-clamp-2">
-                      <ReactMarkdown>
-                        {getMarkdownPreview(note.content_markdown)}
-                      </ReactMarkdown>
-                    </div>
-                  ) : (
-                    <span className="italic">(无内容)</span>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                <CardContent className="py-2">
+                  <div className="text-sm text-muted-foreground dark:text-slate-300 prose prose-sm max-w-none line-clamp-2">
+                    {note.content_markdown ? (
+                      <div className="line-clamp-2">
+                        <ReactMarkdown>
+                          {getMarkdownPreview(note.content_markdown)}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <span className="italic">(无内容)</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
