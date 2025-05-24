@@ -32,6 +32,16 @@ interface UploadResult {
   path: string
 }
 
+// 工具函数：判断字符串是否为合法的 Slate JSON
+function isValidSlateJson(str: string) {
+  try {
+    const val = JSON.parse(str)
+    return Array.isArray(val) && val.every(item => item.type && item.children)
+  } catch {
+    return false
+  }
+}
+
 export default function NoteEditor({ 
   noteId, 
   title = '', 
@@ -43,6 +53,10 @@ export default function NoteEditor({
   const [noteTitle, setNoteTitle] = useState(title)
   const [isSaving, setIsSaving] = useState(false)
   const [markdownPreview, setMarkdownPreview] = useState(initialMarkdown)
+
+  const safeContent = isValidSlateJson(content)
+    ? content
+    : '[{"type":"paragraph","children":[{"text":""}]}]'
 
   // 保存笔记内容
   const handleSave = async (content: string) => {
@@ -138,7 +152,7 @@ export default function NoteEditor({
         />
       </div>
       <MarkdownEditor
-        initialContent={content || '[{"type":"paragraph","children":[{"text":""}]}]'}
+        initialContent={safeContent}
         onSave={handleSave}
         onImageUpload={handleImageUpload}
         minHeight="400px"
