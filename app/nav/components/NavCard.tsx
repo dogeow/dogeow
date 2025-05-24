@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { NavItem } from '@/app/nav/types';
 import { useNavStore } from '@/app/nav/stores/navStore';
 // import { useRouter } from 'next/navigation'; // Moved to NavCardActions
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, AlertTriangleIcon } from 'lucide-react';
 // import { 
 //   DropdownMenu,
 //   DropdownMenuContent,
@@ -62,15 +62,13 @@ export function NavCard({ item }: NavCardProps) {
       <Card className="overflow-hidden hover:shadow-md transition-shadow py-1">
         <CardContent className="p-3 relative flex items-center"> {/* Added items-center for vertical alignment */}
           <div className="mr-3 flex-shrink-0">
-            {item.icon ? (
-              <div className="h-10 w-10 flex items-center justify-center">
+            <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
+              {item.icon ? (
                 <img src={item.icon} alt={`${item.name} 图标`} className="max-h-full max-w-full" />
-              </div>
-            ) : (
-              <div className="h-10 w-10 bg-muted rounded-md flex items-center justify-center">
-                <ExternalLink className="h-5 w-5 text-muted-foreground" />
-              </div>
-            )}
+              ) : (
+                <AlertTriangleIcon className="w-1/2 h-1/2 opacity-50" />
+              )}
+            </div>
           </div>
           
           <div className="flex-grow min-w-0">

@@ -230,8 +230,8 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
               flex items-center justify-center
               rounded-md transition-all select-none
               ${value === 0 
-                ? 'border border-dashed border-gray-300 bg-transparent' 
-                : 'bg-white shadow cursor-pointer hover:bg-blue-50 active:scale-95'}
+                ? 'border border-dashed border-muted bg-transparent' 
+                : 'bg-primary text-primary-foreground shadow cursor-pointer hover:bg-primary/80 active:scale-95'}
               ${isComplete ? 'border-green-400' : ''}
             `}
             style={{

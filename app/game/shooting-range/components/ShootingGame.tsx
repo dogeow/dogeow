@@ -136,14 +136,14 @@ const Target = ({ position, hit, scale, onClick, id }: {
       // 播放爆炸音效
       try {
         const hitSound = new Audio('/sounds/explode.mp3');
-        hitSound.volume = 0.4;
-        hitSound.playbackRate = 1.2; // 加快音效播放速度
+        hitSound.volume = 1; // 降低音量
+        hitSound.playbackRate = 3; // 降低播放速度
         
         // 设置最大播放时间
         setTimeout(() => {
           hitSound.pause();
           hitSound.currentTime = 0;
-        }, 1000); // 爆炸音效播放时间
+        }, 200); // 缩短爆炸音效播放时间
         
         hitSound.play().catch(err => console.log('音频播放失败', err));
       } catch (e) {
@@ -562,7 +562,7 @@ const GameScene = ({
   const difficultySettings = {
     easy: { targetCount: 8, targetSpeed: 0.01, gameAreaSize: 20 },
     medium: { targetCount: 12, targetSpeed: 0.02, gameAreaSize: 25 },
-    hard: { targetCount: 16, targetSpeed: 0.03, gameAreaSize: 30 }
+    hard: { targetCount: 16, targetSpeed: 0.05, gameAreaSize: 30 }
   }
   
   const settings = difficultySettings[difficulty]
@@ -614,14 +614,14 @@ const GameScene = ({
     // 播放击中音效
     try {
       const hitSound = new Audio('/sounds/explode.mp3');
-      hitSound.volume = 0.4;
-      hitSound.playbackRate = 1.2; // 加快音效播放速度
+      hitSound.volume = 0.2; // 降低音量
+      hitSound.playbackRate = 1.0; // 降低播放速度
       
       // 设置最大播放时间
       setTimeout(() => {
         hitSound.pause();
         hitSound.currentTime = 0;
-      }, 1000); // 爆炸音效播放时间
+      }, 800); // 缩短爆炸音效播放时间
       
       hitSound.play().catch(err => console.log('音频播放失败', err));
       
@@ -705,9 +705,46 @@ const GameScene = ({
         
         const halfArea = gameArea / 2
         
-        if (x < -halfArea || x > halfArea) newDx = -dx
-        if (y < -halfArea / 2 || y > halfArea / 2 + 5) newDy = -dy
-        if (z < -halfArea - 5 || z > halfArea - 5) newDz = -dz
+        // 增加随机改变方向的概率
+        const shouldChangeDirection = Math.random() < 0.02 // 每帧有2%的概率改变方向
+        
+        if (x < -halfArea || x > halfArea) {
+          newDx = -dx
+          // 碰到边界时增加随机性
+          if (Math.random() < 0.5) {
+            newDy = (Math.random() - 0.5) * 2
+            newDz = (Math.random() - 0.5) * 2
+          }
+        }
+        if (y < -halfArea / 2 || y > halfArea / 2 + 5) {
+          newDy = -dy
+          // 碰到边界时增加随机性
+          if (Math.random() < 0.5) {
+            newDx = (Math.random() - 0.5) * 2
+            newDz = (Math.random() - 0.5) * 2
+          }
+        }
+        if (z < -halfArea - 5 || z > halfArea - 5) {
+          newDz = -dz
+          // 碰到边界时增加随机性
+          if (Math.random() < 0.5) {
+            newDx = (Math.random() - 0.5) * 2
+            newDy = (Math.random() - 0.5) * 2
+          }
+        }
+        
+        // 随机改变方向
+        if (shouldChangeDirection) {
+          newDx = (Math.random() - 0.5) * 2
+          newDy = (Math.random() - 0.5) * 2
+          newDz = (Math.random() - 0.5) * 2
+        }
+        
+        // 归一化方向向量
+        const length = Math.sqrt(newDx**2 + newDy**2 + newDz**2)
+        newDx /= length
+        newDy /= length
+        newDz /= length
         
         return {
           ...target,
@@ -827,13 +864,13 @@ const GameScene = ({
     // 播放射击音效
     try {
       const shotSound = new Audio('/sounds/shot.mp3');
-      shotSound.volume = 0.3;
-      shotSound.playbackRate = 0.9;
+      shotSound.volume = 0.15; // 降低音量
+      shotSound.playbackRate = 0.8; // 降低播放速度
       
       setTimeout(() => {
         shotSound.pause();
         shotSound.currentTime = 0;
-      }, 800);
+      }, 500); // 缩短播放时间
       
       shotSound.play().catch(err => console.log('音频播放失败', err));
     } catch (e) {

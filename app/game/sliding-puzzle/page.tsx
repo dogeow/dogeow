@@ -85,19 +85,19 @@ function SlidingPuzzleGame() {
             <div className="flex flex-col gap-2 sm:flex-row sm:gap-4 justify-center">
               <Button 
                 onClick={() => startGame(3)}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
+                variant="default"
               >
                 简单 (3×3)
               </Button>
               <Button 
                 onClick={() => startGame(4)}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
+                variant="default"
               >
                 中等 (4×4)
               </Button>
               <Button 
                 onClick={() => startGame(5)}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
+                variant="default"
               >
                 困难 (5×5)
               </Button>
