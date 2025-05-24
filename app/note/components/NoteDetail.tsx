@@ -1,11 +1,12 @@
 "use client"
 
-import useSWR, { mutate } from "swr"
+import useSWR from "swr"
 import { get, del } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { useRouter, useParams } from "next/navigation"
 import { toast } from "react-hot-toast"
-import { Edit, Trash2 } from "lucide-react"
+import { Edit, Trash2, ArrowLeft } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 
 export default function NoteDetail() {
   const router = useRouter()
@@ -15,6 +16,7 @@ export default function NoteDetail() {
     id: number
     title: string
     content: string
+    content_markdown?: string
     updated_at: string
   }>(id ? `/notes/${id}` : null, get)
 
@@ -29,18 +31,28 @@ export default function NoteDetail() {
   if (!note) return <div>加载中...</div>
 
   return (
-    <div className="max-w-2xl mx-auto mt-8 space-y-4">
-      <h1 className="text-2xl font-bold">{note.title}</h1>
-      <div className="text-xs text-gray-500 mb-2">更新于 {note.updated_at}</div>
-      <div className="prose">{note.content || "(无内容)"}</div>
-      <div className="flex gap-2 mt-4">
-        <Button onClick={() => router.push(`/note/edit/${id}`)}>
-          <Edit className="h-4 w-4 mr-1" /> 编辑
+    <div className="max-w-2xl mx-auto mt-8">
+      <div className="flex items-center justify-between mb-6">
+        <Button variant="ghost" size="icon" onClick={() => router.back()}>
+          <ArrowLeft className="h-5 w-5" />
         </Button>
-        <Button variant="destructive" onClick={handleDelete}>
-          <Trash2 className="h-4 w-4 mr-1" /> 删除
-        </Button>
-        <Button variant="outline" onClick={() => router.push("/note")}>返回列表</Button>
+        <h1 className="text-xl font-bold flex-1 text-center truncate">{note.title}</h1>
+        <div className="flex gap-2">
+          <Button variant="ghost" size="icon" onClick={() => router.push(`/note/edit/${id}`)}>
+            <Edit className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={handleDelete}>
+            <Trash2 className="h-5 w-5 text-destructive" />
+          </Button>
+        </div>
+      </div>
+      <div className="text-xs text-gray-500 mb-4 text-center">更新于 {note.updated_at}</div>
+      <div className="prose max-w-none">
+        {note.content_markdown ? (
+          <ReactMarkdown>{note.content_markdown}</ReactMarkdown>
+        ) : (
+          <span className="italic">(无内容)</span>
+        )}
       </div>
     </div>
   )

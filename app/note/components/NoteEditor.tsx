@@ -138,7 +138,7 @@ export default function NoteEditor({
         />
       </div>
       <MarkdownEditor
-        initialContent={content}
+        initialContent={content || '[{"type":"paragraph","children":[{"text":""}]}]'}
         onSave={handleSave}
         onImageUpload={handleImageUpload}
         minHeight="400px"
