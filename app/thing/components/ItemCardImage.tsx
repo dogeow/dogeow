@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
-import { Globe } from 'lucide-react'
+import { Globe, AlertTriangleIcon } from 'lucide-react'
+
 
 // Define ImageData interface locally as specified
 export interface ImageData {
@@ -21,6 +22,7 @@ export interface ItemCardImageProps {
   itemName: string
   status: string
   isPublic: boolean
+  size?: number // 新增 size 属性，单位 px
 }
 
 // Define itemStatusColors and getStatusBorderColor function
@@ -43,6 +45,7 @@ export default function ItemCardImage({
   itemName,
   status,
   isPublic,
+  size,
 }: ItemCardImageProps) {
   const [primaryImage, setPrimaryImage] = useState<ImageData | null | undefined>(null)
   const [imageError, setImageError] = useState(false)
@@ -63,20 +66,27 @@ export default function ItemCardImage({
 
   return (
     <div
-      className={`relative w-full h-48 overflow-hidden rounded-t-lg border-b-2 ${getStatusBorderColor(status)}`}
+      className={
+        size
+          ? `relative rounded overflow-hidden border-b-2 ${getStatusBorderColor(status)}`
+          : `relative w-full h-48 overflow-hidden rounded-t-lg border-b-2 ${getStatusBorderColor(status)}`
+      }
+      style={size ? { width: size, height: size } : {}}
     >
       {imageSrc && !imageError ? (
         <Image
           src={imageSrc}
           alt={`${itemName} 图片`}
-          layout="fill"
+          layout={size ? undefined : 'fill'}
+          width={size}
+          height={size}
           objectFit="cover"
           onError={() => setImageError(true)}
-          unoptimized={imageSrc.startsWith('http')} // Assuming external URLs might not be optimized
+          unoptimized={imageSrc.startsWith('http')}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-500">
-          {primaryImage && !imageSrc ? '无图片路径' : '暂无图片'}
+        <div className="w-full h-full flex items-center justify-center">
+          <AlertTriangleIcon className="w-1/2 h-1/2 opacity-50" />
         </div>
       )}
       {isPublic && (

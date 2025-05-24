@@ -7,7 +7,7 @@ interface LocationDisplayProps {
 
 export function LocationDisplay({ spot }: LocationDisplayProps) {
   if (!spot) {
-    return <div className="text-sm text-muted-foreground">No location</div>;
+    return null;
   }
 
   // Function to recursively build the location string

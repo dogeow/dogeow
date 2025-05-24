@@ -27,47 +27,39 @@ export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   // itemStatusColors, getStatusBorderColor, renderImage, handleDelete functions removed
 
   return (
-    <Card 
-      className="hover:shadow-md transition-shadow cursor-pointer flex flex-col" // Added flex flex-col
-      onClick={onView} // Assuming onView is for navigating to a detailed view
+    <Card
+      className="hover:bg-accent/40 transition cursor-pointer flex flex-row items-center gap-3 px-2 py-2 min-h-[64px]"
+      onClick={onView}
     >
-      <ItemCardImage
-        initialPrimaryImage={item.primary_image}
-        images={item.images}
-        itemName={item.name}
-        status={item.status}
-        isPublic={item.is_public}
-      />
-      <div className="p-3 flex-grow"> {/* Added flex-grow to allow this part to take available space */}
-        {/* Content previously in the card, now below the image */}
-        <div className="flex justify-between items-center mb-1">
-          <h3 className="font-semibold truncate text-base flex-grow">{item.name}</h3>
-          <p className="text-xs text-muted-foreground ml-2 flex-shrink-0">{item.category?.name || '未分类'}</p>
-        </div>
-        
-        {item.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-            {item.description}
-          </p>
-        )}
-        
-        {(item.tags && item.tags.length > 0) && (
-          <div className="mb-2">
-            <TagList tags={item.tags} />
-          </div>
-        )}
-        
-        <LocationDisplay spot={item.spot} />
-        
-        {/* Action buttons like Edit could be placed here or outside */}
-        {/* For example, if onEdit is to be used:
-        <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="mt-2 text-blue-500">
-          Edit
-        </button>
-        */}
+      {/* 缩略图，尺寸更小，左侧显示 */}
+      <div className="flex-shrink-0 w-14 h-14 rounded overflow-hidden border bg-muted">
+        <ItemCardImage
+          initialPrimaryImage={item.primary_image}
+          images={item.images}
+          itemName={item.name}
+          status={item.status}
+          isPublic={item.is_public}
+          size={56} // 传递自定义尺寸
+        />
       </div>
-      
-      {/* DeleteConfirmationDialog removed */}
+      {/* 右侧信息区，紧凑排列 */}
+      <div className="flex flex-col flex-grow min-w-0">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-medium truncate text-base max-w-[120px] sm:max-w-[200px]">{item.name}</h3>
+          <span className="text-xs text-muted-foreground flex-shrink-0">{item.category?.name || '未分类'}</span>
+        </div>
+        {item.description && (
+          <p className="text-xs text-muted-foreground truncate max-w-full">{item.description}</p>
+        )}
+        <div className="flex items-center gap-2 mt-1">
+          {item.tags && item.tags.length > 0 && (
+            <TagList tags={item.tags} />
+          )}
+          <span className="text-xs text-muted-foreground ml-auto">
+            <LocationDisplay spot={item.spot} />
+          </span>
+        </div>
+      </div>
     </Card>
   )
 }
