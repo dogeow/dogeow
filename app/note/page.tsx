@@ -38,6 +38,7 @@ interface Note {
   content_markdown: string
   created_at: string
   updated_at: string
+  is_draft: boolean
 }
 
 // 背景色数组
@@ -224,6 +225,9 @@ export default function NotePage() {
                       className="font-medium text-lg hover:underline"
                     >
                       {note.title || '(无标题)'}
+                      {note.is_draft && (
+                        <span className="ml-2 text-xs text-muted-foreground">(草稿)</span>
+                      )}
                     </Link>
                     
                     <DropdownMenu>

@@ -18,6 +18,7 @@ export default function NoteDetail() {
     content: string
     content_markdown?: string
     updated_at: string
+    is_draft: boolean
   }>(id ? `/notes/${id}` : null, get)
 
   const handleDelete = async () => {
@@ -36,7 +37,12 @@ export default function NoteDetail() {
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold flex-1 text-center truncate">{note.title}</h1>
+        <h1 className="text-xl font-bold flex-1 text-center truncate">
+          {note.title}
+          {note.is_draft && (
+            <span className="ml-2 text-xs text-muted-foreground">(草稿)</span>
+          )}
+        </h1>
         <div className="flex gap-2">
           <Button variant="ghost" size="icon" onClick={() => router.push(`/note/edit/${id}`)}>
             <Edit className="h-5 w-5" />

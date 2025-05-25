@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Slate, Editable, RenderElementProps, RenderLeafProps } from 'slate-react'
+import { Slate, Editable, RenderElementProps, RenderLeafProps, useSlate } from 'slate-react'
 import { Button } from "@/components/ui/button"
 import { Bold, Italic, List, ListOrdered, Code, Save, Quote, Heading1, Heading2, ImageIcon } from 'lucide-react'
 import { toast } from 'react-hot-toast'
@@ -9,6 +9,7 @@ import { ElementType, CustomElement, CustomText } from './types'
 import { useMarkdownEditor } from './hooks/useMarkdownEditor'
 import { handleCodeBlockTab, handleCopyWithSyntaxHighlighting } from './utils'
 import './styles.css'
+import { Editor, Text, Transforms, Range } from 'slate'
 
 export interface MarkdownEditorProps {
   initialContent?: string;
@@ -17,6 +18,9 @@ export interface MarkdownEditorProps {
   readOnly?: boolean;
   minHeight?: string;
   placeholder?: string;
+  isDraft?: boolean;
+  onDraftChange?: (isDraft: boolean) => void;
+  onChange?: (content: string) => void;
 }
 
 // 主MarkdownEditor组件
@@ -26,9 +30,17 @@ const MarkdownEditor = ({
   onImageUpload,
   readOnly = false,
   minHeight = '300px',
+  isDraft = false,
+  onDraftChange,
+  onChange,
 }: MarkdownEditorProps) => {
   // 客户端环境检查
   const [isClient, setIsClient] = useState(false)
+  
+  // forceUpdate 必须在组件顶层
+  const [, forceUpdate] = useState(0)
+  const [selection, setSelection] = useState<Range | null>(null)
+  const [marks, setMarks] = useState<any>(null)
   
   // 使用自定义hook
   const {
@@ -41,7 +53,6 @@ const MarkdownEditor = ({
     handleSave,
     handleKeyDown: baseHandleKeyDown,
     toggleMark,
-    isMarkActive,
     toggleBlock,
     isBlockActive,
   } = useMarkdownEditor({
@@ -291,13 +302,114 @@ const MarkdownEditor = ({
   }, []);
   
   // 自定义工具栏
-  const Toolbar = useCallback(({ children }: { children: React.ReactNode }) => {
+  const Toolbar = useCallback(({ editor, marks, selection, toggleMark }: { editor: typeof editor, marks: any, selection: Range | null, toggleMark: (format: MarkFormat) => void }) => {
     return (
       <div className="flex items-center flex-wrap gap-1 p-2 bg-background border rounded-md mb-2">
-        {children}
+        <MarkButton format="bold" icon={Bold} title="加粗 (Ctrl+B)" toggleMark={toggleMark} editor={editor} marks={marks} />
+        <MarkButton format="italic" icon={Italic} title="斜体 (Ctrl+I)" toggleMark={toggleMark} editor={editor} marks={marks} />
+        <MarkButton format="code" icon={Code} title="行内代码 (Ctrl+`)" toggleMark={toggleMark} editor={editor} marks={marks} />
+        <div className="border-r mx-1 h-6" />
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => toggleBlock('heading-one')}
+          className={isBlockActive('heading-one') ? 'bg-primary/20 text-primary' : ''}
+          title="一级标题"
+        >
+          <Heading1 className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => toggleBlock('heading-two')}
+          className={isBlockActive('heading-two') ? 'bg-primary/20 text-primary' : ''}
+          title="二级标题"
+        >
+          <Heading2 className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => toggleBlock('block-quote')}
+          className={isBlockActive('block-quote') ? 'bg-primary/20 text-primary' : ''}
+          title="引用"
+        >
+          <Quote className="h-4 w-4" />
+        </Button>
+        
+        <div className="border-r mx-1 h-6" />
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => toggleBlock('bulleted-list')}
+          className={isBlockActive('bulleted-list') ? 'bg-primary/20 text-primary' : ''}
+          title="无序列表"
+        >
+          <List className="h-4 w-4" />
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => toggleBlock('numbered-list')}
+          className={isBlockActive('numbered-list') ? 'bg-primary/20 text-primary' : ''}
+          title="有序列表"
+        >
+          <ListOrdered className="h-4 w-4" />
+        </Button>
+        
+        <div className="border-r mx-1 h-6" />
+        
+        {onImageUpload && (
+          <div className="relative">
+            <input
+              type="file"
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              onChange={handleImageUpload}
+              accept="image/*"
+              disabled={isUploading}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isUploading}
+              title="上传图片"
+            >
+              <ImageIcon className="h-4 w-4" />
+              {isUploading && <span className="ml-2">上传中...</span>}
+            </Button>
+          </div>
+        )}
+        
+        <div className="flex-grow" />
+        
+        {onDraftChange && (
+          <Button
+            variant={isDraft ? "secondary" : "ghost"}
+            size="sm"
+            onClick={() => onDraftChange(!isDraft)}
+            title={isDraft ? "取消草稿" : "保存为草稿"}
+          >
+            {isDraft ? "已保存为草稿" : "保存为草稿"}
+          </Button>
+        )}
+        
+        {onSave && (
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={() => saveContent()}
+            title="保存 (Ctrl+S)"
+          >
+            <Save className="h-4 w-4 mr-1" />
+          </Button>
+        )}
       </div>
     );
-  }, []);
+  }, [isBlockActive, onSave, onImageUpload, isUploading, onDraftChange, saveContent, toggleBlock]);
   
   // 为SSR设置客户端渲染标记
   useEffect(() => {
@@ -310,7 +422,7 @@ const MarkdownEditor = ({
       <div 
         className="border rounded-md p-3 bg-gray-50"
         style={{ minHeight }}
-      >
+      >·
         <div className="animate-pulse flex space-x-4">
           <div className="space-y-2 w-full">
             <div className="h-4 bg-gray-200 rounded w-3/4"></div>
@@ -322,135 +434,58 @@ const MarkdownEditor = ({
     );
   }
 
+  // 更健壮的 isMarkActive
+  function isMarkActive(editor: Editor, format: Exclude<keyof CustomText, 'text'>) {
+    const [match] = Editor.nodes(editor, {
+      match: n => Text.isText(n) && (n as CustomText)[format] === true,
+      universal: true,
+    })
+    return !!match
+  }
+
+  type MarkFormat = 'bold' | 'italic' | 'code'
+
+  const markToggle = (format: MarkFormat) => {
+    toggleMark(format)
+    if (editor.selection) {
+      Transforms.select(editor, editor.selection)
+    }
+    forceUpdate(n => n + 1)
+  }
+
+  interface MarkButtonProps {
+    format: MarkFormat
+    icon: React.ComponentType<{ className?: string }>
+    title: string
+    toggleMark: (format: MarkFormat) => void
+    editor: typeof editor
+    marks: any
+  }
+
+  function MarkButton(props: MarkButtonProps) {
+    const { format, icon: Icon, title, toggleMark, marks } = props
+    const active = !!(marks && marks[format])
+    return (
+      <Button
+        variant={active ? 'secondary' : 'ghost'}
+        size="sm"
+        onMouseDown={e => { e.preventDefault(); toggleMark(format) }}
+        aria-pressed={active}
+        className={active ? 'bg-primary/20 text-primary' : ''}
+        title={title}
+      >
+        <Icon className="h-4 w-4" />
+      </Button>
+    )
+  }
+
   // 渲染组件
   return (
     <div className="markdown-editor w-full">
-      {/* 工具栏（只在非只读模式显示） */}
+      {/* 工具栏在编辑器外部 */}
       {!readOnly && (
-        <Toolbar>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleMark('bold')}
-            className={isMarkActive('bold') ? 'bg-accent text-accent-foreground' : ''}
-            title="加粗 (Ctrl+B)"
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleMark('italic')}
-            className={isMarkActive('italic') ? 'bg-accent text-accent-foreground' : ''}
-            title="斜体 (Ctrl+I)"
-          >
-            <Italic className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleMark('code')}
-            className={isMarkActive('code') ? 'bg-accent text-accent-foreground' : ''}
-            title="行内代码 (Ctrl+`)"
-          >
-            <Code className="h-4 w-4" />
-          </Button>
-          
-          <div className="border-r mx-1 h-6" />
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleBlock('heading-one')}
-            className={isBlockActive('heading-one') ? 'bg-accent text-accent-foreground' : ''}
-            title="一级标题"
-          >
-            <Heading1 className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleBlock('heading-two')}
-            className={isBlockActive('heading-two') ? 'bg-accent text-accent-foreground' : ''}
-            title="二级标题"
-          >
-            <Heading2 className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleBlock('block-quote')}
-            className={isBlockActive('block-quote') ? 'bg-accent text-accent-foreground' : ''}
-            title="引用"
-          >
-            <Quote className="h-4 w-4" />
-          </Button>
-          
-          <div className="border-r mx-1 h-6" />
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleBlock('bulleted-list')}
-            className={isBlockActive('bulleted-list') ? 'bg-accent text-accent-foreground' : ''}
-            title="无序列表"
-          >
-            <List className="h-4 w-4" />
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => toggleBlock('numbered-list')}
-            className={isBlockActive('numbered-list') ? 'bg-accent text-accent-foreground' : ''}
-            title="有序列表"
-          >
-            <ListOrdered className="h-4 w-4" />
-          </Button>
-          
-          <div className="border-r mx-1 h-6" />
-          
-          {onImageUpload && (
-            <div className="relative">
-              <input
-                type="file"
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                onChange={handleImageUpload}
-                accept="image/*"
-                disabled={isUploading}
-              />
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={isUploading}
-                title="上传图片"
-              >
-                <ImageIcon className="h-4 w-4" />
-                {isUploading && <span className="ml-2">上传中...</span>}
-              </Button>
-            </div>
-          )}
-          
-          <div className="flex-grow" />
-          
-          {onSave && (
-            <Button 
-              variant="default" 
-              size="sm" 
-              onClick={() => saveContent()}
-              title="保存 (Ctrl+S)"
-            >
-              <Save className="h-4 w-4 mr-1" />
-            </Button>
-          )}
-        </Toolbar>
+        <Toolbar editor={editor} marks={marks} selection={selection} toggleMark={markToggle} />
       )}
-      
-      {/* 编辑器核心 */}
       <div 
         className={`slate-container border rounded-md p-3 ${readOnly ? 'bg-muted' : ''}`}
         style={{ minHeight }}
@@ -458,7 +493,11 @@ const MarkdownEditor = ({
         <Slate
           editor={editor}
           initialValue={value}
-          onChange={value => setValue(value)}
+          onChange={value => {
+            setValue(value)
+            setSelection(editor.selection)
+            setMarks(Editor.marks(editor))
+          }}
         >
           <Editable
             className="outline-none min-h-full prose dark:prose-invert max-w-none"
