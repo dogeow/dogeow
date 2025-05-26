@@ -1,8 +1,6 @@
 "use client"
 
 import { useState, useEffect, Suspense } from 'react';
-import { NavCategory as CategoryType } from '@/app/nav/types';
-import { NavCategory } from './components/NavCategory';
 import { Folder, Plus, Settings } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -117,7 +115,7 @@ function NavContent() {
         style={selectedCategory === 'all' ? { background: themeColor.color, color: '#fff' } : {}}
         onClick={() => handleCategoryClick('all')}
       >全部</button>
-      {categories.map((cat: any) => (
+      {categories.map((cat: unknown) => (
         <button
           key={cat.id}
           className={`px-2 py-1 rounded text-left text-sm ${selectedCategory === cat.id ? 'font-bold' : 'hover:bg-gray-100'}`}
@@ -129,7 +127,6 @@ function NavContent() {
   );
 
   // 分类筛选
-  const filteredCategories = categories
     .filter(category => selectedCategory === 'all' || category.id === selectedCategory)
     .filter(category => category.items && category.items.length > 0)
     .map(category => ({

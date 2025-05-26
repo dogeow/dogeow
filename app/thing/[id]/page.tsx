@@ -64,7 +64,7 @@ export default function ItemDetail() {
     if (!date) return '-'
     try {
       return format(new Date(date), 'yyyy-MM-dd')
-    } catch (e) {
+    } catch {
       return '无效日期'
     }
   }
@@ -98,13 +98,13 @@ export default function ItemDetail() {
   
   const status = statusMap[item.status as keyof typeof statusMap] || { label: item.status, variant: 'secondary' }
   
-  const renderTags = (item: any) => {
+  const renderTags = (item: unknown) => {
     if (!item.tags || item.tags.length === 0) return null;
     
     return (
       <div className="flex flex-wrap gap-2 mt-3">
         <h3 className="font-medium text-xs text-muted-foreground mt-1">标签:</h3>
-        {item.tags.map((tag: any) => (
+        {item.tags.map((tag: unknown) => (
           <Badge
             key={tag.id}
             style={{
@@ -178,7 +178,7 @@ export default function ItemDetail() {
                     
                     {item.images.length > 1 && (
                       <div className="flex flex-wrap gap-2 py-2 justify-center">
-                        {item.images.map((image: any, index: number) => (
+                        {item.images.map((image: unknown, index: number) => (
                           <div
                             key={image.id}
                             className={`relative w-16 h-16 rounded-md cursor-pointer border-2 transition-all ${

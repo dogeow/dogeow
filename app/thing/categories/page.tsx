@@ -25,7 +25,7 @@ export default function Categories() {
   // 获取未分类物品数量
   const fetchUncategorizedCount = async () => {
     try {
-      const response: { data: any[], meta?: { total: number } } = await get('/things/items?uncategorized=true&own=true')
+      const response: { data: unknown[], meta?: { total: number } } = await get('/things/items?uncategorized=true&own=true')
       setUncategorizedCount(response.meta?.total || 0)
     } catch (error) {
       console.error('获取未分类物品数量失败:', error)

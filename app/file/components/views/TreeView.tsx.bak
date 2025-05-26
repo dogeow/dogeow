@@ -1,7 +1,5 @@
 'use client'
 
-import Image from 'next/image'
-
 import { useState, useCallback, memo } from 'react'
 import {
   ChevronRight,
@@ -115,9 +113,9 @@ const FileIcon = memo<{ file: CloudFile }>(({ file }) => {
   if (file.type === 'image') {
     return (
       <div className="w-5 h-5 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted">
-        <Image 
+        <img 
           src={`${API_URL}/cloud/files/${file.id}/preview?thumb=true`} 
-          alt={file.name} width={20} height={20} 
+          alt={file.name} 
           className="object-cover w-full h-full"
           onError={(e) => {
             e.currentTarget.style.display = 'none'

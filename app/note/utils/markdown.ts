@@ -105,7 +105,7 @@ export const deserialize = (markdownString: string): Descendant[] => {
     if (line || i === lines.length - 1) {
       // 处理行内格式
       const textParts: CustomText[] = []
-      let currentText = line
+      const currentText = line
       let lastIndex = 0
       
       // 处理行内代码 `code`

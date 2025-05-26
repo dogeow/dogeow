@@ -9,8 +9,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'react-hot-toast'
 import { ArrowLeft, Edit, Eye } from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import ReactMarkdown from 'react-markdown'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useEditorStore } from '../store/editorStore'
 import { useGlobalNavigationGuard } from '../hooks/useGlobalNavigationGuard'
@@ -57,8 +55,8 @@ export default function NoteEditor({
 }: NoteEditorProps) {
   const router = useRouter()
   const [noteTitle, setNoteTitle] = useState(title)
-  const [isSaving, setIsSaving] = useState(false)
-  const [markdownPreview, setMarkdownPreview] = useState(initialMarkdown)
+  const [_isSaving, __setIsSaving] = useState(false)
+  const [_markdownPreview, __setMarkdownPreview] = useState(initialMarkdown)
   const [draft, setDraft] = useState(isDraft)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)
@@ -78,12 +76,12 @@ export default function NoteEditor({
     }
 
     try {
-      setIsSaving(true)
+      _setIsSaving(true)
       setDirty(false)
       
       const data = {
         title: noteTitle,
-        content,
+        _content,
         is_draft: draft
       }
 
@@ -94,13 +92,13 @@ export default function NoteEditor({
         result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
         // 更新预览
         if (result.content_markdown) {
-          setMarkdownPreview(result.content_markdown)
+          _setMarkdownPreview(result.content_markdown)
         }
       } else {
         // 创建新笔记
         result = await apiRequest<Note>('/notes', 'POST', data)
         if (result.content_markdown) {
-          setMarkdownPreview(result.content_markdown)
+          _setMarkdownPreview(result.content_markdown)
         }
       }
       
@@ -113,12 +111,12 @@ export default function NoteEditor({
       }
       
       return Promise.resolve()
-    } catch (error) {
+    } catch {
       console.error('保存笔记错误:', error)
       toast.error('保存失败')
       return Promise.reject(error)
     } finally {
-      setIsSaving(false)
+      _setIsSaving(false)
     }
   }
 
@@ -164,7 +162,7 @@ export default function NoteEditor({
       })
       
       return result
-    } catch (error) {
+    } catch {
       console.error('图片上传错误:', error)
       toast.error('图片上传失败')
       throw error
@@ -184,7 +182,7 @@ export default function NoteEditor({
       return
     }
     try {
-      setIsSaving(true)
+      _setIsSaving(true)
       const data = {
         title: noteTitle,
         content: safeContent,
@@ -197,10 +195,10 @@ export default function NoteEditor({
       }
       setDirty(false)
       toast.success('已保存为草稿')
-    } catch (error) {
+    } catch {
       toast.error('保存草稿失败')
     } finally {
-      setIsSaving(false)
+      _setIsSaving(false)
     }
   }
 

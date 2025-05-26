@@ -1,9 +1,7 @@
 "use client"
 
 import React, { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Folder, FolderOpen, FolderClosed, Search } from "lucide-react"
-import { cn } from '@/lib/helpers'
+import { Search } from "lucide-react"
 import FolderIcon from '../../components/FolderIcon'
 
 interface LocationsHeaderProps {

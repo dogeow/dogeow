@@ -15,7 +15,7 @@ interface DetailInfoFormProps {
   watchAreaId: string;
   watchRoomId: string;
   watchSpotId: string;
-  setValue: any;
+  setValue: unknown;
 }
 
 export default function DetailInfoForm({

@@ -57,7 +57,7 @@ export default function NoteTags() {
       setNewColor(generateRandomColor()) // 添加成功后重新生成随机颜色
       mutate("/notes/tags")
       toast.success("标签添加成功")
-    } catch (error) {
+    } catch {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)
@@ -79,7 +79,7 @@ export default function NoteTags() {
       await del(`/notes/tags/${tagToDelete}`)
       mutate("/notes/tags")
       toast.success("标签删除成功")
-    } catch (error) {
+    } catch {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)

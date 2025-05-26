@@ -98,7 +98,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
       
       // 关闭对话框
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)

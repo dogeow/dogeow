@@ -1,6 +1,5 @@
 "use client"
 
-import Image from 'next/image'
 import { NavCategory as CategoryType } from '@/app/nav/types';
 import { NavCard } from './NavCard';
 
@@ -18,7 +17,7 @@ export function NavCategory({ category }: NavCategoryProps) {
       <div className="mb-3 flex items-center gap-2">
         {category.icon && (
           <div className="h-6 w-6">
-            <Image src={category.icon} alt={`${category.name} 图标`} width={24} height={24} className="h-full w-full object-contain" />
+            <img src={category.icon} alt={`${category.name} 图标`} className="h-full w-full object-contain" />
           </div>
         )}
         <h2 className="text-xl font-bold">{category.name}</h2>

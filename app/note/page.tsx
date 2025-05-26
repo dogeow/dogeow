@@ -27,7 +27,6 @@ import ReactMarkdown from 'react-markdown'
 import { 
   Card, 
   CardContent, 
-  CardFooter, 
   CardHeader
 } from '@/components/ui/card'
 
@@ -69,7 +68,7 @@ export default function NotePage() {
       try {
         const data = await apiRequest<Note[]>('/notes')
         setNotes(data)
-      } catch (error) {
+      } catch {
         console.error('获取笔记列表失败:', error)
         toast.error('无法加载笔记列表')
       } finally {
@@ -90,7 +89,7 @@ export default function NotePage() {
       await apiRequest(`/notes/${id}`, 'DELETE')
       setNotes(notes.filter(note => note.id !== id))
       toast.success('笔记已删除')
-    } catch (error) {
+    } catch {
       console.error('删除笔记失败:', error)
       toast.error('删除笔记失败')
     }
@@ -121,7 +120,7 @@ export default function NotePage() {
   const formatDate = (dateString: string) => {
     try {
       return format(new Date(dateString), 'yyyy-MM-dd HH:mm')
-    } catch (error) {
+    } catch {
       return dateString
     }
   }

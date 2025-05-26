@@ -104,7 +104,7 @@ export default function NoteCategories() {
   // 处理回车键提交
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      editingCategory ? updateCategory() : addCategory()
+      void (editingCategory ? updateCategory() : addCategory())
     }
   }
 

@@ -210,8 +210,6 @@ export default function EditItem() {
     
     loadItem()
     refreshAreas()
-  }, [params.id, fetchCategories, fetchTags, loadRooms, loadSpots, refreshAreas])
-
 
   useEffect(() => {
     if (!formData.area_id) {

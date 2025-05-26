@@ -3,7 +3,6 @@
 import { useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import { Loader2 } from 'lucide-react'
-import { CloudFile, FolderNode } from '../types'; // Assuming CloudFile and FolderNode are correctly typed
 import GridView from './views/GridView'
 import ListView from './views/ListView'
 import TreeView from './views/TreeView'

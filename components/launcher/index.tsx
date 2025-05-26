@@ -150,7 +150,7 @@ export function AppLauncher() {
     // 从路径中提取文件名
     // 传统方式：从路径中提取文件名
     const parts = currentTrack.split('/');
-    let fileName = parts[parts.length - 1];
+    const fileName = parts[parts.length - 1];
     
     // 移除扩展名和特殊字符
     return fileName
@@ -246,7 +246,7 @@ export function AppLauncher() {
         setIsSearchVisible(false);
       } else {
         // 根据页面类型决定打开搜索对话框还是搜索框
-        isHomePage ? setIsSearchDialogOpen(true) : setIsSearchVisible(true);
+        void (isHomePage ? setIsSearchDialogOpen(true) : setIsSearchVisible(true));
       }
     };
     

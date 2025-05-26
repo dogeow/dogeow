@@ -116,7 +116,7 @@ export const MusicPlayer = React.memo(({
   audioError,
   currentTime,
   duration,
-  volume,
+  _volume,
   isMuted,
   toggleMute,
   switchToPrevTrack,

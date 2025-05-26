@@ -27,7 +27,7 @@ interface BasicInfoFormProps {
   selectedTags: string[];
   setSelectedTags: Dispatch<SetStateAction<string[]>>;
   setCreateTagDialogOpen: Dispatch<SetStateAction<boolean>>;
-  categories: any[];
+  categories: unknown[];
   setUploadedImages: Dispatch<SetStateAction<UploadedImage[]>>;
 }
 

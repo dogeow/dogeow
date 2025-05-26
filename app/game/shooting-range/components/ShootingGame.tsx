@@ -2,7 +2,7 @@
 
 import React, { useRef, useState, useEffect, Suspense, useCallback, useMemo } from "react"
 import { Canvas, useFrame, useThree } from "@react-three/fiber"
-import { PointerLockControls, Text, useTexture, Environment } from "@react-three/drei"
+import { PointerLockControls, /* Text, useTexture, */ Environment } from "@react-three/drei"
 import * as THREE from "three"
 // 注释掉外部组件导入，使用内部定义的组件
 // import GunModel from './Gun'

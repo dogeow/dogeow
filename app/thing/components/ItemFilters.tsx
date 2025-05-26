@@ -20,7 +20,7 @@ import { TagSelector, Tag } from '@/components/ui/tag-selector';
 
 interface ItemFiltersProps {
   onApply: (filters: FilterState) => void;
-  categories: any[]; // As per current useSWR<any[]>
+  categories: unknown[]; // As per current useSWR<any[]>
   areas: Area[];
   rooms: Room[];
   spots: Spot[];
@@ -110,7 +110,7 @@ export default function ItemFilters({
   console.log('[ItemFilters] 组件被渲染');
   
   const { filters: savedFilters } = useItemStore();
-  // SWR hooks for categories, areas, rooms, spots, tags are removed.
+  // SWR hooks for _categories, areas, rooms, spots, tags are removed.
   // These are now passed as props.
   const [activeTab, setActiveTab] = useState("basic");
   const [preventAutoApply, setPreventAutoApply] = useState(true); // 添加状态防止自动应用
@@ -213,7 +213,7 @@ export default function ItemFilters({
   }, [filters, applyFilters]);
   
   // 处理字段变更的函数 - 不再直接应用，而是通过防抖机制应用
-  const handleChange = useCallback((field: keyof FilterState, value: any) => {
+  const handleChange = useCallback((field: keyof FilterState, value: unknown) => {
     setFilters(prev => ({
       ...prev,
       [field]: value
@@ -246,7 +246,7 @@ export default function ItemFilters({
   }, [applyFilters]);
   
   // 检查是否有激活的筛选条件
-  const hasActiveFilters = useCallback(() => {
+  const _hasActiveFilters = useCallback(() => {
     // 检查是否有任何非默认值的筛选条件
     return Object.entries(filters).some(([key, value]) => {
       // 对于字符串类型的值，检查是否非空且不等于'all'

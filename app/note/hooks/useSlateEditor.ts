@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { createEditor, Editor, Transforms, Element as SlateElement, Text, Range, Point } from 'slate'
 import { withReact } from 'slate-react'
 import { withHistory } from 'slate-history'
 

@@ -22,7 +22,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
-import { NavItem } from '@/app/nav/types'
 import { Combobox } from "@/components/ui/combobox"
 
 // 定义表单数据类型
@@ -49,10 +48,9 @@ const navItemSchema = z.object({
   sort_order: z.coerce.number().int().nonnegative()
 }) as z.ZodType<FormData>;
 
-export default function EditNavItem() {
   const params = useParams()
   const router = useRouter()
-  const { fetchCategories, categories, items, fetchItems, updateItem, createCategory } = useNavStore()
+  const { fetchCategories, categories, items: _items, fetchItems, updateItem, createCategory } = useNavStore()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const itemId = Number(params.id)
@@ -81,7 +79,7 @@ export default function EditNavItem() {
       if (initialLoading) {
         try {
           // 加载分类和导航项数据
-          const [_, itemsResult] = await Promise.all([
+          const [_categoriesResult, itemsResult] = await Promise.all([
             fetchCategories(),
             fetchItems()
           ])

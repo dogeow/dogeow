@@ -132,7 +132,7 @@ const MobileNavigationItem = ({ item, pathname }: NavigationItemProps) => {
 
 export function Header() {
   const pathname = usePathname();
-  const [isMobile, setIsMobile] = useState(false);
+  const [_isMobile, setIsMobile] = useState(false);
 
   // 响应式处理
   useEffect(() => {

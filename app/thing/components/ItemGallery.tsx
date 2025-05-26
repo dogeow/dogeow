@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 // format from date-fns is no longer needed here
 import { Item, Spot } from "@/app/thing/types"; // Updated type imports
-import { getLocationPath, getThumbnailUrl } from "@/app/thing/utils"; // Import helpers
 import { ItemDetailDialog } from "./ItemDetailDialog";
 import { ImageSizeControl } from "./ImageSizeControl";
 import { GalleryItem } from "./GalleryItem";

@@ -1,11 +1,11 @@
 import { Text } from 'slate'
 
 // 标准化tokens，使其扁平化并按行分组
-export const normalizeTokens = (tokens: any[]): { types: string[], content: string }[][] => {
+export const normalizeTokens = (tokens: unknown[]): { types: string[], content: string }[][] => {
   const normalizedTokens: { types: string[], content: string }[][] = [[]]
   let currentLine = 0
 
-  const processToken = (token: any, types: string[] = []): void => {
+  const processToken = (token: unknown, types: string[] = []): void => {
     if (typeof token === 'string') {
       const lines = token.split('\n')
       
@@ -51,11 +51,10 @@ export const normalizeTokens = (tokens: any[]): { types: string[], content: stri
 }
 
 // 计算装饰范围
-export const getTokensForCodeBlock = (node: any, path: number[]): any[] => {
+export const getTokensForCodeBlock = (node: unknown, path: number[]): unknown[] => {
   if (!Text.isText(node)) return []
 
-  const ranges: any[] = []
-  const text = node.text
+  const ranges: unknown[] = []
   
   return ranges
 }

@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FileText, Tag, FolderTree, Plus } from "lucide-react"
@@ -11,33 +10,13 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 export default function NoteNavigation() {
   const router = useRouter()
   const pathname = usePathname()
-  const [loading, setLoading] = useState(false)
   const { isDirty, setDirty, saveDraft } = useEditorStore()
   const [showConfirm, setShowConfirm] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
   
   // 导航项定义
-  const navItems = [
-    {
-      href: "/note",
-      label: "我的笔记",
-      icon: FileText,
-      exact: true
-    },
-    {
-      href: "/note/categories",
-      label: "分类",
-      icon: FolderTree
-    },
-    {
-      href: "/note/tags",
-      label: "标签",
-      icon: Tag
-    }
-  ]
   
   // 检查当前路径是否激活
-  const isActive = (item: typeof navItems[0]) => {
     if (item.exact) {
       return pathname === item.href
     }

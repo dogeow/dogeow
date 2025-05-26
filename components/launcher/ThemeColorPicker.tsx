@@ -13,9 +13,6 @@ import { useThemeStore } from '@/stores/themeStore'
 
 export function ThemeColorPicker() {
   const { currentTheme, customThemes, setCurrentTheme, addCustomTheme, removeCustomTheme } = useThemeStore()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [newThemeName, setNewThemeName] = useState('')
-  const [newThemeColor, setNewThemeColor] = useState('#3b82f6')
 
   // 计算当前选中的主题id，没选过时默认第一个
   const selectedThemeId = currentTheme || configs.themeColors[0].id;

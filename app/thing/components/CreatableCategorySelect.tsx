@@ -20,7 +20,7 @@ interface CreatableCategorySelectProps {
 export default function CreatableCategorySelect({ value, onValueChange, categories, allowNoneOption, onCreateCategory }: CreatableCategorySelectProps) {
   const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [_creating, __setCreating] = useState(false);
 
   // 过滤后的分类
   const filtered = useMemo(() => {
@@ -45,22 +45,22 @@ export default function CreatableCategorySelect({ value, onValueChange, categori
   const handleCreate = async () => {
     console.log('handleCreate 被调用，inputValue:', inputValue, 'exists:', exists);
     if (!inputValue.trim() || exists) return;
-    setCreating(true);
+    _setCreating(true);
     if (onCreateCategory) {
       try {
         const newCategory = await onCreateCategory(inputValue.trim());
         onValueChange(newCategory.id.toString());
-      } catch (e: any) {
+      } catch (e: unknown) {
         toast.error(e?.message || e?.toString() || '创建分类失败');
       } finally {
-        setCreating(false);
+        _setCreating(false);
         setInputValue("");
         setOpen(false);
       }
     } else {
       onValueChange(inputValue.trim());
       setInputValue("");
-      setCreating(false);
+      _setCreating(false);
       setOpen(false);
     }
   };

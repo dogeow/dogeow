@@ -1,7 +1,5 @@
 'use client'
 
-import Image from 'next/image'
-
 import {
   File,
   FileText,
@@ -17,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { toast } from 'react-hot-toast'
+import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/helpers'
 import { CloudFile, SortField } from '../../types'
 import useFileStore from '../../store/useFileStore'
@@ -27,8 +26,9 @@ interface ListViewProps {
 }
 
 export default function ListView({ files }: ListViewProps) {
+  const { mutate } = useSWRConfig()
   const { 
-    // currentFolderId, // unused 
+    currentFolderId, 
     navigateToFolder, 
     selectedFiles, 
     setSelectedFiles,
@@ -65,11 +65,11 @@ export default function ListView({ files }: ListViewProps) {
     if (file.type === 'image') {
       return (
         <div className="w-6 h-6 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted">
-          <Image 
+          <img 
             src={`${API_URL}/cloud/files/${file.id}/preview?thumb=true`} 
-            alt={file.name} width={24} height={24} 
+            alt={file.name} 
             className="object-cover w-full h-full"
-            onError={() => {
+            onError={(e) => {
               // 如果缩略图加载失败，显示默认图标
               e.currentTarget.style.display = 'none';
               e.currentTarget.parentElement?.classList.add('flex');

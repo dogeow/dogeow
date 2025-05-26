@@ -23,7 +23,7 @@ interface NavCardActionsProps {
 export default function NavCardActions({ item, deleteItem }: NavCardActionsProps) {
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [_loading, setLoading] = useState(false)
 
   const handleEdit = () => {
     router.push(`/nav/edit/${item.id}`)

@@ -67,7 +67,7 @@ export default function BreadcrumbNav() {
 
       {breadcrumbs.length > 0 && (
         <>
-          {breadcrumbs.map((crumb, index) => (
+          {breadcrumbs.map((crumb) => (
             <div key={crumb.id} className="flex items-center">
               <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground" />
               <Button

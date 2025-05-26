@@ -14,12 +14,12 @@ interface UseFileManagementReturn {
   files: CloudFile[] | undefined;
   folderTree: FolderNode[] | undefined;
   isLoadingFiles: boolean;
-  isErrorFiles: any;
+  isErrorFiles: unknown;
   mutateFiles: KeyedMutator<CloudFile[]>;
   isLoadingTree: boolean;
-  isErrorTree: any;
+  isErrorTree: unknown;
   isLoading: boolean;
-  error: any;
+  error: unknown;
 }
 
 export const useFileManagement = ({

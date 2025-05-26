@@ -20,7 +20,7 @@ interface ClientInfo {
 }
 
 export default function Dashboard() {
-  const { user, isAuthenticated } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
   const { data: clientInfo, isLoading } = useSWR<ClientInfo>('/client-info', apiRequest);
 
   // 显示加载状态，直到确认用户已加载

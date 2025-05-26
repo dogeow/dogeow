@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import {
   File,
   FileText,
-  FileImage,
   FileArchive,
   FileAudio,
   FileVideo,
@@ -15,7 +14,6 @@ import {
   Download,
   Pencil,
   Trash2,
-  ExternalLink
 } from 'lucide-react'
 import { 
   DropdownMenu,
@@ -90,7 +88,7 @@ export default function GridView({ files }: GridViewProps) {
             className="object-cover"
             loading="lazy"
             onLoad={() => console.log('图片加载成功:', file.name)}
-            onError={(e) => {
+            onError={() => {
               console.error('图片加载失败:', file.name);
               console.error('图片URL:', storageUrl);
               // 显示默认图标
@@ -218,7 +216,7 @@ export default function GridView({ files }: GridViewProps) {
         return;
       }
       
-      const { type, content, url, message } = await apiRequest<any>(`${API_URL}/cloud/files/${file.id}/preview`)
+      const { type, content, url } = await apiRequest<unknown>(`${API_URL}/cloud/files/${file.id}/preview`)
 
       setPreviewType(type)
       
@@ -252,7 +250,7 @@ export default function GridView({ files }: GridViewProps) {
                 type="checkbox"
                 className="absolute -top-2 -left-2 h-4 w-4 rounded-sm border border-primary"
                 checked={selectedFiles.includes(file.id)}
-                onChange={(e) => {}}
+                onChange={() => {}}
                 onClick={(e) => toggleSelection(file.id, e)}
               />
             </div>
@@ -372,9 +370,9 @@ export default function GridView({ files }: GridViewProps) {
               )}
 
               {previewType === 'image' && previewUrl && (
-                <img
+                <Image
                   src={previewUrl}
-                  alt={previewFile.name}
+                  alt={previewFile.name} width={800} height={600}
                   className="max-h-[60vh] max-w-full object-contain"
                 />
               )}

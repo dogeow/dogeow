@@ -21,7 +21,7 @@ export type LocationType = 'area' | 'room' | 'spot';
 export type Location = {
   id: number;
   name: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type SelectedLocation = {
@@ -91,7 +91,7 @@ export default function AddItem() {
   }, [fetchCategories, fetchTags])
   
   // 处理标签创建
-  const handleTagCreated = (tag: any) => {
+  const handleTagCreated = (tag: unknown) => {
     // 刷新标签列表
     fetchTags()
     
