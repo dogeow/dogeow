@@ -28,7 +28,7 @@ export function DeleteConfirmationDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>确定要删除吗？</AlertDialogTitle>
           <AlertDialogDescription>
-            此操作将永久删除"{itemName}"。此操作无法撤销。
+            此操作将永久删除&quot;{itemName}&quot;。此操作无法撤销。
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

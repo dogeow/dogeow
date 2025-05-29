@@ -56,7 +56,7 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
   
   // 随机打乱棋盘并确保有解
   const shuffleBoard = (board: number[], boardSize: number) => {
-    let shuffled = [...board]
+    const shuffled = [...board]
     let solved = false
     
     // 尝试最多10次生成有解的棋盘

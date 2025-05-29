@@ -14,13 +14,12 @@ export default function NoteNavigation() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
   
-  // 导航项定义
-  
   // 检查当前路径是否激活
-    if (item.exact) {
-      return pathname === item.href
+  const isActive = (href: string, exact = false) => {
+    if (exact) {
+      return pathname === href
     }
-    return pathname.startsWith(item.href)
+    return pathname.startsWith(href)
   }
   
   // 统一跳转处理

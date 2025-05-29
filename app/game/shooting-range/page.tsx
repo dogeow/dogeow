@@ -36,7 +36,7 @@ export default function ShootingRangePage() {
   }, []);
 
   // 处理返回设置按钮点击，确保释放指针锁定
-  const handleBackToSettings = () => {
+  const _handleBackToSettings = () => {
     // 尝试释放指针锁定
     if (document.exitPointerLock) {
       document.exitPointerLock();

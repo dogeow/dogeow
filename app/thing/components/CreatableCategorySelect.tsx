@@ -20,7 +20,7 @@ interface CreatableCategorySelectProps {
 export default function CreatableCategorySelect({ value, onValueChange, categories, allowNoneOption, onCreateCategory }: CreatableCategorySelectProps) {
   const [inputValue, setInputValue] = useState("");
   const [open, setOpen] = useState(false);
-  const [_creating, __setCreating] = useState(false);
+  const [, setCreating] = useState(false);
 
   // 过滤后的分类
   const filtered = useMemo(() => {
@@ -45,22 +45,23 @@ export default function CreatableCategorySelect({ value, onValueChange, categori
   const handleCreate = async () => {
     console.log('handleCreate 被调用，inputValue:', inputValue, 'exists:', exists);
     if (!inputValue.trim() || exists) return;
-    _setCreating(true);
+    setCreating(true);
     if (onCreateCategory) {
       try {
         const newCategory = await onCreateCategory(inputValue.trim());
         onValueChange(newCategory.id.toString());
-      } catch (e: unknown) {
-        toast.error(e?.message || e?.toString() || '创建分类失败');
+              } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : (typeof e === 'string' ? e : '创建分类失败');
+        toast.error(errorMessage);
       } finally {
-        _setCreating(false);
+        setCreating(false);
         setInputValue("");
         setOpen(false);
       }
     } else {
       onValueChange(inputValue.trim());
       setInputValue("");
-      _setCreating(false);
+      setCreating(false);
       setOpen(false);
     }
   };
@@ -122,7 +123,7 @@ export default function CreatableCategorySelect({ value, onValueChange, categori
                   }}
                 >
                   <Plus className="w-4 h-4 mr-1" />
-                  添加"{inputValue.trim()}"
+                  添加&quot;{inputValue.trim()}&quot;
                 </CommandItem>
               )}
               {filtered.length === 0 && (!inputValue.trim() || exists) && (

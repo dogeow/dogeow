@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import useAuthStore from '@/stores/authStore'
 import { useRouter } from 'next/navigation'
+import { ChevronLeft, LayoutDashboard, Check, X, LogOut } from 'lucide-react'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
 

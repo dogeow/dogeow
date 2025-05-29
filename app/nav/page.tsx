@@ -127,6 +127,7 @@ function NavContent() {
   );
 
   // 分类筛选
+  const filteredCategories = categories
     .filter(category => selectedCategory === 'all' || category.id === selectedCategory)
     .filter(category => category.items && category.items.length > 0)
     .map(category => ({

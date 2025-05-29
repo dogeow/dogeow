@@ -100,7 +100,7 @@ export default function SpotTab({ spots, rooms, loading, onAddSpot, onUpdateSpot
         <div>
           {spots.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
-              暂无位置，请点击右下角的"+"按钮添加位置
+              暂无位置，请点击右下角的&quot;+&quot;按钮添加位置
             </div>
           ) : (
             <div className="space-y-2">

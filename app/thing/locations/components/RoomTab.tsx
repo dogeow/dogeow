@@ -100,7 +100,7 @@ export default function RoomTab({ rooms, areas, loading, onAddRoom, onUpdateRoom
         <div>
           {rooms.length === 0 ? (
             <div className="text-center py-6 text-muted-foreground">
-              暂无房间，请点击右下角的"+"按钮添加房间
+              暂无房间，请点击右下角的&quot;+&quot;按钮添加房间
             </div>
           ) : (
             <div className="space-y-2">

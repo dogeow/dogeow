@@ -196,7 +196,7 @@ const Target = ({ position, hit, scale, onClick, id }: {
   })
 
   // 直接在组件内处理点击事件
-  const handleMeshClick = (e: any) => {
+  const handleMeshClick = (e: THREE.Event) => {
     // React Three Fiber 事件处理
     if (e.stopPropagation) {
       e.stopPropagation();
@@ -351,7 +351,7 @@ const GameUI = ({ score, timeLeft, gameOver, onRestart }: {
 }
 
 // 子弹组件
-const Bullet = ({ initialPosition, direction, onHit }: { 
+const Bullet = ({ initialPosition, direction }: { 
   initialPosition: THREE.Vector3,
   direction: THREE.Vector3,
   onHit?: () => void
@@ -423,7 +423,7 @@ const Bullet = ({ initialPosition, direction, onHit }: {
               attach="geometry"
               onUpdate={(self) => {
                 const positions = [];
-                for (let pos of trailPositions.current) {
+                for (const pos of trailPositions.current) {
                   positions.push(pos.x, pos.y, pos.z);
                 }
                 self.setAttribute(
@@ -532,7 +532,7 @@ const GameScene = ({
   gameStarted: boolean,
   setGameStarted: (started: boolean) => void,
   useFallbackControls?: boolean,
-  onError?: (message: string) => void
+  onError?: (_message: string) => void
 }) => {
   const { camera, gl, scene } = useThree()
   const controls = useRef<any>(null)
@@ -553,10 +553,10 @@ const GameScene = ({
   const shootCooldown = useRef(500); // 麦克雷左轮手枪射击间隔约为0.5秒
   
   // 鼠标位置状态 (用于备用控制)
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [, ] = useState({ x: 0, y: 0 })
   
   // 指针锁状态
-  const [pointerLocked, setPointerLocked] = useState(false);
+  const [, setPointerLocked] = useState(false);
   
   // 根据难度设置参数
   const difficultySettings = {

@@ -6,9 +6,8 @@ import { apiRequest } from '@/lib/api'
 import MarkdownEditor from '@/components/markdown'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft, Edit, Eye } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useEditorStore } from '../store/editorStore'
 import { useGlobalNavigationGuard } from '../hooks/useGlobalNavigationGuard'
@@ -55,8 +54,8 @@ export default function NoteEditor({
 }: NoteEditorProps) {
   const router = useRouter()
   const [noteTitle, setNoteTitle] = useState(title)
-  const [_isSaving, __setIsSaving] = useState(false)
-  const [_markdownPreview, __setMarkdownPreview] = useState(initialMarkdown)
+  const [, setIsSaving] = useState(false)
+  const [, setMarkdownPreview] = useState(initialMarkdown)
   const [draft, setDraft] = useState(isDraft)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)

@@ -1,4 +1,4 @@
-|// 性能监控工具
+// 性能监控工具
 export class PerformanceMonitor {
   private static instance: PerformanceMonitor;
   private metrics: Map<string, number> = new Map();

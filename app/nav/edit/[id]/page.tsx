@@ -48,6 +48,7 @@ const navItemSchema = z.object({
   sort_order: z.coerce.number().int().nonnegative()
 }) as z.ZodType<FormData>;
 
+export default function EditNavPage() {
   const params = useParams()
   const router = useRouter()
   const { fetchCategories, categories, items: _items, fetchItems, updateItem, createCategory } = useNavStore()

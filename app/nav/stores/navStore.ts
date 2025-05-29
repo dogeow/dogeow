@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { NavCategory, NavItem } from '@/app/nav/types'
 import * as navApi from '@/app/nav/services/api'
-import { toast } from 'sonner'
+// import { toast } from 'sonner' // 暂时注释掉未使用的导入
 
 interface NavStore {
   categories: NavCategory[]
