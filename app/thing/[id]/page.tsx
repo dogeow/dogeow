@@ -14,12 +14,13 @@ import { useItemStore } from '@/app/thing/stores/itemStore'
 import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 import { isLightColor } from '@/lib/helpers'
 import { statusMap } from '../config/status'
+import { Item, Tag } from '@/app/thing/types'
 
 export default function ItemDetail() {
   const params = useParams()
   const router = useRouter()
   const { getItem, deleteItem } = useItemStore()
-  const [item, setItem] = useState<any>(null)
+  const [item, setItem] = useState<Item | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
@@ -98,13 +99,13 @@ export default function ItemDetail() {
   
   const status = statusMap[item.status as keyof typeof statusMap] || { label: item.status, variant: 'secondary' }
   
-  const renderTags = (item: unknown) => {
+  const renderTags = (item: Item) => {
     if (!item.tags || item.tags.length === 0) return null;
     
     return (
       <div className="flex flex-wrap gap-2 mt-3">
         <h3 className="font-medium text-xs text-muted-foreground mt-1">标签:</h3>
-        {item.tags.map((tag: unknown) => (
+        {item.tags.map((tag: Tag) => (
           <Badge
             key={tag.id}
             style={{
