@@ -1,51 +1,28 @@
 "use client"
 
 import { ThemeProvider as NextThemesProvider } from "next-themes"
-import { useThemeStore, getCurrentThemeColor } from "@/stores/themeStore"
+import { useThemeStore } from "@/stores/themeStore"
 import { useEffect } from "react"
 import { useTheme } from "next-themes"
-import { configs } from "@/app/configs"
 
 // 内部组件用于处理系统主题变化与颜色变量应用
 function ThemeHandler() {
-  const { followSystem, currentTheme, customThemes } = useThemeStore()
+  const { followSystem, currentTheme, customThemes, previousThemeMode, setFollowSystem } = useThemeStore()
   const { setTheme, theme, systemTheme } = useTheme()
 
   // 处理主题颜色与深色模式
   useEffect(() => {
-    // 确保dark类被正确应用
-    const htmlElement = document.documentElement;
-    
-    // 1. 处理主题模式 (dark/light)
-    if (followSystem) {
-      const systemColorTheme = systemTheme === 'dark' ? 'dark' : 'light';
-      setTheme(systemColorTheme);
-    }
 
-    // 2. 手动设置一次dark类以确保样式生效
-    if (theme === 'dark') {
-      htmlElement.classList.add('dark');
+    if (followSystem) {
+      // 跟随系统主题时
+      setTheme(systemTheme === 'dark' ? 'dark' : 'light');
     } else {
-      htmlElement.classList.remove('dark');
-    }
-    
-    // 3. 记录状态用于调试
-    console.log('ThemeProvider:', { 
-      currentAppliedTheme: theme, 
-      systemTheme, 
-      followSystem,
-      isDarkModeActive: htmlElement.classList.contains('dark')
-    });
-    
-    // 4. 应用主题颜色变量
-    if (!followSystem) {
-      const themeColor = getCurrentThemeColor(currentTheme, customThemes);
-      if (themeColor) {
-        htmlElement.style.setProperty('--primary', themeColor.primary);
-        htmlElement.style.setProperty('--primary-color', themeColor.color);
+      // 恢复用户之前的深色/浅色模式选择
+      if (previousThemeMode && theme !== previousThemeMode) {
+        setTheme(previousThemeMode);
       }
     }
-  }, [followSystem, systemTheme, setTheme, theme, currentTheme, customThemes]);
+  }, [followSystem, systemTheme, setTheme, currentTheme, customThemes, previousThemeMode, theme]);
 
   return null;
 }

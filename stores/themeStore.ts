@@ -9,18 +9,20 @@ interface ThemeState {
   currentTheme: string
   customThemes: CustomTheme[]
   followSystem: boolean
+  previousThemeMode: string
   setCurrentTheme: (theme: string) => void
   addCustomTheme: (theme: CustomTheme) => void
   removeCustomTheme: (id: string) => void
-  setFollowSystem: (follow: boolean) => void
+  setFollowSystem: (follow: boolean, currentMode?: string) => void
 }
 
 export const useThemeStore = create<ThemeState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentTheme: configs.themeColors[0].id,
       customThemes: [],
       followSystem: false,
+      previousThemeMode: 'light',
       setCurrentTheme: (theme) => set({ currentTheme: theme }),
       addCustomTheme: (theme) => set((state) => ({ 
         customThemes: [...state.customThemes, theme] 
@@ -30,7 +32,21 @@ export const useThemeStore = create<ThemeState>()(
         // 如果删除的是当前主题，则切换回默认主题
         currentTheme: state.currentTheme === id ? 'default' : state.currentTheme
       })),
-      setFollowSystem: (follow) => set({ followSystem: follow })
+      setFollowSystem: (follow, currentMode) => set((state) => {
+        if (follow) {
+          // 启用跟随系统主题时，保存当前主题和模式
+          return { 
+            followSystem: follow, 
+            previousThemeMode: currentMode || 'light'
+          }
+        } else {
+          // 取消跟随系统主题时，恢复到之前的主题和模式
+          return { 
+            followSystem: follow, 
+            previousThemeMode: state.previousThemeMode
+          }
+        }
+      })
     }),
     {
       name: 'theme-storage',
