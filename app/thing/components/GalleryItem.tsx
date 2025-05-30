@@ -7,16 +7,14 @@ interface GalleryItemProps {
   item: Item;
   imageSize: number;
   onClick: (item: Item) => void;
-  getThumbnailUrl: (item: Item) => string | undefined;
 }
 
 export function GalleryItem({
   item,
   imageSize,
   onClick,
-  getThumbnailUrl,
 }: GalleryItemProps) {
-  const thumbnailUrl = getThumbnailUrl(item);
+  const thumbnailUrl = item.thumbnail_url;
 
   // Determine border color based on status
   let borderColorClass = "border-transparent";

@@ -18,17 +18,6 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
 
   const router = useRouter();
 
-  // 获取缩略图URL的函数
-  const getThumbnailUrl = (item: Item): string | undefined => {
-    if (item.primary_image?.thumbnail_path) {
-      return `/storage/${item.primary_image.thumbnail_path}`;
-    }
-    if (item.images && item.images.length > 0) {
-      return `/storage/${item.images[0].thumbnail_path}`;
-    }
-    return undefined;
-  };
-
   useEffect(() => {
     const container = document.getElementById("item-gallery-container");
     if (container) {
@@ -86,7 +75,6 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
               item={item}
               imageSize={imageSize}
               onClick={handleItemClick}
-              getThumbnailUrl={getThumbnailUrl}
             />
           ))}
         </div>

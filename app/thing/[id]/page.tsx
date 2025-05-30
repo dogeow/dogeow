@@ -170,7 +170,7 @@ export default function ItemDetail() {
                   <div className="space-y-3">
                     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-sm">
                       <Image
-                        src={(item.images[activeImageIndex] as any).url || item.images[activeImageIndex].path}
+                        src={item.images[activeImageIndex].url || ''}
                         alt={item.name}
                         fill
                         className="object-contain"
@@ -188,7 +188,7 @@ export default function ItemDetail() {
                             onClick={() => setActiveImageIndex(index)}
                           >
                             <Image
-                              src={(image as any).thumbnail_url || image.thumbnail_path}
+                              src={image.thumbnail_url || ''}
                               alt={`${item.name} 图片 ${index + 1}`}
                               fill
                               className="object-cover rounded-sm"

@@ -104,6 +104,7 @@ export interface Item {
   is_public: boolean;
   created_at: string;
   updated_at: string;
+  thumbnail_url?: string | null;
   user?: User;
   category?: Category;
   spot?: Spot & {
@@ -115,12 +116,16 @@ export interface Item {
     id: number;
     path: string;
     thumbnail_path: string;
+    thumbnail_url?: string;
+    url?: string;
     is_primary: boolean;
   }>;
   primary_image?: {
     id: number;
     path: string;
     thumbnail_path: string;
+    thumbnail_url?: string;
+    url?: string;
   };
   tags?: Tag[];
   notes?: string;

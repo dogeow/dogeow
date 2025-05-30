@@ -11,17 +11,3 @@ export const getLocationPath = (spot?: Spot | null): string => {
   }
   return pathParts.join(" > ");
 };
-
-export const getFullImageUrl = (item: Item): string | undefined => {
-  if (item.primary_image?.path) return item.primary_image.path;
-  if (item.images && item.images.length > 0 && item.images[0].path) return item.images[0].path;
-  return undefined;
-};
-
-export const getThumbnailUrl = (item: Item): string | undefined => {
-  if (item.primary_image?.thumbnail_path) return item.primary_image.thumbnail_path;
-  if (item.images && item.images.length > 0 && item.images[0].thumbnail_path) {
-    return item.images[0].thumbnail_path;
-  }
-  return undefined;
-};
