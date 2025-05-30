@@ -13,6 +13,7 @@ import BasicInfoForm from '@/app/thing/components/BasicInfoForm'
 import TagsSection from '@/app/thing/components/TagsSection'
 import ImageSection from '@/app/thing/components/ImageSection'
 import DetailsSection from '@/app/thing/components/DetailsSection'
+import { ItemFormData, UploadedImage, Room, Spot, Tag } from '@/app/thing/types'
 
 export default function EditItem() {
   const params = useParams()
@@ -23,6 +24,15 @@ export default function EditItem() {
   const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
   const [locationPath, setLocationPath] = useState<string>('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  
+  const { 
+    categories, 
+    tags, 
+    fetchCategories, 
+    fetchTags, 
+    getItem, 
+    updateItem 
+  } = useItemStore()
   
   const { data: areas = [], mutate: refreshAreas } = useAreas()
   const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>()
@@ -63,8 +73,8 @@ export default function EditItem() {
     }
   }, [refreshSpots])
 
-  const convertExistingImagesToUploadedFormat = useCallback((images: unknown[]): UploadedImage[] => {
-    return images.map(img => ({
+  const convertExistingImagesToUploadedFormat = useCallback((images: any[]): UploadedImage[] => {
+    return images.map((img: any) => ({
       path: img.path || '', 
       thumbnail_path: img.thumbnail_path || '',
       url: img.url || '',
@@ -105,7 +115,7 @@ export default function EditItem() {
     setFormData(prev => ({ ...prev, ...updates }))
   }, [rooms, spots])
 
-  const handleTagCreated = useCallback((tag: unknown) => {
+  const handleTagCreated = useCallback((tag: Tag) => {
     fetchTags()
     setSelectedTags(prev => [...prev, tag.id.toString()])
   }, [fetchTags])
@@ -199,7 +209,7 @@ export default function EditItem() {
         }
         
         if (item.tags?.length) {
-          setSelectedTags(item.tags.map((tag: unknown) => tag.id.toString()))
+          setSelectedTags(item.tags.map((tag: Tag) => tag.id.toString()))
         }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "发生错误，请重试")
@@ -234,7 +244,7 @@ export default function EditItem() {
   
   if (initialLoading) {
     return (
-      <div className="container mx-auto py-2 px-4">
+      <div className="container mx-auto py-2">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center">
             <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">
@@ -250,7 +260,7 @@ export default function EditItem() {
   }
   
   return (
-    <div className="container mx-auto py-2 px-4">
+    <div className="container mx-auto py-2">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">

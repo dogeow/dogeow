@@ -132,7 +132,7 @@ export default function AddItem() {
   }
   
   return (
-    <div className="container mx-auto py-2 px-4">
+    <div className="container mx-auto py-2">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">

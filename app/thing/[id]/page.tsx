@@ -84,7 +84,7 @@ export default function ItemDetail() {
   if (error || !item) {
     return (
       <>
-        <div className="container mx-auto py-2 px-4">
+        <div className="container mx-auto py-2">
           <div className="flex flex-col justify-center items-center h-64">
             <p className="text-red-500 mb-4">{error || '物品不存在'}</p>
             <Button onClick={() => router.push('/thing')}>
