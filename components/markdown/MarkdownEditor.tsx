@@ -1,5 +1,6 @@
 "use client"
 
+import React, { useState, useCallback } from 'react'
 import { Slate, Editable, RenderElementProps, RenderLeafProps, useSlate } from 'slate-react'
 import { Button } from "@/components/ui/button"
 import { Bold, Italic, List, ListOrdered, Code, Save, Quote, Heading1, Heading2, ImageIcon } from 'lucide-react'
@@ -31,7 +32,7 @@ const MarkdownEditor = ({
   minHeight = '300px',
   isDraft = false,
   onDraftChange,
-  _onChange,
+  onChange,
 }: MarkdownEditorProps) => {
   // 客户端环境检查
   const [isClient, setIsClient] = useState(false)
