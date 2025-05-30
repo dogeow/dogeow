@@ -13,17 +13,15 @@ import Image from "next/image";
 import { Globe, LockIcon, TagIcon, FolderIcon, CalendarIcon, InfoIcon, AlertTriangleIcon, Edit3Icon } from "lucide-react";
 import { Item, Spot } from "@/app/thing/types";
 import { formatDate } from '@/lib/helpers/dateUtils';
-import { getFullImageUrl, getLocationPath } from '@/app/thing/utils'; // Import helpers
+import { getLocationPath } from '@/app/thing/utils';
 
 interface ItemDetailDialogProps {
   item: Item | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  // getLocationPath prop removed
   onViewDetails: (id: number) => void;
 }
 
-// getFullImageUrl removed, will use imported version
 // Helper for status badge, can be centralized later
 const getStatusBadge = (status: string): React.ReactElement => {
   let colorClass = "";
@@ -60,12 +58,22 @@ export function ItemDetailDialog({
   item,
   open,
   onOpenChange,
-  // getLocationPath prop removed
   onViewDetails,
 }: ItemDetailDialogProps) {
   if (!item) return null;
 
-  const imageUrl = getFullImageUrl(item);
+  // 获取图片URL - 优先使用主图片，否则使用第一张图片
+  const getImageUrl = (item: Item): string | undefined => {
+    if (item.primary_image?.url) {
+      return item.primary_image.url;
+    }
+    if (item.images && item.images.length > 0 && item.images[0].url) {
+      return item.images[0].url;
+    }
+    return undefined;
+  };
+
+  const imageUrl = getImageUrl(item);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
