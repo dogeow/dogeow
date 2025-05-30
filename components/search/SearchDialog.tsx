@@ -223,7 +223,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const renderSearchResults = useCallback(() => {
     if (loading) {
       return (
-        <div className="text-center py-8">
+        <div className="flex flex-col items-center justify-center py-8 min-h-[160px]">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">搜索中...</p>
         </div>
@@ -232,35 +232,39 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     
     if (searchTerm && filteredResults.length === 0) {
       return (
-        <div className="text-center py-8">
+        <div className="flex flex-col items-center justify-center py-8 min-h-[160px]">
           <p className="text-muted-foreground">未找到相关结果</p>
         </div>
       )
     }
     
     if (searchTerm) {
-      return filteredResults.map((result) => (
-        <div
-          key={`${result.category}-${result.id}`}
-          className="p-3 mb-2 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
-          onClick={() => handleResultClick(result.url)}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-            <h3 className="font-semibold truncate">{result.title}</h3>
-            <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
-              {categories.find(c => c.id === result.category)?.name || result.category}
-              {result.category === 'thing' && 'isPublic' in result && (
-                <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
-              )}
-            </Badge>
-          </div>
-          <p className="text-sm text-muted-foreground line-clamp-2">{result.content}</p>
+      return (
+        <div className="min-h-[160px] space-y-2">
+          {filteredResults.map((result) => (
+            <div
+              key={`${result.category}-${result.id}`}
+              className="p-3 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
+              onClick={() => handleResultClick(result.url)}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <h3 className="font-semibold truncate">{result.title}</h3>
+                <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
+                  {categories.find(c => c.id === result.category)?.name || result.category}
+                  {result.category === 'thing' && 'isPublic' in result && (
+                    <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
+                  )}
+                </Badge>
+              </div>
+              <p className="text-sm text-muted-foreground line-clamp-2">{result.content}</p>
+            </div>
+          ))}
         </div>
-      ))
+      )
     }
     
     return (
-      <div className="text-center py-4">
+      <div className="flex flex-col items-center justify-center py-8 min-h-[160px]">
         <p className="text-muted-foreground">请输入搜索关键词</p>
       </div>
     )
@@ -269,7 +273,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`md:max-w-[550px] max-h-[90vh] max-w-[90%] overflow-y-auto p-6 transition-all duration-300
+        className={`md:max-w-[550px] max-h-[90vh] max-w-[90%] p-6 transition-all duration-300 flex flex-col
           ${keyboardOpen ? 'fixed bottom-0 left-0 right-0 top-auto h-[45vh] max-h-[50vh] rounded-t-xl' : 'top-1/2 -translate-y-1/2 h-[60vh] rounded-xl'}
         `}
         style={keyboardOpen ? { margin: 0, borderRadius: '1.2rem 1.2rem 0 0' } : {}}
@@ -346,8 +350,10 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
           </div>
         </div>
 
-        <div className="mt-4 px-1">
-          {renderSearchResults()}
+        <div className="mt-4 px-1 flex-1 overflow-hidden">
+          <div className="h-full overflow-y-auto">
+            {renderSearchResults()}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
