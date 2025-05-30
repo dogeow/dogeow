@@ -283,34 +283,30 @@ export function SettingsPanel({
           </motion.div>
         </DialogTrigger>
         
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="max-w-[80%]">
           <DialogHeader>
             <DialogTitle>添加自定义主题</DialogTitle>
           </DialogHeader>
           
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="theme-name" className="text-right">
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex items-center gap-4">
+              <Label htmlFor="theme-name" className="w-1/4 text-right">
                 主题名称
               </Label>
               <Input
                 id="theme-name"
                 value={newThemeName}
                 onChange={(e) => setNewThemeName(e.target.value)}
-                className="col-span-3"
+                className="w-3/4"
                 placeholder="例如：我的主题"
               />
             </div>
             
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="theme-color" className="text-right">
+            <div className="flex items-center gap-4">
+              <Label htmlFor="theme-color" className="w-1/4 text-right">
                 主题颜色
               </Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <div 
-                  className="h-8 w-8 rounded-md border"
-                  style={{ backgroundColor: newThemeColor }}
-                />
+              <div className="w-3/4">
                 <Input
                   id="theme-color"
                   type="color"

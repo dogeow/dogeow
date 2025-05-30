@@ -83,19 +83,13 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
             <Label htmlFor="theme-color" className="text-right">
               主题颜色
             </Label>
-            <div className="col-span-3 flex items-center gap-2">
-              <div 
-                className="h-8 w-8 rounded-md border"
-                style={{ backgroundColor: newThemeColor }}
-              />
-              <Input
-                id="theme-color"
-                type="color"
-                value={newThemeColor}
-                onChange={(e) => setNewThemeColor(e.target.value)}
-                className="w-full"
-              />
-            </div>
+            <Input
+              id="theme-color"
+              type="color"
+              value={newThemeColor}
+              onChange={(e) => setNewThemeColor(e.target.value)}
+              className="col-span-3"
+            />
           </div>
         </div>
         

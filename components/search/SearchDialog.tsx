@@ -269,7 +269,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`sm:max-w-[90%] md:max-w-[550px] max-h-[90vh] overflow-y-auto p-6 transition-all duration-300
+        className={`md:max-w-[550px] max-h-[90vh] max-w-[90%] overflow-y-auto p-6 transition-all duration-300
           ${keyboardOpen ? 'fixed bottom-0 left-0 right-0 top-auto h-[45vh] max-h-[50vh] rounded-t-xl' : 'top-1/2 -translate-y-1/2 h-[60vh] rounded-xl'}
         `}
         style={keyboardOpen ? { margin: 0, borderRadius: '1.2rem 1.2rem 0 0' } : {}}
