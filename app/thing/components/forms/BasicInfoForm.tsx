@@ -10,7 +10,7 @@ import { Plus, Tag as TagIcon, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import ImageUploader from '../ImageUploader'
-import { ItemFormData } from '../../types'
+import { ItemFormData, Category } from '../../types'
 import { TagType } from '../../add/page'
 import { isLightColor } from '@/lib/helpers'
 
@@ -27,7 +27,7 @@ interface BasicInfoFormProps {
   selectedTags: string[];
   setSelectedTags: Dispatch<SetStateAction<string[]>>;
   setCreateTagDialogOpen: Dispatch<SetStateAction<boolean>>;
-  categories: unknown[];
+  categories: Category[];
   setUploadedImages: Dispatch<SetStateAction<UploadedImage[]>>;
 }
 

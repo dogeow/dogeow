@@ -91,7 +91,7 @@ export default function AddItem() {
   }, [fetchCategories, fetchTags])
   
   // 处理标签创建
-  const handleTagCreated = (tag: unknown) => {
+  const handleTagCreated = (tag: Tag) => {
     // 刷新标签列表
     fetchTags()
     

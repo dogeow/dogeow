@@ -61,7 +61,7 @@ export default function ItemDetail() {
     }
   }
   
-  const formatDate = (date: string) => {
+  const formatDate = (date: string | null) => {
     if (!date) return '-'
     try {
       return format(new Date(date), 'yyyy-MM-dd')
@@ -110,7 +110,7 @@ export default function ItemDetail() {
             key={tag.id}
             style={{
               backgroundColor: tag.color || '#3b82f6',
-              color: isLightColor(tag.color) ? '#000' : '#fff'
+              color: isLightColor(tag.color || '#3b82f6') ? '#000' : '#fff'
             }}
             className="h-6 px-2"
           >
@@ -170,7 +170,7 @@ export default function ItemDetail() {
                   <div className="space-y-3">
                     <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-sm">
                       <Image
-                        src={item.images[activeImageIndex].url || item.images[activeImageIndex].path}
+                        src={(item.images[activeImageIndex] as any).url || item.images[activeImageIndex].path}
                         alt={item.name}
                         fill
                         className="object-contain"
@@ -179,7 +179,7 @@ export default function ItemDetail() {
                     
                     {item.images.length > 1 && (
                       <div className="flex flex-wrap gap-2 py-2 justify-center">
-                        {item.images.map((image: unknown, index: number) => (
+                        {item.images.map((image, index: number) => (
                           <div
                             key={image.id}
                             className={`relative w-16 h-16 rounded-md cursor-pointer border-2 transition-all ${
@@ -188,7 +188,7 @@ export default function ItemDetail() {
                             onClick={() => setActiveImageIndex(index)}
                           >
                             <Image
-                              src={image.thumbnail_url}
+                              src={(image as any).thumbnail_url || image.thumbnail_path}
                               alt={`${item.name} 图片 ${index + 1}`}
                               fill
                               className="object-cover rounded-sm"
@@ -261,13 +261,13 @@ export default function ItemDetail() {
                       <div className="bg-blue-50 p-3 rounded-lg border shadow-sm">
                         <h3 className="font-medium text-xs text-muted-foreground">区域</h3>
                         <p className="text-sm font-semibold truncate">
-                          {item.spot?.room?.area?.name || item.area?.name || (item.area_id ? `区域 ${item.area_id}` : '未指定')}
+                          {item.spot?.room?.area?.name || (item as any).area?.name || (item.area_id ? `区域 ${item.area_id}` : '未指定')}
                         </p>
                       </div>
                       <div className="bg-green-50 p-3 rounded-lg border shadow-sm">
                         <h3 className="font-medium text-xs text-muted-foreground">房间</h3>
                         <p className="text-sm font-semibold truncate">
-                          {item.spot?.room?.name || item.room?.name || (item.room_id ? `房间 ${item.room_id}` : '未指定')}
+                          {item.spot?.room?.name || (item as any).room?.name || (item.room_id ? `房间 ${item.room_id}` : '未指定')}
                         </p>
                       </div>
                       <div className="bg-purple-50 p-3 rounded-lg border shadow-sm">
