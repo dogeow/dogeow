@@ -68,8 +68,20 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [thingPublicStatus, setThingPublicStatus] = useState<'all' | 'public' | 'private'>('all')
+  const [hasSearched, setHasSearched] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const keyboardOpen = useKeyboardStatus();
+  
+  // 添加上次搜索参数的引用，用于避免重复搜索
+  const lastSearchRef = useRef<{
+    searchTerm: string;
+    activeCategory: string;
+    thingPublicStatus: string;
+  }>({
+    searchTerm: '',
+    activeCategory: 'all',
+    thingPublicStatus: 'all'
+  })
 
   const categories: Category[] = useMemo(() => [
     { id: "all", name: "全部", path: "/search" },
@@ -95,8 +107,33 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const performSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
       setResults([])
+      setHasSearched(false)
+      lastSearchRef.current = {
+        searchTerm: '',
+        activeCategory,
+        thingPublicStatus
+      }
       return
     }
+
+    // 检查是否与上次搜索参数相同，避免重复搜索
+    const currentSearchParams = {
+      searchTerm: searchTerm.trim(),
+      activeCategory,
+      thingPublicStatus
+    }
+    
+    if (
+      lastSearchRef.current.searchTerm === currentSearchParams.searchTerm &&
+      lastSearchRef.current.activeCategory === currentSearchParams.activeCategory &&
+      lastSearchRef.current.thingPublicStatus === currentSearchParams.thingPublicStatus
+    ) {
+      console.log('搜索参数未变化，跳过重复搜索')
+      return
+    }
+
+    // 更新上次搜索参数
+    lastSearchRef.current = currentSearchParams
 
     setLoading(true)
     
@@ -141,6 +178,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       console.error('搜索出错:', error)
     } finally {
       setLoading(false)
+      setHasSearched(true) // 标记已完成搜索
     }
   }, [searchTerm, activeCategory, thingPublicStatus])
 
@@ -190,8 +228,14 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
         performSearch()
       } else {
         setResults([])
+        setHasSearched(false)
+        lastSearchRef.current = {
+          searchTerm: '',
+          activeCategory,
+          thingPublicStatus
+        }
       }
-    }, 300)
+    }, 500)
     
     return () => clearTimeout(delaySearch)
   }, [searchTerm, activeCategory, thingPublicStatus, performSearch])
@@ -230,7 +274,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       )
     }
     
-    if (searchTerm && filteredResults.length === 0) {
+    if (searchTerm && filteredResults.length === 0 && hasSearched) {
       return (
         <div className="flex flex-col items-center justify-center py-8 min-h-[160px]">
           <p className="text-muted-foreground">未找到相关结果</p>
@@ -268,7 +312,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
         <p className="text-muted-foreground">请输入搜索关键词</p>
       </div>
     )
-  }, [loading, searchTerm, filteredResults, categories, handleResultClick])
+  }, [loading, searchTerm, filteredResults, categories, handleResultClick, hasSearched])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -314,6 +358,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                   
                   setSearchTerm("");
                   setResults([]);
+                  setHasSearched(false);
                   setTimeout(() => {
                     inputRef.current?.focus();
                   }, 10);
