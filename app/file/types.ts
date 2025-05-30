@@ -36,4 +36,10 @@ export interface FolderNode {
   id: number
   name: string
   children: FolderNode[]
+}
+
+export interface FilePreviewResponse {
+  type: 'image' | 'pdf' | 'text' | 'video' | 'audio' | 'other'
+  content?: string | null
+  url?: string | null
 } 

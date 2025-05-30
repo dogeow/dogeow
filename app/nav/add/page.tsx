@@ -203,7 +203,7 @@ export default function AddNavItem() {
                       {/* 图标预览在最左侧 */}
                       {form.watch('icon') && (
                         <Image
-                          src={form.watch('icon')}
+                          src={form.watch('icon')!}
                           alt="网站图标" width={32} height={32}
                           className="w-8 h-8 rounded border bg-white"
                           style={{ minWidth: 32, minHeight: 32 }}

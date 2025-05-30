@@ -69,7 +69,7 @@ export default function ListView({ files }: ListViewProps) {
             src={`${API_URL}/cloud/files/${file.id}/preview?thumb=true`} 
             alt={file.name} width={24} height={24} 
             className="object-cover w-full h-full"
-            onError={() => {
+            onError={(e) => {
               // 如果缩略图加载失败，显示默认图标
               e.currentTarget.style.display = 'none';
               e.currentTarget.parentElement?.classList.add('flex');

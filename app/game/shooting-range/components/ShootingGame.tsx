@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useRef, useState, useEffect, Suspense, useCallback, useMemo } from "react"
-import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { Canvas, useFrame, useThree, ThreeEvent } from "@react-three/fiber"
 import { PointerLockControls, /* Text, useTexture, */ Environment } from "@react-three/drei"
 import * as THREE from "three"
 // 注释掉外部组件导入，使用内部定义的组件
@@ -196,7 +196,7 @@ const Target = ({ position, hit, scale, onClick, id }: {
   })
 
   // 直接在组件内处理点击事件
-  const handleMeshClick = (e: THREE.Event) => {
+  const handleMeshClick = (e: ThreeEvent<MouseEvent>) => {
     // React Three Fiber 事件处理
     if (e.stopPropagation) {
       e.stopPropagation();

@@ -37,7 +37,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/helpers'
-import { CloudFile } from '../../types'
+import { CloudFile, FilePreviewResponse } from '../../types'
 import { apiRequest, put, del } from '@/lib/api'
 import useFileStore from '../../store/useFileStore'
 import { API_URL } from '@/lib/api'
@@ -216,14 +216,14 @@ export default function GridView({ files }: GridViewProps) {
         return;
       }
       
-      const { type, content, url } = await apiRequest<unknown>(`${API_URL}/cloud/files/${file.id}/preview`)
+      const { type, content, url } = await apiRequest<FilePreviewResponse>(`${API_URL}/cloud/files/${file.id}/preview`)
 
       setPreviewType(type)
       
       if (type === 'image' || type === 'pdf') {
-        setPreviewUrl(url)
+        setPreviewUrl(url ?? null)
       } else if (type === 'text') {
-        setPreviewContent(content)
+        setPreviewContent(content ?? null)
       }
     } catch (error) {
       toast.error('预览失败')

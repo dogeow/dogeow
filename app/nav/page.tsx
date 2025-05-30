@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useNavStore } from '@/app/nav/stores/navStore';
 import { useThemeStore, getCurrentThemeColor } from '@/stores/themeStore';
 import { NavCard } from './components/NavCard';
+import { NavCategory } from '@/app/nav/types';
 
 // 创建一个新的组件来处理搜索参数
 function NavContent() {
@@ -115,7 +116,7 @@ function NavContent() {
         style={selectedCategory === 'all' ? { background: themeColor.color, color: '#fff' } : {}}
         onClick={() => handleCategoryClick('all')}
       >全部</button>
-      {categories.map((cat: unknown) => (
+      {categories.map((cat: NavCategory) => (
         <button
           key={cat.id}
           className={`px-2 py-1 rounded text-left text-sm ${selectedCategory === cat.id ? 'font-bold' : 'hover:bg-gray-100'}`}

@@ -75,7 +75,7 @@ export default function NoteEditor({
     }
 
     try {
-      _setIsSaving(true)
+      setIsSaving(true)
       setDirty(false)
       
       const data = {
@@ -115,7 +115,7 @@ export default function NoteEditor({
       toast.error('保存失败')
       return Promise.reject(error)
     } finally {
-      _setIsSaving(false)
+      setIsSaving(false)
     }
   }
 
@@ -181,7 +181,7 @@ export default function NoteEditor({
       return
     }
     try {
-      _setIsSaving(true)
+      setIsSaving(true)
       const data = {
         title: noteTitle,
         content: safeContent,
@@ -197,7 +197,7 @@ export default function NoteEditor({
     } catch {
       toast.error('保存草稿失败')
     } finally {
-      _setIsSaving(false)
+      setIsSaving(false)
     }
   }
 
