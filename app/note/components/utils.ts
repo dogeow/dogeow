@@ -32,12 +32,13 @@ export const normalizeTokens = (tokens: unknown[]): { types: string[], content: 
           content: token,
         })
       }
-    } else if (token.content) {
-      if (typeof token.content === 'string') {
-        processToken(token.content, [...types, token.type])
-      } else {
-        for (const subToken of token.content) {
-          processToken(subToken, [...types, token.type])
+    } else if (token && typeof token === 'object' && 'content' in token) {
+      const tokenObj = token as { content: unknown; type?: string }
+      if (typeof tokenObj.content === 'string') {
+        processToken(tokenObj.content, [...types, tokenObj.type || ''])
+      } else if (Array.isArray(tokenObj.content)) {
+        for (const subToken of tokenObj.content) {
+          processToken(subToken, [...types, tokenObj.type || ''])
         }
       }
     }

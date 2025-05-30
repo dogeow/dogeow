@@ -80,7 +80,7 @@ export default function NoteEditor({
       
       const data = {
         title: noteTitle,
-        _content,
+        content,
         is_draft: draft
       }
 
@@ -91,13 +91,13 @@ export default function NoteEditor({
         result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
         // 更新预览
         if (result.content_markdown) {
-          _setMarkdownPreview(result.content_markdown)
+          setMarkdownPreview(result.content_markdown)
         }
       } else {
         // 创建新笔记
         result = await apiRequest<Note>('/notes', 'POST', data)
         if (result.content_markdown) {
-          _setMarkdownPreview(result.content_markdown)
+          setMarkdownPreview(result.content_markdown)
         }
       }
       
@@ -110,7 +110,7 @@ export default function NoteEditor({
       }
       
       return Promise.resolve()
-    } catch {
+    } catch (error) {
       console.error('保存笔记错误:', error)
       toast.error('保存失败')
       return Promise.reject(error)
@@ -161,7 +161,7 @@ export default function NoteEditor({
       })
       
       return result
-    } catch {
+    } catch (error) {
       console.error('图片上传错误:', error)
       toast.error('图片上传失败')
       throw error

@@ -68,7 +68,7 @@ export default function NotePage() {
       try {
         const data = await apiRequest<Note[]>('/notes')
         setNotes(data)
-      } catch {
+      } catch (error) {
         console.error('获取笔记列表失败:', error)
         toast.error('无法加载笔记列表')
       } finally {
@@ -89,7 +89,7 @@ export default function NotePage() {
       await apiRequest(`/notes/${id}`, 'DELETE')
       setNotes(notes.filter(note => note.id !== id))
       toast.success('笔记已删除')
-    } catch {
+    } catch (error) {
       console.error('删除笔记失败:', error)
       toast.error('删除笔记失败')
     }
