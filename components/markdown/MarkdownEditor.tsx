@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Slate, Editable, RenderElementProps, RenderLeafProps, useSlate } from 'slate-react'
 import { Button } from "@/components/ui/button"
 import { Bold, Italic, List, ListOrdered, Code, Save, Quote, Heading1, Heading2, ImageIcon } from 'lucide-react'
@@ -10,6 +10,7 @@ import { useMarkdownEditor } from './hooks/useMarkdownEditor'
 import { handleCodeBlockTab, handleCopyWithSyntaxHighlighting } from './utils'
 import './styles.css'
 import { Editor, Text, Transforms, Range } from 'slate'
+import { CustomText } from './types'
 
 export interface MarkdownEditorProps {
   initialContent?: string;
@@ -203,11 +204,13 @@ const MarkdownEditor = ({
           <div {...attributes} className="my-4 relative">
             {children}
             <div contentEditable={false} className="flex justify-center">
-              <Image
-                src={elementWithType.url}
-                alt="上传的图片" width={500} height={500}
-                className="max-w-full max-h-[500px] object-contain rounded-md"
-              />
+              {elementWithType.url && (
+                <Image
+                  src={elementWithType.url as string}
+                  alt="上传的图片" width={500} height={500}
+                  className="max-w-full max-h-[500px] object-contain rounded-md"
+                />
+              )}
             </div>
           </div>
         )
@@ -302,7 +305,12 @@ const MarkdownEditor = ({
   }, []);
   
   // 自定义工具栏
-  const Toolbar = useCallback(({ editor, marks, _selection, toggleMark }: { editor: typeof editor, marks: unknown, selection: Range | null, toggleMark: (format: MarkFormat) => void }) => {
+  const Toolbar = useCallback(({ editor, marks, selection, toggleMark }: { 
+    editor: Editor, 
+    marks: unknown, 
+    selection: Range | null, 
+    toggleMark: (format: MarkFormat) => void 
+  }) => {
     return (
       <div className="flex items-center flex-wrap gap-1 p-2 bg-background border rounded-md mb-2">
         <MarkButton format="bold" icon={Bold} title="加粗 (Ctrl+B)" toggleMark={toggleMark} editor={editor} marks={marks} />
@@ -464,7 +472,7 @@ const MarkdownEditor = ({
 
   function MarkButton(props: MarkButtonProps) {
     const { format, icon: Icon, title, toggleMark, marks } = props
-    const active = !!(marks && marks[format])
+    const active = !!(marks && (marks as any)[format])
     return (
       <Button
         variant={active ? 'secondary' : 'ghost'}
@@ -484,7 +492,7 @@ const MarkdownEditor = ({
     <div className="markdown-editor w-full">
       {/* 工具栏在编辑器外部 */}
       {!readOnly && (
-        <Toolbar editor={editor} marks={marks} selection={selection} toggleMark={markToggle} />
+        <Toolbar editor={editor} marks={marks} selection={_selection} toggleMark={markToggle} />
       )}
       <div 
         className={`slate-container border rounded-md p-3 ${readOnly ? 'bg-muted' : ''}`}
