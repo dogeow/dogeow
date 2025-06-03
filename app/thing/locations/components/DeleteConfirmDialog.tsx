@@ -2,6 +2,7 @@
 
 import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 import { LocationType } from '../hooks/useLocationManagement'
+import { getLocationTypeText } from '../constants'
 
 interface DeleteConfirmDialogProps {
   open: boolean;
@@ -18,7 +19,7 @@ export default function DeleteConfirmDialog({
 }: DeleteConfirmDialogProps) {
   const getItemName = () => {
     if (!itemToDelete) return ''
-    const typeText = itemToDelete.type === 'area' ? '区域' : itemToDelete.type === 'room' ? '房间' : '位置'
+    const typeText = getLocationTypeText(itemToDelete.type)
     return `${typeText} ${itemToDelete.id}`
   }
 

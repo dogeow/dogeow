@@ -8,10 +8,9 @@ interface LocationsHeaderProps {
   onSearch?: (query: string) => void
 }
 
-const LocationsHeader: React.FC<LocationsHeaderProps> = ({ onSearch }) => {
+const LocationsHeader: React.FC<LocationsHeaderProps> = () => {
   const [activeFolder, setActiveFolder] = useState<'area' | 'room' | null>(null)
 
-  // 点击文件夹图标时的处理函数
   const handleFolderClick = (type: 'area' | 'room') => {
     if (activeFolder === type) {
       setActiveFolder(null)

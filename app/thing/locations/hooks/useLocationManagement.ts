@@ -10,9 +10,9 @@ import {
   deleteRoom,
   updateSpot,
   deleteSpot,
-  createMutation,
   post
 } from '@/lib/api'
+import { getLocationTypeText } from '../constants'
 
 // 定义类型
 export type LocationType = 'area' | 'room' | 'spot';
@@ -167,7 +167,7 @@ export const useLocationManagement = () => {
     };
     
     const { fn, refresh } = deleteOperations[itemToDelete.type];
-    const successMessage = `${itemToDelete.type === 'area' ? '区域' : itemToDelete.type === 'room' ? '房间' : '位置'}删除成功`;
+    const successMessage = `${getLocationTypeText(itemToDelete.type)}删除成功`;
     
     try {
       setLoading(true);
