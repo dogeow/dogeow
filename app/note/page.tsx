@@ -228,22 +228,6 @@ export default function NotePage() {
                         <span className="ml-2 text-xs text-muted-foreground">(草稿)</span>
                       )}
                     </Link>
-                    
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => router.push(`/note/edit/${note.id}`)}>
-                          <Edit className="mr-2 h-4 w-4" /> 编辑
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => deleteNote(note.id)}>
-                          <Trash className="mr-2 h-4 w-4" /> 删除
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
                   
                   <div className="text-sm text-muted-foreground dark:text-slate-400 mt-1 flex items-center">
