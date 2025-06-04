@@ -62,10 +62,15 @@ export default function NoteEditor({
   const { setDirty, setSaveDraft } = useEditorStore()
   const [globalDialogOpen, setGlobalDialogOpen] = useState(false)
   const globalDialogPromiseRef = useRef<{resolve: (ok: boolean) => void} | null>(null)
+  
+  // 添加当前编辑器内容状态
+  const [currentContent, setCurrentContent] = useState(() => {
+    return isValidSlateJson(content)
+      ? content
+      : '[{"type":"paragraph","children":[{"text":""}]}]'
+  })
 
-  const safeContent = isValidSlateJson(content)
-    ? content
-    : '[{"type":"paragraph","children":[{"text":""}]}]'
+  const safeContent = currentContent
 
   // 保存笔记内容
   const handleSave = async (content: string) => {
@@ -127,7 +132,10 @@ export default function NoteEditor({
   // 处理导航离开
   const handleNavigation = (action: () => void) => {
     setDirty(false)
-    if (noteTitle.trim() || content !== safeContent) {
+    const initialSafeContent = isValidSlateJson(content)
+      ? content
+      : '[{"type":"paragraph","children":[{"text":""}]}]'
+    if (noteTitle.trim() || currentContent !== initialSafeContent) {
       setShowConfirmDialog(true)
       setPendingAction(() => action)
     } else {
@@ -171,7 +179,7 @@ export default function NoteEditor({
   // 编辑器内容改变时更新预览
   const handleEditorChange = (content: string) => {
     setDirty(true)
-    // 这里会从保存后的响应中获取markdown预览
+    setCurrentContent(content)
   }
 
   // 保存为草稿
@@ -184,7 +192,7 @@ export default function NoteEditor({
       setIsSaving(true)
       const data = {
         title: noteTitle,
-        content: safeContent,
+        content: currentContent,
         is_draft: true
       }
       if (isEditing && noteId) {
@@ -226,7 +234,7 @@ export default function NoteEditor({
   useEffect(() => {
     setSaveDraft(saveDraft)
     return () => setSaveDraft(undefined)
-  }, [noteTitle, safeContent, isEditing, noteId])
+  }, [noteTitle, currentContent, isEditing, noteId])
 
   return (
     <div className="w-full max-w-5xl mx-auto">
