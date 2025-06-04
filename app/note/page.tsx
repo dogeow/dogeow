@@ -29,6 +29,7 @@ import {
   CardContent, 
   CardHeader
 } from '@/components/ui/card'
+import { zhCN } from 'date-fns/locale'
 
 interface Note {
   id: number
@@ -119,7 +120,7 @@ export default function NotePage() {
   // 格式化日期
   const formatDate = (dateString: string) => {
     try {
-      return format(new Date(dateString), 'yyyy-MM-dd HH:mm')
+      return format(new Date(dateString), 'yyyy年MM月dd日 HH:mm', { locale: zhCN })
     } catch {
       return dateString
     }

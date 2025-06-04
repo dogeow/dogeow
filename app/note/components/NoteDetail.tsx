@@ -7,6 +7,8 @@ import { useRouter, useParams } from "next/navigation"
 import { toast } from "react-hot-toast"
 import { Edit, Trash2, ArrowLeft } from "lucide-react"
 import ReactMarkdown from "react-markdown"
+import { format } from "date-fns"
+import { zhCN } from "date-fns/locale"
 
 export default function NoteDetail() {
   const router = useRouter()
@@ -26,6 +28,15 @@ export default function NoteDetail() {
     await del(`/notes/${id}`)
     toast.success("笔记已删除")
     router.push("/note")
+  }
+
+  // 格式化时间
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'yyyy年MM月dd日 HH:mm', { locale: zhCN })
+    } catch {
+      return dateString
+    }
   }
 
   if (error) return <div>加载失败</div>
@@ -52,7 +63,7 @@ export default function NoteDetail() {
           </Button>
         </div>
       </div>
-      <div className="text-xs text-gray-500 mb-4 text-center">更新于 {note.updated_at}</div>
+      <div className="text-xs text-gray-500 mb-4 text-center">更新于 {formatDate(note.updated_at)}</div>
       <div className="prose max-w-none">
         {note.content_markdown ? (
           <ReactMarkdown>{note.content_markdown}</ReactMarkdown>
