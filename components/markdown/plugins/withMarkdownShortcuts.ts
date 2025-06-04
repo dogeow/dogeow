@@ -26,12 +26,8 @@ const updateCodeHighlight = (editor: ExtendedEditor) => {
       const nodeToDecorations = mergeMaps(...decorationMaps)
       editor.nodeToDecorations = nodeToDecorations
       
-      const currentSelection = editor.selection
-      if (currentSelection) {
-        const point = { ...currentSelection.anchor }
-        const focus = currentSelection.focus ? { ...currentSelection.focus } : point
-        Transforms.select(editor, { anchor: point, focus })
-      }
+      // 移除直接操作 selection 的代码，让 Slate 自己管理光标位置
+      // 只需要更新装饰即可，不要手动操作选区
     }
   } catch (error) {
     console.error('更新代码高亮出错:', error)

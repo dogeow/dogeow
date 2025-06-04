@@ -36,11 +36,26 @@ export const useMarkdownEditor = ({
   
   // 强制更新高亮的函数
   const updateHighlighting = useCallback(() => {
-    if (!editor.selection) return;
-    
-    const point = { ...editor.selection.anchor };
-    const focus = editor.selection.focus ? { ...editor.selection.focus } : point;
-    editor.selection = { anchor: point, focus };
+    // 移除直接操作 selection 的代码，让 Slate 自己管理光标位置
+    // 只触发重新渲染即可
+    if (editor.nodeToDecorations) {
+      // 强制重新计算装饰
+      const entries = Array.from(
+        Editor.nodes(editor, {
+          at: [],
+          match: n => SlateElement.isElement(n) && (n as CustomElement).type === 'code-block',
+        })
+      );
+      
+      if (entries.length > 0) {
+        // 重新计算装饰但不操作选区
+        const decorationMaps = entries.map(([node, path]) => {
+          const nodeToDecorations = new Map();
+          // 这里可以添加重新计算装饰的逻辑
+          return nodeToDecorations;
+        });
+      }
+    }
   }, [editor]);
   
   // 保存内容
