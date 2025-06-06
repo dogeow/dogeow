@@ -41,10 +41,6 @@ const TileItem = styled.div<{ color: string; colSpan: number; rowSpan: number; $
   }
 
   ${props => props.$hasBackground && `
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    
     &::before {
       content: '';
       position: absolute;
@@ -53,9 +49,14 @@ const TileItem = styled.div<{ color: string; colSpan: number; rowSpan: number; $
       right: 0;
       bottom: 0;
       background: linear-gradient(135deg, ${props.color}80, ${props.color}40);
-      z-index: 1;
+      z-index: 2;
     }
   `}
+`;
+
+const BackgroundImage = styled(Image)`
+  object-fit: cover;
+  z-index: 1;
 `;
 
 const IconWrapper = styled.div`
@@ -65,6 +66,9 @@ const IconWrapper = styled.div`
   width: 2.5rem;
   height: 2.5rem;
   z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const TileName = styled.span`
@@ -116,21 +120,28 @@ export default function Home() {
         colSpan={tile.colSpan}
         rowSpan={tile.rowSpan}
         onClick={() => router.push(tile.href)}
-        style={{
-          ...style,
-          ...(hasBackground && {
-            backgroundImage: `url(/images/projects/${coverImage})`
-          })
-        }}
+        style={style}
         $hasBackground={hasBackground}
       >
+        {hasBackground && (
+          <BackgroundImage
+            src={`/images/projects/${coverImage}`}
+            alt={`${tile.name} background`}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={index < 4}
+          />
+        )}
         {tile.icon.length > 0 && (  
           <IconWrapper>
             <Image
               src={`/images/projects/${tile.icon}`}
               alt={tile.name}
-              fill
+              width={40}
+              height={40}
               className="object-contain"
+              sizes="40px"
+              priority={index < 4}
             />
           </IconWrapper>
         )}
