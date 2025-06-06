@@ -7,8 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
-import { Copy, Check } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Copy, Check, Clock, Calendar } from "lucide-react"
 import { toast } from "sonner"
 
 const TimeConverter = () => {
@@ -218,62 +218,100 @@ const TimeConverter = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-medium">当前时间</h3>
-          <p className="text-sm text-muted-foreground">用于快速填充</p>
-        </div>
-        <div className="text-right">
-          <div className="flex items-center justify-end space-x-2">
-            <p className="font-mono">时间戳: {currentTimestamp}</p>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6" 
-              onClick={() => copyToClipboard(currentTimestamp.toString(), 'timestamp')}
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </Button>
+    <div className="space-y-8">
+      {/* 当前时间显示区域 */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border-blue-200 dark:border-blue-800">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
+            <Clock className="h-5 w-5" />
+            当前时间
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-4 border border-blue-100 dark:border-blue-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">时间戳</p>
+                  <p className="font-mono text-lg font-semibold text-blue-900 dark:text-blue-100">
+                    {currentTimestamp}
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20" 
+                  onClick={() => copyToClipboard(currentTimestamp.toString(), 'timestamp')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            <div className="bg-white/60 dark:bg-gray-800/60 rounded-lg p-4 border border-blue-100 dark:border-blue-800">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground mb-1">日期时间</p>
+                  <p className="font-mono text-lg font-semibold text-blue-900 dark:text-blue-100">
+                    {currentDateTime}
+                  </p>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20" 
+                  onClick={() => copyToClipboard(currentDateTime, 'dateTime')}
+                >
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center justify-end space-x-2">
-            <p className="text-sm font-mono">{currentDateTime}</p>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-6 w-6" 
-              onClick={() => copyToClipboard(currentDateTime, 'dateTime')}
-            >
-              <Copy className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
-      <Tabs defaultValue="timestamp-to-date">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="timestamp-to-date">时间戳转日期</TabsTrigger>
-          <TabsTrigger value="date-to-timestamp">日期转时间戳</TabsTrigger>
+      {/* 转换工具区域 */}
+      <Tabs defaultValue="timestamp-to-date" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2 h-12">
+          <TabsTrigger value="timestamp-to-date" className="flex items-center gap-2">
+            <Clock className="h-4 w-4" />
+            时间戳转日期
+          </TabsTrigger>
+          <TabsTrigger value="date-to-timestamp" className="flex items-center gap-2">
+            <Calendar className="h-4 w-4" />
+            日期转时间戳
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="timestamp-to-date" className="space-y-4">
+        <TabsContent value="timestamp-to-date" className="space-y-6">
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="timestamp">时间戳</Label>
-                  <div className="flex space-x-2">
+            <CardHeader>
+              <CardTitle className="text-lg">时间戳转日期时间</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="timestamp" className="text-sm font-medium">时间戳</Label>
+                  <div className="flex gap-3">
                     <Input 
                       id="timestamp" 
                       value={timestamp}
                       onChange={(e) => setTimestamp(e.target.value)}
+                      placeholder="输入时间戳（支持秒级和毫秒级）"
+                      className="flex-1"
                     />
-                    <Button onClick={useCurrentTimestamp}>使用当前</Button>
+                    <Button 
+                      onClick={useCurrentTimestamp}
+                      variant="outline"
+                      className="whitespace-nowrap"
+                    >
+                      使用当前
+                    </Button>
                   </div>
                 </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="format">日期格式</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="format" className="text-sm font-medium">日期格式</Label>
                   <Input 
                     id="format" 
                     placeholder="yyyy-MM-dd HH:mm:ss" 
@@ -282,22 +320,29 @@ const TimeConverter = () => {
                   />
                 </div>
 
-                <Button onClick={convertTimestampToDateTime}>转换</Button>
+                <Button 
+                  onClick={convertTimestampToDateTime}
+                  className="w-full h-11"
+                  size="lg"
+                >
+                  转换
+                </Button>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="datetime">转换结果</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="datetime" className="text-sm font-medium">转换结果</Label>
                   <div className="flex">
                     <Input 
                       id="datetime" 
                       readOnly 
                       value={dateTime} 
-                      className="rounded-r-none"
+                      className="rounded-r-none bg-gray-50 dark:bg-gray-900"
+                      placeholder="转换结果将显示在这里"
                     />
                     <Button 
                       variant="outline" 
-                      className="rounded-l-none border-l-0"
+                      className="rounded-l-none border-l-0 px-3"
                       onClick={() => copyToClipboard(dateTime, 'dateTime')}
-                      disabled={!dateTime || dateTime === "无效的时间戳" || dateTime === "转换出错"}
+                      disabled={!dateTime || dateTime === "无效的时间戳" || dateTime === "转换出错" || dateTime === "请输入时间戳"}
                     >
                       {dateTimeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
@@ -308,39 +353,56 @@ const TimeConverter = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="date-to-timestamp" className="space-y-4">
+        <TabsContent value="date-to-timestamp" className="space-y-6">
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-col space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="input-datetime">日期时间</Label>
-                  <div className="flex space-x-2">
+            <CardHeader>
+              <CardTitle className="text-lg">日期时间转时间戳</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="input-datetime" className="text-sm font-medium">日期时间</Label>
+                  <div className="flex gap-3">
                     <Input 
                       id="input-datetime" 
-                      placeholder="yyyy-M-d 或 yyyy-MM-dd HH:mm:ss" 
+                      placeholder="yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss" 
                       value={inputDateTime}
                       onChange={(e) => setInputDateTime(e.target.value)}
+                      className="flex-1"
                     />
-                    <Button onClick={useCurrentDateTime}>使用当前</Button>
+                    <Button 
+                      onClick={useCurrentDateTime}
+                      variant="outline"
+                      className="whitespace-nowrap"
+                    >
+                      使用当前
+                    </Button>
                   </div>
                 </div>
 
-                <Button onClick={convertDateTimeToTimestamp}>转换</Button>
+                <Button 
+                  onClick={convertDateTimeToTimestamp}
+                  className="w-full h-11"
+                  size="lg"
+                >
+                  转换
+                </Button>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="output-timestamp">时间戳结果 (秒)</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="output-timestamp" className="text-sm font-medium">时间戳结果（秒）</Label>
                   <div className="flex">
                     <Input 
                       id="output-timestamp" 
                       readOnly 
                       value={outputTimestamp}
-                      className="rounded-r-none"
+                      className="rounded-r-none bg-gray-50 dark:bg-gray-900"
+                      placeholder="转换结果将显示在这里"
                     />
                     <Button 
                       variant="outline" 
-                      className="rounded-l-none border-l-0"
+                      className="rounded-l-none border-l-0 px-3"
                       onClick={() => copyToClipboard(outputTimestamp, 'timestamp')}
-                      disabled={!outputTimestamp || outputTimestamp === "转换出错"}
+                      disabled={!outputTimestamp || outputTimestamp === "转换出错" || outputTimestamp === "请输入日期时间"}
                     >
                       {timestampCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>

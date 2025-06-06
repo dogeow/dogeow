@@ -100,7 +100,7 @@ export default function Categories() {
       <Card>
         <CardContent>
           {categories.length === 0 ? (
-            <div className="text-center py-6 text-muted-foreground">
+            <div className="text-center py-4 text-muted-foreground">
               暂无分类，请添加您的第一个分类
             </div>
           ) : (

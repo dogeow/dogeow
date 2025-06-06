@@ -113,10 +113,10 @@ export default function NoteCategories() {
     const isEditing = editingCategory?.id === category.id
     
     return (
-      <Card key={category.id} className="py-1">
-        <CardHeader>
+      <Card key={category.id} className="hover:shadow-md transition-shadow duration-200 border-l-4 border-l-primary/20 hover:border-l-primary">
+        <CardContent className="py-4">
           <div className="flex items-center justify-between">
-            <CardTitle>
+            <div className="flex-1">
               {isEditing ? (
                 <Input
                   value={editingCategory.name}
@@ -128,17 +128,24 @@ export default function NoteCategories() {
                   }
                   onKeyDown={handleKeyDown}
                   autoFocus
+                  className="text-lg font-medium"
                 />
               ) : (
-                category.name
+                <div>
+                  <h3 className="text-lg font-medium text-foreground">{category.name}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    创建于 {new Date(category.created_at).toLocaleDateString('zh-CN')}
+                  </p>
+                </div>
               )}
-            </CardTitle>
+            </div>
             {isEditing ? (
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 ml-4">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setEditingCategory(null)}
+                  disabled={loading}
                 >
                   取消
                 </Button>
@@ -151,79 +158,105 @@ export default function NoteCategories() {
                 </Button>
               </div>
             ) : (
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 ml-4">
                 <Button
-                  variant="outline"
-                  size="icon"
+                  variant="ghost"
+                  size="sm"
                   onClick={() => setEditingCategory(category)}
+                  className="hover:bg-primary/10"
+                  disabled={loading}
                 >
-                  <Pencil className="h-4 w-4" />
+                  <Pencil className="h-4 w-4 mr-1" />
+                  编辑
                 </Button>
                 <Button
-                  variant="outline"
-                  size="icon"
-                  className="text-red-500 hover:text-red-700"
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => deleteCategory(category.id)}
+                  disabled={loading}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  删除
                 </Button>
               </div>
             )}
           </div>
-        </CardHeader>
+        </CardContent>
       </Card>
     )
   }
 
   return (
-    <div className="container mx-auto py-4">
-      <div className="flex items-center mb-6">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={() => router.push('/note')}
-          className="mr-2"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          返回笔记
-        </Button>
-        <h1 className="text-2xl font-bold">笔记分类管理</h1>
-      </div>
-
-      <Card className="mb-8">
+    <div className="container mx-auto py-4 px-4">
+      {/* 添加分类卡片 */}
+      <Card className="mb-8 border-dashed border-2 hover:border-primary/50 transition-colors">
         <CardContent className="pt-6">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-end space-x-4">
             <div className="flex-1">
-              <label className="block text-sm font-medium mb-1">分类名称</label>
+              <label className="block text-sm font-medium mb-2 text-foreground">分类名称</label>
               <Input
                 value={newCategory}
                 onChange={(e) => setNewCategory(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="输入分类名称"
                 disabled={loading}
+                className="focus:ring-2 focus:ring-primary/20"
               />
             </div>
-            <div className="mt-6">
-              <Button 
-                onClick={addCategory} 
-                disabled={loading || !newCategory.trim()}
-                className="bg-green-500 hover:bg-green-600"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                添加分类
-              </Button>
-            </div>
+            <Button 
+              onClick={addCategory} 
+              disabled={loading || !newCategory.trim()}
+              className="min-w-[120px]"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              添加分类
+            </Button>
           </div>
         </CardContent>
       </Card>
 
+      {/* 分类列表 */}
       <div>
-        <h2 className="text-xl font-bold mb-4">分类列表</h2>
-        {error && <p className="text-red-500">加载分类失败</p>}
-        {isLoading && <p>加载中...</p>}
-        {categories.length === 0 && !isLoading && <p>暂无分类，请添加</p>}
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-foreground">分类列表</h2>
+          <div className="text-sm text-muted-foreground">
+            共 {categories.length} 个分类
+          </div>
+        </div>
+        
+        {error && (
+          <Card className="border-destructive/50 bg-destructive/5">
+            <CardContent className="pt-6">
+              <p className="text-destructive">加载分类失败，请刷新页面重试</p>
+            </CardContent>
+          </Card>
+        )}
+        
+        {isLoading && (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center space-x-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
+                <p className="text-muted-foreground">加载中...</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        {categories.length === 0 && !isLoading && !error && (
+          <Card className="border-dashed border-2">
+            <CardContent className="pt-6 text-center py-12">
+              <div className="text-muted-foreground">
+                <div className="text-4xl mb-4">📝</div>
+                <p className="text-lg font-medium mb-2">暂无分类</p>
+                <p className="text-sm">请添加您的第一个笔记分类</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        <div className="flex flex-col gap-2">
+        <div className="grid gap-3">
           {categories.map(renderCategoryItem)}
         </div>
       </div>

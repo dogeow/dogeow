@@ -61,7 +61,8 @@ export default function FileHeader() {
         description: folderDescription
       })
       
-      mutate(`/cloud/files?parent_id=${currentFolderId || ''}`)
+      // 使用正则表达式匹配所有相关的 SWR key
+      mutate(key => typeof key === 'string' && key.startsWith(`/cloud/files?parent_id=${currentFolderId || ''}`))
       toast.success('文件夹创建成功')
       setFolderName('')
       setFolderDescription('')
@@ -88,7 +89,8 @@ export default function FileHeader() {
         await uploadFile('/cloud/files', formData)
       }
       
-      mutate(`/cloud/files?parent_id=${currentFolderId || ''}`)
+      // 使用正则表达式匹配所有相关的 SWR key
+      mutate(key => typeof key === 'string' && key.startsWith(`/cloud/files?parent_id=${currentFolderId || ''}`))
       toast.success(files.length > 1 ? `${files.length} 个文件上传成功` : '文件上传成功')
     } catch (error) {
       toast.error('文件上传失败')
@@ -107,7 +109,8 @@ export default function FileHeader() {
         await del(`/cloud/files/${id}`)
       }
       
-      mutate(`/cloud/files?parent_id=${currentFolderId || ''}`)
+      // 使用正则表达式匹配所有相关的 SWR key
+      mutate(key => typeof key === 'string' && key.startsWith(`/cloud/files?parent_id=${currentFolderId || ''}`))
       toast.success(selectedFiles.length > 1 
         ? `已删除 ${selectedFiles.length} 个项目` 
         : '删除成功'

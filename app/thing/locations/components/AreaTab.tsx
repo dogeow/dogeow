@@ -99,7 +99,7 @@ export default function AreaTab({ areas, loading, onAddArea, onUpdateArea, onDel
       {/* 区域列表 */}
       <div>
         {areas.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
+          <div className="text-center py-4 text-muted-foreground">
             暂无区域，请点击右下角的&quot;+&quot;按钮添加区域
           </div>
         ) : (

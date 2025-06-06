@@ -116,7 +116,7 @@ const FileIcon = memo<{ file: CloudFile }>(({ file }) => {
     return (
       <div className="w-5 h-5 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted">
         <Image 
-          src={`${API_URL}/cloud/files/${file.id}/preview?thumb=true`} 
+                      src={`${API_URL}/api/cloud/files/${file.id}/preview?thumb=true`} 
           alt={file.name} width={20} height={20} 
           className="object-cover w-full h-full"
           onError={(e) => {
@@ -198,7 +198,7 @@ export default function TreeView({ folderTree, files }: TreeViewProps) {
       navigateToFolder(file.id)
       expandToNode(file.id)
     } else {
-      window.open(`${API_URL}/cloud/files/${file.id}/download`, '_blank')
+      window.open(`${API_URL}/api/cloud/files/${file.id}/download`, '_blank')
     }
   }, [navigateToFolder, expandToNode])
 

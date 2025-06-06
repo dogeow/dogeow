@@ -8,7 +8,7 @@ export default function RootLayout({
     return (
       <div className="mx-auto container">
         <Header/>
-        <main className="py-6">
+        <main className="py-4">
             {children}
         </main>
       </div>

@@ -45,8 +45,8 @@ export default function ToolPage() {
   }, [activeTab]);
   
   return (
-    <div className="container mx-auto py-2">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+    <div className="container mx-auto p-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {/* 工具导航侧栏 */}
         <div className="col-span-1">
           <Card>
@@ -76,23 +76,24 @@ export default function ToolPage() {
         
         {/* 工具内容区 */}
         <div className="col-span-1 md:col-span-3">
-          <Card>
-            {activeTool ? (
-              <>
-                <CardHeader>
-                  <CardTitle>{activeTool.title}</CardTitle>
-                  <CardDescription>{activeTool.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <activeTool.component />
-                </CardContent>
-              </>
-            ) : (
-              <CardContent className="py-12 text-center">
-                <p className="text-muted-foreground">请选择一个工具开始使用</p>
-              </CardContent>
-            )}
-          </Card>
+          {activeTool ? (
+            <div className="space-y-6">
+              {/* 工具标题区域 */}
+              <div className="space-y-2">
+                <h1 className="text-2xl font-bold tracking-tight">{activeTool.title}</h1>
+                <p className="text-muted-foreground">{activeTool.description}</p>
+              </div>
+              
+              {/* 工具内容区域 */}
+              <div className="min-h-[600px]">
+                <activeTool.component />
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center min-h-[400px]">
+              <p className="text-muted-foreground text-lg">请选择一个工具开始使用</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

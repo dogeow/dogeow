@@ -130,7 +130,7 @@ export function TagSelector({
             {/* 标签列表 */}
             <div className="max-h-[200px] overflow-y-auto p-1">
               {filteredTags.length === 0 ? (
-                <div className="py-6 text-center text-sm text-muted-foreground">
+                <div className="py-4 text-center text-sm text-muted-foreground">
                   {emptyText}
                 </div>
               ) : (

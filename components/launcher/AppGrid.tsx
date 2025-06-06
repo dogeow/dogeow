@@ -1,6 +1,6 @@
 "use client"
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Settings, Music } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
@@ -18,7 +18,13 @@ export interface AppGridProps {
 export function AppGrid({ toggleDisplayMode }: AppGridProps) {
   const { theme, setTheme } = useTheme()
   const { setFollowSystem } = useThemeStore()
-  
+  const [mounted, setMounted] = useState(false)
+
+  // 等待组件挂载后再处理主题，避免水合不匹配错误
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // 自定义按钮样式，确保在任何背景下都有足够的对比度
   const buttonStyle = "h-9 w-9 bg-background/60 backdrop-blur-sm"
   
@@ -31,15 +37,23 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
     },
     {
       icon: (
-        <>
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        </>
+        <div className="relative">
+          {mounted ? (
+            <>
+              <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all duration-300 ease-in-out dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute top-0 left-0 h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all duration-300 ease-in-out dark:rotate-0 dark:scale-100" />
+            </>
+          ) : (
+            <Sun className="h-[1.2rem] w-[1.2rem]" />
+          )}
+        </div>
       ),
       label: "切换主题",
       onClick: () => {
+        if (!mounted) return;
         setFollowSystem(false)
-        setTheme(theme === 'dark' ? 'light' : 'dark')
+        const newTheme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(newTheme)
       }
     },
     {

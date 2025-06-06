@@ -39,7 +39,9 @@ export interface FolderNode {
 }
 
 export interface FilePreviewResponse {
-  type: 'image' | 'pdf' | 'text' | 'video' | 'audio' | 'other'
+  type: 'image' | 'pdf' | 'text' | 'video' | 'audio' | 'document' | 'unknown' | 'other'
   content?: string | null
   url?: string | null
+  message?: string
+  suggestion?: string
 } 

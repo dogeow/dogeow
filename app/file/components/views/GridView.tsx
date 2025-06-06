@@ -150,7 +150,7 @@ export default function GridView({ files }: GridViewProps) {
   // 下载文件
   const downloadFile = async (file: CloudFile) => {
     try {
-      window.open(`${API_URL}/cloud/files/${file.id}/download`, '_blank')
+      window.open(`${API_URL}/api/cloud/files/${file.id}/download`, '_blank')
       toast.success('开始下载')
     } catch (error) {
       toast.error('下载失败')
@@ -161,8 +161,9 @@ export default function GridView({ files }: GridViewProps) {
   // 删除文件/文件夹
   const deleteFile = async (file: CloudFile) => {
     try {
-      await del(`${API_URL}/cloud/files/${file.id}`)
-      mutate(`${API_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
+      await del(`/cloud/files/${file.id}`)
+      // 使用正则表达式匹配所有相关的 SWR key
+      mutate(key => typeof key === 'string' && key.startsWith(`/cloud/files?parent_id=${currentFolderId || ''}`))
       toast.success('删除成功')
     } catch (error) {
       toast.error('删除失败')
@@ -183,12 +184,13 @@ export default function GridView({ files }: GridViewProps) {
     if (!editingFile) return
 
     try {
-      await put(`${API_URL}/cloud/files/${editingFile.id}`, {
+      await put(`/cloud/files/${editingFile.id}`, {
         name: fileName,
         description: fileDescription
       })
       
-      mutate(`${API_URL}/cloud/files?parent_id=${currentFolderId || ''}`)
+      // 使用正则表达式匹配所有相关的 SWR key
+      mutate(key => typeof key === 'string' && key.startsWith(`/cloud/files?parent_id=${currentFolderId || ''}`))
       toast.success('更新成功')
       setEditingFile(null)
     } catch (error) {
@@ -204,7 +206,7 @@ export default function GridView({ files }: GridViewProps) {
     setPreviewFile(file)
     setPreviewContent(null)
     setPreviewUrl(null)
-    setPreviewType(null)
+    setPreviewType('loading')
 
     try {
       // 对于图片，直接构造URL而不是使用API响应的URL
@@ -216,7 +218,12 @@ export default function GridView({ files }: GridViewProps) {
         return;
       }
       
-      const { type, content, url } = await apiRequest<FilePreviewResponse>(`${API_URL}/cloud/files/${file.id}/preview`)
+      const response = await apiRequest<FilePreviewResponse>(`/cloud/files/${file.id}/preview`)
+      const { type, content, url } = response
+
+      console.log('Preview response:', response)
+      console.log('Preview type:', type)
+      console.log('Preview URL:', url)
 
       setPreviewType(type)
       
@@ -224,10 +231,18 @@ export default function GridView({ files }: GridViewProps) {
         setPreviewUrl(url ?? null)
       } else if (type === 'text') {
         setPreviewContent(content ?? null)
+      } else if (type === 'document' || type === 'unknown') {
+        // 存储完整的响应信息用于显示
+        setPreviewContent(JSON.stringify(response))
       }
     } catch (error) {
       toast.error('预览失败')
       console.error(error)
+      setPreviewType('unknown')
+      setPreviewContent(JSON.stringify({
+        message: '预览失败，请稍后重试',
+        suggestion: '您可以尝试下载文件后查看'
+      }))
     }
   }
 
@@ -378,22 +393,81 @@ export default function GridView({ files }: GridViewProps) {
               )}
 
               {previewType === 'pdf' && previewUrl && (
-                <div className="w-full h-[60vh]">
-                  <iframe
-                    src={previewUrl}
-                    className="w-full h-full"
-                    title={previewFile.name}
-                  />
+                <div className="w-full h-[60vh] flex flex-col">
+                  <div className="flex-1 relative">
+                    <iframe
+                      src={previewUrl}
+                      className="w-full h-full border-0"
+                      title={previewFile.name}
+                      onError={() => {
+                        console.error('PDF iframe failed to load')
+                      }}
+                    />
+                  </div>
+                  <div className="mt-2 text-center text-sm text-muted-foreground">
+                    如果PDF无法显示，请{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-sm"
+                      onClick={() => window.open(previewUrl, '_blank')}
+                    >
+                      在新窗口中打开
+                    </Button>
+                    {' '}或{' '}
+                    <Button 
+                      variant="link" 
+                      className="p-0 h-auto text-sm"
+                      onClick={() => downloadFile(previewFile)}
+                    >
+                      下载文件
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              {previewType === 'text' && previewContent && (
+              {previewType === 'text' && previewContent && !previewContent.startsWith('{') && (
                 <pre className="w-full h-full max-h-[60vh] overflow-auto bg-muted p-4 rounded text-sm">
                   {previewContent}
                 </pre>
               )}
 
-              {previewType === 'unknown' && (
+              {(previewType === 'document' || previewType === 'unknown') && previewContent && (
+                <div className="text-center max-w-md mx-auto">
+                  <FileText className="h-16 w-16 text-muted-foreground mx-auto" />
+                  {(() => {
+                    try {
+                      const response = JSON.parse(previewContent);
+                      return (
+                        <>
+                          <p className="mt-4 text-muted-foreground font-medium">
+                            {response.message || '此文件类型不支持预览'}
+                          </p>
+                          {response.suggestion && (
+                            <p className="mt-2 text-sm text-muted-foreground">
+                              {response.suggestion}
+                            </p>
+                          )}
+                        </>
+                      );
+                    } catch {
+                      return (
+                        <p className="mt-4 text-muted-foreground">此文件类型不支持预览</p>
+                      );
+                    }
+                  })()}
+                  <Button 
+                    variant="outline" 
+                    className="mt-4"
+                    onClick={() => downloadFile(previewFile)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    下载文件
+                  </Button>
+                </div>
+              )}
+
+              {/* 默认情况：当没有匹配任何预览类型时 */}
+              {previewType && !['loading', 'image', 'pdf', 'text', 'document', 'unknown'].includes(previewType) && (
                 <div className="text-center">
                   <File className="h-16 w-16 text-muted-foreground mx-auto" />
                   <p className="mt-4 text-muted-foreground">此文件类型不支持预览</p>
