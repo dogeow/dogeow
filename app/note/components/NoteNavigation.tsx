@@ -6,6 +6,7 @@ import { FileText, Tag, FolderTree, Plus } from "lucide-react"
 import { useState } from "react"
 import { useEditorStore } from '../store/editorStore'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
 
 export default function NoteNavigation() {
   const router = useRouter()
@@ -44,9 +45,27 @@ export default function NoteNavigation() {
     }
   }
 
-  const handleCancel = () => {
+  const handleSave = async () => {
+    // 这里需要调用实际的保存函数，但由于我们在导航组件中，
+    // 我们只能保存为草稿
+    if (saveDraft) {
+      await saveDraft()
+    }
+    setDirty(false)
     setShowConfirm(false)
-    setPendingHref(null)
+    if (pendingHref) {
+      router.push(pendingHref)
+      setPendingHref(null)
+    }
+  }
+
+  const handleDiscard = () => {
+    setDirty(false)
+    setShowConfirm(false)
+    if (pendingHref) {
+      router.push(pendingHref)
+      setPendingHref(null)
+    }
   }
 
   return (
@@ -70,15 +89,17 @@ export default function NoteNavigation() {
           </Button>
         </div>
       </nav>
-      <ConfirmDialog
+      <SaveOptionsDialog
         open={showConfirm}
         onOpenChange={setShowConfirm}
         title="确认离开"
-        description="您有未保存的内容，是否保存为草稿或继续跳转？"
-        onConfirm={handleConfirm}
-        onCancel={handleCancel}
-        confirmText="保存并跳转"
-        cancelText="取消"
+        description="您有未保存的内容，请选择如何处理："
+        onSaveDraft={handleConfirm}
+        onSave={handleSave}
+        onDiscard={handleDiscard}
+        saveDraftText="保存为草稿"
+        saveText="保存"
+        discardText="放弃保存"
       />
     </div>
   )

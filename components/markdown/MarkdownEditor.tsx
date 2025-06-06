@@ -463,12 +463,12 @@ const MarkdownEditor = ({
           
           {onDraftChange && (
             <Button
-              variant={isDraft ? "secondary" : "ghost"}
+              variant={isDraft ? "default" : "ghost"}
               size="sm"
               onClick={() => onDraftChange(!isDraft)}
-              title={isDraft ? "取消草稿" : "保存为草稿"}
+              title={isDraft ? "发布为正式笔记" : "保存为草稿"}
             >
-              {isDraft ? "已保存为草稿" : "保存为草稿"}
+              {isDraft ? "发布正式" : "保存为草稿"}
             </Button>
           )}
           

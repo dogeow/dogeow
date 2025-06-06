@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiRequest } from '@/lib/api'
-import MarkdownEditor from '@/components/markdown'
+import MarkdownEditor from '@/components/markdown/MarkdownEditor'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'react-hot-toast'
 import { ArrowLeft } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
 import { useEditorStore } from '../store/editorStore'
 import { useGlobalNavigationGuard } from '../hooks/useGlobalNavigationGuard'
 
@@ -69,6 +70,16 @@ export default function NoteEditor({
       ? content
       : '[{"type":"paragraph","children":[{"text":""}]}]'
   })
+  
+  // 添加最后保存的内容状态，用于判断是否有未保存更改
+  const [lastSavedContent, setLastSavedContent] = useState(() => {
+    return isValidSlateJson(content)
+      ? content
+      : '[{"type":"paragraph","children":[{"text":""}]}]'
+  })
+  
+  // 添加最后保存的标题状态
+  const [lastSavedTitle, setLastSavedTitle] = useState(title)
 
   const safeContent = currentContent
 
@@ -106,6 +117,10 @@ export default function NoteEditor({
         }
       }
       
+      // 保存成功后，更新最后保存的内容和标题
+      setLastSavedContent(content)
+      setLastSavedTitle(noteTitle)
+      
       toast.success(isEditing ? '笔记已更新' : '笔记已创建')
       
       // 如果是新笔记，跳转到编辑页面
@@ -125,17 +140,64 @@ export default function NoteEditor({
   }
 
   // 处理草稿状态变化
-  const handleDraftChange = (newDraft: boolean) => {
-    setDraft(newDraft)
+  const handleDraftChange = async (newDraft: boolean) => {
+    if (!noteTitle.trim()) {
+      toast.error('请输入笔记标题')
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      setDraft(newDraft)
+      
+      const data = {
+        title: noteTitle,
+        content: currentContent,
+        is_draft: newDraft
+      }
+
+      let result;
+      
+      if (isEditing && noteId) {
+        // 更新笔记
+        result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
+      } else {
+        // 创建新笔记
+        result = await apiRequest<Note>('/notes', 'POST', data)
+      }
+      
+      // 保存成功后，更新最后保存的内容和标题
+      setLastSavedContent(currentContent)
+      setLastSavedTitle(noteTitle)
+      setDirty(false)
+      
+      if (newDraft) {
+        toast.success('已保存为草稿')
+      } else {
+        toast.success('已发布为正式笔记')
+      }
+      
+      // 如果是新笔记，跳转到编辑页面
+      if (!isEditing && result.id) {
+        router.push(`/note/edit/${result.id}`)
+        router.refresh()
+      }
+      
+    } catch (error) {
+      console.error('保存笔记错误:', error)
+      toast.error('保存失败')
+      // 恢复原来的状态
+      setDraft(!newDraft)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // 处理导航离开
   const handleNavigation = (action: () => void) => {
     setDirty(false)
-    const initialSafeContent = isValidSlateJson(content)
-      ? content
-      : '[{"type":"paragraph","children":[{"text":""}]}]'
-    if (noteTitle.trim() || currentContent !== initialSafeContent) {
+    // 比较当前内容和标题与最后保存的状态
+    if (noteTitle !== lastSavedTitle || currentContent !== lastSavedContent) {
       setShowConfirmDialog(true)
       setPendingAction(() => action)
     } else {
@@ -143,8 +205,9 @@ export default function NoteEditor({
     }
   }
 
-  // 确认离开
-  const handleConfirmLeave = () => {
+  // 处理保存草稿并离开
+  const handleSaveDraftAndLeave = async () => {
+    await saveDraft()
     if (pendingAction) {
       pendingAction()
     }
@@ -152,8 +215,23 @@ export default function NoteEditor({
     setPendingAction(null)
   }
 
-  // 取消离开
-  const handleCancelLeave = () => {
+  // 处理保存并离开
+  const handleSaveAndLeave = async () => {
+    if (currentContent && noteTitle.trim()) {
+      await handleSave(currentContent)
+    }
+    if (pendingAction) {
+      pendingAction()
+    }
+    setShowConfirmDialog(false)
+    setPendingAction(null)
+  }
+
+  // 处理放弃保存并离开
+  const handleDiscardAndLeave = () => {
+    if (pendingAction) {
+      pendingAction()
+    }
     setShowConfirmDialog(false)
     setPendingAction(null)
   }
@@ -188,6 +266,14 @@ export default function NoteEditor({
       toast.error('请输入笔记标题')
       return
     }
+    
+    console.log('开始保存草稿...', {
+      title: noteTitle,
+      content: currentContent,
+      isEditing,
+      noteId
+    })
+    
     try {
       setIsSaving(true)
       const data = {
@@ -195,14 +281,25 @@ export default function NoteEditor({
         content: currentContent,
         is_draft: true
       }
+      
+      console.log('发送草稿保存请求:', data)
+      
+      let result
       if (isEditing && noteId) {
-        await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
+        result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
+        console.log('更新草稿成功:', result)
       } else {
-        await apiRequest<Note>('/notes', 'POST', data)
+        result = await apiRequest<Note>('/notes', 'POST', data)
+        console.log('创建草稿成功:', result)
       }
+      
       setDirty(false)
+      // 保存草稿成功后，也更新最后保存的内容和标题
+      setLastSavedContent(currentContent)
+      setLastSavedTitle(noteTitle)
       toast.success('已保存为草稿')
-    } catch {
+    } catch (error) {
+      console.error('保存草稿失败:', error)
       toast.error('保存草稿失败')
     } finally {
       setIsSaving(false)
@@ -220,15 +317,26 @@ export default function NoteEditor({
   // 全局拦截
   useGlobalNavigationGuard(showDialog)
 
-  // 全局弹窗确认/取消
-  const handleGlobalConfirm = async () => {
+  // 全局弹窗 - 保存草稿并跳转
+  const handleGlobalSaveDraft = async () => {
     await saveDraft()
     setGlobalDialogOpen(false)
     globalDialogPromiseRef.current?.resolve(true)
   }
-  const handleGlobalCancel = () => {
+
+  // 全局弹窗 - 保存并跳转
+  const handleGlobalSave = async () => {
+    if (currentContent && noteTitle.trim()) {
+      await handleSave(currentContent)
+    }
     setGlobalDialogOpen(false)
-    globalDialogPromiseRef.current?.resolve(false)
+    globalDialogPromiseRef.current?.resolve(true)
+  }
+
+  // 全局弹窗 - 放弃保存并跳转
+  const handleGlobalDiscard = () => {
+    setGlobalDialogOpen(false)
+    globalDialogPromiseRef.current?.resolve(true)
   }
 
   useEffect(() => {
@@ -237,7 +345,7 @@ export default function NoteEditor({
   }, [noteTitle, currentContent, isEditing, noteId])
 
   return (
-    <div className="w-full max-w-5xl mx-auto">
+    <div className="w-full max-w-6xl mx-auto px-4">
       <div className="mb-4 flex items-center gap-2">
         <Button 
           variant="ghost" 
@@ -268,25 +376,29 @@ export default function NoteEditor({
         onDraftChange={handleDraftChange}
         onChange={handleEditorChange}
       />
-      <ConfirmDialog
+      <SaveOptionsDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}
         title="确认离开"
-        description="您有未保存的更改，是否要保存为草稿？"
-        onConfirm={handleConfirmLeave}
-        onCancel={handleCancelLeave}
-        confirmText="保存为草稿"
-        cancelText="不保存"
+        description="您有未保存的更改，请选择如何处理："
+        onSaveDraft={handleSaveDraftAndLeave}
+        onSave={handleSaveAndLeave}
+        onDiscard={handleDiscardAndLeave}
+        saveDraftText="保存为草稿"
+        saveText="保存"
+        discardText="放弃保存"
       />
-      <ConfirmDialog
+      <SaveOptionsDialog
         open={globalDialogOpen}
         onOpenChange={setGlobalDialogOpen}
         title="确认离开"
-        description="您有未保存的内容，是否保存为草稿或继续跳转？"
-        onConfirm={handleGlobalConfirm}
-        onCancel={handleGlobalCancel}
-        confirmText="保存并跳转"
-        cancelText="取消"
+        description="您有未保存的内容，请选择如何处理："
+        onSaveDraft={handleGlobalSaveDraft}
+        onSave={handleGlobalSave}
+        onDiscard={handleGlobalDiscard}
+        saveDraftText="保存为草稿"
+        saveText="保存"
+        discardText="放弃保存"
       />
     </div>
   )

@@ -43,7 +43,7 @@ export default function NoteDetail() {
   if (!note) return <div>加载中...</div>
 
   return (
-    <div className="max-w-2xl mx-auto mt-8">
+    <div className="max-w-4xl mx-auto mt-8">
       <div className="flex items-center justify-between mb-6">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />

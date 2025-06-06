@@ -16,6 +16,7 @@ interface Note {
   title: string
   content: string
   content_markdown: string
+  is_draft: boolean
 }
 
 // 笔记编辑页面
@@ -48,7 +49,7 @@ export default function EditNotePage() {
 
   if (loading) {
     return (
-      <div className="container py-8">
+      <div className="container mx-auto py-8">
         <div className="animate-pulse">
           <div className="h-8 w-1/3 mb-4 bg-gray-200 rounded"></div>
           <div className="h-64 w-full bg-gray-200 rounded"></div>
@@ -59,7 +60,7 @@ export default function EditNotePage() {
 
   if (error) {
     return (
-      <div className="container py-8">
+      <div className="container mx-auto py-8">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           {error}
         </div>
@@ -69,7 +70,7 @@ export default function EditNotePage() {
 
   if (!note) {
     return (
-      <div className="container py-8">
+      <div className="container mx-auto py-8">
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
           找不到笔记
         </div>
@@ -78,7 +79,7 @@ export default function EditNotePage() {
   }
 
   return (
-    <div className="container py-4">
+    <div className="container mx-auto py-8">
       {clientReady && (
         <NoteEditor
           noteId={Number(id)}
@@ -86,6 +87,7 @@ export default function EditNotePage() {
           content={note.content}
           isEditing={true}
           initialMarkdown={note.content_markdown}
+          isDraft={note.is_draft}
         />
       )}
     </div>

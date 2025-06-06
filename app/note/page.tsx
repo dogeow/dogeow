@@ -143,7 +143,7 @@ export default function NotePage() {
   }
 
   return (
-    <div className="container py-4">
+    <div className="container mx-auto py-8">
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">笔记列表</h1>
         <Button onClick={() => router.push('/note/new')}>
@@ -240,13 +240,11 @@ export default function NotePage() {
                 </CardHeader>
                 
                 <CardContent className="py-2">
-                  <div className="text-sm text-muted-foreground dark:text-slate-300 prose prose-sm max-w-none line-clamp-2">
+                  <div className="text-sm text-muted-foreground dark:text-slate-300 prose prose-sm max-w-none">
                     {note.content_markdown ? (
-                      <div className="line-clamp-2">
-                        <ReactMarkdown>
-                          {getMarkdownPreview(note.content_markdown)}
-                        </ReactMarkdown>
-                      </div>
+                      <ReactMarkdown>
+                        {getMarkdownPreview(note.content_markdown)}
+                      </ReactMarkdown>
                     ) : (
                       <span className="italic">(无内容)</span>
                     )}
