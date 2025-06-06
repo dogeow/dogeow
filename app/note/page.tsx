@@ -143,7 +143,7 @@ export default function NotePage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-4">
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">笔记列表</h1>
         <Button onClick={() => router.push('/note/new')}>

@@ -345,19 +345,7 @@ export default function NoteEditor({
   }, [noteTitle, currentContent, isEditing, noteId])
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4">
-      <div className="mb-4 flex items-center gap-2">
-        <Button 
-          variant="ghost" 
-          onClick={() => handleNavigation(() => router.push('/note'))}
-        >
-          <ArrowLeft className="w-4 h-4" />
-        </Button>
-        <h1 className="flex-1 text-xl font-bold">
-          {isEditing ? '编辑笔记' : '创建新笔记'}
-          {draft && <span className="ml-2 text-sm text-muted-foreground">(草稿)</span>}
-        </h1>
-      </div>
+    <div className="w-full max-w-6xl mx-auto">
       <div className="mb-4">
         <Input
           id="title"

@@ -125,7 +125,7 @@ export default function CategoryManager() {
   }
 
   return (
-    <div className="container mx-auto py-2">
+    <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center">
           <Button variant="outline" size="icon" onClick={() => router.push('/nav')} className="mr-4">
@@ -219,7 +219,7 @@ export default function CategoryManager() {
           </CardHeader>
           <CardContent>
             {categories.length === 0 ? (
-              <div className="py-8 text-center">
+              <div className="py-4 text-center">
                 <p className="text-muted-foreground">暂无分类，请添加一个分类</p>
               </div>
             ) : (

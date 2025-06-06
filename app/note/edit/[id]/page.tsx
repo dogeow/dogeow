@@ -49,7 +49,7 @@ export default function EditNotePage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto py-4">
         <div className="animate-pulse">
           <div className="h-8 w-1/3 mb-4 bg-gray-200 rounded"></div>
           <div className="h-64 w-full bg-gray-200 rounded"></div>
@@ -60,7 +60,7 @@ export default function EditNotePage() {
 
   if (error) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto py-4">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           {error}
         </div>
@@ -70,7 +70,7 @@ export default function EditNotePage() {
 
   if (!note) {
     return (
-      <div className="container mx-auto py-8">
+      <div className="container mx-auto py-4">
         <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
           找不到笔记
         </div>
@@ -79,7 +79,7 @@ export default function EditNotePage() {
   }
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-4">
       {clientReady && (
         <NoteEditor
           noteId={Number(id)}

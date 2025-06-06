@@ -148,7 +148,7 @@ function NavContent() {
   };
 
   return (
-    <div className="flex">
+    <div className="flex p-4">
       {renderCategorySidebar()}
       <div className="flex-1 flex flex-col gap-2 mx-2">
         <div className="flex items-center">

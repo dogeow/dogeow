@@ -19,7 +19,7 @@ export default function NewNotePage() {
   }, [])
   
   return (
-    <div className="container mx-auto py-8">
+    <div className="container mx-auto py-4">
       {isLoaded && <NoteEditor />}
     </div>
   )

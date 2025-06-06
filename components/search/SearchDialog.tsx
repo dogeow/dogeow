@@ -267,7 +267,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const renderSearchResults = useCallback(() => {
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center py-8 min-h-[160px]">
+        <div className="flex flex-col items-center justify-center py-4 min-h-[160px]">
           <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">搜索中...</p>
         </div>
@@ -276,7 +276,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     
     if (searchTerm && filteredResults.length === 0 && hasSearched) {
       return (
-        <div className="flex flex-col items-center justify-center py-8 min-h-[160px]">
+        <div className="flex flex-col items-center justify-center py-4 min-h-[160px]">
           <p className="text-muted-foreground">未找到相关结果</p>
         </div>
       )
@@ -308,7 +308,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     }
     
     return (
-      <div className="flex flex-col items-center justify-center py-8 min-h-[160px]">
+      <div className="flex flex-col items-center justify-center py-4 min-h-[160px]">
         <p className="text-muted-foreground">请输入搜索关键词</p>
       </div>
     )

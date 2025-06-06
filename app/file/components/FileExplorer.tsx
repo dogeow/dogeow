@@ -42,7 +42,7 @@ export default function FileExplorer() {
 
   if (error) {
     toast.error('加载文件失败');
-    return <div className="text-center py-8">加载失败，请刷新页面重试</div>;
+    return <div className="text-center py-4">加载失败，请刷新页面重试</div>;
   }
 
   if (isLoading) {
@@ -70,7 +70,7 @@ export default function FileExplorer() {
 
         {/* 无文件时显示 */}
         {files && files.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className="text-center py-4 text-muted-foreground">
             {searchQuery 
               ? '没有找到匹配的文件'
               : currentFolderId 
