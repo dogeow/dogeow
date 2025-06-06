@@ -46,9 +46,9 @@ export default function ToolPage() {
   
   return (
     <div className="container mx-auto p-4">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div className="flex flex-col md:flex-row gap-8">
         {/* 工具导航侧栏 */}
-        <div className="col-span-1">
+        <div className="w-full md:w-1/4">
           <Card>
             <CardContent className="pt-6">
               <Tabs orientation="vertical" defaultValue="time-converter" onValueChange={handleToolSelect}>
@@ -75,7 +75,7 @@ export default function ToolPage() {
         </div>
         
         {/* 工具内容区 */}
-        <div className="col-span-1 md:col-span-3">
+        <div className="flex-1">
           {activeTool ? (
             <div className="space-y-6">
               {/* 工具标题区域 */}
