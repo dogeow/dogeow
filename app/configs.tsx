@@ -12,7 +12,7 @@ export const configs = {
   // 可用的音频文件列表
   availableTracks: [
     { name: 'I WiSH - 明日への扉~5 years brew version~', path: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3' },
-    { name: '和楽器バンド - 東風破.mp3', path: '/musics/和楽器バンド - 東風破.mp3' },
+    { name: '和楽器バンド - 東風破.mp3', path: '/musics/和楽器バンド - 東風破.mp3' },
   ],
 
   // 系统提供的背景图列表
@@ -43,5 +43,16 @@ export const configs = {
       primary: "hsl(41 38% 56%)",
       color: "#b99f65"
     }
-  ]
+  ],
+
+  // 功能封面图映射
+  projectCovers: {
+    "/thing": "thing.png",
+    "/lab": "lab.png", 
+    "/file": "file.png",
+    "/tool": "tool.png",
+    "/nav": "nav.png",
+    "/note": "note.png",
+    "/game": "game.png"
+  }
 };

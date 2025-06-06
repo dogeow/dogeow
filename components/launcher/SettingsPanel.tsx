@@ -10,13 +10,13 @@ import { useSettingsPanel } from './settings/useSettingsPanel'
 
 type DisplayMode = 'music' | 'apps' | 'settings'
 
-export type CustomBackground = {
+export interface CustomBackground {
   id: string
   name: string
   url: string
 }
 
-export interface SettingsPanelProps {
+interface SettingsPanelProps {
   toggleDisplayMode: (mode: DisplayMode) => void
   backgroundImage: string
   setBackgroundImage: (url: string) => void
@@ -36,13 +36,15 @@ export function SettingsPanel({
     currentTheme,
     customThemes,
     followSystem,
+    showProjectCovers,
     setCurrentView,
     handleSetBackground,
     handleUploadBackground,
     setCurrentTheme,
     handleAddCustomTheme,
     handleRemoveCustomTheme,
-    handleToggleFollowSystem
+    handleToggleFollowSystem,
+    handleToggleProjectCovers
   } = useSettingsPanel({
     backgroundImage,
     setBackgroundImage,
@@ -92,6 +94,8 @@ export function SettingsPanel({
               onNavigateToTheme={() => setCurrentView('theme')}
               followSystem={followSystem}
               onToggleFollowSystem={handleToggleFollowSystem}
+              showProjectCovers={showProjectCovers}
+              onToggleProjectCovers={handleToggleProjectCovers}
             />
           </>
         )

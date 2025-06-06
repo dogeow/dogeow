@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useThemeStore } from '@/stores/themeStore'
+import { useProjectCoverStore } from '@/stores/projectCoverStore'
 import { hexToHSL } from '@/lib/helpers'
 import type { CustomTheme } from '@/app/types'
 import type { CustomBackground } from '../SettingsPanel'
@@ -31,6 +32,8 @@ export function useSettingsPanel({
     setFollowSystem, 
     addCustomTheme 
   } = useThemeStore()
+  
+  const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
   
   const [currentView, setCurrentView] = useState<SettingsView>('main')
 
@@ -70,6 +73,12 @@ export function useSettingsPanel({
     toast.success(checked ? "已启用跟随系统主题" : "已关闭跟随系统主题")
   }
 
+  // 处理功能封面图选项切换
+  const handleToggleProjectCovers = (checked: boolean) => {
+    setShowProjectCovers(checked)
+    toast.success(checked ? "已启用功能封面图" : "已关闭功能封面图")
+  }
+
   // 处理添加自定义主题
   const handleAddCustomTheme = (name: string, color: string) => {
     const hslColor = hexToHSL(color)
@@ -97,6 +106,7 @@ export function useSettingsPanel({
     currentTheme,
     customThemes,
     followSystem,
+    showProjectCovers,
     
     // 导航方法
     setCurrentView,
@@ -111,6 +121,7 @@ export function useSettingsPanel({
     handleRemoveCustomTheme,
     
     // 系统设置方法
-    handleToggleFollowSystem
+    handleToggleFollowSystem,
+    handleToggleProjectCovers
   }
 } 

@@ -84,7 +84,7 @@ export default function Thing() {
     
     const itemsOnly = params.hasOwnProperty('search') || params.hasOwnProperty('itemsOnly');
     
-    return fetchItems(allParams, itemsOnly)
+    return fetchItems(allParams)
       .then(result => {
         console.log('请求成功，结果:', result);
         // 请求成功后再保存筛选条件
