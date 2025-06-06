@@ -253,8 +253,8 @@ export default function GridView({ files }: GridViewProps) {
           <div
             key={file.id}
             className={cn(
-              "flex flex-col items-center p-4 rounded-lg border cursor-pointer transition-colors shadow-lg",
-              "bg-black/50 backdrop-blur text-white border-white/20 hover:bg-black/70",
+              "flex flex-col items-center p-4 rounded-lg border cursor-pointer transition-colors shadow-sm",
+              "bg-card hover:bg-accent/50 border-border",
               selectedFiles.includes(file.id) && "ring-2 ring-primary border-primary"
             )}
             onClick={() => handleItemClick(file)}
@@ -271,15 +271,15 @@ export default function GridView({ files }: GridViewProps) {
             </div>
             
             <div className="mt-2 text-center">
-              <p className="font-medium text-sm truncate max-w-[8rem] text-white" title={file.name}>
+              <p className="font-medium text-sm truncate max-w-[8rem] text-foreground" title={file.name}>
                 {file.name}
               </p>
               {!file.is_folder && (
-                <p className="text-xs text-gray-200">
+                <p className="text-xs text-muted-foreground">
                   {formatSize(file.size)}
                 </p>
               )}
-              <p className="text-xs text-gray-200 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {formatDate(file.created_at)}
               </p>
             </div>
