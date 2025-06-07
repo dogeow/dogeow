@@ -19,6 +19,13 @@ export default function GamePage() {
       difficulty: "中等",
       icon: "🎯"
     },
+    {
+      id: "2048",
+      name: "2048",
+      description: "经典的数字合并游戏，通过滑动方块合并相同数字，目标是达到2048。支持触摸和键盘操作。",
+      difficulty: "简单到困难",
+      icon: "🔢"
+    },
     // 未来可以添加更多游戏
   ]
 
