@@ -222,22 +222,27 @@ export default function Game2048() {
   useEffect(() => {
     let startX = 0
     let startY = 0
+    let lastMoveTime = 0
+    const moveThrottle = 200 // 200ms内只能移动一次
 
     const handleTouchStart = (e: TouchEvent) => {
       startX = e.touches[0].clientX
       startY = e.touches[0].clientY
     }
 
-    const handleTouchEnd = (e: TouchEvent) => {
+    const handleTouchMove = (e: TouchEvent) => {
       if (!startX || !startY) return
+      
+      const currentTime = Date.now()
+      if (currentTime - lastMoveTime < moveThrottle) return
 
-      const endX = e.changedTouches[0].clientX
-      const endY = e.changedTouches[0].clientY
+      const currentX = e.touches[0].clientX
+      const currentY = e.touches[0].clientY
 
-      const diffX = startX - endX
-      const diffY = startY - endY
+      const diffX = startX - currentX
+      const diffY = startY - currentY
 
-      const minSwipeDistance = 50
+      const minSwipeDistance = 30
 
       if (Math.abs(diffX) > Math.abs(diffY)) {
         if (Math.abs(diffX) > minSwipeDistance) {
@@ -246,6 +251,10 @@ export default function Game2048() {
           } else {
             handleMove('right')
           }
+          // 更新起始点为当前位置，允许连续滑动
+          startX = currentX
+          startY = currentY
+          lastMoveTime = currentTime
         }
       } else {
         if (Math.abs(diffY) > minSwipeDistance) {
@@ -254,18 +263,27 @@ export default function Game2048() {
           } else {
             handleMove('down')
           }
+          // 更新起始点为当前位置，允许连续滑动
+          startX = currentX
+          startY = currentY
+          lastMoveTime = currentTime
         }
       }
+    }
 
+    const handleTouchEnd = () => {
       startX = 0
       startY = 0
+      lastMoveTime = 0
     }
 
     document.addEventListener('touchstart', handleTouchStart)
+    document.addEventListener('touchmove', handleTouchMove)
     document.addEventListener('touchend', handleTouchEnd)
 
     return () => {
       document.removeEventListener('touchstart', handleTouchStart)
+      document.removeEventListener('touchmove', handleTouchMove)
       document.removeEventListener('touchend', handleTouchEnd)
     }
   }, [handleMove])
