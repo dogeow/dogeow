@@ -94,7 +94,7 @@ const getHeaders = () => {
 export async function apiRequest<T>(
   endpoint: string, 
   method: string = 'GET', 
-  data?: any,
+  data?: unknown,
   options?: {
     handleError?: boolean; // 是否自动处理错误，默认为true
   }
@@ -221,7 +221,7 @@ export async function apiRequest<T>(
             }
           }
         }
-      } catch (parseError) {
+      } catch {
         // 如果无法解析JSON，使用HTTP状态文本
         errorMessage = `请求失败: ${response.statusText || response.status}`;
       }
@@ -328,15 +328,15 @@ export function get<T>(endpoint: string): Promise<T> {
   return apiRequest<T>(endpoint, 'GET');
 }
 
-export function post<T>(endpoint: string, data: any): Promise<T> {
+export function post<T>(endpoint: string, data: unknown): Promise<T> {
   return apiRequest<T>(endpoint, 'POST', data);
 }
 
-export function put<T>(endpoint: string, data: any): Promise<T> {
+export function put<T>(endpoint: string, data: unknown): Promise<T> {
   return apiRequest<T>(endpoint, 'PUT', data);
 }
 
-export function patch<T>(endpoint: string, data: any): Promise<T> {
+export function patch<T>(endpoint: string, data: unknown): Promise<T> {
   return apiRequest<T>(endpoint, 'PATCH', data);
 }
 
@@ -361,7 +361,7 @@ export const useUser = () => {
 };
 
 // 物品相关
-export const useItems = (params?: Record<string, any>) => {
+export const useItems = (params?: Record<string, unknown>) => {
   // 构建查询字符串
   let queryString = '';
   if (params) {
@@ -401,7 +401,7 @@ export const useCategory = (id: number) => {
 };
 
 // 区域相关
-export const useAreas = <T = any>() => {
+export const useAreas = <T = unknown>() => {
   return useSWR<T>('/areas', fetcher);
 };
 
@@ -410,7 +410,7 @@ export const useArea = (id: number) => {
 };
 
 // 房间相关
-export const useRooms = <T = any>(areaId?: number) => {
+export const useRooms = <T = unknown>(areaId?: number) => {
   return useSWR<T>(areaId ? `/areas/${areaId}/rooms` : '/rooms', fetcher);
 };
 
@@ -419,7 +419,7 @@ export const useRoom = (id: number) => {
 };
 
 // 位置相关
-export const useSpots = <T = any>(roomId?: number) => {
+export const useSpots = <T = unknown>(roomId?: number) => {
   return useSWR<T>(roomId ? `/rooms/${roomId}/spots` : '/spots', fetcher);
 };
 
@@ -438,7 +438,7 @@ export const useNavItems = (categoryId?: number) => {
 
 // 创建通用的变更函数
 export const createMutation = <T>(endpoint: string, method: string = 'POST') => {
-  return async (data: any): Promise<T> => {
+  return async (data: unknown): Promise<T> => {
     const result = await apiRequest<T>(endpoint, method, data);
     // 自动重新验证相关资源
     await mutate((key) => {

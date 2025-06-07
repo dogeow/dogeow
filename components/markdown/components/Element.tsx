@@ -1,6 +1,5 @@
 import { RenderElementProps } from 'slate-react'
 import { LanguageSelector } from './LanguageSelector'
-import { Node } from 'slate'
 import Image from "next/image";
 
 // 自定义组件选项

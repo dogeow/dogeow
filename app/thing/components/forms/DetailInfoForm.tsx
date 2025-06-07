@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Controller, UseFormReturn } from 'react-hook-form'
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -123,7 +123,7 @@ export default function DetailInfoForm({
   };
 
   // 更新位置路径显示
-  const updateLocationPath = (areaId?: string, roomId?: string, spotId?: string) => {
+  const updateLocationPath = useCallback((areaId?: string, roomId?: string, spotId?: string) => {
     let path = '';
     
     // 有区域ID
@@ -167,7 +167,7 @@ export default function DetailInfoForm({
       setLocationPath('');
       setSelectedLocation(undefined);
     }
-  };
+  }, [areas, rooms, spots]);
 
   // 初始加载区域数据
   useEffect(() => {
@@ -187,7 +187,7 @@ export default function DetailInfoForm({
   // 当位置信息变化时，更新位置路径显示
   useEffect(() => {
     updateLocationPath(watchAreaId, watchRoomId, watchSpotId);
-  }, [watchAreaId, watchRoomId, watchSpotId, areas, rooms, spots]);
+  }, [watchAreaId, watchRoomId, watchSpotId, updateLocationPath]);
 
   // 渲染位置信息提示
   const renderLocationInfo = () => {

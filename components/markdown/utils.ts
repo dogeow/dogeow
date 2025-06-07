@@ -1,4 +1,4 @@
-import { Editor, Element as SlateElement, Point, Range, Transforms } from 'slate'
+import { Editor, Element as SlateElement, Point, Transforms } from 'slate'
 import { ExtendedEditor } from './types'
 import { CustomElement } from '@/app/note/types/editor'
 
@@ -16,8 +16,6 @@ export const handleCodeBlockTab = (
   if (!match) {
     return false;
   }
-  
-  const [codeBlock, path] = match;
   
   // 处理 Tab 键
   if (event.key === 'Tab') {
@@ -37,7 +35,7 @@ export const handleCodeBlockTab = (
         }
         try {
           return serializeToText([node]);
-        } catch (e) {
+        } catch {
           return '';
         }
       }).join('\n');
@@ -82,10 +80,10 @@ export const handleCodeBlockTab = (
 };
 
 // 将编辑器内容序列化为普通文本（用于复制）
-export const serializeToText = (nodes: any[]): string => {
+export const serializeToText = (nodes: CustomElement[]): string => {
   return nodes
     .map(n => {
-      if (n.text) {
+      if ('text' in n) {
         return n.text;
       }
       
@@ -145,6 +143,6 @@ export const handleCopyWithSyntaxHighlighting = (
 };
 
 // 格式化Markdown函数
-export const formatMarkdown = (value: any[]): string => {
+export const formatMarkdown = (value: CustomElement[]): string => {
   return serializeToText(value);
 }; 

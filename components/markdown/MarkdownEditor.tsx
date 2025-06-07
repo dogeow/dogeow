@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast'
 import { useMarkdownEditor } from './hooks/useMarkdownEditor'
 import { handleCodeBlockTab, handleCopyWithSyntaxHighlighting } from './utils'
 import './styles.css'
-import { Editor, Text, Range } from 'slate'
+import { Editor, Text } from 'slate'
 import { CustomText } from './types'
 
 export interface MarkdownEditorProps {
@@ -331,15 +331,6 @@ const MarkdownEditor = ({
         </div>
       </div>
     );
-  }
-
-  // 更健壮的 isMarkActive
-  function isMarkActive(editor: Editor, format: Exclude<keyof CustomText, 'text'>) {
-    const [match] = Editor.nodes(editor, {
-      match: n => Text.isText(n) && (n as CustomText)[format] === true,
-      universal: true,
-    })
-    return !!match
   }
 
   type MarkFormat = 'bold' | 'italic' | 'code'

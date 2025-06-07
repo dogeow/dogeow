@@ -1,5 +1,5 @@
 import { Editor, Element as SlateElement, Node, NodeEntry, Path, Point, Transforms } from 'slate'
-import { CustomElement, ExtendedEditor, TokenRange } from './types'
+import { ExtendedEditor, TokenRange } from './types'
 import Prism from 'prismjs'
 
 // 加载 Prism 语言

@@ -14,8 +14,6 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { cn } from '@/lib/helpers'
-import { ReactEditor } from 'slate-react'
-import { Editor, Element as SlateElement, Path, Transforms } from 'slate'
 
 interface LanguageSelectorProps {
   value?: string;

@@ -46,15 +46,6 @@ export const useMarkdownEditor = ({
           match: n => SlateElement.isElement(n) && (n as CustomElement).type === 'code-block',
         })
       );
-      
-      if (entries.length > 0) {
-        // 重新计算装饰但不操作选区
-        const decorationMaps = entries.map(([node, path]) => {
-          const nodeToDecorations = new Map();
-          // 这里可以添加重新计算装饰的逻辑
-          return nodeToDecorations;
-        });
-      }
     }
   }, [editor]);
   

@@ -99,19 +99,21 @@ export function AudioController({
   useEffect(() => {
     if (!isTrackChanging || !audioRef.current || !userInteracted) return
     
+    const audio = audioRef.current
+    
     const handleCanPlay = () => {
       setReadyToPlay(true)
       setIsTrackChanging(false)
       
-      if (isPlaying && audioRef.current) {
-        audioRef.current.play().catch(err => setAudioError(`播放失败: ${err.message}`))
+      if (isPlaying && audio) {
+        audio.play().catch(err => setAudioError(`播放失败: ${err.message}`))
       }
       
-      audioRef.current?.removeEventListener('canplay', handleCanPlay)
+      audio.removeEventListener('canplay', handleCanPlay)
     }
     
-    audioRef.current.addEventListener('canplay', handleCanPlay)
-    return () => audioRef.current?.removeEventListener('canplay', handleCanPlay)
+    audio.addEventListener('canplay', handleCanPlay)
+    return () => audio.removeEventListener('canplay', handleCanPlay)
   }, [isTrackChanging, userInteracted, setReadyToPlay, setIsTrackChanging, isPlaying, setAudioError])
 
   // 更新音频状态
@@ -198,13 +200,15 @@ export function AudioController({
 
   // 监听播放结束
   useEffect(() => {
+    const audio = audioRef.current
+    
     const handleAudioEnded = () => {
       setCurrentTime(0)
       switchTrack('next')
     }
     
-    audioRef.current?.addEventListener('ended', handleAudioEnded)
-    return () => audioRef.current?.removeEventListener('ended', handleAudioEnded)
+    audio?.addEventListener('ended', handleAudioEnded)
+    return () => audio?.removeEventListener('ended', handleAudioEnded)
   }, [setCurrentTime, switchTrack])
 
   return {
