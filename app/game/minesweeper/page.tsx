@@ -144,6 +144,27 @@ export default function MinesweeperGame() {
     return newBoard
   }, [config])
 
+  // 标记格子
+  const handleCellFlag = useCallback((row: number, col: number) => {
+    if (gameState !== 'playing') return
+    
+    setBoard(currentBoard => {
+      const newBoard = currentBoard.map(row => row.map(cell => ({ ...cell })))
+      
+      if (newBoard[row][col].state === 'hidden') {
+        newBoard[row][col].state = 'flagged'
+        setFlagCount(prev => prev + 1)
+        setMineCount(prev => prev - 1)
+      } else if (newBoard[row][col].state === 'flagged') {
+        newBoard[row][col].state = 'hidden'
+        setFlagCount(prev => prev - 1)
+        setMineCount(prev => prev + 1)
+      }
+      
+      return newBoard
+    })
+  }, [gameState])
+
   // 点击格子
   const handleCellClick = useCallback((row: number, col: number) => {
     if (gameState !== 'playing') return
@@ -192,28 +213,7 @@ export default function MinesweeperGame() {
       
       return newBoard
     })
-  }, [gameState, firstClick, placeMines, calculateNeighbors, revealEmptyArea, config, flagMode, difficulty, updateStats])
-
-  // 标记格子
-  const handleCellFlag = useCallback((row: number, col: number) => {
-    if (gameState !== 'playing') return
-    
-    setBoard(currentBoard => {
-      const newBoard = currentBoard.map(row => row.map(cell => ({ ...cell })))
-      
-      if (newBoard[row][col].state === 'hidden') {
-        newBoard[row][col].state = 'flagged'
-        setFlagCount(prev => prev + 1)
-        setMineCount(prev => prev - 1)
-      } else if (newBoard[row][col].state === 'flagged') {
-        newBoard[row][col].state = 'hidden'
-        setFlagCount(prev => prev - 1)
-        setMineCount(prev => prev + 1)
-      }
-      
-      return newBoard
-    })
-  }, [gameState])
+  }, [gameState, firstClick, placeMines, calculateNeighbors, revealEmptyArea, config, flagMode, difficulty, updateStats, handleCellFlag])
 
   // 右键标记（桌面端）
   const handleCellRightClick = useCallback((e: React.MouseEvent, row: number, col: number) => {

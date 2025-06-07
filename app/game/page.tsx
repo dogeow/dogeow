@@ -17,7 +17,8 @@ export default function GamePage() {
       name: "射击训练场",
       description: "3D第一人称射击游戏，测试你的反应速度和瞄准精度。使用鼠标控制瞄准并击中目标。",
       difficulty: "中等",
-      icon: "🎯"
+      icon: "🎯",
+      hideOnMobile: true // 标记在移动端隐藏
     },
     {
       id: "2048",
@@ -49,7 +50,11 @@ export default function GamePage() {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {games.map((game) => (
-          <Link href={`/game/${game.id}`} key={game.id}>
+          <Link 
+            href={`/game/${game.id}`} 
+            key={game.id}
+            className={game.hideOnMobile ? "hidden md:block" : ""}
+          >
             <Card className="p-6 h-full transition-all hover:shadow-md hover:-translate-y-1">
               <div className="flex flex-col h-full">
                 <div className="text-4xl mb-4">{game.icon}</div>

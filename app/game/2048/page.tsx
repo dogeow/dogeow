@@ -189,7 +189,7 @@ export default function Game2048() {
         toast.error('游戏结束！')
       }
     }
-  }, [board, gameOver, gameWon, incrementGamesPlayed, moveDown, moveLeft, moveRight, moveUp, score])
+  }, [board, gameOver, incrementGamesPlayed, moveDown, moveLeft, moveRight, moveUp, score])
 
   // 键盘事件处理
   useEffect(() => {
