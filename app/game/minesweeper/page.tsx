@@ -404,7 +404,8 @@ export default function MinesweeperGame() {
           className="grid gap-0 mx-auto"
           style={{ 
             gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
-            maxWidth: `${config.cols * 32}px`
+            maxWidth: `${config.cols * 32}px`,
+            touchAction: 'none'
           }}
           onContextMenu={(e) => e.preventDefault()}
         >

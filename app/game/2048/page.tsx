@@ -362,7 +362,10 @@ export default function Game2048() {
       </div>
 
       <Card className="p-4 mb-4">
-        <div className="grid grid-cols-4 gap-2">
+        <div 
+          className="grid grid-cols-4 gap-2"
+          style={{ touchAction: 'none' }}
+        >
           {board.map((row, i) =>
             row.map((cell, j) => (
                              <div

@@ -290,7 +290,8 @@ export default function SnakeGame() {
           className="grid gap-0 bg-gray-50 dark:bg-gray-900 rounded-lg p-2"
           style={{ 
             gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
-            aspectRatio: '1'
+            aspectRatio: '1',
+            touchAction: 'none'
           }}
         >
           {Array.from({ length: BOARD_SIZE * BOARD_SIZE }).map((_, index) => {
