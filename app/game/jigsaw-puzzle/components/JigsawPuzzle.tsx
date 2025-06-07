@@ -81,7 +81,50 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
   const [piecePreviewPiece, setPiecePreviewPiece] = useState<PuzzlePiece | null>(null)
   const [piecePreviewPosition, setPiecePreviewPosition] = useState({ x: 0, y: 0 })
   const [availableHeight, setAvailableHeight] = useState(400) // 初始默认值
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 })
   const { stats, updateStats } = useJigsawStats(size)
+  
+  // 计算保持长宽比的背景图片尺寸
+  const getBackgroundSize = (containerSize: number) => {
+    if (imageDimensions.width === 0 || imageDimensions.height === 0) {
+      return `${containerSize * size}px ${containerSize * size}px`
+    }
+    
+    const aspectRatio = imageDimensions.width / imageDimensions.height
+    const totalSize = containerSize * size
+    
+    // 使用 cover 的逻辑：确保图片完全覆盖拼图区域
+    // 计算需要的尺寸以完全覆盖正方形区域
+    if (aspectRatio > 1) {
+      // 宽图：以高度为准，宽度按比例放大
+      return `${totalSize * aspectRatio}px ${totalSize}px`
+    } else {
+      // 高图：以宽度为准，高度按比例放大
+      return `${totalSize}px ${totalSize / aspectRatio}px`
+    }
+  }
+  
+  // 计算背景位置，确保拼图块显示正确的图片区域
+  const getBackgroundPosition = (row: number, col: number, containerSize: number) => {
+    if (imageDimensions.width === 0 || imageDimensions.height === 0) {
+      return `-${col * containerSize}px -${row * containerSize}px`
+    }
+    
+    const aspectRatio = imageDimensions.width / imageDimensions.height
+    const totalSize = containerSize * size
+    
+    if (aspectRatio > 1) {
+      // 宽图：需要水平居中
+      const actualWidth = totalSize * aspectRatio
+      const offsetX = (actualWidth - totalSize) / 2
+      return `-${col * containerSize + offsetX / size}px -${row * containerSize}px`
+    } else {
+      // 高图：需要垂直居中
+      const actualHeight = totalSize / aspectRatio
+      const offsetY = (actualHeight - totalSize) / 2
+      return `-${col * containerSize}px -${row * containerSize + offsetY / size}px`
+    }
+  }
   
   const puzzleSize = Math.min(400, Math.max(300, 60 * size)) // 动态调整拼图总大小
   const pieceSize = puzzleSize / size
@@ -137,6 +180,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     if (imageUrl) {
       const img = new window.Image()
       img.onload = () => {
+        setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight })
         setImageLoaded(true)
         initializePuzzle()
       }
@@ -811,8 +855,8 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
               // 使用拼图块自己的图片样式，而不是根据槽位位置计算
               const slotImageStyle = placedPiece ? {
                 backgroundImage: `url(${imageUrl})`,
-                backgroundSize: `${puzzleSize}px ${puzzleSize}px`,
-                backgroundPosition: `-${placedPiece.col * pieceSize}px -${placedPiece.row * pieceSize}px`,
+                backgroundSize: getBackgroundSize(pieceSize),
+                backgroundPosition: getBackgroundPosition(placedPiece.row, placedPiece.col, pieceSize),
                 backgroundRepeat: 'no-repeat'
               } : {}
               
@@ -981,9 +1025,9 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                             width: `${selectionPieceSize}px`,
                             height: `${selectionPieceSize}px`,
                             ...(piece.isPlaced ? {} : {
-                              backgroundSize: `${selectionPieceSize * size}px ${selectionPieceSize * size}px`,
+                              backgroundSize: getBackgroundSize(selectionPieceSize),
                               backgroundImage: `url(${imageUrl})`,
-                              backgroundPosition: `-${piece.col * selectionPieceSize}px -${piece.row * selectionPieceSize}px`,
+                              backgroundPosition: getBackgroundPosition(piece.row, piece.col, selectionPieceSize),
                               backgroundRepeat: 'no-repeat'
                             })
                           }}
@@ -1021,8 +1065,8 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                                   className="w-40 h-40 rounded border"
                                   style={{
                                     backgroundImage: `url(${imageUrl})`,
-                                    backgroundSize: `${40 * size}px ${40 * size}px`,
-                                    backgroundPosition: `-${piece.col * 40}px -${piece.row * 40}px`,
+                                    backgroundSize: getBackgroundSize(40),
+                                    backgroundPosition: getBackgroundPosition(piece.row, piece.col, 40),
                                     backgroundRepeat: 'no-repeat',
                                   }}
                                 />
@@ -1066,9 +1110,9 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                       width: `${selectionPieceSize}px`,
                       height: `${selectionPieceSize}px`,
                       ...(piece.isPlaced ? {} : {
-                        backgroundSize: `${selectionPieceSize * size}px ${selectionPieceSize * size}px`,
+                        backgroundSize: getBackgroundSize(selectionPieceSize),
                         backgroundImage: `url(${imageUrl})`,
-                        backgroundPosition: `-${piece.col * selectionPieceSize}px -${piece.row * selectionPieceSize}px`,
+                        backgroundPosition: getBackgroundPosition(piece.row, piece.col, selectionPieceSize),
                         backgroundRepeat: 'no-repeat'
                       })
                     }}
@@ -1106,8 +1150,8 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                             className="w-40 h-40 rounded border"
                             style={{
                               backgroundImage: `url(${imageUrl})`,
-                              backgroundSize: `${40 * size}px ${40 * size}px`,
-                              backgroundPosition: `-${piece.col * 40}px -${piece.row * 40}px`,
+                              backgroundSize: getBackgroundSize(40),
+                              backgroundPosition: getBackgroundPosition(piece.row, piece.col, 40),
                               backgroundRepeat: 'no-repeat',
                             }}
                           />
