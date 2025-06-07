@@ -1,7 +1,7 @@
 "use client"
 
 import React from 'react'
-import { Palette, Image as ImageIcon, Computer, Image } from 'lucide-react'
+import { Palette, Image as ImageIcon, Computer } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -48,7 +48,7 @@ export function MainView({
       
       {/* 功能封面图选项 */}
       <div className="flex items-center gap-2 h-9 px-3 shrink-0">
-        <Image className="h-4 w-4" />
+        <ImageIcon className="h-4 w-4" />
         <Label htmlFor="project-covers" className="text-sm font-medium cursor-pointer">
           功能封面图
         </Label>

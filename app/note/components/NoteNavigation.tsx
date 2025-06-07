@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, Tag, FolderTree, Plus } from "lucide-react"
 import { useState } from "react"
 import { useEditorStore } from '../store/editorStore'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+// import { ConfirmDialog } from '@/components/ui/confirm-dialog' // 暂时未使用
 import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
 
 export default function NoteNavigation() {
@@ -15,13 +15,13 @@ export default function NoteNavigation() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
   
-  // 检查当前路径是否激活
-  const isActive = (href: string, exact = false) => {
-    if (exact) {
-      return pathname === href
-    }
-    return pathname.startsWith(href)
-  }
+  // 检查当前路径是否激活 - 暂时未使用
+  // const isActive = (href: string, exact = false) => {
+  //   if (exact) {
+  //     return pathname === href
+  //   }
+  //   return pathname.startsWith(href)
+  // }
   
   // 统一跳转处理
   const handleNavigate = (href: string) => {

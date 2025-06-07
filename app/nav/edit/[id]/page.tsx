@@ -51,7 +51,7 @@ const navItemSchema = z.object({
 export default function EditNavPage() {
   const params = useParams()
   const router = useRouter()
-  const { fetchCategories, categories, items: _items, fetchItems, updateItem, createCategory } = useNavStore()
+  const { fetchCategories, categories, fetchItems, updateItem, createCategory } = useNavStore()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const itemId = Number(params.id)
@@ -80,7 +80,7 @@ export default function EditNavPage() {
       if (initialLoading) {
         try {
           // 加载分类和导航项数据
-          const [_categoriesResult, itemsResult] = await Promise.all([
+          const [, itemsResult] = await Promise.all([
             fetchCategories(),
             fetchItems()
           ])

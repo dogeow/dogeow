@@ -22,6 +22,7 @@ interface ItemCardProps {
   onView: () => void
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
   // deleteDialogOpen, fetchItems, imageError, primaryImage states and related useEffect removed
   // itemStatusColors, getStatusBorderColor, renderImage, handleDelete functions removed

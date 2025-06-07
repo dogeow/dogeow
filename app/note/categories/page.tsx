@@ -3,12 +3,12 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import useSWR, { mutate } from "swr"
 import { get, post, put, del } from "@/lib/api"
 import { toast } from "sonner"
-import { useRouter } from "next/navigation"
+// import { useRouter } from "next/navigation" // 暂时未使用
 
 // 分类类型定义
 type Category = {
@@ -19,7 +19,7 @@ type Category = {
 }
 
 export default function NoteCategories() {
-  const router = useRouter()
+  // const router = useRouter() // 暂时未使用
   const [newCategory, setNewCategory] = useState("")
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [loading, setLoading] = useState(false)
@@ -29,7 +29,7 @@ export default function NoteCategories() {
 
   // 处理API请求的通用函数
   const handleApiRequest = async (
-    apiCall: () => Promise<any>,
+    apiCall: () => Promise<unknown>,
     successMessage: string,
     errorMessage: string
   ) => {

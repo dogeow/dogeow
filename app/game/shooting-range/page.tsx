@@ -35,22 +35,22 @@ export default function ShootingRangePage() {
     };
   }, []);
 
-  // 处理返回设置按钮点击，确保释放指针锁定
-  const _handleBackToSettings = () => {
-    // 尝试释放指针锁定
-    if (document.exitPointerLock) {
-      document.exitPointerLock();
-    } else if ((document as any).mozExitPointerLock) {
-      (document as any).mozExitPointerLock();
-    } else if ((document as any).webkitExitPointerLock) {
-      (document as any).webkitExitPointerLock();
-    }
-    
-    // 设置一个短暂的延迟，确保指针锁释放后再更改状态
-    setTimeout(() => {
-      setIsStarted(false);
-    }, 50);
-  }
+  // 处理返回设置按钮点击，确保释放指针锁定 - 暂时未使用
+  // const handleBackToSettings = () => {
+  //   // 尝试释放指针锁定
+  //   if (document.exitPointerLock) {
+  //     document.exitPointerLock();
+  //   } else if ((document as Document & { mozExitPointerLock?: () => void }).mozExitPointerLock) {
+  //     (document as Document & { mozExitPointerLock?: () => void }).mozExitPointerLock?.();
+  //   } else if ((document as Document & { webkitExitPointerLock?: () => void }).webkitExitPointerLock) {
+  //     (document as Document & { webkitExitPointerLock?: () => void }).webkitExitPointerLock?.();
+  //   }
+  //   
+  //   // 设置一个短暂的延迟，确保指针锁释放后再更改状态
+  //   setTimeout(() => {
+  //     setIsStarted(false);
+  //   }, 50);
+  // }
 
   return (
     <div className="flex flex-col items-center py-4 px-2">

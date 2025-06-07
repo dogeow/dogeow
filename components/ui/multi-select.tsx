@@ -268,7 +268,7 @@ export function MultiSelectItem({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement> & { value: string; disabled?: boolean }) {
-  const { value: selectedValues, onValueChange, closeOnSelect } = useMultiSelect()
+  const { value: selectedValues, onValueChange } = useMultiSelect()
   const isSelected = selectedValues.includes(value)
   
   return (

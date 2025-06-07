@@ -91,7 +91,7 @@ export function SearchBar({
     
     clearDebounceTimer()
     triggerSearch('')
-  }, [currentApp, setSearchTerm, clearDebounceTimer, triggerSearch])
+  }, [setSearchTerm, clearDebounceTimer, triggerSearch])
 
   if (!isVisible) {
     return (

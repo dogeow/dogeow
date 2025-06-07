@@ -54,7 +54,7 @@ export default function AddNavItem() {
   const router = useRouter()
   const { createItem, fetchCategories, categories, createCategory } = useNavStore()
   const [loading, setLoading] = useState(false)
-  const [fetching, setFetching] = useState(false);
+  const [fetching, setFetching] = useState(false)
 
   // 使用 react-hook-form 管理表单状态
   const form = useForm<FormData>({

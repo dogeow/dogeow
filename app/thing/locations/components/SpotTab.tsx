@@ -23,7 +23,15 @@ interface SpotTabProps {
   onDeleteSpot: (spotId: number) => void;
 }
 
-export default function SpotTab({ spots, rooms, loading, onAddSpot, onUpdateSpot, onDeleteSpot }: SpotTabProps) {
+export default function SpotTab({ 
+  spots, 
+  rooms, 
+  loading, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onAddSpot, 
+  onUpdateSpot, 
+  onDeleteSpot 
+}: SpotTabProps) {
   const [editingSpot, setEditingSpot] = useState<Spot | null>(null)
 
   const handleUpdateSpot = async () => {

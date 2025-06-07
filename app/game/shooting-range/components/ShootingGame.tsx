@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect, Suspense, useCallback, useMemo } from "react"
 import { Canvas, useFrame, useThree, ThreeEvent } from "@react-three/fiber"
 import { PointerLockControls, /* Text, useTexture, */ Environment } from "@react-three/drei"
+import { PointerLockControls as PointerLockControlsImpl } from "three-stdlib"
 import * as THREE from "three"
 // 注释掉外部组件导入，使用内部定义的组件
 // import GunModel from './Gun'
@@ -164,7 +165,7 @@ const Target = ({ position, hit, scale, onClick, id }: {
         metalness: 0.8
       }))
     }
-  }, [hit, id])
+  }, [hit, id, startExplosion])
 
   // 为mesh添加id信息，方便射线检测
   useEffect(() => {
@@ -525,17 +526,17 @@ const GameScene = ({
   gameStarted,
   setGameStarted,
   useFallbackControls = false,
-  onError = (message: string) => {}
+  onError = () => {}
 }: { 
   difficulty: "easy" | "medium" | "hard",
   onScore: () => void,
   gameStarted: boolean,
   setGameStarted: (started: boolean) => void,
   useFallbackControls?: boolean,
-  onError?: (_message: string) => void
+  onError?: (message: string) => void
 }) => {
   const { camera, gl, scene } = useThree()
-  const controls = useRef<any>(null)
+  const controls = useRef<PointerLockControlsImpl | null>(null)
   const [targets, setTargets] = useState<Target[]>([])
   
   // 子弹状态
@@ -551,9 +552,6 @@ const GameScene = ({
   // 麦克雷左轮射击冷却控制
   const [canShoot, setCanShoot] = useState(true);
   const shootCooldown = useRef(500); // 麦克雷左轮手枪射击间隔约为0.5秒
-  
-  // 鼠标位置状态 (用于备用控制)
-  const [, ] = useState({ x: 0, y: 0 })
   
   // 指针锁状态
   const [, setPointerLocked] = useState(false);
@@ -605,7 +603,24 @@ const GameScene = ({
     }
     
     setTargets(newTargets)
-  }, [difficulty])
+  }, [settings.gameAreaSize, settings.targetCount, settings.targetSpeed])
+
+  // 爆炸效果
+  const [explosions, setExplosions] = useState<{
+    id: number;
+    position: [number, number, number];
+    color: string;
+  }[]>([]);
+  
+  const startExplosion = useCallback((position: [number, number, number], color: string = '#ff4444') => {
+    const explosionId = Date.now() + Math.random();
+    setExplosions(prev => [...prev, { id: explosionId, position, color }]);
+    
+    // 2秒后移除爆炸效果
+    setTimeout(() => {
+      setExplosions(prev => prev.filter(exp => exp.id !== explosionId));
+    }, 2000);
+  }, []);
 
   // 处理击中目标
   const handleTargetHit = useCallback((id: number) => {
@@ -1018,8 +1033,8 @@ const GameScene = ({
       // 检查当前文档的指针锁定状态
       const isLocked = 
         document.pointerLockElement === gl.domElement ||
-        (document as any).mozPointerLockElement === gl.domElement ||
-        (document as any).webkitPointerLockElement === gl.domElement;
+        (document as Document & { mozPointerLockElement?: Element }).mozPointerLockElement === gl.domElement ||
+        (document as Document & { webkitPointerLockElement?: Element }).webkitPointerLockElement === gl.domElement;
       
       setPointerLocked(isLocked);
       
@@ -1049,14 +1064,14 @@ const GameScene = ({
       // 组件卸载时，确保释放指针锁
       try {
         if (document.pointerLockElement || 
-            (document as any).mozPointerLockElement || 
-            (document as any).webkitPointerLockElement) {
+            (document as Document & { mozPointerLockElement?: Element }).mozPointerLockElement || 
+            (document as Document & { webkitPointerLockElement?: Element }).webkitPointerLockElement) {
           if (document.exitPointerLock) {
             document.exitPointerLock();
-          } else if ((document as any).mozExitPointerLock) {
-            (document as any).mozExitPointerLock();
-          } else if ((document as any).webkitExitPointerLock) {
-            (document as any).webkitExitPointerLock();
+          } else if ((document as Document & { mozExitPointerLock?: () => void }).mozExitPointerLock) {
+            (document as Document & { mozExitPointerLock?: () => void }).mozExitPointerLock?.();
+          } else if ((document as Document & { webkitExitPointerLock?: () => void }).webkitExitPointerLock) {
+            (document as Document & { webkitExitPointerLock?: () => void }).webkitExitPointerLock?.();
           }
         }
       } catch (e) {
@@ -1069,7 +1084,7 @@ const GameScene = ({
       document.removeEventListener('webkitpointerlockchange', handlePointerLockChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [gameStarted, useFallbackControls, onError, gl, setGameStarted]);
+  }, [gameStarted, useFallbackControls, onError, gl, setGameStarted, startExplosion]);
 
   return (
     <>
@@ -1164,6 +1179,15 @@ const GameScene = ({
       <Suspense fallback={null}>
         <FPSWeapon muzzleFlash={muzzleFlash} />
       </Suspense>
+      
+      {/* 爆炸效果 */}
+      {explosions.map(explosion => (
+        <Explosion 
+          key={explosion.id}
+          position={explosion.position}
+          color={explosion.color}
+        />
+      ))}
     </>
   )
 }
@@ -1252,10 +1276,10 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
         try {
           if (canvasRef.current.requestPointerLock) {
             canvasRef.current.requestPointerLock();
-          } else if ((canvasRef.current as any).mozRequestPointerLock) {
-            (canvasRef.current as any).mozRequestPointerLock();
-          } else if ((canvasRef.current as any).webkitRequestPointerLock) {
-            (canvasRef.current as any).webkitRequestPointerLock();
+          } else if ((canvasRef.current as HTMLCanvasElement & { mozRequestPointerLock?: () => void }).mozRequestPointerLock) {
+            (canvasRef.current as HTMLCanvasElement & { mozRequestPointerLock?: () => void }).mozRequestPointerLock?.();
+          } else if ((canvasRef.current as HTMLCanvasElement & { webkitRequestPointerLock?: () => void }).webkitRequestPointerLock) {
+            (canvasRef.current as HTMLCanvasElement & { webkitRequestPointerLock?: () => void }).webkitRequestPointerLock?.();
           }
         } catch (e) {
           console.error("锁定指针失败:", e);
@@ -1268,8 +1292,6 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
   // 检查浏览器兼容性
   useEffect(() => {
     const checkBrowserSupport = () => {
-      const elem = document.body
-      
       if (!('pointerLockElement' in document) && 
           !('mozPointerLockElement' in document) && 
           !('webkitPointerLockElement' in document)) {
@@ -1344,10 +1366,10 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
     try {
       if (document.pointerLockElement) {
         document.exitPointerLock();
-      } else if ((document as any).mozPointerLockElement) {
-        (document as any).mozExitPointerLock();
-      } else if ((document as any).webkitPointerLockElement) {
-        (document as any).webkitExitPointerLock();
+      } else if ((document as Document & { mozPointerLockElement?: Element }).mozPointerLockElement) {
+        (document as Document & { mozExitPointerLock?: () => void }).mozExitPointerLock?.();
+      } else if ((document as Document & { webkitPointerLockElement?: Element }).webkitPointerLockElement) {
+        (document as Document & { webkitExitPointerLock?: () => void }).webkitExitPointerLock?.();
       }
     } catch (e) {
       console.error("释放指针锁失败:", e);
@@ -1366,10 +1388,10 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
     try {
       if (document.pointerLockElement) {
         document.exitPointerLock();
-      } else if ((document as any).mozPointerLockElement) {
-        (document as any).mozExitPointerLock();
-      } else if ((document as any).webkitPointerLockElement) {
-        (document as any).webkitExitPointerLock();
+      } else if ((document as Document & { mozPointerLockElement?: Element }).mozPointerLockElement) {
+        (document as Document & { mozExitPointerLock?: () => void }).mozExitPointerLock?.();
+      } else if ((document as Document & { webkitPointerLockElement?: Element }).webkitPointerLockElement) {
+        (document as Document & { webkitExitPointerLock?: () => void }).webkitExitPointerLock?.();
       }
     } catch (e) {
       console.error("释放指针锁失败:", e);

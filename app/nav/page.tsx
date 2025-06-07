@@ -22,7 +22,7 @@ function NavContent() {
     fetchItems,
     searchTerm,
     setSearchTerm,
-    filteredItems,
+    // filteredItems, // 暂时未使用
     handleSearch
   } = useNavStore();
   const [loading, setLoading] = useState(true);
@@ -81,7 +81,7 @@ function NavContent() {
         document.removeEventListener('nav-search', handleCustomSearch as EventListener);
       };
     }
-  }, [initialLoaded, handleSearch, searchTerm, router]);
+  }, [initialLoaded, handleSearch, searchTerm, router, setSearchTerm]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -127,17 +127,17 @@ function NavContent() {
     </aside>
   );
 
-  // 分类筛选
-  const filteredCategories = categories
-    .filter(category => selectedCategory === 'all' || category.id === selectedCategory)
-    .filter(category => category.items && category.items.length > 0)
-    .map(category => ({
-      ...category,
-      items: searchTerm ? (category.items || []).filter(item => 
-        filteredItems.some(filteredItem => filteredItem.id === item.id)
-      ) : (category.items || [])
-    }))
-    .filter(category => (category.items || []).length > 0);
+  // 分类筛选 - 注释掉未使用的变量
+  // const filteredCategories = categories
+  //   .filter(category => selectedCategory === 'all' || category.id === selectedCategory)
+  //   .filter(category => category.items && category.items.length > 0)
+  //   .map(category => ({
+  //     ...category,
+  //     items: searchTerm ? (category.items || []).filter(item => 
+  //       filteredItems.some(filteredItem => filteredItem.id === item.id)
+  //     ) : (category.items || [])
+  //   }))
+  //   .filter(category => (category.items || []).length > 0);
 
   const handleAddNav = () => {
     router.push('/nav/add');

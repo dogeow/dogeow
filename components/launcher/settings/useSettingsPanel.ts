@@ -18,8 +18,10 @@ interface UseSettingsPanelProps {
 }
 
 export function useSettingsPanel({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   backgroundImage,
   setBackgroundImage,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   customBackgrounds,
   setCustomBackgrounds
 }: UseSettingsPanelProps) {

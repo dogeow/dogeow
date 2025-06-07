@@ -48,7 +48,7 @@ export const useLocationManagement = () => {
   
   // 通用操作处理函数
   const handleOperation = async (
-    operation: () => Promise<any>,
+    operation: () => Promise<unknown>,
     successMessage: string,
     errorMessage: string,
     refreshFunction: () => void
@@ -186,7 +186,7 @@ export const useLocationManagement = () => {
   };
 
   // 处理位置选择
-  const handleLocationSelect = (type: LocationType, id: number, fullPath: string) => {
+  const handleLocationSelect = (type: LocationType, id: number) => {
     setSelectedLocation({ type, id });
   };
 

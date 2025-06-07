@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/button'
 import { 
   Plus, 
   Search, 
-  Edit, 
-  Trash, 
+  // Edit, // 暂时未使用
+  // Trash, // 暂时未使用
   Calendar, 
-  MoreVertical,
+  // MoreVertical, // 暂时未使用
   Filter
 } from 'lucide-react'
 import { 
@@ -80,21 +80,21 @@ export default function NotePage() {
     fetchNotes()
   }, [])
 
-  // 删除笔记
-  const deleteNote = async (id: number) => {
-    if (!confirm('确定要删除这个笔记吗？此操作无法撤销。')) {
-      return
-    }
-    
-    try {
-      await apiRequest(`/notes/${id}`, 'DELETE')
-      setNotes(notes.filter(note => note.id !== id))
-      toast.success('笔记已删除')
-    } catch (error) {
-      console.error('删除笔记失败:', error)
-      toast.error('删除笔记失败')
-    }
-  }
+  // 删除笔记 - 暂时未使用
+  // const deleteNote = async (id: number) => {
+  //   if (!confirm('确定要删除这个笔记吗？此操作无法撤销。')) {
+  //     return
+  //   }
+  //   
+  //   try {
+  //     await apiRequest(`/notes/${id}`, 'DELETE')
+  //     setNotes(notes.filter(note => note.id !== id))
+  //     toast.success('笔记已删除')
+  //   } catch (error) {
+  //     console.error('删除笔记失败:', error)
+  //     toast.error('删除笔记失败')
+  //   }
+  // }
 
   // 筛选和排序笔记
   const filteredAndSortedNotes = notes

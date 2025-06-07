@@ -1,14 +1,11 @@
 "use client"
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiRequest } from '@/lib/api'
 import MarkdownEditor from '@/components/markdown/MarkdownEditor'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'react-hot-toast'
-import { ArrowLeft } from 'lucide-react'
-import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
 import { useEditorStore } from '../store/editorStore'
 import { useGlobalNavigationGuard } from '../hooks/useGlobalNavigationGuard'
@@ -72,14 +69,14 @@ export default function NoteEditor({
   })
   
   // 添加最后保存的内容状态，用于判断是否有未保存更改
-  const [lastSavedContent, setLastSavedContent] = useState(() => {
+  const [, setLastSavedContent] = useState(() => {
     return isValidSlateJson(content)
       ? content
       : '[{"type":"paragraph","children":[{"text":""}]}]'
   })
   
   // 添加最后保存的标题状态
-  const [lastSavedTitle, setLastSavedTitle] = useState(title)
+  const [, setLastSavedTitle] = useState(title)
 
   const safeContent = currentContent
 
@@ -193,17 +190,17 @@ export default function NoteEditor({
     }
   }
 
-  // 处理导航离开
-  const handleNavigation = (action: () => void) => {
-    setDirty(false)
-    // 比较当前内容和标题与最后保存的状态
-    if (noteTitle !== lastSavedTitle || currentContent !== lastSavedContent) {
-      setShowConfirmDialog(true)
-      setPendingAction(() => action)
-    } else {
-      action()
-    }
-  }
+  // 处理导航离开 - 暂时未使用
+  // const handleNavigation = (action: () => void) => {
+  //   setDirty(false)
+  //   // 比较当前内容和标题与最后保存的状态
+  //   if (noteTitle !== lastSavedTitle || currentContent !== lastSavedContent) {
+  //     setShowConfirmDialog(true)
+  //     setPendingAction(() => action)
+  //   } else {
+  //     action()
+  //   }
+  // }
 
   // 处理保存草稿并离开
   const handleSaveDraftAndLeave = async () => {
@@ -261,7 +258,7 @@ export default function NoteEditor({
   }
 
   // 保存为草稿
-  const saveDraft = async () => {
+  const saveDraft = useCallback(async () => {
     if (!noteTitle.trim()) {
       toast.error('请输入笔记标题')
       return
@@ -304,7 +301,7 @@ export default function NoteEditor({
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [noteTitle, currentContent, isEditing, noteId, setDirty, setLastSavedContent, setLastSavedTitle])
 
   // 封装 showDialog，返回 Promise<boolean>
   const showDialog = () => {
@@ -342,7 +339,7 @@ export default function NoteEditor({
   useEffect(() => {
     setSaveDraft(saveDraft)
     return () => setSaveDraft(undefined)
-  }, [noteTitle, currentContent, isEditing, noteId])
+  }, [noteTitle, currentContent, isEditing, noteId, saveDraft, setSaveDraft])
 
   return (
     <div className="w-full max-w-6xl mx-auto">

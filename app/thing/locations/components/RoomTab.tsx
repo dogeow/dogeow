@@ -23,7 +23,15 @@ interface RoomTabProps {
   onDeleteRoom: (roomId: number) => void;
 }
 
-export default function RoomTab({ rooms, areas, loading, onAddRoom, onUpdateRoom, onDeleteRoom }: RoomTabProps) {
+export default function RoomTab({ 
+  rooms, 
+  areas, 
+  loading, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onAddRoom, 
+  onUpdateRoom, 
+  onDeleteRoom 
+}: RoomTabProps) {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
 
   const handleUpdateRoom = async () => {

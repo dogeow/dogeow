@@ -13,11 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-interface LoginDialogProps {
-  children?: React.ReactNode;
-}
-
-export function LoginDialog({ children }: LoginDialogProps) {
+export function LoginDialog() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showLoginForm, setShowLoginForm] = useState(false);

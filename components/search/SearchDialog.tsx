@@ -37,45 +37,44 @@ interface SearchDialogProps {
   currentRoute?: string
 }
 
+// 简化的键盘检测
 function useKeyboardStatus() {
   const [keyboardOpen, setKeyboardOpen] = useState(false);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
+    // 只在移动设备上检测键盘
+    const isMobile = window.innerWidth <= 768 || /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    if (!isMobile) {
+      setKeyboardOpen(false);
+      return;
+    }
+
     const handleResize = () => {
-      if (typeof window === 'undefined') return;
-      
-      // 检测是否为移动设备
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                      (window.innerWidth <= 768 && 'ontouchstart' in window);
-      
-      if (isMobile && window.visualViewport) {
-        const { height } = window.visualViewport;
-        const windowHeight = window.innerHeight;
-        const keyboardHeight = windowHeight - height;
-        
-        // 键盘高度超过100px时认为已弹出
-        setKeyboardOpen(keyboardHeight > 100);
+      const visualViewport = window.visualViewport;
+      if (visualViewport) {
+        const heightDiff = window.innerHeight - visualViewport.height;
+        setKeyboardOpen(heightDiff > 150);
       } else {
-        // 桌面端不启用键盘检测
-        setKeyboardOpen(false);
+        // 备用检测方法
+        setKeyboardOpen(window.innerHeight < 500);
       }
     };
     
-    // 初始检测
     handleResize();
     
-    // 监听视口变化
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize);
+    const visualViewport = window.visualViewport;
+    if (visualViewport) {
+      visualViewport.addEventListener('resize', handleResize);
+      return () => {
+        visualViewport.removeEventListener('resize', handleResize);
+      };
+    } else {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
     }
-    window.addEventListener('resize', handleResize);
-    
-    return () => {
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleResize);
-      }
-      window.removeEventListener('resize', handleResize);
-    };
   }, []);
   
   return keyboardOpen;
@@ -88,7 +87,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const [activeCategory, setActiveCategory] = useState("all")
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [thingPublicStatus, setThingPublicStatus] = useState<'all' | 'public' | 'private'>('all')
   const [hasSearched, setHasSearched] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const keyboardOpen = useKeyboardStatus();
@@ -97,11 +95,9 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const lastSearchRef = useRef<{
     searchTerm: string;
     activeCategory: string;
-    thingPublicStatus: string;
   }>({
     searchTerm: '',
-    activeCategory: 'all',
-    thingPublicStatus: 'all'
+    activeCategory: 'all'
   })
 
   const categories: Category[] = useMemo(() => [
@@ -131,8 +127,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       setHasSearched(false)
       lastSearchRef.current = {
         searchTerm: '',
-        activeCategory,
-        thingPublicStatus
+        activeCategory
       }
       return
     }
@@ -140,14 +135,12 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     // 检查是否与上次搜索参数相同，避免重复搜索
     const currentSearchParams = {
       searchTerm: searchTerm.trim(),
-      activeCategory,
-      thingPublicStatus
+      activeCategory
     }
     
     if (
       lastSearchRef.current.searchTerm === currentSearchParams.searchTerm &&
-      lastSearchRef.current.activeCategory === currentSearchParams.activeCategory &&
-      lastSearchRef.current.thingPublicStatus === currentSearchParams.thingPublicStatus
+      lastSearchRef.current.activeCategory === currentSearchParams.activeCategory
     ) {
       console.log('搜索参数未变化，跳过重复搜索')
       return
@@ -168,13 +161,12 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
             name: string;
             description?: string;
             is_public?: boolean;
-            [key: string]: any;
+            [key: string]: unknown;
           }>;
         }
         
         const queryParams = new URLSearchParams({
           q: searchTerm,
-          ...(thingPublicStatus !== 'all' && { is_public: thingPublicStatus === 'public' ? 'true' : 'false' })
         })
         
         const response = await get<SearchApiResponse>(`/db-search?${queryParams}`)
@@ -201,7 +193,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       setLoading(false)
       setHasSearched(true) // 标记已完成搜索
     }
-  }, [searchTerm, activeCategory, thingPublicStatus])
+  }, [searchTerm, activeCategory])
 
   const handleSearch = useCallback((e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -230,11 +222,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       router.push(searchUrl)
       onOpenChange(false)
     }
-    
-    // 搜索后重新聚焦输入框
-    setTimeout(() => {
-      inputRef.current?.focus()
-    }, 100)
   }, [searchTerm, activeCategory, currentRoute, pathname, categories, router, onOpenChange])
 
   const handleResultClick = useCallback((url: string) => {
@@ -242,9 +229,16 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     onOpenChange(false)
   }, [router, onOpenChange])
 
+  // 简化的focus逻辑
   useEffect(() => {
-    if (open && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100)
+    if (open) {
+      // 延迟focus，确保DOM已渲染
+      const timer = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus()
+        }
+      }, 200)
+      return () => clearTimeout(timer)
     }
   }, [open])
 
@@ -257,14 +251,13 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
         setHasSearched(false)
         lastSearchRef.current = {
           searchTerm: '',
-          activeCategory,
-          thingPublicStatus
+          activeCategory
         }
       }
     }, 500)
     
     return () => clearTimeout(delaySearch)
-  }, [searchTerm, activeCategory, thingPublicStatus, performSearch])
+  }, [searchTerm, activeCategory, performSearch])
   
   const filteredResults = useMemo(() => 
     results.filter(item => activeCategory === "all" || item.category === activeCategory),
@@ -345,33 +338,35 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
+      <DialogContent 
         className={`
-          !fixed !z-50 !p-0
-          transition-all duration-200 
+          max-w-[95vw] w-full sm:max-w-[550px] 
           ${keyboardOpen 
-            ? '!left-2 !right-2 !bottom-2 !top-auto !translate-x-0 !translate-y-0 !max-w-none !w-auto !h-[50vh] !max-h-[50vh]' 
-            : '!left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%] !w-full !max-w-[550px] !h-[70vh] !max-h-[80vh]'
+            ? 'fixed bottom-2 left-2 right-2 top-auto translate-x-0 translate-y-0 h-[50vh] max-h-[50vh]' 
+            : 'max-h-[80vh] h-[70vh]'
           }
-          !bg-background !border !shadow-lg !rounded-xl
-          [&>button]:!hidden
+          p-0 gap-0
         `}
       >
-        <div className={`flex flex-col h-full ${keyboardOpen ? 'p-3' : 'p-6'}`}>
-          <div className="flex items-center justify-between mb-4 flex-shrink-0">
-            <DialogTitle className={`font-semibold flex-1 text-center ${keyboardOpen ? 'text-base' : 'text-lg'}`}>
-              {getDialogTitle()}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full hover:bg-accent flex-shrink-0 ml-2"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+        <div className="flex flex-col h-full p-4 sm:p-6">
+          {/* 标题栏 */}
+          <DialogHeader className="flex-shrink-0 mb-4">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-semibold flex-1 text-center">
+                {getDialogTitle()}
+              </DialogTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full hover:bg-accent flex-shrink-0 ml-2"
+                onClick={() => onOpenChange(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </DialogHeader>
           
+          {/* 搜索输入框 */}
           <div className="flex-shrink-0 mb-4">
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -381,7 +376,8 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                 placeholder="搜索..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`pl-10 pr-20 ${keyboardOpen ? 'h-9' : 'h-10'}`}
+                className="pl-10 pr-20 h-10"
+                autoFocus
               />
               {searchTerm && (
                 <Button
@@ -389,15 +385,14 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                   variant="ghost"
                   size="icon"
                   className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-accent"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    e.preventDefault();
+                  onClick={() => {
                     setSearchTerm("");
                     setResults([]);
                     setHasSearched(false);
-                    setTimeout(() => {
+                    // 立即重新focus
+                    requestAnimationFrame(() => {
                       inputRef.current?.focus();
-                    }, 10);
+                    });
                   }}
                 >
                   <X className="h-3.5 w-3.5" />
@@ -408,27 +403,23 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                 variant="ghost"
                 size="icon"
                 className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                onClick={() => {
-                  setTimeout(() => {
-                    inputRef.current?.focus();
-                  }, 100);
-                }}
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </form>
           </div>
           
+          {/* 搜索范围 */}
           <div className="flex-shrink-0 mb-4">
-            <div className={`font-medium mb-2 ${keyboardOpen ? 'text-xs' : 'text-sm'}`}>搜索范围:</div>
-            <div className={`flex gap-1 flex-wrap overflow-y-auto ${keyboardOpen ? 'max-h-12' : 'max-h-16'}`}>
+            <div className="text-sm font-medium mb-2">搜索范围:</div>
+            <div className="flex gap-1 flex-wrap max-h-16 overflow-y-auto">
               {categories.map((category) => (
                 <Button 
                   key={category.id} 
                   size="sm" 
                   variant={activeCategory === category.id ? "secondary" : "outline"}
                   onClick={() => setActiveCategory(category.id)}
-                  className={`px-2 text-xs whitespace-nowrap ${keyboardOpen ? 'h-5' : 'h-6'}`}
+                  className="h-6 px-2 text-xs whitespace-nowrap"
                 >
                   {category.name} {getCountByCategory(category.id) > 0 ? `(${getCountByCategory(category.id)})` : ''}
                 </Button>
@@ -436,6 +427,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
             </div>
           </div>
 
+          {/* 搜索结果 */}
           <div className="flex-1 overflow-hidden min-h-0">
             <div className="h-full overflow-y-auto">
               {renderSearchResults()}

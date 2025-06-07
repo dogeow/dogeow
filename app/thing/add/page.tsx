@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import { toast } from "sonner"
-import { useItemStore } from '@/app/thing/stores/itemStore'
+import { useItemStore, ItemFormData } from '@/app/thing/stores/itemStore'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -105,21 +105,27 @@ export default function AddItem() {
     
     try {
       // 准备提交数据
-      const itemData = {
-        ...data,
+      const itemData: ItemFormData = {
+        name: data.name,
+        description: data.description,
+        quantity: data.quantity,
+        status: data.status,
         purchase_date: data.purchase_date ? new Date(data.purchase_date.toString()).toISOString().split('T')[0] : null,
         expiry_date: data.expiry_date ? new Date(data.expiry_date.toString()).toISOString().split('T')[0] : null,
+        purchase_price: data.purchase_price,
         category_id: data.category_id && data.category_id !== "none" ? Number(data.category_id) : null,
         area_id: data.area_id ? Number(data.area_id) : null,
         room_id: data.room_id ? Number(data.room_id) : null,
         spot_id: data.spot_id ? Number(data.spot_id) : null,
+        is_public: data.is_public,
+        thumbnail_url: null,
         image_paths: uploadedImages.map(img => img.path),
-        tags: selectedTags.length > 0 ? selectedTags.map(id => Number(id)) : undefined
+        tags: selectedTags.length > 0 ? selectedTags.map(id => Number(id)) as number[] : undefined
       };
       
-      // 提交请求
+      // 提交请求 - 现在类型匹配了
       const toast_id = toast.loading("正在创建物品...")
-      const newItem = await createItem(itemData as any)
+      const newItem = await createItem(itemData)
       
       toast.success("物品创建成功", { id: toast_id })
       router.push(`/thing/${newItem.id}`)

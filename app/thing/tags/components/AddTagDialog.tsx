@@ -71,7 +71,7 @@ export default function AddTagDialog({
       setTagColor("#3b82f6")
       mutate("/things/tags") // 刷新标签列表
       onOpenChange(false)
-    } catch (error) {
+    } catch {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
       setLoading(false)

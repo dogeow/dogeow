@@ -13,7 +13,7 @@ import BasicInfoForm from '@/app/thing/components/BasicInfoForm'
 import TagsSection from '@/app/thing/components/TagsSection'
 import ImageSection from '@/app/thing/components/ImageSection'
 import DetailsSection from '@/app/thing/components/DetailsSection'
-import { ItemFormData, UploadedImage, Room, Spot, Tag } from '@/app/thing/types'
+import { ItemFormData, UploadedImage, Room, Spot, Tag, ItemImage } from '@/app/thing/types'
 
 export default function EditItem() {
   const params = useParams()
@@ -34,6 +34,7 @@ export default function EditItem() {
     updateItem 
   } = useItemStore()
   
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { data: areas = [], mutate: refreshAreas } = useAreas()
   const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>()
   const { data: spots = [], mutate: refreshSpots } = useSpots<Spot[]>()
@@ -56,7 +57,7 @@ export default function EditItem() {
   const loadRooms = useCallback(async (areaId: string | number) => {
     if (!areaId) return
     try {
-      await apiRequest<any[]>(`/areas/${areaId}/rooms`)
+      await apiRequest<Room[]>(`/areas/${areaId}/rooms`)
       refreshRooms()
     } catch (error) {
       console.error('加载房间失败', error)
@@ -66,15 +67,15 @@ export default function EditItem() {
   const loadSpots = useCallback(async (roomId: string | number) => {
     if (!roomId) return
     try {
-      await apiRequest<any[]>(`/rooms/${roomId}/spots`)
+      await apiRequest<Spot[]>(`/rooms/${roomId}/spots`)
       refreshSpots()
     } catch (error) {
       console.error('加载位置失败', error)
     }
   }, [refreshSpots])
 
-  const convertExistingImagesToUploadedFormat = useCallback((images: any[]): UploadedImage[] => {
-    return images.map((img: any) => ({
+  const convertExistingImagesToUploadedFormat = useCallback((images: ItemImage[]): UploadedImage[] => {
+    return images.map((img: ItemImage) => ({
       path: img.path || '', 
       thumbnail_path: img.thumbnail_path || '',
       url: img.url || '',
@@ -220,7 +221,7 @@ export default function EditItem() {
     
     loadItem()
     refreshAreas()
-  }, [params.id, fetchCategories, fetchTags, loadRooms, loadSpots, refreshAreas])
+  }, [params.id, fetchCategories, fetchTags, loadRooms, loadSpots, refreshAreas, convertExistingImagesToUploadedFormat, getItem, router])
 
 
   useEffect(() => {

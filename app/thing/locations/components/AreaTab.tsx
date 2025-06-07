@@ -14,7 +14,15 @@ interface AreaTabProps {
   onDeleteArea: (areaId: number) => void;
 }
 
-export default function AreaTab({ areas, loading, onAddArea, onUpdateArea, onDeleteArea }: AreaTabProps) {
+export default function AreaTab({ 
+  areas, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  loading, 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onAddArea, 
+  onUpdateArea, 
+  onDeleteArea 
+}: AreaTabProps) {
   const [editingInlineAreaId, setEditingInlineAreaId] = useState<number | null>(null)
   const [editingAreaName, setEditingAreaName] = useState('')
 

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 
@@ -48,38 +48,8 @@ interface PuzzleProps {
 }
 
 export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
-  // 生成初始棋盘
-  const createBoard = (boardSize: number) => {
-    const numbers = Array.from({ length: boardSize * boardSize }, (_, i) => i)
-    return shuffleBoard(numbers, boardSize)
-  }
-  
-  // 随机打乱棋盘并确保有解
-  const shuffleBoard = (board: number[], boardSize: number) => {
-    const shuffled = [...board]
-    let solved = false
-    
-    // 尝试最多10次生成有解的棋盘
-    for (let attempt = 0; attempt < 10 && !solved; attempt++) {
-      // 洗牌算法
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-      }
-      
-      // 确保不是已经完成的状态
-      const isSolvable = checkSolvable(shuffled, boardSize)
-      const isAlreadySolved = shuffled.every((num, index) => 
-        num === index || (index === shuffled.length - 1 && num === 0))
-      
-      solved = isSolvable && !isAlreadySolved
-    }
-    
-    return shuffled
-  }
-  
   // 检查拼图是否有解
-  const checkSolvable = (board: number[], boardSize: number) => {
+  const checkSolvable = useCallback((board: number[], boardSize: number) => {
     // 找到空格位置
     const emptyIndex = board.indexOf(0)
     const emptyRow = Math.floor(emptyIndex / boardSize)
@@ -104,7 +74,37 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
       const emptyRowFromBottom = boardSize - 1 - emptyRow
       return (inversions + emptyRowFromBottom) % 2 === 1
     }
-  }
+  }, [])
+  
+  // 随机打乱棋盘并确保有解
+  const shuffleBoard = useCallback((board: number[], boardSize: number) => {
+    const shuffled = [...board]
+    let solved = false
+    
+    // 尝试最多10次生成有解的棋盘
+    for (let attempt = 0; attempt < 10 && !solved; attempt++) {
+      // 洗牌算法
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+      
+      // 确保不是已经完成的状态
+      const isSolvable = checkSolvable(shuffled, boardSize)
+      const isAlreadySolved = shuffled.every((num, index) => 
+        num === index || (index === shuffled.length - 1 && num === 0))
+      
+      solved = isSolvable && !isAlreadySolved
+    }
+    
+    return shuffled
+  }, [checkSolvable])
+  
+  // 生成初始棋盘
+  const createBoard = useCallback((boardSize: number) => {
+    const numbers = Array.from({ length: boardSize * boardSize }, (_, i) => i)
+    return shuffleBoard(numbers, boardSize)
+  }, [shuffleBoard])
   
   // 游戏状态
   const [board, setBoard] = useState(createBoard(size))
@@ -112,21 +112,21 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
   const [startTime, setStartTime] = useState(new Date())
   const [isComplete, setIsComplete] = useState(false)
   
-  // 当尺寸改变时重置游戏
-  useEffect(() => {
-    resetGame()
-  }, [size])
-  
   // 重置游戏
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setBoard(createBoard(size))
     setMoves(0)
     setStartTime(new Date())
     setIsComplete(false)
-  }
+  }, [size, createBoard])
+
+  // 当尺寸改变时重置游戏
+  useEffect(() => {
+    resetGame()
+  }, [resetGame])
   
   // 移动方块
-  const moveTile = (index: number) => {
+  const moveTile = useCallback((index: number) => {
     if (isComplete) return
     
     const emptyIndex = board.indexOf(0)
@@ -148,7 +148,7 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
     ;[newBoard[index], newBoard[emptyIndex]] = [newBoard[emptyIndex], newBoard[index]]
     
     setBoard(newBoard)
-    setMoves(moves + 1)
+    setMoves(prev => prev + 1)
     
     // 检查是否完成
     const completed = newBoard.every((value, index) => 
@@ -159,7 +159,7 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
       setIsComplete(true)
       onComplete()
     }
-  }
+  }, [board, isComplete, size, onComplete])
   
   // 处理键盘控制
   useEffect(() => {
@@ -199,7 +199,7 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
     
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [board, isComplete, size])
+  }, [board, isComplete, size, moveTile])
   
   return (
     <Card className="p-4 w-full">

@@ -116,6 +116,7 @@ export const MusicPlayer = React.memo(({
   audioError,
   currentTime,
   duration,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   volume,
   isMuted,
   toggleMute,

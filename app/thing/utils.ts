@@ -1,4 +1,4 @@
-import { Item, Spot } from "@/app/thing/types";
+import { Spot } from "@/app/thing/types";
 
 export const getLocationPath = (spot?: Spot | null): string => {
   if (!spot) return "No location specified";

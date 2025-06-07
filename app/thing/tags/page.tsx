@@ -23,7 +23,7 @@ type Tag = {
 }
 
 export default function ThingTags() {
-  const [loading, setLoading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [tagToDelete, setTagToDelete] = useState<number | null>(null)
   const [alertOpen, setAlertOpen] = useState(false)
 
@@ -40,15 +40,16 @@ export default function ThingTags() {
   const deleteTag = async () => {
     if (!tagToDelete) return
     
-    setLoading(true)
+    setDeleting(true)
     try {
       await del(`/things/tags/${tagToDelete}`)
       mutate("/things/tags")
       toast.success("标签删除成功")
-    } catch (error) {
+    } catch (deleteError) {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
+      console.error('删除标签失败:', deleteError)
     } finally {
-      setLoading(false)
+      setDeleting(false)
       setAlertOpen(false)
       setTagToDelete(null)
     }
@@ -90,6 +91,7 @@ export default function ThingTags() {
                     size="icon"
                     className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
                     onClick={() => openDeleteDialog(tag.id)}
+                    disabled={deleting}
                   >
                     <X className="h-3 w-3" />
                   </Button>

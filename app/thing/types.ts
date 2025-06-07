@@ -146,7 +146,7 @@ export interface FilterParams {
   purchase_date_from?: Date | null;
   expiry_date_from?: Date | null;
   isFilterToggle?: boolean;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // 标签类型定义

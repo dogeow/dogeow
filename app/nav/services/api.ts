@@ -27,7 +27,7 @@ export async function getItems(categoryId?: number) {
 
 // 记录点击
 export async function recordClick(itemId: number) {
-  return await post<any>(`/nav/items/${itemId}/click`, {});
+  return await post<{ success: boolean }>(`/nav/items/${itemId}/click`, {});
 }
 
 // 管理员接口
@@ -92,7 +92,7 @@ export async function updateCategory(id: number, category: Partial<NavCategory>)
 }
 
 export async function deleteCategory(id: number) {
-  return await del<any>(`/nav/categories/${id}`);
+  return await del<{ success: boolean }>(`/nav/categories/${id}`);
 }
 
 export async function createItem(item: Partial<NavItem>) {
@@ -104,5 +104,5 @@ export async function updateItem(id: number, item: Partial<NavItem>) {
 }
 
 export async function deleteItem(id: number) {
-  return await del<any>(`/nav/items/${id}`);
+  return await del<{ success: boolean }>(`/nav/items/${id}`);
 }

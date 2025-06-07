@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Globe, LockIcon, TagIcon, FolderIcon, CalendarIcon, InfoIcon, AlertTriangleIcon, Edit3Icon } from "lucide-react";
-import { Item, Spot } from "@/app/thing/types";
+import { Item } from "@/app/thing/types";
 import { formatDate } from '@/lib/helpers/dateUtils';
 import { getLocationPath } from '@/app/thing/utils';
 

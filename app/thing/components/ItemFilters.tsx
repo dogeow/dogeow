@@ -101,7 +101,6 @@ function debugFilterState(label: string, filters: FilterState) {
 
 export default function ItemFilters({ 
   onApply,
-  categories = [], // Default to empty array if not provided
   areas = [],
   rooms = [],
   spots = [],
@@ -134,11 +133,13 @@ export default function ItemFilters({
           if (value) {
             if (key === 'purchase_date_from' || key === 'purchase_date_to' || 
                 key === 'expiry_date_from' || key === 'expiry_date_to') {
-              (mergedFilters as any)[key] = new Date(value as string);
+              // 使用 Object.assign 避免类型错误
+              Object.assign(mergedFilters, { [key]: new Date(value as string) });
             }
           }
         } else {
-          (mergedFilters as any)[key] = value;
+          // 使用 Object.assign 避免类型错误
+          Object.assign(mergedFilters, { [key]: value });
         }
       }
     });
@@ -174,7 +175,8 @@ export default function ItemFilters({
             .map(tag => tag.trim())
             .filter(tag => tag !== '')
             .map(Number);
-          acc[fieldKey] = tagArray as any; // 使用类型断言处理复杂类型
+          // 使用 Object.assign 避免类型错误
+          Object.assign(acc, { [fieldKey]: tagArray });
         } else {
           acc[fieldKey] = value;
         }
@@ -246,6 +248,7 @@ export default function ItemFilters({
   }, [applyFilters]);
   
   // 检查是否有激活的筛选条件
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _hasActiveFilters = useCallback(() => {
     // 检查是否有任何非默认值的筛选条件
     return Object.entries(filters).some(([key, value]) => {

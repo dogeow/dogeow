@@ -9,7 +9,7 @@ import { toast } from 'react-hot-toast'
 import { useMarkdownEditor } from './hooks/useMarkdownEditor'
 import { handleCodeBlockTab, handleCopyWithSyntaxHighlighting } from './utils'
 import './styles.css'
-import { Editor, Text, Transforms, Range } from 'slate'
+import { Editor, Text, Range } from 'slate'
 import { CustomText } from './types'
 
 export interface MarkdownEditorProps {
@@ -359,7 +359,7 @@ const MarkdownEditor = ({
   function MarkButton(props: MarkButtonProps) {
     const { format, icon: Icon, title, toggleMark } = props
     const marks = Editor.marks(editor)
-    const active = !!(marks && (marks as any)[format])
+    const active = !!(marks && marks[format as keyof typeof marks])
     return (
       <Button
         variant={active ? 'secondary' : 'ghost'}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Item, Spot } from "@/app/thing/types";
+import { Item } from "@/app/thing/types";
 import { ItemDetailDialog } from "./ItemDetailDialog";
 import { ImageSizeControl } from "./ImageSizeControl";
 import { GalleryItem } from "./GalleryItem";

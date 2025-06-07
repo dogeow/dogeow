@@ -52,7 +52,7 @@ export const normalizeTokens = (tokens: unknown[]): { types: string[], content: 
 }
 
 // 计算装饰范围
-export const getTokensForCodeBlock = (node: unknown, path: number[]): unknown[] => {
+export const getTokensForCodeBlock = (node: unknown): unknown[] => {
   if (!Text.isText(node)) return []
 
   const ranges: unknown[] = []

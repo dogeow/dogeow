@@ -22,12 +22,12 @@ const handleError = (error: unknown, defaultMessage = '未知错误'): string =>
 };
 
 // 处理表单数据的辅助函数
-const prepareFormData = (data: Record<string, any>) => {
+const prepareFormData = (data: Record<string, unknown>) => {
   const formData = new FormData();
   
   // 处理基本字段
   Object.entries(data).forEach(([key, value]) => {
-    if (!SPECIAL_FIELDS.includes(key as any) && value != null) {
+    if (!SPECIAL_FIELDS.includes(key as typeof SPECIAL_FIELDS[number]) && value != null) {
       formData.append(key, key === 'is_public' ? (value ? "1" : "0") : String(value));
     }
   });
@@ -53,7 +53,7 @@ const prepareFormData = (data: Record<string, any>) => {
 };
 
 // 构建查询参数
-const buildQueryParams = (params: Record<string, any>) => {
+const buildQueryParams = (params: ItemFilters) => {
   const queryParams = new URLSearchParams();
   
   Object.entries(params).forEach(([key, value]) => {
@@ -78,7 +78,7 @@ const buildQueryParams = (params: Record<string, any>) => {
 };
 
 // 过滤前端专用参数
-const filterBackendParams = (params: Record<string, any>) => {
+const filterBackendParams = (params: ItemFilters) => {
   const filtered = { ...params };
   
   // 移除前端专用参数
@@ -89,12 +89,43 @@ const filterBackendParams = (params: Record<string, any>) => {
   return filtered;
 };
 
-type ItemFormData = Omit<Partial<Item>, 'images'> & {
+export type ItemFormData = Omit<Partial<Item>, 'images' | 'tags'> & {
   images?: File[];
   image_paths?: string[];
   image_ids?: number[];
   tags?: Tag[] | number[];
 };
+
+// 分页元数据类型
+interface PaginationMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+  from?: number;
+  to?: number;
+}
+
+// 过滤器类型
+interface ItemFilters {
+  search?: string;
+  category_id?: number | string;
+  tag_id?: number;
+  area_id?: number;
+  room_id?: number;
+  spot_id?: number;
+  is_public?: boolean;
+  purchase_date?: Date;
+  expiry_date?: Date;
+  page?: number;
+  itemsOnly?: boolean;
+  include_null_purchase_date?: boolean;
+  include_null_expiry_date?: boolean;
+  exclude_null_purchase_date?: boolean;
+  exclude_null_expiry_date?: boolean;
+  tags?: string[] | number[] | string;
+  [key: string]: unknown;
+}
 
 interface ItemState {
   items: Item[];
@@ -102,17 +133,17 @@ interface ItemState {
   tags: Tag[];
   loading: boolean;
   error: string | null;
-  meta: any | null;
-  filters: Record<string, any>;
+  meta: PaginationMeta | null;
+  filters: ItemFilters;
   
-  fetchItems: (params?: Record<string, any>) => Promise<{data: Item[], meta: any} | undefined>;
+  fetchItems: (params?: ItemFilters) => Promise<{data: Item[], meta: PaginationMeta} | undefined>;
   fetchCategories: () => Promise<Category[] | undefined>;
   fetchTags: () => Promise<Tag[] | undefined>;
   getItem: (id: number) => Promise<Item | null>;
   createItem: (data: ItemFormData) => Promise<Item>;
   updateItem: (id: number, data: ItemFormData) => Promise<Item>;
   deleteItem: (id: number) => Promise<void>;
-  saveFilters: (filters: Record<string, any>) => void;
+  saveFilters: (filters: ItemFilters) => void;
   clearError: () => void;
 }
 
@@ -152,7 +183,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       
       console.log(`请求 API: ${API_URL}/api/things/items${queryString ? `?${queryString}` : ''}`);
       
-      const data = await apiRequest<{data: Item[], meta: any}>(url);
+      const data = await apiRequest<{data: Item[], meta: PaginationMeta}>(url);
       
       set({
         items: data.data || [],

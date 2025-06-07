@@ -40,11 +40,11 @@ export function useGlobalNavigationGuard(showDialog: () => Promise<boolean>) {
     }
 
     // 兼容 next/navigation 没有 events 的情况
-    const nav = (router as any)
-    if (nav.events && nav.events.on) {
+    const nav = router as { events?: { on: (event: string, handler: (url: string) => void) => void; off: (event: string, handler: (url: string) => void) => void } }
+    if (nav.events?.on) {
       nav.events.on('routeChangeStart', handleRouteChange)
       return () => {
-        nav.events.off('routeChangeStart', handleRouteChange)
+        nav.events?.off('routeChangeStart', handleRouteChange)
       }
     }
   }, [isDirty, pathname, router, showDialog])

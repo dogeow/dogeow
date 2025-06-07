@@ -261,13 +261,13 @@ export default function ItemDetail() {
                       <div className="bg-blue-50 p-3 rounded-lg border shadow-sm">
                         <h3 className="font-medium text-xs text-muted-foreground">区域</h3>
                         <p className="text-sm font-semibold truncate">
-                          {item.spot?.room?.area?.name || (item as any).area?.name || (item.area_id ? `区域 ${item.area_id}` : '未指定')}
+                          {item.spot?.room?.area?.name || (item.area_id ? `区域 ${item.area_id}` : '未指定')}
                         </p>
                       </div>
                       <div className="bg-green-50 p-3 rounded-lg border shadow-sm">
                         <h3 className="font-medium text-xs text-muted-foreground">房间</h3>
                         <p className="text-sm font-semibold truncate">
-                          {item.spot?.room?.name || (item as any).room?.name || (item.room_id ? `房间 ${item.room_id}` : '未指定')}
+                          {item.spot?.room?.name || (item.room_id ? `房间 ${item.room_id}` : '未指定')}
                         </p>
                       </div>
                       <div className="bg-purple-50 p-3 rounded-lg border shadow-sm">

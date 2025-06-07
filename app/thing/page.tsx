@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
 import { apiRequest } from "@/lib/api"
 import { isLightColor } from '@/lib/helpers'
-import { ViewMode, Tag, FilterParams, Area, Room, Spot } from '@/app/thing/types' // Added Area, Room, Spot
+import { ViewMode, Tag, FilterParams, Area, Room, Spot, Item } from '@/app/thing/types' // Added Area, Room, Spot
 
 export default function Thing() {
   const router = useRouter()
@@ -82,6 +82,7 @@ export default function Thing() {
       delete allParams.isFilterToggle;
     }
     
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const itemsOnly = params.hasOwnProperty('search') || params.hasOwnProperty('itemsOnly');
     
     return fetchItems(allParams)
@@ -289,6 +290,7 @@ export default function Thing() {
   }, [loadItems, saveFilters, isSearching]);
 
   // 重置筛选条件
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleReset = useCallback(() => {
     setSearchTerm('');
     setSelectedCategory('none');
@@ -357,7 +359,7 @@ export default function Thing() {
   // 获取未分类物品数量
   const fetchUncategorizedCount = async () => {
     try {
-      const response: { data: any[], meta?: { total: number } } = await apiRequest('/things/items?uncategorized=true&own=true')
+      const response: { data: Item[], meta?: { total: number } } = await apiRequest('/things/items?uncategorized=true&own=true')
       setUncategorizedCount(response.meta?.total || 0)
     } catch (error) {
       console.error('获取未分类物品数量失败:', error)

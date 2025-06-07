@@ -132,6 +132,7 @@ const MobileNavigationItem = ({ item, pathname }: NavigationItemProps) => {
 
 export function Header() {
   const pathname = usePathname();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_isMobile, setIsMobile] = useState(false);
 
   // 响应式处理
