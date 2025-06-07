@@ -206,6 +206,14 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
       return
     }
     
+    // 如果有选中的已放置拼图块，则进行替换
+    if (selectedPlacedPiece !== null) {
+      replacePieceWithUnplaced(selectedPlacedPiece, pieceId)
+      setSelectedPlacedPiece(null)
+      setDraggedPiece(null)
+      return
+    }
+    
     setSelectedPlacedPiece(null)
     setDraggedPiece(pieceId)
   }
@@ -268,6 +276,27 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     }, 100)
   }
   
+  // 用未放置的拼图块替换已放置的拼图块
+  const replacePieceWithUnplaced = (placedPieceId: number, unplacedPieceId: number) => {
+    const placedSlot = slots.find(s => s.pieceId === placedPieceId)
+    if (!placedSlot) return
+    
+    // 将已放置的拼图块设为未放置状态
+    setPieces(prev => prev.map(p => 
+      p.id === placedPieceId ? { ...p, isPlaced: false } : p
+    ))
+    
+    // 从错误状态中移除原来的拼图块
+    setWronglyPlacedPieces(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(placedPieceId)
+      return newSet
+    })
+    
+    // 将新的拼图块放置到该位置
+    placePieceInSlot(unplacedPieceId, placedSlot.id)
+  }
+  
   // 处理槽位点击（移动端）
   const handleSlotClick = (slotId: number) => {
     const slot = slots.find(s => s.id === slotId)
@@ -275,10 +304,17 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     
     // 如果点击的槽位有拼图块
     if (slot.pieceId !== null) {
-      // 如果有选中的拼图块，则交换位置
+      // 如果有选中的已放置拼图块，则交换位置
       if (selectedPlacedPiece !== null && selectedPlacedPiece !== slot.pieceId) {
         swapPieces(selectedPlacedPiece, slot.pieceId)
         setSelectedPlacedPiece(null)
+        return
+      }
+      
+      // 如果有选中的未放置拼图块，则进行替换
+      if (draggedPiece !== null) {
+        replacePieceWithUnplaced(slot.pieceId, draggedPiece)
+        setDraggedPiece(null)
         return
       }
       
