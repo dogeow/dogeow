@@ -10,7 +10,7 @@ import FolderIcon from './FolderIcon'
 import { useTheme } from 'next-themes'
 
 interface LocationTreeSelectProps {
-  onSelect: (type: 'area' | 'room' | 'spot', id: number, fullPath: string) => void;
+  onSelect: (type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => void;
   selectedLocation?: LocationSelection;
   className?: string;
   filterType?: 'area' | 'room' | null;

@@ -7,7 +7,7 @@ import FolderIcon from '../../components/FolderIcon'
 
 interface TreeViewTabProps {
   selectedLocation?: { type: LocationType, id: number };
-  onLocationSelect: (type: LocationType, id: number, fullPath: string) => void;
+  onLocationSelect: (type: LocationType, id: number) => void;
 }
 
 export default function TreeViewTab({ selectedLocation, onLocationSelect }: TreeViewTabProps) {
@@ -15,6 +15,11 @@ export default function TreeViewTab({ selectedLocation, onLocationSelect }: Tree
   
   const toggleTreeExpanded = () => {
     setIsTreeExpanded(!isTreeExpanded)
+  }
+  
+  // 适配器函数，忽略 fullPath 参数
+  const handleLocationSelect = (type: LocationType, id: number) => {
+    onLocationSelect(type, id);
   }
   
   return (
@@ -34,7 +39,7 @@ export default function TreeViewTab({ selectedLocation, onLocationSelect }: Tree
         </div>
         <div className="p-0">
           <LocationTreeSelect 
-            onSelect={onLocationSelect}
+            onSelect={handleLocationSelect}
             selectedLocation={selectedLocation}
             className="border-none shadow-none rounded-none"
             isExpanded={isTreeExpanded}

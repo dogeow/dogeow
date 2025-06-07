@@ -37,8 +37,8 @@ export default function Locations() {
   const [activeTab, setActiveTab] = useState<LocationType | 'tree'>('tree')
 
   // 处理位置选择
-  const handleTabLocationSelect = (type: LocationType, id: number, fullPath: string) => {
-    handleLocationSelect(type, id, fullPath);
+  const handleTabLocationSelect = (type: LocationType, id: number) => {
+    handleLocationSelect(type, id);
     setActiveTab(type);
   };
   

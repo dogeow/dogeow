@@ -83,9 +83,9 @@ export default function EditItem() {
     }))
   }, [])
 
-  const handleLocationSelect = useCallback((type: 'area' | 'room' | 'spot', id: number, fullPath: string) => {
+  const handleLocationSelect = useCallback((type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => {
     setSelectedLocation({ type, id })
-    setLocationPath(fullPath)
+    setLocationPath(fullPath || '')
     
     const updates: Partial<ItemFormData> = {}
     

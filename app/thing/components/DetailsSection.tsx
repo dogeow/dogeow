@@ -11,7 +11,7 @@ interface DetailsSectionProps {
   setFormData: React.Dispatch<React.SetStateAction<ItemFormData>>;
   locationPath: string;
   selectedLocation: LocationSelection;
-  onLocationSelect: (type: 'area' | 'room' | 'spot', id: number, fullPath: string) => void;
+  onLocationSelect: (type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => void;
 }
 
 const DetailsSection: React.FC<DetailsSectionProps> = ({ 

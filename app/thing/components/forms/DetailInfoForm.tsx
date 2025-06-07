@@ -79,9 +79,9 @@ export default function DetailInfoForm({
   }
   
   // 处理位置选择
-  const handleLocationSelect = (type: LocationType, id: number, fullPath: string) => {
+  const handleLocationSelect = (type: LocationType, id: number, fullPath?: string) => {
     setSelectedLocation({ type, id })
-    setLocationPath(fullPath)
+    setLocationPath(fullPath || '')
     
     // 更新表单数据
     if (type === 'area') {
