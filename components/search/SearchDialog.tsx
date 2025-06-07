@@ -44,14 +44,28 @@ function useKeyboardStatus() {
     const handleResize = () => {
       if (typeof window === 'undefined') return;
       
-      // 更精确的键盘检测逻辑
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      // 更精确的移动设备检测
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                      (window.innerWidth <= 768 && 'ontouchstart' in window);
       
       if (isMobile && window.visualViewport) {
         const { height } = window.visualViewport;
-        const screenHeight = window.screen.height;
-        // 当视口高度明显小于屏幕高度时，认为键盘已弹出
-        setKeyboardOpen(height < screenHeight * 0.75);
+        const windowHeight = window.innerHeight;
+        const keyboardHeight = windowHeight - height;
+        
+        // 键盘高度超过100px时认为已弹出
+        const isKeyboardOpen = keyboardHeight > 100;
+        
+        // 调试信息（生产环境可以移除）
+        console.log('键盘检测:', {
+          isMobile,
+          windowHeight,
+          viewportHeight: height,
+          keyboardHeight,
+          isKeyboardOpen
+        });
+        
+        setKeyboardOpen(isKeyboardOpen);
       } else {
         // 桌面端或不支持visualViewport的情况
         setKeyboardOpen(false);
@@ -61,6 +75,7 @@ function useKeyboardStatus() {
     // 初始检测
     handleResize();
     
+    // 监听视口变化
     if (window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleResize);
     }
@@ -338,92 +353,103 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={`
-          !fixed !z-50 !gap-0 !grid-cols-1
+          !fixed !z-50 !gap-0 !p-0
           transition-all duration-300 flex flex-col
           ${keyboardOpen 
-            ? '!left-2 !right-2 !bottom-2 !top-auto !translate-x-0 !translate-y-0 !max-w-none !w-auto !h-[50vh] !max-h-[50vh] !rounded-xl !p-4' 
-            : '!left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%] !w-full !max-w-[550px] !h-[70vh] !max-h-[80vh] !rounded-xl !p-6'
+            ? '!left-2 !right-2 !top-auto !translate-x-0 !translate-y-0 !max-w-none !w-auto !rounded-xl' 
+            : '!left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%] !w-full !max-w-[550px] !rounded-xl'
           }
           !bg-background !border !shadow-lg
-          [&>button[data-radix-dialog-close]]:!hidden
+          [&>button]:!hidden
         `}
+        style={{
+          bottom: keyboardOpen ? '8px' : 'auto',
+          height: keyboardOpen 
+            ? `${typeof window !== 'undefined' && window.visualViewport 
+                ? Math.min(window.visualViewport.height, window.innerHeight * 0.6) 
+                : window?.innerHeight ? window.innerHeight * 0.6 : 400}px`
+            : '70vh',
+          maxHeight: keyboardOpen ? '60vh' : '80vh'
+        }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <DialogTitle className="text-lg font-semibold flex-1 text-center">{getDialogTitle()}</DialogTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-accent flex-shrink-0"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="flex-shrink-0 mb-3">
-          <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              ref={inputRef}
-              type="text"
-              placeholder="搜索..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-20 h-10"
-            />
-            {searchTerm && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-accent"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setSearchTerm("");
-                  setResults([]);
-                  setHasSearched(false);
-                  setTimeout(() => {
-                    inputRef.current?.focus();
-                  }, 10);
-                }}
-              >
-                <X className="h-3.5 w-3.5" />
-              </Button>
-            )}
+        <div className={`flex flex-col h-full ${keyboardOpen ? 'p-3' : 'p-6'}`}>
+          <div className="flex items-center justify-between mb-3 flex-shrink-0">
+            <DialogTitle className={`font-semibold flex-1 text-center ${keyboardOpen ? 'text-base' : 'text-lg'}`}>
+              {getDialogTitle()}
+            </DialogTitle>
             <Button
-              type="submit"
               variant="ghost"
               size="icon"
-              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+              className="h-8 w-8 rounded-full hover:bg-accent flex-shrink-0 ml-2"
+              onClick={() => onOpenChange(false)}
             >
-              <ArrowRight className="h-4 w-4" />
+              <X className="h-4 w-4" />
             </Button>
-          </form>
-        </div>
-        
-        <div className="flex-shrink-0 mb-3">
-          <div className="text-sm font-medium mb-2">搜索范围:</div>
-          <div className="flex gap-1 flex-wrap max-h-20 overflow-y-auto">
-            {categories.map((category) => (
-              <Button 
-                key={category.id} 
-                size="sm" 
-                variant={activeCategory === category.id ? "secondary" : "outline"}
-                onClick={() => setActiveCategory(category.id)}
-                className={`h-6 px-2 text-xs whitespace-nowrap ${
-                  keyboardOpen ? 'text-xs' : 'text-xs'
-                }`}
-              >
-                {category.name} {getCountByCategory(category.id) > 0 ? `(${getCountByCategory(category.id)})` : ''}
-              </Button>
-            ))}
           </div>
-        </div>
+          
+          <div className="flex-shrink-0 mb-3">
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                ref={inputRef}
+                type="text"
+                placeholder="搜索..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`pl-10 pr-20 ${keyboardOpen ? 'h-9' : 'h-10'}`}
+              />
+              {searchTerm && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-accent"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    setSearchTerm("");
+                    setResults([]);
+                    setHasSearched(false);
+                    setTimeout(() => {
+                      inputRef.current?.focus();
+                    }, 10);
+                  }}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              )}
+              <Button
+                type="submit"
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+              >
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
+          
+          <div className="flex-shrink-0 mb-3">
+            <div className={`font-medium mb-2 ${keyboardOpen ? 'text-xs' : 'text-sm'}`}>搜索范围:</div>
+            <div className={`flex gap-1 flex-wrap overflow-y-auto ${keyboardOpen ? 'max-h-12' : 'max-h-16'}`}>
+              {categories.map((category) => (
+                <Button 
+                  key={category.id} 
+                  size="sm" 
+                  variant={activeCategory === category.id ? "secondary" : "outline"}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`px-2 text-xs whitespace-nowrap ${keyboardOpen ? 'h-5' : 'h-6'}`}
+                >
+                  {category.name} {getCountByCategory(category.id) > 0 ? `(${getCountByCategory(category.id)})` : ''}
+                </Button>
+              ))}
+            </div>
+          </div>
 
-        <div className="flex-1 overflow-hidden">
-          <div className="h-full overflow-y-auto">
-            {renderSearchResults()}
+          <div className="flex-1 overflow-hidden min-h-0">
+            <div className="h-full overflow-y-auto">
+              {renderSearchResults()}
+            </div>
           </div>
         </div>
       </DialogContent>
