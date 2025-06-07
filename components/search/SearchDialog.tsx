@@ -43,20 +43,37 @@ function useKeyboardStatus() {
   useEffect(() => {
     const handleResize = () => {
       if (typeof window === 'undefined') return;
-      if (window.visualViewport) {
+      
+      // 更精确的键盘检测逻辑
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      if (isMobile && window.visualViewport) {
         const { height } = window.visualViewport;
-        setKeyboardOpen(height < window.innerHeight - 100);
+        const screenHeight = window.screen.height;
+        // 当视口高度明显小于屏幕高度时，认为键盘已弹出
+        setKeyboardOpen(height < screenHeight * 0.75);
       } else {
-        setKeyboardOpen(window.innerHeight < 500);
+        // 桌面端或不支持visualViewport的情况
+        setKeyboardOpen(false);
       }
     };
-    window.visualViewport?.addEventListener('resize', handleResize);
+    
+    // 初始检测
+    handleResize();
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleResize);
+    }
     window.addEventListener('resize', handleResize);
+    
     return () => {
-      window.visualViewport?.removeEventListener('resize', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleResize);
+      }
       window.removeEventListener('resize', handleResize);
     };
   }, []);
+  
   return keyboardOpen;
 }
 
@@ -267,8 +284,8 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   const renderSearchResults = useCallback(() => {
     if (loading) {
       return (
-        <div className="flex flex-col items-center justify-center py-4 min-h-[160px]">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center py-8 min-h-[120px]">
+          <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
           <p className="mt-2 text-sm text-muted-foreground">搜索中...</p>
         </div>
       )
@@ -276,31 +293,33 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     
     if (searchTerm && filteredResults.length === 0 && hasSearched) {
       return (
-        <div className="flex flex-col items-center justify-center py-4 min-h-[160px]">
-          <p className="text-muted-foreground">未找到相关结果</p>
+        <div className="flex flex-col items-center justify-center py-8 min-h-[120px]">
+          <p className="text-muted-foreground text-sm">未找到相关结果</p>
         </div>
       )
     }
     
     if (searchTerm) {
       return (
-        <div className="min-h-[160px] space-y-2">
+        <div className="space-y-2">
           {filteredResults.map((result) => (
             <div
               key={`${result.category}-${result.id}`}
-              className="p-3 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-1"
+              className="p-3 rounded-lg bg-card hover:bg-accent/50 cursor-pointer space-y-2 border border-border/50"
               onClick={() => handleResultClick(result.url)}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                <h3 className="font-semibold truncate">{result.title}</h3>
-                <Badge variant="outline" className="text-xs whitespace-normal sm:whitespace-nowrap w-fit">
-                  {categories.find(c => c.id === result.category)?.name || result.category}
-                  {result.category === 'thing' && 'isPublic' in result && (
-                    <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
-                  )}
-                </Badge>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-medium text-sm leading-tight flex-1">{result.title}</h3>
+                  <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
+                    {categories.find(c => c.id === result.category)?.name || result.category}
+                    {result.category === 'thing' && 'isPublic' in result && (
+                      <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
+                    )}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{result.content}</p>
               </div>
-              <p className="text-sm text-muted-foreground line-clamp-2">{result.content}</p>
             </div>
           ))}
         </div>
@@ -308,8 +327,9 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     }
     
     return (
-      <div className="flex flex-col items-center justify-center py-4 min-h-[160px]">
-        <p className="text-muted-foreground">请输入搜索关键词</p>
+      <div className="flex flex-col items-center justify-center py-8 min-h-[120px]">
+        <Search className="h-8 w-8 text-muted-foreground/50 mb-2" />
+        <p className="text-muted-foreground text-sm">请输入搜索关键词</p>
       </div>
     )
   }, [loading, searchTerm, filteredResults, categories, handleResultClick, hasSearched])
@@ -317,16 +337,30 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`md:max-w-[550px] max-h-[90vh] max-w-[90%] p-6 transition-all duration-300 flex flex-col
-          ${keyboardOpen ? 'fixed bottom-0 left-0 right-0 top-auto h-[45vh] max-h-[50vh] rounded-t-xl' : 'top-1/2 -translate-y-1/2 h-[60vh] rounded-xl'}
+        className={`
+          !fixed !z-50 !gap-0 !grid-cols-1
+          transition-all duration-300 flex flex-col
+          ${keyboardOpen 
+            ? '!left-2 !right-2 !bottom-2 !top-auto !translate-x-0 !translate-y-0 !max-w-none !w-auto !h-[50vh] !max-h-[50vh] !rounded-xl !p-4' 
+            : '!left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%] !w-full !max-w-[550px] !h-[70vh] !max-h-[80vh] !rounded-xl !p-6'
+          }
+          !bg-background !border !shadow-lg
+          [&>button[data-radix-dialog-close]]:!hidden
         `}
-        style={keyboardOpen ? { margin: 0, borderRadius: '1.2rem 1.2rem 0 0' } : {}}
       >
-        <DialogHeader>
-          <DialogTitle className="text-center">{getDialogTitle()}</DialogTitle>
-        </DialogHeader>
+        <div className="flex items-center justify-between mb-4">
+          <DialogTitle className="text-lg font-semibold flex-1 text-center">{getDialogTitle()}</DialogTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-accent flex-shrink-0"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
         
-        <div className="mt-4 px-1">
+        <div className="flex-shrink-0 mb-3">
           <form onSubmit={handleSearch} className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -335,27 +369,17 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
               placeholder="搜索..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-10"
+              className="pl-10 pr-20 h-10"
             />
             {searchTerm && (
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800"
-                data-clear-button="true"
+                className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-accent"
                 onClick={(e) => {
-                  // 阻止事件冒泡，防止关闭对话框
                   e.stopPropagation();
                   e.preventDefault();
-                  
-                  // 保证不关闭对话框
-                  const dialog = e.currentTarget.closest('div[role="dialog"]');
-                  if (dialog) {
-                    // 确保任何对话框事件都不会被触发
-                    e.nativeEvent.stopImmediatePropagation();
-                  }
-                  
                   setSearchTerm("");
                   setResults([]);
                   setHasSearched(false);
@@ -364,7 +388,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                   }, 10);
                 }}
               >
-                <X className="h-3.5 w-3.5 text-slate-500" />
+                <X className="h-3.5 w-3.5" />
               </Button>
             )}
             <Button
@@ -378,16 +402,18 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
           </form>
         </div>
         
-        <div className="mt-4 px-1">
+        <div className="flex-shrink-0 mb-3">
           <div className="text-sm font-medium mb-2">搜索范围:</div>
-          <div className="flex gap-1 flex-wrap">
+          <div className="flex gap-1 flex-wrap max-h-20 overflow-y-auto">
             {categories.map((category) => (
               <Button 
                 key={category.id} 
                 size="sm" 
                 variant={activeCategory === category.id ? "secondary" : "outline"}
                 onClick={() => setActiveCategory(category.id)}
-                className="h-7 px-2 text-xs"
+                className={`h-6 px-2 text-xs whitespace-nowrap ${
+                  keyboardOpen ? 'text-xs' : 'text-xs'
+                }`}
               >
                 {category.name} {getCountByCategory(category.id) > 0 ? `(${getCountByCategory(category.id)})` : ''}
               </Button>
@@ -395,7 +421,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
           </div>
         </div>
 
-        <div className="mt-4 px-1 flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden">
           <div className="h-full overflow-y-auto">
             {renderSearchResults()}
           </div>
