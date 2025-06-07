@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Trophy, Target, Clock, TrendingUp } from 'lucide-react'
+import { Trophy, TrendingUp } from 'lucide-react'
 import { useGameStore } from '../stores/game-store'
 
 export const GameStats = () => {

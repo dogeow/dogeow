@@ -46,8 +46,13 @@ export default function Game2048() {
     }
   }
 
+  // 辅助函数
+  const transpose = useCallback((board: Board): Board => {
+    return board[0].map((_, colIndex) => board.map(row => row[colIndex]))
+  }, [])
+
   // 移动和合并逻辑
-  function moveLeft(board: Board): { newBoard: Board; scoreGained: number; moved: boolean } {
+  const moveLeft = useCallback((board: Board): { newBoard: Board; scoreGained: number; moved: boolean } => {
     const newBoard = board.map(row => [...row])
     let scoreGained = 0
     let moved = false
@@ -92,9 +97,9 @@ export default function Game2048() {
     }
 
     return { newBoard, scoreGained, moved }
-  }
+  }, [gameWon, incrementGamesWon])
 
-  function moveRight(board: Board) {
+  const moveRight = useCallback((board: Board) => {
     const rotatedBoard = board.map(row => [...row].reverse())
     const { newBoard, scoreGained, moved } = moveLeft(rotatedBoard)
     return {
@@ -102,9 +107,9 @@ export default function Game2048() {
       scoreGained,
       moved
     }
-  }
+  }, [moveLeft])
 
-  function moveUp(board: Board) {
+  const moveUp = useCallback((board: Board) => {
     const transposedBoard = transpose(board)
     const { newBoard, scoreGained, moved } = moveLeft(transposedBoard)
     return {
@@ -112,9 +117,9 @@ export default function Game2048() {
       scoreGained,
       moved
     }
-  }
+  }, [moveLeft, transpose])
 
-  function moveDown(board: Board) {
+  const moveDown = useCallback((board: Board) => {
     const transposedBoard = transpose(board)
     const { newBoard, scoreGained, moved } = moveRight(transposedBoard)
     return {
@@ -122,11 +127,7 @@ export default function Game2048() {
       scoreGained,
       moved
     }
-  }
-
-  function transpose(board: Board): Board {
-    return board[0].map((_, colIndex) => board.map(row => row[colIndex]))
-  }
+  }, [moveRight, transpose])
 
   // 检查游戏是否结束
   function isGameOver(board: Board): boolean {

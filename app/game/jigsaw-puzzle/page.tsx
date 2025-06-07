@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { useRouter, useSearchParams } from "next/navigation"
+// import { useRouter, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import { Upload, Image as ImageIcon, ArrowLeft } from "lucide-react"
 
@@ -58,8 +58,8 @@ const SYSTEM_IMAGES = [
 
 // 内部游戏组件
 function JigsawPuzzleGame() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  // const router = useRouter()
+  // const searchParams = useSearchParams()
   
   const [gameState, setGameState] = useState<'menu' | 'select-image' | 'playing'>('menu')
   const [selectedImage, setSelectedImage] = useState<string>('')

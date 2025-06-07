@@ -7,7 +7,7 @@ export function useGameSounds() {
   const initAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
       try {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
+        audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
       } catch (error) {
         console.warn('Audio context not supported:', error)
       }

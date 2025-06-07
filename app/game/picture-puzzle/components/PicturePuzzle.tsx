@@ -217,7 +217,7 @@ export default function PicturePuzzle({ imageUrl, size, onComplete }: PicturePuz
       playCompleteSound()
       onComplete()
     }
-  }, [pieces, isComplete, size, onComplete])
+  }, [pieces, isComplete, size, onComplete, moves, playCompleteSound, startTime, updateStats, setPieces, setMoves, setIsComplete, playMoveSound])
   
   // 键盘控制
   useEffect(() => {
