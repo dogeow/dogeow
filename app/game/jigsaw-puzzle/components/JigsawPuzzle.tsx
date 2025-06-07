@@ -69,6 +69,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
   const [currentTab, setCurrentTab] = useState("0")
   const [showFloatingReference, setShowFloatingReference] = useState(false)
   const [selectedPlacedPiece, setSelectedPlacedPiece] = useState<number | null>(null)
+  const [wronglyPlacedPieces, setWronglyPlacedPieces] = useState<Set<number>>(new Set())
   const { stats, updateStats } = useJigsawStats(size)
   
   const puzzleSize = 240
@@ -117,6 +118,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     setSlots(newSlots)
     setStartTime(new Date())
     setIsComplete(false)
+    setWronglyPlacedPieces(new Set())
   }, [imageUrl, size, pieceSize, puzzleSize])
   
   // 图片加载完成后初始化拼图
@@ -183,6 +185,9 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     
     placePieceInSlot(draggedPiece, slotId)
     setDraggedPiece(null)
+    
+    // 清除任何选中状态，允许用户继续操作
+    setSelectedPlacedPiece(null)
   }
   
   // 处理点击放置（移动端）
@@ -227,24 +232,26 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     }
     
     if (selectedPlacedPiece !== null) {
+      // 先从原位置移除拼图块
       const originalSlot = slots.find(s => s.pieceId === selectedPlacedPiece)
       if (originalSlot) {
         setSlots(prev => prev.map(s => 
           s.id === originalSlot.id ? { ...s, pieceId: null } : s
         ))
+        
+        // 从错误状态中移除（因为已经移走了）
+        setWronglyPlacedPieces(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(selectedPlacedPiece)
+          return newSet
+        })
       }
       
+      // 放置到新位置
       placePieceInSlot(selectedPlacedPiece, slotId)
       
-      // 检查是否放置正确，如果错误则保持选中状态
-      const piece = pieces.find(p => p.id === selectedPlacedPiece)
-      const targetSlot = slots.find(s => s.id === slotId)
-      const isCorrectPosition = piece && targetSlot && piece.row === targetSlot.row && piece.col === targetSlot.col
-      
-      if (isCorrectPosition) {
-        setSelectedPlacedPiece(null) // 只有放置正确时才清除选中状态
-      }
-      // 如果放置错误，保持 selectedPlacedPiece 状态，用户可以继续点击其他位置
+      // 清除选中状态，允许用户继续操作其他拼图块
+      setSelectedPlacedPiece(null)
       
       return
     }
@@ -257,6 +264,9 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     
     if (!piece || !slot) return
     
+    // 检查是否放置正确
+    const isCorrectPosition = piece.row === slot.row && piece.col === slot.col
+    
     setPieces(prev => prev.map(p => 
       p.id === pieceId ? { ...p, isPlaced: true } : p
     ))
@@ -264,6 +274,17 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     setSlots(prev => prev.map(s => 
       s.id === slotId ? { ...s, pieceId: pieceId } : s
     ))
+    
+    // 立即更新错误放置的拼图块状态
+    setWronglyPlacedPieces(prev => {
+      const newSet = new Set(prev)
+      if (isCorrectPosition) {
+        newSet.delete(pieceId)
+      } else {
+        newSet.add(pieceId)
+      }
+      return newSet
+    })
     
     setTimeout(() => {
       checkGameCompletion()
@@ -294,6 +315,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     setCurrentTab("0")
     setDraggedPiece(null)
     setSelectedPlacedPiece(null)
+    setWronglyPlacedPieces(new Set())
   }
   
   // 获取所有拼图块
@@ -427,12 +449,13 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
               const placedPiece = slot.pieceId !== null ? pieces.find(p => p.id === slot.pieceId) : null
               const isCorrectlyPlaced = placedPiece && placedPiece.row === slot.row && placedPiece.col === slot.col
               const isSelected = selectedPlacedPiece === slot.pieceId
+              const isWronglyPlaced = placedPiece && wronglyPlacedPieces.has(placedPiece.id)
               
-              // 计算当前槽位应该显示的图片部分
+              // 使用拼图块自己的图片样式，而不是根据槽位位置计算
               const slotImageStyle = placedPiece ? {
                 backgroundImage: `url(${imageUrl})`,
                 backgroundSize: `${puzzleSize}px ${puzzleSize}px`,
-                backgroundPosition: `-${slot.col * pieceSize}px -${slot.row * pieceSize}px`,
+                backgroundPosition: `-${placedPiece.col * pieceSize}px -${placedPiece.row * pieceSize}px`,
                 backgroundRepeat: 'no-repeat'
               } : {}
               
@@ -446,8 +469,10 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                     relative cursor-pointer
                     ${slot.pieceId !== null 
                       ? (isSelected 
-                          ? 'ring-2 ring-gray-400 ring-inset shadow-md' 
-                          : (isCorrectlyPlaced ? '' : 'ring-1 ring-orange-400 ring-inset'))
+                          ? 'ring-2 ring-gray-400 ring-inset' 
+                          : (isWronglyPlaced 
+                              ? 'ring-2 ring-red-400 ring-inset' 
+                              : ''))
                       : 'border border-dashed border-gray-300 bg-gray-50/50 hover:bg-gray-100/50'}
                     ${draggedPiece !== null && slot.pieceId === null ? 'border-gray-400 bg-gray-100' : ''}
                     ${selectedPlacedPiece !== null && slot.pieceId === null ? 'border-gray-400 bg-gray-100' : ''}
@@ -527,17 +552,17 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                 
                 {pieceGroups.map((group, groupIndex) => (
                   <TabsContent key={groupIndex} value={groupIndex.toString()}>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-2 justify-items-center">
                       {group.map((piece: PuzzlePiece) => (
                         <div
                           key={piece.id}
                           className={`
-                            relative rounded border-2 transition-all duration-200
+                            relative rounded border-2 flex items-center justify-center
                             ${piece.isPlaced 
                               ? 'border-dashed border-gray-200 bg-gray-50/30' 
                               : `cursor-pointer ${draggedPiece === piece.id 
-                                  ? 'border-gray-400 shadow-md scale-105 bg-gray-50' 
-                                  : 'border-gray-300 hover:border-primary hover:shadow-md bg-white'}`
+                                  ? 'border-gray-400 bg-gray-50' 
+                                  : 'border-gray-300 hover:border-primary bg-white'}`
                             }
                           `}
                           style={{
@@ -565,17 +590,17 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                 ))}
               </Tabs>
             ) : (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2 justify-items-center">
                 {allPiecesForDisplay.map((piece: PuzzlePiece) => (
                   <div
                     key={piece.id}
                     className={`
-                      relative rounded border-2 transition-all duration-200
+                      relative rounded border-2 flex items-center justify-center
                       ${piece.isPlaced 
                         ? 'border-dashed border-gray-200 bg-gray-50/30' 
                         : `cursor-pointer ${draggedPiece === piece.id 
-                            ? 'border-gray-400 shadow-md scale-105 bg-gray-50' 
-                            : 'border-gray-300 hover:border-primary hover:shadow-md bg-white'}`
+                            ? 'border-gray-400 bg-gray-50' 
+                            : 'border-gray-300 hover:border-primary bg-white'}`
                       }
                     `}
                     style={{
