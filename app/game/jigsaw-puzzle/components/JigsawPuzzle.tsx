@@ -632,6 +632,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
   }
 
   // 检测标签页是否需要滚动
+  const placedPiecesCount = pieces.filter(p => p.isPlaced).length
   useEffect(() => {
     if (pieceGroups.length <= 1) {
       setTabsNeedScrolling(false)
@@ -655,7 +656,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
       clearTimeout(timer)
       window.removeEventListener('resize', checkTabsScrolling)
     }
-  }, [pieceGroups.length, pieces.filter(p => p.isPlaced).length]) // 当标签页数量或拼图块状态变化时重新检测
+  }, [pieceGroups.length, placedPiecesCount]) // 当标签页数量或拼图块状态变化时重新检测
   
   if (!imageLoaded) {
     return (
@@ -925,7 +926,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
               <div className="mb-2 text-xs text-gray-400 bg-gray-50 p-2 rounded">
                 <div>屏幕高度: {typeof window !== 'undefined' ? window.innerHeight : 0}px | 可用高度: {availableHeight}px | 网格空间: {actualAvailableForGrid}px</div>
                 <div>拼图块大小: {selectionPieceSize}px | 最大行数: {maxRows} | 列数: {colsPerRow} | 每页: {piecesPerPage}块 | 总页数: {pieceGroups.length}</div>
-                <div>标签页滚动: {tabsNeedScrolling ? '是' : '否'} | 表情符号标签页: {pieceGroups.filter((group, index) => tabsNeedScrolling && group.filter(p => !p.isPlaced).length === 0).length}个</div>
+                <div>标签页滚动: {tabsNeedScrolling ? '是' : '否'} | 表情符号标签页: {pieceGroups.filter((group) => tabsNeedScrolling && group.filter(p => !p.isPlaced).length === 0).length}个</div>
               </div>
             )}
             
