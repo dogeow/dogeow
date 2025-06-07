@@ -12,7 +12,7 @@ interface JigsawStatsHook {
   resetStats: () => void
 }
 
-export function useJigsawStats(difficulty: 2 | 3 | 4): JigsawStatsHook {
+export function useJigsawStats(difficulty: number): JigsawStatsHook {
   const storageKey = `jigsaw-puzzle-stats-${difficulty}x${difficulty}`
   
   const [stats, setStats] = useState<JigsawStats>({

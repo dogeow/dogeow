@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Hash } from "lucide-react"
 import { useJigsawStats } from "../hooks/useJigsawStats"
 
 // 计时器组件
@@ -38,7 +38,7 @@ function Timer({ startTime }: { startTime: Date }) {
 // 拼图游戏组件接口
 interface JigsawPuzzleProps {
   imageUrl: string
-  size: 2 | 3 | 4
+  size: number
   onComplete: () => void
 }
 
@@ -66,16 +66,26 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
   const [isComplete, setIsComplete] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null)
-  const [currentTab, setCurrentTab] = useState("0")
+
   const [showFloatingReference, setShowFloatingReference] = useState(false)
   const [selectedPlacedPiece, setSelectedPlacedPiece] = useState<number | null>(null)
   const [wronglyPlacedPieces, setWronglyPlacedPieces] = useState<Set<number>>(new Set())
+  const [lastWronglyPlacedPiece, setLastWronglyPlacedPiece] = useState<number | null>(null)
+  const [magnifierVisible, setMagnifierVisible] = useState(false)
+  const [magnifierPosition, setMagnifierPosition] = useState({ x: 0, y: 0 })
+  const [currentTab, setCurrentTab] = useState("0")
+  const [showPieceNumbers, setShowPieceNumbers] = useState(false)
+  const [showDebugInfo, setShowDebugInfo] = useState(true) // 默认显示调试信息
+  const [tabsNeedScrolling, setTabsNeedScrolling] = useState(false)
+  const [piecePreviewVisible, setPiecePreviewVisible] = useState(false)
+  const [piecePreviewPiece, setPiecePreviewPiece] = useState<PuzzlePiece | null>(null)
+  const [piecePreviewPosition, setPiecePreviewPosition] = useState({ x: 0, y: 0 })
+  const [availableHeight, setAvailableHeight] = useState(400) // 初始默认值
   const { stats, updateStats } = useJigsawStats(size)
   
-  const puzzleSize = 240
+  const puzzleSize = Math.min(400, Math.max(300, 60 * size)) // 动态调整拼图总大小
   const pieceSize = puzzleSize / size
-  const piecesPerTab = 6
-
+  const selectionPieceSize = Math.max(60, Math.min(80, 480 / size)) // 选择区域的拼图块大小
   // 初始化拼图
   const initializePuzzle = useCallback(() => {
     const totalPieces = size * size
@@ -119,6 +129,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     setStartTime(new Date())
     setIsComplete(false)
     setWronglyPlacedPieces(new Set())
+    setLastWronglyPlacedPiece(null)
   }, [imageUrl, size, pieceSize, puzzleSize])
   
   // 图片加载完成后初始化拼图
@@ -151,10 +162,90 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     }
   }, [])
 
+  // 计算可用高度
+  useEffect(() => {
+    const calculateAvailableHeight = () => {
+      const windowHeight = window.innerHeight
+      
+      // 更精确地计算已占用的高度
+      const appBarHeight = 64 // 导航栏高度
+      const gameInfoCardHeight = 140 // 游戏信息卡片高度（包含内边距）
+      const puzzleAreaHeight = puzzleSize + 60 // 拼图区域 + 标题 + 边距
+      const statisticsCardHeight = stats.gamesCompleted > 0 ? 120 : 0 // 统计信息卡片
+      const verticalSpacing = 80 // 各种垂直间距
+      
+      const usedHeight = appBarHeight + gameInfoCardHeight + puzzleAreaHeight + statisticsCardHeight + verticalSpacing
+      
+      // 为拼图块选择区域保留的高度，最少300px，最多不超过屏幕的60%
+      const available = Math.max(300, Math.min(windowHeight * 0.6, windowHeight - usedHeight))
+      setAvailableHeight(available)
+    }
+    
+    calculateAvailableHeight()
+    window.addEventListener('resize', calculateAvailableHeight)
+    
+    return () => {
+      window.removeEventListener('resize', calculateAvailableHeight)
+    }
+  }, [puzzleSize, stats.gamesCompleted])
+
   // 取消所有选择
   const cancelSelection = () => {
     setDraggedPiece(null)
     setSelectedPlacedPiece(null)
+  }
+  
+  // 处理放大镜事件
+  const handleMagnifierStart = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault()
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    
+    const x = ((clientX - rect.left) / rect.width) * 100
+    const y = ((clientY - rect.top) / rect.height) * 100
+    
+    setMagnifierPosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) })
+    setMagnifierVisible(true)
+  }
+  
+  const handleMagnifierMove = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!magnifierVisible) return
+    e.preventDefault()
+    
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
+    
+    const x = ((clientX - rect.left) / rect.width) * 100
+    const y = ((clientY - rect.top) / rect.height) * 100
+    
+    setMagnifierPosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) })
+  }
+  
+  const handleMagnifierEnd = () => {
+    setMagnifierVisible(false)
+  }
+
+  // 处理拼图块预览事件
+  const handlePiecePreviewStart = (e: React.MouseEvent | React.TouchEvent, piece: PuzzlePiece) => {
+    e.preventDefault()
+    e.stopPropagation()
+    
+    // 获取拼图块元素的位置
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    setPiecePreviewPosition({
+      x: rect.left + rect.width / 2, // 拼图块中心的 x 坐标
+      y: rect.top // 拼图块顶部的 y 坐标
+    })
+    
+    setPiecePreviewPiece(piece)
+    setPiecePreviewVisible(true)
+  }
+  
+  const handlePiecePreviewEnd = () => {
+    setPiecePreviewVisible(false)
+    setPiecePreviewPiece(null)
   }
   
   // 处理拖拽开始
@@ -190,13 +281,14 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     placePieceInSlot(pieceId, slotId)
     setDraggedPiece(null)
     
-    // 检查是否放置正确，如果错误则自动选中该拼图块，方便用户继续移动
+    // 检查是否放置正确，如果错误则记录最近错误放置的拼图块
     const isCorrectPosition = piece.row === slot.row && piece.col === slot.col
     if (!isCorrectPosition) {
-      setSelectedPlacedPiece(pieceId)
+      setLastWronglyPlacedPiece(pieceId)
     } else {
-      setSelectedPlacedPiece(null)
+      setLastWronglyPlacedPiece(null)
     }
+    setSelectedPlacedPiece(null)
   }
   
   // 处理点击放置（移动端）
@@ -211,11 +303,13 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
       replacePieceWithUnplaced(selectedPlacedPiece, pieceId)
       setSelectedPlacedPiece(null)
       setDraggedPiece(null)
+      setLastWronglyPlacedPiece(null)
       return
     }
     
     setSelectedPlacedPiece(null)
     setDraggedPiece(pieceId)
+    setLastWronglyPlacedPiece(null)
   }
   
   // 处理已放置拼图块的点击
@@ -227,6 +321,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     
     setDraggedPiece(null)
     setSelectedPlacedPiece(pieceId)
+    setLastWronglyPlacedPiece(null)
   }
   
   // 交换两个拼图块的位置
@@ -248,6 +343,8 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     const piece2 = pieces.find(p => p.id === pieceId2)
     
     if (piece1 && piece2) {
+      let newLastWronglyPlacedPiece = lastWronglyPlacedPiece
+      
       setWronglyPlacedPieces(prev => {
         const newSet = new Set(prev)
         
@@ -255,20 +352,35 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
         const piece1Correct = piece1.row === slot2.row && piece1.col === slot2.col
         if (piece1Correct) {
           newSet.delete(pieceId1)
+          // 如果这个拼图块之前是错误的，现在正确了，清除记录
+          if (newLastWronglyPlacedPiece === pieceId1) {
+            newLastWronglyPlacedPiece = null
+          }
         } else {
           newSet.add(pieceId1)
+          // 如果这个拼图块现在错误了，记住它
+          newLastWronglyPlacedPiece = pieceId1
         }
         
         // 检查piece2在slot1的位置是否正确
         const piece2Correct = piece2.row === slot1.row && piece2.col === slot1.col
         if (piece2Correct) {
           newSet.delete(pieceId2)
+          // 如果这个拼图块之前是错误的，现在正确了，清除记录
+          if (newLastWronglyPlacedPiece === pieceId2) {
+            newLastWronglyPlacedPiece = null
+          }
         } else {
           newSet.add(pieceId2)
+          // 如果这个拼图块现在错误了，记住它（优先记住piece2）
+          newLastWronglyPlacedPiece = pieceId2
         }
         
         return newSet
       })
+      
+      // 更新最近错误放置的拼图块
+      setLastWronglyPlacedPiece(newLastWronglyPlacedPiece)
     }
     
     setTimeout(() => {
@@ -301,6 +413,62 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
   const handleSlotClick = (slotId: number) => {
     const slot = slots.find(s => s.id === slotId)
     if (!slot) return
+    
+    // 优先处理最近错误放置的拼图块 - 用户可以立即点击其他位置移动它
+    if (lastWronglyPlacedPiece !== null && slot.pieceId !== lastWronglyPlacedPiece) {
+      const originalSlot = slots.find(s => s.pieceId === lastWronglyPlacedPiece)
+      if (originalSlot) {
+        // 如果目标槽位已有拼图块，则交换位置
+        if (slot.pieceId !== null) {
+          swapPieces(lastWronglyPlacedPiece, slot.pieceId)
+        } else {
+          // 如果目标槽位为空，则直接移动
+          setSlots(prev => prev.map(s => {
+            if (s.id === originalSlot.id) {
+              return { ...s, pieceId: null }
+            }
+            if (s.id === slotId) {
+              return { ...s, pieceId: lastWronglyPlacedPiece }
+            }
+            return s
+          }))
+          
+          // 从错误状态中移除（因为已经移走了）
+          setWronglyPlacedPieces(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(lastWronglyPlacedPiece)
+            return newSet
+          })
+          
+          // 重新检查新位置是否正确
+          const piece = pieces.find(p => p.id === lastWronglyPlacedPiece)
+          if (piece) {
+            const isCorrectPosition = piece.row === slot.row && piece.col === slot.col
+            if (!isCorrectPosition) {
+              setWronglyPlacedPieces(prev => {
+                const newSet = new Set(prev)
+                newSet.add(lastWronglyPlacedPiece)
+                return newSet
+              })
+              // 如果新位置仍然错误，继续记住这个拼图块
+              setLastWronglyPlacedPiece(lastWronglyPlacedPiece)
+            } else {
+              // 如果新位置正确，清除记录
+              setLastWronglyPlacedPiece(null)
+            }
+          }
+          
+          // 检查游戏完成状态
+          setTimeout(() => {
+            checkGameCompletion()
+          }, 100)
+        }
+        
+        // 注意：不要在这里清除 lastWronglyPlacedPiece，因为上面的逻辑已经处理了
+        
+        return
+      }
+    }
     
     // 如果点击的槽位有拼图块
     if (slot.pieceId !== null) {
@@ -382,8 +550,14 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
       const newSet = new Set(prev)
       if (isCorrectPosition) {
         newSet.delete(pieceId)
+        // 如果放置正确，清除最近错误放置的记录
+        if (lastWronglyPlacedPiece === pieceId) {
+          setLastWronglyPlacedPiece(null)
+        }
       } else {
         newSet.add(pieceId)
+        // 如果放置错误，记住这个拼图块，用户可以立即点击其他位置移动它
+        setLastWronglyPlacedPiece(pieceId)
       }
       return newSet
     })
@@ -418,16 +592,70 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     setDraggedPiece(null)
     setSelectedPlacedPiece(null)
     setWronglyPlacedPieces(new Set())
+    setLastWronglyPlacedPiece(null)
+    setMagnifierVisible(false)
   }
   
   // 获取所有拼图块
   const allPiecesForDisplay = pieces
   
+  // 计算动态分页逻辑
+  const colsPerRow = Math.min(4, Math.ceil(Math.sqrt(allPiecesForDisplay.length))) // 每排最多4列
+  
+  // 根据可用高度动态计算可显示的行数
+  const cardHeaderHeight = 60 // 卡片标题和按钮区域高度
+  const debugInfoHeight = showDebugInfo ? 50 : 0 // 调试信息高度（可选）
+  const cardPadding = 32 // 卡片内边距
+  
+  // 先假设有标签页，计算可用空间
+  const tabsHeight = 50 // 标签页高度
+  const availableForGrid = Math.max(120, availableHeight - cardHeaderHeight - tabsHeight - debugInfoHeight - cardPadding)
+  const maxRows = Math.max(2, Math.floor(availableForGrid / (selectionPieceSize + 8))) // 每个拼图块高度 + 间距
+  
+  const piecesPerPage = maxRows * colsPerRow // 每页最多显示的拼图块数量
+  
   // 将拼图块分组到不同的标签页
   const pieceGroups = []
-  for (let i = 0; i < allPiecesForDisplay.length; i += piecesPerTab) {
-    pieceGroups.push(allPiecesForDisplay.slice(i, i + piecesPerTab))
+  for (let i = 0; i < allPiecesForDisplay.length; i += piecesPerPage) {
+    pieceGroups.push(allPiecesForDisplay.slice(i, i + piecesPerPage))
   }
+  
+  // 如果只有一页，重新计算可用空间（不需要标签页高度）
+  const actualAvailableForGrid = pieceGroups.length > 1 
+    ? availableForGrid 
+    : Math.max(120, availableHeight - cardHeaderHeight - debugInfoHeight - cardPadding)
+  
+  // 罗马数字转换函数
+  const toRoman = (num: number): string => {
+    const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X']
+    return romanNumerals[num - 1] || num.toString()
+  }
+
+  // 检测标签页是否需要滚动
+  useEffect(() => {
+    if (pieceGroups.length <= 1) {
+      setTabsNeedScrolling(false)
+      return
+    }
+
+    const checkTabsScrolling = () => {
+      const tabsList = document.querySelector('[role="tablist"]')
+      if (tabsList) {
+        const needsScroll = tabsList.scrollWidth > tabsList.clientWidth
+        setTabsNeedScrolling(needsScroll)
+      }
+    }
+
+    // 延迟检测，确保DOM已渲染
+    const timer = setTimeout(checkTabsScrolling, 100)
+    
+    window.addEventListener('resize', checkTabsScrolling)
+    
+    return () => {
+      clearTimeout(timer)
+      window.removeEventListener('resize', checkTabsScrolling)
+    }
+  }, [pieceGroups.length, pieces.filter(p => p.isPlaced).length]) // 当标签页数量或拼图块状态变化时重新检测
   
   if (!imageLoaded) {
     return (
@@ -496,40 +724,67 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
         {/* 浮动原图参考 */}
         {showFloatingReference && (
           <div className="fixed top-4 right-4 z-50 lg:absolute lg:top-0 lg:right-0 lg:z-10">
-            <Card className="p-2 shadow-lg border-2 border-primary/20 bg-white/95 backdrop-blur-sm">
-              <div className="flex items-center justify-between mb-2">
+            <Card className="p-1.5 shadow-lg border-2 border-primary/20 bg-white/95 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-medium text-gray-600">原图参考</span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowFloatingReference(false)}
-                  className="h-6 w-6 p-0 hover:bg-gray-100"
+                  className="h-5 w-5 p-0 hover:bg-gray-100"
                 >
                   <EyeOff className="h-3 w-3" />
                 </Button>
               </div>
-              <div className="relative w-24 h-24 rounded overflow-hidden border border-gray-200">
-                <Image
-                  src={imageUrl}
-                  alt="浮动原图参考"
-                  fill
-                  className="object-cover"
-                />
-                {pieces.length > 0 && (
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent">
-                    <div className="text-white text-xs text-center py-1 font-medium">
-                      {Math.round((pieces.filter(p => p.isPlaced).length / pieces.length) * 100)}%
+              <div className="relative w-32 h-32 rounded overflow-hidden border border-gray-200">
+                <div
+                  className="relative w-full h-full cursor-crosshair"
+                  onMouseDown={handleMagnifierStart}
+                  onMouseMove={handleMagnifierMove}
+                  onMouseUp={handleMagnifierEnd}
+                  onMouseLeave={handleMagnifierEnd}
+                  onTouchStart={handleMagnifierStart}
+                  onTouchMove={handleMagnifierMove}
+                  onTouchEnd={handleMagnifierEnd}
+                >
+                  <Image
+                    src={imageUrl}
+                    alt="浮动原图参考"
+                    fill
+                    className="object-cover"
+                  />
+                  
+                  {/* 放大镜 */}
+                  {magnifierVisible && (
+                    <div
+                      className="absolute pointer-events-none z-50"
+                      style={{
+                        left: `${magnifierPosition.x}%`,
+                        top: `${magnifierPosition.y}%`,
+                        transform: 'translate(-50%, -50%)',
+                      }}
+                    >
+                      <div className="relative w-32 h-32 rounded-full border-4 border-white shadow-2xl overflow-hidden bg-white">
+                        <div
+                          className="absolute inset-0"
+                          style={{
+                            backgroundImage: `url(${imageUrl})`,
+                            backgroundSize: '500%',
+                            backgroundPosition: `${magnifierPosition.x}% ${magnifierPosition.y}%`,
+                            backgroundRepeat: 'no-repeat',
+                          }}
+                        />
+                        {/* 十字准线 */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-full h-0.5 bg-red-500 opacity-50"></div>
+                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="h-full w-0.5 bg-red-500 opacity-50"></div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-              <div className="mt-2 w-full bg-gray-200 rounded-full h-1">
-                <div 
-                  className="bg-gradient-to-r from-blue-500 to-green-500 h-1 rounded-full transition-all duration-500"
-                  style={{ 
-                    width: `${pieces.length > 0 ? (pieces.filter(p => p.isPlaced).length / pieces.length) * 100 : 0}%` 
-                  }}
-                ></div>
+                  )}
+                </div>
               </div>
             </Card>
           </div>
@@ -638,41 +893,96 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
           )}
           
           <Card className="p-4 w-full max-w-md">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-medium text-gray-600">拼图块选择</h4>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDebugInfo(!showDebugInfo)}
+                  className="h-7 w-7 p-0 text-xs"
+                  title={showDebugInfo ? "隐藏调试信息" : "显示调试信息"}
+                >
+                  D
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowPieceNumbers(!showPieceNumbers)}
+                  className="h-7 w-7 p-0"
+                  title={showPieceNumbers ? "隐藏编号" : "显示编号"}
+                >
+                  <Hash className="h-3 w-3" />
+                </Button>
+                <span className="text-xs text-gray-500">
+                  剩余 {allPiecesForDisplay.filter(piece => !piece.isPlaced).length} 块
+                </span>
+              </div>
+            </div>
+            
+            {/* 调试信息 */}
+            {showDebugInfo && (
+              <div className="mb-2 text-xs text-gray-400 bg-gray-50 p-2 rounded">
+                <div>屏幕高度: {typeof window !== 'undefined' ? window.innerHeight : 0}px | 可用高度: {availableHeight}px | 网格空间: {actualAvailableForGrid}px</div>
+                <div>拼图块大小: {selectionPieceSize}px | 最大行数: {maxRows} | 列数: {colsPerRow} | 每页: {piecesPerPage}块 | 总页数: {pieceGroups.length}</div>
+                <div>标签页滚动: {tabsNeedScrolling ? '是' : '否'} | 表情符号标签页: {pieceGroups.filter((group, index) => tabsNeedScrolling && group.filter(p => !p.isPlaced).length === 0).length}个</div>
+              </div>
+            )}
+            
             {pieceGroups.length > 1 ? (
               <Tabs value={currentTab} onValueChange={setCurrentTab}>
-                <TabsList className="grid w-full mb-4" style={{ gridTemplateColumns: `repeat(${pieceGroups.length}, 1fr)` }}>
-                  {pieceGroups.map((group, index) => {
-                    const remainingCount = group.filter(piece => !piece.isPlaced).length
-                    return (
-                      <TabsTrigger key={index} value={index.toString()}>
-                        第{index + 1}组 ({remainingCount})
-                      </TabsTrigger>
-                    )
-                  })}
-                </TabsList>
+                <div className="w-full mb-4 overflow-x-auto">
+                  <TabsList className="inline-flex gap-1 h-auto p-1 min-w-full">
+                    {pieceGroups.map((group, index) => {
+                      const remainingCount = group.filter(piece => !piece.isPlaced).length
+                      
+                      // 如果需要滚动且该标签页剩余数量为0，显示表情符号
+                      const showEmoji = tabsNeedScrolling && remainingCount === 0
+                      
+                      return (
+                        <TabsTrigger 
+                          key={index} 
+                          value={index.toString()} 
+                          className={`text-xs px-2 py-1 flex-shrink-0 whitespace-nowrap ${
+                            showEmoji ? 'min-w-[32px] justify-center' : ''
+                          }`}
+                          title={showEmoji ? `第${toRoman(index + 1)}页 - 已完成` : undefined}
+                        >
+                          {showEmoji ? '😑' : `${toRoman(index + 1)} (${remainingCount})`}
+                        </TabsTrigger>
+                      )
+                    })}
+                  </TabsList>
+                </div>
                 
                 {pieceGroups.map((group, groupIndex) => (
                   <TabsContent key={groupIndex} value={groupIndex.toString()}>
-                    <div className="grid grid-cols-3 gap-2 justify-items-center">
+                    <div 
+                      className="grid gap-2 justify-items-center"
+                      style={{
+                        gridTemplateColumns: `repeat(${colsPerRow}, 1fr)`
+                      }}
+                    >
                       {group.map((piece: PuzzlePiece) => (
                         <div
                           key={piece.id}
+                          data-piece-id={piece.id}
                           className={`
-                            relative rounded border-2 flex items-center justify-center
+                            relative rounded border-2 flex items-center justify-center transition-all duration-200
                             ${piece.isPlaced 
-                              ? 'border-dashed border-gray-200 bg-gray-50/30' 
+                              ? 'border-dashed border-gray-200 bg-gray-50/30 opacity-30' 
                               : `cursor-pointer ${draggedPiece === piece.id 
-                                  ? 'border-gray-400 bg-gray-50' 
-                                  : 'border-gray-300 hover:border-primary bg-white'}`
+                                  ? 'border-blue-400 bg-blue-50 scale-105 shadow-md' 
+                                  : 'border-gray-300 hover:border-blue-400 hover:shadow-sm bg-white'}`
                             }
                           `}
                           style={{
-                            width: `${pieceSize}px`,
-                            height: `${pieceSize}px`,
+                            width: `${selectionPieceSize}px`,
+                            height: `${selectionPieceSize}px`,
                             ...(piece.isPlaced ? {} : {
-                              backgroundSize: `${puzzleSize}px ${puzzleSize}px`,
+                              backgroundSize: `${selectionPieceSize * size}px ${selectionPieceSize * size}px`,
                               backgroundImage: `url(${imageUrl})`,
-                              backgroundPosition: `-${piece.col * pieceSize}px -${piece.row * pieceSize}px`,
+                              backgroundPosition: `-${piece.col * selectionPieceSize}px -${piece.row * selectionPieceSize}px`,
                               backgroundRepeat: 'no-repeat'
                             })
                           }}
@@ -680,10 +990,51 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                             draggable: true,
                             onClick: () => handlePieceClick(piece.id),
                             onDragStart: (e: React.DragEvent) => handleDragStart(e, piece.id),
-                            onDragEnd: handleDragEnd
+                            onDragEnd: handleDragEnd,
+                            onMouseDown: (e: React.MouseEvent) => handlePiecePreviewStart(e, piece),
+                            onMouseUp: handlePiecePreviewEnd,
+                            onMouseLeave: handlePiecePreviewEnd,
+                            onTouchStart: (e: React.TouchEvent) => handlePiecePreviewStart(e, piece),
+                            onTouchEnd: handlePiecePreviewEnd
                           })}
                         >
-
+                          {/* 拼图块编号（可选显示） */}
+                          {!piece.isPlaced && showPieceNumbers && (
+                            <div className="absolute -top-1 -right-1 bg-gray-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center opacity-80">
+                              {piece.id + 1}
+                            </div>
+                          )}
+                          
+                          {/* 拼图块预览 */}
+                          {!piece.isPlaced && piecePreviewVisible && piecePreviewPiece?.id === piece.id && (
+                            <div 
+                              className="fixed z-50 pointer-events-none"
+                              style={{
+                                left: `${piecePreviewPosition.x}px`,
+                                top: `${piecePreviewPosition.y - 220}px`, // 在拼图块上方显示
+                                transform: 'translateX(-50%)', // 水平居中
+                              }}
+                            >
+                              <div className="relative bg-white rounded-lg shadow-2xl p-3 border">
+                                <div
+                                  className="w-40 h-40 rounded border"
+                                  style={{
+                                    backgroundImage: `url(${imageUrl})`,
+                                    backgroundSize: `${40 * size}px ${40 * size}px`,
+                                    backgroundPosition: `-${piece.col * 40}px -${piece.row * 40}px`,
+                                    backgroundRepeat: 'no-repeat',
+                                  }}
+                                />
+                                <div className="text-center mt-2 text-xs text-gray-600">
+                                  拼图块 {piece.id + 1}
+                                </div>
+                                {/* 小箭头指向拼图块 */}
+                                <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+                                  <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white"></div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -691,26 +1042,32 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                 ))}
               </Tabs>
             ) : (
-              <div className="grid grid-cols-3 gap-2 justify-items-center">
+              <div 
+                className="grid gap-2 justify-items-center"
+                style={{
+                  gridTemplateColumns: `repeat(${colsPerRow}, 1fr)`
+                }}
+              >
                 {allPiecesForDisplay.map((piece: PuzzlePiece) => (
                   <div
                     key={piece.id}
+                    data-piece-id={piece.id}
                     className={`
-                      relative rounded border-2 flex items-center justify-center
+                      relative rounded border-2 flex items-center justify-center transition-all duration-200
                       ${piece.isPlaced 
-                        ? 'border-dashed border-gray-200 bg-gray-50/30' 
+                        ? 'border-dashed border-gray-200 bg-gray-50/30 opacity-30' 
                         : `cursor-pointer ${draggedPiece === piece.id 
-                            ? 'border-gray-400 bg-gray-50' 
-                            : 'border-gray-300 hover:border-primary bg-white'}`
+                            ? 'border-blue-400 bg-blue-50 scale-105 shadow-md' 
+                            : 'border-gray-300 hover:border-blue-400 hover:shadow-sm bg-white'}`
                       }
                     `}
                     style={{
-                      width: `${pieceSize}px`,
-                      height: `${pieceSize}px`,
+                      width: `${selectionPieceSize}px`,
+                      height: `${selectionPieceSize}px`,
                       ...(piece.isPlaced ? {} : {
-                        backgroundSize: `${puzzleSize}px ${puzzleSize}px`,
+                        backgroundSize: `${selectionPieceSize * size}px ${selectionPieceSize * size}px`,
                         backgroundImage: `url(${imageUrl})`,
-                        backgroundPosition: `-${piece.col * pieceSize}px -${piece.row * pieceSize}px`,
+                        backgroundPosition: `-${piece.col * selectionPieceSize}px -${piece.row * selectionPieceSize}px`,
                         backgroundRepeat: 'no-repeat'
                       })
                     }}
@@ -718,14 +1075,57 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                       draggable: true,
                       onClick: () => handlePieceClick(piece.id),
                       onDragStart: (e: React.DragEvent) => handleDragStart(e, piece.id),
-                      onDragEnd: handleDragEnd
+                      onDragEnd: handleDragEnd,
+                      onMouseDown: (e: React.MouseEvent) => handlePiecePreviewStart(e, piece),
+                      onMouseUp: handlePiecePreviewEnd,
+                      onMouseLeave: handlePiecePreviewEnd,
+                      onTouchStart: (e: React.TouchEvent) => handlePiecePreviewStart(e, piece),
+                      onTouchEnd: handlePiecePreviewEnd
                     })}
                   >
-
+                    {/* 拼图块编号（可选显示） */}
+                    {!piece.isPlaced && showPieceNumbers && (
+                      <div className="absolute -top-1 -right-1 bg-gray-600 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center opacity-80">
+                        {piece.id + 1}
+                      </div>
+                    )}
+                    
+                    {/* 拼图块预览 */}
+                    {!piece.isPlaced && piecePreviewVisible && piecePreviewPiece?.id === piece.id && (
+                      <div 
+                        className="fixed z-50 pointer-events-none"
+                        style={{
+                          left: `${piecePreviewPosition.x}px`,
+                          top: `${piecePreviewPosition.y - 220}px`, // 在拼图块上方显示
+                          transform: 'translateX(-50%)', // 水平居中
+                        }}
+                      >
+                        <div className="relative bg-white rounded-lg shadow-2xl p-3 border">
+                          <div
+                            className="w-40 h-40 rounded border"
+                            style={{
+                              backgroundImage: `url(${imageUrl})`,
+                              backgroundSize: `${40 * size}px ${40 * size}px`,
+                              backgroundPosition: `-${piece.col * 40}px -${piece.row * 40}px`,
+                              backgroundRepeat: 'no-repeat',
+                            }}
+                          />
+                          <div className="text-center mt-2 text-xs text-gray-600">
+                            拼图块 {piece.id + 1}
+                          </div>
+                          {/* 小箭头指向拼图块 */}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2">
+                            <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-white"></div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             )}
+            
+
           </Card>
         </div>
       </div>
