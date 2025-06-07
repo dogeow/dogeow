@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback, useRef } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useGameStats } from "../hooks/useGameStats"
@@ -154,7 +155,7 @@ export default function PicturePuzzle({ imageUrl, size, onComplete }: PicturePuz
   // 图片加载完成后初始化拼图
   useEffect(() => {
     if (imageUrl) {
-      const img = new Image()
+      const img = new window.Image()
       img.onload = () => {
         setImageLoaded(true)
         setPreviewImage(imageUrl)
@@ -375,11 +376,13 @@ export default function PicturePuzzle({ imageUrl, size, onComplete }: PicturePuz
          <div className="flex flex-col items-center space-y-4">
            <div>
              <h3 className="text-sm font-medium mb-3 text-gray-600">参考图片</h3>
-             <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-md">
-               <img
+             <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-md relative">
+               <Image
                  src={previewImage}
                  alt="参考图片"
-                 className="w-48 h-48 object-cover"
+                 width={192}
+                 height={192}
+                 className="object-cover"
                />
              </div>
              <div className="mt-3 text-center">

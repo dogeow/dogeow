@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, Suspense } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 // import { useRouter, useSearchParams } from "next/navigation"
@@ -167,11 +168,12 @@ function JigsawPuzzleGame() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {SYSTEM_IMAGES.map((image) => (
                 <div key={image.id} className="relative group">
-                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary transition-colors">
-                    <img
+                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-primary transition-colors relative">
+                    <Image
                       src={image.thumbnail}
                       alt={image.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   </div>
                   <div className="mt-2 text-center">

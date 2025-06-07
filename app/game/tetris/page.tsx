@@ -202,6 +202,33 @@ export default function TetrisGame() {
     }
   }, [isClient, nextPiece])
 
+  // 移动方块
+  const movePiece = useCallback((direction: 'left' | 'right' | 'down'): boolean => {
+    if (!currentPiece || gameOver || paused) return false
+
+    // eslint-disable-next-line prefer-const
+    let newPosition = { ...currentPiece.position }
+    
+    switch (direction) {
+      case 'left':
+        newPosition.x -= 1
+        break
+      case 'right':
+        newPosition.x += 1
+        break
+      case 'down':
+        newPosition.y += 1
+        break
+    }
+
+    if (isValidPosition(board, currentPiece, newPosition)) {
+      setCurrentPiece(prev => prev ? { ...prev, position: newPosition } : null)
+      return true
+    }
+    
+    return false
+  }, [currentPiece, board, gameOver, paused])
+
   // 游戏循环
   useEffect(() => {
     if (!isClient || gameOver || paused || !currentPiece) return
@@ -261,34 +288,7 @@ export default function TetrisGame() {
         clearInterval(gameLoopRef.current)
       }
     }
-  }, [isClient, board, currentPiece, nextPiece, gameOver, paused, level, score, lines, bestScore, setBestScore, incrementGamesPlayed, addLinesCleared])
-
-  // 移动方块
-  const movePiece = useCallback((direction: 'left' | 'right' | 'down'): boolean => {
-    if (!currentPiece || gameOver || paused) return false
-
-    // eslint-disable-next-line prefer-const
-    let newPosition = { ...currentPiece.position }
-    
-    switch (direction) {
-      case 'left':
-        newPosition.x -= 1
-        break
-      case 'right':
-        newPosition.x += 1
-        break
-      case 'down':
-        newPosition.y += 1
-        break
-    }
-
-    if (isValidPosition(board, currentPiece, newPosition)) {
-      setCurrentPiece(prev => prev ? { ...prev, position: newPosition } : null)
-      return true
-    }
-    
-    return false
-  }, [currentPiece, board, gameOver, paused])
+  }, [isClient, board, currentPiece, nextPiece, gameOver, paused, level, score, lines, bestScore, setBestScore, incrementGamesPlayed, addLinesCleared, movePiece])
 
   // 旋转方块
   const rotatePiece = useCallback(() => {

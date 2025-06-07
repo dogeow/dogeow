@@ -1,9 +1,11 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Eye, EyeOff } from "lucide-react"
 import { useJigsawStats } from "../hooks/useJigsawStats"
 
 // 计时器组件
@@ -65,17 +67,18 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
   const [imageLoaded, setImageLoaded] = useState(false)
   const [draggedPiece, setDraggedPiece] = useState<number | null>(null)
   const [currentTab, setCurrentTab] = useState("0")
+  const [showFloatingReference, setShowFloatingReference] = useState(false)
+  const [selectedPlacedPiece, setSelectedPlacedPiece] = useState<number | null>(null)
   const { stats, updateStats } = useJigsawStats(size)
   
-  const puzzleSize = 240 // 拼图区域大小
+  const puzzleSize = 240
   const pieceSize = puzzleSize / size
-  const piecesPerTab = 6 // 每个标签页显示的拼图块数量
-  
+  const piecesPerTab = 6
+
   // 初始化拼图
   const initializePuzzle = useCallback(() => {
     const totalPieces = size * size
     
-    // 创建拼图块
     const newPieces: PuzzlePiece[] = []
     for (let i = 0; i < totalPieces; i++) {
       const row = Math.floor(i / size)
@@ -95,10 +98,8 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
       })
     }
     
-    // 打乱拼图块顺序
     const shuffledPieces = [...newPieces].sort(() => Math.random() - 0.5)
     
-    // 创建拼图槽位
     const newSlots: PuzzleSlot[] = []
     for (let i = 0; i < totalPieces; i++) {
       const row = Math.floor(i / size)
@@ -121,7 +122,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
   // 图片加载完成后初始化拼图
   useEffect(() => {
     if (imageUrl) {
-      const img = new Image()
+      const img = new window.Image()
       img.onload = () => {
         setImageLoaded(true)
         initializePuzzle()
@@ -133,6 +134,26 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
       img.src = imageUrl
     }
   }, [imageUrl, initializePuzzle])
+  
+  // 键盘事件监听
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        cancelSelection()
+      }
+    }
+    
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [])
+
+  // 取消所有选择
+  const cancelSelection = () => {
+    setDraggedPiece(null)
+    setSelectedPlacedPiece(null)
+  }
   
   // 处理拖拽开始
   const handleDragStart = (e: React.DragEvent, pieceId: number) => {
@@ -157,46 +178,10 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     
     if (draggedPiece === null) return
     
-    const piece = pieces.find(p => p.id === draggedPiece)
     const slot = slots.find(s => s.id === slotId)
+    if (!slot || slot.pieceId !== null) return
     
-    if (!piece || !slot || slot.pieceId !== null) return
-    
-    // 检查是否是正确的位置
-    const isCorrectPosition = piece.row === slot.row && piece.col === slot.col
-    
-    // 允许放置到任何空位置
-    // 更新拼图块状态
-    setPieces(prev => prev.map(p => 
-      p.id === draggedPiece ? { ...p, isPlaced: true } : p
-    ))
-    
-    // 更新槽位状态
-    setSlots(prev => prev.map(s => 
-      s.id === slotId ? { ...s, pieceId: draggedPiece } : s
-    ))
-    
-    // 只有当所有拼图块都在正确位置时才算完成
-    if (isCorrectPosition) {
-      const updatedPieces = pieces.map(p => 
-        p.id === draggedPiece ? { ...p, isPlaced: true } : p
-      )
-      
-      // 检查是否所有拼图块都在正确位置
-      const allInCorrectPosition = updatedPieces.every(p => {
-        if (!p.isPlaced) return false
-        const currentSlot = slots.find(s => s.pieceId === p.id)
-        return currentSlot && currentSlot.row === p.row && currentSlot.col === p.col
-      })
-      
-      if (allInCorrectPosition && updatedPieces.every(p => p.isPlaced)) {
-        setIsComplete(true)
-        const completionTime = Math.floor((new Date().getTime() - startTime.getTime()) / 1000)
-        updateStats(completionTime, pieces.length)
-        onComplete()
-      }
-    }
-    
+    placePieceInSlot(draggedPiece, slotId)
     setDraggedPiece(null)
   }
   
@@ -206,63 +191,112 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
       setDraggedPiece(null)
       return
     }
+    
+    setSelectedPlacedPiece(null)
     setDraggedPiece(pieceId)
+  }
+  
+  // 处理已放置拼图块的点击
+  const handlePlacedPieceClick = (pieceId: number) => {
+    if (selectedPlacedPiece === pieceId) {
+      setSelectedPlacedPiece(null)
+      return
+    }
+    
+    setDraggedPiece(null)
+    setSelectedPlacedPiece(pieceId)
   }
   
   // 处理槽位点击（移动端）
   const handleSlotClick = (slotId: number) => {
-    if (draggedPiece === null) return
-    
-    const piece = pieces.find(p => p.id === draggedPiece)
     const slot = slots.find(s => s.id === slotId)
+    if (!slot) return
     
-    if (!piece || !slot || slot.pieceId !== null) return
-    
-    // 检查是否是正确的位置
-    const isCorrectPosition = piece.row === slot.row && piece.col === slot.col
-    
-    // 允许放置到任何空位置，但只有正确位置才算完成
-    // 更新拼图块状态
-    setPieces(prev => prev.map(p => 
-      p.id === draggedPiece ? { ...p, isPlaced: true } : p
-    ))
-    
-    // 更新槽位状态
-    setSlots(prev => prev.map(s => 
-      s.id === slotId ? { ...s, pieceId: draggedPiece } : s
-    ))
-    
-    // 只有当所有拼图块都在正确位置时才算完成
-    if (isCorrectPosition) {
-      const updatedPieces = pieces.map(p => 
-        p.id === draggedPiece ? { ...p, isPlaced: true } : p
-      )
-      
-      // 检查是否所有拼图块都在正确位置
-      const allInCorrectPosition = updatedPieces.every(p => {
-        if (!p.isPlaced) return false
-        const currentSlot = slots.find(s => s.pieceId === p.id)
-        return currentSlot && currentSlot.row === p.row && currentSlot.col === p.col
-      })
-      
-      if (allInCorrectPosition && updatedPieces.every(p => p.isPlaced)) {
-        setIsComplete(true)
-        const completionTime = Math.floor((new Date().getTime() - startTime.getTime()) / 1000)
-        updateStats(completionTime, pieces.length)
-        onComplete()
-      }
+    if (slot.pieceId !== null) {
+      handlePlacedPieceClick(slot.pieceId)
+      return
     }
     
-    setDraggedPiece(null)
+    if (draggedPiece !== null) {
+      const piece = pieces.find(p => p.id === draggedPiece)
+      if (!piece) return
+      
+      placePieceInSlot(draggedPiece, slotId)
+      setDraggedPiece(null)
+      return
+    }
+    
+    if (selectedPlacedPiece !== null) {
+      const originalSlot = slots.find(s => s.pieceId === selectedPlacedPiece)
+      if (originalSlot) {
+        setSlots(prev => prev.map(s => 
+          s.id === originalSlot.id ? { ...s, pieceId: null } : s
+        ))
+      }
+      
+      placePieceInSlot(selectedPlacedPiece, slotId)
+      
+      // 检查是否放置正确，如果错误则保持选中状态
+      const piece = pieces.find(p => p.id === selectedPlacedPiece)
+      const targetSlot = slots.find(s => s.id === slotId)
+      const isCorrectPosition = piece && targetSlot && piece.row === targetSlot.row && piece.col === targetSlot.col
+      
+      if (isCorrectPosition) {
+        setSelectedPlacedPiece(null) // 只有放置正确时才清除选中状态
+      }
+      // 如果放置错误，保持 selectedPlacedPiece 状态，用户可以继续点击其他位置
+      
+      return
+    }
+  }
+  
+  // 统一的拼图块放置逻辑
+  const placePieceInSlot = (pieceId: number, slotId: number) => {
+    const piece = pieces.find(p => p.id === pieceId)
+    const slot = slots.find(s => s.id === slotId)
+    
+    if (!piece || !slot) return
+    
+    setPieces(prev => prev.map(p => 
+      p.id === pieceId ? { ...p, isPlaced: true } : p
+    ))
+    
+    setSlots(prev => prev.map(s => 
+      s.id === slotId ? { ...s, pieceId: pieceId } : s
+    ))
+    
+    setTimeout(() => {
+      checkGameCompletion()
+    }, 100)
+  }
+  
+  // 检查游戏完成状态
+  const checkGameCompletion = () => {
+    const allPiecesPlaced = pieces.every(p => p.isPlaced)
+    if (!allPiecesPlaced) return
+    
+    const allInCorrectPosition = pieces.every(p => {
+      const currentSlot = slots.find(s => s.pieceId === p.id)
+      return currentSlot && currentSlot.row === p.row && currentSlot.col === p.col
+    })
+    
+    if (allInCorrectPosition) {
+      setIsComplete(true)
+      const completionTime = Math.floor((new Date().getTime() - startTime.getTime()) / 1000)
+      updateStats(completionTime, pieces.length)
+      onComplete()
+    }
   }
   
   // 重新开始游戏
   const resetGame = () => {
     initializePuzzle()
     setCurrentTab("0")
+    setDraggedPiece(null)
+    setSelectedPlacedPiece(null)
   }
   
-  // 获取所有拼图块（包括已放置的，但在选择区域显示为空位）
+  // 获取所有拼图块
   const allPiecesForDisplay = pieces
   
   // 将拼图块分组到不同的标签页
@@ -283,39 +317,124 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
   }
   
   return (
-    <div className="flex flex-col items-center space-y-6">
-      {/* 游戏信息 */}
-      <Card className="p-4 w-full max-w-md">
-        <div className="flex justify-between items-center">
-          <div className="text-center">
-            <div className="text-sm text-gray-500">已完成</div>
-            <div className="font-semibold">{pieces.filter(p => p.isPlaced).length}/{pieces.length}</div>
+    <div className="flex flex-col items-center space-y-4">
+      {/* 游戏信息和操作提示 */}
+      <Card className="p-4 w-full max-w-4xl">
+        <div className="flex flex-col space-y-3">
+          {/* 主要游戏信息 */}
+          <div className="flex justify-between items-center">
+            <div className="text-center">
+              <div className="text-sm text-gray-500">已完成</div>
+              <div className="font-semibold">{pieces.filter(p => p.isPlaced).length}/{pieces.length}</div>
+            </div>
+            <Timer startTime={startTime} />
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowFloatingReference(!showFloatingReference)}
+                className="flex items-center gap-1"
+              >
+                <Eye className="w-3 h-3" />
+                {showFloatingReference ? '隐藏' : '显示'}参考
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={resetGame}
+              >
+                重新开始
+              </Button>
+            </div>
           </div>
-          <Timer startTime={startTime} />
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={resetGame}
-          >
-            重新开始
-          </Button>
+          
+          {/* 进度条 */}
+          <div>
+            <div className="flex justify-between items-center mb-1">
+              <span className="text-xs text-gray-500">完成进度</span>
+              <span className="text-xs font-medium text-gray-700">
+                {Math.round((pieces.filter(p => p.isPlaced).length / pieces.length) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full transition-all duration-500 ease-out"
+                style={{ 
+                  width: `${pieces.length > 0 ? (pieces.filter(p => p.isPlaced).length / pieces.length) * 100 : 0}%` 
+                }}
+              ></div>
+            </div>
+          </div>
         </div>
       </Card>
       
-      <div className="flex flex-col lg:flex-row gap-8 items-start w-full max-w-6xl">
+      <div className="flex flex-col lg:flex-row gap-6 items-center justify-center w-full max-w-6xl relative">
+        {/* 浮动原图参考 */}
+        {showFloatingReference && (
+          <div className="fixed top-4 right-4 z-50 lg:absolute lg:top-0 lg:right-0 lg:z-10">
+            <Card className="p-2 shadow-lg border-2 border-primary/20 bg-white/95 backdrop-blur-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-gray-600">原图参考</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFloatingReference(false)}
+                  className="h-6 w-6 p-0 hover:bg-gray-100"
+                >
+                  <EyeOff className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="relative w-24 h-24 rounded overflow-hidden border border-gray-200">
+                <Image
+                  src={imageUrl}
+                  alt="浮动原图参考"
+                  fill
+                  className="object-cover"
+                />
+                {pieces.length > 0 && (
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent">
+                    <div className="text-white text-xs text-center py-1 font-medium">
+                      {Math.round((pieces.filter(p => p.isPlaced).length / pieces.length) * 100)}%
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="mt-2 w-full bg-gray-200 rounded-full h-1">
+                <div 
+                  className="bg-gradient-to-r from-blue-500 to-green-500 h-1 rounded-full transition-all duration-500"
+                  style={{ 
+                    width: `${pieces.length > 0 ? (pieces.filter(p => p.isPlaced).length / pieces.length) * 100 : 0}%` 
+                  }}
+                ></div>
+              </div>
+            </Card>
+          </div>
+        )}
+        
         {/* 拼图区域 */}
         <div className="flex flex-col items-center">
           <div 
-            className="grid gap-1 border-2 border-gray-300 p-2 rounded-xl bg-white shadow-lg relative"
+            className="grid border-2 border-gray-300 rounded-xl bg-white shadow-lg relative"
             style={{
               gridTemplateColumns: `repeat(${size}, 1fr)`,
-              width: `${puzzleSize + 16}px`,
-              height: `${puzzleSize + 16}px`
+              width: `${puzzleSize}px`,
+              height: `${puzzleSize}px`
             }}
           >
+
+            
             {slots.map((slot) => {
               const placedPiece = slot.pieceId !== null ? pieces.find(p => p.id === slot.pieceId) : null
               const isCorrectlyPlaced = placedPiece && placedPiece.row === slot.row && placedPiece.col === slot.col
+              const isSelected = selectedPlacedPiece === slot.pieceId
+              
+              // 计算当前槽位应该显示的图片部分
+              const slotImageStyle = placedPiece ? {
+                backgroundImage: `url(${imageUrl})`,
+                backgroundSize: `${puzzleSize}px ${puzzleSize}px`,
+                backgroundPosition: `-${slot.col * pieceSize}px -${slot.row * pieceSize}px`,
+                backgroundRepeat: 'no-repeat'
+              } : {}
               
               return (
                 <div
@@ -324,25 +443,28 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, slot.id)}
                   className={`
-                    relative rounded border-2 transition-all duration-200
+                    relative cursor-pointer
                     ${slot.pieceId !== null 
-                      ? (isCorrectlyPlaced ? 'border-green-400 bg-white' : 'border-orange-400 bg-white')
-                      : 'border-dashed border-gray-300 bg-gray-50/50 hover:bg-gray-100/50'}
-                    ${draggedPiece !== null && slot.pieceId === null ? 'border-blue-400 bg-blue-50 cursor-pointer' : ''}
+                      ? (isSelected 
+                          ? 'ring-2 ring-gray-400 ring-inset shadow-md' 
+                          : (isCorrectlyPlaced ? '' : 'ring-1 ring-orange-400 ring-inset'))
+                      : 'border border-dashed border-gray-300 bg-gray-50/50 hover:bg-gray-100/50'}
+                    ${draggedPiece !== null && slot.pieceId === null ? 'border-gray-400 bg-gray-100' : ''}
+                    ${selectedPlacedPiece !== null && slot.pieceId === null ? 'border-gray-400 bg-gray-100' : ''}
                   `}
                   style={{
-                    width: `${pieceSize - 2}px`,
-                    height: `${pieceSize - 2}px`,
-                    ...(placedPiece ? placedPiece.imageStyle : {})
+                    width: `${pieceSize}px`,
+                    height: `${pieceSize}px`,
+                    ...slotImageStyle
                   }}
-                                  >
+                >
                 </div>
               )
             })}
           </div>
           
           {isComplete && (
-            <div className="mt-6 text-center animate-bounce">
+            <div className="mt-4 text-center animate-bounce">
               <div className="bg-green-50 border-2 border-green-200 rounded-xl p-4 shadow-lg">
                 <p className="text-green-600 font-bold text-xl mb-2">🎉 恭喜完成！</p>
                 <div className="text-sm text-gray-600 mb-3">
@@ -393,11 +515,14 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
             {pieceGroups.length > 1 ? (
               <Tabs value={currentTab} onValueChange={setCurrentTab}>
                 <TabsList className="grid w-full mb-4" style={{ gridTemplateColumns: `repeat(${pieceGroups.length}, 1fr)` }}>
-                  {pieceGroups.map((_, index) => (
-                    <TabsTrigger key={index} value={index.toString()}>
-                      第{index + 1}组
-                    </TabsTrigger>
-                  ))}
+                  {pieceGroups.map((group, index) => {
+                    const remainingCount = group.filter(piece => !piece.isPlaced).length
+                    return (
+                      <TabsTrigger key={index} value={index.toString()}>
+                        第{index + 1}组 ({remainingCount})
+                      </TabsTrigger>
+                    )
+                  })}
                 </TabsList>
                 
                 {pieceGroups.map((group, groupIndex) => (
@@ -411,7 +536,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                             ${piece.isPlaced 
                               ? 'border-dashed border-gray-200 bg-gray-50/30' 
                               : `cursor-pointer ${draggedPiece === piece.id 
-                                  ? 'border-blue-400 shadow-lg scale-105 bg-blue-50' 
+                                  ? 'border-gray-400 shadow-md scale-105 bg-gray-50' 
                                   : 'border-gray-300 hover:border-primary hover:shadow-md bg-white'}`
                             }
                           `}
@@ -432,11 +557,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                             onDragEnd: handleDragEnd
                           })}
                         >
-                          {!piece.isPlaced && draggedPiece === piece.id && (
-                            <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                              ✓
-                            </div>
-                          )}
+
                         </div>
                       ))}
                     </div>
@@ -453,7 +574,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                       ${piece.isPlaced 
                         ? 'border-dashed border-gray-200 bg-gray-50/30' 
                         : `cursor-pointer ${draggedPiece === piece.id 
-                            ? 'border-blue-400 shadow-lg scale-105 bg-blue-50' 
+                            ? 'border-gray-400 shadow-md scale-105 bg-gray-50' 
                             : 'border-gray-300 hover:border-primary hover:shadow-md bg-white'}`
                       }
                     `}
@@ -474,11 +595,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                       onDragEnd: handleDragEnd
                     })}
                   >
-                    {!piece.isPlaced && draggedPiece === piece.id && (
-                      <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                        ✓
-                      </div>
-                    )}
+
                   </div>
                 ))}
               </div>
