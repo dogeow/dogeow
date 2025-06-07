@@ -321,7 +321,10 @@ export default function Game2048() {
   }
 
   return (
-    <div className="container py-4 px-4 max-w-md mx-auto">
+    <div 
+      className="container py-4 px-4 max-w-md mx-auto"
+      onContextMenu={(e) => e.preventDefault()}
+    >
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold mb-2">2048</h1>
         <p className="text-gray-600 text-sm mb-4">

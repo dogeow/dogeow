@@ -26,6 +26,20 @@ export default function GamePage() {
       difficulty: "简单到困难",
       icon: "🔢"
     },
+    {
+      id: "snake",
+      name: "贪吃蛇",
+      description: "经典的贪吃蛇游戏，控制蛇吃食物并避免撞墙和撞自己。支持触摸滑动和键盘控制。",
+      difficulty: "简单到中等",
+      icon: "🐍"
+    },
+    {
+      id: "minesweeper",
+      name: "扫雷",
+      description: "经典的扫雷游戏，通过数字提示找出所有地雷位置。支持三种难度级别和右键标记功能。",
+      difficulty: "简单到困难",
+      icon: "💣"
+    },
     // 未来可以添加更多游戏
   ]
 
