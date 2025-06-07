@@ -82,9 +82,6 @@ export default function Thing() {
       delete allParams.isFilterToggle;
     }
     
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const itemsOnly = params.hasOwnProperty('search') || params.hasOwnProperty('itemsOnly');
-    
     return fetchItems(allParams)
       .then(result => {
         console.log('请求成功，结果:', result);
@@ -297,18 +294,6 @@ export default function Thing() {
     saveFilters(filters);
     loadItems({ ...filters, page: 1 });
   }, [loadItems, saveFilters, isSearching]);
-
-  // 重置筛选条件
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleReset = useCallback(() => {
-    setSearchTerm('');
-    setSelectedCategory('none');
-    setSelectedTags([]);
-    setCurrentPage(1);
-    
-    saveFilters({});
-    loadItems({});
-  }, [loadItems, saveFilters]);
 
   // 检查是否有激活的筛选条件
   const hasActiveFilters = useCallback(() => {

@@ -27,8 +27,6 @@ export default function SpotTab({
   spots, 
   rooms, 
   loading, 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onAddSpot, 
   onUpdateSpot, 
   onDeleteSpot 
 }: SpotTabProps) {

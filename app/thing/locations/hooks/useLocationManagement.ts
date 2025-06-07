@@ -36,9 +36,9 @@ export type Spot = {
 
 export const useLocationManagement = () => {
   // 获取数据
-  const { data: areas = [], mutate: refreshAreas } = useAreas();
-  const { data: rooms = [], mutate: refreshRooms } = useRooms();
-  const { data: spots = [], mutate: refreshSpots } = useSpots();
+  const { data: areas = [], mutate: refreshAreas } = useAreas<Area[]>();
+  const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>();
+  const { data: spots = [], mutate: refreshSpots } = useSpots<Spot[]>();
   
   // 通用状态
   const [loading, setLoading] = useState(false)

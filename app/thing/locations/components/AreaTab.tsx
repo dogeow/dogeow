@@ -16,10 +16,6 @@ interface AreaTabProps {
 
 export default function AreaTab({ 
   areas, 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  loading, 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onAddArea, 
   onUpdateArea, 
   onDeleteArea 
 }: AreaTabProps) {

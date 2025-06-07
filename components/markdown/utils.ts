@@ -1,4 +1,4 @@
-import { Editor, Element as SlateElement, Point, Transforms } from 'slate'
+import { Editor, Element as SlateElement, Point, Transforms, Descendant } from 'slate'
 import { ExtendedEditor } from './types'
 import { CustomElement } from '@/app/note/types/editor'
 
@@ -80,15 +80,16 @@ export const handleCodeBlockTab = (
 };
 
 // 将编辑器内容序列化为普通文本（用于复制）
-export const serializeToText = (nodes: CustomElement[]): string => {
+export const serializeToText = (nodes: Descendant[]): string => {
   return nodes
     .map(n => {
       if ('text' in n) {
         return n.text;
       }
       
-      const type = n.type || 'paragraph';
-      const children = serializeToText(n.children || []);
+      const element = n as CustomElement;
+      const type = element.type || 'paragraph';
+      const children = serializeToText(element.children || []);
       
       switch (type) {
         case 'paragraph':
@@ -102,7 +103,7 @@ export const serializeToText = (nodes: CustomElement[]): string => {
         case 'block-quote':
           return '> ' + children.replace(/\n/g, '\n> ') + '\n\n';
         case 'code-block':
-          const language = n.language || '';
+          const language = element.language || '';
           return '```' + language + '\n' + children + '\n```\n\n';
         case 'bulleted-list':
           return children;
@@ -143,6 +144,6 @@ export const handleCopyWithSyntaxHighlighting = (
 };
 
 // 格式化Markdown函数
-export const formatMarkdown = (value: CustomElement[]): string => {
+export const formatMarkdown = (value: Descendant[]): string => {
   return serializeToText(value);
 }; 

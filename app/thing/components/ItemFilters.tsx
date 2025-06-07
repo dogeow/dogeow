@@ -248,40 +248,6 @@ export default function ItemFilters({
     setPreventAutoApply(true);
   }, [applyFilters]);
   
-  // 检查是否有激活的筛选条件
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _hasActiveFilters = useCallback(() => {
-    // 检查是否有任何非默认值的筛选条件
-    return Object.entries(filters).some(([key, value]) => {
-      // 对于字符串类型的值，检查是否非空且不等于'all'
-      if (typeof value === 'string') {
-        return value !== '' && value !== 'all' && initialFilters[key as keyof FilterState] !== value;
-      }
-      // 对于数组或字符串类型的标签
-      if (key === 'tags') {
-        if (typeof value === 'string') {
-          return value !== '';
-        }
-        if (Array.isArray(value)) {
-          return value.length > 0;
-        }
-      }
-      // 对于日期类型的值，检查是否非空
-      if (value instanceof Date) {
-        return true;
-      }
-      // 对于数值类型，检查是否非空
-      if (typeof value === 'number') {
-        return value !== 0 && initialFilters[key as keyof FilterState] !== value;
-      }
-      // 对于布尔类型，检查是否与初始值不同
-      if (typeof value === 'boolean') {
-        return initialFilters[key as keyof FilterState] !== value;
-      }
-      return false;
-    });
-  }, [filters]);
-  
   const renderDateRangePicker = useCallback((
     label: string, 
     fromField: 'purchase_date_from' | 'expiry_date_from', 

@@ -34,8 +34,7 @@ export default function EditItem() {
     updateItem 
   } = useItemStore()
   
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data: areas = [], mutate: refreshAreas } = useAreas()
+  const { mutate: refreshAreas } = useAreas()
   const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>()
   const { data: spots = [], mutate: refreshSpots } = useSpots<Spot[]>()
   

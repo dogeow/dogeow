@@ -1,31 +1,18 @@
 "use client"
 
-// import { useState, useEffect } from 'react' // State for image and dialog removed
 import { Card } from "@/components/ui/card"
-// import { Badge } from "@/components/ui/badge" // Moved to ItemCardImage
-// import { Globe } from "lucide-react" // Moved to ItemCardImage
-// import { toast } from "sonner" // For delete, removed
-// import Image from "next/image" // Moved to ItemCardImage
-// import { useItemStore } from '@/app/thing/stores/itemStore' // For fetchItems after delete, removed
-// import { del } from '@/lib/api' // For delete, removed
 import { Item } from '@/app/thing/types'
-// import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog" // Removed
 import { TagList } from "./TagList"
 import { LocationDisplay } from "./LocationDisplay"
-import ItemCardImage from './ItemCardImage' // Import the new component
-
-// ImageData interface removed, now in ItemCardImage.tsx
+import ItemCardImage from './ItemCardImage'
 
 interface ItemCardProps {
   item: Item
-  onEdit: () => void // Retained as per original, though not used in provided snippet
+  onEdit: () => void
   onView: () => void
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function ItemCard({ item, onEdit, onView }: ItemCardProps) {
-  // deleteDialogOpen, fetchItems, imageError, primaryImage states and related useEffect removed
-  // itemStatusColors, getStatusBorderColor, renderImage, handleDelete functions removed
+export default function ItemCard({ item, onView }: ItemCardProps) {
 
   return (
     <Card

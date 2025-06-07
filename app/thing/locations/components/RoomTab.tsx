@@ -27,8 +27,6 @@ export default function RoomTab({
   rooms, 
   areas, 
   loading, 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onAddRoom, 
   onUpdateRoom, 
   onDeleteRoom 
 }: RoomTabProps) {
