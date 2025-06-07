@@ -34,20 +34,11 @@ export const useMarkdownEditor = ({
   
   const [isUploading, setIsUploading] = useState(false);
   
-  // 强制更新高亮的函数
+  // 更新高亮函数 - 用于强制重新渲染编辑器以更新语法高亮
   const updateHighlighting = useCallback(() => {
-    // 移除直接操作 selection 的代码，让 Slate 自己管理光标位置
-    // 只触发重新渲染即可
-    if (editor.nodeToDecorations) {
-      // 强制重新计算装饰
-      const entries = Array.from(
-        Editor.nodes(editor, {
-          at: [],
-          match: n => SlateElement.isElement(n) && (n as CustomElement).type === 'code-block',
-        })
-      );
-    }
-  }, [editor]);
+    // 强制重新渲染编辑器
+    setValue(prevValue => [...prevValue]);
+  }, []);
   
   // 保存内容
   const handleSave = useCallback(async () => {
@@ -156,7 +147,7 @@ export const useMarkdownEditor = ({
         }
       }
     }
-  }, [editor, updateHighlighting, toggleMark]);
+  }, [editor, toggleMark, updateHighlighting]);
 
   return {
     editor,

@@ -43,7 +43,7 @@ export type CustomText = {
 // 范围类型
 export interface TokenRange extends SlateRange {
   token: boolean
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // 创建扩展编辑器类型

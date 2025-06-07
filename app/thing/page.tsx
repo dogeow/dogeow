@@ -105,30 +105,39 @@ export default function Thing() {
       });
   }, [fetchItems, getBaseFilterParams, isSearching, saveFilters]);
 
-  // 处理点击外部关闭菜单的通用函数
-  const useOutsideClickHandler = (isOpen: boolean, setIsOpen: (open: boolean) => void, containerClass: string) => {
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (isOpen) {
-          const target = event.target as HTMLElement;
-          if (!target.closest(`.${containerClass}`)) {
-            setIsOpen(false);
-          }
-        }
-      };
-
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [isOpen]);
-  };
-
   // 处理点击外部关闭标签菜单
-  useOutsideClickHandler(tagMenuOpen, setTagMenuOpen, 'tag-dropdown-container');
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (tagMenuOpen) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.tag-dropdown-container')) {
+          setTagMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [tagMenuOpen]);
 
   // 处理点击外部关闭分类菜单
-  useOutsideClickHandler(categoryMenuOpen, setCategoryMenuOpen, 'category-dropdown-container');
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryMenuOpen) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.category-dropdown-container')) {
+          setCategoryMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [categoryMenuOpen]);
 
   // 在组件初始化时加载基础数据
   useEffect(() => {
@@ -281,7 +290,7 @@ export default function Thing() {
   }, []);
 
   // 筛选条件应用
-  const handleApplyFilters = useCallback((filters: any) => {
+  const handleApplyFilters = useCallback((filters: Record<string, unknown>) => {
     if (isSearching) return;
     
     setCurrentPage(1);

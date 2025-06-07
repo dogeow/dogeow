@@ -1,6 +1,8 @@
 import { RenderElementProps } from 'slate-react'
 import { LanguageSelector } from './LanguageSelector'
 import Image from "next/image";
+import { Transforms } from 'slate'
+import { useSlate } from 'slate-react'
 
 // 自定义组件选项
 type CustomRenderElementProps = RenderElementProps & {
@@ -13,6 +15,7 @@ type CustomRenderElementProps = RenderElementProps & {
 
 export const Element = (props: CustomRenderElementProps) => {
   const { attributes, children, element } = props
+  const editor = useSlate()
 
   switch (element.type) {
     case 'block-quote':
@@ -70,8 +73,17 @@ export const Element = (props: CustomRenderElementProps) => {
           <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-t-md px-3 py-1 text-sm">
             <LanguageSelector
               value={element.language}
-              onChange={value => {
-                // 这个回调将在LanguageSelector组件内处理
+              onChange={newLanguage => {
+                // 找到当前元素的路径并更新语言属性
+                const path = editor.selection?.anchor.path
+                if (path) {
+                  const elementPath = path.slice(0, -1) // 获取元素路径（去掉文本节点路径）
+                  Transforms.setNodes(
+                    editor,
+                    { language: newLanguage },
+                    { at: elementPath }
+                  )
+                }
               }}
             />
           </div>

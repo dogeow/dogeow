@@ -48,6 +48,7 @@ interface FilterState {
   include_null_expiry_date: boolean;
   exclude_null_purchase_date?: boolean;
   exclude_null_expiry_date?: boolean;
+  [key: string]: unknown;
 }
 
 // 添加防抖函数
