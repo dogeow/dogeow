@@ -320,7 +320,7 @@ export default function SnakeGame() {
                 )}
                 {isSnakeHead && (
                   <div className="w-full h-full flex items-center justify-center text-xs">
-                    👁️
+                    🐍
                   </div>
                 )}
               </div>
