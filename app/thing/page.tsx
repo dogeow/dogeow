@@ -172,7 +172,7 @@ export default function Thing() {
         }
         
         if (savedFilters.tags && Array.isArray(savedFilters.tags)) {
-          setSelectedTags(savedFilters.tags);
+          setSelectedTags(savedFilters.tags.map(tag => tag.toString()));
         }
         
         // 使用store加载数据
@@ -281,7 +281,7 @@ export default function Thing() {
   }, []);
 
   // 筛选条件应用
-  const handleApplyFilters = useCallback((filters: FilterParams) => {
+  const handleApplyFilters = useCallback((filters: any) => {
     if (isSearching) return;
     
     setCurrentPage(1);

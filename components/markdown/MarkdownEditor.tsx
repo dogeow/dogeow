@@ -9,8 +9,7 @@ import { toast } from 'react-hot-toast'
 import { useMarkdownEditor } from './hooks/useMarkdownEditor'
 import { handleCodeBlockTab, handleCopyWithSyntaxHighlighting } from './utils'
 import './styles.css'
-import { Editor, Text } from 'slate'
-import { CustomText } from './types'
+import { Editor } from 'slate'
 
 export interface MarkdownEditorProps {
   initialContent?: string;
@@ -300,7 +299,7 @@ const MarkdownEditor = ({
   }, []);
   
   // 处理编辑器内容变化
-  const handleChange = useCallback((newValue: any[]) => {
+  const handleChange = useCallback((newValue: unknown[]) => {
     setValue(newValue);
     
     // 调用父组件的 onChange 回调

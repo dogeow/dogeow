@@ -1,12 +1,12 @@
 // 基础 API 响应类型
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data: T;
   message?: string;
   status?: number;
 }
 
 // 分页响应类型
-export interface PaginatedResponse<T = any> {
+export interface PaginatedResponse<T = unknown> {
   data: T[];
   current_page: number;
   last_page: number;
@@ -67,7 +67,7 @@ export interface QueryParams {
   search?: string;
   sort?: string;
   order?: 'asc' | 'desc';
-  filter?: Record<string, any>;
+  filter?: Record<string, unknown>;
 }
 
 // HTTP 方法类型

@@ -1,4 +1,4 @@
-import { Editor, Element as SlateElement, Node, NodeEntry, Path, Point, Transforms } from 'slate'
+import { Editor, Element as SlateElement, Node, NodeEntry, Point, Transforms } from 'slate'
 import { ExtendedEditor, TokenRange } from './types'
 import Prism from 'prismjs'
 
@@ -220,8 +220,6 @@ export const handleCodeBlockTab = (
   if (!match) {
     return false;
   }
-  
-  const [codeBlock, path] = match;
   
   // 处理 Tab 键
   if (event.key === 'Tab') {
