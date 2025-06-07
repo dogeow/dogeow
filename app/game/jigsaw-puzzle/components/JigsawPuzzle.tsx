@@ -183,11 +183,20 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     const slot = slots.find(s => s.id === slotId)
     if (!slot || slot.pieceId !== null) return
     
-    placePieceInSlot(draggedPiece, slotId)
+    const piece = pieces.find(p => p.id === draggedPiece)
+    if (!piece) return
+    
+    const pieceId = draggedPiece
+    placePieceInSlot(pieceId, slotId)
     setDraggedPiece(null)
     
-    // 清除任何选中状态，允许用户继续操作
-    setSelectedPlacedPiece(null)
+    // 检查是否放置正确，如果错误则自动选中该拼图块，方便用户继续移动
+    const isCorrectPosition = piece.row === slot.row && piece.col === slot.col
+    if (!isCorrectPosition) {
+      setSelectedPlacedPiece(pieceId)
+    } else {
+      setSelectedPlacedPiece(null)
+    }
   }
   
   // 处理点击放置（移动端）
@@ -212,16 +221,73 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
     setSelectedPlacedPiece(pieceId)
   }
   
+  // 交换两个拼图块的位置
+  const swapPieces = (pieceId1: number, pieceId2: number) => {
+    const slot1 = slots.find(s => s.pieceId === pieceId1)
+    const slot2 = slots.find(s => s.pieceId === pieceId2)
+    
+    if (!slot1 || !slot2) return
+    
+    // 交换槽位中的拼图块
+    setSlots(prev => prev.map(s => {
+      if (s.id === slot1.id) return { ...s, pieceId: pieceId2 }
+      if (s.id === slot2.id) return { ...s, pieceId: pieceId1 }
+      return s
+    }))
+    
+    // 更新错误状态
+    const piece1 = pieces.find(p => p.id === pieceId1)
+    const piece2 = pieces.find(p => p.id === pieceId2)
+    
+    if (piece1 && piece2) {
+      setWronglyPlacedPieces(prev => {
+        const newSet = new Set(prev)
+        
+        // 检查piece1在slot2的位置是否正确
+        const piece1Correct = piece1.row === slot2.row && piece1.col === slot2.col
+        if (piece1Correct) {
+          newSet.delete(pieceId1)
+        } else {
+          newSet.add(pieceId1)
+        }
+        
+        // 检查piece2在slot1的位置是否正确
+        const piece2Correct = piece2.row === slot1.row && piece2.col === slot1.col
+        if (piece2Correct) {
+          newSet.delete(pieceId2)
+        } else {
+          newSet.add(pieceId2)
+        }
+        
+        return newSet
+      })
+    }
+    
+    setTimeout(() => {
+      checkGameCompletion()
+    }, 100)
+  }
+  
   // 处理槽位点击（移动端）
   const handleSlotClick = (slotId: number) => {
     const slot = slots.find(s => s.id === slotId)
     if (!slot) return
     
+    // 如果点击的槽位有拼图块
     if (slot.pieceId !== null) {
+      // 如果有选中的拼图块，则交换位置
+      if (selectedPlacedPiece !== null && selectedPlacedPiece !== slot.pieceId) {
+        swapPieces(selectedPlacedPiece, slot.pieceId)
+        setSelectedPlacedPiece(null)
+        return
+      }
+      
+      // 否则选中这个拼图块
       handlePlacedPieceClick(slot.pieceId)
       return
     }
     
+    // 如果点击的是空槽位
     if (draggedPiece !== null) {
       const piece = pieces.find(p => p.id === draggedPiece)
       if (!piece) return
@@ -447,7 +513,6 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
             
             {slots.map((slot) => {
               const placedPiece = slot.pieceId !== null ? pieces.find(p => p.id === slot.pieceId) : null
-              const isCorrectlyPlaced = placedPiece && placedPiece.row === slot.row && placedPiece.col === slot.col
               const isSelected = selectedPlacedPiece === slot.pieceId
               const isWronglyPlaced = placedPiece && wronglyPlacedPieces.has(placedPiece.id)
               
