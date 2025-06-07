@@ -240,13 +240,13 @@ export default function MinesweeperGame() {
 
   // 检查胜利条件
   useEffect(() => {
-    if (gameState === 'playing' && board.length > 0) {
+    if (gameState === 'playing' && board.length > 0 && board[0] && board[0].length > 0) {
       let hiddenCount = 0
       
       for (let row = 0; row < config.rows; row++) {
         for (let col = 0; col < config.cols; col++) {
-          const cell = board[row][col]
-          if (cell.state === 'hidden') {
+          const cell = board[row]?.[col]
+          if (cell && cell.state === 'hidden') {
             hiddenCount++
           }
         }
@@ -281,8 +281,14 @@ export default function MinesweeperGame() {
     resetGame()
   }, [resetGame])
 
+  // 当难度改变时重置游戏
+  useEffect(() => {
+    resetGame()
+  }, [difficulty, resetGame])
+
   // 获取格子显示内容
   const getCellContent = (cell: Cell) => {
+    if (!cell || cell.state === undefined) return ''
     if (cell.state === 'flagged') return '🚩'
     if (cell.state === 'hidden') return ''
     if (cell.isMine) return '💣'
@@ -293,6 +299,10 @@ export default function MinesweeperGame() {
   // 获取格子样式
   const getCellStyle = (cell: Cell) => {
     const baseStyle = "w-8 h-8 border border-gray-400 flex items-center justify-center text-sm font-bold cursor-pointer select-none"
+    
+    if (!cell || cell.state === undefined) {
+      return `${baseStyle} bg-gray-300 dark:bg-gray-600`
+    }
     
     if (cell.state === 'hidden') {
       return `${baseStyle} bg-gray-300 dark:bg-gray-600 hover:bg-gray-200 dark:hover:bg-gray-500`
@@ -400,31 +410,37 @@ export default function MinesweeperGame() {
       </div>
 
       <Card className="p-4 mb-4 overflow-auto">
-        <div 
-          className="grid gap-0 mx-auto"
-          style={{ 
-            gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
-            maxWidth: `${config.cols * 32}px`,
-            touchAction: 'none'
-          }}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          {board.map((row, rowIndex) =>
-            row.map((cell, colIndex) => (
-              <div
-                key={`${rowIndex}-${colIndex}`}
-                className={getCellStyle(cell)}
-                onClick={() => handleCellClick(rowIndex, colIndex)}
-                onContextMenu={(e) => handleCellRightClick(e, rowIndex, colIndex)}
-                onTouchStart={() => handleTouchStart(rowIndex, colIndex)}
-                onTouchEnd={handleTouchEnd}
-                onTouchCancel={handleTouchEnd}
-              >
-                {getCellContent(cell)}
-              </div>
-            ))
-          )}
-        </div>
+        {board.length > 0 && board[0] && board[0].length > 0 ? (
+          <div 
+            className="grid gap-0 mx-auto"
+            style={{ 
+              gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
+              maxWidth: `${config.cols * 32}px`,
+              touchAction: 'none'
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            {board.map((row, rowIndex) =>
+              row.map((cell, colIndex) => (
+                <div
+                  key={`${rowIndex}-${colIndex}`}
+                  className={getCellStyle(cell)}
+                  onClick={() => handleCellClick(rowIndex, colIndex)}
+                  onContextMenu={(e) => handleCellRightClick(e, rowIndex, colIndex)}
+                  onTouchStart={() => handleTouchStart(rowIndex, colIndex)}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchCancel={handleTouchEnd}
+                >
+                  {getCellContent(cell)}
+                </div>
+              ))
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center justify-center h-32">
+            <div className="text-gray-500">正在初始化游戏...</div>
+          </div>
+        )}
       </Card>
 
       <div className="text-center text-sm text-gray-600 dark:text-gray-400">
