@@ -44,7 +44,7 @@ function useKeyboardStatus() {
     const handleResize = () => {
       if (typeof window === 'undefined') return;
       
-      // 更精确的移动设备检测
+      // 检测是否为移动设备
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
                       (window.innerWidth <= 768 && 'ontouchstart' in window);
       
@@ -54,20 +54,9 @@ function useKeyboardStatus() {
         const keyboardHeight = windowHeight - height;
         
         // 键盘高度超过100px时认为已弹出
-        const isKeyboardOpen = keyboardHeight > 100;
-        
-        // 调试信息（生产环境可以移除）
-        console.log('键盘检测:', {
-          isMobile,
-          windowHeight,
-          viewportHeight: height,
-          keyboardHeight,
-          isKeyboardOpen
-        });
-        
-        setKeyboardOpen(isKeyboardOpen);
+        setKeyboardOpen(keyboardHeight > 100);
       } else {
-        // 桌面端或不支持visualViewport的情况
+        // 桌面端不启用键盘检测
         setKeyboardOpen(false);
       }
     };
@@ -241,6 +230,11 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       router.push(searchUrl)
       onOpenChange(false)
     }
+    
+    // 搜索后重新聚焦输入框
+    setTimeout(() => {
+      inputRef.current?.focus()
+    }, 100)
   }, [searchTerm, activeCategory, currentRoute, pathname, categories, router, onOpenChange])
 
   const handleResultClick = useCallback((url: string) => {
@@ -353,27 +347,18 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={`
-          !fixed !z-50 !gap-0 !p-0
-          transition-all duration-300 flex flex-col
+          !fixed !z-50 !p-0
+          transition-all duration-200 
           ${keyboardOpen 
-            ? '!left-2 !right-2 !top-auto !translate-x-0 !translate-y-0 !max-w-none !w-auto !rounded-xl' 
-            : '!left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%] !w-full !max-w-[550px] !rounded-xl'
+            ? '!left-2 !right-2 !bottom-2 !top-auto !translate-x-0 !translate-y-0 !max-w-none !w-auto !h-[50vh] !max-h-[50vh]' 
+            : '!left-[50%] !top-[50%] !translate-x-[-50%] !translate-y-[-50%] !w-full !max-w-[550px] !h-[70vh] !max-h-[80vh]'
           }
-          !bg-background !border !shadow-lg
+          !bg-background !border !shadow-lg !rounded-xl
           [&>button]:!hidden
         `}
-        style={{
-          bottom: keyboardOpen ? '8px' : 'auto',
-          height: keyboardOpen 
-            ? `${typeof window !== 'undefined' && window.visualViewport 
-                ? Math.min(window.visualViewport.height, window.innerHeight * 0.6) 
-                : window?.innerHeight ? window.innerHeight * 0.6 : 400}px`
-            : '70vh',
-          maxHeight: keyboardOpen ? '60vh' : '80vh'
-        }}
       >
         <div className={`flex flex-col h-full ${keyboardOpen ? 'p-3' : 'p-6'}`}>
-          <div className="flex items-center justify-between mb-3 flex-shrink-0">
+          <div className="flex items-center justify-between mb-4 flex-shrink-0">
             <DialogTitle className={`font-semibold flex-1 text-center ${keyboardOpen ? 'text-base' : 'text-lg'}`}>
               {getDialogTitle()}
             </DialogTitle>
@@ -387,7 +372,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
             </Button>
           </div>
           
-          <div className="flex-shrink-0 mb-3">
+          <div className="flex-shrink-0 mb-4">
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -423,13 +408,18 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                 variant="ghost"
                 size="icon"
                 className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                onClick={() => {
+                  setTimeout(() => {
+                    inputRef.current?.focus();
+                  }, 100);
+                }}
               >
                 <ArrowRight className="h-4 w-4" />
               </Button>
             </form>
           </div>
           
-          <div className="flex-shrink-0 mb-3">
+          <div className="flex-shrink-0 mb-4">
             <div className={`font-medium mb-2 ${keyboardOpen ? 'text-xs' : 'text-sm'}`}>搜索范围:</div>
             <div className={`flex gap-1 flex-wrap overflow-y-auto ${keyboardOpen ? 'max-h-12' : 'max-h-16'}`}>
               {categories.map((category) => (
