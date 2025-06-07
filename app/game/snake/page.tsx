@@ -101,7 +101,7 @@ export default function SnakeGame() {
 
       return newSnake
     })
-  }, [direction, food, gameOver, gameStarted, checkCollision, generateFood])
+  }, [direction, food, gameOver, gameStarted, checkCollision, generateFood, addFoodEaten, incrementGamesPlayed])
 
   // 游戏循环
   useEffect(() => {

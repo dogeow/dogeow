@@ -10,7 +10,6 @@ type Board = number[][]
 type Direction = 'up' | 'down' | 'left' | 'right'
 
 const BOARD_SIZE = 4
-const INITIAL_TILES = 2
 
 export default function Game2048() {
   const { bestScore, setBestScore, incrementGamesPlayed, incrementGamesWon, gamesPlayed, gamesWon } = useGame2048Store()
@@ -190,7 +189,7 @@ export default function Game2048() {
         toast.error('游戏结束！')
       }
     }
-  }, [board, gameOver, gameWon])
+  }, [board, gameOver, gameWon, incrementGamesPlayed, moveDown, moveLeft, moveRight, moveUp, score])
 
   // 键盘事件处理
   useEffect(() => {

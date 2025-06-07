@@ -192,7 +192,7 @@ export default function MinesweeperGame() {
       
       return newBoard
     })
-  }, [gameState, firstClick, placeMines, calculateNeighbors, revealEmptyArea, config, flagMode])
+  }, [gameState, firstClick, placeMines, calculateNeighbors, revealEmptyArea, config, flagMode, difficulty, updateStats])
 
   // 标记格子
   const handleCellFlag = useCallback((row: number, col: number) => {
@@ -242,16 +242,12 @@ export default function MinesweeperGame() {
   useEffect(() => {
     if (gameState === 'playing' && board.length > 0) {
       let hiddenCount = 0
-      let correctFlags = 0
       
       for (let row = 0; row < config.rows; row++) {
         for (let col = 0; col < config.cols; col++) {
           const cell = board[row][col]
           if (cell.state === 'hidden') {
             hiddenCount++
-          }
-          if (cell.state === 'flagged' && cell.isMine) {
-            correctFlags++
           }
         }
       }
@@ -263,7 +259,7 @@ export default function MinesweeperGame() {
         toast.success('恭喜！你赢了！')
       }
     }
-  }, [board, gameState, flagCount, config.mines, config.rows, config.cols])
+  }, [board, gameState, flagCount, config.mines, config.rows, config.cols, difficulty, timer, updateStats])
 
   // 计时器
   useEffect(() => {
