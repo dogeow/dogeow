@@ -15,18 +15,79 @@ type Cell = {
 
 type Difficulty = 'easy' | 'medium' | 'hard'
 
-const DIFFICULTIES = {
-  easy: { rows: 9, cols: 9, mines: 10 },
-  medium: { rows: 16, cols: 16, mines: 40 },
-  hard: { rows: 16, cols: 30, mines: 99 }
+// 根据屏幕大小动态计算难度配置
+const getDynamicDifficulties = () => {
+  if (typeof window === 'undefined') {
+    // 服务端渲染时的默认值
+    return {
+      easy: { rows: 9, cols: 9, mines: 10 },
+      medium: { rows: 15, cols: 12, mines: 27 },
+      hard: { rows: 20, cols: 15, mines: 48 }
+    }
+  }
+
+  const screenWidth = window.innerWidth
+  const screenHeight = window.innerHeight
+  const isPortrait = screenHeight > screenWidth
+  
+  // 计算可用空间（考虑UI元素占用的空间）
+  const availableWidth = Math.min(screenWidth - 32, 1000) // 减去padding，最大1000px以支持长方形
+  const availableHeight = screenHeight - 400 // 减去头部UI占用的空间
+  
+  // 每个格子32px
+  const maxCols = Math.floor(availableWidth / 32)
+  const maxRows = Math.floor(availableHeight / 32)
+  
+  if (isPortrait || screenWidth < 768) {
+    // 移动设备或竖屏 - 利用可滚动特性，支持长方形
+    const mediumRows = Math.min(15, 20) // 允许更多行，因为可以滚动
+    const mediumCols = Math.min(10, maxCols)
+    const hardRows = Math.min(20, 25) // 允许更多行
+    const hardCols = Math.min(12, maxCols)
+    
+    return {
+      easy: { rows: 8, cols: 8, mines: 10 },
+      medium: { 
+        rows: mediumRows, 
+        cols: mediumCols, 
+        mines: Math.floor(mediumRows * mediumCols * 0.15) 
+      },
+      hard: { 
+        rows: hardRows, 
+        cols: hardCols, 
+        mines: Math.floor(hardRows * hardCols * 0.17) 
+      }
+    }
+  } else {
+    // 桌面设备 - 可以使用长方形
+    const mediumRows = Math.min(13, maxRows)
+    const mediumCols = Math.min(15, maxCols)
+    const hardRows = Math.min(16, maxRows)
+    const hardCols = Math.min(30, maxCols)
+    
+    return {
+      easy: { rows: 9, cols: 9, mines: 10 },
+      medium: { 
+        rows: mediumRows, 
+        cols: mediumCols, 
+        mines: Math.floor(mediumRows * mediumCols * 0.15) 
+      },
+      hard: { 
+        rows: hardRows, 
+        cols: hardCols, 
+        mines: Math.floor(hardRows * hardCols * 0.16) 
+      }
+    }
+  }
 }
 
 export default function MinesweeperGame() {
   const { stats, updateStats } = useMinesweeperStore()
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
+  const [difficulties, setDifficulties] = useState(getDynamicDifficulties())
   const [board, setBoard] = useState<Cell[][]>([])
   const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing')
-  const [mineCount, setMineCount] = useState(DIFFICULTIES.easy.mines)
+  const [mineCount, setMineCount] = useState(difficulties.easy.mines)
   const [flagCount, setFlagCount] = useState(0)
   const [firstClick, setFirstClick] = useState(true)
   const [timer, setTimer] = useState(0)
@@ -34,7 +95,32 @@ export default function MinesweeperGame() {
   const [flagMode, setFlagMode] = useState(false)
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
 
-  const config = DIFFICULTIES[difficulty]
+  const config = difficulties[difficulty]
+
+  // 监听屏幕大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      const newDifficulties = getDynamicDifficulties()
+      setDifficulties(newDifficulties)
+    }
+
+    window.addEventListener('resize', handleResize)
+    // 初始化时也调用一次
+    handleResize()
+    
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // 阻止整个页面的右键菜单
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault()
+      return false
+    }
+
+    document.addEventListener('contextmenu', handleContextMenu)
+    return () => document.removeEventListener('contextmenu', handleContextMenu)
+  }, [])
 
   // 初始化棋盘
   const initializeBoard = useCallback(() => {
@@ -218,7 +304,9 @@ export default function MinesweeperGame() {
   // 右键标记（桌面端）
   const handleCellRightClick = useCallback((e: React.MouseEvent, row: number, col: number) => {
     e.preventDefault()
+    e.stopPropagation()
     handleCellFlag(row, col)
+    return false
   }, [handleCellFlag])
 
   // 长按开始
@@ -286,6 +374,11 @@ export default function MinesweeperGame() {
     resetGame()
   }, [difficulty, resetGame])
 
+  // 当难度配置改变时重置游戏
+  useEffect(() => {
+    resetGame()
+  }, [difficulties])
+
   // 获取格子显示内容
   const getCellContent = (cell: Cell) => {
     if (!cell || cell.state === undefined) return ''
@@ -332,19 +425,20 @@ export default function MinesweeperGame() {
   }
 
   return (
-    <div 
-      className="container py-4 px-4 max-w-4xl mx-auto"
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold mb-2">扫雷</h1>
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-          找出所有地雷，避免踩雷！
-        </p>
+    <div className="container py-4 px-4 max-w-4xl mx-auto flex flex-col min-h-screen">
+      {/* 头部区域 */}
+      <div className="flex flex-col items-center text-center space-y-6">
+        {/* 标题 */}
+        <div className="flex flex-col items-center space-y-2">
+          <h1 className="text-3xl font-bold">扫雷</h1>
+          <p className="text-gray-600 dark:text-gray-400 text-sm">
+            找出所有地雷，避免踩雷！
+          </p>
+        </div>
         
         {/* 难度选择 */}
-        <div className="flex justify-center space-x-2 mb-4">
-          {Object.entries(DIFFICULTIES).map(([key, value]) => (
+        <div className="flex flex-wrap justify-center gap-2">
+          {Object.entries(difficulties).map(([key, value]) => (
             <Button
               key={key}
               variant={difficulty === key ? "default" : "outline"}
@@ -352,21 +446,15 @@ export default function MinesweeperGame() {
               onClick={() => {
                 setDifficulty(key as Difficulty)
               }}
+              className="text-xs"
             >
               {key === 'easy' ? '简单' : key === 'medium' ? '中等' : '困难'}
-              <span className="ml-1 text-xs">
-                ({value.rows}×{value.cols}, {value.mines}雷)
-              </span>
             </Button>
           ))}
         </div>
         
         {/* 游戏信息 */}
-        <div className="flex justify-center items-center space-x-6 mb-4">
-          <div className="text-center">
-            <div className="text-sm text-gray-600 dark:text-gray-400">剩余地雷</div>
-            <div className="text-xl font-bold">{mineCount}</div>
-          </div>
+        <div className="flex justify-center items-center space-x-8">
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-gray-400">时间</div>
             <div className="text-xl font-bold">{timer}s</div>
@@ -379,46 +467,35 @@ export default function MinesweeperGame() {
           </div>
         </div>
         
-                 <div className="flex justify-center space-x-2 mb-4">
-           <Button 
-             onClick={() => setFlagMode(!flagMode)} 
-             variant={flagMode ? "default" : "outline"} 
-             size="sm"
-           >
-             {flagMode ? '🚩 标记模式' : '👆 点击模式'}
-           </Button>
-           <Button onClick={resetGame} variant="outline" size="sm">
-             重新开始
-           </Button>
-         </div>
-         
-         {/* 统计信息 */}
-         <div className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-           <div className="grid grid-cols-3 gap-2 text-center">
-             <div>
-               <div>游戏: {stats[difficulty].gamesPlayed}</div>
-               <div>胜利: {stats[difficulty].gamesWon}</div>
-             </div>
-             <div>
-               <div>胜率: {stats[difficulty].gamesPlayed > 0 ? Math.round((stats[difficulty].gamesWon / stats[difficulty].gamesPlayed) * 100) : 0}%</div>
-             </div>
-             <div>
-               <div>最佳: {stats[difficulty].bestTime > 0 ? `${stats[difficulty].bestTime}s` : '-'}</div>
-             </div>
-           </div>
-         </div>
+        {/* 控制按钮 */}
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button 
+            onClick={() => setFlagMode(!flagMode)} 
+            variant={flagMode ? "default" : "outline"} 
+            size="sm"
+          >
+            {flagMode ? '🚩 标记模式' : '👆 点击模式'}
+          </Button>
+          <Button onClick={resetGame} variant="outline" size="sm">
+            重新开始
+          </Button>
+        </div>
       </div>
 
-      <Card className="p-4 mb-4 overflow-auto">
+      {/* 游戏区域 */}
+      <div className="flex-1 flex flex-col items-center justify-center py-8 space-y-6">
         {board.length > 0 && board[0] && board[0].length > 0 ? (
           <div 
-            className="grid gap-0 mx-auto"
+            className="grid gap-0"
             style={{ 
               gridTemplateColumns: `repeat(${config.cols}, 1fr)`,
               maxWidth: `${config.cols * 32}px`,
               touchAction: 'none'
             }}
-            onContextMenu={(e) => e.preventDefault()}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              return false
+            }}
           >
             {board.map((row, rowIndex) =>
               row.map((cell, colIndex) => (
@@ -430,6 +507,12 @@ export default function MinesweeperGame() {
                   onTouchStart={() => handleTouchStart(rowIndex, colIndex)}
                   onTouchEnd={handleTouchEnd}
                   onTouchCancel={handleTouchEnd}
+                  onMouseDown={(e) => {
+                    // 阻止鼠标中键和右键的默认行为
+                    if (e.button === 1 || e.button === 2) {
+                      e.preventDefault()
+                    }
+                  }}
                 >
                   {getCellContent(cell)}
                 </div>
@@ -441,28 +524,47 @@ export default function MinesweeperGame() {
             <div className="text-gray-500">正在初始化游戏...</div>
           </div>
         )}
-      </Card>
+        
+        {/* 统计信息 */}
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex justify-center space-x-8">
+            <div className="text-center">
+              <div>游戏: {stats[difficulty].gamesPlayed}</div>
+              <div>胜利: {stats[difficulty].gamesWon}</div>
+            </div>
+            <div className="text-center">
+              <div>胜率: {stats[difficulty].gamesPlayed > 0 ? Math.round((stats[difficulty].gamesWon / stats[difficulty].gamesPlayed) * 100) : 0}%</div>
+            </div>
+            <div className="text-center">
+              <div>最佳: {stats[difficulty].bestTime > 0 ? `${stats[difficulty].bestTime}s` : '-'}</div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="mb-2 font-medium text-blue-800 dark:text-blue-200">游戏说明</p>
-          <p className="mb-1">💣 找出所有地雷位置</p>
-          <p className="mb-1">🚩 右键标记可疑位置</p>
-          <p className="mb-1">🔢 数字表示周围地雷数量</p>
-          <p>⚠️ 点到地雷就失败了</p>
+      {/* 底部说明区域 */}
+      <div className="flex flex-col items-center text-center text-sm text-gray-600 dark:text-gray-400 space-y-6">
+        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <p className="font-medium text-blue-800 dark:text-blue-200">游戏说明</p>
+          <div className="flex flex-col space-y-1 mt-2">
+            <p>💣 找出所有地雷位置</p>
+            <p>🚩 右键标记可疑位置</p>
+            <p>🔢 数字表示周围地雷数量</p>
+            <p>⚠️ 点到地雷就失败了</p>
+          </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-2 text-xs">
+        <div className="flex justify-center space-x-8 text-xs">
           <div className="text-center">
-            <div className="font-medium mb-1">桌面端</div>
-            <div className="flex flex-col space-y-1">
+            <div className="font-medium">桌面端</div>
+            <div className="flex flex-col space-y-1 mt-1">
               <div>👆 左键揭示</div>
               <div>👆 右键标记</div>
             </div>
           </div>
           <div className="text-center">
-            <div className="font-medium mb-1">手机端</div>
-            <div className="flex flex-col space-y-1">
+            <div className="font-medium">手机端</div>
+            <div className="flex flex-col space-y-1 mt-1">
               <div>👆 点击揭示</div>
               <div>⏰ 长按标记</div>
               <div>🚩 标记模式</div>

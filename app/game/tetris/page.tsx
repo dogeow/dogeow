@@ -449,10 +449,9 @@ export default function TetrisGame() {
         {row.map((cell, x) => (
           <div
             key={`${y}-${x}`}
-            className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 border border-gray-300 transition-colors duration-150"
+            className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 transition-colors duration-150"
             style={{
-              backgroundColor: cell || '#f8f9fa',
-              borderColor: cell ? '#333' : '#ddd'
+              backgroundColor: cell || 'rgb(17, 24, 39)'
             }}
           />
         ))}
@@ -477,10 +476,9 @@ export default function TetrisGame() {
             {row.map((cell, x) => (
               <div
                 key={`${y}-${x}`}
-                className="w-4 h-4 sm:w-5 sm:h-5 border border-gray-300"
+                className="w-4 h-4 sm:w-5 sm:h-5"
                 style={{
-                  backgroundColor: cell ? nextPiece.color : '#ffffff',
-                  borderColor: cell ? '#000' : '#ccc'
+                  backgroundColor: cell ? nextPiece.color : 'transparent'
                 }}
               />
             ))}
@@ -497,273 +495,176 @@ export default function TetrisGame() {
         <p className="text-gray-600 text-sm sm:text-base hidden sm:block">使用方向键移动和旋转，空格键硬降，P键暂停</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-3 sm:gap-6 justify-center items-start lg:items-stretch">
-        {/* 游戏区域 */}
-        <div className="flex flex-col items-center">
-          {/* 游戏区域和右上角下一个方块 */}
+      <div className="flex flex-col gap-4">
+        {/* 游戏主体区域 - 模仿经典游戏机屏幕 */}
+        <div className="flex justify-center">
           <div className="relative">
-            <Card className="p-2 sm:p-4 flex-shrink-0 bg-gradient-to-br from-gray-50 to-gray-100">
-              <div className="flex flex-col items-center">
-                <div className="border-2 border-gray-400 p-1 sm:p-2 bg-white rounded-lg shadow-inner relative overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/30 to-purple-50/30 pointer-events-none"></div>
-                  <div className="relative">
-                    {renderBoard()}
+            {/* 游戏机外壳 */}
+            <div className="bg-gradient-to-br from-gray-200 to-gray-300 dark:from-gray-800 dark:to-gray-900 p-6 rounded-2xl shadow-2xl border-4 border-gray-400 dark:border-gray-700">
+              {/* 屏幕区域 */}
+              <div className="bg-black p-4 rounded-lg shadow-inner relative overflow-hidden">
+                {/* 背光效果 - 夜晚模式绿色，白天模式无背光 */}
+                <div className="absolute inset-0 bg-gradient-to-br from-transparent to-transparent dark:from-green-400/10 dark:to-green-300/20 pointer-events-none"></div>
+                
+                <div className="flex gap-4 relative z-10">
+                                      {/* 主游戏区域 */}
+                    <div className="flex flex-col">
+                      <div className="bg-gray-900 p-2 rounded border border-gray-600 dark:border-green-500/30 shadow-lg">
+                        <div className="relative">
+                          {renderBoard()}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 右侧信息区域 */}
+                    <div className="flex flex-col gap-3 w-32 sm:w-40">
+                      {/* 下一个方块 */}
+                      <div className="bg-gray-900 p-3 rounded border border-gray-600 dark:border-green-500/30">
+                        <div className="text-xs text-gray-300 dark:text-green-400 mb-2 text-center font-mono">NEXT</div>
+                        <div className="flex justify-center bg-gray-800 rounded p-2 min-h-[50px] items-center">
+                          {renderNextPiece()}
+                        </div>
+                      </div>
+
+                      {/* 得分信息 */}
+                      <div className="bg-gray-900 p-3 rounded border border-gray-600 dark:border-green-500/30">
+                        <div className="space-y-2 font-mono text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-300 dark:text-green-400">SCORE</span>
+                            <span className="text-white dark:text-green-300 font-bold">{score.toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300 dark:text-green-400">LINES</span>
+                            <span className="text-white dark:text-green-300 font-bold">{lines}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300 dark:text-green-400">LEVEL</span>
+                            <span className="text-white dark:text-green-300 font-bold">{level}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-300 dark:text-green-400">HIGH</span>
+                            <span className="text-white dark:text-green-300 font-bold">{bestScore.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 游戏状态 */}
+                      {(gameOver || paused) && (
+                        <div className="bg-gray-900 p-3 rounded border border-red-500/50">
+                          <div className="text-center">
+                            {gameOver && (
+                              <div>
+                                <div className="text-red-400 text-xs font-mono mb-2">GAME OVER</div>
+                                <Button onClick={resetGame} size="sm" className="text-xs">重新开始</Button>
+                              </div>
+                            )}
+                            {paused && !gameOver && (
+                              <div className="text-yellow-400 text-xs font-mono">PAUSED</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
-            </Card>
-            
-            {/* 右上角下一个方块 */}
-            <div className="absolute top-2 -right-24 sm:top-4 sm:-right-32 md:-right-40 lg:-right-48">
-              <Card className="p-2 sm:p-3 bg-white shadow-lg border-2">
-                <div className="text-xs text-gray-600 mb-1 text-center">下一个</div>
-                <div className="flex justify-center">
-                  {renderNextPiece()}
-                </div>
-              </Card>
             </div>
           </div>
-            
-          {gameOver && (
-            <div className="mt-4 text-center">
-              <p className="text-xl font-bold text-red-600 mb-2">游戏结束！</p>
-              <Button onClick={resetGame}>重新开始</Button>
-            </div>
-          )}
+        </div>
+
+        {/* 移动端控制按钮 */}
+        <div className="lg:hidden w-full max-w-md mx-auto">
+          {/* 暂停按钮 - 单独一行，小按钮 */}
+          <div className="flex justify-center mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 px-6 text-sm font-medium"
+              onClick={() => setPaused(prev => !prev)}
+              disabled={gameOver}
+            >
+              {paused ? '▶️ 继续' : '⏸️ 暂停'}
+            </Button>
+          </div>
+
+          {/* 旋转按钮 */}
+          <div className="flex justify-center mb-4">
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-16 text-xl font-bold"
+              onTouchStart={(e) => {
+                e.preventDefault()
+                rotatePiece()
+              }}
+              onClick={() => rotatePiece()}
+            >
+              ↻
+            </Button>
+          </div>
           
-          {paused && !gameOver && (
-            <div className="mt-4 text-center">
-              <p className="text-xl font-bold text-blue-600">游戏暂停</p>
-            </div>
-          )}
+          {/* 左右移动和软降 */}
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-full text-xl font-bold"
+              onTouchStart={(e) => {
+                e.preventDefault()
+                movePiece('left')
+              }}
+              onClick={() => movePiece('left')}
+            >
+              ←
+            </Button>
+            <Button
+              variant="outline"
+              className={`h-12 w-full text-sm font-medium ${isSoftDropping ? 'bg-blue-100' : ''}`}
+              onTouchStart={(e) => {
+                e.preventDefault()
+                startSoftDrop()
+              }}
+              onTouchEnd={(e) => {
+                e.preventDefault()
+                stopSoftDrop()
+              }}
+              onMouseDown={() => startSoftDrop()}
+              onMouseUp={() => stopSoftDrop()}
+              onMouseLeave={() => stopSoftDrop()}
+            >
+              按住软降 ↓
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-full text-xl font-bold"
+              onTouchStart={(e) => {
+                e.preventDefault()
+                movePiece('right')
+              }}
+              onClick={() => movePiece('right')}
+            >
+              →
+            </Button>
+          </div>
 
-          {/* 移动端控制按钮 */}
-          <div className="mt-3 sm:mt-4 lg:hidden">
-            <div className="grid grid-cols-3 gap-1 sm:gap-2 max-w-xs mx-auto">
-              <div></div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 sm:h-10 text-lg"
-                onTouchStart={(e) => {
-                  e.preventDefault()
-                  rotatePiece()
-                }}
-                onClick={() => rotatePiece()}
-              >
-                ↻
-              </Button>
-              <div></div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 sm:h-10 text-lg"
-                onTouchStart={(e) => {
-                  e.preventDefault()
-                  movePiece('left')
-                }}
-                onClick={() => movePiece('left')}
-              >
-                ←
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 sm:h-10 text-lg"
-                onTouchStart={(e) => {
-                  e.preventDefault()
-                  hardDrop()
-                }}
-                onClick={() => hardDrop()}
-              >
-                ⬇
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 sm:h-10 text-lg"
-                onTouchStart={(e) => {
-                  e.preventDefault()
-                  movePiece('right')
-                }}
-                onClick={() => movePiece('right')}
-              >
-                →
-              </Button>
-            </div>
-            
-            <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-3 max-w-xs mx-auto">
-              <Button
-                variant="outline"
-                className={`flex-1 h-8 sm:h-10 text-xs sm:text-sm ${isSoftDropping ? 'bg-blue-100' : ''}`}
-                onTouchStart={(e) => {
-                  e.preventDefault()
-                  startSoftDrop()
-                }}
-                onTouchEnd={(e) => {
-                  e.preventDefault()
-                  stopSoftDrop()
-                }}
-                onMouseDown={() => startSoftDrop()}
-                onMouseUp={() => stopSoftDrop()}
-                onMouseLeave={() => stopSoftDrop()}
-              >
-                按住软降 ↓
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 h-8 sm:h-10 text-xs sm:text-sm"
-                onClick={() => setPaused(prev => !prev)}
-                disabled={gameOver}
-              >
-                {paused ? '▶️' : '⏸️'}
-              </Button>
-            </div>
+          {/* 硬降 */}
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-20 text-xl font-bold"
+              onTouchStart={(e) => {
+                e.preventDefault()
+                hardDrop()
+              }}
+              onClick={() => hardDrop()}
+            >
+              ⬇
+            </Button>
           </div>
         </div>
 
-        {/* 信息面板 */}
-        <div className="flex flex-col gap-3 sm:gap-4 w-full lg:w-72">
-          {/* 手机端紧凑信息显示 */}
-          <div className="lg:hidden">
-            <Card className="p-3">
-              <div className="flex items-center justify-between gap-4">
-                <div className="flex-1 space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">得分:</span>
-                    <span className="font-bold text-blue-600">{score.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">行数:</span>
-                    <span className="font-bold text-green-600">{lines}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">等级:</span>
-                    <span className="font-bold text-purple-600">{level}</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
 
-          {/* 桌面端详细信息显示 */}
-          <div className="hidden lg:block">
-            {/* 下一个方块 */}
-            <Card className="p-4 mb-4">
-              <h3 className="text-lg font-semibold mb-3 text-center">下一个方块</h3>
-              <div className="flex flex-col items-center min-h-[80px] justify-center bg-gray-50 rounded-lg p-3">
-                {renderNextPiece()}
-              </div>
-            </Card>
-
-            {/* 游戏信息 */}
-            <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-3">游戏信息</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">得分:</span>
-                  <span className="font-bold text-lg text-blue-600">{score.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">行数:</span>
-                  <span className="font-bold text-lg text-green-600">{lines}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">等级:</span>
-                  <span className="font-bold text-lg text-purple-600">{level}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">最高分:</span>
-                  <span className="font-bold text-lg text-orange-600">{bestScore.toLocaleString()}</span>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* 手机端控制按钮 */}
-          <div className="lg:hidden">
-            <Card className="p-3">
-              <div className="flex gap-2">
-                <Button 
-                  onClick={() => setPaused(prev => !prev)}
-                  disabled={gameOver}
-                  className="flex-1 h-9"
-                  variant={paused ? "default" : "secondary"}
-                  size="sm"
-                >
-                  {paused ? '▶️ 继续' : '⏸️ 暂停'}
-                </Button>
-                <Button onClick={resetGame} variant="outline" className="flex-1 h-9" size="sm">
-                  🔄 重新开始
-                </Button>
-              </div>
-            </Card>
-          </div>
-
-          {/* 桌面端详细信息 */}
-          <div className="hidden lg:block space-y-4">
-            {/* 统计信息 */}
-            <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-3">统计</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">游戏次数:</span>
-                  <span className="font-bold">{gamesPlayed}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-600">总消除行数:</span>
-                  <span className="font-bold">{totalLinesCleared}</span>
-                </div>
-              </div>
-            </Card>
-
-            {/* 控制按钮 */}
-            <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-3">控制</h3>
-              <div className="space-y-3">
-                <Button 
-                  onClick={() => setPaused(prev => !prev)}
-                  disabled={gameOver}
-                  className="w-full h-10"
-                  variant={paused ? "default" : "secondary"}
-                >
-                  {paused ? '▶️ 继续' : '⏸️ 暂停'}
-                </Button>
-                <Button onClick={resetGame} variant="outline" className="w-full h-10">
-                  🔄 重新开始
-                </Button>
-              </div>
-            </Card>
-
-            {/* 操作说明 */}
-            <Card className="p-4">
-              <h3 className="text-lg font-semibold mb-3">操作说明</h3>
-              <div className="text-sm space-y-2">
-                <div className="flex items-center gap-2">
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">← →</span>
-                  <span>左右移动</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">↓</span>
-                  <span>加速下降</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">↑</span>
-                  <span>旋转方块</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">空格</span>
-                  <span>硬降</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="bg-gray-100 px-2 py-1 rounded text-xs font-mono">P</span>
-                  <span>暂停/继续</span>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
       </div>
     </div>
   )
