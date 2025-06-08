@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -19,6 +19,15 @@ export default function Game2048() {
   const [gameWon, setGameWon] = useState(false)
   const [history, setHistory] = useState<{ board: Board; score: number }[]>([])
   const [canUndo, setCanUndo] = useState(false)
+  
+  // 自动运行相关状态
+  const [isAutoRunning, setIsAutoRunning] = useState(false)
+  const [isDirectionalRunning, setIsDirectionalRunning] = useState(false)
+  const [currentDirection, setCurrentDirection] = useState<Direction>('down')
+  const [isClockwise, setIsClockwise] = useState(true)
+  const [speed, setSpeed] = useState(500) // 默认500ms
+  const autoRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const directionalRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // 初始化棋盘
   function initializeBoard(): Board {
@@ -158,39 +167,46 @@ export default function Game2048() {
   const handleMove = useCallback((direction: Direction) => {
     if (gameOver) return
 
-    let result
-    switch (direction) {
-      case 'left':
-        result = moveLeft(board)
-        break
-      case 'right':
-        result = moveRight(board)
-        break
-      case 'up':
-        result = moveUp(board)
-        break
-      case 'down':
-        result = moveDown(board)
-        break
-    }
-
-    if (result.moved) {
-      // 保存当前状态到历史记录
-      setHistory(prev => [...prev.slice(-4), { board: [...board], score }])
-      setCanUndo(true)
-      
-      const newBoard = [...result.newBoard]
-      addRandomTile(newBoard)
-      setBoard(newBoard)
-      setScore(prev => prev + result.scoreGained)
-      
-      if (isGameOver(newBoard)) {
-        setGameOver(true)
-        incrementGamesPlayed()
-        toast.error('游戏结束！')
+    setBoard(currentBoard => {
+      let result
+      switch (direction) {
+        case 'left':
+          result = moveLeft(currentBoard)
+          break
+        case 'right':
+          result = moveRight(currentBoard)
+          break
+        case 'up':
+          result = moveUp(currentBoard)
+          break
+        case 'down':
+          result = moveDown(currentBoard)
+          break
       }
-    }
-  }, [board, gameOver, incrementGamesPlayed, moveDown, moveLeft, moveRight, moveUp, score])
+
+      if (result.moved) {
+        const newBoard = [...result.newBoard]
+        addRandomTile(newBoard)
+        
+        // 保存当前状态到历史记录
+        setScore(currentScore => {
+          setHistory(prev => [...prev.slice(-4), { board: [...currentBoard], score: currentScore }])
+          return currentScore + result.scoreGained
+        })
+        setCanUndo(true)
+        
+        if (isGameOver(newBoard)) {
+          setGameOver(true)
+          incrementGamesPlayed()
+          toast.error('游戏结束！')
+        }
+        
+        return newBoard
+      }
+      
+      return currentBoard
+    })
+  }, [gameOver, incrementGamesPlayed, moveDown, moveLeft, moveRight, moveUp])
 
   // 键盘事件处理
   useEffect(() => {
@@ -289,6 +305,146 @@ export default function Game2048() {
     }
   }, [handleMove])
 
+  // 获取下一个方向（顺时针或逆时针）
+  const getNextDirection = useCallback((current: Direction, clockwise: boolean): Direction => {
+    const directions: Direction[] = ['up', 'right', 'down', 'left']
+    const currentIndex = directions.indexOf(current)
+    
+    if (clockwise) {
+      return directions[(currentIndex + 1) % 4]
+    } else {
+      return directions[(currentIndex - 1 + 4) % 4]
+    }
+  }, [])
+
+  // 随机方向自动运行
+  const toggleAutoRun = useCallback(() => {
+    if (isAutoRunning) {
+      // 停止自动运行
+      if (autoRunIntervalRef.current) {
+        clearInterval(autoRunIntervalRef.current)
+        autoRunIntervalRef.current = null
+      }
+      setIsAutoRunning(false)
+      toast.success('已停止随机自动运行')
+    } else {
+      // 开始自动运行
+      setIsAutoRunning(true)
+      toast.success('开始随机自动运行')
+      
+      const runAutoMove = () => {
+        const directions: Direction[] = ['up', 'down', 'left', 'right']
+        const randomDirection = directions[Math.floor(Math.random() * directions.length)]
+        handleMove(randomDirection)
+      }
+      
+      autoRunIntervalRef.current = setInterval(runAutoMove, speed)
+    }
+  }, [isAutoRunning, handleMove, speed])
+
+  // 方向循环自动运行
+  const toggleDirectionalRun = useCallback(() => {
+    if (isDirectionalRunning) {
+      // 停止方向循环运行
+      if (directionalRunIntervalRef.current) {
+        clearInterval(directionalRunIntervalRef.current)
+        directionalRunIntervalRef.current = null
+      }
+      setIsDirectionalRunning(false)
+      toast.success('已停止方向循环运行')
+    } else {
+      // 开始方向循环运行
+      setIsDirectionalRunning(true)
+      toast.success(`开始${isClockwise ? '顺时针' : '逆时针'}循环运行`)
+      
+      const runDirectionalMove = () => {
+        setCurrentDirection(prev => {
+          const nextDir = getNextDirection(prev, isClockwise)
+          handleMove(nextDir)
+          return nextDir
+        })
+      }
+      
+      directionalRunIntervalRef.current = setInterval(runDirectionalMove, speed)
+    }
+  }, [isDirectionalRunning, isClockwise, getNextDirection, handleMove, speed])
+
+  // 切换顺时针/逆时针
+  const toggleClockwise = useCallback(() => {
+    setIsClockwise(prev => !prev)
+    toast.success(`切换为${!isClockwise ? '顺时针' : '逆时针'}模式`)
+  }, [isClockwise])
+
+  // 速度控制
+  const speedOptions = [
+    { value: 1, label: '不能再快了' },
+    { value: 200, label: '快' },
+    { value: 500, label: '正常' },
+    { value: 1000, label: '慢' },
+  ]
+
+  const changeSpeed = useCallback((newSpeed: number) => {
+    setSpeed(newSpeed)
+    
+    // 如果正在运行，重新启动定时器以应用新速度
+    if (isAutoRunning && autoRunIntervalRef.current) {
+      clearInterval(autoRunIntervalRef.current)
+      const runAutoMove = () => {
+        const directions: Direction[] = ['up', 'down', 'left', 'right']
+        const randomDirection = directions[Math.floor(Math.random() * directions.length)]
+        handleMove(randomDirection)
+      }
+      autoRunIntervalRef.current = setInterval(runAutoMove, newSpeed)
+    }
+    
+    if (isDirectionalRunning && directionalRunIntervalRef.current) {
+      clearInterval(directionalRunIntervalRef.current)
+      const runDirectionalMove = () => {
+        setCurrentDirection(prev => {
+          const nextDir = getNextDirection(prev, isClockwise)
+          handleMove(nextDir)
+          return nextDir
+        })
+      }
+      directionalRunIntervalRef.current = setInterval(runDirectionalMove, newSpeed)
+    }
+    
+    const speedLabel = speedOptions.find(option => option.value === newSpeed)?.label || '自定义'
+    toast.success(`速度已调整为：${speedLabel}`)
+  }, [isAutoRunning, isDirectionalRunning, isClockwise, getNextDirection, handleMove, speedOptions])
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (autoRunIntervalRef.current) {
+        clearInterval(autoRunIntervalRef.current)
+      }
+      if (directionalRunIntervalRef.current) {
+        clearInterval(directionalRunIntervalRef.current)
+      }
+    }
+  }, [])
+
+  // 游戏结束时停止自动运行
+  useEffect(() => {
+    if (gameOver) {
+      if (isAutoRunning) {
+        if (autoRunIntervalRef.current) {
+          clearInterval(autoRunIntervalRef.current)
+          autoRunIntervalRef.current = null
+        }
+        setIsAutoRunning(false)
+      }
+      if (isDirectionalRunning) {
+        if (directionalRunIntervalRef.current) {
+          clearInterval(directionalRunIntervalRef.current)
+          directionalRunIntervalRef.current = null
+        }
+        setIsDirectionalRunning(false)
+      }
+    }
+  }, [gameOver, isAutoRunning, isDirectionalRunning])
+
   // 更新最高分
   useEffect(() => {
     if (score > 0) {
@@ -298,12 +454,26 @@ export default function Game2048() {
 
   // 重新开始游戏
   const resetGame = () => {
+    // 停止所有自动运行
+    if (autoRunIntervalRef.current) {
+      clearInterval(autoRunIntervalRef.current)
+      autoRunIntervalRef.current = null
+    }
+    if (directionalRunIntervalRef.current) {
+      clearInterval(directionalRunIntervalRef.current)
+      directionalRunIntervalRef.current = null
+    }
+    
     setBoard(initializeBoard())
     setScore(0)
     setGameOver(false)
     setGameWon(false)
     setHistory([])
     setCanUndo(false)
+    setIsAutoRunning(false)
+    setIsDirectionalRunning(false)
+    setCurrentDirection('down')
+    setSpeed(500) // 重置速度为默认值
   }
 
   // 撤销上一步
@@ -423,12 +593,146 @@ export default function Game2048() {
         </div>
       )}
 
+      {/* 方向控制按钮 */}
+      <div className="mb-6">
+        <div className="flex flex-col items-center space-y-2">
+          {/* 上按钮 */}
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-12 h-12 p-0 text-xl"
+            onClick={() => handleMove('up')}
+            disabled={gameOver || isAutoRunning || isDirectionalRunning}
+          >
+            ↑
+          </Button>
+          
+          {/* 中间一行：左、中心、右 */}
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-12 h-12 p-0 text-xl"
+              onClick={() => handleMove('left')}
+              disabled={gameOver || isAutoRunning || isDirectionalRunning}
+            >
+              ←
+            </Button>
+            
+            <div className="w-12 h-12 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center">
+              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+            </div>
+            
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-12 h-12 p-0 text-xl"
+              onClick={() => handleMove('right')}
+              disabled={gameOver || isAutoRunning || isDirectionalRunning}
+            >
+              →
+            </Button>
+          </div>
+          
+          {/* 下按钮 */}
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-12 h-12 p-0 text-xl"
+            onClick={() => handleMove('down')}
+            disabled={gameOver || isAutoRunning || isDirectionalRunning}
+          >
+            ↓
+          </Button>
+        </div>
+      </div>
+
+      {/* 自动运行控制 */}
+      <div className="mb-6 space-y-3">
+        <div className="text-center">
+          {/* 速度控制 */}
+          <div className="mb-3">
+            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              运行速度：{speedOptions.find(option => option.value === speed)?.label || '自定义'}
+            </div>
+            <div className="flex justify-center flex-wrap gap-1">
+              {speedOptions.map((option) => (
+                <Button
+                  key={option.value}
+                  variant={speed === option.value ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => changeSpeed(option.value)}
+                  disabled={gameOver}
+                  className="text-xs px-2 py-1"
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* 随机方向自动运行 */}
+          <div className="flex justify-center mb-3">
+            <Button
+              variant={isAutoRunning ? "destructive" : "default"}
+              size="default"
+              onClick={toggleAutoRun}
+              disabled={gameOver || isDirectionalRunning}
+              className="text-sm px-6"
+            >
+              {isAutoRunning ? '🛑 停止随机运行' : '🎲 随机自动运行'}
+            </Button>
+          </div>
+          
+          {/* 方向循环控制 */}
+          <div className="flex justify-center items-center space-x-3">
+            <Button
+              variant="outline"
+              size="default"
+              onClick={toggleClockwise}
+              disabled={gameOver || isAutoRunning}
+              className="text-sm px-4"
+            >
+              {isClockwise ? '🔄 顺时针' : '🔃 逆时针'}
+            </Button>
+            
+            <Button
+              variant={isDirectionalRunning ? "destructive" : "default"}
+              size="default"
+              onClick={toggleDirectionalRun}
+              disabled={gameOver || isAutoRunning}
+              className="text-sm px-6"
+            >
+              {isDirectionalRunning ? '🛑 停止循环' : '🔄 方向循环'}
+            </Button>
+          </div>
+          
+          {/* 当前状态显示 */}
+          {(isAutoRunning || isDirectionalRunning) && (
+            <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+              {isAutoRunning && <div>🎲 随机运行中...</div>}
+              {isDirectionalRunning && (
+                <div>
+                  🔄 {isClockwise ? '顺时针' : '逆时针'}循环中 
+                  <span className="ml-1 font-mono text-lg">
+                    ({currentDirection === 'up' ? '↑' : 
+                      currentDirection === 'down' ? '↓' : 
+                      currentDirection === 'left' ? '←' : '→'})
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="text-center text-sm text-gray-600 dark:text-gray-400">
         <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
           <p className="mb-2 font-medium text-blue-800 dark:text-blue-200">游戏说明</p>
           <p className="mb-1">📱 滑动屏幕或使用方向键移动方块</p>
           <p className="mb-1">🔢 相同数字的方块会合并</p>
-          <p>🎯 目标：合并出2048方块！</p>
+          <p className="mb-1">🎯 目标：合并出2048方块！</p>
+          <p className="text-xs text-blue-600 dark:text-blue-300">💡 可使用上方按钮手动控制或自动运行</p>
         </div>
         
         <div className="flex justify-center space-x-4 text-xs">
