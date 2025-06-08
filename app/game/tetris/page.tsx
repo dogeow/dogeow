@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Card } from "@/components/ui/card"
+
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useTetrisStore } from "@/stores/tetrisStore"
@@ -171,7 +171,7 @@ function getDropSpeed(level: number): number {
 }
 
 export default function TetrisGame() {
-  const { bestScore, setBestScore, incrementGamesPlayed, addLinesCleared, gamesPlayed, totalLinesCleared } = useTetrisStore()
+  const { bestScore, setBestScore, incrementGamesPlayed, addLinesCleared } = useTetrisStore()
   
   const [board, setBoard] = useState<Board>(() => createEmptyBoard())
   const [currentPiece, setCurrentPiece] = useState<Tetromino | null>(null)

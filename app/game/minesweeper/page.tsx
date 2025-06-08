@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Card } from "@/components/ui/card"
+
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useMinesweeperStore } from "@/stores/minesweeperStore"
@@ -377,7 +377,7 @@ export default function MinesweeperGame() {
   // 当难度配置改变时重置游戏
   useEffect(() => {
     resetGame()
-  }, [difficulties])
+  }, [difficulties, resetGame])
 
   // 获取格子显示内容
   const getCellContent = (cell: Cell) => {
@@ -438,7 +438,7 @@ export default function MinesweeperGame() {
         
         {/* 难度选择 */}
         <div className="flex flex-wrap justify-center gap-2">
-          {Object.entries(difficulties).map(([key, value]) => (
+          {Object.entries(difficulties).map(([key]) => (
             <Button
               key={key}
               variant={difficulty === key ? "default" : "outline"}
@@ -458,6 +458,10 @@ export default function MinesweeperGame() {
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-gray-400">时间</div>
             <div className="text-xl font-bold">{timer}s</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-gray-600 dark:text-gray-400">地雷</div>
+            <div className="text-xl font-bold">{mineCount}</div>
           </div>
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-gray-400">状态</div>
