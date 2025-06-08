@@ -9,10 +9,12 @@ import { Eye, EyeOff, Hash } from "lucide-react"
 import { useJigsawStats } from "../hooks/useJigsawStats"
 
 // 计时器组件
-function Timer({ startTime }: { startTime: Date }) {
+function Timer({ startTime, isComplete }: { startTime: Date, isComplete: boolean }) {
   const [time, setTime] = useState(0)
   
   useEffect(() => {
+    if (isComplete) return // 游戏完成时不启动计时器
+    
     const interval = setInterval(() => {
       const now = new Date()
       const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000)
@@ -20,7 +22,7 @@ function Timer({ startTime }: { startTime: Date }) {
     }, 1000)
     
     return () => clearInterval(interval)
-  }, [startTime])
+  }, [startTime, isComplete])
   
   const minutes = Math.floor(time / 60)
   const seconds = time % 60
@@ -724,7 +726,7 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
               <div className="text-sm text-gray-500">已完成</div>
               <div className="font-semibold">{pieces.filter(p => p.isPlaced).length}/{pieces.length}</div>
             </div>
-            <Timer startTime={startTime} />
+            <Timer startTime={startTime} isComplete={isComplete} />
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
