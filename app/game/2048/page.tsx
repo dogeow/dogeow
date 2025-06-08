@@ -26,8 +26,10 @@ export default function Game2048() {
   const [currentDirection, setCurrentDirection] = useState<Direction>('down')
   const [isClockwise, setIsClockwise] = useState(true)
   const [speed, setSpeed] = useState(500) // 默认500ms
+  const [showRandomDirection, setShowRandomDirection] = useState<Direction | null>(null)
   const autoRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const directionalRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const randomDirectionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 初始化棋盘
   function initializeBoard(): Board {
@@ -235,20 +237,29 @@ export default function Game2048() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [handleMove])
 
-  // 触摸事件处理
+  // 触摸事件处理 - 仅在游戏区域生效
   useEffect(() => {
     let startX = 0
     let startY = 0
     let lastMoveTime = 0
+    let isGameAreaTouch = false
     const moveThrottle = 200 // 200ms内只能移动一次
 
     const handleTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX
-      startY = e.touches[0].clientY
+      const target = e.target as HTMLElement
+      // 检查是否在游戏区域内
+      const gameBoard = target.closest('[data-game-board]')
+      if (gameBoard) {
+        isGameAreaTouch = true
+        startX = e.touches[0].clientX
+        startY = e.touches[0].clientY
+      } else {
+        isGameAreaTouch = false
+      }
     }
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!startX || !startY) return
+      if (!isGameAreaTouch || !startX || !startY) return
       
       const currentTime = Date.now()
       if (currentTime - lastMoveTime < moveThrottle) return
@@ -292,6 +303,7 @@ export default function Game2048() {
       startX = 0
       startY = 0
       lastMoveTime = 0
+      isGameAreaTouch = false
     }
 
     document.addEventListener('touchstart', handleTouchStart)
@@ -413,6 +425,28 @@ export default function Game2048() {
     toast.success(`速度已调整为：${speedLabel}`)
   }, [isAutoRunning, isDirectionalRunning, isClockwise, getNextDirection, handleMove, speedOptions])
 
+  // 随机移动一次
+  const randomMoveOnce = useCallback(() => {
+    if (gameOver || isAutoRunning || isDirectionalRunning) return
+    
+    const directions: Direction[] = ['up', 'down', 'left', 'right']
+    const randomDirection = directions[Math.floor(Math.random() * directions.length)]
+    
+    // 显示随机到的方向
+    setShowRandomDirection(randomDirection)
+    
+    // 执行移动
+    handleMove(randomDirection)
+    
+    // 500ms后恢复显示🎲
+    if (randomDirectionTimeoutRef.current) {
+      clearTimeout(randomDirectionTimeoutRef.current)
+    }
+    randomDirectionTimeoutRef.current = setTimeout(() => {
+      setShowRandomDirection(null)
+    }, 500)
+  }, [gameOver, isAutoRunning, isDirectionalRunning, handleMove])
+
   // 清理定时器
   useEffect(() => {
     return () => {
@@ -421,6 +455,9 @@ export default function Game2048() {
       }
       if (directionalRunIntervalRef.current) {
         clearInterval(directionalRunIntervalRef.current)
+      }
+      if (randomDirectionTimeoutRef.current) {
+        clearTimeout(randomDirectionTimeoutRef.current)
       }
     }
   }, [])
@@ -474,6 +511,7 @@ export default function Game2048() {
     setIsDirectionalRunning(false)
     setCurrentDirection('down')
     setSpeed(500) // 重置速度为默认值
+    setShowRandomDirection(null) // 重置随机方向显示
   }
 
   // 撤销上一步
@@ -554,6 +592,7 @@ export default function Game2048() {
         <div 
           className="grid grid-cols-4 gap-2"
           style={{ touchAction: 'none' }}
+          data-game-board
         >
           {board.map((row, i) =>
             row.map((cell, j) => (
@@ -619,9 +658,19 @@ export default function Game2048() {
               ←
             </Button>
             
-            <div className="w-12 h-12 rounded border-2 border-gray-300 dark:border-gray-600 flex items-center justify-center">
-              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-            </div>
+            <Button
+              variant="outline"
+              size="lg"
+              className="w-12 h-12 p-0 text-lg"
+              onClick={randomMoveOnce}
+              disabled={gameOver || isAutoRunning || isDirectionalRunning}
+            >
+              {showRandomDirection ? (
+                showRandomDirection === 'up' ? '↑' :
+                showRandomDirection === 'down' ? '↓' :
+                showRandomDirection === 'left' ? '←' : '→'
+              ) : '🎲'}
+            </Button>
             
             <Button
               variant="outline"
@@ -652,9 +701,6 @@ export default function Game2048() {
         <div className="text-center">
           {/* 速度控制 */}
           <div className="mb-3">
-            <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              运行速度：{speedOptions.find(option => option.value === speed)?.label || '自定义'}
-            </div>
             <div className="flex justify-center flex-wrap gap-1">
               {speedOptions.map((option) => (
                 <Button
@@ -671,29 +717,28 @@ export default function Game2048() {
             </div>
           </div>
 
-          {/* 随机方向自动运行 */}
-          <div className="flex justify-center mb-3">
+          {/* 自动运行控制 - 同一行显示 */}
+          <div className="flex justify-center items-center space-x-2">
             <Button
               variant={isAutoRunning ? "destructive" : "default"}
               size="default"
               onClick={toggleAutoRun}
               disabled={gameOver || isDirectionalRunning}
-              className="text-sm px-6"
-            >
-              {isAutoRunning ? '🛑 停止随机运行' : '🎲 随机自动运行'}
-            </Button>
-          </div>
-          
-          {/* 方向循环控制 */}
-          <div className="flex justify-center items-center space-x-3">
-            <Button
-              variant="outline"
-              size="default"
-              onClick={toggleClockwise}
-              disabled={gameOver || isAutoRunning}
               className="text-sm px-4"
             >
-              {isClockwise ? '🔄 顺时针' : '🔃 逆时针'}
+              {isAutoRunning ? '🛑' : '🎲'}
+            </Button>
+            
+            <span className="text-gray-400">|</span>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleClockwise}
+              disabled={gameOver || isAutoRunning}
+              className="text-xs px-2"
+            >
+              {isClockwise ? '🔄' : '🔃'}
             </Button>
             
             <Button
@@ -701,9 +746,9 @@ export default function Game2048() {
               size="default"
               onClick={toggleDirectionalRun}
               disabled={gameOver || isAutoRunning}
-              className="text-sm px-6"
+              className="text-sm px-4"
             >
-              {isDirectionalRunning ? '🛑 停止循环' : '🔄 方向循环'}
+              {isDirectionalRunning ? '🛑' : '🔄'}
             </Button>
           </div>
           
