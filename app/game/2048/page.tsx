@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
@@ -8,6 +8,7 @@ import { useGame2048Store } from "@/stores/game2048Store"
 
 type Board = number[][]
 type Direction = 'up' | 'down' | 'left' | 'right'
+type SpeedOption = { value: number; label: string }
 
 const BOARD_SIZE = 4
 
@@ -388,12 +389,12 @@ export default function Game2048() {
   }, [isClockwise])
 
   // 速度控制
-  const speedOptions = [
+  const speedOptions = useMemo<SpeedOption[]>(() => [
     { value: 1, label: '不能再快了' },
     { value: 200, label: '快' },
     { value: 500, label: '正常' },
     { value: 1000, label: '慢' },
-  ]
+  ], [])
 
   const changeSpeed = useCallback((newSpeed: number) => {
     setSpeed(newSpeed)
