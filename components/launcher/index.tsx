@@ -176,7 +176,7 @@ export function AppLauncher() {
   useEffect(() => {
     if (backgroundImage) {
       // 系统背景图片
-      if (backgroundImage.startsWith('wallhaven') || backgroundImage.startsWith('我的世界') || backgroundImage.startsWith('F_RIhiObMAA')) {
+      if (backgroundImage.startsWith('wallhaven') || backgroundImage.startsWith('F_RIhiObMAA')) {
         document.body.style.backgroundImage = `url(/images/backgrounds/${backgroundImage})`;
       } 
       // 自定义上传的背景图片（base64格式）

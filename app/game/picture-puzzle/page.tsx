@@ -26,12 +26,6 @@ const SYSTEM_IMAGES = [
     thumbnail: '/images/backgrounds/F_RIhiObMAA-c8N.jpeg'
   },
   {
-    id: 'bg2', 
-    name: '我的世界',
-    url: '/images/backgrounds/我的世界.png',
-    thumbnail: '/images/backgrounds/我的世界.png'
-  },
-  {
     id: 'bg3',
     name: '风景2', 
     url: '/images/backgrounds/wallhaven-72rd8e_2560x1440-1.webp',
