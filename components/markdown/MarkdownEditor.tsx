@@ -139,14 +139,14 @@ const MarkdownEditor = ({
         
       case 'bulleted-list':
         return (
-          <ul className="list-disc ml-5 my-2" {...attributes}>
+          <ul {...attributes}>
             {children}
           </ul>
         )
         
       case 'numbered-list':
         return (
-          <ol className="list-decimal ml-5 my-2" {...attributes}>
+          <ol {...attributes}>
             {children}
           </ol>
         )
@@ -174,7 +174,7 @@ const MarkdownEditor = ({
         
       case 'list-item':
         return (
-          <li className="my-1" {...attributes}>
+          <li {...attributes}>
             {children}
           </li>
         )
@@ -477,6 +477,7 @@ const MarkdownEditor = ({
       <div 
         className={`slate-container border rounded-md p-3 ${readOnly ? 'bg-muted' : ''}`}
         style={{ minHeight }}
+        data-slate-editor
       >
         <Slate
           editor={editor}
@@ -484,7 +485,7 @@ const MarkdownEditor = ({
           onChange={handleChange}
         >
           <Editable
-            className="outline-none min-h-full prose dark:prose-invert max-w-none"
+            className="outline-none min-h-full max-w-none"
             renderElement={renderElement}
             renderLeaf={renderLeaf}
             spellCheck={false}

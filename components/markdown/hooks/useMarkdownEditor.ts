@@ -36,9 +36,26 @@ export const useMarkdownEditor = ({
   
   // 更新高亮函数 - 用于强制重新渲染编辑器以更新语法高亮
   const updateHighlighting = useCallback(() => {
-    // 强制重新渲染编辑器
-    setValue(prevValue => [...prevValue]);
-  }, []);
+    // 使用更安全的方式来触发重新渲染，避免影响光标位置
+    // 只有在编辑器有选区时才进行操作
+    if (editor.selection) {
+      // 保存当前选区
+      const currentSelection = editor.selection;
+      
+      // 使用 requestAnimationFrame 来延迟更新，避免干扰当前的键盘事件
+      requestAnimationFrame(() => {
+        try {
+          // 恢复选区（如果它仍然有效）
+          if (currentSelection && Editor.hasPath(editor, currentSelection.anchor.path)) {
+            Transforms.select(editor, currentSelection);
+          }
+        } catch (error) {
+          // 如果恢复选区失败，忽略错误
+          console.debug('恢复选区失败:', error);
+        }
+      });
+    }
+  }, [editor]);
   
   // 保存内容
   const handleSave = useCallback(async () => {
@@ -100,7 +117,14 @@ export const useMarkdownEditor = ({
 
   // 键盘处理程序
   const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    // 热键处理
+    // 允许正常的光标移动键（箭头键、Home、End等）正常工作
+    const navigationKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'];
+    if (navigationKeys.includes(event.key)) {
+      // 不阻止导航键的默认行为，让Slate自己处理
+      return;
+    }
+    
+    // 热键处理 - 只处理特定的格式化热键
     for (const hotkey in HOTKEYS) {
       if (isHotkey(hotkey, event)) {
         event.preventDefault();
