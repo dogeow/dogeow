@@ -29,6 +29,9 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Doge先锋",
   description: "学习、生活、工作于一体",
+  icons: {
+    apple: "/images/480.png",
+  },
 };
 
 export default function RootLayout({
