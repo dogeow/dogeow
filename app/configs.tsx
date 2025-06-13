@@ -9,6 +9,106 @@ export const configs = {
     { name: "笔记", icon: "", href: "/note", color: "#1976D2", size: "small", colSpan: 1, rowSpan: 1 },
     { name: "游戏", icon: "", href: "/game", color: "#424242", size: "small", colSpan: 1, rowSpan: 1 },
   ],
+
+  // 游戏列表数据
+  games: [
+    {
+      id: "sliding-puzzle",
+      name: "滑块拼图",
+      description: "经典的数字滑块拼图游戏，通过移动数字方块来排列顺序",
+      icon: "🧩"
+    },
+    {
+      id: "picture-puzzle",
+      name: "图片拼图",
+      description: "将打乱的图片碎片重新拼接成完整图片",
+      icon: "🖼️"
+    },
+    {
+      id: "jigsaw-puzzle",
+      name: "传统拼图",
+      description: "传统的拼图游戏，考验你的观察力和耐心",
+      icon: "🧩"
+    },
+    {
+      id: "shooting-range",
+      name: "射击训练场",
+      description: "射击训练游戏，提高你的瞄准技巧",
+      icon: "🎯",
+      hideOnMobile: true
+    },
+    {
+      id: "tetris",
+      name: "俄罗斯方块",
+      description: "经典的俄罗斯方块游戏，消除方块获得高分",
+      icon: "🧱"
+    },
+    {
+      id: "2048",
+      name: "2048",
+      description: "数字合并游戏，通过滑动合并相同数字达到2048",
+      icon: "🔢"
+    },
+    {
+      id: "snake",
+      name: "贪吃蛇",
+      description: "经典的贪吃蛇游戏，控制蛇吃食物并避免撞到自己",
+      icon: "🐍"
+    },
+    {
+      id: "minesweeper",
+      name: "扫雷",
+      description: "经典的扫雷游戏，通过数字提示找出所有地雷",
+      icon: "💣"
+    },
+    {
+      id: "tic-tac-toe",
+      name: "井字棋",
+      description: "简单的井字棋游戏，三子连线即可获胜",
+      icon: "⭕"
+    },
+  ],
+
+  // 导航数据
+  navigation: [
+    {
+      id: "nav-1",
+      name: "导航管理",
+      description: "管理和组织你的网站导航链接",
+      url: "/nav"
+    }
+  ],
+
+  // 笔记数据
+  notes: [
+    {
+      id: "note-1",
+      name: "Markdown笔记",
+      description: "支持Markdown格式的在线笔记编辑器",
+      url: "/note"
+    }
+  ],
+
+  // 文件数据
+  files: [
+    {
+      id: "file-1",
+      name: "文件管理",
+      description: "在线文件存储和管理系统",
+      url: "/file"
+    }
+  ],
+
+  // 实验室数据
+  lab: [
+    {
+      id: "lab-1",
+      name: "实验室工具",
+      description: "各种实用的在线工具和实验功能",
+      url: "/lab"
+    }
+  ],
+
   // 可用的音频文件列表
   availableTracks: [
     { name: 'I WiSH - 明日への扉~5 years brew version~', path: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3' },

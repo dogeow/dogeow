@@ -2,56 +2,10 @@
 
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
+import { configs } from "@/app/configs"
 
 export default function GamePage() {
-  const games = [
-    {
-      id: "sliding-puzzle",
-      name: "滑块拼图",
-      icon: "🧩"
-    },
-    {
-      id: "picture-puzzle",
-      name: "图片拼图",
-      icon: "🖼️"
-    },
-    {
-      id: "jigsaw-puzzle",
-      name: "传统拼图",
-      icon: "🧩"
-    },
-    {
-      id: "shooting-range",
-      name: "射击训练场",
-      icon: "🎯",
-      hideOnMobile: true // 标记在移动端隐藏
-    },
-    {
-      id: "tetris",
-      name: "俄罗斯方块",
-      icon: "🧱"
-    },
-    {
-      id: "2048",
-      name: "2048",
-      icon: "🔢"
-    },
-    {
-      id: "snake",
-      name: "贪吃蛇",
-      icon: "🐍"
-    },
-    {
-      id: "minesweeper",
-      name: "扫雷",
-      icon: "💣"
-    },
-    {
-      id: "tic-tac-toe",
-      name: "井字棋",
-      icon: "⭕"
-    },
-  ]
+  const games = configs.games
 
   return (
     <div className="container py-4 px-4">

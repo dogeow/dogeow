@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Search, X, ArrowRight, Loader2 } from "lucide-react"
 import { get } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
+import { configs } from "@/app/configs"
 
 interface Category {
   id: string
@@ -22,7 +23,7 @@ interface Category {
 }
 
 interface SearchResult {
-  id: number
+  id: number | string
   title: string
   content: string
   url: string
@@ -107,7 +108,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     { id: "note", name: "笔记", path: "/note" },
     { id: "file", name: "文件", path: "/file" },
     { id: "game", name: "游戏", path: "/game" },
-    { id: "mc", name: "MC", path: "/mc" },
+    { id: "tool", name: "工具", path: "/tool" },
     { id: "nav", name: "导航", path: "/nav" },
   ], [])
 
@@ -120,6 +121,92 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       setActiveCategory("all")
     }
   }, [currentRoute, categories])
+
+  // 本地搜索函数
+  const searchLocalData = useCallback((searchTerm: string, category: string) => {
+    const results: SearchResult[] = []
+    const lowerSearchTerm = searchTerm.toLowerCase()
+
+    // 搜索游戏
+    if (category === "all" || category === "game") {
+      const gameResults = configs.games.filter(game => 
+        game.name.toLowerCase().includes(lowerSearchTerm) ||
+        game.description.toLowerCase().includes(lowerSearchTerm) ||
+        game.id.toLowerCase().includes(lowerSearchTerm)
+      ).map(game => ({
+        id: game.id,
+        title: game.name,
+        content: game.description,
+        url: `/game/${game.id}`,
+        category: 'game'
+      }))
+      results.push(...gameResults)
+    }
+
+    // 搜索导航
+    if (category === "all" || category === "nav") {
+      const navResults = configs.navigation.filter(nav => 
+        nav.name.toLowerCase().includes(lowerSearchTerm) ||
+        nav.description.toLowerCase().includes(lowerSearchTerm)
+      ).map(nav => ({
+        id: nav.id,
+        title: nav.name,
+        content: nav.description,
+        url: nav.url,
+        category: 'nav'
+      }))
+      results.push(...navResults)
+    }
+
+    // 搜索笔记
+    if (category === "all" || category === "note") {
+      const noteResults = configs.notes.filter(note => 
+        note.name.toLowerCase().includes(lowerSearchTerm) ||
+        note.description.toLowerCase().includes(lowerSearchTerm)
+      ).map(note => ({
+        id: note.id,
+        title: note.name,
+        content: note.description,
+        url: note.url,
+        category: 'note'
+      }))
+      results.push(...noteResults)
+    }
+
+    // 搜索文件
+    if (category === "all" || category === "file") {
+      const fileResults = configs.files.filter(file => 
+        file.name.toLowerCase().includes(lowerSearchTerm) ||
+        file.description.toLowerCase().includes(lowerSearchTerm)
+      ).map(file => ({
+        id: file.id,
+        title: file.name,
+        content: file.description,
+        url: file.url,
+        category: 'file'
+      }))
+      results.push(...fileResults)
+    }
+
+    // 搜索实验室
+    if (category === "all" || category === "lab") {
+      const labResults = configs.lab.filter(lab => 
+        lab.name.toLowerCase().includes(lowerSearchTerm) ||
+        lab.description.toLowerCase().includes(lowerSearchTerm)
+      ).map(lab => ({
+        id: lab.id,
+        title: lab.name,
+        content: lab.description,
+        url: lab.url,
+        category: 'lab'
+      }))
+      results.push(...labResults)
+    }
+
+
+
+    return results
+  }, [])
 
   const performSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
@@ -152,8 +239,13 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     setLoading(true)
     
     try {
-      setResults([])
+      const allResults: SearchResult[] = []
       
+      // 搜索本地数据（游戏、导航等）
+      const localResults = searchLocalData(searchTerm, activeCategory)
+      allResults.push(...localResults)
+      
+      // 搜索数据库中的物品
       if (activeCategory === "all" || activeCategory === "thing") {
         interface SearchApiResponse {
           results: Array<{
@@ -181,11 +273,11 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
             isPublic: item.is_public
           }))
           
-          setResults(prev => [...prev, ...thingResults])
+          allResults.push(...thingResults)
         }
       }
       
-      // TODO: Implement other category searches
+      setResults(allResults)
       
     } catch (error) {
       console.error('搜索出错:', error)
@@ -193,7 +285,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       setLoading(false)
       setHasSearched(true) // 标记已完成搜索
     }
-  }, [searchTerm, activeCategory])
+  }, [searchTerm, activeCategory, searchLocalData])
 
   const handleSearch = useCallback((e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -376,36 +468,29 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                 placeholder="搜索..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-20 h-10"
+                className="pl-10 pr-10 h-10"
                 autoFocus
               />
-              {searchTerm && (
+              {searchTerm ? (
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-10 top-1/2 transform -translate-y-1/2 h-8 w-8 rounded-full hover:bg-accent"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setResults([]);
-                    setHasSearched(false);
-                    // 立即重新focus
-                    requestAnimationFrame(() => {
-                      inputRef.current?.focus();
-                    });
-                  }}
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                  onClick={() => setSearchTerm('')}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                >
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
-              <Button
-                type="submit"
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
-              >
-                <ArrowRight className="h-4 w-4" />
-              </Button>
             </form>
           </div>
           
