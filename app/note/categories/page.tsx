@@ -3,12 +3,12 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Plus, Pencil, Trash2 } from "lucide-react"
+import { Pencil, Trash2 } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import useSWR, { mutate } from "swr"
-import { get, post, put, del } from "@/lib/api"
+import { get, put, del } from "@/lib/api"
 import { toast } from "sonner"
-// import { useRouter } from "next/navigation" // 暂时未使用
+import CategorySpeedDial from "./components/CategorySpeedDial"
 
 // 分类类型定义
 type Category = {
@@ -19,13 +19,16 @@ type Category = {
 }
 
 export default function NoteCategories() {
-  // const router = useRouter() // 暂时未使用
-  const [newCategory, setNewCategory] = useState("")
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [loading, setLoading] = useState(false)
 
   // 加载分类数据
   const { data: categories = [], error, isLoading } = useSWR<Category[]>('/notes/categories', get)
+
+  // 刷新分类数据
+  const refreshCategories = () => {
+    mutate("/notes/categories")
+  }
 
   // 处理API请求的通用函数
   const handleApiRequest = async (
@@ -50,23 +53,7 @@ export default function NoteCategories() {
     }
   }
 
-  // 添加分类
-  const addCategory = async () => {
-    if (!newCategory.trim()) {
-      toast.error("请输入分类名称")
-      return
-    }
 
-    const success = await handleApiRequest(
-      () => post("/notes/categories", { name: newCategory.trim() }),
-      "分类添加成功",
-      "添加分类失败"
-    )
-    
-    if (success) {
-      setNewCategory("")
-    }
-  }
 
   // 更新分类
   const updateCategory = async () => {
@@ -103,8 +90,8 @@ export default function NoteCategories() {
 
   // 处理回车键提交
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      void (editingCategory ? updateCategory() : addCategory())
+    if (e.key === 'Enter' && editingCategory) {
+      void updateCategory()
     }
   }
 
@@ -188,33 +175,7 @@ export default function NoteCategories() {
   }
 
   return (
-    <div className="container mx-auto py-4 px-4">
-      {/* 添加分类卡片 */}
-      <Card className="mb-8 border-dashed border-2 hover:border-primary/50 transition-colors">
-        <CardContent className="pt-6">
-          <div className="flex items-end space-x-4">
-            <div className="flex-1">
-              <label className="block text-sm font-medium mb-2 text-foreground">分类名称</label>
-              <Input
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="输入分类名称"
-                disabled={loading}
-                className="focus:ring-2 focus:ring-primary/20"
-              />
-            </div>
-            <Button 
-              onClick={addCategory} 
-              disabled={loading || !newCategory.trim()}
-              className="min-w-[120px]"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              添加分类
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="container mx-auto py-4 px-4 pb-24">
 
       {/* 分类列表 */}
       <div>
@@ -260,6 +221,8 @@ export default function NoteCategories() {
           {categories.map(renderCategoryItem)}
         </div>
       </div>
+
+      <CategorySpeedDial onCategoryAdded={refreshCategories} />
     </div>
   )
 }
