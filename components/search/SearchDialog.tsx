@@ -14,12 +14,14 @@ import { Search, X, Loader2 } from "lucide-react"
 import { get } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { configs } from "@/app/configs"
+import useAuthStore from "@/stores/authStore"
 
 interface Category {
   id: string
   name: string
   path: string
   icon?: React.ReactNode
+  requireAuth?: boolean // 是否需要认证
 }
 
 interface SearchResult {
@@ -29,6 +31,7 @@ interface SearchResult {
   url: string
   category: string
   isPublic?: boolean
+  requireAuth?: boolean // 是否需要认证才能访问
 }
 
 interface SearchDialogProps {
@@ -84,6 +87,7 @@ function useKeyboardStatus() {
 export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", currentRoute }: SearchDialogProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { isAuthenticated } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
   const [activeCategory, setActiveCategory] = useState("all")
   const [results, setResults] = useState<SearchResult[]>([])
@@ -101,16 +105,26 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     activeCategory: 'all'
   })
 
-  const categories: Category[] = useMemo(() => [
-    { id: "all", name: "全部", path: "/search" },
-    { id: "thing", name: "物品", path: "/thing" },
-    { id: "lab", name: "实验室", path: "/lab" },
-    { id: "note", name: "笔记", path: "/note" },
-    { id: "file", name: "文件", path: "/file" },
-    { id: "game", name: "游戏", path: "/game" },
-    { id: "tool", name: "工具", path: "/tool" },
-    { id: "nav", name: "导航", path: "/nav" },
-  ], [])
+  // 根据认证状态过滤搜索类别
+  const categories: Category[] = useMemo(() => {
+    const allCategories: Category[] = [
+      { id: "all", name: "全部", path: "/search" },
+      { id: "thing", name: "物品", path: "/thing", requireAuth: false }, // 物品有公开的，不需要认证
+      { id: "lab", name: "实验室", path: "/lab", requireAuth: false },
+      { id: "note", name: "笔记", path: "/note", requireAuth: true }, // 笔记需要认证
+      { id: "file", name: "文件", path: "/file", requireAuth: true }, // 文件需要认证
+      { id: "game", name: "游戏", path: "/game", requireAuth: false }, // 游戏不需要认证
+      { id: "tool", name: "工具", path: "/tool", requireAuth: false },
+      { id: "nav", name: "导航", path: "/nav", requireAuth: true }, // 导航需要认证
+    ]
+    
+    // 如果用户未认证，过滤掉需要认证的类别
+    if (!isAuthenticated) {
+      return allCategories.filter(category => !category.requireAuth)
+    }
+    
+    return allCategories
+  }, [isAuthenticated])
 
   useEffect(() => {
     if (currentRoute) {
@@ -127,7 +141,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
     const results: SearchResult[] = []
     const lowerSearchTerm = searchTerm.toLowerCase()
 
-    // 搜索游戏
+    // 搜索游戏（游戏对所有用户开放）
     if (category === "all" || category === "game") {
       const gameResults = configs.games.filter(game => 
         game.name.toLowerCase().includes(lowerSearchTerm) ||
@@ -138,75 +152,81 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
         title: game.name,
         content: game.description,
         url: `/game/${game.id}`,
-        category: 'game'
+        category: 'game',
+        requireAuth: false
       }))
       results.push(...gameResults)
     }
 
-    // 搜索导航
-    if (category === "all" || category === "nav") {
-      const navResults = configs.navigation.filter(nav => 
-        nav.name.toLowerCase().includes(lowerSearchTerm) ||
-        nav.description.toLowerCase().includes(lowerSearchTerm)
-      ).map(nav => ({
-        id: nav.id,
-        title: nav.name,
-        content: nav.description,
-        url: nav.url,
-        category: 'nav'
-      }))
-      results.push(...navResults)
+    // 只有认证用户才能搜索以下内容
+    if (isAuthenticated) {
+      // 搜索导航
+      if (category === "all" || category === "nav") {
+        const navResults = configs.navigation.filter(nav => 
+          nav.name.toLowerCase().includes(lowerSearchTerm) ||
+          nav.description.toLowerCase().includes(lowerSearchTerm)
+        ).map(nav => ({
+          id: nav.id,
+          title: nav.name,
+          content: nav.description,
+          url: nav.url,
+          category: 'nav',
+          requireAuth: true
+        }))
+        results.push(...navResults)
+      }
+
+      // 搜索笔记
+      if (category === "all" || category === "note") {
+        const noteResults = configs.notes.filter(note => 
+          note.name.toLowerCase().includes(lowerSearchTerm) ||
+          note.description.toLowerCase().includes(lowerSearchTerm)
+        ).map(note => ({
+          id: note.id,
+          title: note.name,
+          content: note.description,
+          url: note.url,
+          category: 'note',
+          requireAuth: true
+        }))
+        results.push(...noteResults)
+      }
+
+      // 搜索文件
+      if (category === "all" || category === "file") {
+        const fileResults = configs.files.filter(file => 
+          file.name.toLowerCase().includes(lowerSearchTerm) ||
+          file.description.toLowerCase().includes(lowerSearchTerm)
+        ).map(file => ({
+          id: file.id,
+          title: file.name,
+          content: file.description,
+          url: file.url,
+          category: 'file',
+          requireAuth: true
+        }))
+        results.push(...fileResults)
+      }
+
+      // 搜索实验室
+      if (category === "all" || category === "lab") {
+        const labResults = configs.lab.filter(lab => 
+          lab.name.toLowerCase().includes(lowerSearchTerm) ||
+          lab.description.toLowerCase().includes(lowerSearchTerm)
+        ).map(lab => ({
+          id: lab.id,
+          title: lab.name,
+          content: lab.description,
+          url: lab.url,
+          category: 'lab',
+          requireAuth: false
+        }))
+        results.push(...labResults)
+      }
     }
-
-    // 搜索笔记
-    if (category === "all" || category === "note") {
-      const noteResults = configs.notes.filter(note => 
-        note.name.toLowerCase().includes(lowerSearchTerm) ||
-        note.description.toLowerCase().includes(lowerSearchTerm)
-      ).map(note => ({
-        id: note.id,
-        title: note.name,
-        content: note.description,
-        url: note.url,
-        category: 'note'
-      }))
-      results.push(...noteResults)
-    }
-
-    // 搜索文件
-    if (category === "all" || category === "file") {
-      const fileResults = configs.files.filter(file => 
-        file.name.toLowerCase().includes(lowerSearchTerm) ||
-        file.description.toLowerCase().includes(lowerSearchTerm)
-      ).map(file => ({
-        id: file.id,
-        title: file.name,
-        content: file.description,
-        url: file.url,
-        category: 'file'
-      }))
-      results.push(...fileResults)
-    }
-
-    // 搜索实验室
-    if (category === "all" || category === "lab") {
-      const labResults = configs.lab.filter(lab => 
-        lab.name.toLowerCase().includes(lowerSearchTerm) ||
-        lab.description.toLowerCase().includes(lowerSearchTerm)
-      ).map(lab => ({
-        id: lab.id,
-        title: lab.name,
-        content: lab.description,
-        url: lab.url,
-        category: 'lab'
-      }))
-      results.push(...labResults)
-    }
-
-
 
     return results
-  }, [])
+  }, [isAuthenticated])
 
   const performSearch = useCallback(async () => {
     if (!searchTerm.trim()) {
@@ -245,7 +265,7 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       const localResults = searchLocalData(searchTerm, activeCategory)
       allResults.push(...localResults)
       
-      // 搜索数据库中的物品
+      // 搜索数据库中的物品（后端已经处理了权限控制）
       if (activeCategory === "all" || activeCategory === "thing") {
         interface SearchApiResponse {
           results: Array<{
@@ -253,27 +273,35 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
             name: string;
             description?: string;
             is_public?: boolean;
+            user_id?: number;
             [key: string]: unknown;
           }>;
+          user_authenticated: boolean;
         }
         
         const queryParams = new URLSearchParams({
           q: searchTerm,
         })
         
-        const response = await get<SearchApiResponse>(`/db-search?${queryParams}`)
-        
-        if (response.results?.length) {
-          const thingResults = response.results.map((item) => ({
-            id: item.id,
-            title: item.name,
-            content: item.description || '无描述',
-            url: `/thing/${item.id}`,
-            category: 'thing',
-            isPublic: item.is_public
-          }))
+        try {
+          const response = await get<SearchApiResponse>(`/db-search?${queryParams}`)
           
-          allResults.push(...thingResults)
+          if (response.results?.length) {
+            const thingResults = response.results.map((item) => ({
+              id: item.id,
+              title: item.name,
+              content: item.description || '无描述',
+              url: `/thing/${item.id}`,
+              category: 'thing',
+              isPublic: item.is_public,
+              requireAuth: false // 物品搜索不需要认证（后端已处理权限）
+            }))
+            
+            allResults.push(...thingResults)
+          }
+        } catch (error) {
+          console.error('物品搜索失败:', error)
+          // 如果是认证错误，不显示错误信息，只是不返回结果
         }
       }
       
@@ -389,6 +417,9 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       return (
         <div className="flex flex-col items-center justify-center py-8 min-h-[120px]">
           <p className="text-muted-foreground text-sm">未找到相关结果</p>
+          {!isAuthenticated && (
+            <p className="text-muted-foreground text-xs mt-2">登录后可搜索更多内容</p>
+          )}
         </div>
       )
     }
@@ -405,12 +436,16 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
               <div className="flex flex-col gap-2">
                 <div className="flex items-start justify-between gap-2">
                   <h3 className="font-medium text-sm leading-tight flex-1">{result.title}</h3>
-                  <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
-                    {categories.find(c => c.id === result.category)?.name || result.category}
+                  <div className="flex items-center gap-1">
+                    <Badge variant="outline" className="text-xs whitespace-nowrap flex-shrink-0">
+                      {categories.find(c => c.id === result.category)?.name || result.category}
+                    </Badge>
                     {result.category === 'thing' && 'isPublic' in result && (
-                      <span className="ml-1">{result.isPublic ? '(公开)' : '(私有)'}</span>
+                      <Badge variant={result.isPublic ? "secondary" : "default"} className="text-xs">
+                        {result.isPublic ? '公开' : '私有'}
+                      </Badge>
                     )}
-                  </Badge>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{result.content}</p>
               </div>
@@ -424,9 +459,12 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
       <div className="flex flex-col items-center justify-center py-8 min-h-[120px]">
         <Search className="h-8 w-8 text-muted-foreground/50 mb-2" />
         <p className="text-muted-foreground text-sm">请输入搜索关键词</p>
+        {!isAuthenticated && (
+          <p className="text-muted-foreground text-xs mt-2">登录后可搜索更多内容</p>
+        )}
       </div>
     )
-  }, [loading, searchTerm, filteredResults, categories, handleResultClick, hasSearched])
+  }, [loading, searchTerm, filteredResults, categories, handleResultClick, hasSearched, isAuthenticated])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
