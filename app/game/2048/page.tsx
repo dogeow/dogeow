@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useGame2048Store } from "@/stores/game2048Store"
+import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 type Board = number[][]
 type Direction = 'up' | 'down' | 'left' | 'right'
@@ -553,7 +554,20 @@ export default function Game2048() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold mb-2">2048</h1>
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <h1 className="text-3xl font-bold">2048</h1>
+          <GameRulesDialog
+            title="2048游戏规则"
+            rules={[
+              "滑动屏幕或使用方向键移动方块",
+              "相同数字的方块会合并成更大的数字",
+              "目标：合并出2048方块！",
+              "可使用按钮手动控制或自动运行",
+              "支持撤销上一步操作",
+              "游戏结束条件：棋盘填满且无法合并"
+            ]}
+          />
+        </div>
         <p className="text-gray-600 text-sm mb-4">
           滑动合并数字，达到2048！
         </p>
@@ -772,34 +786,7 @@ export default function Game2048() {
         </div>
       </div>
 
-      <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="mb-2 font-medium text-blue-800 dark:text-blue-200">游戏说明</p>
-          <p className="mb-1">📱 滑动屏幕或使用方向键移动方块</p>
-          <p className="mb-1">🔢 相同数字的方块会合并</p>
-          <p className="mb-1">🎯 目标：合并出2048方块！</p>
-          <p className="text-xs text-blue-600 dark:text-blue-300">💡 可使用上方按钮手动控制或自动运行</p>
-        </div>
-        
-        <div className="flex justify-center space-x-4 text-xs">
-          <div className="flex items-center space-x-1">
-            <span>⬅️</span>
-            <span>左滑</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span>➡️</span>
-            <span>右滑</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span>⬆️</span>
-            <span>上滑</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span>⬇️</span>
-            <span>下滑</span>
-          </div>
-        </div>
-      </div>
+
     </div>
   )
 } 

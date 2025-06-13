@@ -1522,12 +1522,7 @@ const ShootingGame = ({ difficulty, setGameStarted }: ShootingGameProps) => {
         </div>
       )}
       
-      {/* 调试信息和游戏说明 */}
-      <div className="fixed bottom-2 inset-x-0 flex justify-center">
-        <div className="bg-black/70 p-2 text-white text-xs max-w-fit mx-auto">
-          <p>空格键或鼠标左键：射击 | ESC：暂停</p>
-        </div>
-      </div>
+
     </>
   )
 }

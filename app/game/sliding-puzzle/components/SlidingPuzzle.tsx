@@ -206,13 +206,6 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
       <div className="flex justify-between items-center mb-4">
         <MoveCounter moves={moves} />
         <Timer startTime={startTime} />
-        <Button 
-          variant="outline" 
-          size="sm" 
-          onClick={resetGame}
-        >
-          重新开始
-        </Button>
       </div>
       
       <div 

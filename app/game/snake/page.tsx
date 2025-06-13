@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useSnakeGameStore } from "@/stores/snakeGameStore"
+import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 type Position = { x: number; y: number }
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'
@@ -259,7 +260,20 @@ export default function SnakeGame() {
       onContextMenu={(e) => e.preventDefault()}
     >
       <div className="text-center mb-6">
-        <h1 className="text-3xl font-bold mb-2">贪吃蛇</h1>
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <h1 className="text-3xl font-bold">贪吃蛇</h1>
+          <GameRulesDialog
+            title="贪吃蛇游戏规则"
+            rules={[
+              "控制蛇移动吃食物",
+              "每个食物+10分",
+              "不能撞墙或撞自己",
+              "使用方向键或滑动控制",
+              "按空格键暂停/开始游戏",
+              "游戏结束后可以重新开始"
+            ]}
+          />
+        </div>
         <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
           控制蛇吃食物，避免撞墙和撞自己！
         </p>
@@ -375,30 +389,7 @@ export default function SnakeGame() {
         </div>
       </div>
 
-      <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-        <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="mb-2 font-medium text-blue-800 dark:text-blue-200">游戏说明</p>
-          <p className="mb-1">🐍 控制蛇移动吃食物</p>
-          <p className="mb-1">🍎 每个食物+10分</p>
-          <p className="mb-1">⚠️ 不能撞墙或撞自己</p>
-          <p>🎮 使用方向键或滑动控制</p>
-        </div>
-        
-        <div className="flex justify-center space-x-4 text-xs">
-          <div className="flex items-center space-x-1">
-            <span>⬆️⬇️⬅️➡️</span>
-            <span>方向键</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span>📱</span>
-            <span>滑动手势</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <span>空格</span>
-            <span>暂停/开始</span>
-          </div>
-        </div>
-      </div>
+
     </div>
   )
 } 

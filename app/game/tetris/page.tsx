@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useTetrisStore } from "@/stores/tetrisStore"
+import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 type TetrominoType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L'
 type Position = { x: number; y: number }
@@ -491,7 +492,20 @@ export default function TetrisGame() {
   return (
     <div className="container mx-auto p-2 sm:p-4 max-w-7xl">
       <div className="text-center mb-4 sm:mb-6">
-        <h1 className="text-2xl sm:text-4xl font-bold mb-2">俄罗斯方块</h1>
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <h1 className="text-2xl sm:text-4xl font-bold">俄罗斯方块</h1>
+          <GameRulesDialog
+            title="俄罗斯方块游戏规则"
+            rules={[
+              "使用方向键移动和旋转方块",
+              "空格键硬降，下方向键软降",
+              "P键暂停游戏",
+              "填满一行会自动消除并得分",
+              "消除多行可获得更高分数",
+              "方块堆到顶部游戏结束"
+            ]}
+          />
+        </div>
         <p className="text-gray-600 text-sm sm:text-base hidden sm:block">使用方向键移动和旋转，空格键硬降，P键暂停</p>
       </div>
 
@@ -663,6 +677,7 @@ export default function TetrisGame() {
             </Button>
           </div>
         </div>
+
 
 
       </div>

@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 // 动态导入ThreeJS组件以避免SSR问题
 const ShootingGame = dynamic(() => import("./components/ShootingGame"), {
@@ -54,7 +55,20 @@ export default function ShootingRangePage() {
 
   return (
     <div className="flex flex-col items-center py-4 px-2">
-      <h1 className="text-2xl font-bold mb-4">射击游戏</h1>
+      <div className="flex items-center gap-4 mb-4">
+        <h1 className="text-2xl font-bold">射击游戏</h1>
+        <GameRulesDialog
+          title="射击游戏规则"
+          rules={[
+            "使用鼠标移动瞄准目标",
+            "点击鼠标左键射击",
+            "尽可能快速准确地击中所有目标",
+            "按ESC键暂停游戏",
+            "游戏时间为60秒",
+            "击中目标获得10分"
+          ]}
+        />
+      </div>
 
       {!isStarted ? (
         <Card className="p-6 max-w-md mx-auto">
@@ -84,15 +98,7 @@ export default function ShootingRangePage() {
             </div>
           </div>
 
-          <div className="mb-4">
-            <h3 className="font-medium mb-2">游戏说明：</h3>
-            <ul className="list-disc list-inside text-sm space-y-1">
-              <li>使用鼠标移动瞄准目标</li>
-              <li>点击鼠标左键射击</li>
-              <li>尽可能快速准确地击中所有目标</li>
-              <li>按ESC键暂停游戏</li>
-            </ul>
-          </div>
+
 
           <Button className="w-full" onClick={() => setIsStarted(true)}>
             开始游戏
@@ -107,6 +113,7 @@ export default function ShootingRangePage() {
           </div>
         </div>
       )}
+
     </div>
   )
 } 

@@ -61,50 +61,116 @@ export default function ThingTags() {
   }
 
   return (
-    <div className="py-2 pb-24">
-      {error && <p className="text-red-500">加载标签失败</p>}
-      {!tags && !error && <p>加载中...</p>}
-      {tags?.length === 0 && <p>暂无标签，请添加</p>}
-
-      <div className="flex flex-wrap gap-2 mt-2">
-        {tags?.map((tag) => (
-          <div key={tag.id} className="relative flex items-center">
-            {tag.items_count > 0 && (
-              <div 
-                className="absolute -top-3 -right-1 z-10 flex items-center justify-center w-5 h-5 text-sm font-medium text-primary"
-              >
-                {tag.items_count}
-              </div>
-            )}
-            <Badge
-              style={getTagStyle(tag.color)}
-              className="h-8 px-3 flex items-center"
-            >
-              {tag.name}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
-                onClick={() => openDeleteDialog(tag.id)}
-                disabled={deleting}
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </Badge>
+    <div className="content-container px-4 py-6 pb-24">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-2xl font-bold mb-6">标签管理</h1>
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            加载标签失败，请稍后重试
           </div>
-        ))}
+        )}
+        
+        {!tags && !error && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-gray-500">加载中...</div>
+          </div>
+        )}
+        
+        {tags?.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-gray-500 mb-4">暂无标签</div>
+            <p className="text-sm text-gray-400">您还没有创建任何标签，请先添加一些标签</p>
+          </div>
+        )}
+
+        {tags && tags.length > 0 && (
+          <div className="space-y-6">
+            {/* 标签统计 */}
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+              <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                <span>共 {tags.length} 个标签</span>
+                <span>总计 {tags.reduce((sum, tag) => sum + tag.items_count, 0)} 个物品</span>
+              </div>
+            </div>
+
+            {/* 标签网格 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {tags.map((tag) => (
+                <div key={tag.id} className="relative group">
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
+                    {/* 标签头部 */}
+                    <div className="flex items-center justify-between mb-3">
+                      <Badge
+                        style={getTagStyle(tag.color)}
+                        className="h-7 px-3 text-sm font-medium"
+                      >
+                        {tag.name}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                        onClick={() => openDeleteDialog(tag.id)}
+                        disabled={deleting}
+                        title="删除标签"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {/* 标签信息 */}
+                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center justify-between">
+                        <span>关联物品</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {tag.items_count} 个
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>创建时间</span>
+                        <span className="text-xs">
+                          {new Date(tag.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 使用频率指示器 */}
+                    {tag.items_count > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
+                            <div 
+                              className="bg-primary rounded-full h-1.5 transition-all"
+                              style={{ 
+                                width: `${Math.min(100, (tag.items_count / Math.max(...tags.map(t => t.items_count))) * 100)}%` 
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {tag.items_count > 10 ? '高频' : tag.items_count > 3 ? '中频' : '低频'}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 自定义删除确认弹窗 */}
+        <DeleteConfirmationDialog
+          open={alertOpen}
+          onOpenChange={setAlertOpen}
+          onConfirm={deleteTag}
+          itemName={tagToDelete ? tags?.find(t => t.id === tagToDelete)?.name || '' : ''}
+        />
+
+        {/* 添加标签Speed Dial */}
+        {/* <TagSpeedDial /> */}
       </div>
-
-      {/* 自定义删除确认弹窗 */}
-      <DeleteConfirmationDialog
-        open={alertOpen}
-        onOpenChange={setAlertOpen}
-        onConfirm={deleteTag}
-        itemName={tagToDelete ? tags?.find(t => t.id === tagToDelete)?.name || '' : ''}
-      />
-
-      {/* 添加标签Speed Dial */}
-      {/* <TagSpeedDial /> */}
     </div>
   )
 } 

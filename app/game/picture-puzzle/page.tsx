@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 // import { useRouter, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
 import { Upload, Image as ImageIcon, ArrowLeft } from "lucide-react"
+import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 // 动态导入拼图游戏组件
 const PicturePuzzle = dynamic(
@@ -102,7 +103,20 @@ function PicturePuzzleGame() {
   
   return (
     <div className="flex flex-col items-center py-4 px-2 min-h-screen">
-      <h1 className="text-2xl font-bold mb-6">图片拼图游戏</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <h1 className="text-2xl font-bold">图片拼图游戏</h1>
+        <GameRulesDialog
+          title="图片拼图游戏规则"
+          rules={[
+            "将打乱的图片方块移动到正确位置",
+            "点击与空白方块相邻的方块可以移动它",
+            "重新组合完整图片即可获胜",
+            "支持键盘方向键控制",
+            "可以选择3×3、4×4、5×5三种难度",
+            "支持上传自定义图片进行拼图"
+          ]}
+        />
+      </div>
       
       {gameState === 'menu' && (
         <Card className="p-6 max-w-md w-full">
@@ -134,15 +148,7 @@ function PicturePuzzleGame() {
               </div>
             </div>
           </div>
-          <div className="mt-6 text-sm text-gray-500">
-            <p className="font-medium mb-2">游戏规则：</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>将打乱的图片方块移动到正确位置</li>
-              <li>点击与空白方块相邻的方块可以移动它</li>
-              <li>重新组合完整图片即可获胜</li>
-              <li>支持键盘方向键控制</li>
-            </ul>
-          </div>
+
         </Card>
       )}
       
@@ -249,6 +255,7 @@ function PicturePuzzleGame() {
           </div>
         </div>
       )}
+
     </div>
   )
 }

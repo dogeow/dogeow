@@ -117,7 +117,6 @@ export default function Locations() {
 
       {/* 添加位置SpeedDial */}
       <LocationsSpeedDial
-        activeTab={activeTab}
         areas={areas}
         rooms={rooms}
         loading={loading}

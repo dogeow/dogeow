@@ -8,6 +8,7 @@ import { RotateCcw, Trophy, Users, Bot, User, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from './stores/game-store'
 import { GameStats } from './components/game-stats'
+import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
 
 const TicTacToe = () => {
   const {
@@ -37,6 +38,18 @@ const TicTacToe = () => {
                 <CardTitle className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-2">
                   <Trophy className="w-8 h-8 text-yellow-500" />
                   井字棋
+                  <GameRulesDialog
+                    title="井字棋游戏规则"
+                    rules={[
+                      "两名玩家轮流在 3×3 的棋盘上放置标记（X 和 O）",
+                      "率先在横、竖或斜线上连成三个标记的玩家获胜",
+                      "如果棋盘填满且无人获胜，则为平局",
+                      "点击\"重新开始\"可以开始新一轮游戏",
+                      "人机对战模式下，你是 X，AI 是 O",
+                      "AI 有三种难度：简单（随机）、中等（混合策略）、困难（最优策略）"
+                    ]}
+                    className="ml-auto"
+                  />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -203,20 +216,7 @@ const TicTacToe = () => {
               </CardContent>
             </Card>
 
-            {/* 游戏规则 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">游戏规则</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-gray-600 space-y-2">
-                <p>• 两名玩家轮流在 3×3 的棋盘上放置标记（X 和 O）</p>
-                <p>• 率先在横、竖或斜线上连成三个标记的玩家获胜</p>
-                <p>• 如果棋盘填满且无人获胜，则为平局</p>
-                <p>• 点击&ldquo;重新开始&rdquo;可以开始新一轮游戏</p>
-                <p>• 人机对战模式下，你是 X，AI 是 O</p>
-                <p>• AI 有三种难度：简单（随机）、中等（混合策略）、困难（最优策略）</p>
-              </CardContent>
-            </Card>
+
           </div>
 
           {/* 侧边栏统计 */}
@@ -224,6 +224,7 @@ const TicTacToe = () => {
             <GameStats />
           </div>
         </div>
+
       </div>
     </div>
   )

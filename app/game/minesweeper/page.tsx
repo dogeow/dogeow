@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 import { useMinesweeperStore } from "@/stores/minesweeperStore"
+import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 type CellState = 'hidden' | 'revealed' | 'flagged'
 type Cell = {
@@ -92,7 +93,7 @@ export default function MinesweeperGame() {
   const [firstClick, setFirstClick] = useState(true)
   const [timer, setTimer] = useState(0)
   const [gameStarted, setGameStarted] = useState(false)
-  const [flagMode, setFlagMode] = useState(false)
+
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
 
   const config = difficulties[difficulty]
@@ -197,7 +198,6 @@ export default function MinesweeperGame() {
     setFirstClick(true)
     setTimer(0)
     setGameStarted(false)
-    setFlagMode(false)
   }, [initializeBoard, config.mines])
 
   // 揭示空白区域
@@ -255,12 +255,6 @@ export default function MinesweeperGame() {
   const handleCellClick = useCallback((row: number, col: number) => {
     if (gameState !== 'playing') return
     
-    // 如果是标记模式，执行标记操作
-    if (flagMode) {
-      handleCellFlag(row, col)
-      return
-    }
-    
     setBoard(currentBoard => {
       let newBoard = currentBoard.map(row => row.map(cell => ({ ...cell })))
       
@@ -299,7 +293,7 @@ export default function MinesweeperGame() {
       
       return newBoard
     })
-  }, [gameState, firstClick, placeMines, calculateNeighbors, revealEmptyArea, config, flagMode, difficulty, updateStats, handleCellFlag])
+  }, [gameState, firstClick, placeMines, calculateNeighbors, revealEmptyArea, config, difficulty, updateStats])
 
   // 右键标记（桌面端）
   const handleCellRightClick = useCallback((e: React.MouseEvent, row: number, col: number) => {
@@ -430,7 +424,20 @@ export default function MinesweeperGame() {
       <div className="flex flex-col items-center text-center space-y-6">
         {/* 标题 */}
         <div className="flex flex-col items-center space-y-2">
-          <h1 className="text-3xl font-bold">扫雷</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-bold">扫雷</h1>
+            <GameRulesDialog
+              title="扫雷游戏规则"
+              rules={[
+                "找出所有地雷位置而不踩雷",
+                "数字表示周围8个格子的地雷数量",
+                "左键点击揭示格子，右键标记地雷",
+                "手机端可长按标记或使用标记模式",
+                "揭示所有非地雷格子即可获胜",
+                "点到地雷就失败了"
+              ]}
+            />
+          </div>
           <p className="text-gray-600 dark:text-gray-400 text-sm">
             找出所有地雷，避免踩雷！
           </p>
@@ -473,13 +480,6 @@ export default function MinesweeperGame() {
         
         {/* 控制按钮 */}
         <div className="flex flex-wrap justify-center gap-2">
-          <Button 
-            onClick={() => setFlagMode(!flagMode)} 
-            variant={flagMode ? "default" : "outline"} 
-            size="sm"
-          >
-            {flagMode ? '🚩 标记模式' : '👆 点击模式'}
-          </Button>
           <Button onClick={resetGame} variant="outline" size="sm">
             重新开始
           </Button>
@@ -546,36 +546,7 @@ export default function MinesweeperGame() {
         </div>
       </div>
 
-      {/* 底部说明区域 */}
-      <div className="flex flex-col items-center text-center text-sm text-gray-600 dark:text-gray-400 space-y-6">
-        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <p className="font-medium text-blue-800 dark:text-blue-200">游戏说明</p>
-          <div className="flex flex-col space-y-1 mt-2">
-            <p>💣 找出所有地雷位置</p>
-            <p>🚩 右键标记可疑位置</p>
-            <p>🔢 数字表示周围地雷数量</p>
-            <p>⚠️ 点到地雷就失败了</p>
-          </div>
-        </div>
-        
-        <div className="flex justify-center space-x-8 text-xs">
-          <div className="text-center">
-            <div className="font-medium">桌面端</div>
-            <div className="flex flex-col space-y-1 mt-1">
-              <div>👆 左键揭示</div>
-              <div>👆 右键标记</div>
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="font-medium">手机端</div>
-            <div className="flex flex-col space-y-1 mt-1">
-              <div>👆 点击揭示</div>
-              <div>⏰ 长按标记</div>
-              <div>🚩 标记模式</div>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
   )
 } 

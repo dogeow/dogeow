@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useRouter, useSearchParams } from "next/navigation"
 import dynamic from "next/dynamic"
+import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 // 使用动态导入的滑块拼图游戏组件
 const SlidingPuzzle = dynamic(
@@ -55,6 +56,10 @@ function SlidingPuzzleGame() {
     updateUrlParams(false)
   }
   
+  const restartGame = () => {
+    setGameKey(prev => prev + 1) // 重置游戏实例
+  }
+  
   // 监听URL参数变化
   useEffect(() => {
     const diffParam = searchParams.get('difficulty')
@@ -103,24 +108,47 @@ function SlidingPuzzleGame() {
               </Button>
             </div>
           </div>
-          <div className="mt-4 text-sm text-gray-500">
-            <p>游戏规则：</p>
-            <ul className="list-disc pl-5 mt-2">
-              <li>将打乱的数字方块移动到正确位置</li>
-              <li>点击与空白方块相邻的方块可以移动它</li>
-              <li>按照顺序排列所有数字即可获胜</li>
-            </ul>
+          <div className="mt-4 flex justify-center">
+            <GameRulesDialog
+              title="滑块拼图游戏规则"
+              rules={[
+                "将打乱的数字方块移动到正确位置",
+                "点击与空白方块相邻的方块可以移动它",
+                "按照顺序排列所有数字即可获胜",
+                "支持键盘方向键控制",
+                "可以选择3×3、4×4、5×5三种难度",
+                "移动次数越少分数越高"
+              ]}
+            />
           </div>
         </Card>
       ) : (
         <div className="w-full max-w-md">
-          <Button 
-            variant="outline" 
-            onClick={backToMenu}
-            className="mb-4"
-          >
-            返回菜单
-          </Button>
+          <div className="flex justify-between items-center mb-4">
+            <Button 
+              variant="outline" 
+              onClick={backToMenu}
+            >
+              返回菜单
+            </Button>
+            <GameRulesDialog
+              title="滑块拼图游戏规则"
+              rules={[
+                "将打乱的数字方块移动到正确位置",
+                "点击与空白方块相邻的方块可以移动它",
+                "按照顺序排列所有数字即可获胜",
+                "支持键盘方向键控制",
+                "可以选择3×3、4×4、5×5三种难度",
+                "移动次数越少分数越高"
+              ]}
+            />
+            <Button 
+              variant="outline" 
+              onClick={restartGame}
+            >
+              重新开始
+            </Button>
+          </div>
           
           {/* 使用key强制重新渲染 */}
           <div key={`game-${difficulty}-${gameKey}`}>
