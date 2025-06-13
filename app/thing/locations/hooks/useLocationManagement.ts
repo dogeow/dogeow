@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { toast } from "sonner"
 import { 
-  useAreas, 
-  useRooms, 
-  useSpots, 
+  useLocations, 
   updateArea, 
   deleteArea,
   updateRoom,
@@ -12,6 +10,7 @@ import {
   deleteSpot,
   post
 } from '@/lib/api'
+import { LocationTreeResponse } from '@/app/thing/types'
 import { getLocationTypeText } from '../constants'
 
 // 定义类型
@@ -35,10 +34,18 @@ export type Spot = {
 };
 
 export const useLocationManagement = () => {
-  // 获取数据
-  const { data: areas = [], mutate: refreshAreas } = useAreas<Area[]>();
-  const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>();
-  const { data: spots = [], mutate: refreshSpots } = useSpots<Spot[]>();
+  // 获取统一的位置数据
+  const { data: locationData, mutate: refreshLocations } = useLocations();
+  
+  // 从统一接口中提取各类位置数据
+  const areas = (locationData as LocationTreeResponse)?.areas || [];
+  const rooms = (locationData as LocationTreeResponse)?.rooms || [];
+  const spots = (locationData as LocationTreeResponse)?.spots || [];
+  
+  // 统一的刷新函数
+  const refreshAreas = refreshLocations;
+  const refreshRooms = refreshLocations;
+  const refreshSpots = refreshLocations;
   
   // 通用状态
   const [loading, setLoading] = useState(false)

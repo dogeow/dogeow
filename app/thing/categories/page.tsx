@@ -8,9 +8,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Trash2, Check, X } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/app/thing/stores/itemStore'
-import { put, del, get } from '@/lib/api'
+import { put, del } from '@/lib/api'
 import CategorySpeedDial from './components/CategorySpeedDial'
 import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
+import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 
 export default function Categories() {
   const { categories, fetchCategories } = useItemStore()
@@ -19,22 +20,13 @@ export default function Categories() {
   const [inlineEditingName, setInlineEditingName] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
-  const [uncategorizedCount, setUncategorizedCount] = useState(0)
   const inlineInputRef = useRef<HTMLInputElement>(null)
 
-  // 获取未分类物品数量
-  const fetchUncategorizedCount = async () => {
-    try {
-      const response: { data: unknown[], meta?: { total: number } } = await get('/things/items?uncategorized=true&own=true')
-      setUncategorizedCount(response.meta?.total || 0)
-    } catch (error) {
-      console.error('获取未分类物品数量失败:', error)
-    }
-  }
+  // 使用共享的未分类数量hook
+  const { count: uncategorizedCount } = useUncategorizedCount()
 
   useEffect(() => {
     fetchCategories()
-    fetchUncategorizedCount()
   }, [fetchCategories])
 
   useEffect(() => {

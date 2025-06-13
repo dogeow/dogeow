@@ -400,12 +400,17 @@ export const useCategory = (id: number) => {
   return useSWR(id ? `/things/categories/${id}` : null, fetcher);
 };
 
+// 位置相关 - 统一获取所有位置数据
+export const useLocations = () => {
+  return useSWR('/locations/tree', fetcher);
+};
+
 // 区域相关
 export const useAreas = <T = unknown>() => {
   return useSWR<T>('/areas', fetcher);
 };
 
-export const useArea = (id: number) => {
+export const useArea = (id?: number) => {
   return useSWR(id ? `/areas/${id}` : null, fetcher);
 };
 
@@ -414,7 +419,7 @@ export const useRooms = <T = unknown>(areaId?: number) => {
   return useSWR<T>(areaId ? `/areas/${areaId}/rooms` : '/rooms', fetcher);
 };
 
-export const useRoom = (id: number) => {
+export const useRoom = (id?: number) => {
   return useSWR(id ? `/rooms/${id}` : null, fetcher);
 };
 
@@ -423,7 +428,7 @@ export const useSpots = <T = unknown>(roomId?: number) => {
   return useSWR<T>(roomId ? `/rooms/${roomId}/spots` : '/spots', fetcher);
 };
 
-export const useSpot = (id: number) => {
+export const useSpot = (id?: number) => {
   return useSWR(id ? `/spots/${id}` : null, fetcher);
 };
 

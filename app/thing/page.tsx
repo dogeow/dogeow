@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
 import { apiRequest } from "@/lib/api"
 import { isLightColor } from '@/lib/helpers'
-import { ViewMode, Tag, FilterParams, Area, Room, Spot, Item } from '@/app/thing/types' // Added Area, Room, Spot
+import { ViewMode, Tag, FilterParams, LocationTreeResponse } from '@/app/thing/types'
+import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 
 export default function Thing() {
   const router = useRouter()
@@ -32,14 +33,19 @@ export default function Thing() {
   const [isSearching, setIsSearching] = useState(false)
   const [initialDataLoaded, setInitialDataLoaded] = useState(false)
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
-  const [uncategorizedCount, setUncategorizedCount] = useState<number>(0)
+  
+  // 使用共享的未分类数量hook
+  const { count: uncategorizedCount } = useUncategorizedCount()
   
   // 标签加载
   const { data: tags } = useSWR<Tag[]>('/things/tags', apiRequest);
-  // SWR calls for areas, rooms, spots
-  const { data: areas } = useSWR<Area[]>('/areas', apiRequest);
-  const { data: rooms } = useSWR<Room[]>('/rooms', apiRequest);
-  const { data: spots } = useSWR<Spot[]>('/spots', apiRequest);
+  // 统一获取位置数据
+  const { data: locationData } = useSWR<LocationTreeResponse>('/locations/tree', apiRequest);
+  
+  // 从统一接口中提取各类位置数据
+  const areas = locationData?.areas || [];
+  const rooms = locationData?.rooms || [];
+  const spots = locationData?.spots || [];
   
   // 计算总页数
   const totalPages = meta?.last_page || 1
@@ -350,20 +356,7 @@ export default function Thing() {
     setCategoryMenuOpen(false);
   }, [handleCategoryChange]);
 
-  // 获取未分类物品数量
-  const fetchUncategorizedCount = async () => {
-    try {
-      const response: { data: Item[], meta?: { total: number } } = await apiRequest('/things/items?uncategorized=true&own=true')
-      setUncategorizedCount(response.meta?.total || 0)
-    } catch (error) {
-      console.error('获取未分类物品数量失败:', error)
-    }
-  }
-
-  // 初始化时拉取未分类数量
-  useEffect(() => {
-    fetchUncategorizedCount()
-  }, [])
+  // 已移除fetchUncategorizedCount，现在使用useUncategorizedCount hook
 
   // 渲染加载状态
   const renderLoading = () => (

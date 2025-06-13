@@ -87,6 +87,24 @@ export interface Spot {
   updated_at?: string;
 }
 
+// 位置树形数据类型
+export interface LocationTreeResponse {
+  tree: LocationTreeNode[];
+  areas: Area[];
+  rooms: Room[];
+  spots: Spot[];
+}
+
+export interface LocationTreeNode {
+  id: string;
+  name: string;
+  type: 'area' | 'room' | 'spot';
+  original_id: number;
+  parent_id?: number;
+  children?: LocationTreeNode[];
+  items_count: number;
+}
+
 // 物品类型
 export interface Item {
   id: number;
