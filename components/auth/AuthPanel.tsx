@@ -68,7 +68,7 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
         <ChevronLeft className="h-5 w-5" />
       </Button>
       
-      <div className="flex-1 flex items-center gap-2 px-2">
+      <div className="flex-1 flex items-center gap-2">
         <form onSubmit={handleSubmit} className="flex items-center gap-2 w-full">
           <Input
             type="email"

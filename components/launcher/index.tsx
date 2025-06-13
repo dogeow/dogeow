@@ -315,7 +315,7 @@ export function AppLauncher() {
               ) : (
                 <Button
                   variant="default"
-                  className="h-9"
+                  className="h-8"
                   onClick={() => toggleDisplayMode('auth')}
                 >
                   登录
