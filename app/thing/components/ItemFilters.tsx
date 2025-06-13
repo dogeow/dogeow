@@ -15,6 +15,7 @@ import { CalendarIcon } from "lucide-react"
 import type { Area, Room, Spot } from '@/app/thing/types';
 import { useItemStore } from '@/app/thing/stores/itemStore';
 import { TagSelector, Tag } from '@/components/ui/tag-selector';
+import { Badge } from "@/components/ui/badge"
 // import useSWR from 'swr' // SWR will be removed
 // import { get } from '@/lib/api' // get will be removed
 
@@ -204,16 +205,43 @@ export default function ItemFilters({
     }
   }, [debouncedFilters, isInitialRender, applyFilters, preventAutoApply]);
   
-  // 显式应用筛选的按钮处理函数
-  const handleApplyButtonClick = useCallback(() => {
-    console.log('显式应用筛选按钮点击，应用筛选条件:', filters);
+  // 检查是否有活跃的筛选条件
+  const hasActiveFilters = Object.keys(filters).some(key => {
+    const fieldKey = key as keyof FilterState;
+    const currentValue = filters[fieldKey];
+    const initialValue = initialFilters[fieldKey];
     
-    // 应用筛选条件，但保持阻止自动应用状态
-    applyFilters(filters);
+    // 特殊处理日期字段
+    if (typeof fieldKey === 'string' && (fieldKey.includes('date_from') || fieldKey.includes('date_to'))) {
+      return currentValue !== null && initialValue === null;
+    }
     
-    // 保持阻止自动应用，避免后续状态变化导致重复请求
-    // setPreventAutoApply(false); - 注释掉这行，保持阻止自动应用
-  }, [filters, applyFilters]);
+    return currentValue !== initialValue;
+  });
+  
+  // 快速清除所有筛选条件
+  const handleClearAll = () => {
+    setFilters(initialFilters);
+    setPreventAutoApply(false);
+    setTimeout(() => {
+      applyFilters(initialFilters);
+    }, 100);
+  };
+  
+  // 获取活跃筛选条件的数量
+  const getActiveFiltersCount = () => {
+    return Object.keys(filters).filter(key => {
+      const fieldKey = key as keyof FilterState;
+      const currentValue = filters[fieldKey];
+      const initialValue = initialFilters[fieldKey];
+      
+      if (typeof fieldKey === 'string' && (fieldKey.includes('date_from') || fieldKey.includes('date_to'))) {
+        return currentValue !== null && initialValue === null;
+      }
+      
+      return currentValue !== initialValue && currentValue !== '' && currentValue !== 'all';
+    }).length;
+  };
   
   // 处理字段变更的函数 - 不再直接应用，而是通过防抖机制应用
   const handleChange = useCallback((field: keyof FilterState, value: unknown) => {
@@ -327,7 +355,40 @@ export default function ItemFilters({
   }, [filters]);
   
   return (
-    <div className="space-y-4 px-1 text-gray-900 dark:text-white">
+    <div className="space-y-4">
+      {/* 快速操作栏 */}
+      <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium">筛选条件</span>
+          {hasActiveFilters && (
+            <Badge variant="secondary" className="text-xs">
+              {getActiveFiltersCount()} 个条件
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleClearAll}
+              className="text-xs h-7"
+            >
+              清除全部
+            </Button>
+          )}
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => applyFilters(filters)}
+            disabled={!hasActiveFilters}
+            className="text-xs h-7"
+          >
+            应用筛选
+          </Button>
+        </div>
+      </div>
+
       <div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-2 w-full mb-4 bg-gray-100 border border-gray-200 rounded-lg dark:bg-[#23272f] dark:border-[#2d323b]">
@@ -501,15 +562,6 @@ export default function ItemFilters({
             </div>
           </TabsContent>
         </Tabs>
-      </div>
-      
-      <div className="flex justify-between mt-6 sticky bottom-0 bg-white py-3 border-t border-gray-200 z-10 dark:bg-[#23272f] dark:border-[#3a3f4b]">
-        <Button variant="outline" className="bg-white border-gray-200 text-gray-900 hover:bg-gray-100 dark:bg-[#23272f] dark:border-[#3a3f4b] dark:text-white dark:hover:bg-[#23272f]/80" onClick={handleReset}>
-          重置
-        </Button>
-        <Button className="bg-primary text-white hover:bg-primary/90" onClick={handleApplyButtonClick}>
-          应用筛选
-        </Button>
       </div>
     </div>
   )
