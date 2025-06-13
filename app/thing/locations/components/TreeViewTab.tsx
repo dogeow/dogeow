@@ -11,7 +11,7 @@ interface TreeViewTabProps {
 }
 
 export default function TreeViewTab({ selectedLocation, onLocationSelect }: TreeViewTabProps) {
-  const [isTreeExpanded, setIsTreeExpanded] = useState(true)
+  const [isTreeExpanded, setIsTreeExpanded] = useState(false)
   
   const toggleTreeExpanded = () => {
     setIsTreeExpanded(!isTreeExpanded)

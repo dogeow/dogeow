@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Input } from "@/components/ui/input"
-import { MapPin } from "lucide-react"
+import { MapPin, Home } from "lucide-react"
 import { useLocations } from '@/lib/api'
 import { cn } from '@/lib/helpers'
 import { LocationSelection, LocationTreeResponse } from '../types'
@@ -247,29 +247,6 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
     onSelect(type, id, buildPath(type, id))
   }, [onSelect, buildPath])
 
-  // 获取主题样式
-  const getThemeStyles = useCallback((baseColor: string, isSelected: boolean) => {
-    if (!mounted) return {}
-    
-    const colorMap = {
-      blue: {
-        selected: theme === 'dark' ? 'rgba(30, 64, 175, 0.6)' : 'rgb(219 234 254)',
-        normal: theme === 'dark' ? 'rgba(23, 37, 84, 0.5)' : 'rgb(239 246 255)'
-      },
-      green: {
-        selected: theme === 'dark' ? 'rgba(22, 101, 52, 0.6)' : 'rgb(220 252 231)',
-        normal: theme === 'dark' ? 'rgba(5, 46, 22, 0.5)' : 'rgb(240 253 244)'
-      },
-      purple: {
-        selected: theme === 'dark' ? 'rgba(107, 33, 168, 0.6)' : 'rgb(243 232 255)',
-        normal: theme === 'dark' ? 'rgba(76, 29, 149, 0.5)' : 'rgb(250 245 255)'
-      }
-    }
-    
-    const colors = colorMap[baseColor as keyof typeof colorMap]
-    return { backgroundColor: isSelected ? colors.selected : colors.normal }
-  }, [mounted, theme])
-
   const hasNoResults = filteredData.filteredAreas.length === 0 && 
                       filteredData.filteredRooms.length === 0 && 
                       filteredData.filteredSpots.length === 0
@@ -306,12 +283,11 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
           <div key={area.id}>
             <div 
               className={cn(
-                "flex items-center py-1 px-2 rounded hover:bg-blue-100 hover:dark:bg-blue-800/40 cursor-pointer text-sm",
+                "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
                 selectedLocation?.type === 'area' && selectedLocation.id === area.id 
-                  ? "bg-blue-100 dark:bg-blue-800/60" 
-                  : "bg-blue-50 dark:bg-blue-950/50"
+                  ? "bg-muted" 
+                  : ""
               )}
-              style={getThemeStyles('blue', selectedLocation?.type === 'area' && selectedLocation.id === area.id)}
               onClick={() => handleSelect('area', area.id)}
             >
               <span
@@ -334,22 +310,19 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                 <div key={room.id} className="ml-4">
                   <div 
                     className={cn(
-                      "flex items-center py-1 px-2 rounded hover:bg-green-100 hover:dark:bg-green-800/40 cursor-pointer text-sm",
+                      "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
                       selectedLocation?.type === 'room' && selectedLocation.id === room.id 
-                        ? "bg-green-100 dark:bg-green-800/60" 
-                        : "bg-green-50 dark:bg-green-950/50"
+                        ? "bg-muted" 
+                        : ""
                     )}
-                    style={getThemeStyles('green', selectedLocation?.type === 'room' && selectedLocation.id === room.id)}
                     onClick={() => handleSelect('room', room.id)}
                   >
                     <span
                       onClick={(e) => toggleRoom(e, room.id)}
                       className="flex items-center"
                     >
-                      <FolderIcon 
-                        isOpen={filteredRoomIds.includes(room.id)} 
-                        size={14}
-                        className="mr-1"
+                      <Home 
+                        className="h-3.5 w-3.5 mr-1 text-muted-foreground"
                       />
                     </span>
                     <span className="flex-grow cursor-pointer truncate">
@@ -364,12 +337,11 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                       <div 
                         key={spot.id} 
                         className={cn(
-                          "ml-4 flex items-center py-1 px-2 rounded hover:bg-purple-100 hover:dark:bg-purple-800/40 cursor-pointer text-sm",
+                          "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
                           selectedLocation?.type === 'spot' && selectedLocation.id === spot.id 
-                            ? "bg-purple-100 dark:bg-purple-800/60" 
-                            : "bg-purple-50 dark:bg-purple-950/50"
+                            ? "bg-muted" 
+                            : ""
                         )}
-                        style={getThemeStyles('purple', selectedLocation?.type === 'spot' && selectedLocation.id === spot.id)}
                         onClick={() => handleSelect('spot', spot.id)}
                       >
                         <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
@@ -386,18 +358,15 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
           <div key={room.id}>
             <div 
               className={cn(
-                "flex items-center py-1 px-2 rounded hover:bg-green-100 hover:dark:bg-green-800/40 cursor-pointer text-sm",
+                "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
                 selectedLocation?.type === 'room' && selectedLocation.id === room.id 
-                  ? "bg-green-100 dark:bg-green-800/60" 
-                  : "bg-green-50 dark:bg-green-950/50"
+                  ? "bg-muted" 
+                  : ""
               )}
-              style={getThemeStyles('green', selectedLocation?.type === 'room' && selectedLocation.id === room.id)}
               onClick={() => handleSelect('room', room.id)}
             >
-              <FolderIcon 
-                isOpen={filteredRoomIds.includes(room.id)} 
-                size={14}
-                className="mr-1"
+              <Home 
+                className="h-3.5 w-3.5 mr-1 text-muted-foreground"
               />
               <span className="flex-grow cursor-pointer truncate">
                 {room.name}
@@ -416,12 +385,11 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                 <div 
                   key={spot.id} 
                   className={cn(
-                    "ml-4 flex items-center py-1 px-2 rounded hover:bg-purple-100 hover:dark:bg-purple-800/40 cursor-pointer text-sm",
+                    "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
                     selectedLocation?.type === 'spot' && selectedLocation.id === spot.id 
-                      ? "bg-purple-100 dark:bg-purple-800/60" 
-                      : "bg-purple-50 dark:bg-purple-950/50"
+                      ? "bg-muted" 
+                      : ""
                   )}
-                  style={getThemeStyles('purple', selectedLocation?.type === 'spot' && selectedLocation.id === spot.id)}
                   onClick={() => handleSelect('spot', spot.id)}
                 >
                   <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />

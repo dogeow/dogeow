@@ -43,10 +43,10 @@ export default function Locations() {
   };
   
   const tabItems = [
-    { value: 'tree', icon: <FolderTree className="h-4 w-4 mr-2"/>, label: '树形视图' },
-    { value: 'area', icon: <Home className="h-4 w-4 mr-2"/>, label: '区域' },
-    { value: 'room', icon: <DoorOpen className="h-4 w-4 mr-2"/>, label: '房间' },
-    { value: 'spot', icon: <MapPin className="h-4 w-4 mr-2"/>, label: '具体位置' }
+    { value: 'tree', icon: <FolderTree className="h-4 w-4"/>, label: '树形视图' },
+    { value: 'area', icon: <Home className="h-4 w-4"/>, label: '区域' },
+    { value: 'room', icon: <DoorOpen className="h-4 w-4"/>, label: '房间' },
+    { value: 'spot', icon: <MapPin className="h-4 w-4"/>, label: '具体位置' }
   ];
 
   // Tab内容配置

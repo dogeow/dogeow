@@ -30,23 +30,23 @@ export default function ThingNavigation() {
     {
       href: "/thing",
       label: "所有物品",
-      icon: <Package className="h-4 w-4 mr-2" />,
+      icon: <Package className="h-4 w-4" />,
       exact: true
     },
     {
       href: "/thing/categories",
       label: "分类",
-      icon: <FolderTree className="h-4 w-4 mr-2" />
+      icon: <FolderTree className="h-4 w-4" />
     },
     {
       href: "/thing/locations", 
       label: "位置",
-      icon: <MapPin className="h-4 w-4 mr-2" />
+      icon: <MapPin className="h-4 w-4" />
     },
     {
       href: "/thing/tags",
       label: "标签", 
-      icon: <Tag className="h-4 w-4 mr-2" />
+      icon: <Tag className="h-4 w-4" />
     }
   ]
   
