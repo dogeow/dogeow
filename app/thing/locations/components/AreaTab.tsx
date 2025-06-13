@@ -110,7 +110,7 @@ export default function AreaTab({
           <div className="space-y-2">
             {areas.map((area) => (
               <div key={area.id} 
-                className="flex items-center justify-between p-2 border rounded-md bg-blue-50 dark:bg-blue-950/50"
+                className="flex items-center justify-between p-2 border rounded-md"
               >
                 {editingInlineAreaId === area.id ? renderEditMode(area) : <span>{area.name}</span>}
                 <div className="flex space-x-2">

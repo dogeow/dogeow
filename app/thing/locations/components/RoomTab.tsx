@@ -111,9 +111,7 @@ export default function RoomTab({
           ) : (
             <div className="space-y-2">
               {rooms.map((room) => (
-                <div key={room.id} className="flex items-center justify-between p-2 border rounded-md bg-green-50 dark:bg-green-950/50"
-                  style={{ backgroundColor: typeof window !== 'undefined' && document.documentElement.classList.contains('dark') 
-                    ? 'rgba(5, 46, 22, 0.5)' : 'rgb(240 253 244)' }}
+                <div key={room.id} className="flex items-center justify-between p-2 border rounded-md"
                 >
                   <div>
                     <span className="font-medium">{room.name}</span>
