@@ -355,39 +355,7 @@ export default function ItemFilters({
   }, [filters]);
   
   return (
-    <div className="space-y-4">
-      {/* 快速操作栏 */}
-      <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">筛选条件</span>
-          {hasActiveFilters && (
-            <Badge variant="secondary" className="text-xs">
-              {getActiveFiltersCount()} 个条件
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          {hasActiveFilters && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleClearAll}
-              className="text-xs h-7"
-            >
-              清除全部
-            </Button>
-          )}
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => applyFilters(filters)}
-            disabled={!hasActiveFilters}
-            className="text-xs h-7"
-          >
-            应用筛选
-          </Button>
-        </div>
-      </div>
+    <div className="space-y-4 px-1 text-gray-900 dark:text-white">
 
       <div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -562,6 +530,22 @@ export default function ItemFilters({
             </div>
           </TabsContent>
         </Tabs>
+      </div>
+      
+      <div className="flex justify-between mt-6 sticky bottom-0 bg-background py-3 border-t z-10">
+        <Button 
+          variant="outline" 
+          onClick={handleClearAll}
+          disabled={!hasActiveFilters}
+        >
+          重置
+        </Button>
+        <Button 
+          onClick={() => applyFilters(filters)}
+          disabled={!hasActiveFilters}
+        >
+          应用筛选
+        </Button>
       </div>
     </div>
   )

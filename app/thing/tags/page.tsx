@@ -65,42 +65,38 @@ export default function ThingTags() {
 
   return (
     <div className="py-2 pb-24">
-      <Card className="border">
-        <CardContent>
-          {error && <p className="text-red-500">加载标签失败</p>}
-          {!tags && !error && <p>加载中...</p>}
-          {tags?.length === 0 && <p>暂无标签，请添加</p>}
+      {error && <p className="text-red-500">加载标签失败</p>}
+      {!tags && !error && <p>加载中...</p>}
+      {tags?.length === 0 && <p>暂无标签，请添加</p>}
 
-          <div className="flex flex-wrap gap-2 mt-2">
-            {tags?.map((tag) => (
-              <div key={tag.id} className="relative flex items-center">
-                {tag.items_count > 0 && (
-                  <div 
-                    className="absolute -top-3 -right-1 z-10 flex items-center justify-center w-5 h-5 text-sm font-medium text-primary"
-                  >
-                    {tag.items_count}
-                  </div>
-                )}
-                <Badge
-                  style={getTagStyle(tag.color)}
-                  className="h-8 px-3 flex items-center"
-                >
-                  {tag.name}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
-                    onClick={() => openDeleteDialog(tag.id)}
-                    disabled={deleting}
-                  >
-                    <X className="h-3 w-3" />
-                  </Button>
-                </Badge>
+      <div className="flex flex-wrap gap-2 mt-2">
+        {tags?.map((tag) => (
+          <div key={tag.id} className="relative flex items-center">
+            {tag.items_count > 0 && (
+              <div 
+                className="absolute -top-3 -right-1 z-10 flex items-center justify-center w-5 h-5 text-sm font-medium text-primary"
+              >
+                {tag.items_count}
               </div>
-            ))}
+            )}
+            <Badge
+              style={getTagStyle(tag.color)}
+              className="h-8 px-3 flex items-center"
+            >
+              {tag.name}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
+                onClick={() => openDeleteDialog(tag.id)}
+                disabled={deleting}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </Badge>
           </div>
-        </CardContent>
-      </Card>
+        ))}
+      </div>
 
       {/* 自定义删除确认弹窗 */}
       <DeleteConfirmationDialog
