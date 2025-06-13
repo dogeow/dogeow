@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, X, ArrowRight, Loader2 } from "lucide-react"
+import { Search, X, Loader2 } from "lucide-react"
 import { get } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { configs } from "@/app/configs"
@@ -447,14 +447,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
               <DialogTitle className="text-lg font-semibold flex-1 text-center">
                 {getDialogTitle()}
               </DialogTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full hover:bg-accent flex-shrink-0 ml-2"
-                onClick={() => onOpenChange(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </DialogHeader>
           
@@ -468,10 +460,10 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                 placeholder="搜索..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-10 h-10"
+                className={`pl-10 h-10 ${searchTerm ? 'pr-10' : 'pr-3'}`}
                 autoFocus
               />
-              {searchTerm ? (
+              {searchTerm && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -480,15 +472,6 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                   onClick={() => setSearchTerm('')}
                 >
                   <X className="h-4 w-4" />
-                </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
-                >
-                  <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
             </form>
