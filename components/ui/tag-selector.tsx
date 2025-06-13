@@ -110,7 +110,7 @@ export function TagSelector({
       </Button>
       
       {open && (
-        <div className="absolute left-0 z-10 w-full mt-1 bg-popover dark:bg-[#111] text-popover-foreground dark:text-white rounded-md border shadow-md overflow-hidden">
+        <div className="absolute left-0 z-[60] w-full mt-1 bg-popover dark:bg-[#111] text-popover-foreground dark:text-white rounded-md border shadow-lg overflow-hidden">
           <div className="flex flex-col">
             {/* 搜索框 */}
             <div className="p-2 border-b dark:border-gray-700">
