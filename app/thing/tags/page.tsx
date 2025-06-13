@@ -8,8 +8,6 @@ import useSWR, { mutate } from "swr"
 import { get, del } from "@/lib/api"
 import { toast } from "sonner"
 import { isLightColor } from '@/lib/helpers'
-import TagSpeedDial from './components/TagSpeedDial'
-import { Card, CardContent } from "@/components/ui/card"
 import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 
 // 标签类型定义
@@ -46,7 +44,6 @@ export default function ThingTags() {
       mutate("/things/tags")
       toast.success("标签删除成功")
     } catch (deleteError) {
-      // API的统一错误处理已经显示了错误提示，这里不需要重复显示
       console.error('删除标签失败:', deleteError)
     } finally {
       setDeleting(false)
@@ -107,7 +104,7 @@ export default function ThingTags() {
       />
 
       {/* 添加标签Speed Dial */}
-      <TagSpeedDial />
+      {/* <TagSpeedDial /> */}
     </div>
   )
 } 

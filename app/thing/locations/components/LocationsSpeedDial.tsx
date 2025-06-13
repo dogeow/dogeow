@@ -11,7 +11,6 @@ import { Area, Room, LocationType } from '../hooks/useLocationManagement'
 import { cn } from "@/lib/helpers"
 
 interface LocationsSpeedDialProps {
-  activeTab: LocationType | 'tree';
   areas: Area[];
   rooms: Room[];
   loading: boolean;
@@ -21,7 +20,6 @@ interface LocationsSpeedDialProps {
 }
 
 export default function LocationsSpeedDial({
-  activeTab,
   areas,
   rooms,
   loading,

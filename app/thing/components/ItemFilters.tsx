@@ -15,7 +15,7 @@ import { CalendarIcon } from "lucide-react"
 import type { Area, Room, Spot } from '@/app/thing/types';
 import { useItemStore } from '@/app/thing/stores/itemStore';
 import { TagSelector, Tag } from '@/components/ui/tag-selector';
-import { Badge } from "@/components/ui/badge"
+
 // import useSWR from 'swr' // SWR will be removed
 // import { get } from '@/lib/api' // get will be removed
 
@@ -228,20 +228,7 @@ export default function ItemFilters({
     }, 100);
   };
   
-  // 获取活跃筛选条件的数量
-  const getActiveFiltersCount = () => {
-    return Object.keys(filters).filter(key => {
-      const fieldKey = key as keyof FilterState;
-      const currentValue = filters[fieldKey];
-      const initialValue = initialFilters[fieldKey];
-      
-      if (typeof fieldKey === 'string' && (fieldKey.includes('date_from') || fieldKey.includes('date_to'))) {
-        return currentValue !== null && initialValue === null;
-      }
-      
-      return currentValue !== initialValue && currentValue !== '' && currentValue !== 'all';
-    }).length;
-  };
+
   
   // 处理字段变更的函数 - 不再直接应用，而是通过防抖机制应用
   const handleChange = useCallback((field: keyof FilterState, value: unknown) => {
@@ -266,15 +253,7 @@ export default function ItemFilters({
     });
   }, [applyFilters]);
   
-  const handleReset = useCallback(() => {
-    setFilters(initialFilters);
-    console.log('重置筛选条件');
-    
-    // 重置后显式应用筛选条件
-    applyFilters(initialFilters);
-    // 重置后再次阻止自动应用，直到用户下次点击应用按钮
-    setPreventAutoApply(true);
-  }, [applyFilters]);
+
   
   const renderDateRangePicker = useCallback((
     label: string, 

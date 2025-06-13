@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Search, X, Clock, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Badge } from "@/components/ui/badge"
+
 
 interface SearchInputProps {
   value: string

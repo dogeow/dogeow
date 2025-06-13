@@ -330,10 +330,7 @@ export default function Thing() {
     }
   }, []);
 
-  // 添加新物品
-  const handleAddItem = useCallback(() => {
-    router.push('/thing/add')
-  }, [router]);
+
 
   // 处理标签点击
   const handleTagClick = useCallback((tagId: string) => {
