@@ -2,8 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
-import { ImageDownIcon, ImageUpIcon, Columns2Icon, Columns3Icon, Columns4Icon, GripIcon } from "lucide-react";
+import { Columns2Icon, Columns3Icon, Columns4Icon, GripIcon, RectangleHorizontalIcon } from "lucide-react";
 import { ensureEven } from "@/lib/helpers/mathUtils";
 
 interface ImageSizeControlProps {
@@ -29,6 +28,7 @@ export function ImageSizeControl({
       case "sm": columns = 4; break;
       case "md": columns = 3; break;
       case "lg": columns = 2; break;
+      case "xl": columns = 1; break;
       default: columns = Math.floor(containerWidth / initialSize) || 1;
     }
     const gap = 8;
@@ -72,22 +72,16 @@ export function ImageSizeControl({
     }
   };
 
-  const handleSliderChange = (value: number[]) => {
-    const newSize = ensureEven(value[0]);
-    setImageSize(newSize);
-    onSizeChange(newSize);
-    setCurrentSizePreset(null);
-  };
-
   const sizePresets = [
     { id: "xs", label: "XS", icon: <GripIcon className="h-4 w-4" /> },
     { id: "sm", label: "S", icon: <Columns4Icon className="h-4 w-4" /> },
     { id: "md", label: "M", icon: <Columns3Icon className="h-4 w-4" /> },
     { id: "lg", label: "L", icon: <Columns2Icon className="h-4 w-4" /> },
+    { id: "xl", label: "XL", icon: <RectangleHorizontalIcon className="h-4 w-4" /> },
   ];
 
   return (
-    <div ref={containerRef} className="flex items-center gap-2 mb-4 p-2 bg-background/80 backdrop-blur-sm sticky top-0 z-10 rounded-md border">
+    <div ref={containerRef} className="flex items-center justify-between gap-2 mb-4 p-2 bg-background/80 backdrop-blur-sm sticky top-0 z-10 rounded-md border">
       <div className="flex items-center gap-1">
         {sizePresets.map((preset) => (
           <Button
@@ -103,17 +97,7 @@ export function ImageSizeControl({
           </Button>
         ))}
       </div>
-      <ImageDownIcon className="h-4 w-4 text-muted-foreground" />
-      <Slider
-        min={60}
-        max={maxSize}
-        step={2}
-        value={[imageSize]}
-        onValueChange={handleSliderChange}
-        className="w-full max-w-xs"
-      />
-      <ImageUpIcon className="h-4 w-4 text-muted-foreground" />
-      <span className="text-xs text-muted-foreground w-12 text-right">
+      <span className="text-sm text-muted-foreground font-medium">
         {imageSize}px
       </span>
     </div>
