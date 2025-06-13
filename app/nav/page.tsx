@@ -1,11 +1,12 @@
 "use client"
 
 import { useState, useEffect, Suspense } from 'react';
-import { Folder, Plus, Settings } from 'lucide-react';
+import { Folder, Plus, Settings, Lock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useNavStore } from '@/app/nav/stores/navStore';
 import { useThemeStore, getCurrentThemeColor } from '@/stores/themeStore';
+import { useLoginTrigger } from '@/hooks/useLoginTrigger';
 import { NavCard } from './components/NavCard';
 import { NavCategory } from '@/app/nav/types';
 
@@ -30,6 +31,7 @@ function NavContent() {
   const [initialLoaded, setInitialLoaded] = useState(false);
   const { currentTheme, customThemes } = useThemeStore();
   const themeColor = getCurrentThemeColor(currentTheme, customThemes);
+  const { requireLogin, isAuthenticated } = useLoginTrigger();
   
   // 监听URL中filter[name]参数的变化
   useEffect(() => {
@@ -140,11 +142,15 @@ function NavContent() {
   //   .filter(category => (category.items || []).length > 0);
 
   const handleAddNav = () => {
-    router.push('/nav/add');
+    requireLogin(() => {
+      router.push('/nav/add');
+    });
   };
 
   const handleManageCategories = () => {
-    router.push('/nav/categories');
+    requireLogin(() => {
+      router.push('/nav/categories');
+    });
   };
 
   return (
@@ -161,13 +167,28 @@ function NavContent() {
               onClick={handleManageCategories} 
               size="sm" 
               variant="outline"
-              className="flex items-center gap-1"
+              className="flex items-center gap-1 relative"
+              disabled={!isAuthenticated}
+              style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
             >
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">管理分类</span>
+              {!isAuthenticated && (
+                <Lock className="h-3 w-3 ml-1 text-muted-foreground" />
+              )}
             </Button>
-            <Button onClick={handleAddNav} size="sm" variant="default" className="bg-green-500 hover:bg-green-600">
+            <Button 
+              onClick={handleAddNav} 
+              size="sm" 
+              variant="default" 
+              className="bg-green-500 hover:bg-green-600 flex items-center gap-1 relative"
+              disabled={!isAuthenticated}
+              style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
+            >
               <Plus className="h-4 w-4" />
+              {!isAuthenticated && (
+                <Lock className="h-3 w-3 text-white" />
+              )}
             </Button>
           </div>
         </div>

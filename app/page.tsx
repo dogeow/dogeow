@@ -8,6 +8,8 @@ import type { Tile } from '@/app/types';
 import { useRouter } from "next/navigation";
 import Footer from "@/components/app/Footer";
 import { useProjectCoverStore } from '@/stores/projectCoverStore';
+import { useLoginTrigger } from '@/hooks/useLoginTrigger';
+import { Lock } from 'lucide-react';
 
 const TileGrid = styled.div`
   display: flex;
@@ -79,10 +81,61 @@ const TileName = styled.span`
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 `;
 
+const LockIcon = styled.div`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  backdrop-filter: blur(4px);
+`;
+
 export default function Home() {
   const router = useRouter();
   const tiles = configs.tiles as Tile[];
   const { showProjectCovers } = useProjectCoverStore();
+  const { requireLogin, isAuthenticated } = useLoginTrigger();
+
+  // 需要登录的应用路径
+  const protectedRoutes = ['/thing', '/nav', '/note', '/dashboard', '/file', '/tool'];
+
+  // 检查是否需要登录
+  const isProtectedRoute = (href: string) => {
+    return protectedRoutes.some(route => href.startsWith(route));
+  };
+
+  // 处理瓦片点击
+  const handleTileClick = (tile: Tile) => {
+    if (isProtectedRoute(tile.href)) {
+      requireLogin(() => {
+        router.push(tile.href);
+      });
+    } else {
+      router.push(tile.href);
+    }
+  };
+
+  // 获取瓦片的样式，为需要登录的瓦片添加视觉标识
+  const getTileStyle = (tile: Tile) => {
+    const baseStyle = {};
+    
+    // 如果是受保护的路由且用户未登录，添加视觉标识
+    if (isProtectedRoute(tile.href) && !isAuthenticated) {
+      return {
+        ...baseStyle,
+        opacity: 0.7,
+        position: 'relative' as const,
+      };
+    }
+    
+    return baseStyle;
+  };
 
   useEffect(() => {
     // https://patorjk.com/software/taag
@@ -112,6 +165,8 @@ export default function Home() {
   const renderTile = (tile: Tile, index: number, keyPrefix: string, style?: React.CSSProperties) => {
     const coverImage = getCoverImage(tile.href);
     const hasBackground = !!coverImage;
+    const isProtected = isProtectedRoute(tile.href);
+    const needsLogin = isProtected && !isAuthenticated;
     
     return (
       <TileItem
@@ -119,8 +174,8 @@ export default function Home() {
         color={tile.color}
         colSpan={tile.colSpan}
         rowSpan={tile.rowSpan}
-        onClick={() => router.push(tile.href)}
-        style={style}
+        onClick={() => handleTileClick(tile)}
+        style={{...style, ...getTileStyle(tile)}}
         $hasBackground={hasBackground}
       >
         {hasBackground && (
@@ -145,6 +200,16 @@ export default function Home() {
             />
           </IconWrapper>
         )}
+        
+        {/* 需要登录的标识 */}
+        {needsLogin && (
+          <>
+            <LockIcon>
+              <Lock className="h-3 w-3 text-white" />
+            </LockIcon>
+          </>
+        )}
+        
         <TileName>{tile.name}</TileName>
       </TileItem>
     );

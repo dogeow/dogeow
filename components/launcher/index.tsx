@@ -316,6 +316,7 @@ export function AppLauncher() {
                 <Button
                   variant="default"
                   className="h-8"
+                  data-login-trigger
                   onClick={() => toggleDisplayMode('auth')}
                 >
                   登录
