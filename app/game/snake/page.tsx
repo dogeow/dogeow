@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { useSnakeGameStore } from "@/stores/snakeGameStore"
+import { useSnakeGameStore } from "./store"
 import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 type Position = { x: number; y: number }

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react"
 
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { useMinesweeperStore } from "@/stores/minesweeperStore"
+import { useMinesweeperStore } from "./store"
 import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 type CellState = 'hidden' | 'revealed' | 'flagged'

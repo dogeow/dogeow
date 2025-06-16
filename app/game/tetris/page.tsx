@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { useTetrisStore } from "@/stores/tetrisStore"
+import { useTetrisStore } from "./store"
 import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 type TetrominoType = 'I' | 'O' | 'T' | 'S' | 'Z' | 'J' | 'L'

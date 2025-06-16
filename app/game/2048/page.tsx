@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
-import { useGame2048Store } from "@/stores/game2048Store"
+import { useGame2048Store } from "./store"
 import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
 
 type Board = number[][]
