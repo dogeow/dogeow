@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import { apiRequest } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { 
-  Plus, 
   Search, 
   // Edit, // 暂时未使用
   // Trash, // 暂时未使用
@@ -30,6 +29,7 @@ import {
   CardHeader
 } from '@/components/ui/card'
 import { zhCN } from 'date-fns/locale'
+import NoteSpeedDial from './components/NoteSpeedDial'
 
 interface Note {
   id: number
@@ -146,10 +146,6 @@ export default function NotePage() {
     <div className="container mx-auto py-4">
       <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
         <h1 className="text-2xl font-bold">笔记列表</h1>
-        <Button onClick={() => router.push('/note/new')}>
-          <Plus className="mr-2 h-4 w-4" />
-          新建笔记
-        </Button>
       </div>
       
       <div className="flex flex-wrap gap-4 mb-6">
@@ -203,12 +199,6 @@ export default function NotePage() {
           <p className="text-muted-foreground mb-4">
             {searchTerm ? '没有找到匹配的笔记' : '还没有创建任何笔记'}
           </p>
-          {!searchTerm && (
-            <Button onClick={() => router.push('/note/new')}>
-              <Plus className="mr-2 h-4 w-4" />
-              创建第一个笔记
-            </Button>
-          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -255,6 +245,8 @@ export default function NotePage() {
           ))}
         </div>
       )}
+      
+      <NoteSpeedDial />
     </div>
   )
 }

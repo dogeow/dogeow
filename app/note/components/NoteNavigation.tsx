@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { FileText, Tag, FolderTree, Plus } from "lucide-react"
+import { FileText, Tag, FolderTree } from "lucide-react"
 import { useState } from "react"
 import { useEditorStore } from '../store/editorStore'
 // import { ConfirmDialog } from '@/components/ui/confirm-dialog' // 暂时未使用
@@ -72,9 +72,6 @@ export default function NoteNavigation() {
     <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 relative shadow-sm">
       <nav className="flex items-center py-2 px-2 overflow-x-auto">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="sm" onClick={() => handleNavigate('/note/new')}>
-            <Plus className="h-4 w-4" />
-          </Button>
           <Button variant="ghost" size="sm" onClick={() => handleNavigate('/note')}>
             <FileText className="h-4 w-4 mr-2" />
             我的笔记
