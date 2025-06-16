@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useThemeStore } from '@/stores/themeStore'
+import { useMusicStore } from '@/stores/musicStore'
 import { cn } from '@/lib/helpers'
 
 type DisplayMode = 'music' | 'apps' | 'settings';
@@ -18,6 +19,7 @@ export interface AppGridProps {
 export function AppGrid({ toggleDisplayMode }: AppGridProps) {
   const { theme, setTheme } = useTheme()
   const { setFollowSystem } = useThemeStore()
+  const { isPlaying } = useMusicStore()
   const [mounted, setMounted] = useState(false)
 
   // 等待组件挂载后再处理主题，避免水合不匹配错误
@@ -31,7 +33,24 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
   // 定义按钮配置
   const buttons = [
     {
-      icon: <Music className="h-5 w-5" />,
+      icon: (
+        <motion.div
+          animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
+          transition={
+            isPlaying 
+              ? { 
+                  duration: 10, 
+                  repeat: Infinity, 
+                  ease: "linear" 
+                }
+              : { 
+                  duration: 10
+                }
+          }
+        >
+          <Music className="h-5 w-5" />
+        </motion.div>
+      ),
       label: "打开音乐",
       onClick: () => toggleDisplayMode('music')
     },

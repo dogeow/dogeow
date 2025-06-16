@@ -28,11 +28,13 @@ export function AppLauncher() {
   const { 
     currentTrack, 
     volume: musicVolume, 
+    isPlaying: storeIsPlaying,
     setCurrentTrack,
-    setAvailableTracks
+    setAvailableTracks,
+    setIsPlaying: setStoreIsPlaying
   } = useMusicStore()
   const { backgroundImage, setBackgroundImage } = useBackgroundStore()
-  const [isPlaying, setIsPlaying] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(storeIsPlaying)
   const [isMuted, setIsMuted] = useState(false)
   const [volume] = useState(musicVolume || 0.5)
   const [duration, setDuration] = useState(0)
@@ -100,6 +102,11 @@ export function AppLauncher() {
 
   // 切换静音状态
   const toggleMute = () => setIsMuted(!isMuted);
+
+  // 同步播放状态到store
+  useEffect(() => {
+    setStoreIsPlaying(isPlaying)
+  }, [isPlaying, setStoreIsPlaying])
 
   // 监听全局用户交互
   useEffect(() => {
