@@ -334,11 +334,11 @@ export default function ItemFilters({
   }, [filters]);
   
   return (
-    <div className="space-y-4 px-1 text-gray-900 dark:text-white">
+    <div className="space-y-4 px-1 text-foreground">
 
       <div>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 w-full mb-4 bg-gray-100 border border-gray-200 rounded-lg dark:bg-[#23272f] dark:border-[#2d323b]">
+          <TabsList className="grid grid-cols-2 w-full mb-4 bg-muted border border-border rounded-lg">
             <TabsTrigger value="basic" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">基础</TabsTrigger>
             <TabsTrigger value="detailed" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">详细</TabsTrigger>
           </TabsList>
@@ -349,7 +349,7 @@ export default function ItemFilters({
               <Input
                 value={filters.name}
                 onChange={(e) => handleChange('name', e.target.value)}
-                className="h-11 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:ring-primary focus:border-primary dark:bg-[#2d323b] dark:border-[#3a3f4b] dark:text-white dark:placeholder:text-gray-400"
+                className="h-11 bg-background border border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary"
               />
             </div>
             
@@ -358,21 +358,21 @@ export default function ItemFilters({
               <Input
                 value={filters.description}
                 onChange={(e) => handleChange('description', e.target.value)}
-                className="h-11 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:ring-primary focus:border-primary dark:bg-[#2d323b] dark:border-[#3a3f4b] dark:text-white dark:placeholder:text-gray-400"
+                className="h-11 bg-background border border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary"
               />
             </div>
             
             <div className="space-y-3">
               <Label className="text-base font-medium">状态</Label>
-              <div className="bg-gray-100 rounded-lg border border-gray-200 px-2 py-1 dark:bg-[#2d323b] dark:border-[#3a3f4b]">
+              <div className="bg-muted rounded-lg border border-border px-2 py-1">
                 <Select 
                   value={filters.status} 
                   onValueChange={(value) => handleChange('status', value)}
                 >
-                  <SelectTrigger className="h-11 bg-white border-none text-gray-900 dark:bg-[#2d323b] dark:text-white">
+                  <SelectTrigger className="h-11 bg-background border-none text-foreground">
                     <SelectValue placeholder="选择状态" />
                   </SelectTrigger>
-                  <SelectContent className="bg-white border-gray-200 text-gray-900 dark:bg-[#23272f] dark:border-[#3a3f4b] dark:text-white">
+                  <SelectContent className="bg-popover border border-border text-popover-foreground">
                     <SelectItem value="all">全部状态</SelectItem>
                     <SelectItem value="active">正常</SelectItem>
                     <SelectItem value="archived">已归档</SelectItem>
@@ -388,10 +388,10 @@ export default function ItemFilters({
                 value={filters.is_public === null ? 'null' : filters.is_public === true ? 'true' : 'false'} 
                 onValueChange={(value) => handleChange('is_public', value === 'null' ? null : value === 'true')}
               >
-                <SelectTrigger className="h-11 bg-white border border-gray-200 text-gray-900 dark:bg-[#2d323b] dark:border-[#3a3f4b] dark:text-white">
+                <SelectTrigger className="h-11 bg-background border border-input text-foreground">
                   <SelectValue placeholder="所有物品" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 text-gray-900 dark:bg-[#23272f] dark:border-[#3a3f4b] dark:text-white">
+                <SelectContent className="bg-popover border border-border text-popover-foreground">
                   <SelectItem value="null">所有物品</SelectItem>
                   <SelectItem value="true">公开</SelectItem>
                   <SelectItem value="false">私有</SelectItem>
@@ -401,7 +401,7 @@ export default function ItemFilters({
             
             <div className="space-y-3">
               <Label className="text-base font-medium">标签</Label>
-              <div className="bg-gray-100 rounded-lg border border-gray-200 px-2 py-1 dark:bg-[#2d323b] dark:border-[#3a3f4b]">
+              <div className="bg-muted rounded-lg border border-border px-2 py-1">
                 <TagSelector
                   tags={tags}
                   selectedTags={typeof filters.tags === 'string' ? 
@@ -429,7 +429,7 @@ export default function ItemFilters({
                     placeholder="最低价"
                     value={filters.price_from}
                     onChange={(e) => handleChange('price_from', e.target.value)}
-                    className="h-11 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:ring-primary focus:border-primary dark:bg-[#2d323b] dark:border-[#3a3f4b] dark:text-white dark:placeholder:text-gray-400"
+                    className="h-11 bg-background border border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary"
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -439,7 +439,7 @@ export default function ItemFilters({
                     placeholder="最高价"
                     value={filters.price_to}
                     onChange={(e) => handleChange('price_to', e.target.value)}
-                    className="h-11 bg-white border border-gray-200 text-gray-900 placeholder:text-gray-400 focus:ring-primary focus:border-primary dark:bg-[#2d323b] dark:border-[#3a3f4b] dark:text-white dark:placeholder:text-gray-400"
+                    className="h-11 bg-background border border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary"
                   />
                 </div>
               </div>
@@ -454,10 +454,10 @@ export default function ItemFilters({
                     value={typeof filters.area_id === 'number' ? filters.area_id.toString() : filters.area_id.toString()} 
                     onValueChange={(value) => handleChange('area_id', value)}
                   >
-                    <SelectTrigger className="h-11 bg-white border border-gray-200 text-gray-900 dark:bg-[#2d323b] dark:border-[#3a3f4b] dark:text-white">
+                    <SelectTrigger className="h-11 bg-background border border-input text-foreground">
                       <SelectValue placeholder="选择区域" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 text-gray-900 dark:bg-[#23272f] dark:border-[#3a3f4b] dark:text-white">
+                    <SelectContent className="bg-popover border border-border text-popover-foreground">
                       <SelectItem value="all">全部区域</SelectItem>
                       {areas.map((area: Area) => ( 
                         <SelectItem key={area.id} value={area.id.toString()}>{area.name}</SelectItem>
@@ -472,10 +472,10 @@ export default function ItemFilters({
                     onValueChange={(value) => handleChange('room_id', value)}
                     disabled={filters.area_id === 'all' || filters.area_id === null || filters.area_id === ''}
                   >
-                    <SelectTrigger className="h-11 bg-white border border-gray-200 text-gray-900 disabled:opacity-60 dark:bg-[#2d323b] dark:border-[#3a3f4b] dark:text-white">
+                    <SelectTrigger className="h-11 bg-background border border-input text-foreground disabled:opacity-60">
                       <SelectValue placeholder="选择房间" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 text-gray-900 dark:bg-[#23272f] dark:border-[#3a3f4b] dark:text-white">
+                    <SelectContent className="bg-popover border border-border text-popover-foreground">
                       <SelectItem value="all">全部房间</SelectItem>
                       {rooms
                         .filter(room => filters.area_id === 'all' || room.area_id?.toString() === filters.area_id?.toString())
@@ -492,10 +492,10 @@ export default function ItemFilters({
                     onValueChange={(value) => handleChange('spot_id', value)}
                     disabled={filters.room_id === 'all' || filters.room_id === null || filters.room_id === ''}
                   >
-                    <SelectTrigger className="h-11 bg-white border border-gray-200 text-gray-900 disabled:opacity-60 dark:bg-[#2d323b] dark:border-[#3a3f4b] dark:text-white">
+                    <SelectTrigger className="h-11 bg-background border border-input text-foreground disabled:opacity-60">
                       <SelectValue placeholder="选择位置" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white border-gray-200 text-gray-900 dark:bg-[#23272f] dark:border-[#3a3f4b] dark:text-white">
+                    <SelectContent className="bg-popover border border-border text-popover-foreground">
                       <SelectItem value="all">全部位置</SelectItem>
                       {spots
                         .filter(spot => filters.room_id === 'all' || spot.room_id?.toString() === filters.room_id?.toString())
@@ -511,7 +511,7 @@ export default function ItemFilters({
         </Tabs>
       </div>
       
-      <div className="flex justify-between mt-6 sticky bottom-0 py-3 border-t z-10">
+      <div className="flex justify-between mt-6 sticky bottom-0 bg-background py-3 border-t z-10">
         <Button 
           variant="outline" 
           onClick={handleClearAll}

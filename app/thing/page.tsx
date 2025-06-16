@@ -509,10 +509,6 @@ export default function Thing() {
       >
         <SheetTitle className="flex justify-between mb-3">
           筛选
-          <X 
-            className="h-5 w-5 cursor-pointer hover:opacity-70" 
-            onClick={() => handleFiltersOpenChange(false)} 
-          />
         </SheetTitle>
         <ItemFilters 
           onApply={handleApplyFilters} 
