@@ -61,12 +61,11 @@ export function AudioController({
       
       setAudioError(null)
       setIsTrackChanging(true)
-      audioRef.current.volume = isMuted ? 0 : volume
     } catch (err) {
       setAudioError(`设置音频源失败: ${err}`)
       toast.error("音频源设置失败", { description: String(err) })
     }
-  }, [currentTrack, buildAudioUrl, isMuted, volume, setAudioError, setIsTrackChanging])
+  }, [currentTrack, buildAudioUrl, setAudioError, setIsTrackChanging])
 
   // 处理播放错误
   const handlePlayError = useCallback((error: Error) => {
@@ -157,11 +156,10 @@ export function AudioController({
       audioRef.current.pause()
       setIsPlaying(false)
     } else {
-      audioRef.current.volume = isMuted ? 0 : volume
       audioRef.current.play().catch(err => setAudioError(`播放失败: ${err.message}`))
       setIsPlaying(true)
     }
-  }, [currentTrack, isPlaying, isMuted, volume, setupMediaSource, setIsPlaying, setAudioError])
+  }, [currentTrack, isPlaying, setupMediaSource, setIsPlaying, setAudioError])
 
   // 切换曲目
   const switchTrack = useCallback((direction: 'next' | 'prev') => {
