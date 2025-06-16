@@ -511,17 +511,19 @@ export default function ItemFilters({
         </Tabs>
       </div>
       
-      <div className="flex justify-between mt-6 sticky bottom-0 bg-background py-3 border-t z-10">
+      <div className="flex justify-between mt-6 sticky bottom-0 py-3 border-t z-10">
         <Button 
           variant="outline" 
           onClick={handleClearAll}
           disabled={!hasActiveFilters}
+          className="disabled:opacity-50 disabled:bg-background disabled:border-border disabled:text-muted-foreground"
         >
           重置
         </Button>
         <Button 
           onClick={() => applyFilters(filters)}
           disabled={!hasActiveFilters}
+          className="disabled:opacity-50 disabled:bg-muted disabled:text-muted-foreground"
         >
           应用筛选
         </Button>
