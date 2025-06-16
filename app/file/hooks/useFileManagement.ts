@@ -1,6 +1,6 @@
 import useSWR, { KeyedMutator } from 'swr';
 import { get } from '@/lib/api';
-import { CloudFile, FolderNode } from '@/types';
+import { CloudFile, FolderNode } from '../types';
 
 interface UseFileManagementProps {
   currentFolderId: number | null;
