@@ -3,8 +3,6 @@ import { create } from 'zustand'
 export interface Ball {
   x: number
   y: number
-  vx: number
-  vy: number
   radius: number
 }
 
@@ -36,15 +34,12 @@ export interface GameState {
   // 小球状态
   ball: Ball
   
-  // 陀螺仪数据
+  // 陀螺仪设置
+  sensitivity: number
   gyroSupported: boolean
   gyroPermission: boolean
   tiltX: number
   tiltY: number
-  
-  // 控制设置
-  sensitivity: number
-  friction: number
   
   // 游戏动作
   startGame: () => void
@@ -53,20 +48,15 @@ export interface GameState {
   resetGame: () => void
   nextLevel: () => void
   
-  // 小球控制
-  updateBall: (deltaTime: number) => void
-  moveBall: (dx: number, dy: number) => void
-  
-  // 陀螺仪控制
-  updateTilt: (x: number, y: number) => void
-  requestGyroPermission: () => Promise<void>
+  // 小球控制 - 智能移动到岔口
+  moveBall: (direction: 'up' | 'down' | 'left' | 'right') => void
   
   // 迷宫生成
   generateMaze: () => void
   
   // 设置
-  setSensitivity: (value: number) => void
   setLevel: (level: number) => void
+  setSensitivity: (sensitivity: number) => void
 }
 
 export const useMazeStore = create<GameState>((set, get) => ({
@@ -86,20 +76,15 @@ export const useMazeStore = create<GameState>((set, get) => ({
   ball: {
     x: 25,
     y: 25,
-    vx: 0,
-    vy: 0,
     radius: 8
   },
   
-  // 陀螺仪状态
+  // 陀螺仪设置
+  sensitivity: 0.5,
   gyroSupported: false,
   gyroPermission: false,
   tiltX: 0,
   tiltY: 0,
-  
-  // 控制设置
-  sensitivity: 0.3,
-  friction: 0.95,
   
   // 游戏控制
   startGame: () => {
@@ -113,9 +98,7 @@ export const useMazeStore = create<GameState>((set, get) => ({
       ball: {
         ...state.ball,
         x: state.cellSize + state.ball.radius,
-        y: state.cellSize + state.ball.radius,
-        vx: 0,
-        vy: 0
+        y: state.cellSize + state.ball.radius
       }
     })
   },
@@ -133,9 +116,7 @@ export const useMazeStore = create<GameState>((set, get) => ({
       ball: {
         ...state.ball,
         x: state.cellSize + state.ball.radius,
-        y: state.cellSize + state.ball.radius,
-        vx: 0,
-        vy: 0
+        y: state.cellSize + state.ball.radius
       }
     })
   },
@@ -146,53 +127,53 @@ export const useMazeStore = create<GameState>((set, get) => ({
     get().startGame()
   },
   
-  // 简化的更新函数，不再需要物理动画
-  updateBall: () => {
-    // 现在使用直接移动，不需要持续更新
-    // 这个函数保留是为了兼容性，但实际上不做任何事情
-    return
-  },
-  
-  moveBall: (dx: number, dy: number) => {
+  // 智能移动到岔口或墙壁
+  moveBall: (direction: 'up' | 'down' | 'left' | 'right') => {
     const state = get()
-    console.log('moveBall调用:', { dx, dy, isPlaying: state.isPlaying, isPaused: state.isPaused })
+    console.log('moveBall调用:', { direction, isPlaying: state.isPlaying, isPaused: state.isPaused })
     
     if (!state.isPlaying || state.isPaused) {
       console.log('moveBall: 游戏未开始或已暂停')
       return
     }
     
-    // 改为直接移动，不使用物理动画
-    const moveDistance = state.cellSize / 4 // 每次移动1/4格子
-    const newX = state.ball.x + dx * moveDistance
-    const newY = state.ball.y + dy * moveDistance
+    const { ball, maze, cellSize, mazeSize } = state
     
-    // 边界检测
-    const { cellSize, mazeSize, ball } = state
-    const minX = ball.radius
-    const maxX = mazeSize * cellSize - ball.radius
-    const minY = ball.radius
-    const maxY = mazeSize * cellSize - ball.radius
+    if (!maze.length) {
+      console.log('迷宫未生成')
+      return
+    }
     
-    const clampedX = Math.max(minX, Math.min(maxX, newX))
-    const clampedY = Math.max(minY, Math.min(maxY, newY))
+    // 计算移动方向向量
+    const directionVector = {
+      up: { dx: 0, dy: -1 },
+      down: { dx: 0, dy: 1 },
+      left: { dx: -1, dy: 0 },
+      right: { dx: 1, dy: 0 }
+    }[direction]
     
-    // 墙壁碰撞检测
-    const collision = checkWallCollision(clampedX, clampedY, ball, state.maze, cellSize)
+    // 找到小球移动到岔口或墙壁的位置
+    const newPosition = findMoveToIntersection(
+      ball.x, 
+      ball.y, 
+      directionVector.dx, 
+      directionVector.dy, 
+      ball, 
+      maze, 
+      cellSize, 
+      mazeSize
+    )
     
-    const finalX = collision.x ? state.ball.x : clampedX
-    const finalY = collision.y ? state.ball.y : clampedY
-    
-    console.log('直接移动小球:', { 
-      oldPos: { x: state.ball.x, y: state.ball.y },
-      newPos: { x: finalX, y: finalY },
-      collision
+    console.log('智能移动:', { 
+      direction,
+      oldPos: { x: ball.x, y: ball.y },
+      newPos: newPosition
     })
     
     // 检查是否到达终点
     const endX = (mazeSize - 1) * cellSize + cellSize / 2
     const endY = (mazeSize - 1) * cellSize + cellSize / 2
-    const distance = Math.sqrt((finalX - endX) ** 2 + (finalY - endY) ** 2)
+    const distance = Math.sqrt((newPosition.x - endX) ** 2 + (newPosition.y - endY) ** 2)
     
     if (distance < ball.radius + 10) {
       set({ gameWon: true, isPlaying: false })
@@ -201,54 +182,11 @@ export const useMazeStore = create<GameState>((set, get) => ({
     
     set({
       ball: {
-        ...state.ball,
-        x: finalX,
-        y: finalY,
-        vx: 0, // 重置速度
-        vy: 0
+        ...ball,
+        x: newPosition.x,
+        y: newPosition.y
       }
     })
-  },
-  
-  // 陀螺仪控制
-  updateTilt: (x: number, y: number) => {
-    const state = get()
-    set({ tiltX: x, tiltY: y })
-    
-    if (state.isPlaying && !state.isPaused) {
-      const force = state.sensitivity
-      get().moveBall(x * force, y * force)
-    }
-  },
-  
-  requestGyroPermission: async () => {
-    console.log('🔐 请求陀螺仪权限...')
-    
-    if (typeof DeviceOrientationEvent !== 'undefined' && 'requestPermission' in DeviceOrientationEvent) {
-      try {
-        console.log('📱 iOS设备，请求权限')
-        const permission = await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission()
-        console.log('🔐 权限请求结果:', permission)
-        
-        const granted = permission === 'granted'
-        set({ 
-          gyroPermission: granted,
-          gyroSupported: true
-        })
-        
-        if (granted) {
-          console.log('✅ 陀螺仪权限已获得')
-        } else {
-          console.log('❌ 陀螺仪权限被拒绝')
-        }
-      } catch (error) {
-        console.error('❌ 陀螺仪权限请求失败:', error)
-        set({ gyroSupported: false, gyroPermission: false })
-      }
-    } else {
-      console.log('✅ 非iOS设备，直接启用陀螺仪')
-      set({ gyroSupported: true, gyroPermission: true })
-    }
   },
   
   // 迷宫生成（递归回溯算法）
@@ -298,8 +236,9 @@ export const useMazeStore = create<GameState>((set, get) => ({
   },
   
   // 设置
-  setSensitivity: (value: number) => set({ sensitivity: value }),
-  setLevel: (level: number) => set({ level })
+  setLevel: (level: number) => set({ level }),
+  
+  setSensitivity: (sensitivity: number) => set({ sensitivity })
 }))
 
 // 辅助函数
@@ -334,6 +273,109 @@ function removeWall(current: MazeCell, next: MazeCell) {
   }
 }
 
+// 智能移动到岔口或墙壁的函数
+function findMoveToIntersection(
+  startX: number, 
+  startY: number, 
+  dx: number, 
+  dy: number, 
+  ball: Ball, 
+  maze: MazeCell[][], 
+  cellSize: number, 
+  mazeSize: number
+): { x: number, y: number } {
+  let currentX = startX
+  let currentY = startY
+  const step = cellSize / 8 // 小步长移动以精确检测
+  
+  // 首先检查是否可以朝指定方向移动
+  const nextX = currentX + dx * step
+  const nextY = currentY + dy * step
+  
+  if (checkWallCollision(nextX, nextY, ball, maze, cellSize).x && dx !== 0) {
+    console.log('水平方向被墙阻挡，无法移动')
+    return { x: currentX, y: currentY }
+  }
+  
+  if (checkWallCollision(nextX, nextY, ball, maze, cellSize).y && dy !== 0) {
+    console.log('垂直方向被墙阻挡，无法移动')
+    return { x: currentX, y: currentY }
+  }
+  
+  // 开始移动直到遇到岔口或墙壁
+  while (true) {
+    const newX = currentX + dx * step
+    const newY = currentY + dy * step
+    
+    // 边界检测
+    const minX = ball.radius
+    const maxX = mazeSize * cellSize - ball.radius
+    const minY = ball.radius
+    const maxY = mazeSize * cellSize - ball.radius
+    
+    if (newX < minX || newX > maxX || newY < minY || newY > maxY) {
+      console.log('到达迷宫边界')
+      break
+    }
+    
+    // 墙壁碰撞检测
+    const collision = checkWallCollision(newX, newY, ball, maze, cellSize)
+    if ((collision.x && dx !== 0) || (collision.y && dy !== 0)) {
+      console.log('遇到墙壁，停止移动')
+      break
+    }
+    
+    // 更新位置
+    currentX = newX
+    currentY = newY
+    
+    // 检查是否到达岔口（有其他可选路径）
+    if (isAtIntersection(currentX, currentY, dx, dy, ball, maze, cellSize)) {
+      console.log('到达岔口，停止移动')
+      break
+    }
+  }
+  
+  return { x: currentX, y: currentY }
+}
+
+// 检查是否在岔口（除了来的方向和要去的方向，还有其他可选路径）
+function isAtIntersection(
+  x: number, 
+  y: number, 
+  moveX: number, 
+  moveY: number, 
+  ball: Ball, 
+  maze: MazeCell[][], 
+  cellSize: number
+): boolean {
+  const directions = [
+    { dx: 0, dy: -1 }, // 上
+    { dx: 1, dy: 0 },  // 右
+    { dx: 0, dy: 1 },  // 下
+    { dx: -1, dy: 0 }  // 左
+  ]
+  
+  let availablePaths = 0
+  
+  for (const dir of directions) {
+    // 跳过当前移动方向的反方向（来的方向）
+    if (dir.dx === -moveX && dir.dy === -moveY) continue
+    
+    // 检查这个方向是否可以移动
+    const testX = x + dir.dx * cellSize / 4
+    const testY = y + dir.dy * cellSize / 4
+    const collision = checkWallCollision(testX, testY, ball, maze, cellSize)
+    
+    if (!collision.x && !collision.y) {
+      availablePaths++
+    }
+  }
+  
+  // 如果有2个或以上可选路径（包括当前移动方向），则认为是岔口
+  return availablePaths >= 2
+}
+
 function checkWallCollision(x: number, y: number, ball: Ball, maze: MazeCell[][], cellSize: number) {
   const collision = { x: false, y: false }
   
@@ -347,7 +389,7 @@ function checkWallCollision(x: number, y: number, ball: Ball, maze: MazeCell[][]
   const cellY = Math.floor(y / cellSize)
   
   if (cellX < 0 || cellX >= maze[0].length || cellY < 0 || cellY >= maze.length) {
-    return collision
+    return { x: true, y: true } // 超出边界视为碰撞
   }
   
   const cell = maze[cellY][cellX]

@@ -44,6 +44,12 @@ export const configs = {
       icon: "🌀"
     },
     {
+      id: "bowling",
+      name: "保龄球",
+      description: "陀螺仪控制的保龄球游戏，倾斜设备瞄准并投球",
+      icon: "🎳"
+    },
+    {
       id: "tetris",
       name: "俄罗斯方块",
       description: "经典的俄罗斯方块游戏，消除方块获得高分",

@@ -1,38 +1,30 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useMazeStore } from '../store'
 import { MazeCanvas } from './MazeCanvas'
 import { GameControls } from './GameControls'
 import { GameStats } from './GameStats'
-import { GyroPermissionDialog } from './GyroPermissionDialog'
 
 export function MazeGame() {
   const {
     isPlaying,
     isPaused,
     gameWon,
-    moveBall,
-    updateTilt,
-    gyroSupported,
-    gyroPermission,
-    requestGyroPermission
+    moveBall
   } = useMazeStore()
 
-  // 不再需要游戏循环，因为改为直接移动模式
-  // const animationFrameRef = useRef<number | undefined>(undefined)
-  // const lastTimeRef = useRef<number>(0)
+  const touchStartRef = useRef<{ x: number, y: number } | null>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
   // 键盘控制
   useEffect(() => {
     console.log('设置键盘监听器，当前状态:', { isPlaying, isPaused })
     
     const handleKeyDown = (event: KeyboardEvent) => {
-      // 总是输出按键信息进行调试
       console.log('🎮 按键事件:', {
         key: event.key,
         code: event.code,
-        target: event.target,
         游戏状态: { isPlaying, isPaused }
       })
       
@@ -41,33 +33,30 @@ export function MazeGame() {
         return
       }
 
-      const force = 2 // 增加移动距离，让移动更明显
       const key = event.key.toLowerCase()
       const code = event.code.toLowerCase()
       
       console.log('🔍 处理按键:', { key, code })
       
-      // 使用 if-else 替代 switch 以支持多种按键检测方式
       if (key === 'w' || code === 'keyw' || key === 'arrowup') {
         event.preventDefault()
         console.log('⬆️ 向上移动')
-        moveBall(0, -force)
+        moveBall('up')
       } else if (key === 's' || code === 'keys' || key === 'arrowdown') {
         event.preventDefault()
         console.log('⬇️ 向下移动')
-        moveBall(0, force)
+        moveBall('down')
       } else if (key === 'a' || code === 'keya' || key === 'arrowleft') {
         event.preventDefault()
         console.log('⬅️ 向左移动')
-        moveBall(-force, 0)
+        moveBall('left')
       } else if (key === 'd' || code === 'keyd' || key === 'arrowright') {
         event.preventDefault()
         console.log('➡️ 向右移动')
-        moveBall(force, 0)
+        moveBall('right')
       } else if (key === ' ' || code === 'space') {
         event.preventDefault()
         console.log('⏸️ 空格键 - 暂停/继续')
-        // 空格键暂停/继续
         if (isPaused) {
           useMazeStore.getState().resumeGame()
         } else {
@@ -78,13 +67,7 @@ export function MazeGame() {
       }
     }
 
-    // 测试事件监听器是否正常工作
-    const testHandler = () => {
-      console.log('✅ 键盘事件监听器已设置')
-    }
-    
     window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keydown', testHandler, { once: true })
     
     return () => {
       console.log('🧹 清理键盘监听器')
@@ -92,84 +75,98 @@ export function MazeGame() {
     }
   }, [isPlaying, isPaused, moveBall])
 
-  // 陀螺仪控制
+  // 触摸手势控制
   useEffect(() => {
-    if (!gyroSupported || !gyroPermission) return
+    const canvas = canvasRef.current
+    if (!canvas) return
 
-    const handleDeviceOrientation = (event: DeviceOrientationEvent) => {
+    const handleTouchStart = (event: TouchEvent) => {
       if (!isPlaying || isPaused) return
-
-      // 获取设备倾斜角度
-      const beta = event.beta || 0  // 前后倾斜 (-180 到 180)
-      const gamma = event.gamma || 0 // 左右倾斜 (-90 到 90)
-
-      // 将角度转换为标准化的力值
-      const tiltX = Math.max(-1, Math.min(1, gamma / 30)) // 限制在-1到1之间
-      const tiltY = Math.max(-1, Math.min(1, beta / 30))
-
-      updateTilt(tiltX, tiltY)
+      
+      event.preventDefault()
+      const touch = event.touches[0]
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY
+      }
+      console.log('👆 触摸开始:', touchStartRef.current)
     }
 
-    window.addEventListener('deviceorientation', handleDeviceOrientation)
-    return () => window.removeEventListener('deviceorientation', handleDeviceOrientation)
-  }, [gyroSupported, gyroPermission, isPlaying, isPaused, updateTilt])
+    const handleTouchMove = (event: TouchEvent) => {
+      event.preventDefault() // 防止页面滚动
+    }
 
-  // 检测陀螺仪支持
-  useEffect(() => {
-    const detectGyroSupport = async () => {
-      console.log('🔍 检测陀螺仪支持...')
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (!isPlaying || isPaused || !touchStartRef.current) return
       
-      if (typeof window === 'undefined') {
-        console.log('❌ 非浏览器环境')
-        return
+      event.preventDefault()
+      const touch = event.changedTouches[0]
+      const touchEnd = {
+        x: touch.clientX,
+        y: touch.clientY
       }
-
-      // 检查基本的 DeviceOrientationEvent 支持
-      if (!('DeviceOrientationEvent' in window)) {
-        console.log('❌ 设备不支持 DeviceOrientationEvent')
-        useMazeStore.setState({ gyroSupported: false })
-        return
-      }
-
-      console.log('✅ DeviceOrientationEvent 存在')
-
-      // 检查是否是iOS设备并且需要权限
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
       
-      console.log('📱 设备检测:', { 
-        isIOS, 
-        userAgent: navigator.userAgent,
-        platform: navigator.platform,
-        maxTouchPoints: navigator.maxTouchPoints
+      const deltaX = touchEnd.x - touchStartRef.current.x
+      const deltaY = touchEnd.y - touchStartRef.current.y
+      
+      console.log('👆 触摸结束:', { 
+        start: touchStartRef.current, 
+        end: touchEnd, 
+        delta: { x: deltaX, y: deltaY } 
       })
-
-      if (isIOS && 'requestPermission' in DeviceOrientationEvent) {
-        console.log('🍎 iOS设备，需要权限请求')
-        useMazeStore.setState({ 
-          gyroSupported: true, 
-          gyroPermission: false 
-        })
-      } else {
-        console.log('✅ 非iOS设备或旧版本，直接支持')
-        useMazeStore.setState({ 
-          gyroSupported: true, 
-          gyroPermission: true 
-        })
+      
+      // 计算滑动距离和方向
+      const minSwipeDistance = 30 // 最小滑动距离
+      const absX = Math.abs(deltaX)
+      const absY = Math.abs(deltaY)
+      
+      if (absX < minSwipeDistance && absY < minSwipeDistance) {
+        console.log('👆 滑动距离太短，忽略')
+        touchStartRef.current = null
+        return
       }
-
-      // 初始化设置
-      useMazeStore.getState().setSensitivity(0.3)
+      
+      // 判断主要滑动方向
+      if (absX > absY) {
+        // 水平滑动
+        if (deltaX > 0) {
+          console.log('👆 向右滑动')
+          moveBall('right')
+        } else {
+          console.log('👆 向左滑动')
+          moveBall('left')
+        }
+      } else {
+        // 垂直滑动
+        if (deltaY > 0) {
+          console.log('👆 向下滑动')
+          moveBall('down')
+        } else {
+          console.log('👆 向上滑动')
+          moveBall('up')
+        }
+      }
+      
+      touchStartRef.current = null
     }
 
-    detectGyroSupport()
-  }, [])
+    // 添加触摸事件监听器
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
+
+    return () => {
+      canvas.removeEventListener('touchstart', handleTouchStart)
+      canvas.removeEventListener('touchmove', handleTouchMove)
+      canvas.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isPlaying, isPaused, moveBall])
 
   return (
     <div className="flex flex-col items-center space-y-6">
       <GameStats />
       
-      <div className="relative">
+      <div className="relative" ref={canvasRef}>
         <MazeCanvas />
         
         {/* 游戏暂停遮罩 */}
@@ -188,16 +185,16 @@ export function MazeGame() {
             </div>
           </div>
         )}
+        
+        {/* 手势提示 */}
+        {isPlaying && !isPaused && (
+          <div className="absolute bottom-2 left-2 text-xs text-white/70 bg-black/50 px-2 py-1 rounded">
+            滑动控制小球移动
+          </div>
+        )}
       </div>
 
       <GameControls />
-      
-      {/* 陀螺仪权限对话框 */}
-      {gyroSupported && !gyroPermission && (
-        <GyroPermissionDialog 
-          onRequestPermission={requestGyroPermission}
-        />
-      )}
 
       {/* 调试测试按钮 */}
       {isPlaying && (
@@ -208,7 +205,7 @@ export function MazeGame() {
             <button 
               onClick={() => {
                 console.log('🧪 测试向上移动')
-                moveBall(0, -1)
+                moveBall('up')
               }}
               className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
             >
@@ -219,7 +216,7 @@ export function MazeGame() {
             <button 
               onClick={() => {
                 console.log('🧪 测试向左移动')
-                moveBall(-1, 0)
+                moveBall('left')
               }}
               className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
             >
@@ -229,7 +226,7 @@ export function MazeGame() {
             <button 
               onClick={() => {
                 console.log('🧪 测试向右移动')
-                moveBall(1, 0)
+                moveBall('right')
               }}
               className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
             >
@@ -240,7 +237,7 @@ export function MazeGame() {
             <button 
               onClick={() => {
                 console.log('🧪 测试向下移动')
-                moveBall(0, 1)
+                moveBall('down')
               }}
               className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
             >
@@ -250,22 +247,6 @@ export function MazeGame() {
           </div>
         </div>
       )}
-
-      {/* 控制说明 */}
-      <div className="text-center text-sm text-slate-400 max-w-md">
-        <p className="mb-2">
-          <strong>PC端：</strong> 使用 WASD 或方向键控制小球移动
-        </p>
-        <p className="mb-2">
-          <strong>手机端：</strong> 倾斜设备控制小球滚动方向
-        </p>
-        <p>
-          <strong>目标：</strong> 将蓝色小球滚动到右下角的绿色终点
-        </p>
-        <p className="text-xs mt-2">
-          如果键盘无响应，请尝试点击页面任意位置获得焦点，然后再按键
-        </p>
-      </div>
     </div>
   )
 } 

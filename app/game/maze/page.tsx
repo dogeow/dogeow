@@ -9,7 +9,7 @@ export default function MazePage() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-white mb-2">🌀 迷宫游戏</h1>
           <p className="text-slate-300">
-            PC端使用WASD或方向键控制，手机端倾斜设备控制小球
+            PC端使用WASD或方向键控制，手机端使用手势滑动控制小球
           </p>
         </div>
         <MazeGame />

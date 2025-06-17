@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Slider } from '@/components/ui/slider'
 import { useMazeStore } from '../store'
 import { Play, Pause, RotateCcw, SkipForward, Settings } from 'lucide-react'
 import { useState } from 'react'
@@ -13,18 +12,13 @@ export function GameControls() {
     isPaused,
     gameWon,
     level,
-    sensitivity,
-    gyroSupported,
-    gyroPermission,
     ball,
     maze,
     startGame,
     pauseGame,
     resumeGame,
     resetGame,
-    nextLevel,
-    setSensitivity,
-    requestGyroPermission
+    nextLevel
   } = useMazeStore()
 
   const [showSettings, setShowSettings] = useState(false)
@@ -102,46 +96,13 @@ export function GameControls() {
               <h3 className="text-lg font-semibold mb-2">游戏设置</h3>
             </div>
 
-            {/* 灵敏度设置 */}
+            {/* 控制说明 */}
             <div>
-              <label className="block text-sm font-medium mb-2">
-                控制灵敏度: {sensitivity.toFixed(1)}
-              </label>
-              <Slider
-                value={[sensitivity]}
-                onValueChange={(value) => setSensitivity(value[0])}
-                min={0.1}
-                max={1.0}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
-
-            {/* 陀螺仪状态 */}
-            <div>
-              <h4 className="text-sm font-medium mb-2">陀螺仪控制</h4>
-              <div className="text-sm text-slate-600 space-y-2">
-                <div className="text-xs">
-                  设备: {navigator.userAgent.includes('iPhone') ? 'iPhone' : 
-                         navigator.userAgent.includes('iPad') ? 'iPad' : 
-                         navigator.userAgent.includes('Android') ? 'Android' : 'Desktop'}
-                </div>
-                {!gyroSupported ? (
-                  <span className="text-red-500">❌ 设备不支持陀螺仪</span>
-                ) : !gyroPermission ? (
-                  <div className="flex items-center justify-between">
-                    <span className="text-yellow-500">⚠️ 需要权限</span>
-                    <Button
-                      onClick={requestGyroPermission}
-                      size="sm"
-                      variant="outline"
-                    >
-                      请求权限
-                    </Button>
-                  </div>
-                ) : (
-                  <span className="text-green-500">✅ 陀螺仪已启用</span>
-                )}
+              <h4 className="text-sm font-medium mb-2">控制方式</h4>
+              <div className="text-sm text-slate-600 space-y-1">
+                <div>• PC端：WASD或方向键</div>
+                <div>• 手机端：手势滑动</div>
+                <div>• 智能移动：自动移动到岔口或墙壁</div>
               </div>
             </div>
 
@@ -156,7 +117,6 @@ export function GameControls() {
             <div className="text-xs text-slate-500 border-t pt-2">
               <div>游戏状态: {isPlaying ? '进行中' : '未开始'} {isPaused ? '(暂停)' : ''}</div>
               <div>小球位置: ({ball.x.toFixed(1)}, {ball.y.toFixed(1)})</div>
-              <div>小球速度: ({ball.vx.toFixed(2)}, {ball.vy.toFixed(2)})</div>
               <div>迷宫生成: {maze.length > 0 ? '是' : '否'}</div>
             </div>
           </div>
@@ -179,9 +139,9 @@ export function GameControls() {
 function VirtualDPad() {
   const { moveBall, isPlaying, isPaused } = useMazeStore()
 
-  const handleMove = (dx: number, dy: number) => {
+  const handleMove = (direction: 'up' | 'down' | 'left' | 'right') => {
     if (!isPlaying || isPaused) return
-    moveBall(dx, dy)
+    moveBall(direction)
   }
 
   const buttonClass = "w-12 h-12 rounded-lg bg-slate-600 hover:bg-slate-500 active:bg-slate-400 flex items-center justify-center text-white font-bold select-none"
@@ -191,8 +151,8 @@ function VirtualDPad() {
       <div></div>
       <button
         className={buttonClass}
-        onTouchStart={() => handleMove(0, -1)}
-        onMouseDown={() => handleMove(0, -1)}
+        onTouchStart={() => handleMove('up')}
+        onMouseDown={() => handleMove('up')}
       >
         ↑
       </button>
@@ -200,16 +160,16 @@ function VirtualDPad() {
       
       <button
         className={buttonClass}
-        onTouchStart={() => handleMove(-1, 0)}
-        onMouseDown={() => handleMove(-1, 0)}
+        onTouchStart={() => handleMove('left')}
+        onMouseDown={() => handleMove('left')}
       >
         ←
       </button>
       <div className="w-12 h-12"></div>
       <button
         className={buttonClass}
-        onTouchStart={() => handleMove(1, 0)}
-        onMouseDown={() => handleMove(1, 0)}
+        onTouchStart={() => handleMove('right')}
+        onMouseDown={() => handleMove('right')}
       >
         →
       </button>
@@ -217,8 +177,8 @@ function VirtualDPad() {
       <div></div>
       <button
         className={buttonClass}
-        onTouchStart={() => handleMove(0, 1)}
-        onMouseDown={() => handleMove(0, 1)}
+        onTouchStart={() => handleMove('down')}
+        onMouseDown={() => handleMove('down')}
       >
         ↓
       </button>
