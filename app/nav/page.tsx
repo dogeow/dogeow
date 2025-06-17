@@ -160,7 +160,7 @@ function NavContent() {
         <div className="flex items-center">
           <div className="flex items-center gap-1 mt-2">
             <Folder className="h-6 w-6" />
-            <h1 className="text-2xl font-bold">我的导航</h1>
+            <h1 className="text-2xl font-bold">导航</h1>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Button 

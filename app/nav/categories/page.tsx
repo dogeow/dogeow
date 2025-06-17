@@ -1,17 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useNavStore } from "@/app/nav/stores/navStore"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
   Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle,
-  CardFooter
+  CardContent
 } from "@/components/ui/card"
 import { 
   Table, 
@@ -21,83 +17,74 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table"
-import { Plus, Pencil, Trash2, ArrowLeft } from "lucide-react"
+import { Trash2, Check, X, ArrowLeft } from "lucide-react"
 import { NavCategory } from "@/app/nav/types"
 import { useRouter } from "next/navigation"
-import { Textarea } from "@/components/ui/textarea"
 import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
+import CategorySpeedDial from "./components/CategorySpeedDial"
 
 export default function CategoryManager() {
   const router = useRouter()
   const { 
     categories, 
     fetchCategories, 
-    createCategory, 
     updateCategory, 
     deleteCategory 
   } = useNavStore()
   
   const [loading, setLoading] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState("")
-  const [newCategoryDescription, setNewCategoryDescription] = useState("")
-  const [editingCategory, setEditingCategory] = useState<NavCategory | null>(null)
+  const [inlineEditingId, setInlineEditingId] = useState<number | null>(null)
+  const [inlineEditingName, setInlineEditingName] = useState('')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
+  const inlineInputRef = useRef<HTMLInputElement>(null)
 
   // 加载分类数据
   useEffect(() => {
     fetchCategories()
   }, [fetchCategories])
 
-  // 添加分类
-  const handleAddCategory = async () => {
-    if (!newCategoryName.trim()) {
+  useEffect(() => {
+    if (inlineEditingId && inlineInputRef.current) {
+      inlineInputRef.current.focus()
+    }
+  }, [inlineEditingId])
+
+  const handleInlineEdit = (category: NavCategory) => {
+    setInlineEditingId(category.id)
+    setInlineEditingName(category.name)
+  }
+
+  const saveInlineEdit = async () => {
+    if (!inlineEditingId || !inlineEditingName.trim()) {
       toast.error("分类名称不能为空")
       return
     }
 
     setLoading(true)
     try {
-      await createCategory({
-        name: newCategoryName,
-        description: newCategoryDescription || null,
-        is_visible: true,
-        sort_order: 0
-      })
-      
-      toast.success("分类创建成功")
-      setNewCategoryName("")
-      setNewCategoryDescription("")
+      const categoryToUpdate = categories.find(c => c.id === inlineEditingId)
+      if (categoryToUpdate) {
+        await updateCategory(inlineEditingId, {
+          name: inlineEditingName,
+          description: categoryToUpdate.description,
+          is_visible: categoryToUpdate.is_visible,
+          sort_order: categoryToUpdate.sort_order
+        })
+        toast.success("分类更新成功")
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "发生错误，请重试")
     } finally {
       setLoading(false)
+      setInlineEditingId(null)
+      setInlineEditingName('')
     }
   }
 
-  // 更新分类
-  const handleUpdateCategory = async () => {
-    if (!editingCategory || !editingCategory.name.trim()) {
-      toast.error("分类名称不能为空")
-      return
-    }
-
-    setLoading(true)
-    try {
-      await updateCategory(editingCategory.id, {
-        name: editingCategory.name,
-        description: editingCategory.description || null,
-        is_visible: editingCategory.is_visible,
-        sort_order: editingCategory.sort_order
-      })
-      
-      toast.success("分类更新成功")
-      setEditingCategory(null)
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-    } finally {
-      setLoading(false)
-    }
+  const cancelInlineEdit = () => {
+    setInlineEditingId(null)
+    setInlineEditingName('')
   }
 
   // 删除分类
@@ -124,6 +111,11 @@ export default function CategoryManager() {
     setDeleteDialogOpen(true)
   }
 
+  // 处理分类添加后的刷新
+  const handleCategoryAdded = () => {
+    fetchCategories()
+  }
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -135,120 +127,84 @@ export default function CategoryManager() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* 添加/编辑分类卡片 */}
+      <div className="py-2 pb-24">
         <Card>
-          <CardHeader>
-            <CardTitle>{editingCategory ? "编辑分类" : "添加分类"}</CardTitle>
-            <CardDescription>
-              {editingCategory ? "修改现有导航分类" : "创建新的导航分类便于整理您的网站导航"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">分类名称</label>
-              <Input
-                value={editingCategory ? editingCategory.name : newCategoryName}
-                onChange={(e) => editingCategory 
-                  ? setEditingCategory({...editingCategory, name: e.target.value})
-                  : setNewCategoryName(e.target.value)
-                }
-                placeholder="输入分类名称"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">分类描述（可选）</label>
-              <Textarea
-                value={editingCategory ? editingCategory.description || "" : newCategoryDescription}
-                onChange={(e) => editingCategory 
-                  ? setEditingCategory({...editingCategory, description: e.target.value})
-                  : setNewCategoryDescription(e.target.value)
-                }
-                placeholder="输入分类描述"
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-            {editingCategory && (
-              <div>
-                <label className="block text-sm font-medium mb-1">排序</label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={editingCategory.sort_order}
-                  onChange={(e) => setEditingCategory({
-                    ...editingCategory, 
-                    sort_order: parseInt(e.target.value) || 0
-                  })}
-                />
-                <p className="text-xs text-muted-foreground mt-1">数字越小排序越靠前</p>
-              </div>
-            )}
-          </CardContent>
-          <CardFooter className="flex justify-between">
-            {editingCategory ? (
-              <>
-                <Button variant="outline" onClick={() => setEditingCategory(null)}>
-                  取消
-                </Button>
-                <Button 
-                  onClick={handleUpdateCategory}
-                  disabled={loading || !editingCategory.name.trim()}
-                >
-                  {loading ? '处理中...' : '更新分类'}
-                </Button>
-              </>
-            ) : (
-              <Button 
-                onClick={handleAddCategory}
-                disabled={loading || !newCategoryName.trim()}
-                className="ml-auto"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                添加分类
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-
-        {/* 分类列表卡片 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>分类列表</CardTitle>
-            <CardDescription>管理现有的导航分类</CardDescription>
-          </CardHeader>
           <CardContent>
             {categories.length === 0 ? (
-              <div className="py-4 text-center">
-                <p className="text-muted-foreground">暂无分类，请添加一个分类</p>
+              <div className="text-center py-8 text-muted-foreground">
+                暂无分类，请添加您的第一个分类
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>名称</TableHead>
-                    <TableHead>项目数量</TableHead>
-                    <TableHead>操作</TableHead>
+                    <TableHead className="w-full">分类名称</TableHead>
+                    <TableHead className="text-center">项目数量</TableHead>
+                    <TableHead className="w-[50px]">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {categories.map((category) => (
                     <TableRow key={category.id}>
-                      <TableCell className="font-medium">{category.name}</TableCell>
-                      <TableCell>{category.items_count || 0}</TableCell>
+                      <TableCell>
+                        {inlineEditingId === category.id ? (
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              ref={inlineInputRef}
+                              value={inlineEditingName}
+                              onChange={(e) => setInlineEditingName(e.target.value)}
+                              className="h-8"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  saveInlineEdit()
+                                } else if (e.key === 'Escape') {
+                                  cancelInlineEdit()
+                                }
+                              }}
+                            />
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={saveInlineEdit}
+                              disabled={loading}
+                            >
+                              <Check className="h-4 w-4 text-green-500" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={cancelInlineEdit}
+                              disabled={loading}
+                            >
+                              <X className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <div 
+                              className="cursor-pointer hover:underline font-medium" 
+                              onClick={() => handleInlineEdit(category)}
+                            >
+                              {category.name}
+                            </div>
+                            {category.description && (
+                              <div className="text-sm text-muted-foreground mt-1">
+                                {category.description}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {category.items_count || 0}
+                      </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            onClick={() => setEditingCategory(category)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
                             onClick={() => confirmDelete(category.id)}
+                            disabled={loading}
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
@@ -261,15 +217,18 @@ export default function CategoryManager() {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* 删除确认对话框 */}
-      <DeleteConfirmationDialog
-        open={deleteDialogOpen}
-        onOpenChange={setDeleteDialogOpen}
-        onConfirm={handleDeleteCategory}
-        itemName={categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''}
-      />
+        {/* SpeedDial 组件 */}
+        <CategorySpeedDial onCategoryAdded={handleCategoryAdded} />
+
+        {/* 删除确认对话框 */}
+        <DeleteConfirmationDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          onConfirm={handleDeleteCategory}
+          itemName={categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''}
+        />
+      </div>
     </div>
   )
 } 

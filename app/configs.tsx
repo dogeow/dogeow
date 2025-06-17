@@ -38,6 +38,12 @@ export const configs = {
       hideOnMobile: true
     },
     {
+      id: "maze",
+      name: "迷宫",
+      description: "陀螺仪控制的物理迷宫游戏，倾斜设备控制小球到达终点",
+      icon: "🌀"
+    },
+    {
       id: "tetris",
       name: "俄罗斯方块",
       description: "经典的俄罗斯方块游戏，消除方块获得高分",

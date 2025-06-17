@@ -71,7 +71,7 @@ export function Combobox({
 
   // 检查是否显示创建选项
   const showCreateOption = onCreateOption && searchQuery && searchQuery.trim().length > 0
-  const showEmpty = filteredOptions.length === 0 || (searchQuery && filteredOptions.length === 0)
+  const showEmpty = filteredOptions.length === 0
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -103,7 +103,7 @@ export function Combobox({
           <CommandList>
             {showCreateOption && (
               <div 
-                className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center text-primary"
+                className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center text-primary border-b"
                 onClick={handleCreateOption}
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
@@ -111,26 +111,16 @@ export function Combobox({
               </div>
             )}
             
-            {showEmpty && (
+            {showEmpty && !showCreateOption && (
               <CommandEmpty>
-                {showCreateOption ? (
-                  <div 
-                    className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center text-primary"
-                    onClick={handleCreateOption}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    <span>{createText}: <strong>{searchQuery}</strong></span>
-                  </div>
-                ) : (
-                  <div className="py-2 px-2 text-sm text-muted-foreground">
-                    {emptyText}
-                  </div>
-                )}
+                <div className="py-2 px-2 text-sm text-muted-foreground">
+                  {emptyText}
+                </div>
               </CommandEmpty>
             )}
             
             <CommandGroup>
-              {options.map((option) => (
+              {filteredOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.value}
