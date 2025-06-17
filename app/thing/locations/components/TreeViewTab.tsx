@@ -25,11 +25,11 @@ export default function TreeViewTab({ selectedLocation, onLocationSelect }: Tree
   return (
     <div className="flex flex-col">
       <div className="w-full border rounded-lg shadow-sm overflow-hidden">
-        <div className="p-3 border-b bg-gray-50 dark:bg-gray-800">
+        <div className="p-3 border-b bg-secondary">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-medium">位置树形结构</h2>
+            <h2 className="text-lg font-medium text-secondary-foreground">位置树形结构</h2>
             <button 
-              className="p-1.5 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              className="p-1.5 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors"
               onClick={toggleTreeExpanded}
               title={isTreeExpanded ? "折叠所有" : "展开所有"}
             >

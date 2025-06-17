@@ -252,8 +252,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                       filteredData.filteredSpots.length === 0
 
   return (
-    <div className={cn("border rounded-md p-2 bg-background dark:bg-gray-800", className)} 
-      style={{ backgroundColor: mounted && theme === 'dark' ? 'rgb(31 41 55)' : '' }}
+    <div className={cn("border rounded-md p-2 bg-card", className)}
     >
       <div className="flex items-center gap-2 mb-2">
         <div className="relative flex-1">

@@ -502,7 +502,7 @@ export default function Thing() {
         </Button>
       </SheetTrigger>
       <SheetContent 
-        className="sm:max-w-md p-4 max-w-[200px] overflow-y-auto h-full bg-white text-gray-900 border-l border-gray-200 shadow-xl dark:bg-[#23272f] dark:text-white dark:border-[#2d323b]"
+        className="sm:max-w-md p-4 max-w-[200px] overflow-y-auto h-full bg-background text-foreground border-l border-border shadow-xl"
         side="right" 
         onEscapeKeyDown={() => handleFiltersOpenChange(false)}
         onPointerDownOutside={() => handleFiltersOpenChange(false)}
@@ -545,16 +545,16 @@ export default function Thing() {
       </Button>
       
       {categoryMenuOpen && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg dark:bg-gray-800">
+        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-border bg-popover shadow-lg">
           <div className="p-2">
             <div 
-              className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'none' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+              className={`flex items-center text-sm p-2 hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer ${selectedCategory === 'none' ? 'bg-accent/50 text-accent-foreground' : 'text-popover-foreground'}`}
               onClick={() => handleCategoryClick('none')}
             >
               所有分类
             </div>
             <div 
-              className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === 'uncategorized' ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+              className={`flex items-center text-sm p-2 hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer ${selectedCategory === 'uncategorized' ? 'bg-accent/50 text-accent-foreground' : 'text-popover-foreground'}`}
               onClick={() => handleCategoryClick('uncategorized')}
             >
               <span className="flex-1">未分类</span>
@@ -564,7 +564,7 @@ export default function Thing() {
             {categoriesFromStore.map((category) => ( 
               <div 
                 key={category.id}
-                className={`flex items-center text-sm p-2 hover:bg-gray-100 rounded-md cursor-pointer ${selectedCategory === category.id.toString() ? 'bg-accent/50 text-accent-foreground' : 'text-gray-600'}`}
+                className={`flex items-center text-sm p-2 hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer ${selectedCategory === category.id.toString() ? 'bg-accent/50 text-accent-foreground' : 'text-popover-foreground'}`}
                 onClick={() => handleCategoryClick(category.id.toString())}
               >
                 <span className="flex-1">{category.name}</span>
@@ -590,11 +590,11 @@ export default function Thing() {
       </Button>
 
       {tagMenuOpen && (
-        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg dark:bg-gray-800">
+        <div className="absolute top-full left-0 z-50 mt-1 w-56 rounded-md border border-border bg-popover shadow-lg">
           <div className="p-2">
             {selectedTags.length > 0 && (
               <div 
-                className="flex items-center text-sm text-gray-600 p-2 hover:bg-gray-100 rounded-md cursor-pointer"
+                className="flex items-center text-sm text-popover-foreground p-2 hover:bg-accent hover:text-accent-foreground rounded-md cursor-pointer"
                 onClick={() => {
                   setSelectedTags([]);
                   loadItems({ tags: undefined, page: 1 });
