@@ -7,7 +7,6 @@ import { useLocations } from '@/lib/api'
 import { cn } from '@/lib/helpers'
 import { LocationSelection, LocationTreeResponse } from '../types'
 import FolderIcon from './FolderIcon'
-import { useTheme } from 'next-themes'
 
 interface LocationTreeSelectProps {
   onSelect: (type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => void;
@@ -27,11 +26,10 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedAreas, setExpandedAreas] = useState<number[]>([])
   const [expandedRooms, setExpandedRooms] = useState<number[]>([])
-  const [mounted, setMounted] = useState(false)
+  const [, setMounted] = useState(false)
   
   const prevIsExpandedRef = useRef(isExpanded)
   const prevSelectionRef = useRef<{type?: string, id?: number}>({})
-  const { theme } = useTheme()
   
   // 确保组件已挂载
   useEffect(() => {
