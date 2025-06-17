@@ -85,7 +85,7 @@ export default function ThingTags() {
         {tags && tags.length > 0 && (
           <div className="space-y-6">
             {/* 标签统计 */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
               <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>共 {tags.length} 个标签</span>
                 <span>总计 {tags.reduce((sum, tag) => sum + tag.items_count, 0)} 个物品</span>
