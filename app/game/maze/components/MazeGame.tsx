@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect } from 'react'
 import { useMazeStore } from '../store'
 import { MazeCanvas } from './MazeCanvas'
 import { GameControls } from './GameControls'
@@ -12,7 +12,6 @@ export function MazeGame() {
     isPlaying,
     isPaused,
     gameWon,
-    updateBall,
     moveBall,
     updateTilt,
     gyroSupported,
@@ -20,91 +19,77 @@ export function MazeGame() {
     requestGyroPermission
   } = useMazeStore()
 
-  const animationFrameRef = useRef<number | undefined>(undefined)
-  const lastTimeRef = useRef<number>(0)
-
-  // 游戏循环
-  const gameLoop = useCallback((currentTime: number) => {
-    if (lastTimeRef.current === 0) {
-      lastTimeRef.current = currentTime
-    }
-    
-    const deltaTime = Math.min((currentTime - lastTimeRef.current) / 1000, 0.016) // 限制最大帧时间
-    lastTimeRef.current = currentTime
-
-    updateBall(deltaTime)
-
-    if (isPlaying && !isPaused && !gameWon) {
-      animationFrameRef.current = requestAnimationFrame(gameLoop)
-    }
-  }, [isPlaying, isPaused, gameWon, updateBall])
-
-  // 启动/停止游戏循环
-  useEffect(() => {
-    if (isPlaying && !isPaused && !gameWon) {
-      lastTimeRef.current = 0
-      animationFrameRef.current = requestAnimationFrame(gameLoop)
-    } else {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
-    }
-
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
-    }
-  }, [isPlaying, isPaused, gameWon, gameLoop])
+  // 不再需要游戏循环，因为改为直接移动模式
+  // const animationFrameRef = useRef<number | undefined>(undefined)
+  // const lastTimeRef = useRef<number>(0)
 
   // 键盘控制
   useEffect(() => {
+    console.log('设置键盘监听器，当前状态:', { isPlaying, isPaused })
+    
     const handleKeyDown = (event: KeyboardEvent) => {
       // 总是输出按键信息进行调试
-      console.log('按键事件:', event.key, event.code, '游戏状态:', { isPlaying, isPaused })
+      console.log('🎮 按键事件:', {
+        key: event.key,
+        code: event.code,
+        target: event.target,
+        游戏状态: { isPlaying, isPaused }
+      })
       
       if (!isPlaying || isPaused) {
-        console.log('游戏未开始或已暂停，忽略按键')
+        console.log('❌ 游戏未开始或已暂停，忽略按键')
         return
       }
 
-      const force = 1
+      const force = 2 // 增加移动距离，让移动更明显
       const key = event.key.toLowerCase()
       const code = event.code.toLowerCase()
       
-      console.log('处理按键:', { key, code })
+      console.log('🔍 处理按键:', { key, code })
       
       // 使用 if-else 替代 switch 以支持多种按键检测方式
       if (key === 'w' || code === 'keyw' || key === 'arrowup') {
         event.preventDefault()
-        console.log('向上移动')
+        console.log('⬆️ 向上移动')
         moveBall(0, -force)
       } else if (key === 's' || code === 'keys' || key === 'arrowdown') {
         event.preventDefault()
-        console.log('向下移动')
+        console.log('⬇️ 向下移动')
         moveBall(0, force)
       } else if (key === 'a' || code === 'keya' || key === 'arrowleft') {
         event.preventDefault()
-        console.log('向左移动')
+        console.log('⬅️ 向左移动')
         moveBall(-force, 0)
       } else if (key === 'd' || code === 'keyd' || key === 'arrowright') {
         event.preventDefault()
-        console.log('向右移动')
+        console.log('➡️ 向右移动')
         moveBall(force, 0)
       } else if (key === ' ' || code === 'space') {
         event.preventDefault()
-        console.log('空格键 - 暂停/继续')
+        console.log('⏸️ 空格键 - 暂停/继续')
         // 空格键暂停/继续
         if (isPaused) {
           useMazeStore.getState().resumeGame()
         } else {
           useMazeStore.getState().pauseGame()
         }
+      } else {
+        console.log('🚫 未识别的按键:', { key, code })
       }
     }
 
+    // 测试事件监听器是否正常工作
+    const testHandler = () => {
+      console.log('✅ 键盘事件监听器已设置')
+    }
+    
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    window.addEventListener('keydown', testHandler, { once: true })
+    
+    return () => {
+      console.log('🧹 清理键盘监听器')
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [isPlaying, isPaused, moveBall])
 
   // 陀螺仪控制
@@ -170,6 +155,58 @@ export function MazeGame() {
         />
       )}
 
+      {/* 调试测试按钮 */}
+      {isPlaying && (
+        <div className="flex flex-col items-center space-y-2">
+          <div className="text-sm text-slate-500">调试测试（点击测试移动）</div>
+          <div className="grid grid-cols-3 gap-2">
+            <div></div>
+            <button 
+              onClick={() => {
+                console.log('🧪 测试向上移动')
+                moveBall(0, -1)
+              }}
+              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+            >
+              ↑
+            </button>
+            <div></div>
+            
+            <button 
+              onClick={() => {
+                console.log('🧪 测试向左移动')
+                moveBall(-1, 0)
+              }}
+              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+            >
+              ←
+            </button>
+            <div></div>
+            <button 
+              onClick={() => {
+                console.log('🧪 测试向右移动')
+                moveBall(1, 0)
+              }}
+              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+            >
+              →
+            </button>
+            
+            <div></div>
+            <button 
+              onClick={() => {
+                console.log('🧪 测试向下移动')
+                moveBall(0, 1)
+              }}
+              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
+            >
+              ↓
+            </button>
+            <div></div>
+          </div>
+        </div>
+      )}
+
       {/* 控制说明 */}
       <div className="text-center text-sm text-slate-400 max-w-md">
         <p className="mb-2">
@@ -180,6 +217,9 @@ export function MazeGame() {
         </p>
         <p>
           <strong>目标：</strong> 将蓝色小球滚动到右下角的绿色终点
+        </p>
+        <p className="text-xs mt-2">
+          如果键盘无响应，请尝试点击页面任意位置获得焦点，然后再按键
         </p>
       </div>
     </div>

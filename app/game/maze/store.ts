@@ -146,79 +146,11 @@ export const useMazeStore = create<GameState>((set, get) => ({
     get().startGame()
   },
   
-  // 小球物理更新
-  updateBall: (deltaTime: number) => {
-    const state = get()
-    if (!state.isPlaying || state.isPaused) return
-    
-    // 添加调试信息（仅在有速度时输出）
-    if (process.env.NODE_ENV === 'development' && (Math.abs(state.ball.vx) > 0.01 || Math.abs(state.ball.vy) > 0.01)) {
-      console.log('updateBall:', { 
-        deltaTime, 
-        ballPos: { x: state.ball.x, y: state.ball.y },
-        ballVel: { vx: state.ball.vx, vy: state.ball.vy },
-        mazeGenerated: state.maze.length > 0
-      })
-    }
-    
-    const { ball, friction, cellSize, mazeSize } = state
-    const maxX = mazeSize * cellSize - ball.radius
-    const maxY = mazeSize * cellSize - ball.radius
-    
-    // 更新位置
-    let newX = ball.x + ball.vx * deltaTime
-    let newY = ball.y + ball.vy * deltaTime
-    
-    // 边界检测
-    if (newX < ball.radius) {
-      newX = ball.radius
-      set({ ball: { ...ball, vx: 0 } })
-    } else if (newX > maxX) {
-      newX = maxX
-      set({ ball: { ...ball, vx: 0 } })
-    }
-    
-    if (newY < ball.radius) {
-      newY = ball.radius
-      set({ ball: { ...ball, vy: 0 } })
-    } else if (newY > maxY) {
-      newY = maxY
-      set({ ball: { ...ball, vy: 0 } })
-    }
-    
-    // 墙壁碰撞检测
-    const collision = checkWallCollision(newX, newY, ball, state.maze, cellSize)
-    if (collision.x) {
-      newX = ball.x
-      set({ ball: { ...ball, vx: 0 } })
-    }
-    if (collision.y) {
-      newY = ball.y
-      set({ ball: { ...ball, vy: 0 } })
-    }
-    
-    // 应用摩擦力
-    const newVx = ball.vx * friction
-    const newVy = ball.vy * friction
-    
-    // 检查是否到达终点
-    const endX = (mazeSize - 1) * cellSize + cellSize / 2
-    const endY = (mazeSize - 1) * cellSize + cellSize / 2
-    const distance = Math.sqrt((newX - endX) ** 2 + (newY - endY) ** 2)
-    
-    if (distance < ball.radius + 10) {
-      set({ gameWon: true, isPlaying: false })
-    }
-    
-    set({
-      ball: {
-        ...ball,
-        x: newX,
-        y: newY,
-        vx: newVx,
-        vy: newVy
-      }
-    })
+  // 简化的更新函数，不再需要物理动画
+  updateBall: () => {
+    // 现在使用直接移动，不需要持续更新
+    // 这个函数保留是为了兼容性，但实际上不做任何事情
+    return
   },
   
   moveBall: (dx: number, dy: number) => {
@@ -230,23 +162,50 @@ export const useMazeStore = create<GameState>((set, get) => ({
       return
     }
     
-    const force = 0.5
-    const newVx = state.ball.vx + dx * force
-    const newVy = state.ball.vy + dy * force
+    // 改为直接移动，不使用物理动画
+    const moveDistance = state.cellSize / 4 // 每次移动1/4格子
+    const newX = state.ball.x + dx * moveDistance
+    const newY = state.ball.y + dy * moveDistance
     
-    console.log('更新小球速度:', { 
-      oldVx: state.ball.vx, 
-      oldVy: state.ball.vy, 
-      newVx, 
-      newVy,
-      ballPos: { x: state.ball.x, y: state.ball.y }
+    // 边界检测
+    const { cellSize, mazeSize, ball } = state
+    const minX = ball.radius
+    const maxX = mazeSize * cellSize - ball.radius
+    const minY = ball.radius
+    const maxY = mazeSize * cellSize - ball.radius
+    
+    const clampedX = Math.max(minX, Math.min(maxX, newX))
+    const clampedY = Math.max(minY, Math.min(maxY, newY))
+    
+    // 墙壁碰撞检测
+    const collision = checkWallCollision(clampedX, clampedY, ball, state.maze, cellSize)
+    
+    const finalX = collision.x ? state.ball.x : clampedX
+    const finalY = collision.y ? state.ball.y : clampedY
+    
+    console.log('直接移动小球:', { 
+      oldPos: { x: state.ball.x, y: state.ball.y },
+      newPos: { x: finalX, y: finalY },
+      collision
     })
+    
+    // 检查是否到达终点
+    const endX = (mazeSize - 1) * cellSize + cellSize / 2
+    const endY = (mazeSize - 1) * cellSize + cellSize / 2
+    const distance = Math.sqrt((finalX - endX) ** 2 + (finalY - endY) ** 2)
+    
+    if (distance < ball.radius + 10) {
+      set({ gameWon: true, isPlaying: false })
+      console.log('🎉 到达终点！')
+    }
     
     set({
       ball: {
         ...state.ball,
-        vx: newVx,
-        vy: newVy
+        x: finalX,
+        y: finalY,
+        vx: 0, // 重置速度
+        vy: 0
       }
     })
   },
