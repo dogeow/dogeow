@@ -33,11 +33,11 @@ const TechLink: React.FC<TechLinkProps> = ({ href, src, alt, needsInvert }) => (
 
 const PoweredBy: React.FC = () => (
   <div className="flex items-center gap-2 text-sm opacity-80">
-    <span>Powered By 🫴</span>
-    <TechLink href="https://nextjs.org" src={NextJsIcon} alt="Next.js" needsInvert={true} />
+    <span>🫴 Powered By</span>
     <TechLink href="https://laravel.com" src={laravelIcon} alt="Laravel" needsInvert={false} />
-    <TechLink href="https://ui.shadcn.com" src={graphQlIcon} alt="shadcn/ui" needsInvert={true} />
     <TechLink href="https://react.dev" src={reactIcon} alt="React" needsInvert={false} />
+    <TechLink href="https://nextjs.org" src={NextJsIcon} alt="Next.js" needsInvert={true} />
+    <TechLink href="https://ui.shadcn.com" src={graphQlIcon} alt="shadcn/ui" needsInvert={true} />
   </div>
 );
 
