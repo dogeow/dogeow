@@ -61,10 +61,8 @@ export default function ThingTags() {
   }
 
   return (
-    <div className="content-container px-4 py-6 pb-24">
+    <div className="content-container py-6 pb-24">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">标签管理</h1>
-        
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
             加载标签失败，请稍后重试
@@ -87,52 +85,41 @@ export default function ThingTags() {
         {tags && tags.length > 0 && (
           <div className="space-y-6">
             {/* 标签统计 */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-2">
               <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>共 {tags.length} 个标签</span>
                 <span>总计 {tags.reduce((sum, tag) => sum + tag.items_count, 0)} 个物品</span>
               </div>
             </div>
 
-            {/* 标签网格 */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {/* 标签网格 - 调整为一行显示两个 */}
+            <div className="grid grid-cols-2 gap-4">
               {tags.map((tag) => (
                 <div key={tag.id} className="relative group">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 hover:shadow-md transition-shadow">
-                    {/* 标签头部 */}
-                    <div className="flex items-center justify-between mb-3">
-                      <Badge
-                        style={getTagStyle(tag.color)}
-                        className="h-7 px-3 text-sm font-medium"
-                      >
-                        {tag.name}
-                      </Badge>
+                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 hover:shadow-md transition-shadow">
+                    {/* 标签头部 - 合并为一行 */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          style={getTagStyle(tag.color)}
+                          className="h-7 px-3 text-sm font-medium"
+                        >
+                          {tag.name}
+                        </Badge>
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          {tag.items_count} 个
+                        </span>
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                        className="h-7 w-7 opacity-20 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                         onClick={() => openDeleteDialog(tag.id)}
                         disabled={deleting}
                         title="删除标签"
                       >
                         <X className="h-4 w-4" />
                       </Button>
-                    </div>
-
-                    {/* 标签信息 */}
-                    <div className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center justify-between">
-                        <span>关联物品</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {tag.items_count} 个
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span>创建时间</span>
-                        <span className="text-xs">
-                          {new Date(tag.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
                     </div>
 
                     {/* 使用频率指示器 */}

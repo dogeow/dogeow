@@ -264,56 +264,50 @@ export default function ItemFilters({
     <div className="space-y-3">
       <Label className="text-base font-medium">{label}</Label>
       <div className="space-y-3">
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">开始日期</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full h-11 justify-start text-left font-normal",
-                  !filters[fromField] && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {filters[fromField] ? format(new Date(filters[fromField] as Date), 'yyyy-MM-dd') : <span>开始日期</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={filters[fromField] as Date}
-                onSelect={(date) => handleChange(fromField, date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">结束日期</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full h-11 justify-start text-left font-normal",
-                  !filters[toField] && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {filters[toField] ? format(new Date(filters[toField] as Date), 'yyyy-MM-dd') : <span>结束日期</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
-              <Calendar
-                mode="single"
-                selected={filters[toField] as Date}
-                onSelect={(date) => handleChange(toField, date)}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full h-11 justify-start text-left font-normal",
+                !filters[fromField] && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {filters[fromField] ? format(new Date(filters[fromField] as Date), 'yyyy-MM-dd') : <span>开始日期</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={filters[fromField] as Date}
+              onSelect={(date) => handleChange(fromField, date)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn(
+                "w-full h-11 justify-start text-left font-normal",
+                !filters[toField] && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {filters[toField] ? format(new Date(filters[toField] as Date), 'yyyy-MM-dd') : <span>结束日期</span>}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Calendar
+              mode="single"
+              selected={filters[toField] as Date}
+              onSelect={(date) => handleChange(toField, date)}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
         <div className="flex items-center space-x-2 w-full mt-1">
           <Switch 
             id={`include-null-${fromField}`}
@@ -421,90 +415,76 @@ export default function ItemFilters({
             
             <div className="space-y-3">
               <Label className="text-base font-medium">价格范围</Label>
-              <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">最低价</Label>
-                  <Input
-                    type="number"
-                    placeholder="最低价"
-                    value={filters.price_from}
-                    onChange={(e) => handleChange('price_from', e.target.value)}
-                    className="h-11 bg-background border border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">最高价</Label>
-                  <Input
-                    type="number"
-                    placeholder="最高价"
-                    value={filters.price_to}
-                    onChange={(e) => handleChange('price_to', e.target.value)}
-                    className="h-11 bg-background border border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary"
-                  />
-                </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  placeholder="最低价"
+                  value={filters.price_from}
+                  onChange={(e) => handleChange('price_from', e.target.value)}
+                  className="h-11 bg-background border border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary"
+                />
+                <span className="text-muted-foreground">-</span>
+                <Input
+                  type="number"
+                  placeholder="最高价"
+                  value={filters.price_to}
+                  onChange={(e) => handleChange('price_to', e.target.value)}
+                  className="h-11 bg-background border border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary"
+                />
               </div>
             </div>
             
             <div className="space-y-3">
               <Label className="text-base font-medium">位置</Label>
               <div className="space-y-3">
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">区域</Label>
-                  <Select 
-                    value={typeof filters.area_id === 'number' ? filters.area_id.toString() : filters.area_id.toString()} 
-                    onValueChange={(value) => handleChange('area_id', value)}
-                  >
-                    <SelectTrigger className="h-11 bg-background border border-input text-foreground">
-                      <SelectValue placeholder="选择区域" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border text-popover-foreground">
-                      <SelectItem value="all">全部区域</SelectItem>
-                      {areas.map((area: Area) => ( 
-                        <SelectItem key={area.id} value={area.id.toString()}>{area.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">房间</Label>
-                  <Select 
-                    value={typeof filters.room_id === 'number' ? filters.room_id.toString() : filters.room_id.toString()} 
-                    onValueChange={(value) => handleChange('room_id', value)}
-                    disabled={filters.area_id === 'all' || filters.area_id === null || filters.area_id === ''}
-                  >
-                    <SelectTrigger className="h-11 bg-background border border-input text-foreground disabled:opacity-60">
-                      <SelectValue placeholder="选择房间" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border text-popover-foreground">
-                      <SelectItem value="all">全部房间</SelectItem>
-                      {rooms
-                        .filter(room => filters.area_id === 'all' || room.area_id?.toString() === filters.area_id?.toString())
-                        .map((room: Room) => (
-                        <SelectItem key={room.id} value={room.id.toString()}>{room.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-xs text-muted-foreground">具体位置</Label>
-                  <Select 
-                    value={typeof filters.spot_id === 'number' ? filters.spot_id.toString() : filters.spot_id.toString()} 
-                    onValueChange={(value) => handleChange('spot_id', value)}
-                    disabled={filters.room_id === 'all' || filters.room_id === null || filters.room_id === ''}
-                  >
-                    <SelectTrigger className="h-11 bg-background border border-input text-foreground disabled:opacity-60">
-                      <SelectValue placeholder="选择位置" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-popover border border-border text-popover-foreground">
-                      <SelectItem value="all">全部位置</SelectItem>
-                      {spots
-                        .filter(spot => filters.room_id === 'all' || spot.room_id?.toString() === filters.room_id?.toString())
-                        .map((spot: Spot) => (
-                        <SelectItem key={spot.id} value={spot.id.toString()}>{spot.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                <Select 
+                  value={typeof filters.area_id === 'number' ? filters.area_id.toString() : filters.area_id.toString()} 
+                  onValueChange={(value) => handleChange('area_id', value)}
+                >
+                  <SelectTrigger className="h-11 bg-background border border-input text-foreground">
+                    <SelectValue placeholder="选择区域" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border text-popover-foreground">
+                    <SelectItem value="all">全部区域</SelectItem>
+                    {areas.map((area: Area) => ( 
+                      <SelectItem key={area.id} value={area.id.toString()}>{area.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select 
+                  value={typeof filters.room_id === 'number' ? filters.room_id.toString() : filters.room_id.toString()} 
+                  onValueChange={(value) => handleChange('room_id', value)}
+                  disabled={filters.area_id === 'all' || filters.area_id === null || filters.area_id === ''}
+                >
+                  <SelectTrigger className="h-11 bg-background border border-input text-foreground disabled:opacity-60">
+                    <SelectValue placeholder="选择房间" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border text-popover-foreground">
+                    <SelectItem value="all">全部房间</SelectItem>
+                    {rooms
+                      .filter(room => filters.area_id === 'all' || room.area_id?.toString() === filters.area_id?.toString())
+                      .map((room: Room) => (
+                      <SelectItem key={room.id} value={room.id.toString()}>{room.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select 
+                  value={typeof filters.spot_id === 'number' ? filters.spot_id.toString() : filters.spot_id.toString()} 
+                  onValueChange={(value) => handleChange('spot_id', value)}
+                  disabled={filters.room_id === 'all' || filters.room_id === null || filters.room_id === ''}
+                >
+                  <SelectTrigger className="h-11 bg-background border border-input text-foreground disabled:opacity-60">
+                    <SelectValue placeholder="选择位置" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-popover border border-border text-popover-foreground">
+                    <SelectItem value="all">全部位置</SelectItem>
+                    {spots
+                      .filter(spot => filters.room_id === 'all' || spot.room_id?.toString() === filters.room_id?.toString())
+                      .map((spot: Spot) => (
+                      <SelectItem key={spot.id} value={spot.id.toString()}>{spot.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </TabsContent>
