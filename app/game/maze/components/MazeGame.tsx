@@ -116,9 +116,53 @@ export function MazeGame() {
 
   // 检测陀螺仪支持
   useEffect(() => {
-    if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
-      useMazeStore.getState().setSensitivity(0.3) // 初始化设置
+    const detectGyroSupport = async () => {
+      console.log('🔍 检测陀螺仪支持...')
+      
+      if (typeof window === 'undefined') {
+        console.log('❌ 非浏览器环境')
+        return
+      }
+
+      // 检查基本的 DeviceOrientationEvent 支持
+      if (!('DeviceOrientationEvent' in window)) {
+        console.log('❌ 设备不支持 DeviceOrientationEvent')
+        useMazeStore.setState({ gyroSupported: false })
+        return
+      }
+
+      console.log('✅ DeviceOrientationEvent 存在')
+
+      // 检查是否是iOS设备并且需要权限
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+      
+      console.log('📱 设备检测:', { 
+        isIOS, 
+        userAgent: navigator.userAgent,
+        platform: navigator.platform,
+        maxTouchPoints: navigator.maxTouchPoints
+      })
+
+      if (isIOS && 'requestPermission' in DeviceOrientationEvent) {
+        console.log('🍎 iOS设备，需要权限请求')
+        useMazeStore.setState({ 
+          gyroSupported: true, 
+          gyroPermission: false 
+        })
+      } else {
+        console.log('✅ 非iOS设备或旧版本，直接支持')
+        useMazeStore.setState({ 
+          gyroSupported: true, 
+          gyroPermission: true 
+        })
+      }
+
+      // 初始化设置
+      useMazeStore.getState().setSensitivity(0.3)
     }
+
+    detectGyroSupport()
   }, [])
 
   return (

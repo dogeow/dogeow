@@ -120,7 +120,12 @@ export function GameControls() {
             {/* 陀螺仪状态 */}
             <div>
               <h4 className="text-sm font-medium mb-2">陀螺仪控制</h4>
-              <div className="text-sm text-slate-600">
+              <div className="text-sm text-slate-600 space-y-2">
+                <div className="text-xs">
+                  设备: {navigator.userAgent.includes('iPhone') ? 'iPhone' : 
+                         navigator.userAgent.includes('iPad') ? 'iPad' : 
+                         navigator.userAgent.includes('Android') ? 'Android' : 'Desktop'}
+                </div>
                 {!gyroSupported ? (
                   <span className="text-red-500">❌ 设备不支持陀螺仪</span>
                 ) : !gyroPermission ? (

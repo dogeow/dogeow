@@ -222,18 +222,31 @@ export const useMazeStore = create<GameState>((set, get) => ({
   },
   
   requestGyroPermission: async () => {
+    console.log('🔐 请求陀螺仪权限...')
+    
     if (typeof DeviceOrientationEvent !== 'undefined' && 'requestPermission' in DeviceOrientationEvent) {
       try {
+        console.log('📱 iOS设备，请求权限')
         const permission = await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission()
+        console.log('🔐 权限请求结果:', permission)
+        
+        const granted = permission === 'granted'
         set({ 
-          gyroPermission: permission === 'granted',
+          gyroPermission: granted,
           gyroSupported: true
         })
+        
+        if (granted) {
+          console.log('✅ 陀螺仪权限已获得')
+        } else {
+          console.log('❌ 陀螺仪权限被拒绝')
+        }
       } catch (error) {
-        console.error('陀螺仪权限请求失败:', error)
-        set({ gyroSupported: false })
+        console.error('❌ 陀螺仪权限请求失败:', error)
+        set({ gyroSupported: false, gyroPermission: false })
       }
     } else {
+      console.log('✅ 非iOS设备，直接启用陀螺仪')
       set({ gyroSupported: true, gyroPermission: true })
     }
   },
