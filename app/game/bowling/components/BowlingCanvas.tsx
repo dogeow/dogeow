@@ -8,13 +8,13 @@ import { useBowlingStore } from "../store"
 // 常量配置
 const PHYSICS_CONFIG = {
   GRAVITY: -9.82,
-  BALL_MASS: 15,
-  PIN_MASS: 0.2,
-  BALL_RADIUS: 1,
+  BALL_MASS: 10, // 减少球的重量，降低冲击力
+  PIN_MASS: 0.8, // 增加球瓶重量，让它们更难倒下
+  BALL_RADIUS: 0.6, // 减少球的半径，让它更小
   PIN_HEIGHT: 1.5,
   PIN_RADIUS_TOP: 0.15,
   PIN_RADIUS_BOTTOM: 0.2,
-  LANE_WIDTH: 3.5, // 标准球道宽度约3.5米
+  LANE_WIDTH: 5.0, // 增加球道宽度，给玩家更多操作空间
   LANE_LENGTH: 19.2, // 标准球道长度19.152米
   WALL_HEIGHT: 2,
   WALL_THICKNESS: 0.5,
@@ -25,7 +25,7 @@ const PHYSICS_CONFIG = {
 const MATERIALS_CONFIG = {
   BALL_GROUND: { friction: 0.1, restitution: 0.0 }, // 大幅减少摩擦力，模拟光滑球道
   BALL_PIN: { friction: 0.6, restitution: 0.5 },
-  PIN_GROUND: { friction: 0.3, restitution: 0.2 },
+  PIN_GROUND: { friction: 0.8, restitution: 0.1 }, // 增加球瓶与地面摩擦力，让球瓶更稳定
   PIN_PIN: { friction: 0.4, restitution: 0.5 }
 } as const
 
@@ -42,9 +42,9 @@ const CAMERA_CONFIG = {
 
 const PIN_POSITIONS = [
   [0, 1.0, -18.3], // 第1号球瓶，距离投球线18.288米（约-18.3）
-  [-0.4, 1.0, -19.2], [0.4, 1.0, -19.2], // 第二排
-  [-0.8, 1.0, -20.1], [0, 1.0, -20.1], [0.8, 1.0, -20.1], // 第三排
-  [-1.2, 1.0, -21.0], [-0.4, 1.0, -21.0], [0.4, 1.0, -21.0], [1.2, 1.0, -21.0] // 第四排
+  [-0.6, 1.0, -19.2], [0.6, 1.0, -19.2], // 第二排，增加间距
+  [-1.2, 1.0, -20.1], [0, 1.0, -20.1], [1.2, 1.0, -20.1], // 第三排，增加间距
+  [-1.8, 1.0, -21.0], [-0.6, 1.0, -21.0], [0.6, 1.0, -21.0], [1.8, 1.0, -21.0] // 第四排，增加间距
 ] as const
 
 interface SceneRef {
@@ -258,29 +258,6 @@ export function BowlingCanvas() {
       pinMesh.receiveShadow = true
       scene.add(pinMesh)
       
-      // 添加红色条纹装饰
-      const stripeGeometry = new THREE.CylinderGeometry(
-        PHYSICS_CONFIG.PIN_RADIUS_TOP + 0.01, 
-        PHYSICS_CONFIG.PIN_RADIUS_BOTTOM + 0.01, 
-        0.15, // 条纹高度
-        12
-      )
-      const stripeMaterial = new THREE.MeshPhongMaterial({ 
-        color: 0xcc0000, // 红色条纹
-        shininess: 100,
-        specular: 0x444444
-      })
-      
-      // 上条纹
-      const upperStripe = new THREE.Mesh(stripeGeometry, stripeMaterial)
-      upperStripe.position.set(pos[0], pos[1] + 0.4, pos[2])
-      scene.add(upperStripe)
-      
-      // 下条纹
-      const lowerStripe = new THREE.Mesh(stripeGeometry, stripeMaterial)
-      lowerStripe.position.set(pos[0], pos[1] - 0.2, pos[2])
-      scene.add(lowerStripe)
-      
       pinMeshes.push(pinMesh)
 
       const pinShape = new CANNON.Cylinder(
@@ -292,8 +269,8 @@ export function BowlingCanvas() {
       const pinBody = new CANNON.Body({ 
         mass: PHYSICS_CONFIG.PIN_MASS,
         material: pinMaterial,
-        linearDamping: 0.05,
-        angularDamping: 0.05
+        linearDamping: 0.2, // 增加球瓶阻尼，让它们移动时减速更快
+        angularDamping: 0.2 // 增加角度阻尼，减少旋转
       })
       pinBody.addShape(pinShape)
       pinBody.position.set(pos[0], pos[1], pos[2])
@@ -322,8 +299,8 @@ export function BowlingCanvas() {
       world.addBody(wallBody)
     }
 
-    createWall(-2) // 左墙，调整位置适应球道宽度
-    createWall(2)  // 右墙
+    createWall(-3) // 左墙，调整位置适应更宽的球道
+    createWall(3)  // 右墙
   }, [])
 
   // 添加照明
@@ -459,7 +436,7 @@ export function BowlingCanvas() {
     const elapsedTime = currentTime - throwStartTime
     
     // 检查边界 - 调整边界适应新球道长度
-    if (position.y < -5 || position.z < -25 || position.z > 15 || Math.abs(position.x) > 8) {
+    if (position.y < -5 || position.z < -25 || position.z > 15 || Math.abs(position.x) > 10) {
       console.log('🚨 球超出边界，但继续游戏直到15秒', { 
         y: position.y, 
         z: position.z, 
@@ -607,8 +584,8 @@ export function BowlingCanvas() {
     console.log('🎳 Three.js 投球！', { aimAngle })
 
     const angleRad = (aimAngle * Math.PI) / 180
-    const force = 250 // 增加力度，让球有足够速度在光滑球道上滚到球瓶
-    const velocityScale = 0.02 // 稍微增加速度缩放因子
+    const force = 200 // 降低力度，减少撞击强度
+    const velocityScale = 0.018 // 稍微降低速度缩放因子
 
     // 设置球的速度
     sceneRef.current.ball.body.velocity.set(
@@ -621,7 +598,7 @@ export function BowlingCanvas() {
     const forceVector = new CANNON.Vec3(
       Math.sin(angleRad) * force * 0.2, // 降低侧向力
       -1, // 轻微向下的力
-      -force * 0.6 // 增加前进力
+      -force * 0.5 // 降低前进力
     )
     sceneRef.current.ball.body.applyImpulse(forceVector, sceneRef.current.ball.body.position)
     
