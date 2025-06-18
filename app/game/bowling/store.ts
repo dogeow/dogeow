@@ -144,10 +144,8 @@ export const useBowlingStore = create<GameState>((set, get) => ({
       ballThrown: false
     })
     
-    // 自动请求陀螺仪权限
-    setTimeout(() => {
-      get().requestGyroPermission()
-    }, 1000)
+    // 移除自动权限请求，改为通过对话框让用户主动请求
+    console.log('🎮 游戏已启动，等待用户主动申请陀螺仪权限')
   },
   
   pauseGame: () => set({ isPaused: true }),
@@ -209,11 +207,15 @@ export const useBowlingStore = create<GameState>((set, get) => ({
   },
   
   requestGyroPermission: async () => {
-    console.log('🔐 请求陀螺仪权限...')
+    console.log('🔐 开始请求陀螺仪权限...')
     
     // 检测设备支持
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    const isAndroid = /Android/i.test(navigator.userAgent)
+    const isMobile = isIOS || isAndroid
     const hasDeviceOrientation = 'DeviceOrientationEvent' in window
+    
+    console.log('📱 设备信息:', { isIOS, isAndroid, isMobile, hasDeviceOrientation })
     
     if (!hasDeviceOrientation) {
       console.log('❌ 设备不支持陀螺仪')
@@ -223,28 +225,59 @@ export const useBowlingStore = create<GameState>((set, get) => ({
     
     set({ gyroSupported: true })
     
+    // iOS 设备需要显式请求权限
     if (isIOS && typeof DeviceOrientationEvent !== 'undefined' && 'requestPermission' in DeviceOrientationEvent) {
       try {
-        console.log('📱 iOS设备，请求权限')
+        console.log('📱 iOS设备，显示系统权限对话框')
         const permission = await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission()
-        console.log('🔐 权限请求结果:', permission)
+        console.log('🔐 iOS权限请求结果:', permission)
         
         const granted = permission === 'granted'
         set({ gyroPermission: granted })
         
         if (granted) {
-          console.log('✅ 陀螺仪权限已获得')
+          console.log('✅ iOS陀螺仪权限已获得')
         } else {
-          console.log('❌ 陀螺仪权限被拒绝')
+          console.log('❌ iOS陀螺仪权限被拒绝')
         }
       } catch (error) {
-        console.error('❌ 权限请求失败:', error)
+        console.error('❌ iOS权限请求失败:', error)
         set({ gyroPermission: false })
       }
-    } else {
-      // 非iOS设备，假设已有权限
-      console.log('🤖 非iOS设备，假设已有权限')
-      set({ gyroPermission: true })
+    } 
+    // Android 和其他移动设备
+    else if (isMobile) {
+      console.log('🤖 Android/移动设备，测试陀螺仪可用性')
+      
+      // 对于Android设备，我们需要测试陀螺仪是否真的可用
+      let testPassed = false
+      
+      const testHandler = (event: DeviceOrientationEvent) => {
+        if (event.alpha !== null || event.beta !== null || event.gamma !== null) {
+          testPassed = true
+          console.log('✅ 陀螺仪测试成功')
+        }
+      }
+      
+      window.addEventListener('deviceorientation', testHandler)
+      
+      // 等待100ms测试陀螺仪响应
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      window.removeEventListener('deviceorientation', testHandler)
+      
+      if (testPassed) {
+        set({ gyroPermission: true })
+        console.log('✅ Android陀螺仪权限已获得')
+      } else {
+        console.log('⚠️ Android陀螺仪可能需要用户手动开启')
+        set({ gyroPermission: true }) // 假设有权限，让用户尝试
+      }
+    }
+    // 桌面设备
+    else {
+      console.log('💻 桌面设备，陀螺仪不可用')
+      set({ gyroPermission: false })
     }
   },
   
