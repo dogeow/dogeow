@@ -1,249 +1,156 @@
 "use client"
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useCallback, useRef } from 'react'
 import { useMazeStore } from '../store'
-import { MazeCanvas } from './MazeCanvas'
-import { GameControls } from './GameControls'
-import { GameStats } from './GameStats'
+import MazeCanvas from './MazeCanvas'
 
-export function MazeGame() {
+export default function MazeGame() {
   const {
-    isPlaying,
-    isPaused,
-    gameWon,
-    moveBall
+    moveToPosition,
+    gameStarted,
+    gameCompleted,
+    isAutoMoving,
+    mazeSize,
+    cameraConfig
   } = useMazeStore()
 
-  const touchStartRef = useRef<{ x: number, y: number } | null>(null)
-  const canvasRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // 键盘控制
-  useEffect(() => {
-    console.log('设置键盘监听器，当前状态:', { isPlaying, isPaused })
+  // 将屏幕坐标转换为迷宫网格坐标
+  const screenToMazeCoordinates = useCallback((clientX: number, clientY: number) => {
+    if (!canvasRef.current) return null
     
-    const handleKeyDown = (event: KeyboardEvent) => {
-      console.log('🎮 按键事件:', {
-        key: event.key,
-        code: event.code,
-        游戏状态: { isPlaying, isPaused }
-      })
+    const canvas = canvasRef.current
+    const rect = canvas.getBoundingClientRect()
+    
+    // 获取canvas内的相对坐标 (0 到 canvas尺寸)
+    const x = clientX - rect.left
+    const y = clientY - rect.top
+    
+    // 转换为标准化坐标 (0 到 1)
+    const normalizedX = x / rect.width
+    const normalizedY = y / rect.height
+    
+    // 根据视角模式进行不同的坐标转换
+    let mazeX: number, mazeY: number
+    
+    if (cameraConfig.mode === 'top') {
+      // 俯视模式：直接映射到迷宫网格
+      const margin = 0.05 // 迷宫周围的边距
+      const effectiveX = (normalizedX - margin) / (1 - 2 * margin)
+      const effectiveY = (normalizedY - margin) / (1 - 2 * margin)
       
-      if (!isPlaying || isPaused) {
-        console.log('❌ 游戏未开始或已暂停，忽略按键')
-        return
-      }
-
-      const key = event.key.toLowerCase()
-      const code = event.code.toLowerCase()
+      // 确保在有效范围内
+      const clampedX = Math.max(0, Math.min(1, effectiveX))
+      const clampedY = Math.max(0, Math.min(1, effectiveY))
       
-      console.log('🔍 处理按键:', { key, code })
+      mazeX = Math.floor(clampedX * mazeSize)
+      mazeY = Math.floor(clampedY * mazeSize)
+    } else if (cameraConfig.mode === 'follow') {
+      // 2.5D模式：使用更精确的坐标转换
+      const viewportStartX = 0.12
+      const viewportEndX = 0.88
+      const viewportStartY = 0.20
+      const viewportEndY = 0.80
       
-      if (key === 'w' || code === 'keyw' || key === 'arrowup') {
-        event.preventDefault()
-        console.log('⬆️ 向上移动')
-        moveBall('up')
-      } else if (key === 's' || code === 'keys' || key === 'arrowdown') {
-        event.preventDefault()
-        console.log('⬇️ 向下移动')
-        moveBall('down')
-      } else if (key === 'a' || code === 'keya' || key === 'arrowleft') {
-        event.preventDefault()
-        console.log('⬅️ 向左移动')
-        moveBall('left')
-      } else if (key === 'd' || code === 'keyd' || key === 'arrowright') {
-        event.preventDefault()
-        console.log('➡️ 向右移动')
-        moveBall('right')
-      } else if (key === ' ' || code === 'space') {
-        event.preventDefault()
-        console.log('⏸️ 空格键 - 暂停/继续')
-        if (isPaused) {
-          useMazeStore.getState().resumeGame()
-        } else {
-          useMazeStore.getState().pauseGame()
-        }
+      // 检查点击是否在迷宫显示区域内
+      if (normalizedX >= viewportStartX && normalizedX <= viewportEndX &&
+          normalizedY >= viewportStartY && normalizedY <= viewportEndY) {
+        
+        // 将屏幕坐标映射到迷宫网格
+        const relativeX = (normalizedX - viewportStartX) / (viewportEndX - viewportStartX)
+        const relativeY = (normalizedY - viewportStartY) / (viewportEndY - viewportStartY)
+        
+        mazeX = Math.floor(relativeX * mazeSize)
+        mazeY = Math.floor(relativeY * mazeSize)
       } else {
-        console.log('🚫 未识别的按键:', { key, code })
+        // 点击在迷宫区域外，使用最接近的边界点
+        const clampedX = Math.max(viewportStartX, Math.min(viewportEndX, normalizedX))
+        const clampedY = Math.max(viewportStartY, Math.min(viewportEndY, normalizedY))
+        
+        const relativeX = (clampedX - viewportStartX) / (viewportEndX - viewportStartX)
+        const relativeY = (clampedY - viewportStartY) / (viewportEndY - viewportStartY)
+        
+        mazeX = Math.floor(relativeX * mazeSize)
+        mazeY = Math.floor(relativeY * mazeSize)
       }
+    } else {
+      // 第一人称模式：简单映射
+      mazeX = Math.floor(normalizedX * mazeSize)
+      mazeY = Math.floor(normalizedY * mazeSize)
     }
-
-    window.addEventListener('keydown', handleKeyDown)
     
-    return () => {
-      console.log('🧹 清理键盘监听器')
-      window.removeEventListener('keydown', handleKeyDown)
+    // 确保坐标在有效范围内
+    mazeX = Math.max(0, Math.min(mazeSize - 1, mazeX))
+    mazeY = Math.max(0, Math.min(mazeSize - 1, mazeY))
+    
+    // 特殊处理：如果点击在终点附近，优先识别为终点
+    const endpointX = mazeSize - 1
+    const endpointY = mazeSize - 1
+    const distanceToEndpoint = Math.abs(mazeX - endpointX) + Math.abs(mazeY - endpointY)
+    
+    if (distanceToEndpoint <= 1) {
+      mazeX = endpointX
+      mazeY = endpointY
     }
-  }, [isPlaying, isPaused, moveBall])
+    
+    return { x: mazeX, y: mazeY }
+  }, [mazeSize, cameraConfig.mode])
 
-  // 触摸手势控制
+  // 处理画布点击
+  const handleCanvasClick = useCallback((event: MouseEvent) => {
+    if (!gameStarted || gameCompleted || isAutoMoving) {
+      return
+    }
+
+    const coordinates = screenToMazeCoordinates(event.clientX, event.clientY)
+    if (!coordinates) return
+
+    moveToPosition(coordinates.x, coordinates.y)
+  }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition])
+
+  // 处理触摸点击
+  const handleTouchEnd = useCallback((event: TouchEvent) => {
+    if (!gameStarted || gameCompleted || isAutoMoving) {
+      return
+    }
+
+    event.preventDefault()
+    
+    if (event.changedTouches.length > 0) {
+      const touch = event.changedTouches[0]
+      const coordinates = screenToMazeCoordinates(touch.clientX, touch.clientY)
+      if (!coordinates) return
+
+      moveToPosition(coordinates.x, coordinates.y)
+    }
+  }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition])
+
+  // 绑定事件监听器
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const handleTouchStart = (event: TouchEvent) => {
-      if (!isPlaying || isPaused) return
-      
-      event.preventDefault()
-      const touch = event.touches[0]
-      touchStartRef.current = {
-        x: touch.clientX,
-        y: touch.clientY
-      }
-      console.log('👆 触摸开始:', touchStartRef.current)
-    }
-
-    const handleTouchMove = (event: TouchEvent) => {
-      event.preventDefault() // 防止页面滚动
-    }
-
-    const handleTouchEnd = (event: TouchEvent) => {
-      if (!isPlaying || isPaused || !touchStartRef.current) return
-      
-      event.preventDefault()
-      const touch = event.changedTouches[0]
-      const touchEnd = {
-        x: touch.clientX,
-        y: touch.clientY
-      }
-      
-      const deltaX = touchEnd.x - touchStartRef.current.x
-      const deltaY = touchEnd.y - touchStartRef.current.y
-      
-      console.log('👆 触摸结束:', { 
-        start: touchStartRef.current, 
-        end: touchEnd, 
-        delta: { x: deltaX, y: deltaY } 
-      })
-      
-      // 计算滑动距离和方向
-      const minSwipeDistance = 30 // 最小滑动距离
-      const absX = Math.abs(deltaX)
-      const absY = Math.abs(deltaY)
-      
-      if (absX < minSwipeDistance && absY < minSwipeDistance) {
-        console.log('👆 滑动距离太短，忽略')
-        touchStartRef.current = null
-        return
-      }
-      
-      // 判断主要滑动方向
-      if (absX > absY) {
-        // 水平滑动
-        if (deltaX > 0) {
-          console.log('👆 向右滑动')
-          moveBall('right')
-        } else {
-          console.log('👆 向左滑动')
-          moveBall('left')
-        }
-      } else {
-        // 垂直滑动
-        if (deltaY > 0) {
-          console.log('👆 向下滑动')
-          moveBall('down')
-        } else {
-          console.log('👆 向上滑动')
-          moveBall('up')
-        }
-      }
-      
-      touchStartRef.current = null
-    }
-
-    // 添加触摸事件监听器
-    canvas.addEventListener('touchstart', handleTouchStart, { passive: false })
-    canvas.addEventListener('touchmove', handleTouchMove, { passive: false })
+    canvas.addEventListener('click', handleCanvasClick)
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false })
 
     return () => {
-      canvas.removeEventListener('touchstart', handleTouchStart)
-      canvas.removeEventListener('touchmove', handleTouchMove)
+      canvas.removeEventListener('click', handleCanvasClick)
       canvas.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [isPlaying, isPaused, moveBall])
+  }, [handleCanvasClick, handleTouchEnd])
 
   return (
-    <div className="flex flex-col items-center space-y-6">
-      <GameStats />
+    <div className="relative w-full h-full">
+      <MazeCanvas ref={canvasRef} />
       
-      <div className="relative" ref={canvasRef}>
-        <MazeCanvas />
-        
-        {/* 游戏暂停遮罩 */}
-        {isPaused && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-            <div className="text-white text-2xl font-bold">游戏暂停</div>
-          </div>
-        )}
-        
-        {/* 胜利遮罩 */}
-        {gameWon && (
-          <div className="absolute inset-0 bg-green-500/80 flex items-center justify-center rounded-lg">
-            <div className="text-center text-white">
-              <div className="text-3xl font-bold mb-2">🎉 恭喜通关！</div>
-              <div className="text-lg">准备挑战下一关吗？</div>
-            </div>
-          </div>
-        )}
-        
-        {/* 手势提示 */}
-        {isPlaying && !isPaused && (
-          <div className="absolute bottom-2 left-2 text-xs text-white/70 bg-black/50 px-2 py-1 rounded">
-            滑动控制小球移动
-          </div>
-        )}
-      </div>
 
-      <GameControls />
-
-      {/* 调试测试按钮 */}
-      {isPlaying && (
-        <div className="flex flex-col items-center space-y-2">
-          <div className="text-sm text-slate-500">调试测试（点击测试移动）</div>
-          <div className="grid grid-cols-3 gap-2">
-            <div></div>
-            <button 
-              onClick={() => {
-                console.log('🧪 测试向上移动')
-                moveBall('up')
-              }}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-            >
-              ↑
-            </button>
-            <div></div>
-            
-            <button 
-              onClick={() => {
-                console.log('🧪 测试向左移动')
-                moveBall('left')
-              }}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-            >
-              ←
-            </button>
-            <div></div>
-            <button 
-              onClick={() => {
-                console.log('🧪 测试向右移动')
-                moveBall('right')
-              }}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-            >
-              →
-            </button>
-            
-            <div></div>
-            <button 
-              onClick={() => {
-                console.log('🧪 测试向下移动')
-                moveBall('down')
-              }}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-            >
-              ↓
-            </button>
-            <div></div>
+      
+      {gameCompleted && (
+        <div className="absolute inset-0 flex items-center justify-center bg-green-500/80 rounded-lg">
+          <div className="text-white text-center">
+            <h3 className="text-2xl font-bold mb-2">🎉 恭喜通关！</h3>
+            <p className="text-sm opacity-90">你成功走出了迷宫</p>
           </div>
         </div>
       )}
