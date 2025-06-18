@@ -226,7 +226,7 @@ export const useBowlingStore = create<GameState>((set, get) => ({
     if (isIOS && typeof DeviceOrientationEvent !== 'undefined' && 'requestPermission' in DeviceOrientationEvent) {
       try {
         console.log('📱 iOS设备，请求权限')
-        const permission = await (DeviceOrientationEvent as any).requestPermission()
+        const permission = await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission()
         console.log('🔐 权限请求结果:', permission)
         
         const granted = permission === 'granted'

@@ -250,7 +250,7 @@ export function BowlingCanvas() {
     const pinMeshes: THREE.Mesh[] = []
     const pinBodies: CANNON.Body[] = []
 
-    PIN_POSITIONS.forEach((pos, index) => {
+    PIN_POSITIONS.forEach((pos) => {
       // 创建球瓶主体
       const pinMesh = new THREE.Mesh(pinGeometry, pinMaterial3D)
       pinMesh.position.set(pos[0], pos[1], pos[2])
@@ -528,8 +528,8 @@ export function BowlingCanvas() {
 
       // 同步球的位置
       if (sceneRef.current.ball) {
-        sceneRef.current.ball.mesh.position.copy(sceneRef.current.ball.body.position as any)
-        sceneRef.current.ball.mesh.quaternion.copy(sceneRef.current.ball.body.quaternion as any)
+        sceneRef.current.ball.mesh.position.copy(sceneRef.current.ball.body.position as unknown as THREE.Vector3)
+        sceneRef.current.ball.mesh.quaternion.copy(sceneRef.current.ball.body.quaternion as unknown as THREE.Quaternion)
         
         // 更新相机
         updateCamera(sceneRef.current.camera, sceneRef.current.ball.body.position)
@@ -537,8 +537,8 @@ export function BowlingCanvas() {
 
       // 同步球瓶位置
       sceneRef.current.pins.forEach((pin) => {
-        pin.mesh.position.copy(pin.body.position as any)
-        pin.mesh.quaternion.copy(pin.body.quaternion as any)
+        pin.mesh.position.copy(pin.body.position as unknown as THREE.Vector3)
+        pin.mesh.quaternion.copy(pin.body.quaternion as unknown as THREE.Quaternion)
       })
 
       // 检查球状态

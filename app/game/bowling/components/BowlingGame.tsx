@@ -8,37 +8,30 @@ import { GameStats } from "./GameStats"
 
 export function BowlingGame() {
   const gameRef = useRef<HTMLDivElement>(null)
-  const [isMounted, setIsMounted] = useState(false)
-  
   const {
-    isPlaying,
-    isPaused,
     gameStarted,
     gyroSupported,
     gyroPermission,
-    updateTilt,
+    startGame,
     detectGyroSupport
   } = useBowlingStore()
 
-  // 确保组件已在客户端挂载
+  const [isMounted, setIsMounted] = useState(false)
+
   useEffect(() => {
     setIsMounted(true)
-    // 在客户端挂载后检测陀螺仪支持
-    detectGyroSupport()
   }, [])
 
-  // 自动启动游戏和权限请求
+  // 自动检测陀螺仪支持并启动游戏
   useEffect(() => {
-    if (!isMounted) return
-    
-    console.log('🎳 保龄球游戏初始化...')
-    
-    // 如果还没开始游戏，自动开始
-    if (!gameStarted) {
-      console.log('🚀 自动开始游戏')
-      useBowlingStore.getState().startGame()
+    const init = async () => {
+      await detectGyroSupport()
+      if (!gameStarted) {
+        startGame()
+      }
     }
-  }, [gameStarted, isMounted])
+    init()
+  }, [detectGyroSupport, gameStarted, startGame])
 
   // 陀螺仪监听
   useEffect(() => {
@@ -57,7 +50,7 @@ export function BowlingGame() {
         const normalizedX = Math.max(-1, Math.min(1, gamma / 45)) // 左右倾斜
         const normalizedY = Math.max(-1, Math.min(1, beta / 45)) // 前后倾斜
         
-        updateTilt(normalizedX, normalizedY)
+        useBowlingStore.getState().updateTilt(normalizedX, normalizedY)
       }
     }
 
@@ -68,7 +61,7 @@ export function BowlingGame() {
       window.removeEventListener('deviceorientation', handleOrientation)
       console.log('🔄 陀螺仪监听器已移除')
     }
-  }, [gyroSupported, gyroPermission, updateTilt, isMounted])
+  }, [gyroSupported, gyroPermission, isMounted])
 
   // 物理更新现在由 BowlingCanvas 组件中的 Three.js 处理
 
