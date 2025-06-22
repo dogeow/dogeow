@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react"
 import { useBowlingStore } from "../store"
 import { BowlingCanvas } from "./BowlingCanvas"
-import { GameControls } from "./GameControls"
 import { GameStats } from "./GameStats"
 
 export function BowlingGame() {
@@ -133,9 +132,6 @@ export function BowlingGame() {
       <div className="relative">
         <BowlingCanvas />
       </div>
-      
-      {/* 游戏控制 */}
-      <GameControls />
 
       {/* 游戏统计 */}
       <GameStats />

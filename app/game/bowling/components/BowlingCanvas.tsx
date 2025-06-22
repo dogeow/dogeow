@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef, useCallback, useState } from "react"
 import * as THREE from "three"
 import * as CANNON from "cannon-es"
 import { useBowlingStore } from "../store"
@@ -23,10 +23,10 @@ const PHYSICS_CONFIG = {
 } as const
 
 const MATERIALS_CONFIG = {
-  BALL_GROUND: { friction: 0.1, restitution: 0.0 }, // 大幅减少摩擦力，模拟光滑球道
-  BALL_PIN: { friction: 0.6, restitution: 0.5 },
-  PIN_GROUND: { friction: 0.8, restitution: 0.1 }, // 增加球瓶与地面摩擦力，让球瓶更稳定
-  PIN_PIN: { friction: 0.4, restitution: 0.5 }
+  BALL_GROUND: { friction: 0.05, restitution: 0.0 }, // 进一步减少摩擦力，让球滚得更远
+  BALL_PIN: { friction: 0.4, restitution: 0.5 },
+  PIN_GROUND: { friction: 0.6, restitution: 0.1 }, // 适当减少球瓶摩擦力，让球瓶更容易倒下
+  PIN_PIN: { friction: 0.3, restitution: 0.5 }
 } as const
 
 const CAMERA_CONFIG = {
@@ -57,18 +57,34 @@ interface SceneRef {
   ground: { mesh: THREE.Mesh; body: CANNON.Body } | null
   animationId: number | null
   throwStartTime?: number
+  aimLine?: THREE.Line
+  powerBar?: THREE.Line
 }
 
 export function BowlingCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ballThrownRef = useRef(false)
   const sceneRef = useRef<SceneRef | null>(null)
+  
+  // 添加触摸控制状态
+  const [isCharging, setIsCharging] = useState(false)
+  const [chargePower, setChargePower] = useState(0)
+  const [chargeStartTime, setChargeStartTime] = useState(0)
+  const chargeIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const [currentAimAngle, setCurrentAimAngle] = useState(0)
 
   const {
     ballThrown,
     canThrow,
     aimAngle,
-    processBallResult
+    power,
+    tiltX,
+    lastKnockedDown,
+    showingResult,
+    processBallResult,
+    setPower,
+    setAimAngle,
+    throwBall
   } = useBowlingStore()
   
   // 同步ballThrown状态到ref
@@ -76,6 +92,65 @@ export function BowlingCanvas() {
     ballThrownRef.current = ballThrown
     console.log('🎳 ballThrown状态更新:', ballThrown)
   }, [ballThrown])
+
+  // 初始化瞄准角度
+  useEffect(() => {
+    if (!isCharging && canThrow && !ballThrown) {
+      setCurrentAimAngle(aimAngle) // 使用store中的角度
+    }
+  }, [aimAngle, isCharging, canThrow, ballThrown])
+
+  // 在按住时持续更新瞄准角度
+  useEffect(() => {
+    if (isCharging) {
+      const newAngle = Math.max(-30, Math.min(30, tiltX * 30)) // 限制角度范围并将陀螺仪数据转换为角度
+      setCurrentAimAngle(newAngle)
+      setAimAngle(newAngle)
+    }
+  }, [tiltX, isCharging, setAimAngle])
+
+  // 开始蓄力
+  const startCharging = useCallback(() => {
+    if (!canThrow || ballThrown) return
+    
+    console.log('🎯 开始蓄力')
+    setIsCharging(true)
+    setChargePower(20) // 起始力度
+    setChargeStartTime(Date.now())
+    
+    chargeIntervalRef.current = setInterval(() => {
+      setChargePower(prev => {
+        const next = prev + 2
+        return next > 100 ? 20 : next // 循环蓄力
+      })
+    }, 50)
+  }, [canThrow, ballThrown])
+
+  // 结束蓄力并投球
+  const endCharging = useCallback(() => {
+    if (!isCharging) return
+    
+    console.log('🚀 结束蓄力，投球！', { power: chargePower, angle: currentAimAngle })
+    setIsCharging(false)
+    if (chargeIntervalRef.current) {
+      clearInterval(chargeIntervalRef.current)
+      chargeIntervalRef.current = null
+    }
+    
+    // 设置力度并投球
+    setPower(chargePower)
+    throwBall()
+    setChargePower(0)
+  }, [isCharging, chargePower, currentAimAngle, setPower, throwBall])
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (chargeIntervalRef.current) {
+        clearInterval(chargeIntervalRef.current)
+      }
+    }
+  }, [])
 
   // 创建物理材料和接触材料
   const createPhysicsMaterials = useCallback((world: CANNON.World) => {
@@ -218,8 +293,8 @@ export function BowlingCanvas() {
     const ballBody = new CANNON.Body({ 
       mass: PHYSICS_CONFIG.BALL_MASS,
       material: ballMaterial,
-      linearDamping: 0.05, // 大幅减少线性阻尼，让球保持速度
-      angularDamping: 0.05, // 大幅减少角度阻尼，让旋转保持更久
+      linearDamping: 0.02, // 进一步减少线性阻尼，让球滚得更远
+      angularDamping: 0.02, // 进一步减少角度阻尼，让旋转保持更久
       fixedRotation: false,
       type: CANNON.Body.DYNAMIC
     })
@@ -269,8 +344,8 @@ export function BowlingCanvas() {
       const pinBody = new CANNON.Body({ 
         mass: PHYSICS_CONFIG.PIN_MASS,
         material: pinMaterial,
-        linearDamping: 0.2, // 增加球瓶阻尼，让它们移动时减速更快
-        angularDamping: 0.2 // 增加角度阻尼，减少旋转
+        linearDamping: 0.15, // 适当减少球瓶阻尼，让它们更容易移动
+        angularDamping: 0.15 // 适当减少角度阻尼，增加旋转
       })
       pinBody.addShape(pinShape)
       pinBody.position.set(pos[0], pos[1], pos[2])
@@ -435,18 +510,36 @@ export function BowlingCanvas() {
     const currentTime = Date.now()
     const elapsedTime = currentTime - throwStartTime
     
-    // 检查边界 - 调整边界适应新球道长度
-    if (position.y < -5 || position.z < -25 || position.z > 15 || Math.abs(position.x) > 10) {
-      console.log('🚨 球超出边界，但继续游戏直到15秒', { 
-        y: position.y, 
-        z: position.z, 
-        x: position.x
+    // 检查球是否静止（速度很小且持续一段时间）
+    const isStationary = speed < 0.1 && elapsedTime > 2000 // 球速度小于0.1且已经2秒后
+    
+    // 检查球是否到达球瓶区域且静止
+    const reachedPinArea = position.z < -15 && isStationary
+    
+    // 检查边界 - 球超出边界立即结束
+    const outOfBounds = position.y < -5 || position.z < -30 || position.z > 15 || Math.abs(position.x) > 12
+    
+    if (outOfBounds) {
+      console.log('🚨 球超出边界，立即处理结果', { 
+        y: position.y.toFixed(2), 
+        z: position.z.toFixed(2), 
+        x: position.x.toFixed(2)
       })
+      return true
+    }
+    
+    if (isStationary) {
+      console.log('⏸️ 球已静止，处理结果', { 
+        speed: speed.toFixed(3),
+        elapsedTime,
+        position: { x: position.x.toFixed(2), y: position.y.toFixed(2), z: position.z.toFixed(2) }
+      })
+      return true
     }
 
-    // 15秒时间限制，给较慢的球更多时间
+    // 15秒时间限制作为最后的安全网
     if (elapsedTime > PHYSICS_CONFIG.THROW_TIMEOUT) {
-      console.log('⏰ 投球时间到（15秒），处理结果', { 
+      console.log('⏰ 投球时间到（15秒），强制处理结果', { 
         elapsedTime, 
         ballPosition: { x: position.x.toFixed(2), y: position.y.toFixed(2), z: position.z.toFixed(2) },
         speed: speed.toFixed(2)
@@ -495,7 +588,7 @@ export function BowlingCanvas() {
     const world = new CANNON.World()
     world.gravity.set(0, PHYSICS_CONFIG.GRAVITY, 0)
     world.broadphase = new CANNON.NaiveBroadphase()
-    world.defaultContactMaterial.friction = 0.2 // 减少默认摩擦力，模拟光滑环境
+    world.defaultContactMaterial.friction = 0.1 // 进一步减少默认摩擦力，模拟更光滑的环境
     world.defaultContactMaterial.restitution = 0.3
 
     // 创建场景元素
@@ -581,11 +674,13 @@ export function BowlingCanvas() {
     if (!ballThrown || !sceneRef.current?.ball) return
 
     ballThrownRef.current = true
-    console.log('🎳 Three.js 投球！', { aimAngle })
+    console.log('🎳 Three.js 投球！', { aimAngle, power })
 
     const angleRad = (aimAngle * Math.PI) / 180
-    const force = 200 // 降低力度，减少撞击强度
-    const velocityScale = 0.018 // 稍微降低速度缩放因子
+    const basePower = 250 // 增加基础力度
+    const powerMultiplier = power / 100 // 将力度百分比转换为乘数
+    const force = basePower * powerMultiplier // 根据力度调整最终力度
+    const velocityScale = 0.025 // 增加速度缩放因子
 
     // 设置球的速度
     sceneRef.current.ball.body.velocity.set(
@@ -596,9 +691,9 @@ export function BowlingCanvas() {
     
     // 应用冲量
     const forceVector = new CANNON.Vec3(
-      Math.sin(angleRad) * force * 0.2, // 降低侧向力
-      -1, // 轻微向下的力
-      -force * 0.5 // 降低前进力
+      Math.sin(angleRad) * force * 0.3, // 增加侧向力
+      -2, // 增加向下的力
+      -force * 0.8 // 增加前进力
     )
     sceneRef.current.ball.body.applyImpulse(forceVector, sceneRef.current.ball.body.position)
     
@@ -606,6 +701,7 @@ export function BowlingCanvas() {
     sceneRef.current.throwStartTime = Date.now()
     
     console.log('🎳 投球完成', { 
+      power,
       force,
       angle: aimAngle,
       ballMass: sceneRef.current.ball.body.mass,
@@ -615,7 +711,7 @@ export function BowlingCanvas() {
       }
     })
 
-  }, [ballThrown, aimAngle])
+  }, [ballThrown, aimAngle, power])
 
   // 重置球和球瓶位置
   useEffect(() => {
@@ -654,24 +750,88 @@ export function BowlingCanvas() {
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-200 to-sky-100 rounded-lg overflow-hidden">
       <canvas 
         ref={canvasRef}
-        className="w-full h-full"
+        className="w-full h-full cursor-pointer"
         style={{ display: 'block' }}
+        onMouseDown={startCharging}
+        onMouseUp={endCharging}
+        onMouseLeave={endCharging}
+        onTouchStart={(e) => {
+          e.preventDefault()
+          startCharging()
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault()
+          endCharging()
+        }}
+        onTouchCancel={(e) => {
+          e.preventDefault()
+          endCharging()
+        }}
       />
       
-      {/* 瞄准线 */}
+      {/* 瞄准线和力度条 */}
       {canThrow && !ballThrown && (
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2" style={{ left: '61%' }}>
           <div 
-            className="w-0.5 h-100 origin-bottom transition-transform duration-100"
+            className="w-0.5 h-100 origin-bottom transition-transform duration-100 relative"
             style={{ 
-              transform: `translateX(-50%) rotate(${aimAngle}deg)`,
+              transform: `translateX(-50%) rotate(${currentAimAngle}deg)`,
               transformOrigin: 'bottom center',
               background: 'repeating-linear-gradient(to top, #ef4444 0px, #ef4444 8px, transparent 8px, transparent 16px)'
             }}
-          />
-          <div className="text-center text-white text-sm mt-2 bg-black/50 px-2 py-1 rounded">
-            角度: {aimAngle.toFixed(1)}°
+          >
+            {/* 力度条叠加在虚线上 */}
+            {isCharging && (
+              <div 
+                className="absolute bottom-0 left-0 w-full transition-all duration-75"
+                style={{ 
+                  height: `${chargePower}%`,
+                  background: `linear-gradient(to top, 
+                    ${chargePower < 30 ? '#22c55e' : 
+                      chargePower < 70 ? '#eab308' : '#ef4444'} 0%, 
+                    ${chargePower < 30 ? '#16a34a' : 
+                      chargePower < 70 ? '#ca8a04' : '#dc2626'} 100%)`,
+                  opacity: 0.9,
+                  borderRadius: '1px',
+                  boxShadow: '0 0 4px rgba(255,255,255,0.5)'
+                }}
+              />
+            )}
           </div>
+          <div className="text-center text-white text-sm mt-2 bg-black/50 px-2 py-1 rounded">
+            {isCharging ? (
+              <div>
+                <div className="font-bold">💪 {chargePower}%</div>
+                <div className="text-xs">蓄力中...</div>
+              </div>
+            ) : (
+              <div>角度: {currentAimAngle.toFixed(1)}°</div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* 投球状态提示 */}
+      {ballThrown && !showingResult && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-600/90 text-white px-4 py-2 rounded-lg text-center">
+          <div className="text-lg font-bold">🎳 投球中...</div>
+          <div className="text-sm">球正在滚动</div>
+        </div>
+      )}
+      
+      {/* 结果显示 */}
+      {showingResult && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-green-600/90 text-white px-6 py-3 rounded-lg text-center animate-pulse">
+          <div className="text-xl font-bold">🎯 投球结果</div>
+          <div className="text-lg">
+            击倒 <span className="text-yellow-300 font-bold">{lastKnockedDown}</span> 个球瓶
+          </div>
+          <div className="text-sm">
+            剩余 <span className="text-red-300 font-bold">{10 - lastKnockedDown}</span> 个球瓶
+          </div>
+          {lastKnockedDown === 10 && (
+            <div className="text-lg font-bold text-yellow-300 mt-1">🎉 全中！</div>
+          )}
         </div>
       )}
     </div>

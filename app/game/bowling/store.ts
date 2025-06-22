@@ -47,6 +47,10 @@ export interface GameState {
   canThrow: boolean
   ballThrown: boolean
   
+  // 结果显示
+  lastKnockedDown: number
+  showingResult: boolean
+  
   // 设置
   sensitivity: number
   
@@ -125,6 +129,10 @@ export const useBowlingStore = create<GameState>((set, get) => ({
   canThrow: true,
   ballThrown: false,
   
+  // 结果显示
+  lastKnockedDown: 0,
+  showingResult: false,
+  
   // 设置
   sensitivity: 0.5,
   
@@ -164,7 +172,9 @@ export const useBowlingStore = create<GameState>((set, get) => ({
       throwsInFrame: Array(10).fill(0),
       canThrow: true,
       ballThrown: false,
-      aimAngle: 0
+      aimAngle: 0,
+      lastKnockedDown: 0,
+      showingResult: false
     })
   },
   
@@ -189,7 +199,9 @@ export const useBowlingStore = create<GameState>((set, get) => ({
         currentThrow: 1,
         canThrow: true,
         ballThrown: false,
-        aimAngle: 0
+        aimAngle: 0,
+        lastKnockedDown: 0,
+        showingResult: false
       })
     }
   },
@@ -199,11 +211,8 @@ export const useBowlingStore = create<GameState>((set, get) => ({
     const state = get()
     set({ tiltX: x, tiltY: y })
     
-    if (state.canThrow && !state.ballThrown) {
-      // 左右倾斜控制瞄准角度
-      const newAngle = Math.max(-30, Math.min(30, x * state.sensitivity * 60))
-      set({ aimAngle: newAngle })
-    }
+    // 注意：这里不直接更新aimAngle，因为现在由BowlingCanvas在按住时控制
+    // aimAngle的更新现在在BowlingCanvas中的isCharging状态下进行
   },
   
   requestGyroPermission: async () => {
@@ -332,26 +341,31 @@ export const useBowlingStore = create<GameState>((set, get) => ({
     console.log('🎯 实际击倒球瓶数:', actualKnockedDown)
     
     const newScore = state.totalScore + actualKnockedDown
+    const remainingPins = 10 - actualKnockedDown
     
-    // 立即重置投球状态
+    // 立即显示结果并重置投球状态
     set({
       totalScore: newScore,
       canThrow: true,
-      ballThrown: false
+      ballThrown: false,
+      lastKnockedDown: actualKnockedDown,
+      showingResult: true
     })
     
     console.log('✅ 状态已重置:', { 
       canThrow: true, 
       ballThrown: false,
       totalScore: newScore,
-      knockedDownPins: actualKnockedDown
+      knockedDownPins: actualKnockedDown,
+      remainingPins
     })
     
-    // 2秒后进入下一轮
+    // 3秒后隐藏结果并进入下一轮
     setTimeout(() => {
+      set({ showingResult: false })
       console.log('➡️ 准备进入下一轮')
       get().nextFrame()
-    }, 2000)
+    }, 3000)
   },
 
   // 手动检测陀螺仪支持（在客户端调用）
