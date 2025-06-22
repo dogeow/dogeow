@@ -8,7 +8,6 @@ export function GameStats() {
     currentThrow,
     totalScore,
     frameScores,
-    isPlaying,
     gameStarted
   } = useBowlingStore()
 

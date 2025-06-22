@@ -116,7 +116,9 @@ export function BowlingCanvas() {
     console.log('🎯 开始蓄力')
     setIsCharging(true)
     setChargePower(20) // 起始力度
-    setChargeStartTime(Date.now())
+    const startTime = Date.now()
+    setChargeStartTime(startTime)
+    console.log('⏱️ 蓄力开始时间:', startTime)
     
     chargeIntervalRef.current = setInterval(() => {
       setChargePower(prev => {
@@ -130,7 +132,12 @@ export function BowlingCanvas() {
   const endCharging = useCallback(() => {
     if (!isCharging) return
     
-    console.log('🚀 结束蓄力，投球！', { power: chargePower, angle: currentAimAngle })
+    const chargeDuration = Date.now() - chargeStartTime
+    console.log('🚀 结束蓄力，投球！', { 
+      power: chargePower, 
+      angle: currentAimAngle,
+      chargeDuration: `${chargeDuration}ms`
+    })
     setIsCharging(false)
     if (chargeIntervalRef.current) {
       clearInterval(chargeIntervalRef.current)
@@ -141,7 +148,7 @@ export function BowlingCanvas() {
     setPower(chargePower)
     throwBall()
     setChargePower(0)
-  }, [isCharging, chargePower, currentAimAngle, setPower, throwBall])
+  }, [isCharging, chargePower, currentAimAngle, chargeStartTime, setPower, throwBall])
 
   // 清理定时器
   useEffect(() => {
@@ -514,7 +521,7 @@ export function BowlingCanvas() {
     const isStationary = speed < 0.1 && elapsedTime > 2000 // 球速度小于0.1且已经2秒后
     
     // 检查球是否到达球瓶区域且静止
-    const reachedPinArea = position.z < -15 && isStationary
+    // const reachedPinArea = position.z < -15 && isStationary
     
     // 检查边界 - 球超出边界立即结束
     const outOfBounds = position.y < -5 || position.z < -30 || position.z > 15 || Math.abs(position.x) > 12

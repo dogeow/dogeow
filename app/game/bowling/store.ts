@@ -208,7 +208,6 @@ export const useBowlingStore = create<GameState>((set, get) => ({
   
   // 陀螺仪控制
   updateTilt: (x: number, y: number) => {
-    const state = get()
     set({ tiltX: x, tiltY: y })
     
     // 注意：这里不直接更新aimAngle，因为现在由BowlingCanvas在按住时控制
