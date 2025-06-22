@@ -73,7 +73,6 @@ export function GameControls() {
     <div className="bg-amber-800/30 p-6 rounded-lg space-y-4 w-full max-w-md">
       {/* 标题和帮助按钮 */}
       <div className="flex justify-between items-center">
-        <h3 className="text-white font-bold text-lg">🎮 游戏控制</h3>
         <Button
           onClick={() => setShowHelp(!showHelp)}
           variant="ghost"
@@ -144,32 +143,6 @@ export function GameControls() {
           🔄
         </Button>
       </div>
-
-      {/* 陀螺仪状态 - 只在客户端渲染 */}
-      {isClient && (
-        <div className="text-center text-sm">
-          {gyroSupported ? (
-            gyroPermission ? (
-              <div className="text-green-400">
-                <div>✅ 陀螺仪已启用</div>
-                {!showHelp && (
-                  <div className="text-xs mt-1 text-amber-300">
-                    倾斜: {tiltX.toFixed(2)}, {tiltY.toFixed(2)}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-yellow-400">
-                ⚠️ 等待陀螺仪权限...
-              </div>
-            )
-          ) : (
-            <div className="text-red-400">
-              ❌ 此设备不支持陀螺仪
-            </div>
-          )}
-        </div>
-      )}
     </div>
   )
 } 

@@ -660,12 +660,13 @@ export function BowlingCanvas() {
       
       {/* 瞄准线 */}
       {canThrow && !ballThrown && (
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2">
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2" style={{ left: '61%' }}>
           <div 
-            className="w-1 h-16 bg-red-500 origin-bottom transition-transform duration-100"
+            className="w-0.5 h-100 origin-bottom transition-transform duration-100"
             style={{ 
               transform: `translateX(-50%) rotate(${aimAngle}deg)`,
-              transformOrigin: 'bottom center'
+              transformOrigin: 'bottom center',
+              background: 'repeating-linear-gradient(to top, #ef4444 0px, #ef4444 8px, transparent 8px, transparent 16px)'
             }}
           />
           <div className="text-center text-white text-sm mt-2 bg-black/50 px-2 py-1 rounded">

@@ -128,40 +128,17 @@ export function BowlingGame() {
           </div>
         </div>
       )}
-
-      {/* 游戏统计 */}
-      <GameStats />
       
       {/* 游戏画布 */}
       <div className="relative">
         <BowlingCanvas />
-        
-        {/* 陀螺仪状态指示 - 只在客户端渲染完成后显示 */}
-        {isMounted && (
-          <div className="absolute top-4 right-4 bg-black/50 text-white p-2 rounded text-sm">
-            {gyroSupported ? (
-              gyroPermission ? (
-                <span className="text-green-400">🎯 陀螺仪已启用</span>
-              ) : (
-                <div className="flex flex-col items-center space-y-1">
-                  <span className="text-yellow-400">⚠️ 需要权限</span>
-                  <button
-                    onClick={() => setShowPermissionDialog(true)}
-                    className="text-xs bg-yellow-500 hover:bg-yellow-600 text-black px-2 py-1 rounded transition-colors"
-                  >
-                    点击启用
-                  </button>
-                </div>
-              )
-            ) : (
-              <span className="text-red-400">❌ 陀螺仪不支持</span>
-            )}
-          </div>
-        )}
       </div>
       
       {/* 游戏控制 */}
       <GameControls />
+
+      {/* 游戏统计 */}
+      <GameStats />
     </div>
   )
 } 

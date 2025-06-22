@@ -70,19 +70,6 @@ export function GameStats() {
           </div>
         ))}
       </div>
-      
-      {/* 游戏状态 */}
-      <div className="text-center text-sm">
-        {isPlaying ? (
-          <div className="text-green-400">
-            🎮 游戏进行中
-          </div>
-        ) : (
-          <div className="text-amber-300">
-            ⏸️ 游戏暂停
-          </div>
-        )}
-      </div>
     </div>
   )
 }
