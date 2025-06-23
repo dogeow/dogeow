@@ -34,9 +34,9 @@ export default function MazeGame() {
     const normalizedX = x / rect.width
     const normalizedY = y / rect.height
     
-    // 转换为迷宫网格坐标
-    const mazeX = Math.floor(normalizedX * mazeSize)
-    const mazeY = Math.floor(normalizedY * mazeSize)
+    // 转换为迷宫网格坐标 - 使用四舍五入获得更准确的映射
+    const mazeX = Math.round(normalizedX * mazeSize - 0.5)
+    const mazeY = Math.round(normalizedY * mazeSize - 0.5)
     
     // 确保坐标在有效范围内
     const clampedX = Math.max(0, Math.min(mazeSize - 1, mazeX))
@@ -45,9 +45,11 @@ export default function MazeGame() {
     console.log('🎯 坐标转换:', {
       click: { x: clientX, y: clientY },
       canvas: { x, y },
+      canvasSize: { width: rect.width, height: rect.height },
       normalized: { x: normalizedX, y: normalizedY },
       maze: { x: mazeX, y: mazeY },
-      clamped: { x: clampedX, y: clampedY }
+      clamped: { x: clampedX, y: clampedY },
+      mazeSize
     })
     
     return { x: clampedX, y: clampedY }

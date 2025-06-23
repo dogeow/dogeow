@@ -46,6 +46,13 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     const canvasWidth = rect.width
     const canvasHeight = rect.height
     const cellSize = Math.min(canvasWidth, canvasHeight) / mazeSize
+    
+    console.log('🎨 Canvas尺寸:', { 
+      rect: { width: rect.width, height: rect.height },
+      canvas: { width: canvas.width, height: canvas.height },
+      cellSize,
+      mazeSize
+    })
 
     // 清空画布
     ctx.clearRect(0, 0, canvasWidth, canvasHeight)
@@ -116,6 +123,12 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     const ballGridY = ball.z
     const ballX = ballGridX * cellSize + cellSize / 2
     const ballY = ballGridY * cellSize + cellSize / 2
+    
+    console.log('🎨 绘制小球:', { 
+      ballGrid: { x: ballGridX, y: ballGridY }, 
+      ballCanvas: { x: ballX, y: ballY },
+      cellSize 
+    })
 
     ctx.fillStyle = '#3b82f6'
     ctx.beginPath()
