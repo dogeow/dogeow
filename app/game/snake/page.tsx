@@ -59,6 +59,7 @@ export default function SnakeGame() {
   const gameOverRef = useRef(false)
   const gameStartedRef = useRef(false)
   const directionQueueRef = useRef<Direction[]>([])
+  const resetGameRef = useRef<() => void>(() => {})
   
   // 同步 ref 值
   useEffect(() => {
@@ -154,16 +155,19 @@ export default function SnakeGame() {
 
   // 方向控制
   const changeDirection = useCallback((newDirection: Direction) => {
-    if (!gameStarted || gameOver) return
+    if (!gameStartedRef.current || gameOverRef.current) return
     
-    setDirection(prev => {
-      // 防止反向移动
-      if (OPPOSITE_DIRECTIONS[prev] === newDirection) {
-        return prev
-      }
-      return newDirection
-    })
-  }, [gameStarted, gameOver])
+    // 防止反向移动和重复方向
+    if (OPPOSITE_DIRECTIONS[directionRef.current] === newDirection || 
+        directionRef.current === newDirection) {
+      return
+    }
+    
+    // 将方向变化加入队列，避免快速按键时丢失
+    if (directionQueueRef.current.length < 2) {
+      directionQueueRef.current.push(newDirection)
+    }
+  }, [])
 
   // 游戏循环
   useEffect(() => {
@@ -190,8 +194,8 @@ export default function SnakeGame() {
         changeDirection(KEY_DIRECTION_MAP[e.key as keyof typeof KEY_DIRECTION_MAP] as Direction)
       } else if (e.key === ' ') {
         e.preventDefault()
-        if (gameOver) {
-          resetGame()
+        if (gameOverRef.current) {
+          resetGameRef.current()
         } else {
           setGameStarted(prev => !prev)
         }
@@ -200,7 +204,7 @@ export default function SnakeGame() {
 
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [changeDirection, gameOver])
+  }, [changeDirection])
 
   // 触摸控制
   useEffect(() => {
@@ -212,7 +216,7 @@ export default function SnakeGame() {
     }
 
     const handleTouchEnd = (e: TouchEvent) => {
-      if (!gameStarted || gameOver) return
+      if (!gameStartedRef.current || gameOverRef.current) return
       
       const { x: startX, y: startY } = touchStartRef.current
       if (!startX || !startY) return
@@ -243,7 +247,7 @@ export default function SnakeGame() {
       document.removeEventListener('touchstart', handleTouchStart)
       document.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [changeDirection, gameStarted, gameOver])
+  }, [changeDirection])
 
   // 更新最高分
   useEffect(() => {
@@ -260,7 +264,19 @@ export default function SnakeGame() {
     setGameOver(false)
     setGameStarted(false)
     setScore(0)
+    
+    // 重置 ref 值
+    directionRef.current = 'RIGHT'
+    foodRef.current = INITIAL_FOOD
+    gameOverRef.current = false
+    gameStartedRef.current = false
+    directionQueueRef.current = []
   }, [])
+  
+  // 同步 resetGame ref
+  useEffect(() => {
+    resetGameRef.current = resetGame
+  }, [resetGame])
 
   // 开始/暂停游戏
   const toggleGame = useCallback(() => {
