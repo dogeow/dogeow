@@ -76,14 +76,16 @@ export default function MazeGame() {
 
   // 处理画布点击
   const handleCanvasClick = useCallback((event: MouseEvent) => {
-    console.log('🖱️ 画布点击事件:', { gameStarted, gameCompleted, isAutoMoving })
+    console.log('🖱️ 画布点击事件:', { gameStarted, gameCompleted })
     
-    if (!gameStarted || gameCompleted || isAutoMoving) {
+    if (!gameStarted) {
       // 如果游戏未开始，点击开始游戏
-      if (!gameStarted) {
-        console.log('🎮 点击开始游戏')
-        startGame()
-      }
+      console.log('🎮 点击开始游戏')
+      startGame()
+      return
+    }
+
+    if (gameCompleted) {
       return
     }
 
@@ -92,15 +94,17 @@ export default function MazeGame() {
 
     console.log('🎯 点击坐标:', coordinates)
     moveToPosition(coordinates.x, coordinates.y)
-  }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition, startGame])
+  }, [gameStarted, gameCompleted, screenToMazeCoordinates, moveToPosition, startGame])
 
   // 处理触摸点击
   const handleTouchEnd = useCallback((event: TouchEvent) => {
-    if (!gameStarted || gameCompleted || isAutoMoving) {
+    if (!gameStarted) {
       // 如果游戏未开始，点击开始游戏
-      if (!gameStarted) {
-        startGame()
-      }
+      startGame()
+      return
+    }
+
+    if (gameCompleted) {
       return
     }
 
@@ -114,7 +118,7 @@ export default function MazeGame() {
       // console.log('🎯 触摸坐标:', coordinates)
       moveToPosition(coordinates.x, coordinates.y)
     }
-  }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition, startGame])
+  }, [gameStarted, gameCompleted, screenToMazeCoordinates, moveToPosition, startGame])
 
   // 绑定事件监听器
   useEffect(() => {
@@ -133,10 +137,25 @@ export default function MazeGame() {
   // 键盘控制
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!gameStarted || gameCompleted || isAutoMoving) return
+      if (!gameStarted || gameCompleted) return
+
+      // 如果正在自动移动，先中断
+      if (isAutoMoving) {
+        const { interruptAutoMove } = useMazeStore.getState()
+        interruptAutoMove()
+        // 短暂延迟后再执行键盘移动
+        setTimeout(() => {
+          const { moveBall } = useMazeStore.getState()
+          executeKeyboardMove(event, moveBall)
+        }, 100)
+        return
+      }
 
       const { moveBall } = useMazeStore.getState()
-      
+      executeKeyboardMove(event, moveBall)
+    }
+
+    const executeKeyboardMove = (event: KeyboardEvent, moveBall: (direction: 'up' | 'down' | 'left' | 'right') => void) => {
       switch (event.key) {
         case 'ArrowUp':
         case 'w':
@@ -211,7 +230,8 @@ export default function MazeGame() {
         <h3 className="font-semibold text-blue-800 mb-2">游戏说明</h3>
         <div className="text-sm text-blue-700 space-y-1">
           <p>• 点击迷宫中的任意位置，小球会自动寻路到达</p>
-          <p>• 使用方向键或 WASD 键控制小球移动</p>
+          <p>• 移动过程中可以随时点击其他位置来中断并重新导航</p>
+          <p>• 使用方向键或 WASD 键控制小球移动（会中断自动移动）</p>
           <p>• 将蓝色小球移动到右下角的红色终点即可获胜</p>
           <p>• 绿色方块是起点，红色方块是终点</p>
         </div>

@@ -32,6 +32,7 @@ export interface MazeStore {
   // 自动寻路
   autoPath: { x: number, y: number }[]
   isAutoMoving: boolean
+  autoMoveInterrupt: boolean
   
   // 动作
   startGame: () => void
@@ -39,6 +40,7 @@ export interface MazeStore {
   generateMaze: () => void
   moveBall: (direction: 'up' | 'down' | 'left' | 'right') => void
   moveToPosition: (targetX: number, targetY: number) => void
+  interruptAutoMove: () => void
 }
 
 export const useMazeStore = create<MazeStore>((set, get) => ({
@@ -56,6 +58,7 @@ export const useMazeStore = create<MazeStore>((set, get) => ({
   
   autoPath: [],
   isAutoMoving: false,
+  autoMoveInterrupt: false,
   
   startGame: () => {
     console.log('🎮 开始游戏')
@@ -98,6 +101,7 @@ export const useMazeStore = create<MazeStore>((set, get) => ({
       isMoving: false,
       autoPath: [],
       isAutoMoving: false,
+      autoMoveInterrupt: false,
       maze: [] // 清空迷宫
     })
   },
@@ -224,6 +228,17 @@ export const useMazeStore = create<MazeStore>((set, get) => ({
       return
     }
 
+    // 如果当前正在自动移动，先中断
+    if (state.isAutoMoving) {
+      console.log('🛑 中断当前自动移动')
+      set({ autoMoveInterrupt: true })
+      // 等待一小段时间确保中断生效
+      setTimeout(() => {
+        get().moveToPosition(targetX, targetY)
+      }, 50)
+      return
+    }
+
     const { ball, maze, mazeSize } = state
     
     // console.log('🎯 moveToPosition 调用:', { targetX, targetY, currentBall: ball })
@@ -254,20 +269,27 @@ export const useMazeStore = create<MazeStore>((set, get) => ({
     if (path.length > 0) {
       console.log('🚗 自动寻路成功，路径长度:', path.length)
       
-      set({ autoPath: path, isAutoMoving: true })
+      set({ autoPath: path, isAutoMoving: true, autoMoveInterrupt: false })
       
       // 开始自动移动
       autoMove(ball, path, () => {
-        console.log('🎉 到达目标位置!')
-        set({ isAutoMoving: false })
-        
-        // 如果目标是终点，确保游戏完成
-        if (endX === mazeSize - 1 && endY === mazeSize - 1) {
-          console.log('🏆 确认到达终点，游戏完成!')
-          set({ gameCompleted: true })
+        const currentState = get()
+        if (!currentState.autoMoveInterrupt) {
+          console.log('🎉 到达目标位置!')
+          set({ isAutoMoving: false })
+          
+          // 如果目标是终点，确保游戏完成
+          if (endX === mazeSize - 1 && endY === mazeSize - 1) {
+            console.log('🏆 确认到达终点，游戏完成!')
+            set({ gameCompleted: true })
+          }
         }
       })
     }
+  },
+  
+  interruptAutoMove: () => {
+    set({ autoMoveInterrupt: true })
   },
 }))
 
@@ -458,6 +480,17 @@ function autoMove(
   let currentIndex = 0
   
   const moveToNext = () => {
+    // 检查是否需要中断
+    const state = useMazeStore.getState()
+    if (state.autoMoveInterrupt) {
+      console.log('🛑 自动移动被中断')
+      useMazeStore.setState({ 
+        isAutoMoving: false, 
+        autoMoveInterrupt: false 
+      })
+      return
+    }
+    
     if (currentIndex >= path.length) {
       onComplete()
       return
@@ -467,10 +500,10 @@ function autoMove(
     const newX = target.x
     const newZ = target.y
     
-    // 更新小球位置
-    const state = useMazeStore.getState()
+    // 更新小球位置和移动次数
     useMazeStore.setState({
-      ball: { ...state.ball, x: newX, z: newZ }
+      ball: { ...state.ball, x: newX, z: newZ },
+      moves: state.moves + 1
     })
     
     currentIndex++

@@ -56,30 +56,6 @@ export const GameStats = () => {
           </div>
         </div>
 
-        {/* 游戏模式信息 */}
-        <div className="pt-4 border-t dark:border-gray-600 space-y-2">
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-600 dark:text-gray-300">游戏模式</span>
-            <Badge variant={gameMode === 'ai' ? 'default' : 'secondary'}>
-              {gameMode === 'ai' ? '人机对战' : '双人对战'}
-            </Badge>
-          </div>
-          {gameMode === 'ai' && (
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300">AI 难度</span>
-              <Badge 
-                variant="outline" 
-                className={
-                  difficulty === 'hard' ? 'text-red-600 dark:text-red-400' :
-                  difficulty === 'medium' ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'
-                }
-              >
-                {difficulty === 'easy' ? '简单' : difficulty === 'medium' ? '中等' : '困难'}
-              </Badge>
-            </div>
-          )}
-        </div>
-
         {/* 成就提示 */}
         {totalGames >= 10 && (
           <div className="pt-4 border-t dark:border-gray-600">

@@ -27,7 +27,7 @@ export function GameControls({
     <>
       {/* 瞄准线和力度条 */}
       {canThrow && !ballThrown && (
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2" style={{ left: '61%' }}>
+        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2">
           <div 
             className="w-0.5 h-50 origin-bottom transition-transform duration-100 relative"
             style={{ 
