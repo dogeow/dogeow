@@ -124,7 +124,7 @@ export function useBowlingAnimation({
     
     // 开始新的动画循环
     animate()
-  }, [sceneRef, updateCamera, isProcessingResultRef, onResultProcessed])
+  }, [sceneRef, updateCamera, isProcessingResultRef, ballThrownRef, showingResult, onResultProcessed])
 
   // 停止动画
   const stopAnimation = useCallback(() => {
@@ -143,7 +143,7 @@ export function useBowlingAnimation({
     return () => {
       stopAnimation()
     }
-  }, [sceneRef.current, startAnimation, stopAnimation])
+  }, [sceneRef, startAnimation, stopAnimation])
 
   return {
     startAnimation,

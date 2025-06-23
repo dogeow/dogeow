@@ -107,7 +107,7 @@ export function BowlingCanvas() {
       resetScene()
       resetProcessingState()
     }
-  }, [gameState.currentFrame, resetScene, resetProcessingState, gameState.showingResult])
+  }, [gameState.currentFrame, resetScene, resetProcessingState, gameState.showingResult, isMounted])
 
   // 重置效果 - 第二次投球时只重置球
   useEffect(() => {
@@ -116,7 +116,7 @@ export function BowlingCanvas() {
       resetBall()
       resetProcessingState()
     }
-  }, [gameState.currentThrow, gameState.currentFrame, resetBall, resetProcessingState, gameState.showingResult])
+  }, [gameState.currentThrow, gameState.currentFrame, resetBall, resetProcessingState, gameState.showingResult, isMounted])
 
   // 监听投球事件
   useEffect(() => {
@@ -133,7 +133,7 @@ export function BowlingCanvas() {
     if (sceneRef.current) {
       setMounted()
     }
-  }, [sceneRef.current, setMounted])
+  }, [sceneRef, setMounted])
 
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-200 to-sky-100 rounded-lg overflow-hidden">
