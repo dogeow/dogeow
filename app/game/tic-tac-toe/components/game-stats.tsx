@@ -6,7 +6,7 @@ import { Trophy, TrendingUp } from 'lucide-react'
 import { useGameStore } from '../stores/game-store'
 
 export const GameStats = () => {
-  const { scores, gameMode, difficulty } = useGameStore()
+  const { scores, gameMode } = useGameStore()
   
   const totalGames = scores.X + scores.O + scores.draws
   const winRate = totalGames > 0 ? ((scores.X / totalGames) * 100).toFixed(1) : '0'
