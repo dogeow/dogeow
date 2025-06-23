@@ -121,9 +121,6 @@ export function BowlingGame() {
                 稍后再说
               </button>
             </div>
-            <div className="mt-4 text-xs text-gray-400">
-              💡 提示：需要允许访问设备方向
-            </div>
           </div>
         </div>
       )}

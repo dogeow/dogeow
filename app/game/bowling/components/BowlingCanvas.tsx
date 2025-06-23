@@ -4,40 +4,41 @@ import { useEffect, useRef, useCallback, useState } from "react"
 import * as THREE from "three"
 import * as CANNON from "cannon-es"
 import { useBowlingStore } from "../store"
+import { toast } from 'react-hot-toast'
 
 // 常量配置
 const PHYSICS_CONFIG = {
-  GRAVITY: -9.82,
-  BALL_MASS: 10, // 减少球的重量，降低冲击力
-  PIN_MASS: 0.8, // 增加球瓶重量，让它们更难倒下
+  GRAVITY: -9.82, // 重力加速度
+  BALL_MASS: 15, // 增加球的重量，提高冲击力image.png
+  PIN_MASS: 0.1, // 大幅减少球瓶重量，让它们更容易倒下
   BALL_RADIUS: 0.6, // 减少球的半径，让它更小
-  PIN_HEIGHT: 1.5,
-  PIN_RADIUS_TOP: 0.15,
-  PIN_RADIUS_BOTTOM: 0.2,
+  PIN_HEIGHT: 1.5, // 球瓶高度
+  PIN_RADIUS_TOP: 0.15, // 球瓶顶部半径
+  PIN_RADIUS_BOTTOM: 0.2, // 球瓶底部半径
   LANE_WIDTH: 5.0, // 增加球道宽度，给玩家更多操作空间
   LANE_LENGTH: 19.2, // 标准球道长度19.152米
-  WALL_HEIGHT: 2,
-  WALL_THICKNESS: 0.5,
+  WALL_HEIGHT: 2, // 墙壁高度
+  WALL_THICKNESS: 0.5, // 墙壁厚度
   THROW_TIMEOUT: 15000, // 增加到15秒，给球更多时间滚到球瓶
-  PHYSICS_STEP: 1 / 60
+  PHYSICS_STEP: 1 / 60 // 物理步长
 } as const
 
 const MATERIALS_CONFIG = {
-  BALL_GROUND: { friction: 0.05, restitution: 0.0 }, // 进一步减少摩擦力，让球滚得更远
-  BALL_PIN: { friction: 0.4, restitution: 0.5 },
-  PIN_GROUND: { friction: 0.6, restitution: 0.1 }, // 适当减少球瓶摩擦力，让球瓶更容易倒下
-  PIN_PIN: { friction: 0.3, restitution: 0.5 }
+  BALL_GROUND: { friction: 0.08, restitution: 0.0 }, // 适当增加摩擦力，防止球滑太远
+  BALL_PIN: { friction: 0.6, restitution: 0.1 }, // 大幅减少反弹，防止球往回走
+  PIN_GROUND: { friction: 0.4, restitution: 0.05 }, // 减少球瓶反弹，让它们更容易倒下
+  PIN_PIN: { friction: 0.4, restitution: 0.2 } // 减少球瓶间反弹
 } as const
 
 const CAMERA_CONFIG = {
-  FOV: 75,
-  NEAR: 0.1,
-  FAR: 1000,
+  FOV: 75, // 视野角度
+  NEAR: 0.1, // 近裁剪面
+  FAR: 1000, // 远裁剪面
   INITIAL_POSITION: { x: 0, y: 8, z: 12 }, // 调整初始相机位置
-  FOLLOW_OFFSET: { x: 0, y: 6, z: 8 },
+  FOLLOW_OFFSET: { x: 0, y: 6, z: 8 }, // 跟随偏移
   FIXED_VIEW: { x: 0, y: 8, z: -12 }, // 调整固定观看位置
-  LERP_SPEED: 0.1,
-  SLOW_LERP_SPEED: 0.05
+  LERP_SPEED: 0.1, // 线性插值速度
+  SLOW_LERP_SPEED: 0.05 // 慢速线性插值速度
 } as const
 
 const PIN_POSITIONS = [
@@ -47,23 +48,30 @@ const PIN_POSITIONS = [
   [-1.8, 1.0, -21.0], [-0.6, 1.0, -21.0], [0.6, 1.0, -21.0], [1.8, 1.0, -21.0] // 第四排，增加间距
 ] as const
 
-interface SceneRef {
-  scene: THREE.Scene
-  camera: THREE.PerspectiveCamera
-  renderer: THREE.WebGLRenderer
-  world: CANNON.World
-  ball: { mesh: THREE.Mesh; body: CANNON.Body } | null
-  pins: Array<{ mesh: THREE.Mesh; body: CANNON.Body }>
-  ground: { mesh: THREE.Mesh; body: CANNON.Body } | null
-  animationId: number | null
-  throwStartTime?: number
-  aimLine?: THREE.Line
-  powerBar?: THREE.Line
-}
-
 export function BowlingCanvas() {
+  interface SceneRef {
+    scene: THREE.Scene
+    camera: THREE.PerspectiveCamera
+    renderer: THREE.WebGLRenderer
+    world: CANNON.World
+    ball: { mesh: THREE.Mesh; body: CANNON.Body } | null
+    pins: Array<{ mesh: THREE.Mesh; body: CANNON.Body }>
+    ground: { mesh: THREE.Mesh; body: CANNON.Body } | null
+    animationId: number | null
+    throwStartTime?: number
+    aimLine?: THREE.Line
+    powerBar?: THREE.Line
+    materials: {
+        groundMaterial: CANNON.Material;
+        ballMaterial: CANNON.Material;
+        pinMaterial: CANNON.Material;
+    }
+  }
+
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const ballThrownRef = useRef(false)
+  const canThrowRef = useRef(true)
+  const showingResultRef = useRef(false)
   const sceneRef = useRef<SceneRef | null>(null)
   
   // 添加触摸控制状态
@@ -72,6 +80,9 @@ export function BowlingCanvas() {
   const [chargeStartTime, setChargeStartTime] = useState(0)
   const chargeIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const [currentAimAngle, setCurrentAimAngle] = useState(0)
+  
+  // 手动控制状态
+  const [isDragging, setIsDragging] = useState(false)
 
   const {
     ballThrown,
@@ -79,46 +90,92 @@ export function BowlingCanvas() {
     aimAngle,
     power,
     tiltX,
+    gyroSupported,
+    gyroPermission,
     lastKnockedDown,
     showingResult,
-    processBallResult,
+    currentFrame,
+    processThrowResult,
     setPower,
     setAimAngle,
-    throwBall
+    throwBall,
   } = useBowlingStore()
   
-  // 同步ballThrown状态到ref
+  // 同步状态到ref
   useEffect(() => {
     ballThrownRef.current = ballThrown
     console.log('🎳 ballThrown状态更新:', ballThrown)
   }, [ballThrown])
 
-  // 初始化瞄准角度
   useEffect(() => {
-    if (!isCharging && canThrow && !ballThrown) {
-      setCurrentAimAngle(aimAngle) // 使用store中的角度
-    }
-  }, [aimAngle, isCharging, canThrow, ballThrown])
+    canThrowRef.current = canThrow
+  }, [canThrow])
 
-  // 在按住时持续更新瞄准角度
   useEffect(() => {
-    if (isCharging) {
-      const newAngle = Math.max(-30, Math.min(30, tiltX * 30)) // 限制角度范围并将陀螺仪数据转换为角度
+    showingResultRef.current = showingResult
+  }, [showingResult])
+
+  // 实时更新瞄准角度（根据陀螺仪数据或默认角度）
+  useEffect(() => {
+    if (canThrow && !ballThrown && !showingResult) {
+      let newAngle = 0
+      
+      // 如果陀螺仪可用且有权限，使用陀螺仪数据
+      if (gyroSupported && gyroPermission) {
+        newAngle = Math.max(-30, Math.min(30, tiltX * 30)) // 限制角度范围并将陀螺仪数据转换为角度
+      } else {
+        // 如果陀螺仪不可用，使用store中的角度（可以通过其他方式设置）
+        newAngle = aimAngle
+      }
+      
       setCurrentAimAngle(newAngle)
-      setAimAngle(newAngle)
+      
+      // 只有在陀螺仪可用时才更新store中的角度
+      if (gyroSupported && gyroPermission) {
+        setAimAngle(newAngle)
+      }
     }
-  }, [tiltX, isCharging, setAimAngle])
+  }, [tiltX, aimAngle, canThrow, ballThrown, showingResult, gyroSupported, gyroPermission, setAimAngle])
+
+  // 手动角度调整函数
+  const updateManualAngle = useCallback((event: React.MouseEvent | React.TouchEvent | MouseEvent | TouchEvent) => {
+    if (!canvasRef.current || (gyroSupported && gyroPermission)) return
+    
+    const rect = canvasRef.current.getBoundingClientRect()
+    let clientX = 0
+    
+    if ('clientX' in event) {
+      clientX = event.clientX
+    } else if ('touches' in event && event.touches.length > 0) {
+      clientX = event.touches[0].clientX
+    }
+    
+    const centerX = rect.left + rect.width / 2
+    const offsetX = clientX - centerX
+    const maxOffset = rect.width / 4 // 使用屏幕宽度的1/4作为最大偏移
+    const normalizedOffset = Math.max(-1, Math.min(1, offsetX / maxOffset))
+    const newAngle = normalizedOffset * 30 // 最大30度角度
+    
+    setCurrentAimAngle(newAngle)
+    setAimAngle(newAngle)
+  }, [gyroSupported, gyroPermission, setAimAngle])
 
   // 开始蓄力
-  const startCharging = useCallback(() => {
-    if (!canThrow || ballThrown) return
+  const startCharging = useCallback((event?: React.MouseEvent | React.TouchEvent) => {
+    if (!canThrow || ballThrown || showingResult) return
     
     console.log('🎯 开始蓄力')
     setIsCharging(true)
+    setIsDragging(true)
     setChargePower(20) // 起始力度
     const startTime = Date.now()
     setChargeStartTime(startTime)
     console.log('⏱️ 蓄力开始时间:', startTime)
+    
+    // 如果没有陀螺仪支持，使用鼠标/触摸位置来设置角度
+    if (event && (!gyroSupported || !gyroPermission)) {
+      updateManualAngle(event)
+    }
     
     chargeIntervalRef.current = setInterval(() => {
       setChargePower(prev => {
@@ -126,7 +183,7 @@ export function BowlingCanvas() {
         return next > 100 ? 20 : next // 循环蓄力
       })
     }, 50)
-  }, [canThrow, ballThrown])
+  }, [canThrow, ballThrown, showingResult, gyroSupported, gyroPermission, updateManualAngle])
 
   // 结束蓄力并投球
   const endCharging = useCallback(() => {
@@ -139,6 +196,7 @@ export function BowlingCanvas() {
       chargeDuration: `${chargeDuration}ms`
     })
     setIsCharging(false)
+    setIsDragging(false)
     if (chargeIntervalRef.current) {
       clearInterval(chargeIntervalRef.current)
       chargeIntervalRef.current = null
@@ -149,6 +207,42 @@ export function BowlingCanvas() {
     throwBall()
     setChargePower(0)
   }, [isCharging, chargePower, currentAimAngle, chargeStartTime, setPower, throwBall])
+
+  // 处理鼠标/触摸移动事件
+  useEffect(() => {
+    if (!isDragging || !isCharging) return
+
+    const handleMouseMove = (event: MouseEvent) => {
+      updateManualAngle(event)
+    }
+
+    const handleTouchMove = (event: TouchEvent) => {
+      event.preventDefault()
+      updateManualAngle(event)
+    }
+
+    const handleMouseUp = () => {
+      endCharging()
+    }
+
+    const handleTouchEnd = () => {
+      endCharging()
+    }
+
+    if (!gyroSupported || !gyroPermission) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('touchmove', handleTouchMove, { passive: false })
+      document.addEventListener('mouseup', handleMouseUp)
+      document.addEventListener('touchend', handleTouchEnd)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('touchmove', handleTouchMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.removeEventListener('touchend', handleTouchEnd)
+    }
+  }, [isDragging, isCharging, gyroSupported, gyroPermission, updateManualAngle, endCharging])
 
   // 清理定时器
   useEffect(() => {
@@ -300,8 +394,8 @@ export function BowlingCanvas() {
     const ballBody = new CANNON.Body({ 
       mass: PHYSICS_CONFIG.BALL_MASS,
       material: ballMaterial,
-      linearDamping: 0.02, // 进一步减少线性阻尼，让球滚得更远
-      angularDamping: 0.02, // 进一步减少角度阻尼，让旋转保持更久
+      linearDamping: 0.1, // 增加线性阻尼，让球更快停下，防止往回走
+      angularDamping: 0.05, // 适当增加角度阻尼
       fixedRotation: false,
       type: CANNON.Body.DYNAMIC
     })
@@ -351,8 +445,8 @@ export function BowlingCanvas() {
       const pinBody = new CANNON.Body({ 
         mass: PHYSICS_CONFIG.PIN_MASS,
         material: pinMaterial,
-        linearDamping: 0.15, // 适当减少球瓶阻尼，让它们更容易移动
-        angularDamping: 0.15 // 适当减少角度阻尼，增加旋转
+        linearDamping: 0.2, // 增加球瓶阻尼，让它们被撞击后更快稳定
+        angularDamping: 0.3 // 增加角度阻尼，让球瓶倒下后不会过度旋转
       })
       pinBody.addShape(pinShape)
       pinBody.position.set(pos[0], pos[1], pos[2])
@@ -447,67 +541,26 @@ export function BowlingCanvas() {
     scene.add(backLight)
   }, [])
 
-  // 检测球瓶状态并处理投球结果
-  const processBallResultWithDetection = useCallback(() => {
-    let knockedDownCount = 0
-    
-    if (sceneRef.current?.pins) {
-      sceneRef.current.pins.forEach((pin, index) => {
-        const rotation = pin.body.quaternion
-        const angle = Math.abs(rotation.x) + Math.abs(rotation.z)
-        const position = pin.body.position
-        
-        if (angle > 0.3 || position.y < 0.5) {
-          knockedDownCount++
-          console.log(`🎯 球瓶 ${index + 1} 被击倒`, { 
-            angle: angle.toFixed(2), 
-            y: position.y.toFixed(2) 
-          })
-        }
-      })
-    }
-    
-    console.log(`🎳 实际击倒球瓶数: ${knockedDownCount}/10`)
-    processBallResult(knockedDownCount)
-  }, [processBallResult])
-
   // 更新相机位置
   const updateCamera = useCallback((camera: THREE.PerspectiveCamera, ballPosition: CANNON.Vec3) => {
-    if (ballThrownRef.current) {
-      if (ballPosition.z > -15) { // 调整相机跟随条件适应新球道长度
-        // 相机跟随球
-        const cameraOffset = {
-          x: ballPosition.x,
-          y: ballPosition.y + CAMERA_CONFIG.FOLLOW_OFFSET.y,
-          z: ballPosition.z + CAMERA_CONFIG.FOLLOW_OFFSET.z
-        }
-        
-        camera.position.lerp(
-          new THREE.Vector3(cameraOffset.x, cameraOffset.y, cameraOffset.z),
-          CAMERA_CONFIG.LERP_SPEED
-        )
-        
-        camera.lookAt(ballPosition.x, ballPosition.y, ballPosition.z - 5)
-      } else {
-        // 固定观看位置
-        camera.position.lerp(
-          new THREE.Vector3(CAMERA_CONFIG.FIXED_VIEW.x, CAMERA_CONFIG.FIXED_VIEW.y, CAMERA_CONFIG.FIXED_VIEW.z),
-          CAMERA_CONFIG.SLOW_LERP_SPEED
-        )
-        camera.lookAt(0, 0, -19) // 调整观看目标到球瓶区域
-      }
-    } else {
-      // 恢复默认位置
-      camera.position.lerp(
-        new THREE.Vector3(CAMERA_CONFIG.INITIAL_POSITION.x, CAMERA_CONFIG.INITIAL_POSITION.y, CAMERA_CONFIG.INITIAL_POSITION.z),
-        CAMERA_CONFIG.SLOW_LERP_SPEED
-      )
-      camera.lookAt(0, 0, 0)
+    const targetZ = ballPosition.z < 0 ? ballPosition.z + 15 : CAMERA_CONFIG.INITIAL_POSITION.z;
+    const targetY = ballPosition.z < 0 ? ballPosition.y + 5 : CAMERA_CONFIG.INITIAL_POSITION.y;
+    
+    const targetPosition = new THREE.Vector3(
+      CAMERA_CONFIG.INITIAL_POSITION.x,
+      targetY,
+      targetZ
+    );
+    
+    // 如果不在显示结果，则平滑移动相机
+    if (!showingResult) {
+       camera.position.lerp(targetPosition, 0.05);
+       camera.lookAt(0, ballPosition.y, ballPosition.z - 5);
     }
-  }, [])
+  }, [showingResult]);
 
   // 检查投球状态
-  const checkBallStatus = useCallback((ballBody: CANNON.Body, throwStartTime?: number) => {
+  const checkBallStatus = useCallback((ballBody: CANNON.Body, throwStartTime: number | null): boolean => {
     if (!ballThrownRef.current || !throwStartTime) return false
 
     const velocity = ballBody.velocity
@@ -518,7 +571,7 @@ export function BowlingCanvas() {
     const elapsedTime = currentTime - throwStartTime
     
     // 检查球是否静止（速度很小且持续一段时间）
-    const isStationary = speed < 0.1 && elapsedTime > 2000 // 球速度小于0.1且已经2秒后
+    const isStationary = speed < 0.05 && elapsedTime > 4000 // 球速度小于0.05且已经4秒后，给球瓶更多时间倒下
     
     // 检查球是否到达球瓶区域且静止
     // const reachedPinArea = position.z < -15 && isStationary
@@ -556,6 +609,138 @@ export function BowlingCanvas() {
 
     return false
   }, [])
+
+  // 处理投球结果 (现在包含击倒检测)
+  const processBallResult = useCallback(() => {
+    console.log('🎳 处理投球结果开始');
+    
+    let knockedDownCount = 0;
+    if (sceneRef.current?.pins) {
+      sceneRef.current.pins.forEach((pin, index) => {
+        const rotation = pin.body.quaternion;
+        const position = pin.body.position;
+        const rotationMatrix = new THREE.Matrix4().makeRotationFromQuaternion(
+          new THREE.Quaternion(rotation.x, rotation.y, rotation.z, rotation.w)
+        );
+        const upVector = new THREE.Vector3(0, 1, 0).applyMatrix4(rotationMatrix);
+        const tiltAngle = Math.acos(Math.abs(upVector.y));
+        const isKnockedDown = tiltAngle > 0.785 || position.y < 0.3;
+        
+        if (isKnockedDown) {
+          knockedDownCount++;
+        }
+      });
+    }
+    
+    console.log(`🎳 最终击倒球瓶数: ${knockedDownCount}`);
+    
+    // 调用 store action 来处理分数和状态转换
+    processThrowResult(knockedDownCount);
+  }, [processThrowResult]);
+
+  // ==================================================================
+  // 最终的场景重置逻辑
+  // ==================================================================
+
+  const resetSceneForNewRound = useCallback(() => {
+    if (!sceneRef.current || !sceneRef.current.scene || !sceneRef.current.world || !sceneRef.current.materials) {
+      console.error("⚠️ 无法重置场景：缺少必要的引用。");
+      return;
+    }
+    console.log(`🚀 为第 ${currentFrame} 轮重置整个场景...`);
+
+    const { scene, world, materials, ball, pins } = sceneRef.current;
+    
+    // 1. 移除旧的球
+    if (ball) {
+      scene.remove(ball.mesh);
+      world.removeBody(ball.body);
+    }
+
+    // 2. 移除旧的球瓶
+    if (pins) {
+      pins.forEach(pin => {
+        scene.remove(pin.mesh);
+        world.removeBody(pin.body);
+      });
+    }
+
+    // 3. 创建新的球和球瓶
+    const newBall = createBall(scene, world, materials.ballMaterial);
+    const newPins = createPins(scene, world, materials.pinMaterial);
+    
+    // 4. 更新 sceneRef
+    sceneRef.current.ball = newBall;
+    sceneRef.current.pins = newPins;
+    
+    // 5. 重置相机
+    if (sceneRef.current.camera) {
+        // 直接设置相机位置，而不是平滑移动
+        sceneRef.current.camera.position.set(
+            CAMERA_CONFIG.INITIAL_POSITION.x,
+            CAMERA_CONFIG.INITIAL_POSITION.y,
+            CAMERA_CONFIG.INITIAL_POSITION.z
+        );
+        sceneRef.current.camera.lookAt(0, 0, 0);
+    }
+    
+    console.log('✅ 场景重置完成');
+  }, [currentFrame, createBall, createPins]);
+
+  // 唯一的重置触发器：当轮次改变时重置场景
+  useEffect(() => {
+    // 忽略第一轮的初始化，因为它已经在主useEffect中完成了
+    if (currentFrame > 1) {
+      resetSceneForNewRound();
+    }
+  }, [currentFrame, resetSceneForNewRound]);
+
+  // 监听投球事件
+  useEffect(() => {
+    if (!ballThrown || !sceneRef.current?.ball) return
+
+    ballThrownRef.current = true
+    console.log('🎳 Three.js 投球！', { aimAngle, power })
+
+    const angleRad = (aimAngle * Math.PI) / 180
+    const basePower = 300 // 进一步增加基础力度
+    const powerMultiplier = power / 100 // 将力度百分比转换为乘数
+    const force = basePower * powerMultiplier // 根据力度调整最终力度
+    const velocityScale = 0.03 // 增加速度缩放因子
+
+    // 设置球的速度
+    sceneRef.current.ball.body.velocity.set(
+      Math.sin(angleRad) * force * velocityScale * 0.3,
+      0,
+      -force * velocityScale
+    )
+    
+    // 应用冲量
+    const forceVector = new CANNON.Vec3(
+      Math.sin(angleRad) * force * 0.2, // 减少侧向力，增加前进稳定性
+      -3, // 增加向下的力，防止球弹跳
+      -force * 1.0 // 增加前进力
+    )
+    sceneRef.current.ball.body.applyImpulse(forceVector, sceneRef.current.ball.body.position)
+    
+    // 重置投球计时器
+    sceneRef.current.throwStartTime = Date.now()
+    
+    console.log('🎳 投球完成', { 
+      power,
+      force,
+      angle: aimAngle,
+      ballMass: sceneRef.current.ball.body.mass,
+      velocitySet: {
+        x: (Math.sin(angleRad) * force * velocityScale * 0.3).toFixed(3),
+        z: (-force * velocityScale).toFixed(3)
+      }
+    })
+
+    // 新逻辑：使用 Zustand store action
+    processBallResult()
+
+  }, [ballThrown, aimAngle, power, processBallResult])
 
   // 初始化 Three.js 场景
   useEffect(() => {
@@ -616,7 +801,8 @@ export function BowlingCanvas() {
       ball,
       pins,
       ground: { mesh: groundMesh, body: groundBody },
-      animationId: null
+      animationId: null,
+      materials: materials,
     }
 
     // 动画循环
@@ -642,8 +828,9 @@ export function BowlingCanvas() {
       })
 
       // 检查球状态
-      if (sceneRef.current.ball && checkBallStatus(sceneRef.current.ball.body, sceneRef.current.throwStartTime)) {
-        processBallResultWithDetection()
+      if (sceneRef.current.ball && checkBallStatus(sceneRef.current.ball.body, sceneRef.current.throwStartTime ?? null)) {
+        ballThrownRef.current = false; // 防止重复触发
+        processBallResult();
         return
       }
 
@@ -674,84 +861,7 @@ export function BowlingCanvas() {
       }
       sceneRef.current?.renderer.dispose()
     }
-  }, [createPhysicsMaterials, createSceneElements, createBall, createPins, createWalls, createLighting, updateCamera, checkBallStatus, processBallResultWithDetection])
-
-  // 监听投球事件
-  useEffect(() => {
-    if (!ballThrown || !sceneRef.current?.ball) return
-
-    ballThrownRef.current = true
-    console.log('🎳 Three.js 投球！', { aimAngle, power })
-
-    const angleRad = (aimAngle * Math.PI) / 180
-    const basePower = 250 // 增加基础力度
-    const powerMultiplier = power / 100 // 将力度百分比转换为乘数
-    const force = basePower * powerMultiplier // 根据力度调整最终力度
-    const velocityScale = 0.025 // 增加速度缩放因子
-
-    // 设置球的速度
-    sceneRef.current.ball.body.velocity.set(
-      Math.sin(angleRad) * force * velocityScale * 0.3,
-      0,
-      -force * velocityScale
-    )
-    
-    // 应用冲量
-    const forceVector = new CANNON.Vec3(
-      Math.sin(angleRad) * force * 0.3, // 增加侧向力
-      -2, // 增加向下的力
-      -force * 0.8 // 增加前进力
-    )
-    sceneRef.current.ball.body.applyImpulse(forceVector, sceneRef.current.ball.body.position)
-    
-    // 重置投球计时器
-    sceneRef.current.throwStartTime = Date.now()
-    
-    console.log('🎳 投球完成', { 
-      power,
-      force,
-      angle: aimAngle,
-      ballMass: sceneRef.current.ball.body.mass,
-      velocitySet: {
-        x: (Math.sin(angleRad) * force * velocityScale * 0.3).toFixed(3),
-        z: (-force * velocityScale).toFixed(3)
-      }
-    })
-
-  }, [ballThrown, aimAngle, power])
-
-  // 重置球和球瓶位置
-  useEffect(() => {
-    if (!sceneRef.current || ballThrown) return
-
-    // 重置球位置
-    if (sceneRef.current.ball) {
-      sceneRef.current.ball.body.position.set(0, 1, 10)
-      sceneRef.current.ball.body.velocity.set(0, 0, 0)
-      sceneRef.current.ball.body.angularVelocity.set(0, 0, 0)
-      sceneRef.current.ball.mesh.position.set(0, 1, 10)
-      sceneRef.current.ball.mesh.quaternion.set(0, 0, 0, 1)
-    }
-    
-    // 重置相机和计时器
-    if (sceneRef.current) {
-      sceneRef.current.throwStartTime = undefined
-      sceneRef.current.camera.position.set(CAMERA_CONFIG.INITIAL_POSITION.x, CAMERA_CONFIG.INITIAL_POSITION.y, CAMERA_CONFIG.INITIAL_POSITION.z)
-      sceneRef.current.camera.lookAt(0, 0, 0)
-    }
-
-    // 重置球瓶位置
-    sceneRef.current.pins.forEach((pin, index) => {
-      const pos = PIN_POSITIONS[index]
-      if (pos) {
-        pin.body.position.set(pos[0], pos[1], pos[2])
-        pin.body.velocity.set(0, 0, 0)
-        pin.body.angularVelocity.set(0, 0, 0)
-        pin.body.quaternion.set(0, 0, 0, 1)
-      }
-    })
-
-  }, [canThrow, ballThrown])
+  }, []) // 依赖项数组保持为空，确保只在挂载时运行一次
 
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-200 to-sky-100 rounded-lg overflow-hidden">
@@ -759,12 +869,12 @@ export function BowlingCanvas() {
         ref={canvasRef}
         className="w-full h-full cursor-pointer"
         style={{ display: 'block' }}
-        onMouseDown={startCharging}
+        onMouseDown={(e) => startCharging(e)}
         onMouseUp={endCharging}
         onMouseLeave={endCharging}
         onTouchStart={(e) => {
           e.preventDefault()
-          startCharging()
+          startCharging(e)
         }}
         onTouchEnd={(e) => {
           e.preventDefault()
@@ -812,7 +922,18 @@ export function BowlingCanvas() {
                 <div className="text-xs">蓄力中...</div>
               </div>
             ) : (
-              <div>角度: {currentAimAngle.toFixed(1)}°</div>
+              <div>
+                <div>角度: {currentAimAngle.toFixed(1)}°</div>
+                {gyroSupported && gyroPermission && (
+                  <div className="text-xs text-green-300">🎯 陀螺仪已启用</div>
+                )}
+                {gyroSupported && !gyroPermission && (
+                  <div className="text-xs text-yellow-300">⚠️ 需要陀螺仪权限</div>
+                )}
+                {!gyroSupported && (
+                  <div className="text-xs text-gray-300">📱 手动控制</div>
+                )}
+              </div>
             )}
           </div>
         </div>

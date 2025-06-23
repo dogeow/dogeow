@@ -55,7 +55,7 @@ export function GameStats() {
       
       {/* 轮次得分 */}
       <div className="grid grid-cols-5 gap-1 text-xs">
-        {Array.from({ length: 10 }, (_, i) => (
+        {Array.from({ length: 5 }, (_, i) => (
           <div 
             key={i}
             className={`text-center p-1 rounded ${

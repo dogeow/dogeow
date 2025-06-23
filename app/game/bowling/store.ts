@@ -74,7 +74,9 @@ export interface GameState {
   // 辅助方法
   resetPins: () => void
   resetBall: () => void
-  processBallResult: (knockedDownPins?: number) => void
+  processThrowResult: (knockedDownCount: number) => void
+  setBallThrown: (thrown: boolean) => void
+  setShowingResult: (showing: boolean) => void
   
   // 手动检测陀螺仪支持（在客户端调用）
   detectGyroSupport: () => void
@@ -88,8 +90,8 @@ export const useBowlingStore = create<GameState>((set, get) => ({
   currentFrame: 1,
   currentThrow: 1,
   totalScore: 0,
-  frameScores: Array(10).fill(0),
-  throwsInFrame: Array(10).fill(0),
+  frameScores: Array(5).fill(0),
+  throwsInFrame: Array(5).fill(0),
   
   // 保龄球初始状态
   ball: {
@@ -146,8 +148,8 @@ export const useBowlingStore = create<GameState>((set, get) => ({
       currentFrame: 1,
       currentThrow: 1,
       totalScore: 0,
-      frameScores: Array(10).fill(0),
-      throwsInFrame: Array(10).fill(0),
+      frameScores: Array(5).fill(0),
+      throwsInFrame: Array(5).fill(0),
       canThrow: true,
       ballThrown: false
     })
@@ -168,8 +170,8 @@ export const useBowlingStore = create<GameState>((set, get) => ({
       currentFrame: 1,
       currentThrow: 1,
       totalScore: 0,
-      frameScores: Array(10).fill(0),
-      throwsInFrame: Array(10).fill(0),
+      frameScores: Array(5).fill(0),
+      throwsInFrame: Array(5).fill(0),
       canThrow: true,
       ballThrown: false,
       aimAngle: 0,
@@ -192,7 +194,7 @@ export const useBowlingStore = create<GameState>((set, get) => ({
   
   nextFrame: () => {
     const state = get()
-    if (state.currentFrame < 10) {
+    if (state.currentFrame < 5) {
       console.log('➡️ 下一轮')
       set({
         currentFrame: state.currentFrame + 1,
@@ -202,6 +204,21 @@ export const useBowlingStore = create<GameState>((set, get) => ({
         aimAngle: 0,
         lastKnockedDown: 0,
         showingResult: false
+      })
+    } else {
+      // 游戏结束，重置到第一轮
+      console.log('🏁 5轮游戏结束，重置到第一轮')
+      set({
+        currentFrame: 1,
+        currentThrow: 1,
+        canThrow: true,
+        ballThrown: false,
+        aimAngle: 0,
+        lastKnockedDown: 0,
+        showingResult: false,
+        totalScore: 0,
+        frameScores: Array(5).fill(0),
+        throwsInFrame: Array(5).fill(0)
       })
     }
   },
@@ -325,47 +342,38 @@ export const useBowlingStore = create<GameState>((set, get) => ({
     })
   },
   
-  processBallResult: (knockedDownPins?: number) => {
-    console.log('📊 处理投球结果开始')
-    
-    const state = get()
-    console.log('🎯 当前状态:', { 
-      canThrow: state.canThrow, 
-      ballThrown: state.ballThrown,
-      currentFrame: state.currentFrame 
-    })
-    
-    // 使用传入的击倒数量，如果没有传入则使用随机数（向后兼容）
-    const actualKnockedDown = knockedDownPins !== undefined ? knockedDownPins : Math.floor(Math.random() * 11)
-    console.log('🎯 实际击倒球瓶数:', actualKnockedDown)
-    
-    const newScore = state.totalScore + actualKnockedDown
-    const remainingPins = 10 - actualKnockedDown
-    
-    // 立即显示结果并重置投球状态
+  processThrowResult: (knockedDownCount: number) => {
+    console.log(`🎳 处理投球结果，击倒了 ${knockedDownCount} 个球瓶`);
+
+    const state = get();
+    let newTotalScore = state.totalScore + knockedDownCount;
+    const newFrameScores = [...state.frameScores];
+    newFrameScores[state.currentFrame - 1] += knockedDownCount;
+
     set({
-      totalScore: newScore,
-      canThrow: true,
+      lastKnockedDown: knockedDownCount,
       ballThrown: false,
-      lastKnockedDown: actualKnockedDown,
-      showingResult: true
-    })
+      showingResult: true,
+      totalScore: newTotalScore,
+      frameScores: newFrameScores,
+      canThrow: false, // 结果显示期间禁止投球
+    });
     
-    console.log('✅ 状态已重置:', { 
-      canThrow: true, 
-      ballThrown: false,
-      totalScore: newScore,
-      knockedDownPins: actualKnockedDown,
-      remainingPins
-    })
-    
-    // 3秒后隐藏结果并进入下一轮
+    console.log('📊 更新分数后状态:', {
+      totalScore: newTotalScore,
+      currentFrameScore: newFrameScores[state.currentFrame - 1],
+      showingResult: true,
+    });
+
+    // 3秒后进入下一帧
     setTimeout(() => {
-      set({ showingResult: false })
-      console.log('➡️ 准备进入下一轮')
-      get().nextFrame()
-    }, 3000)
+      console.log('⏰ 3秒结果显示时间到，准备下一轮');
+      get().nextFrame();
+    }, 3000);
   },
+
+  setBallThrown: (thrown: boolean) => set({ ballThrown: thrown }),
+  setShowingResult: (showing: boolean) => set({ showingResult: showing }),
 
   // 手动检测陀螺仪支持（在客户端调用）
   detectGyroSupport: () => {
