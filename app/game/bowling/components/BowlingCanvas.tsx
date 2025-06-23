@@ -17,8 +17,9 @@ const PHYSICS_CONFIG = {
   PIN_RADIUS_BOTTOM: 0.2, // 球瓶底部半径
   LANE_WIDTH: 5.0, // 增加球道宽度，给玩家更多操作空间
   LANE_LENGTH: 19.2, // 标准球道长度19.152米
-  WALL_HEIGHT: 2, // 墙壁高度
+  WALL_HEIGHT: 1.0, // 降低墙壁高度
   WALL_THICKNESS: 0.5, // 墙壁厚度
+  GUTTER_WIDTH: 0.25, // 边沟宽度
   THROW_TIMEOUT: 15000, // 增加到15秒，给球更多时间滚到球瓶
   PHYSICS_STEP: 1 / 60 // 物理步长
 } as const
@@ -31,11 +32,11 @@ const MATERIALS_CONFIG = {
 } as const
 
 const CAMERA_CONFIG = {
-  FOV: 75, // 视野角度
+  FOV: 60, // 调整FOV，获得更自然、更聚焦的视野
   NEAR: 0.1, // 近裁剪面
   FAR: 1000, // 远裁剪面
-  INITIAL_POSITION: { x: 0, y: 8, z: 12 }, // 调整初始相机位置
-  FOLLOW_OFFSET: { x: 0, y: 6, z: 8 }, // 跟随偏移
+  INITIAL_POSITION: { x: 0, y: 4, z: 16 }, // 更低的玩家视角，更具沉浸感
+  FOLLOW_HEIGHT: 8, // 跟随时相机的高度
   FIXED_VIEW: { x: 0, y: 8, z: -12 }, // 调整固定观看位置
   LERP_SPEED: 0.1, // 线性插值速度
   SLOW_LERP_SPEED: 0.05 // 慢速线性插值速度
@@ -95,6 +96,7 @@ export function BowlingCanvas() {
     lastKnockedDown,
     showingResult,
     currentFrame,
+    currentThrow,
     processThrowResult,
     setPower,
     setAimAngle,
@@ -282,10 +284,10 @@ export function BowlingCanvas() {
     const { groundMaterial } = materials
 
     // 创建一个视觉上的"坑底"地面，放置在较低位置
-    const pitFloorGeometry = new THREE.PlaneGeometry(25, 50)
+    const pitFloorGeometry = new THREE.PlaneGeometry(200, 200) // 大幅增加尺寸，确保完全覆盖
     const pitFloorMesh = new THREE.Mesh(
       pitFloorGeometry,
-      new THREE.MeshPhongMaterial({ color: 0x1a1a1a }) // 深色坑底
+      new THREE.MeshPhongMaterial({ color: 0x2c2c54 }) // 更柔和的午夜蓝
     )
     pitFloorMesh.rotation.x = -Math.PI / 2
     pitFloorMesh.position.y = -10 // 移动到Y轴下方，形成深坑
@@ -420,6 +422,7 @@ export function BowlingCanvas() {
   const createWalls = useCallback((scene: THREE.Scene, world: CANNON.World) => {
     const wallLength = 32 // 墙壁长度应与球道长度匹配
     const wallPositionZ = -6 // 墙壁中心应与球道中心对齐
+    const wallCenterX = PHYSICS_CONFIG.LANE_WIDTH / 2 + PHYSICS_CONFIG.GUTTER_WIDTH + PHYSICS_CONFIG.WALL_THICKNESS / 2;
 
     const createWall = (x: number) => {
       const wallGeometry = new THREE.BoxGeometry(PHYSICS_CONFIG.WALL_THICKNESS, PHYSICS_CONFIG.WALL_HEIGHT, wallLength)
@@ -427,28 +430,42 @@ export function BowlingCanvas() {
         wallGeometry,
         new THREE.MeshLambertMaterial({ color: 0x666666 })
       )
-      wallMesh.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT/2, wallPositionZ)
+      wallMesh.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT / 2, wallPositionZ)
       scene.add(wallMesh)
 
-      const wallShape = new CANNON.Box(new CANNON.Vec3(PHYSICS_CONFIG.WALL_THICKNESS/2, PHYSICS_CONFIG.WALL_HEIGHT/2, wallLength/2))
+      const wallShape = new CANNON.Box(new CANNON.Vec3(PHYSICS_CONFIG.WALL_THICKNESS / 2, PHYSICS_CONFIG.WALL_HEIGHT / 2, wallLength / 2))
       const wallBody = new CANNON.Body({ mass: 0 })
       wallBody.addShape(wallShape)
-      wallBody.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT/2, wallPositionZ)
+      wallBody.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT / 2, wallPositionZ)
       world.addBody(wallBody)
     }
 
-    createWall(-(PHYSICS_CONFIG.LANE_WIDTH / 2 + 0.5)) // 左墙
-    createWall(PHYSICS_CONFIG.LANE_WIDTH / 2 + 0.5)  // 右墙
+    createWall(-wallCenterX) // 左墙
+    createWall(wallCenterX)  // 右墙
+
+    // 创建视觉上的边沟 (Gutter)
+    const gutterGeometry = new THREE.BoxGeometry(PHYSICS_CONFIG.GUTTER_WIDTH, 0.1, wallLength);
+    const gutterMaterial = new THREE.MeshLambertMaterial({ color: 0x1a1a1a }); // 深色沟槽
+    const gutterY = -0.05; // 略低于球道
+    const gutterCenterX = PHYSICS_CONFIG.LANE_WIDTH / 2 + PHYSICS_CONFIG.GUTTER_WIDTH / 2;
+
+    const rightGutter = new THREE.Mesh(gutterGeometry, gutterMaterial);
+    rightGutter.position.set(gutterCenterX, gutterY, wallPositionZ);
+    scene.add(rightGutter);
+
+    const leftGutter = new THREE.Mesh(gutterGeometry, gutterMaterial);
+    leftGutter.position.set(-gutterCenterX, gutterY, wallPositionZ);
+    scene.add(leftGutter);
   }, [])
 
   // 添加照明
   const createLighting = useCallback((scene: THREE.Scene) => {
-    // 环境光 - 提供基础照明
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.4) // 降低环境光强度
-    scene.add(ambientLight)
+    // 使用半球光代替环境光，提供更自然的光照效果
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x2c2c54, 0.6); // 天空光(白色)、地面光(背景色)、强度
+    scene.add(hemisphereLight);
 
     // 主要方向光 - 模拟天花板照明
-    const mainLight = new THREE.DirectionalLight(0xffffff, 0.8)
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.7) // 稍微降低强度以平衡半球光
     mainLight.position.set(0, 15, -5)
     mainLight.target.position.set(0, 0, -15)
     mainLight.castShadow = true
@@ -487,12 +504,12 @@ export function BowlingCanvas() {
     scene.add(pinSpotLight)
 
     // 侧面补光灯 - 增加立体感
-    const sideLight1 = new THREE.DirectionalLight(0xffffff, 0.3)
+    const sideLight1 = new THREE.DirectionalLight(0xffffff, 0.6) // 增强侧面补光
     sideLight1.position.set(-10, 8, -10)
     sideLight1.target.position.set(0, 0, -15)
     scene.add(sideLight1)
 
-    const sideLight2 = new THREE.DirectionalLight(0xffffff, 0.3)
+    const sideLight2 = new THREE.DirectionalLight(0xffffff, 0.6) // 增强侧面补光
     sideLight2.position.set(10, 8, -10)
     sideLight2.target.position.set(0, 0, -15)
     scene.add(sideLight2)
@@ -505,74 +522,90 @@ export function BowlingCanvas() {
 
   // 更新相机位置
   const updateCamera = useCallback((camera: THREE.PerspectiveCamera, ballPosition: CANNON.Vec3) => {
-    const targetZ = ballPosition.z < 0 ? ballPosition.z + 15 : CAMERA_CONFIG.INITIAL_POSITION.z;
-    const targetY = CAMERA_CONFIG.INITIAL_POSITION.y; // 始终保持相机在初始高度
-    
+    if (showingResult) return; // 结果显示期间，相机应静止
+
+    // 如果球还没投出，保持在初始玩家视角
+    if (!ballThrownRef.current) {
+      camera.position.lerp(
+        new THREE.Vector3(
+          CAMERA_CONFIG.INITIAL_POSITION.x,
+          CAMERA_CONFIG.INITIAL_POSITION.y,
+          CAMERA_CONFIG.INITIAL_POSITION.z
+        ), 
+        0.1 // 使用一个较快的速度回到初始位置
+      );
+      camera.lookAt(0, 1, -20); // 直视球道远端
+      return;
+    }
+
+    // --- 球投出后的跟随逻辑 ---
+    const PIN_AREA_END_Z = -22;
+
+    const effectiveBallZ = Math.max(ballPosition.z, PIN_AREA_END_Z);
+    const effectiveBallY = Math.max(ballPosition.y, 0);
+
+    let targetZ = effectiveBallZ < 0 ? effectiveBallZ + 15 : CAMERA_CONFIG.INITIAL_POSITION.z;
+    targetZ = Math.max(targetZ, -8);
+
     const targetPosition = new THREE.Vector3(
       CAMERA_CONFIG.INITIAL_POSITION.x,
-      targetY,
+      CAMERA_CONFIG.FOLLOW_HEIGHT,
       targetZ
     );
-    
-    // 如果不在显示结果，则平滑移动相机
-    if (!showingResult) {
-       camera.position.lerp(targetPosition, 0.05);
-       // 让相机稍微向下看，但不要跟随球的Y轴
-       const lookAtY = Math.max(0, ballPosition.y);
-       camera.lookAt(0, lookAtY, ballPosition.z - 5);
-    }
+
+    camera.position.lerp(targetPosition, CAMERA_CONFIG.SLOW_LERP_SPEED);
+    camera.lookAt(0, effectiveBallY, effectiveBallZ);
   }, [showingResult]);
 
-  // 检查投球状态
-  const checkBallStatus = useCallback((ballBody: CANNON.Body, throwStartTime: number | null): boolean => {
-    if (!ballThrownRef.current || !throwStartTime) return false
+  // 检查场景是否稳定
+  const checkSceneIsStable = useCallback((
+    ballBody: CANNON.Body, 
+    pinBodies: CANNON.Body[], 
+    throwStartTime: number | null
+  ): boolean => {
+    if (!ballThrownRef.current || !throwStartTime) return false;
 
-    const velocity = ballBody.velocity
-    const position = ballBody.position
-    const speed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z)
-    
-    const currentTime = Date.now()
-    const elapsedTime = currentTime - throwStartTime
-    
-    // 检查球是否静止（速度很小且持续一段时间）
-    const isStationary = speed < 0.05 && elapsedTime > 4000 // 球速度小于0.05且已经4秒后，给球瓶更多时间倒下
-    
-    // 检查球是否到达球瓶区域且静止
-    // const reachedPinArea = position.z < -15 && isStationary
-    
-    // 检查边界 - 球超出边界立即结束
-    const outOfBounds = position.y < -5 || position.z < -30 || position.z > 15 || Math.abs(position.x) > 12
-    
-    if (outOfBounds) {
-      console.log('🚨 球超出边界，立即处理结果', { 
-        y: position.y.toFixed(2), 
-        z: position.z.toFixed(2), 
-        x: position.x.toFixed(2)
-      })
-      return true
-    }
-    
-    if (isStationary) {
-      console.log('⏸️ 球已静止，处理结果', { 
-        speed: speed.toFixed(3),
-        elapsedTime,
-        position: { x: position.x.toFixed(2), y: position.y.toFixed(2), z: position.z.toFixed(2) }
-      })
-      return true
-    }
+    const currentTime = Date.now();
+    const elapsedTime = currentTime - throwStartTime;
 
-    // 15秒时间限制作为最后的安全网
     if (elapsedTime > PHYSICS_CONFIG.THROW_TIMEOUT) {
-      console.log('⏰ 投球时间到（15秒），强制处理结果', { 
-        elapsedTime, 
-        ballPosition: { x: position.x.toFixed(2), y: position.y.toFixed(2), z: position.z.toFixed(2) },
-        speed: speed.toFixed(2)
-      })
-      return true
+      console.log('⏰ 投球时间到（15秒），强制处理结果');
+      return true;
+    }
+    if (elapsedTime < 4000) {
+      return false;
+    }
+    
+    // 通用的检查器，判断任何物理体是否"运动结束"
+    const isBodySettled = (body: CANNON.Body): boolean => {
+      // 条件1: 速度是否足够低（静止）
+      const isStable = body.velocity.length() < 0.1 && body.angularVelocity.length() < 0.1;
+      if (isStable) return true;
+
+      // 条件2: 是否已经出界
+      const pos = body.position;
+      const isOutOfBounds = pos.y < -5 || pos.z < -30 || pos.z > 15 || Math.abs(pos.x) > 12;
+      if (isOutOfBounds) return true;
+
+      return false;
+    };
+
+    // 检查球是否已经结束运动
+    if (!isBodySettled(ballBody)) {
+      return false; 
     }
 
-    return false
-  }, [])
+    // 检查所有球瓶是否也已经结束运动
+    for (const pinBody of pinBodies) {
+      if (!isBodySettled(pinBody)) {
+        return false; // 找到一个还在运动的球瓶
+      }
+    }
+
+    // 如果所有物体都已结束运动，则场景稳定
+    console.log('✅ 所有物体均已稳定或出界，处理结果');
+    return true;
+  }, []);
 
   // 处理投球结果 (现在包含击倒检测)
   const processBallResult = useCallback(() => {
@@ -631,10 +664,23 @@ export function BowlingCanvas() {
         pin.mesh.quaternion.copy(pin.body.quaternion as unknown as THREE.Quaternion)
       })
 
-      // 检查球状态
-      if (sceneRef.current.ball && checkBallStatus(sceneRef.current.ball.body, sceneRef.current.throwStartTime ?? null)) {
+      // 检查场景是否稳定
+      if (
+        sceneRef.current.ball &&
+        sceneRef.current.pins &&
+        checkSceneIsStable(
+          sceneRef.current.ball.body,
+          sceneRef.current.pins.map(p => p.body),
+          sceneRef.current.throwStartTime ?? null
+        )
+      ) {
         ballThrownRef.current = false; // 防止重复触发
-        processBallResult();
+        
+        console.log('🎳 场景稳定，等待1秒后处理结果...');
+        setTimeout(() => {
+          processBallResult();
+        }, 1000); // 延迟1秒执行
+        
         return // 停止当前动画循环
       }
 
@@ -649,9 +695,44 @@ export function BowlingCanvas() {
     
     // 开始新的动画循环
     animate();
-  }, [checkBallStatus, processBallResult, updateCamera]);
+  }, [checkSceneIsStable, processBallResult, updateCamera]);
 
-  const resetSceneForNewRound = useCallback(() => {
+  const resetBallOnly = useCallback(() => {
+    if (!sceneRef.current || !sceneRef.current.scene || !sceneRef.current.world || !sceneRef.current.materials) {
+      console.error("⚠️ 无法重置球：缺少必要的引用。");
+      return;
+    }
+    console.log(`⚾ Frame ${currentFrame}, Throw 2. Resetting ball only.`);
+
+    const { scene, world, materials, ball } = sceneRef.current;
+    
+    // 1. 移除旧的球
+    if (ball) {
+      scene.remove(ball.mesh);
+      world.removeBody(ball.body);
+    }
+
+    // 2. 创建新的球
+    const newBall = createBall(scene, world, materials.ballMaterial);
+    
+    // 3. 更新 sceneRef
+    sceneRef.current.ball = newBall;
+    
+    // 4. 重置相机
+    if (sceneRef.current.camera) {
+      sceneRef.current.camera.position.set(
+        CAMERA_CONFIG.INITIAL_POSITION.x,
+        CAMERA_CONFIG.INITIAL_POSITION.y,
+        CAMERA_CONFIG.INITIAL_POSITION.z
+      );
+      sceneRef.current.camera.lookAt(0, 0, 0);
+    }
+
+    console.log('✅ 球重置完成, 重启动画循环');
+    startAnimation();
+  }, [createBall, startAnimation, currentFrame]);
+
+  const resetForNextFrame = useCallback(() => {
     if (!sceneRef.current || !sceneRef.current.scene || !sceneRef.current.world || !sceneRef.current.materials) {
       console.error("⚠️ 无法重置场景：缺少必要的引用。");
       return;
@@ -696,13 +777,28 @@ export function BowlingCanvas() {
     startAnimation(); // 重置后重启动画！
   }, [currentFrame, createBall, createPins, startAnimation]);
 
-  // 唯一的重置触发器：当轮次改变时重置场景
+  // --- 新的、更可靠的重置逻辑 ---
+  const isMounted = useRef(false);
+
+  // 1. 当进入新的一轮 (frame) 时，完全重置场景
   useEffect(() => {
-    // 忽略第一轮的初始化，因为它已经在主useEffect中完成了
-    if (currentFrame > 1) {
-      resetSceneForNewRound();
+    // 忽略组件首次挂载时的运行
+    if (isMounted.current) {
+      console.log(`GAME: New frame detected (${currentFrame}). Performing full reset.`);
+      resetForNextFrame();
     }
-  }, [currentFrame, resetSceneForNewRound]);
+  }, [currentFrame]); // 只依赖 currentFrame
+
+  // 2. 当进入同一轮的第二次投球时，只重置球
+  useEffect(() => {
+    // 同样忽略首次挂载
+    if (isMounted.current) {
+      if (currentThrow === 2) {
+        console.log(`GAME: Second throw detected in frame ${currentFrame}. Resetting ball only.`);
+        resetBallOnly();
+      }
+    }
+  }, [currentThrow]); // 只依赖 currentThrow
 
   // 监听投球事件
   useEffect(() => {
@@ -757,8 +853,9 @@ export function BowlingCanvas() {
 
     const canvas = canvasRef.current
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0x1a1a1a) // 更深的背景色，营造室内保龄球馆氛围
-    scene.fog = new THREE.Fog(0x1a1a1a, 30, 60) // 调整雾效范围适应更大的场景
+    const newBgColor = new THREE.Color(0x2c2c54); // 更柔和的午夜蓝
+    scene.background = newBgColor;
+    scene.fog = new THREE.Fog(newBgColor, 50, 90) // 雾气颜色和背景匹配
 
     // 相机设置
     const camera = new THREE.PerspectiveCamera(
@@ -789,6 +886,7 @@ export function BowlingCanvas() {
     const world = new CANNON.World()
     world.gravity.set(0, PHYSICS_CONFIG.GRAVITY, 0)
     world.broadphase = new CANNON.NaiveBroadphase()
+    world.allowSleep = false; // 关键：禁止物理体自动休眠，防止球瓶中途静止
     world.defaultContactMaterial.friction = 0.1 // 进一步减少默认摩擦力，模拟更光滑的环境
     world.defaultContactMaterial.restitution = 0.3
 
@@ -816,6 +914,7 @@ export function BowlingCanvas() {
 
     // 动画循环
     startAnimation();
+    isMounted.current = true; // 在初始化最后标记为已挂载
 
     // 处理窗口大小变化
     const handleResize = () => {
@@ -867,7 +966,7 @@ export function BowlingCanvas() {
       {canThrow && !ballThrown && (
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2" style={{ left: '61%' }}>
           <div 
-            className="w-0.5 h-100 origin-bottom transition-transform duration-100 relative"
+            className="w-0.5 h-50 origin-bottom transition-transform duration-100 relative"
             style={{ 
               transform: `translateX(-50%) rotate(${currentAimAngle}deg)`,
               transformOrigin: 'bottom center',

@@ -27,13 +27,12 @@ export interface GameState {
   gameStarted: boolean
   currentFrame: number
   currentThrow: number
+  pinsStanding: number // 新增：追踪当前轮次站立的球瓶数
+  
+  // 分数
   totalScore: number
   frameScores: number[]
   throwsInFrame: number[]
-  
-  // 保龄球和球瓶（仅用于状态跟踪，实际物理由Three.js处理）
-  ball: Ball
-  pins: Pin[]
   
   // 陀螺仪数据
   gyroSupported: boolean
@@ -51,32 +50,19 @@ export interface GameState {
   lastKnockedDown: number
   showingResult: boolean
   
-  // 设置
-  sensitivity: number
-  
   // 游戏动作
   startGame: () => void
-  pauseGame: () => void
-  resumeGame: () => void
   resetGame: () => void
   throwBall: () => void
-  nextFrame: () => void
-  
+  processThrowResult: (knockedDownCount: number) => void
+
   // 陀螺仪控制
-  updateTilt: (x: number, y: number) => void
   requestGyroPermission: () => Promise<void>
+  updateTilt: (x: number, y: number) => void
   
   // 设置
-  setSensitivity: (value: number) => void
   setAimAngle: (angle: number) => void
   setPower: (power: number) => void
-  
-  // 辅助方法
-  resetPins: () => void
-  resetBall: () => void
-  processThrowResult: (knockedDownCount: number) => void
-  setBallThrown: (thrown: boolean) => void
-  setShowingResult: (showing: boolean) => void
   
   // 手动检测陀螺仪支持（在客户端调用）
   detectGyroSupport: () => void
@@ -89,35 +75,10 @@ export const useBowlingStore = create<GameState>((set, get) => ({
   gameStarted: false,
   currentFrame: 1,
   currentThrow: 1,
+  pinsStanding: 10,
   totalScore: 0,
   frameScores: Array(5).fill(0),
   throwsInFrame: Array(5).fill(0),
-  
-  // 保龄球初始状态
-  ball: {
-    x: 0,
-    y: 0,
-    z: -50,
-    vx: 0,
-    vy: 0,
-    vz: 0,
-    radius: 3,
-    isRolling: false
-  },
-  
-  // 球瓶初始状态（标准三角形排列）
-  pins: [
-    { id: 1, x: 0, y: 0, z: 50, isKnockedDown: false, angle: 0 },
-    { id: 2, x: -2, y: 0, z: 56, isKnockedDown: false, angle: 0 },
-    { id: 3, x: 2, y: 0, z: 56, isKnockedDown: false, angle: 0 },
-    { id: 4, x: -4, y: 0, z: 62, isKnockedDown: false, angle: 0 },
-    { id: 5, x: 0, y: 0, z: 62, isKnockedDown: false, angle: 0 },
-    { id: 6, x: 4, y: 0, z: 62, isKnockedDown: false, angle: 0 },
-    { id: 7, x: -6, y: 0, z: 68, isKnockedDown: false, angle: 0 },
-    { id: 8, x: -2, y: 0, z: 68, isKnockedDown: false, angle: 0 },
-    { id: 9, x: 2, y: 0, z: 68, isKnockedDown: false, angle: 0 },
-    { id: 10, x: 6, y: 0, z: 68, isKnockedDown: false, angle: 0 }
-  ],
   
   // 陀螺仪状态
   gyroSupported: false,
@@ -135,40 +96,24 @@ export const useBowlingStore = create<GameState>((set, get) => ({
   lastKnockedDown: 0,
   showingResult: false,
   
-  // 设置
-  sensitivity: 0.5,
-  
   // 游戏控制
   startGame: () => {
     console.log('🎳 开始游戏')
+    get().resetGame();
     set({
       isPlaying: true,
-      isPaused: false,
       gameStarted: true,
-      currentFrame: 1,
-      currentThrow: 1,
-      totalScore: 0,
-      frameScores: Array(5).fill(0),
-      throwsInFrame: Array(5).fill(0),
-      canThrow: true,
-      ballThrown: false
     })
-    
-    // 移除自动权限请求，改为通过对话框让用户主动请求
-    console.log('🎮 游戏已启动，等待用户主动申请陀螺仪权限')
   },
-  
-  pauseGame: () => set({ isPaused: true }),
-  resumeGame: () => set({ isPaused: false }),
   
   resetGame: () => {
     console.log('🔄 重置游戏')
     set({
       isPlaying: false,
-      isPaused: false,
       gameStarted: false,
       currentFrame: 1,
       currentThrow: 1,
+      pinsStanding: 10,
       totalScore: 0,
       frameScores: Array(5).fill(0),
       throwsInFrame: Array(5).fill(0),
@@ -181,55 +126,47 @@ export const useBowlingStore = create<GameState>((set, get) => ({
   },
   
   throwBall: () => {
-    const state = get()
-    if (!state.canThrow || state.ballThrown) return
-    
-    console.log('🎳 投球！', { aimAngle: state.aimAngle, power: state.power })
-    
-    set({
-      canThrow: false,
-      ballThrown: true
-    })
-  },
-  
-  nextFrame: () => {
-    const state = get()
-    if (state.currentFrame < 5) {
-      console.log('➡️ 下一轮')
-      set({
-        currentFrame: state.currentFrame + 1,
-        currentThrow: 1,
-        canThrow: true,
-        ballThrown: false,
-        aimAngle: 0,
-        lastKnockedDown: 0,
-        showingResult: false
-      })
-    } else {
-      // 游戏结束，重置到第一轮
-      console.log('🏁 5轮游戏结束，重置到第一轮')
-      set({
-        currentFrame: 1,
-        currentThrow: 1,
-        canThrow: true,
-        ballThrown: false,
-        aimAngle: 0,
-        lastKnockedDown: 0,
-        showingResult: false,
-        totalScore: 0,
-        frameScores: Array(5).fill(0),
-        throwsInFrame: Array(5).fill(0)
-      })
+    if (get().canThrow) {
+      set({ canThrow: false, ballThrown: true });
     }
   },
   
-  // 陀螺仪控制
-  updateTilt: (x: number, y: number) => {
-    set({ tiltX: x, tiltY: y })
-    
-    // 注意：这里不直接更新aimAngle，因为现在由BowlingCanvas在按住时控制
-    // aimAngle的更新现在在BowlingCanvas中的isCharging状态下进行
+  processThrowResult: (knockedDownCount: number) => {
+    const { currentFrame, currentThrow, pinsStanding } = get();
+    console.log(`🧠 Processing: F${currentFrame} T${currentThrow}, Pins Standing: ${pinsStanding}, Knocked: ${knockedDownCount}`);
+
+    set({ showingResult: true, lastKnockedDown: knockedDownCount });
+
+    const advance = (nextState: Partial<GameState>) => {
+      setTimeout(() => {
+        set({ ...nextState, showingResult: false, canThrow: true, ballThrown: false });
+      }, 2500); // 结果显示2.5秒
+    };
+
+    if (currentThrow === 1) {
+      if (knockedDownCount >= pinsStanding) { // Strike
+        console.log('🎉 STRIKE!');
+        if (currentFrame === 5) {
+          console.log('🏁 Game Over');
+          get().resetGame();
+        } else {
+          advance({ currentFrame: currentFrame + 1, currentThrow: 1, pinsStanding: 10 });
+        }
+      } else { // Not a strike
+        console.log('⚾️ Go for spare');
+        advance({ currentThrow: 2, pinsStanding: pinsStanding - knockedDownCount });
+      }
+    } else { // Second throw
+      if (currentFrame === 5) {
+        console.log('🏁 Game Over');
+        get().resetGame();
+      } else {
+        advance({ currentFrame: currentFrame + 1, currentThrow: 1, pinsStanding: 10 });
+      }
+    }
   },
+  
+  updateTilt: (x: number, y: number) => set({ tiltX: x, tiltY: y }),
   
   requestGyroPermission: async () => {
     console.log('🔐 开始请求陀螺仪权限...')
@@ -306,76 +243,9 @@ export const useBowlingStore = create<GameState>((set, get) => ({
     }
   },
   
-  // 设置
-  setSensitivity: (value: number) => set({ sensitivity: value }),
   setAimAngle: (angle: number) => set({ aimAngle: angle }),
-  setPower: (power: number) => set({ power }),
+  setPower: (power: number) => set({ power: power }),
   
-  // 辅助方法
-  resetPins: () => {
-    console.log('🎳 重置球瓶')
-    // 重置球瓶状态
-    set({
-      pins: get().pins.map(pin => ({
-        ...pin,
-        isKnockedDown: false,
-        angle: 0
-      }))
-    })
-  },
-  
-  resetBall: () => {
-    console.log('⚫ 重置球')
-    set({
-      ball: {
-        x: 0,
-        y: 0,
-        z: -50,
-        vx: 0,
-        vy: 0,
-        vz: 0,
-        radius: 3,
-        isRolling: false
-      },
-      canThrow: true,
-      ballThrown: false
-    })
-  },
-  
-  processThrowResult: (knockedDownCount: number) => {
-    console.log(`🎳 处理投球结果，击倒了 ${knockedDownCount} 个球瓶`);
-
-    const state = get();
-    let newTotalScore = state.totalScore + knockedDownCount;
-    const newFrameScores = [...state.frameScores];
-    newFrameScores[state.currentFrame - 1] += knockedDownCount;
-
-    set({
-      lastKnockedDown: knockedDownCount,
-      ballThrown: false,
-      showingResult: true,
-      totalScore: newTotalScore,
-      frameScores: newFrameScores,
-      canThrow: false, // 结果显示期间禁止投球
-    });
-    
-    console.log('📊 更新分数后状态:', {
-      totalScore: newTotalScore,
-      currentFrameScore: newFrameScores[state.currentFrame - 1],
-      showingResult: true,
-    });
-
-    // 3秒后进入下一帧
-    setTimeout(() => {
-      console.log('⏰ 3秒结果显示时间到，准备下一轮');
-      get().nextFrame();
-    }, 3000);
-  },
-
-  setBallThrown: (thrown: boolean) => set({ ballThrown: thrown }),
-  setShowingResult: (showing: boolean) => set({ showingResult: showing }),
-
-  // 手动检测陀螺仪支持（在客户端调用）
   detectGyroSupport: () => {
     if (typeof window === 'undefined') return
     
@@ -397,5 +267,5 @@ export const useBowlingStore = create<GameState>((set, get) => ({
       console.log('❌ 设备不支持陀螺仪')
       set({ gyroSupported: false, gyroPermission: false })
     }
-  }
-})) 
+  },
+})); 
