@@ -56,7 +56,7 @@ export function BowlingCanvas() {
     world: CANNON.World
     ball: { mesh: THREE.Mesh; body: CANNON.Body } | null
     pins: Array<{ mesh: THREE.Mesh; body: CANNON.Body }>
-    ground: { mesh: THREE.Mesh; body: CANNON.Body } | null
+    lane: { mesh: THREE.Mesh; body: CANNON.Body } | null
     animationId: number | null
     throwStartTime?: number
     aimLine?: THREE.Line
@@ -279,97 +279,56 @@ export function BowlingCanvas() {
 
   // 创建场景元素
   const createSceneElements = useCallback((scene: THREE.Scene, world: CANNON.World, materials: ReturnType<typeof createPhysicsMaterials>) => {
-    // 创建更大的地面，延伸到球瓶后面
-    const groundGeometry = new THREE.PlaneGeometry(25, 50) // 大幅增加地面尺寸
-    const groundMesh = new THREE.Mesh(
-      groundGeometry,
-      new THREE.MeshPhongMaterial({ 
-        color: 0x2a2a2a, // 深色地面
-        shininess: 30,
-        specular: 0x111111
-      })
-    )
-    groundMesh.rotation.x = -Math.PI / 2
-    groundMesh.position.z = -5 // 调整地面中心位置
-    groundMesh.receiveShadow = true
-    scene.add(groundMesh)
+    const { groundMaterial } = materials
 
-    // 创建木质纹理球道 - 扩展到完整长度
-    const fullLaneLength = 35 // 进一步增加球道长度，确保覆盖所有区域
-    const laneGeometry = new THREE.PlaneGeometry(PHYSICS_CONFIG.LANE_WIDTH, fullLaneLength)
+    // 创建一个视觉上的"坑底"地面，放置在较低位置
+    const pitFloorGeometry = new THREE.PlaneGeometry(25, 50)
+    const pitFloorMesh = new THREE.Mesh(
+      pitFloorGeometry,
+      new THREE.MeshPhongMaterial({ color: 0x1a1a1a }) // 深色坑底
+    )
+    pitFloorMesh.rotation.x = -Math.PI / 2
+    pitFloorMesh.position.y = -10 // 移动到Y轴下方，形成深坑
+    pitFloorMesh.receiveShadow = true
+    scene.add(pitFloorMesh)
+
+    // 创建有限长度的物理球道和视觉球道
+    // 球瓶位置在 z=-18.3 到 z=-21.0，所以球道应该在 z=-22 结束
+    const laneLength = 32 // 球道长度：从 z=10 (起始) 到 z=-22 (结束)
+    const laneWidth = PHYSICS_CONFIG.LANE_WIDTH
+
+    // 视觉球道
+    const laneGeometry = new THREE.PlaneGeometry(laneWidth, laneLength)
     const laneMesh = new THREE.Mesh(
       laneGeometry,
-      new THREE.MeshPhongMaterial({ 
-        color: 0xdeb887, // 浅木色
-        shininess: 80, // 增加光泽度
-        specular: 0x444444, // 镜面反射
-        transparent: true,
-        opacity: 0.95
-      })
+      new THREE.MeshPhongMaterial({ color: 0xdeb887, shininess: 80, specular: 0x444444 })
     )
     laneMesh.rotation.x = -Math.PI / 2
-    laneMesh.position.y = 0.01
-    laneMesh.position.z = -7.5 // 进一步向后移动，确保覆盖球瓶区域
+    laneMesh.position.set(0, 0.01, -6) // 球道中心在 z=-6 (10到-22的中点)
     laneMesh.receiveShadow = true
-    laneMesh.castShadow = false
     scene.add(laneMesh)
 
-    // 添加投球助跑区域 - 在球道前面
-    const approachLength = 5 // 助跑区长度
-    const approachGeometry = new THREE.PlaneGeometry(PHYSICS_CONFIG.LANE_WIDTH, approachLength)
+    // 物理球道
+    const laneShape = new CANNON.Box(new CANNON.Vec3(laneWidth / 2, 0.1, laneLength / 2))
+    const laneBody = new CANNON.Body({ mass: 0, material: groundMaterial })
+    laneBody.addShape(laneShape)
+    laneBody.position.set(0, -0.1, -6) // 物理实体位置略低于视觉
+    world.addBody(laneBody)
+
+    // 添加投球助跑区
+    const approachLength = 5
+    const approachGeometry = new THREE.PlaneGeometry(laneWidth, approachLength)
     const approachMesh = new THREE.Mesh(
-      approachGeometry,
-      new THREE.MeshPhongMaterial({ 
-        color: 0xc8a882, // 稍微深一点的木色，区分助跑区
-        shininess: 70,
-        specular: 0x333333
-      })
+        approachGeometry,
+        new THREE.MeshPhongMaterial({ color: 0xc8a882 })
     )
     approachMesh.rotation.x = -Math.PI / 2
-    approachMesh.position.y = 0.005 // 稍微低一点，避免Z-fighting
-    approachMesh.position.z = 10 // 在球道前面
+    approachMesh.position.y = 0.005
+    approachMesh.position.z = 10 + approachLength / 2 // 助跑区紧接球道起始位置
     approachMesh.receiveShadow = true
     scene.add(approachMesh)
 
-    // 添加球道边缘装饰线 - 延伸到完整长度
-    const edgeGeometry = new THREE.PlaneGeometry(0.1, fullLaneLength)
-    const edgeMaterial = new THREE.MeshPhongMaterial({ color: 0x8b4513 }) // 深棕色边线
-    
-    // 左边线
-    const leftEdge = new THREE.Mesh(edgeGeometry, edgeMaterial)
-    leftEdge.rotation.x = -Math.PI / 2
-    leftEdge.position.set(-PHYSICS_CONFIG.LANE_WIDTH/2, 0.02, -5)
-    scene.add(leftEdge)
-    
-    // 右边线
-    const rightEdge = new THREE.Mesh(edgeGeometry, edgeMaterial)
-    rightEdge.rotation.x = -Math.PI / 2
-    rightEdge.position.set(PHYSICS_CONFIG.LANE_WIDTH/2, 0.02, -5)
-    scene.add(rightEdge)
-
-    // 添加助跑区边线
-    const approachEdgeGeometry = new THREE.PlaneGeometry(0.1, approachLength)
-    
-    // 助跑区左边线
-    const approachLeftEdge = new THREE.Mesh(approachEdgeGeometry, edgeMaterial)
-    approachLeftEdge.rotation.x = -Math.PI / 2
-    approachLeftEdge.position.set(-PHYSICS_CONFIG.LANE_WIDTH/2, 0.015, 10)
-    scene.add(approachLeftEdge)
-    
-    // 助跑区右边线
-    const approachRightEdge = new THREE.Mesh(approachEdgeGeometry, edgeMaterial)
-    approachRightEdge.rotation.x = -Math.PI / 2
-    approachRightEdge.position.set(PHYSICS_CONFIG.LANE_WIDTH/2, 0.015, 10)
-    scene.add(approachRightEdge)
-
-    // 物理地面 - 扩大物理地面范围
-    const groundShape = new CANNON.Plane()
-    const groundBody = new CANNON.Body({ mass: 0, material: materials.groundMaterial })
-    groundBody.addShape(groundShape)
-    groundBody.quaternion.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2)
-    world.addBody(groundBody)
-
-    return { groundMesh, groundBody }
+    return { laneMesh, laneBody }
   }, [])
 
   // 创建球
@@ -459,24 +418,27 @@ export function BowlingCanvas() {
 
   // 创建边界墙
   const createWalls = useCallback((scene: THREE.Scene, world: CANNON.World) => {
+    const wallLength = 32 // 墙壁长度应与球道长度匹配
+    const wallPositionZ = -6 // 墙壁中心应与球道中心对齐
+
     const createWall = (x: number) => {
-      const wallGeometry = new THREE.BoxGeometry(PHYSICS_CONFIG.WALL_THICKNESS, PHYSICS_CONFIG.WALL_HEIGHT, 35) // 增加墙壁长度
+      const wallGeometry = new THREE.BoxGeometry(PHYSICS_CONFIG.WALL_THICKNESS, PHYSICS_CONFIG.WALL_HEIGHT, wallLength)
       const wallMesh = new THREE.Mesh(
         wallGeometry,
         new THREE.MeshLambertMaterial({ color: 0x666666 })
       )
-      wallMesh.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT/2, -2) // 调整墙壁位置对应地面中心
+      wallMesh.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT/2, wallPositionZ)
       scene.add(wallMesh)
 
-      const wallShape = new CANNON.Box(new CANNON.Vec3(PHYSICS_CONFIG.WALL_THICKNESS/2, PHYSICS_CONFIG.WALL_HEIGHT/2, 17.5)) // 调整墙壁碰撞体积
+      const wallShape = new CANNON.Box(new CANNON.Vec3(PHYSICS_CONFIG.WALL_THICKNESS/2, PHYSICS_CONFIG.WALL_HEIGHT/2, wallLength/2))
       const wallBody = new CANNON.Body({ mass: 0 })
       wallBody.addShape(wallShape)
-      wallBody.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT/2, -2)
+      wallBody.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT/2, wallPositionZ)
       world.addBody(wallBody)
     }
 
-    createWall(-3) // 左墙，调整位置适应更宽的球道
-    createWall(3)  // 右墙
+    createWall(-(PHYSICS_CONFIG.LANE_WIDTH / 2 + 0.5)) // 左墙
+    createWall(PHYSICS_CONFIG.LANE_WIDTH / 2 + 0.5)  // 右墙
   }, [])
 
   // 添加照明
@@ -544,7 +506,7 @@ export function BowlingCanvas() {
   // 更新相机位置
   const updateCamera = useCallback((camera: THREE.PerspectiveCamera, ballPosition: CANNON.Vec3) => {
     const targetZ = ballPosition.z < 0 ? ballPosition.z + 15 : CAMERA_CONFIG.INITIAL_POSITION.z;
-    const targetY = ballPosition.z < 0 ? ballPosition.y + 5 : CAMERA_CONFIG.INITIAL_POSITION.y;
+    const targetY = CAMERA_CONFIG.INITIAL_POSITION.y; // 始终保持相机在初始高度
     
     const targetPosition = new THREE.Vector3(
       CAMERA_CONFIG.INITIAL_POSITION.x,
@@ -555,7 +517,9 @@ export function BowlingCanvas() {
     // 如果不在显示结果，则平滑移动相机
     if (!showingResult) {
        camera.position.lerp(targetPosition, 0.05);
-       camera.lookAt(0, ballPosition.y, ballPosition.z - 5);
+       // 让相机稍微向下看，但不要跟随球的Y轴
+       const lookAtY = Math.max(0, ballPosition.y);
+       camera.lookAt(0, lookAtY, ballPosition.z - 5);
     }
   }, [showingResult]);
 
@@ -642,6 +606,51 @@ export function BowlingCanvas() {
   // 最终的场景重置逻辑
   // ==================================================================
 
+  const startAnimation = useCallback(() => {
+    if (!sceneRef.current) return;
+    const { renderer, scene, camera, world } = sceneRef.current;
+
+    const animate = () => {
+      if (!sceneRef.current) return
+
+      // 更新物理世界
+      world.step(PHYSICS_CONFIG.PHYSICS_STEP, PHYSICS_CONFIG.PHYSICS_STEP, 3)
+
+      // 同步球的位置
+      if (sceneRef.current.ball) {
+        sceneRef.current.ball.mesh.position.copy(sceneRef.current.ball.body.position as unknown as THREE.Vector3)
+        sceneRef.current.ball.mesh.quaternion.copy(sceneRef.current.ball.body.quaternion as unknown as THREE.Quaternion)
+        
+        // 更新相机
+        updateCamera(sceneRef.current.camera, sceneRef.current.ball.body.position)
+      }
+
+      // 同步球瓶位置
+      sceneRef.current.pins.forEach((pin) => {
+        pin.mesh.position.copy(pin.body.position as unknown as THREE.Vector3)
+        pin.mesh.quaternion.copy(pin.body.quaternion as unknown as THREE.Quaternion)
+      })
+
+      // 检查球状态
+      if (sceneRef.current.ball && checkBallStatus(sceneRef.current.ball.body, sceneRef.current.throwStartTime ?? null)) {
+        ballThrownRef.current = false; // 防止重复触发
+        processBallResult();
+        return // 停止当前动画循环
+      }
+
+      renderer.render(scene, camera)
+      sceneRef.current.animationId = requestAnimationFrame(animate)
+    }
+
+    // 停止任何可能正在运行的旧动画循环
+    if (sceneRef.current.animationId) {
+      cancelAnimationFrame(sceneRef.current.animationId);
+    }
+    
+    // 开始新的动画循环
+    animate();
+  }, [checkBallStatus, processBallResult, updateCamera]);
+
   const resetSceneForNewRound = useCallback(() => {
     if (!sceneRef.current || !sceneRef.current.scene || !sceneRef.current.world || !sceneRef.current.materials) {
       console.error("⚠️ 无法重置场景：缺少必要的引用。");
@@ -675,17 +684,17 @@ export function BowlingCanvas() {
     
     // 5. 重置相机
     if (sceneRef.current.camera) {
-        // 直接设置相机位置，而不是平滑移动
-        sceneRef.current.camera.position.set(
-            CAMERA_CONFIG.INITIAL_POSITION.x,
-            CAMERA_CONFIG.INITIAL_POSITION.y,
-            CAMERA_CONFIG.INITIAL_POSITION.z
-        );
-        sceneRef.current.camera.lookAt(0, 0, 0);
+      sceneRef.current.camera.position.set(
+        CAMERA_CONFIG.INITIAL_POSITION.x,
+        CAMERA_CONFIG.INITIAL_POSITION.y,
+        CAMERA_CONFIG.INITIAL_POSITION.z
+      );
+      sceneRef.current.camera.lookAt(0, 0, 0);
     }
     
-    console.log('✅ 场景重置完成');
-  }, [currentFrame, createBall, createPins]);
+    console.log('✅ 场景重置完成, 重启动画循环');
+    startAnimation(); // 重置后重启动画！
+  }, [currentFrame, createBall, createPins, startAnimation]);
 
   // 唯一的重置触发器：当轮次改变时重置场景
   useEffect(() => {
@@ -738,9 +747,9 @@ export function BowlingCanvas() {
     })
 
     // 新逻辑：使用 Zustand store action
-    processBallResult()
+    // processBallResult() // <--- 错误！不应该在这里立即调用
 
-  }, [ballThrown, aimAngle, power, processBallResult])
+  }, [ballThrown, aimAngle, power, processBallResult]) // 移除 startAnimation 依赖
 
   // 初始化 Three.js 场景
   useEffect(() => {
@@ -785,7 +794,7 @@ export function BowlingCanvas() {
 
     // 创建场景元素
     const materials = createPhysicsMaterials(world)
-    const { groundMesh, groundBody } = createSceneElements(scene, world, materials)
+    const { laneMesh, laneBody } = createSceneElements(scene, world, materials)
     const ball = createBall(scene, world, materials.ballMaterial)
     const pins = createPins(scene, world, materials.pinMaterial)
     
@@ -800,45 +809,13 @@ export function BowlingCanvas() {
       world,
       ball,
       pins,
-      ground: { mesh: groundMesh, body: groundBody },
+      lane: { mesh: laneMesh, body: laneBody },
       animationId: null,
       materials: materials,
     }
 
     // 动画循环
-    const animate = () => {
-      if (!sceneRef.current) return
-
-      // 更新物理世界
-      world.step(PHYSICS_CONFIG.PHYSICS_STEP, PHYSICS_CONFIG.PHYSICS_STEP, 3)
-
-      // 同步球的位置
-      if (sceneRef.current.ball) {
-        sceneRef.current.ball.mesh.position.copy(sceneRef.current.ball.body.position as unknown as THREE.Vector3)
-        sceneRef.current.ball.mesh.quaternion.copy(sceneRef.current.ball.body.quaternion as unknown as THREE.Quaternion)
-        
-        // 更新相机
-        updateCamera(sceneRef.current.camera, sceneRef.current.ball.body.position)
-      }
-
-      // 同步球瓶位置
-      sceneRef.current.pins.forEach((pin) => {
-        pin.mesh.position.copy(pin.body.position as unknown as THREE.Vector3)
-        pin.mesh.quaternion.copy(pin.body.quaternion as unknown as THREE.Quaternion)
-      })
-
-      // 检查球状态
-      if (sceneRef.current.ball && checkBallStatus(sceneRef.current.ball.body, sceneRef.current.throwStartTime ?? null)) {
-        ballThrownRef.current = false; // 防止重复触发
-        processBallResult();
-        return
-      }
-
-      renderer.render(scene, camera)
-      sceneRef.current.animationId = requestAnimationFrame(animate)
-    }
-
-    animate()
+    startAnimation();
 
     // 处理窗口大小变化
     const handleResize = () => {
