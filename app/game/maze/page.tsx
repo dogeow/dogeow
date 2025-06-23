@@ -10,7 +10,7 @@ export default function MazePage() {
         {/* 头部 */}
         <div className="flex items-center gap-4 mb-6">
           <BackButton onClick={() => window.history.back()} />
-          <h1 className="text-2xl font-bold text-gray-800">3D 迷宫游戏</h1>
+          <h1 className="text-2xl font-bold text-gray-800">迷宫游戏</h1>
         </div>
 
         {/* 游戏区域 */}

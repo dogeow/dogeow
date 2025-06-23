@@ -8,7 +8,7 @@ import { useBowlingStore } from "../store"
 // 常量配置
 const PHYSICS_CONFIG = {
   GRAVITY: -9.82, // 重力加速度
-  BALL_MASS: 15, // 增加球的重量，提高冲击力image.png
+  BALL_MASS: 15, // 增加球的重量，提高冲击力
   PIN_MASS: 0.1, // 大幅减少球瓶重量，让它们更容易倒下
   BALL_RADIUS: 0.6, // 减少球的半径，让它更小
   PIN_HEIGHT: 1.5, // 球瓶高度
@@ -72,6 +72,7 @@ export function BowlingCanvas() {
   const ballThrownRef = useRef(false)
   const canThrowRef = useRef(true)
   const showingResultRef = useRef(false)
+  const isProcessingResultRef = useRef(false)
   const sceneRef = useRef<SceneRef | null>(null)
   
   // 添加触摸控制状态
@@ -546,15 +547,12 @@ export function BowlingCanvas() {
   const updateCamera = useCallback((camera: THREE.PerspectiveCamera, ballPosition: CANNON.Vec3) => {
     if (showingResult) return; // 结果显示期间，相机应静止
 
-    // 如果球还没投出，保持在初始玩家视角
+    // 如果球还没投出，将相机锁定在初始玩家视角
     if (!ballThrownRef.current) {
-      camera.position.lerp(
-        new THREE.Vector3(
-          CAMERA_CONFIG.INITIAL_POSITION.x,
-          CAMERA_CONFIG.INITIAL_POSITION.y,
-          CAMERA_CONFIG.INITIAL_POSITION.z
-        ), 
-        0.1 // 使用一个较快的速度回到初始位置
+      camera.position.set(
+        CAMERA_CONFIG.INITIAL_POSITION.x,
+        CAMERA_CONFIG.INITIAL_POSITION.y,
+        CAMERA_CONFIG.INITIAL_POSITION.z
       );
       camera.lookAt(0, 1, -20); // 直视球道远端
       return;
@@ -688,6 +686,7 @@ export function BowlingCanvas() {
 
       // 检查场景是否稳定
       if (
+        !isProcessingResultRef.current && // 仅当未在处理结果时才检查
         sceneRef.current.ball &&
         sceneRef.current.pins &&
         checkSceneIsStable(
@@ -696,7 +695,7 @@ export function BowlingCanvas() {
           sceneRef.current.throwStartTime ?? null
         )
       ) {
-        ballThrownRef.current = false; // 防止重复触发
+        isProcessingResultRef.current = true; // 上锁，开始处理
         
         console.log('🎳 场景稳定，等待1秒后处理结果...');
         setTimeout(() => {
@@ -726,31 +725,24 @@ export function BowlingCanvas() {
 
     const { ball, camera } = sceneRef.current;
     
-    // 重置物理状态，而不是销毁和重建
+    // 重置物理状态
     ball.body.position.set(0, 1, 10);
     ball.body.velocity.set(0, 0, 0);
     ball.body.angularVelocity.set(0, 0, 0);
     ball.body.quaternion.set(0,0,0,1);
-
-    // 重置相机视角
-    camera.position.set(
-      CAMERA_CONFIG.INITIAL_POSITION.x,
-      CAMERA_CONFIG.INITIAL_POSITION.y,
-      CAMERA_CONFIG.INITIAL_POSITION.z
-    );
-    camera.lookAt(0, 1, -20);
     
+    isProcessingResultRef.current = false; // 解锁，允许下一次检查
     console.log('✅ 球已重置。');
   }, [currentFrame]);
 
   const resetForNextFrame = useCallback(() => {
-    if (!sceneRef.current || !sceneRef.current.pins || !sceneRef.current.ball || !sceneRef.current.camera) {
+    if (!sceneRef.current || !sceneRef.current.pins || !sceneRef.current.ball) {
       console.error("⚠️ 无法重置场景：缺少必要的引用。");
       return;
     }
     console.log(`🚀 为第 ${currentFrame} 轮重置整个场景...`);
 
-    const { ball, pins, camera } = sceneRef.current;
+    const { ball, pins } = sceneRef.current;
     
     // 重置球
     ball.body.position.set(0, 1, 10);
@@ -767,14 +759,7 @@ export function BowlingCanvas() {
         pin.body.quaternion.set(0,0,0,1);
     });
     
-    // 重置相机
-    camera.position.set(
-      CAMERA_CONFIG.INITIAL_POSITION.x,
-      CAMERA_CONFIG.INITIAL_POSITION.y,
-      CAMERA_CONFIG.INITIAL_POSITION.z
-    );
-    camera.lookAt(0, 1, -20);
-    
+    isProcessingResultRef.current = false; // 解锁，允许下一次检查
     console.log('✅ 场景已重置。');
   }, [currentFrame]);
 

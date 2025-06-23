@@ -168,12 +168,12 @@ export default function ItemDetail() {
               <CardContent className="space-y-6">
                 {item.images && item.images.length > 0 ? (
                   <div className="space-y-3">
-                    <div className="relative aspect-video bg-muted rounded-lg overflow-hidden shadow-sm">
+                    <div className="relative aspect-square bg-muted rounded-lg overflow-hidden shadow-sm">
                       <Image
                         src={item.images[activeImageIndex].url || ''}
                         alt={item.name}
                         fill
-                        className="object-contain"
+                        className="object-cover"
                       />
                     </div>
                     
@@ -182,7 +182,7 @@ export default function ItemDetail() {
                         {item.images.map((image, index: number) => (
                           <div
                             key={image.id}
-                            className={`relative w-16 h-16 rounded-md cursor-pointer border-2 transition-all ${
+                            className={`relative w-16 h-16 aspect-square rounded-md cursor-pointer border-2 transition-all overflow-hidden ${
                               index === activeImageIndex ? 'border-primary ring-2 ring-primary/20' : 'border-muted hover:border-muted-foreground/50'
                             }`}
                             onClick={() => setActiveImageIndex(index)}
@@ -191,7 +191,7 @@ export default function ItemDetail() {
                               src={image.thumbnail_url || ''}
                               alt={`${item.name} 图片 ${index + 1}`}
                               fill
-                              className="object-cover rounded-sm"
+                              className="object-cover"
                             />
                           </div>
                         ))}

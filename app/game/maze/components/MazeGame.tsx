@@ -11,7 +11,10 @@ export default function MazeGame() {
     gameCompleted,
     isAutoMoving,
     mazeSize,
-    cameraConfig
+    moves,
+    gameTime,
+    startGame,
+    resetGame
   } = useMazeStore()
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -23,7 +26,7 @@ export default function MazeGame() {
     const canvas = canvasRef.current
     const rect = canvas.getBoundingClientRect()
     
-    // 获取canvas内的相对坐标 (0 到 canvas尺寸)
+    // 获取canvas内的相对坐标
     const x = clientX - rect.left
     const y = clientY - rect.top
     
@@ -31,75 +34,27 @@ export default function MazeGame() {
     const normalizedX = x / rect.width
     const normalizedY = y / rect.height
     
-    // 根据视角模式进行不同的坐标转换
-    let mazeX: number, mazeY: number
-    
-    if (cameraConfig.mode === 'top') {
-      // 俯视模式：直接映射到迷宫网格
-      const margin = 0.05 // 迷宫周围的边距
-      const effectiveX = (normalizedX - margin) / (1 - 2 * margin)
-      const effectiveY = (normalizedY - margin) / (1 - 2 * margin)
-      
-      // 确保在有效范围内
-      const clampedX = Math.max(0, Math.min(1, effectiveX))
-      const clampedY = Math.max(0, Math.min(1, effectiveY))
-      
-      mazeX = Math.floor(clampedX * mazeSize)
-      mazeY = Math.floor(clampedY * mazeSize)
-    } else if (cameraConfig.mode === 'follow') {
-      // 2.5D模式：使用更精确的坐标转换
-      const viewportStartX = 0.12
-      const viewportEndX = 0.88
-      const viewportStartY = 0.20
-      const viewportEndY = 0.80
-      
-      // 检查点击是否在迷宫显示区域内
-      if (normalizedX >= viewportStartX && normalizedX <= viewportEndX &&
-          normalizedY >= viewportStartY && normalizedY <= viewportEndY) {
-        
-        // 将屏幕坐标映射到迷宫网格
-        const relativeX = (normalizedX - viewportStartX) / (viewportEndX - viewportStartX)
-        const relativeY = (normalizedY - viewportStartY) / (viewportEndY - viewportStartY)
-        
-        mazeX = Math.floor(relativeX * mazeSize)
-        mazeY = Math.floor(relativeY * mazeSize)
-      } else {
-        // 点击在迷宫区域外，使用最接近的边界点
-        const clampedX = Math.max(viewportStartX, Math.min(viewportEndX, normalizedX))
-        const clampedY = Math.max(viewportStartY, Math.min(viewportEndY, normalizedY))
-        
-        const relativeX = (clampedX - viewportStartX) / (viewportEndX - viewportStartX)
-        const relativeY = (clampedY - viewportStartY) / (viewportEndY - viewportStartY)
-        
-        mazeX = Math.floor(relativeX * mazeSize)
-        mazeY = Math.floor(relativeY * mazeSize)
-      }
-    } else {
-      // 第一人称模式：简单映射
-      mazeX = Math.floor(normalizedX * mazeSize)
-      mazeY = Math.floor(normalizedY * mazeSize)
-    }
+    // 转换为迷宫网格坐标
+    const mazeX = Math.floor(normalizedX * mazeSize)
+    const mazeY = Math.floor(normalizedY * mazeSize)
     
     // 确保坐标在有效范围内
-    mazeX = Math.max(0, Math.min(mazeSize - 1, mazeX))
-    mazeY = Math.max(0, Math.min(mazeSize - 1, mazeY))
+    const clampedX = Math.max(0, Math.min(mazeSize - 1, mazeX))
+    const clampedY = Math.max(0, Math.min(mazeSize - 1, mazeY))
     
-    // 特殊处理：如果点击在终点附近，优先识别为终点
-    const endpointX = mazeSize - 1
-    const endpointY = mazeSize - 1
-    const distanceToEndpoint = Math.abs(mazeX - endpointX) + Math.abs(mazeY - endpointY)
-    
-    if (distanceToEndpoint <= 1) {
-      mazeX = endpointX
-      mazeY = endpointY
-    }
-    
-    return { x: mazeX, y: mazeY }
-  }, [mazeSize, cameraConfig.mode])
+    return { x: clampedX, y: clampedY }
+  }, [mazeSize])
 
   // 处理画布点击
   const handleCanvasClick = useCallback((event: MouseEvent) => {
+    console.log('🖱️ 画布点击事件:', { gameStarted, gameCompleted, isAutoMoving })
+    
     if (!gameStarted || gameCompleted || isAutoMoving) {
+      // 如果游戏未开始，点击开始游戏
+      if (!gameStarted) {
+        console.log('🎮 点击开始游戏')
+        startGame()
+      }
       return
     }
 
@@ -107,11 +62,15 @@ export default function MazeGame() {
     if (!coordinates) return
 
     moveToPosition(coordinates.x, coordinates.y)
-  }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition])
+  }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition, startGame])
 
   // 处理触摸点击
   const handleTouchEnd = useCallback((event: TouchEvent) => {
     if (!gameStarted || gameCompleted || isAutoMoving) {
+      // 如果游戏未开始，点击开始游戏
+      if (!gameStarted) {
+        startGame()
+      }
       return
     }
 
@@ -124,7 +83,7 @@ export default function MazeGame() {
 
       moveToPosition(coordinates.x, coordinates.y)
     }
-  }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition])
+  }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition, startGame])
 
   // 绑定事件监听器
   useEffect(() => {
@@ -140,17 +99,98 @@ export default function MazeGame() {
     }
   }, [handleCanvasClick, handleTouchEnd])
 
-  return (
-    <div className="relative w-full h-full">
-      <MazeCanvas ref={canvasRef} />
-      
+  // 键盘控制
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!gameStarted || gameCompleted || isAutoMoving) return
 
+      const { moveBall } = useMazeStore.getState()
+      
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          event.preventDefault()
+          moveBall('up')
+          break
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          event.preventDefault()
+          moveBall('down')
+          break
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          event.preventDefault()
+          moveBall('left')
+          break
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          event.preventDefault()
+          moveBall('right')
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [gameStarted, gameCompleted, isAutoMoving])
+
+  return (
+    <div className="relative w-full">
+      {/* 游戏信息 */}
+      <div className="flex justify-between items-center mb-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex gap-6">
+          <div className="text-sm">
+            <span className="text-gray-600">移动次数:</span>
+            <span className="ml-2 font-bold text-blue-600">{moves}</span>
+          </div>
+          <div className="text-sm">
+            <span className="text-gray-600">用时:</span>
+            <span className="ml-2 font-bold text-green-600">{gameTime}秒</span>
+          </div>
+        </div>
+        
+        <div className="flex gap-2">
+          <button
+            onClick={resetGame}
+            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+          >
+            重新开始
+          </button>
+        </div>
+      </div>
+
+      {/* 游戏画布 */}
+      <MazeCanvas ref={canvasRef} />
+
+      {/* 控制说明 */}
+      <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+        <h3 className="font-semibold text-blue-800 mb-2">游戏说明</h3>
+        <div className="text-sm text-blue-700 space-y-1">
+          <p>• 点击迷宫中的任意位置，小球会自动寻路到达</p>
+          <p>• 使用方向键或 WASD 键控制小球移动</p>
+          <p>• 将蓝色小球移动到右下角的红色终点即可获胜</p>
+          <p>• 绿色方块是起点，红色方块是终点</p>
+        </div>
+      </div>
       
       {gameCompleted && (
-        <div className="absolute inset-0 flex items-center justify-center bg-green-500/80 rounded-lg">
-          <div className="text-white text-center">
-            <h3 className="text-2xl font-bold mb-2">🎉 恭喜通关！</h3>
-            <p className="text-sm opacity-90">你成功走出了迷宫</p>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+          <div className="bg-white rounded-lg p-8 text-center shadow-xl">
+            <h3 className="text-3xl font-bold mb-4 text-green-600">🎉 恭喜通关！</h3>
+            <div className="text-gray-600 space-y-2 mb-6">
+              <p>移动次数: <span className="font-bold text-blue-600">{moves}</span></p>
+              <p>用时: <span className="font-bold text-green-600">{gameTime}秒</span></p>
+            </div>
+            <button
+              onClick={resetGame}
+              className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-semibold"
+            >
+              再来一局
+            </button>
           </div>
         </div>
       )}
