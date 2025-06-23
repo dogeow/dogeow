@@ -4,7 +4,6 @@ import { useEffect, useRef, useCallback, useState } from "react"
 import * as THREE from "three"
 import * as CANNON from "cannon-es"
 import { useBowlingStore } from "../store"
-import { toast } from 'react-hot-toast'
 
 // 常量配置
 const PHYSICS_CONFIG = {
@@ -372,13 +371,15 @@ export function BowlingCanvas() {
     // 1. 创建更逼真的球瓶几何体 (LatheGeometry)
     // 通过定义一条旋转的曲线来创建更真实的球瓶形状
     const pinHeight = PHYSICS_CONFIG.PIN_HEIGHT;
+    // 更新了轮廓点，以创建平坦且封闭的底部和顶部
     const pinPoints = [
-        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM * 0.7, -pinHeight / 2),
-        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM, -pinHeight / 2 + 0.1),
-        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM * 1.25, -pinHeight * 0.15),
-        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_TOP * 0.8, pinHeight * 0.3),
-        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_TOP, pinHeight / 2 - 0.1),
-        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_TOP * 0.9, pinHeight / 2),
+        new THREE.Vector2(0, -pinHeight / 2), // 从Y轴中心开始，确保底部是封闭的
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM, -pinHeight / 2), // 创建一个平坦的底部
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM * 1.2, -pinHeight * 0.4),
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM * 1.3, -pinHeight * 0.1),
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_TOP * 0.9, pinHeight * 0.4),
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_TOP, pinHeight / 2), // 瓶顶边缘
+        new THREE.Vector2(0, pinHeight / 2), // 在Y轴中心结束，确保顶部是封闭的
     ];
     const pinGeometry = new THREE.LatheGeometry(pinPoints, 24);
 
@@ -641,7 +642,7 @@ export function BowlingCanvas() {
     
     let knockedDownCount = 0;
     if (sceneRef.current?.pins) {
-      sceneRef.current.pins.forEach((pin, index) => {
+      sceneRef.current.pins.forEach((pin) => {
         const rotation = pin.body.quaternion;
         const position = pin.body.position;
         const rotationMatrix = new THREE.Matrix4().makeRotationFromQuaternion(
@@ -815,7 +816,7 @@ export function BowlingCanvas() {
       console.log(`GAME: New frame detected (${currentFrame}). Performing full reset.`);
       resetForNextFrame();
     }
-  }, [currentFrame]); // 只依赖 currentFrame
+  }, [currentFrame, resetForNextFrame]); // 只依赖 currentFrame
 
   // 2. 当进入同一轮的第二次投球时，只重置球
   useEffect(() => {
@@ -826,7 +827,7 @@ export function BowlingCanvas() {
         resetBallOnly();
       }
     }
-  }, [currentThrow]); // 只依赖 currentThrow
+  }, [currentThrow, currentFrame, resetBallOnly]); // 只依赖 currentThrow
 
   // 监听投球事件
   useEffect(() => {
@@ -965,7 +966,7 @@ export function BowlingCanvas() {
       }
       sceneRef.current?.renderer.dispose()
     }
-  }, []) // 依赖项数组保持为空，确保只在挂载时运行一次
+  }, [createBall, createLighting, createPhysicsMaterials, createPins, createSceneElements, createWalls, startAnimation])
 
   return (
     <div className="relative w-full h-[600px] bg-gradient-to-b from-sky-200 to-sky-100 rounded-lg overflow-hidden">
