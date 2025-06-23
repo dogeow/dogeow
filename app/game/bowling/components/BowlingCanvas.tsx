@@ -369,26 +369,53 @@ export function BowlingCanvas() {
 
   // 创建球瓶
   const createPins = useCallback((scene: THREE.Scene, world: CANNON.World, pinMaterial: CANNON.Material) => {
-    const pinGeometry = new THREE.CylinderGeometry(
-      PHYSICS_CONFIG.PIN_RADIUS_TOP, 
-      PHYSICS_CONFIG.PIN_RADIUS_BOTTOM, 
-      PHYSICS_CONFIG.PIN_HEIGHT, 
-      12 // 增加分段数让球瓶更圆滑
-    )
-    
-    // 创建球瓶材质 - 白色底色，高光泽
-    const pinMaterial3D = new THREE.MeshPhongMaterial({ 
-      color: 0xffffff, // 纯白色
-      shininess: 120, // 高光泽度
-      specular: 0x888888, // 强镜面反射
-      transparent: false
-    })
+    // 1. 创建更逼真的球瓶几何体 (LatheGeometry)
+    // 通过定义一条旋转的曲线来创建更真实的球瓶形状
+    const pinHeight = PHYSICS_CONFIG.PIN_HEIGHT;
+    const pinPoints = [
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM * 0.7, -pinHeight / 2),
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM, -pinHeight / 2 + 0.1),
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_BOTTOM * 1.25, -pinHeight * 0.15),
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_TOP * 0.8, pinHeight * 0.3),
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_TOP, pinHeight / 2 - 0.1),
+        new THREE.Vector2(PHYSICS_CONFIG.PIN_RADIUS_TOP * 0.9, pinHeight / 2),
+    ];
+    const pinGeometry = new THREE.LatheGeometry(pinPoints, 24);
+
+    // 2. 创建带红色条纹的 Canvas 贴图
+    const createPinTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return null;
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#e60028'; // 经典的保龄球红色
+      const stripeHeight = canvas.height * 0.1;
+      const stripeY = canvas.height * 0.6;
+      ctx.fillRect(0, stripeY, canvas.width, stripeHeight);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    };
+    const pinTexture = createPinTexture();
+
+    // 3. 创建应用了新贴图的材质
+    const pinMaterial3D = new THREE.MeshPhongMaterial({
+      map: pinTexture,
+      shininess: 120,
+      specular: 0x444444,
+      emissive: 0x111111
+    });
     
     const pinMeshes: THREE.Mesh[] = []
     const pinBodies: CANNON.Body[] = []
 
     PIN_POSITIONS.forEach((pos) => {
-      // 创建球瓶主体
       const pinMesh = new THREE.Mesh(pinGeometry, pinMaterial3D)
       pinMesh.position.set(pos[0], pos[1], pos[2])
       pinMesh.castShadow = true
@@ -397,6 +424,7 @@ export function BowlingCanvas() {
       
       pinMeshes.push(pinMesh)
 
+      // 物理形状保持简单，使用Cylinder
       const pinShape = new CANNON.Cylinder(
         PHYSICS_CONFIG.PIN_RADIUS_TOP, 
         PHYSICS_CONFIG.PIN_RADIUS_BOTTOM, 
@@ -406,8 +434,8 @@ export function BowlingCanvas() {
       const pinBody = new CANNON.Body({ 
         mass: PHYSICS_CONFIG.PIN_MASS,
         material: pinMaterial,
-        linearDamping: 0.2, // 增加球瓶阻尼，让它们被撞击后更快稳定
-        angularDamping: 0.3 // 增加角度阻尼，让球瓶倒下后不会过度旋转
+        linearDamping: 0.2,
+        angularDamping: 0.3
       })
       pinBody.addShape(pinShape)
       pinBody.position.set(pos[0], pos[1], pos[2])
