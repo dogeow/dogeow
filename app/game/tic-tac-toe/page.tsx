@@ -28,14 +28,14 @@ const TicTacToe = () => {
   } = useGameStore()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 主游戏区域 */}
           <div className="lg:col-span-2">
             <Card className="mb-6">
               <CardHeader className="text-center">
-                <CardTitle className="text-3xl font-bold text-gray-800 flex items-center justify-center gap-2">
+                <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center justify-center gap-2">
                   <Trophy className="w-8 h-8 text-yellow-500" />
                   井字棋
                   <GameRulesDialog
@@ -79,7 +79,7 @@ const TicTacToe = () => {
                 {gameMode === 'ai' && (
                   <div className="flex justify-center mb-6">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">AI 难度:</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-300">AI 难度:</span>
                       <Select value={difficulty} onValueChange={setDifficulty}>
                         <SelectTrigger className="w-24">
                           <SelectValue />
@@ -149,9 +149,9 @@ const TicTacToe = () => {
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 10 }}
-                        className="text-xl text-gray-700"
+                        className="text-xl text-gray-700 dark:text-gray-200"
                       >
-                        当前玩家: <span className="font-bold text-blue-600">
+                        当前玩家: <span className="font-bold text-blue-600 dark:text-blue-400">
                           {gameMode === 'ai' && currentPlayer === 'O' ? 'AI (O)' : `${currentPlayer}`}
                         </span>
                       </motion.div>
@@ -168,11 +168,11 @@ const TicTacToe = () => {
                       whileTap={{ scale: 0.95 }}
                       onClick={() => makeMove(index)}
                       className={`
-                        aspect-square bg-white border-2 border-gray-300 rounded-lg
+                        aspect-square bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-lg
                         text-4xl font-bold transition-all duration-200
-                        hover:border-blue-400 hover:shadow-md
+                        hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md
                         ${cell ? 'cursor-default' : 'cursor-pointer'}
-                        ${cell === 'X' ? 'text-blue-600' : 'text-red-600'}
+                        ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}
                         ${isAiThinking && gameMode === 'ai' ? 'pointer-events-none opacity-50' : ''}
                       `}
                       disabled={!!cell || gameOver || isAiThinking}

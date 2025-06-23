@@ -88,8 +88,6 @@ export function BowlingGame() {
     }
   }, [gyroSupported, gyroPermission, isMounted])
 
-  // 物理更新现在由 BowlingCanvas 组件中的 Three.js 处理
-
   return (
     <div ref={gameRef} className="flex flex-col items-center space-y-6">
       {/* 权限请求对话框 */}

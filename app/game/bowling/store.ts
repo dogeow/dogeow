@@ -143,12 +143,19 @@ export const useBowlingStore = create<GameState>((set, get) => ({
       }, 2500); // 结果显示2.5秒
     };
 
+    const gameOver = () => {
+      setTimeout(() => {
+        console.log('🏁 Game Over - 重置游戏');
+        get().resetGame();
+      }, 2500); // 结果显示2.5秒后才重置
+    };
+
     if (currentThrow === 1) {
       if (knockedDownCount >= pinsStanding) { // Strike
         console.log('🎉 STRIKE!');
         if (currentFrame === 5) {
           console.log('🏁 Game Over');
-          get().resetGame();
+          gameOver();
         } else {
           advance({ currentFrame: currentFrame + 1, currentThrow: 1, pinsStanding: 10 });
         }
@@ -159,7 +166,7 @@ export const useBowlingStore = create<GameState>((set, get) => ({
     } else { // Second throw
       if (currentFrame === 5) {
         console.log('🏁 Game Over');
-        get().resetGame();
+        gameOver();
       } else {
         advance({ currentFrame: currentFrame + 1, currentThrow: 1, pinsStanding: 10 });
       }

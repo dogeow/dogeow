@@ -42,6 +42,14 @@ export default function MazeGame() {
     const clampedX = Math.max(0, Math.min(mazeSize - 1, mazeX))
     const clampedY = Math.max(0, Math.min(mazeSize - 1, mazeY))
     
+    console.log('🎯 坐标转换:', {
+      click: { x: clientX, y: clientY },
+      canvas: { x, y },
+      normalized: { x: normalizedX, y: normalizedY },
+      maze: { x: mazeX, y: mazeY },
+      clamped: { x: clampedX, y: clampedY }
+    })
+    
     return { x: clampedX, y: clampedY }
   }, [mazeSize])
 
@@ -61,6 +69,7 @@ export default function MazeGame() {
     const coordinates = screenToMazeCoordinates(event.clientX, event.clientY)
     if (!coordinates) return
 
+    console.log('🎯 点击坐标:', coordinates)
     moveToPosition(coordinates.x, coordinates.y)
   }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition, startGame])
 
@@ -81,6 +90,7 @@ export default function MazeGame() {
       const coordinates = screenToMazeCoordinates(touch.clientX, touch.clientY)
       if (!coordinates) return
 
+      console.log('🎯 触摸坐标:', coordinates)
       moveToPosition(coordinates.x, coordinates.y)
     }
   }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition, startGame])
@@ -154,12 +164,21 @@ export default function MazeGame() {
         </div>
         
         <div className="flex gap-2">
-          <button
-            onClick={resetGame}
-            className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
-          >
-            重新开始
-          </button>
+          {gameStarted ? (
+            <button
+              onClick={resetGame}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+            >
+              重新开始
+            </button>
+          ) : (
+            <button
+              onClick={startGame}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+            >
+              开始游戏
+            </button>
+          )}
         </div>
       </div>
 

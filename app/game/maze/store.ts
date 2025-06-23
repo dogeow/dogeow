@@ -226,6 +226,8 @@ export const useMazeStore = create<MazeStore>((set, get) => ({
 
     const { ball, maze, mazeSize } = state
     
+    console.log('🎯 moveToPosition 调用:', { targetX, targetY, currentBall: ball })
+    
     // 使用网格坐标
     const gridX = ball.x
     const gridY = ball.z
@@ -235,6 +237,11 @@ export const useMazeStore = create<MazeStore>((set, get) => ({
     const startY = Math.max(0, Math.min(mazeSize - 1, gridY))
     const endX = Math.max(0, Math.min(mazeSize - 1, targetX))
     const endY = Math.max(0, Math.min(mazeSize - 1, targetY))
+    
+    console.log('🎯 坐标处理:', { 
+      start: { x: startX, y: startY }, 
+      end: { x: endX, y: endY } 
+    })
     
     // 如果目标就是当前位置，不需要移动
     if (startX === endX && startY === endY) {
