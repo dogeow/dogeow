@@ -507,6 +507,7 @@ export function BowlingCanvas() {
     mainLight.shadow.camera.top = 20
     mainLight.shadow.camera.bottom = -20
     scene.add(mainLight)
+    scene.add(mainLight.target)
 
     // 球道聚光灯 - 照亮球道
     const laneSpotLight = new THREE.SpotLight(0xffffff, 1.2)
@@ -520,6 +521,7 @@ export function BowlingCanvas() {
     laneSpotLight.shadow.mapSize.width = 2048
     laneSpotLight.shadow.mapSize.height = 2048
     scene.add(laneSpotLight)
+    scene.add(laneSpotLight.target)
 
     // 球瓶区聚光灯 - 突出球瓶
     const pinSpotLight = new THREE.SpotLight(0xffffff, 1.0)
@@ -531,17 +533,20 @@ export function BowlingCanvas() {
     pinSpotLight.distance = 20
     pinSpotLight.castShadow = true
     scene.add(pinSpotLight)
+    scene.add(pinSpotLight.target)
 
     // 侧面补光灯 - 增加立体感
     const sideLight1 = new THREE.DirectionalLight(0xffffff, 0.6) // 增强侧面补光
     sideLight1.position.set(-10, 8, -10)
     sideLight1.target.position.set(0, 0, -15)
     scene.add(sideLight1)
+    scene.add(sideLight1.target)
 
     const sideLight2 = new THREE.DirectionalLight(0xffffff, 0.6) // 增强侧面补光
     sideLight2.position.set(10, 8, -10)
     sideLight2.target.position.set(0, 0, -15)
     scene.add(sideLight2)
+    scene.add(sideLight2.target)
 
     // 背景点光源 - 营造氛围
     const backLight = new THREE.PointLight(0x444444, 0.5, 30)
