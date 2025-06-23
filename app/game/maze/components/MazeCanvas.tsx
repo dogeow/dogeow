@@ -12,12 +12,12 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     gameStarted
   } = useMazeStore()
 
-  console.log('🎨 MazeCanvas 渲染状态:', { 
-    gameStarted, 
-    mazeLength: maze.length, 
-    ballPosition: ball,
-    mazeSize 
-  })
+  // console.log('🎨 MazeCanvas 渲染状态:', { 
+  //   gameStarted, 
+  //   mazeLength: maze.length, 
+  //   ballPosition: ball,
+  //   mazeSize 
+  // })
 
   // 合并内部ref和外部ref
   const setRef = (element: HTMLCanvasElement | null) => {
@@ -47,12 +47,17 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     const canvasHeight = rect.height
     const cellSize = Math.min(canvasWidth, canvasHeight) / mazeSize
     
-    console.log('🎨 Canvas尺寸:', { 
-      rect: { width: rect.width, height: rect.height },
-      canvas: { width: canvas.width, height: canvas.height },
-      cellSize,
-      mazeSize
-    })
+    // 计算迷宫在Canvas中的实际偏移
+    const mazeRenderSize = cellSize * mazeSize
+    const offsetX = (canvasWidth - mazeRenderSize) / 2
+    const offsetY = (canvasHeight - mazeRenderSize) / 2
+    
+    // console.log('🎨 Canvas尺寸:', { 
+    //   rect: { width: rect.width, height: rect.height },
+    //   canvas: { width: canvas.width, height: canvas.height },
+    //   cellSize,
+    //   mazeSize
+    // })
 
     // 清空画布
     ctx.clearRect(0, 0, canvasWidth, canvasHeight)
@@ -63,7 +68,7 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
 
     // 如果迷宫还没生成，只绘制背景
     if (maze.length === 0) {
-      console.log('🎨 迷宫未生成，只绘制背景')
+      // console.log('🎨 迷宫未生成，只绘制背景')
       return
     }
 
@@ -74,8 +79,8 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     for (let y = 0; y < mazeSize; y++) {
       for (let x = 0; x < mazeSize; x++) {
         const cell = maze[y][x]
-        const cellX = x * cellSize
-        const cellY = y * cellSize
+        const cellX = x * cellSize + offsetX
+        const cellY = y * cellSize + offsetY
 
         // 绘制墙壁
         ctx.beginPath()
@@ -110,25 +115,25 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
 
     // 绘制起点标记
     ctx.fillStyle = '#4ade80'
-    ctx.fillRect(cellSize * 0.1, cellSize * 0.1, cellSize * 0.8, cellSize * 0.8)
+    ctx.fillRect(offsetX + cellSize * 0.1, offsetY + cellSize * 0.1, cellSize * 0.8, cellSize * 0.8)
 
     // 绘制终点标记
     ctx.fillStyle = '#ef4444'
-    const endX = (mazeSize - 1) * cellSize
-    const endY = (mazeSize - 1) * cellSize
+    const endX = (mazeSize - 1) * cellSize + offsetX
+    const endY = (mazeSize - 1) * cellSize + offsetY
     ctx.fillRect(endX + cellSize * 0.1, endY + cellSize * 0.1, cellSize * 0.8, cellSize * 0.8)
 
     // 绘制小球
     const ballGridX = ball.x
     const ballGridY = ball.z
-    const ballX = ballGridX * cellSize + cellSize / 2
-    const ballY = ballGridY * cellSize + cellSize / 2
+    const ballX = ballGridX * cellSize + cellSize / 2 + offsetX
+    const ballY = ballGridY * cellSize + cellSize / 2 + offsetY
     
-    console.log('🎨 绘制小球:', { 
-      ballGrid: { x: ballGridX, y: ballGridY }, 
-      ballCanvas: { x: ballX, y: ballY },
-      cellSize 
-    })
+    // console.log('🎨 绘制小球:', { 
+    //   ballGrid: { x: ballGridX, y: ballGridY }, 
+    //   ballCanvas: { x: ballX, y: ballY },
+    //   cellSize 
+    // })
 
     ctx.fillStyle = '#3b82f6'
     ctx.beginPath()

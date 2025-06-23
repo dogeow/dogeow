@@ -30,13 +30,29 @@ export default function MazeGame() {
     const x = clientX - rect.left
     const y = clientY - rect.top
     
-    // 转换为标准化坐标 (0 到 1)
-    const normalizedX = x / rect.width
-    const normalizedY = y / rect.height
+    // 计算实际的迷宫渲染区域（与Canvas绘制逻辑保持一致）
+    const canvasWidth = rect.width
+    const canvasHeight = rect.height
+    const cellSize = Math.min(canvasWidth, canvasHeight) / mazeSize
+    const mazeRenderWidth = cellSize * mazeSize
+    const mazeRenderHeight = cellSize * mazeSize
     
-    // 转换为迷宫网格坐标 - 使用四舍五入获得更准确的映射
-    const mazeX = Math.round(normalizedX * mazeSize - 0.5)
-    const mazeY = Math.round(normalizedY * mazeSize - 0.5)
+    // 计算迷宫在Canvas中的偏移（如果Canvas不是正方形）
+    const offsetX = (canvasWidth - mazeRenderWidth) / 2
+    const offsetY = (canvasHeight - mazeRenderHeight) / 2
+    
+    // 调整坐标到迷宫渲染区域
+    const adjustedX = x - offsetX
+    const adjustedY = y - offsetY
+    
+    // 转换为网格坐标
+    const mazeX = Math.floor(adjustedX / cellSize)
+    const mazeY = Math.floor(adjustedY / cellSize)
+    
+    // 如果调整后的坐标为负数，说明点击在迷宫区域外，返回null
+    if (adjustedX < 0 || adjustedY < 0 || adjustedX >= mazeRenderWidth || adjustedY >= mazeRenderHeight) {
+      return null
+    }
     
     // 确保坐标在有效范围内
     const clampedX = Math.max(0, Math.min(mazeSize - 1, mazeX))
@@ -46,7 +62,10 @@ export default function MazeGame() {
       click: { x: clientX, y: clientY },
       canvas: { x, y },
       canvasSize: { width: rect.width, height: rect.height },
-      normalized: { x: normalizedX, y: normalizedY },
+      cellSize,
+      mazeRender: { width: mazeRenderWidth, height: mazeRenderHeight },
+      offset: { x: offsetX, y: offsetY },
+      adjusted: { x: adjustedX, y: adjustedY },
       maze: { x: mazeX, y: mazeY },
       clamped: { x: clampedX, y: clampedY },
       mazeSize
@@ -92,7 +111,7 @@ export default function MazeGame() {
       const coordinates = screenToMazeCoordinates(touch.clientX, touch.clientY)
       if (!coordinates) return
 
-      console.log('🎯 触摸坐标:', coordinates)
+      // console.log('🎯 触摸坐标:', coordinates)
       moveToPosition(coordinates.x, coordinates.y)
     }
   }, [gameStarted, gameCompleted, isAutoMoving, screenToMazeCoordinates, moveToPosition, startGame])
