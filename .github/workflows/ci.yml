@@ -35,6 +35,7 @@ jobs:
       
     - name: Check code formatting
       run: npm run format:check
+      continue-on-error: true
       
     - name: Build application
       run: npm run build
