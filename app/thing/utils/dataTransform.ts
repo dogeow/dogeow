@@ -28,7 +28,7 @@ export function buildLocationPath(
 /**
  * 检查数据是否有变化
  */
-export function hasDataChanged(current: any, initial: any): boolean {
+export function hasDataChanged<T>(current: T, initial: T): boolean {
   return JSON.stringify(current) !== JSON.stringify(initial)
 }
 

@@ -4,7 +4,7 @@ import { toast } from "sonner"
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import { useAreas, useRooms, useSpots } from '@/lib/api'
 import { apiRequest } from '@/lib/api'
-import { ItemFormData, UploadedImage, Room, Spot, Tag, ItemImage, LocationSelection } from '@/app/thing/types'
+import { ItemFormData, UploadedImage, Room, Spot, Tag, LocationSelection } from '@/app/thing/types'
 import { useAutoSave } from './useAutoSave'
 import { INITIAL_FORM_DATA, AUTO_SAVE_DELAY, ERROR_MESSAGES } from '@/app/thing/constants'
 import { convertImagesToUploadedFormat, buildLocationPath, hasDataChanged, tagsToIdStrings } from '@/app/thing/utils/dataTransform'
@@ -35,8 +35,22 @@ export function useItemEdit() {
   const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>()
   const { data: spots = [], mutate: refreshSpots } = useSpots<Spot[]>()
 
+  // 定义自动保存数据类型
+  interface AutoSaveData {
+    formData: ItemFormData
+    selectedTags: string[]
+    uploadedImages: UploadedImage[]
+  }
+
+  // 定义用于比较的简化数据类型
+  interface CompareData {
+    formData: ItemFormData
+    selectedTags: string[]
+    uploadedImages: Array<{ path: string; id?: number }>
+  }
+
   // 自动保存逻辑
-  const handleAutoSave = useCallback(async (data: any) => {
+  const handleAutoSave = useCallback(async (_data: AutoSaveData) => {
     const updateData: Parameters<typeof updateItem>[1] = {
       ...formData,
       purchase_date: formData.purchase_date?.toISOString() || null,
@@ -59,7 +73,7 @@ export function useItemEdit() {
     lastSaved,
     triggerAutoSave,
     setInitialData
-  } = useAutoSave({
+  } = useAutoSave<AutoSaveData>({
     onSave: handleAutoSave,
     delay: AUTO_SAVE_DELAY
   })
@@ -190,7 +204,7 @@ export function useItemEdit() {
       }
       
       // 设置自动保存的初始数据
-      const initialData = {
+      const initialData: AutoSaveData = {
         formData: itemFormData,
         selectedTags: item.tags ? tagsToIdStrings(item.tags) : [],
         uploadedImages: item.images ? convertExistingImagesToUploadedFormat(item.images) : []
@@ -205,7 +219,7 @@ export function useItemEdit() {
   }, [params.id, getItem, router, convertExistingImagesToUploadedFormat, fetchCategories, fetchTags, loadRooms, loadSpots, setInitialData])
 
   // 监听数据变化，触发自动保存
-  const initialDataRef = useRef<any>(null)
+  const initialDataRef = useRef<CompareData | null>(null)
   
   useEffect(() => {
     if (!initialDataRef.current || initialLoading) return

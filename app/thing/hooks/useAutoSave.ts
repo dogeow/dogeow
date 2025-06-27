@@ -6,18 +6,18 @@ interface UseAutoSaveOptions<T> {
   initialData?: T
 }
 
-interface UseAutoSaveReturn {
+interface UseAutoSaveReturn<T> {
   autoSaving: boolean
   lastSaved: Date | null
   triggerAutoSave: () => void
-  setInitialData: (data: any) => void
+  setInitialData: (data: T) => void
 }
 
 export function useAutoSave<T>({
   onSave,
   delay = 2000,
   initialData
-}: UseAutoSaveOptions<T>): UseAutoSaveReturn {
+}: UseAutoSaveOptions<T>): UseAutoSaveReturn<T> {
   const [autoSaving, setAutoSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
