@@ -8,7 +8,7 @@ type MarkdownShortcut = '#' | '##' | '>' | '-' | '*' | '+' | '1.' | '```'
 
 // 检查 Markdown 快捷方式
 const checkMarkdownShortcut = (text: string): RegExpExecArray | null => {
-  return /^(\#\#|\#|\>|\-|\*|\+|1\.|\`\`\`)$/.exec(text)
+  return /^(\#\#|\#|\>|\-|\*|\+|1\.|\`\`\`\w*)$/.exec(text)
 }
 
 // 更新代码高亮
@@ -35,7 +35,7 @@ const updateCodeHighlight = (editor: ExtendedEditor) => {
 }
 
 // 处理 Markdown 快捷方式
-const handleMarkdownShortcut = (editor: ExtendedEditor, type: MarkdownShortcut) => {
+const handleMarkdownShortcut = (editor: ExtendedEditor, type: MarkdownShortcut, fullText?: string) => {
   const transforms: Record<MarkdownShortcut, () => void> = {
     '#': () => {
       Transforms.setNodes(
@@ -63,9 +63,13 @@ const handleMarkdownShortcut = (editor: ExtendedEditor, type: MarkdownShortcut) 
     '+': () => handleListTransform(editor, 'bulleted-list'),
     '1.': () => handleListTransform(editor, 'numbered-list'),
     '```': () => {
+      // 检查是否带有语言标识符
+      const codeMatch = fullText ? /^```(\w*)$/.exec(fullText) : null
+      const language = codeMatch ? codeMatch[1] : undefined
+      
       Transforms.setNodes(
         editor,
-        { type: 'code-block' },
+        { type: 'code-block', language },
         { match: n => SlateElement.isElement(n) && Editor.isBlock(editor, n) }
       )
     }
@@ -119,16 +123,19 @@ export const withMarkdownShortcuts = (editor: ExtendedEditor) => {
 
       const beforeMatch = checkMarkdownShortcut(beforeText)
       if (beforeMatch) {
-        const type = beforeMatch[1] as MarkdownShortcut
+        const type = beforeMatch[1].startsWith('```') ? '```' : beforeMatch[1] as MarkdownShortcut
         
         if (type === '```') {
-          insertText(text)
+          // 对于代码块，我们需要特殊处理
+          Transforms.select(editor, range)
+          Transforms.delete(editor)
+          handleMarkdownShortcut(editor, type, beforeMatch[1])
           return
         }
         
         Transforms.select(editor, range)
         Transforms.delete(editor)
-        handleMarkdownShortcut(editor, type)
+        handleMarkdownShortcut(editor, type, beforeMatch[1])
         return
       }
     }

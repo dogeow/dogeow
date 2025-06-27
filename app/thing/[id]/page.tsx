@@ -11,6 +11,7 @@ import { format } from 'date-fns'
 import Image from "next/image"
 import { toast } from "sonner"
 import { useItemStore } from '@/app/thing/stores/itemStore'
+import { useItem } from '@/lib/api'
 import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 import { isLightColor } from '@/lib/helpers'
 import { statusMap } from '../config/status'
@@ -19,31 +20,23 @@ import { Item, Tag } from '@/app/thing/types'
 export default function ItemDetail() {
   const params = useParams()
   const router = useRouter()
-  const { getItem, deleteItem } = useItemStore()
-  const [item, setItem] = useState<Item | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const { deleteItem } = useItemStore()
+  const { data: item, error, isLoading: loading } = useItem(Number(params.id))
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
   
+  // 添加调试日志
   useEffect(() => {
-    const fetchItem = async () => {
-      try {
-        const itemData = await getItem(Number(params.id))
-        if (itemData) {
-          setItem(itemData)
-        } else {
-          setError('物品不存在')
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '加载失败')
-      } finally {
-        setLoading(false)
-      }
+    if (item) {
+      console.log('获取到的物品数据:', item)
+      console.log('位置信息:', {
+        area_id: item.area_id,
+        room_id: item.room_id,
+        spot_id: item.spot_id,
+        spot: item.spot
+      })
     }
-    
-    fetchItem()
-  }, [params.id, getItem])
+  }, [item])
   
   const handleEdit = () => {
     router.push(`/thing/${params.id}/edit`)
@@ -82,12 +75,12 @@ export default function ItemDetail() {
     )
   }
   
-  if (error || !item) {
+  if (error || (!loading && !item)) {
     return (
       <>
         <div className="container mx-auto py-2">
           <div className="flex flex-col justify-center items-center h-64">
-            <p className="text-red-500 mb-4">{error || '物品不存在'}</p>
+            <p className="text-red-500 mb-4">{error?.message || '物品不存在'}</p>
             <Button onClick={() => router.push('/thing')}>
               <ArrowLeft className="mr-2 h-4 w-4" /> 返回物品列表
             </Button>
@@ -96,6 +89,9 @@ export default function ItemDetail() {
       </>
     )
   }
+  
+  // 类型守卫
+  if (!item) return null
   
   const status = statusMap[item.status as keyof typeof statusMap] || { label: item.status, variant: 'secondary' }
   

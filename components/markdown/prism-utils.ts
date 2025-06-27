@@ -40,8 +40,13 @@ export const getChildNodeToDecorations = ([block, blockPath]: NodeEntry<SlateEle
     
     const language = block.language;
     
-    // 确保语言已加载
-    let grammar = Prism.languages[language];
+    // 确保语言已加载，处理语言别名
+    let actualLanguage = language;
+    if (language === 'shell' || language === 'sh') {
+      actualLanguage = 'bash';
+    }
+    
+    let grammar = Prism.languages[actualLanguage];
     if (!grammar) {
       console.warn(`没有找到语言: ${language}, 使用普通文本`);
       grammar = Prism.languages.text || {};

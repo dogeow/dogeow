@@ -382,13 +382,13 @@ export const useItems = (params?: Record<string, unknown>) => {
     queryString = urlParams.toString();
   }
   
-  const endpoint = `/items${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `/things/items${queryString ? `?${queryString}` : ''}`;
   console.log('API请求URL:', endpoint);
   return useSWR(endpoint, fetcher);
 };
 
 export const useItem = (id: number) => {
-  return useSWR(id ? `/items/${id}` : null, fetcher);
+  return useSWR<Item>(id ? `/things/items/${id}` : null, fetcher);
 };
 
 // 分类相关
@@ -455,8 +455,8 @@ export const createMutation = <T>(endpoint: string, method: string = 'POST') => 
 };
 
 // 物品操作
-export const updateItem = (id: number) => createMutation<Item>(`/items/${id}`, 'PUT');
-export const deleteItem = (id: number) => createMutation<void>(`/items/${id}`, 'DELETE');
+export const updateItem = (id: number) => createMutation<Item>(`/things/items/${id}`, 'PUT');
+export const deleteItem = (id: number) => createMutation<void>(`/things/items/${id}`, 'DELETE');
 
 // 分类操作
 export const updateCategory = (id: number) => createMutation<Category>(`/things/categories/${id}`, 'PUT');
