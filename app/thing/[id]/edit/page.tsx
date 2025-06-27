@@ -1,9 +1,9 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Check } from "lucide-react"
 import { toast } from "sonner"
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -24,6 +24,10 @@ export default function EditItem() {
   const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
   const [locationPath, setLocationPath] = useState<string>('')
   const [selectedTags, setSelectedTags] = useState<string[]>([])
+  const [autoSaving, setAutoSaving] = useState(false)
+  const [lastSaved, setLastSaved] = useState<Date | null>(null)
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const initialDataRef = useRef<any>(null)
   
   const { 
     categories, 
@@ -120,6 +124,47 @@ export default function EditItem() {
     setSelectedTags(prev => [...prev, tag.id.toString()])
   }, [fetchTags])
 
+  // 自动保存函数
+  const autoSave = useCallback(async () => {
+    if (!initialDataRef.current) return
+    
+    setAutoSaving(true)
+    try {
+      const updateData: Parameters<typeof updateItem>[1] = {
+        ...formData,
+        purchase_date: formData.purchase_date?.toISOString() || null,
+        expiry_date: formData.expiry_date?.toISOString() || null,
+        purchase_price: formData.purchase_price ? Number(formData.purchase_price) : null,
+        category_id: formData.category_id ? Number(formData.category_id) : null,
+        area_id: formData.area_id ? Number(formData.area_id) : null,
+        room_id: formData.room_id ? Number(formData.room_id) : null,
+        spot_id: formData.spot_id ? Number(formData.spot_id) : null,
+        image_ids: uploadedImages.filter(img => img.id).map(img => img.id!).filter((id): id is number => id !== undefined),
+        image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
+        tags: selectedTags.map(id => tags.find(tag => tag.id.toString() === id)).filter((tag): tag is Tag => tag !== undefined)
+      }
+      
+      await updateItem(Number(params.id), updateData)
+      setLastSaved(new Date())
+    } catch (error) {
+      console.error("自动保存失败:", error)
+      // 自动保存失败不显示错误提示，避免打扰用户
+    } finally {
+      setAutoSaving(false)
+    }
+  }, [formData, uploadedImages, selectedTags, tags, updateItem, params.id])
+
+  // 触发自动保存的防抖函数
+  const triggerAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current)
+    }
+    
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      autoSave()
+    }, 2000) // 2秒后自动保存
+  }, [autoSave])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -211,6 +256,26 @@ export default function EditItem() {
         if (item.tags?.length) {
           setSelectedTags(item.tags.map((tag: Tag) => tag.id.toString()))
         }
+        
+        // 设置初始数据引用，用于自动保存
+        initialDataRef.current = {
+          formData: {
+            name: item.name,
+            description: item.description || '',
+            quantity: item.quantity,
+            status: item.status,
+            purchase_date: item.purchase_date ? new Date(item.purchase_date) : null,
+            expiry_date: item.expiry_date ? new Date(item.expiry_date) : null,
+            purchase_price: item.purchase_price || null,
+            category_id: item.category_id?.toString() || '',
+            area_id: item.spot?.room?.area?.id?.toString() || '',
+            room_id: item.spot?.room?.id?.toString() || '',
+            spot_id: item.spot_id?.toString() || '',
+            is_public: item.is_public,
+          },
+          selectedTags: item.tags?.map((tag: Tag) => tag.id.toString()) || [],
+          uploadedImages: item.images ? convertExistingImagesToUploadedFormat(item.images) : []
+        }
       } catch (error) {
         toast.error(error instanceof Error ? error.message : "发生错误，请重试")
       } finally {
@@ -221,6 +286,35 @@ export default function EditItem() {
     loadItem()
     refreshAreas()
   }, [params.id, fetchCategories, fetchTags, loadRooms, loadSpots, refreshAreas, convertExistingImagesToUploadedFormat, getItem, router])
+
+  // 监听数据变化，触发自动保存
+  useEffect(() => {
+    if (!initialDataRef.current || initialLoading) return
+    
+    // 检查是否有数据变化
+    const hasChanges = JSON.stringify({
+      formData,
+      selectedTags,
+      uploadedImages: uploadedImages.map(img => ({ path: img.path, id: img.id }))
+    }) !== JSON.stringify({
+      formData: initialDataRef.current.formData,
+      selectedTags: initialDataRef.current.selectedTags,
+      uploadedImages: initialDataRef.current.uploadedImages.map((img: any) => ({ path: img.path, id: img.id }))
+    })
+    
+    if (hasChanges) {
+      triggerAutoSave()
+    }
+  }, [formData, selectedTags, uploadedImages, triggerAutoSave, initialLoading])
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current)
+      }
+    }
+  }, [])
 
 
   useEffect(() => {
@@ -268,9 +362,25 @@ export default function EditItem() {
           </Button>
           <h1 className="text-2xl md:text-3xl font-bold">编辑物品</h1>
         </div>
+        
+        {/* 自动保存状态显示 */}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {autoSaving && (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+              <span>正在保存...</span>
+            </>
+          )}
+          {lastSaved && !autoSaving && (
+            <>
+              <Check className="h-4 w-4 text-green-500" />
+              <span>已保存 {new Date(lastSaved).toLocaleTimeString()}</span>
+            </>
+          )}
+        </div>
       </div>
       
-      <form onSubmit={handleSubmit} className="pb-20">
+      <div className="pb-20">
         <Tabs defaultValue="basic" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="basic">基本信息</TabsTrigger>
@@ -308,12 +418,8 @@ export default function EditItem() {
           </TabsContent>
         </Tabs>
         
-        <div className="flex justify-end mt-6">
-          <Button type="submit" size="lg" disabled={loading}>
-            {loading ? "更新中..." : "更新物品"}
-          </Button>
+        
         </div>
-      </form>
     </div>
   )
 }

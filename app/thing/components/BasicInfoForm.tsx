@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
 import { ItemFormData, Category } from "../types"
 
 interface BasicInfoFormProps {
@@ -14,6 +15,16 @@ interface BasicInfoFormProps {
 }
 
 const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, categories }) => {
+  const [isEditingQuantity, setIsEditingQuantity] = useState(false)
+  const [tempQuantity, setTempQuantity] = useState(formData.quantity.toString())
+
+  // 当 formData.quantity 变化时更新 tempQuantity（但只在非编辑状态下）
+  React.useEffect(() => {
+    if (!isEditingQuantity) {
+      setTempQuantity(formData.quantity.toString())
+    }
+  }, [formData.quantity, isEditingQuantity])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -28,6 +39,32 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
     setFormData(prev => ({ ...prev, [name]: checked }))
   }
 
+  const handleQuantityEdit = () => {
+    setTempQuantity(formData.quantity.toString())
+    setIsEditingQuantity(true)
+  }
+
+  const handleQuantitySave = () => {
+    const quantity = parseInt(tempQuantity)
+    if (quantity > 0) {
+      setFormData(prev => ({ ...prev, quantity }))
+      setIsEditingQuantity(false)
+    }
+  }
+
+  const handleQuantityCancel = () => {
+    setTempQuantity(formData.quantity.toString())
+    setIsEditingQuantity(false)
+  }
+
+  const handleQuantityKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleQuantitySave()
+    } else if (e.key === 'Escape') {
+      handleQuantityCancel()
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -37,13 +74,39 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name">名称</Label>
-          <Input
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            required
-          />
+          <div className="flex items-center gap-2">
+            <Input
+              id="name"
+              name="name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+              className="flex-1"
+            />
+            {/* 数量显示 */}
+            {isEditingQuantity ? (
+              <div className="flex items-center">
+                <Input
+                  type="number"
+                  min="1"
+                  value={tempQuantity}
+                  onChange={(e) => setTempQuantity(e.target.value)}
+                  onKeyDown={handleQuantityKeyDown}
+                  onBlur={handleQuantitySave}
+                  className="w-16 h-8 text-sm text-center"
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <Badge
+                variant="secondary"
+                className="cursor-pointer hover:bg-secondary/80 transition-colors"
+                onClick={handleQuantityEdit}
+              >
+                <span className="text-xs">× {formData.quantity}</span>
+              </Badge>
+            )}
+          </div>
         </div>
         
         <div className="space-y-2">
@@ -78,18 +141,6 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
             </Select>
           </div>
           
-          <div className="space-y-2 w-1/4">
-            <Label htmlFor="quantity">数量</Label>
-            <Input
-              id="quantity"
-              name="quantity"
-              type="number"
-              min="1"
-              value={formData.quantity}
-              onChange={handleInputChange}
-            />
-          </div>
-          
           <div className="space-y-2">
             <Label htmlFor="status">状态</Label>
             <Select
@@ -106,17 +157,17 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
               </SelectContent>
             </Select>
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="is_public" className="flex items-center space-x-2">
-            <Switch
-              id="is_public"
-              checked={formData.is_public}
-              onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
-            />
-            <span>公开物品</span>
-          </Label>
+          
+          <div className="space-y-2">
+            <Label htmlFor="is_public">公开物品</Label>
+            <div className="h-10 flex items-center">
+              <Switch
+                id="is_public"
+                checked={formData.is_public}
+                onCheckedChange={(checked) => handleSwitchChange('is_public', checked)}
+              />
+            </div>
+          </div>
         </div>
       </CardContent>
     </Card>

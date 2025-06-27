@@ -294,8 +294,8 @@ export default function ItemDetail() {
                     {/* 过期到创建的天数差 - 只在有过期日期时显示 */}
                     {item.expiry_date && (
                       <div className="absolute right-4" style={{ top: item.expiry_date ? '23%' : 'auto' }}>
-                        <div className="bg-white px-3 py-2 rounded-full border shadow-md">
-                          <span className="text-xs font-medium whitespace-nowrap">
+                        <div className="bg-background px-3 py-2 rounded-full border shadow-md">
+                          <span className="text-xs font-medium whitespace-nowrap text-foreground">
                             {calculateDaysDifference(item.created_at, item.expiry_date) || 0}天
                           </span>
                         </div>
@@ -304,8 +304,8 @@ export default function ItemDetail() {
                     
                     {/* 创建到更新的天数差 */}
                     <div className="absolute right-4" style={{ top: item.expiry_date ? '59%' : '36%' }}>
-                      <div className="bg-white px-3 py-2 rounded-full border shadow-md">
-                        <span className="text-xs font-medium whitespace-nowrap">
+                      <div className="bg-background px-3 py-2 rounded-full border shadow-md">
+                        <span className="text-xs font-medium whitespace-nowrap text-foreground">
                           {calculateDaysDifference(item.created_at, item.updated_at) || 0}天
                         </span>
                       </div>

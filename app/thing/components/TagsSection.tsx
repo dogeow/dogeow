@@ -111,7 +111,7 @@ const TagsSection: React.FC<TagsSectionProps> = ({
                 {isDropdownOpen && (
                   <div 
                     ref={dropdownRef}
-                    className="absolute top-[calc(100%+5px)] left-0 w-full bg-popover z-[1000] rounded-md border border-border shadow-md"
+                    className="absolute bottom-[calc(100%+5px)] left-0 w-full bg-popover z-[1000] rounded-md border border-border shadow-md"
                   >
                     <div className="p-2">
                       <Input
