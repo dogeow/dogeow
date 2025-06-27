@@ -150,7 +150,7 @@ export default function BasicInfoForm({
                     <SelectValue placeholder="选择状态" />
                   </SelectTrigger>
                   <SelectContent position="popper" align="start" sideOffset={4} avoidCollisions={false} className="z-[100]">
-                    <SelectItem value="active">正常</SelectItem>
+                    <SelectItem value="active">使用中</SelectItem>
                     <SelectItem value="inactive">闲置</SelectItem>
                     <SelectItem value="expired">已过期</SelectItem>
                   </SelectContent>

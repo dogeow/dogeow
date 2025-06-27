@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ArrowLeft, Edit, Trash2 } from "lucide-react"
+import { ArrowLeft, Edit, Trash2, Lock, Unlock } from "lucide-react"
 import { format } from 'date-fns'
 import Image from "next/image"
 import { toast } from "sonner"
@@ -176,7 +176,8 @@ export default function ItemDetail() {
                     <Badge className={status.variant === 'bg-green-500' ? status.variant : ''} variant={status.variant !== 'bg-green-500' ? (status.variant as "outline" | "destructive" | "secondary" | "default") : undefined}>
                       {status.label}
                     </Badge>
-                    <Badge variant={item.is_public ? "default" : "outline"}>
+                    <Badge variant={item.is_public ? "default" : "outline"} className="flex items-center gap-1">
+                      {item.is_public ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                       {item.is_public ? '公开' : '私有'}
                     </Badge>
                   </div>
@@ -227,20 +228,34 @@ export default function ItemDetail() {
                   <p className="text-xs">{item.description || '无描述'}</p>
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="bg-background p-3 rounded-lg border shadow-sm">
-                    <h3 className="font-medium text-xs text-muted-foreground">数量</h3>
-                    <p className="text-sm font-semibold">{item.quantity}</p>
+                {/* 只显示有值的信息，数量为1时不显示 */}
+                {(item.quantity > 1 || item.purchase_price || item.purchase_date) && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {/* 数量 - 只在大于1时显示 */}
+                    {item.quantity > 1 && (
+                      <div className="bg-background p-3 rounded-lg border shadow-sm">
+                        <h3 className="font-medium text-xs text-muted-foreground">数量</h3>
+                        <p className="text-sm font-semibold">{item.quantity}</p>
+                      </div>
+                    )}
+                    
+                    {/* 价格 - 只在有值时显示 */}
+                    {item.purchase_price && (
+                      <div className="bg-background p-3 rounded-lg border shadow-sm">
+                        <h3 className="font-medium text-xs text-muted-foreground">价格</h3>
+                        <p className="text-sm font-semibold">¥{item.purchase_price}</p>
+                      </div>
+                    )}
+                    
+                    {/* 购买日期 - 只在有值时显示 */}
+                    {item.purchase_date && (
+                      <div className="bg-background p-3 rounded-lg border shadow-sm">
+                        <h3 className="font-medium text-xs text-muted-foreground">购买日期</h3>
+                        <p className="text-sm font-semibold">{formatDate(item.purchase_date)}</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="bg-background p-3 rounded-lg border shadow-sm">
-                    <h3 className="font-medium text-xs text-muted-foreground">价格</h3>
-                    <p className="text-sm font-semibold">{item.purchase_price ? `¥${item.purchase_price}` : '-'}</p>
-                  </div>
-                  <div className="bg-background p-3 rounded-lg border shadow-sm">
-                    <h3 className="font-medium text-xs text-muted-foreground">购买日期</h3>
-                    <p className="text-sm font-semibold">{formatDate(item.purchase_date)}</p>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -305,24 +320,33 @@ export default function ItemDetail() {
                 </CardHeader>
                 <CardContent>
                   {(item.area_id || item.room_id || item.spot_id) ? (
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-blue-50 p-3 rounded-lg border shadow-sm">
-                        <h3 className="font-medium text-xs text-foreground">区域</h3>
-                        <p className="text-sm font-semibold truncate text-foreground">
-                          {item.spot?.room?.area?.name || (item.area_id ? `区域 ${item.area_id}` : '未指定')}
-                        </p>
-                      </div>
-                      <div className="bg-green-50 p-3 rounded-lg border shadow-sm">
-                        <h3 className="font-medium text-xs text-foreground">房间</h3>
-                        <p className="text-sm font-semibold truncate text-foreground">
-                          {item.spot?.room?.name || (item.room_id ? `房间 ${item.room_id}` : '未指定')}
-                        </p>
-                      </div>
-                      <div className="bg-purple-50 p-3 rounded-lg border shadow-sm">
-                        <h3 className="font-medium text-xs text-foreground">具体位置</h3>
-                        <p className="text-sm font-semibold truncate text-foreground">
-                          {item.spot?.name || ''}
-                        </p>
+                    <div className="space-y-3">
+                      {/* 三个位置卡片 */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {item.spot?.room?.area?.name && (
+                          <div className="bg-background p-3 rounded-lg border shadow-sm">
+                            <h3 className="font-medium text-xs text-muted-foreground">区域</h3>
+                            <p className="text-sm font-semibold truncate">
+                              {item.spot.room.area.name}
+                            </p>
+                          </div>
+                        )}
+                        {item.spot?.room?.name && (
+                          <div className="bg-background p-3 rounded-lg border shadow-sm">
+                            <h3 className="font-medium text-xs text-muted-foreground">房间</h3>
+                            <p className="text-sm font-semibold truncate">
+                              {item.spot.room.name}
+                            </p>
+                          </div>
+                        )}
+                        {item.spot?.name && (
+                          <div className="bg-background p-3 rounded-lg border shadow-sm">
+                            <h3 className="font-medium text-xs text-muted-foreground">位置</h3>
+                            <p className="text-sm font-semibold truncate">
+                              {item.spot.name}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (

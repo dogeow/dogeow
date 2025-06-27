@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Search, X, Loader2 } from "lucide-react"
+import { Search, X, Loader2, Lock, Unlock } from "lucide-react"
 import { get } from "@/lib/api"
 import { Badge } from "@/components/ui/badge"
 import { configs } from "@/app/configs"
@@ -441,7 +441,8 @@ export function SearchDialog({ open, onOpenChange, initialSearchTerm = "", curre
                       {categories.find(c => c.id === result.category)?.name || result.category}
                     </Badge>
                     {result.category === 'thing' && 'isPublic' in result && (
-                      <Badge variant={result.isPublic ? "secondary" : "default"} className="text-xs">
+                      <Badge variant={result.isPublic ? "secondary" : "default"} className="text-xs flex items-center gap-1">
+                        {result.isPublic ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
                         {result.isPublic ? '公开' : '私有'}
                       </Badge>
                     )}

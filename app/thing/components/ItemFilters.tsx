@@ -368,7 +368,7 @@ export default function ItemFilters({
                   </SelectTrigger>
                   <SelectContent className="bg-popover border border-border text-popover-foreground">
                     <SelectItem value="all">全部状态</SelectItem>
-                    <SelectItem value="active">正常</SelectItem>
+                    <SelectItem value="active">使用中</SelectItem>
                     <SelectItem value="archived">已归档</SelectItem>
                     <SelectItem value="expired">已过期</SelectItem>
                   </SelectContent>

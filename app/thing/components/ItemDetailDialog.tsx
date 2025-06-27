@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Globe, LockIcon, TagIcon, FolderIcon, CalendarIcon, InfoIcon, AlertTriangleIcon, Edit3Icon } from "lucide-react";
+import { Globe, LockIcon, TagIcon, MapPin, CalendarIcon, InfoIcon, AlertTriangleIcon, Edit3Icon } from "lucide-react";
 import { Item } from "@/app/thing/types";
 import { formatDate } from '@/lib/helpers/dateUtils';
 import { getLocationPath } from '@/app/thing/utils';
@@ -139,7 +139,7 @@ export function ItemDetailDialog({
 
             <div>
               <h4 className="font-medium mb-1.5 text-sm text-muted-foreground inline-flex items-center">
-                <FolderIcon className="mr-2 h-4 w-4" /> Location
+                <MapPin className="mr-2 h-4 w-4" /> Location
               </h4>
               <p className="text-base">{getLocationPath(item.spot) || "No location specified."}</p>
             </div>

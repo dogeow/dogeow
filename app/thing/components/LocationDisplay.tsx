@@ -1,5 +1,5 @@
 import { Spot } from "@/app/thing/types";
-import FolderIcon from "./FolderIcon"; // 改为默认导入
+import { MapPin } from "lucide-react";
 
 interface LocationDisplayProps {
   spot?: Spot | null;
@@ -22,7 +22,7 @@ export function LocationDisplay({ spot }: LocationDisplayProps) {
 
   return (
     <div className="flex items-center text-sm text-muted-foreground">
-      <FolderIcon className="mr-2 h-4 w-4" isOpen={false} />
+      <MapPin className="mr-2 h-4 w-4" />
       <span>{fullLocationPath}</span>
     </div>
   );
