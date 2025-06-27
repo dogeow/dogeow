@@ -1,330 +1,38 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useParams, useRouter } from 'next/navigation'
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Check } from "lucide-react"
-import { toast } from "sonner"
-import { useItemStore } from '@/app/thing/stores/itemStore'
+import { ArrowLeft } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useAreas, useRooms, useSpots } from '@/lib/api'
-import { apiRequest } from '@/lib/api'
 import BasicInfoForm from '@/app/thing/components/BasicInfoForm'
 import TagsSection from '@/app/thing/components/TagsSection'
 import ImageSection from '@/app/thing/components/ImageSection'
 import DetailsSection from '@/app/thing/components/DetailsSection'
-import { ItemFormData, UploadedImage, Room, Spot, Tag, ItemImage } from '@/app/thing/types'
+import AutoSaveStatus from '@/app/thing/components/AutoSaveStatus'
+import LoadingState from '@/app/thing/components/LoadingState'
+import { useItemEdit } from '@/app/thing/hooks/useItemEdit'
 
 export default function EditItem() {
-  const params = useParams()
-  const router = useRouter()
-
-  const [initialLoading, setInitialLoading] = useState(true)
-  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
-  const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
-  const [locationPath, setLocationPath] = useState<string>('')
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [autoSaving, setAutoSaving] = useState(false)
-  const [lastSaved, setLastSaved] = useState<Date | null>(null)
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const initialDataRef = useRef<{
-    formData: ItemFormData;
-    selectedTags: string[];
-    uploadedImages: UploadedImage[];
-  } | null>(null)
-  
-  const { 
-    categories, 
-    tags, 
-    fetchCategories, 
-    fetchTags, 
-    getItem, 
-    updateItem 
-  } = useItemStore()
-  
-  const { mutate: refreshAreas } = useAreas()
-  const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>()
-  const { data: spots = [], mutate: refreshSpots } = useSpots<Spot[]>()
-  
-  const [formData, setFormData] = useState<ItemFormData>({
-    name: '',
-    description: '',
-    quantity: 1,
-    status: 'active',
-    purchase_date: null,
-    expiry_date: null,
-    purchase_price: null,
-    category_id: '',
-    area_id: '',
-    room_id: '',
-    spot_id: '',
-    is_public: false,
-  })
-
-  const loadRooms = useCallback(async (areaId: string | number) => {
-    if (!areaId) return
-    try {
-      await apiRequest<Room[]>(`/areas/${areaId}/rooms`)
-      refreshRooms()
-    } catch (error) {
-      console.error('加载房间失败', error)
-    }
-  }, [refreshRooms])
-
-  const loadSpots = useCallback(async (roomId: string | number) => {
-    if (!roomId) return
-    try {
-      await apiRequest<Spot[]>(`/rooms/${roomId}/spots`)
-      refreshSpots()
-    } catch (error) {
-      console.error('加载位置失败', error)
-    }
-  }, [refreshSpots])
-
-  const convertExistingImagesToUploadedFormat = useCallback((images: ItemImage[]): UploadedImage[] => {
-    return images.map((img: ItemImage) => ({
-      path: img.path || '', 
-      thumbnail_path: img.thumbnail_path || '',
-      url: img.url || '',
-      thumbnail_url: img.thumbnail_url || '',
-      id: img.id
-    }))
-  }, [])
-
-  const handleLocationSelect = useCallback((type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => {
-    setSelectedLocation({ type, id })
-    setLocationPath(fullPath || '')
-    
-    const updates: Partial<ItemFormData> = {}
-    
-    if (type === 'area') {
-      updates.area_id = id.toString()
-      updates.room_id = ''
-      updates.spot_id = ''
-    } else if (type === 'room') {
-      updates.room_id = id.toString()
-      updates.spot_id = ''
-      const room = rooms.find(r => r.id === id)
-      if (room?.area_id) {
-        updates.area_id = room.area_id.toString()
-      }
-    } else if (type === 'spot') {
-      updates.spot_id = id.toString()
-      const spot = spots.find(s => s.id === id)
-      if (spot?.room_id) {
-        updates.room_id = spot.room_id.toString()
-        const room = rooms.find(r => r.id === spot.room_id)
-        if (room?.area_id) {
-          updates.area_id = room.area_id.toString()
-        }
-      }
-    }
-    
-    setFormData(prev => ({ ...prev, ...updates }))
-  }, [rooms, spots])
-
-  const handleTagCreated = useCallback((tag: Tag) => {
-    fetchTags()
-    setSelectedTags(prev => [...prev, tag.id.toString()])
-  }, [fetchTags])
-
-  // 自动保存函数
-  const autoSave = useCallback(async () => {
-    if (!initialDataRef.current) return
-    
-    setAutoSaving(true)
-    try {
-      const updateData: Parameters<typeof updateItem>[1] = {
-        ...formData,
-        purchase_date: formData.purchase_date?.toISOString() || null,
-        expiry_date: formData.expiry_date?.toISOString() || null,
-        purchase_price: formData.purchase_price ? Number(formData.purchase_price) : null,
-        category_id: formData.category_id ? Number(formData.category_id) : null,
-        area_id: formData.area_id ? Number(formData.area_id) : null,
-        room_id: formData.room_id ? Number(formData.room_id) : null,
-        spot_id: formData.spot_id ? Number(formData.spot_id) : null,
-        image_ids: uploadedImages.filter(img => img.id).map(img => img.id!).filter((id): id is number => id !== undefined),
-        image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
-        tags: selectedTags.map(id => tags.find(tag => tag.id.toString() === id)).filter((tag): tag is Tag => tag !== undefined)
-      }
-      
-      await updateItem(Number(params.id), updateData)
-      setLastSaved(new Date())
-    } catch (error) {
-      console.error("自动保存失败:", error)
-      // 自动保存失败不显示错误提示，避免打扰用户
-    } finally {
-      setAutoSaving(false)
-    }
-  }, [formData, uploadedImages, selectedTags, tags, updateItem, params.id])
-
-  // 触发自动保存的防抖函数
-  const triggerAutoSave = useCallback(() => {
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current)
-    }
-    
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      autoSave()
-    }, 2000) // 2秒后自动保存
-  }, [autoSave])
-
-
-
-  useEffect(() => {
-    const loadItem = async () => {
-      try {
-        const item = await getItem(Number(params.id))
-        if (!item) {
-          toast.error("物品不存在")
-          router.push('/thing')
-          return
-        }
-        
-        setFormData({
-          name: item.name,
-          description: item.description || '',
-          quantity: item.quantity,
-          status: item.status,
-          purchase_date: item.purchase_date ? new Date(item.purchase_date) : null,
-          expiry_date: item.expiry_date ? new Date(item.expiry_date) : null,
-          purchase_price: item.purchase_price || null,
-          category_id: item.category_id?.toString() || '',
-          area_id: item.spot?.room?.area?.id?.toString() || '',
-          room_id: item.spot?.room?.id?.toString() || '',
-          spot_id: item.spot_id?.toString() || '',
-          is_public: item.is_public,
-        })
-        
-        if (item.images && item.images.length > 0) {
-          setUploadedImages(convertExistingImagesToUploadedFormat(item.images))
-        }
-        
-        await Promise.all([fetchCategories(), fetchTags()])
-        
-        if (item.spot?.room?.area?.id) {
-          await loadRooms(item.spot.room.area.id)
-        }
-        
-        if (item.spot?.room?.id) {
-          await loadSpots(item.spot.room.id)
-        }
-        
-        if (item.spot_id) {
-          setSelectedLocation({ type: 'spot', id: item.spot_id })
-          if (item.spot?.room?.name && item.spot?.room?.area?.name) {
-            setLocationPath(`${item.spot.room.area.name} / ${item.spot.room.name} / ${item.spot.name}`)
-          }
-        } else if (item.room_id) {
-          setSelectedLocation({ type: 'room', id: item.room_id })
-          if (item.spot?.room?.name && item.spot?.room?.area?.name) {
-            setLocationPath(`${item.spot.room.area.name} / ${item.spot.room.name}`)
-          }
-        } else if (item.area_id) {
-          setSelectedLocation({ type: 'area', id: item.area_id })
-          if (item.spot?.room?.area?.name) {
-            setLocationPath(item.spot.room.area.name)
-          }
-        }
-        
-        if (item.tags?.length) {
-          setSelectedTags(item.tags.map((tag: Tag) => tag.id.toString()))
-        }
-        
-        // 设置初始数据引用，用于自动保存
-        initialDataRef.current = {
-          formData: {
-            name: item.name,
-            description: item.description || '',
-            quantity: item.quantity,
-            status: item.status,
-            purchase_date: item.purchase_date ? new Date(item.purchase_date) : null,
-            expiry_date: item.expiry_date ? new Date(item.expiry_date) : null,
-            purchase_price: item.purchase_price || null,
-            category_id: item.category_id?.toString() || '',
-            area_id: item.spot?.room?.area?.id?.toString() || '',
-            room_id: item.spot?.room?.id?.toString() || '',
-            spot_id: item.spot_id?.toString() || '',
-            is_public: item.is_public,
-          },
-          selectedTags: item.tags?.map((tag: Tag) => tag.id.toString()) || [],
-          uploadedImages: item.images ? convertExistingImagesToUploadedFormat(item.images) : []
-        }
-      } catch (error) {
-        toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-      } finally {
-        setInitialLoading(false)
-      }
-    }
-    
-    loadItem()
-    refreshAreas()
-  }, [params.id, fetchCategories, fetchTags, loadRooms, loadSpots, refreshAreas, convertExistingImagesToUploadedFormat, getItem, router])
-
-  // 监听数据变化，触发自动保存
-  useEffect(() => {
-    if (!initialDataRef.current || initialLoading) return
-    
-    // 检查是否有数据变化
-    const hasChanges = JSON.stringify({
-      formData,
-      selectedTags,
-      uploadedImages: uploadedImages.map(img => ({ path: img.path, id: img.id }))
-    }) !== JSON.stringify({
-      formData: initialDataRef.current.formData,
-      selectedTags: initialDataRef.current.selectedTags,
-      uploadedImages: initialDataRef.current.uploadedImages.map((img: UploadedImage) => ({ path: img.path, id: img.id }))
-    })
-    
-    if (hasChanges) {
-      triggerAutoSave()
-    }
-  }, [formData, selectedTags, uploadedImages, triggerAutoSave, initialLoading])
-
-  // 清理定时器
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current)
-      }
-    }
-  }, [])
-
-
-  useEffect(() => {
-    if (!formData.area_id) {
-      setFormData(prev => ({ ...prev, room_id: '', spot_id: '' }))
-      return
-    }
-    
-    loadRooms(formData.area_id)
-  }, [formData.area_id, loadRooms])
-  
-  // 当选择房间时加载位置
-  useEffect(() => {
-    if (!formData.room_id) {
-      setFormData(prev => ({ ...prev, spot_id: '' }))
-      return
-    }
-    
-    loadSpots(formData.room_id)
-  }, [formData.room_id, loadSpots])
+  const {
+    initialLoading,
+    formData,
+    setFormData,
+    uploadedImages,
+    setUploadedImages,
+    selectedLocation,
+    locationPath,
+    selectedTags,
+    setSelectedTags,
+    autoSaving,
+    lastSaved,
+    categories,
+    tags,
+    handleLocationSelect,
+    handleTagCreated,
+    router
+  } = useItemEdit()
   
   if (initialLoading) {
-    return (
-      <div className="container mx-auto py-2">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center">
-            <Button variant="outline" size="icon" onClick={() => router.push('/thing')} className="mr-4">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-center justify-center h-64">
-          <p>加载中...</p>
-        </div>
-      </div>
-    )
+    return <LoadingState onBack={() => router.push('/thing')} />
   }
   
   return (
@@ -337,21 +45,7 @@ export default function EditItem() {
           <h1 className="text-2xl md:text-3xl font-bold">编辑物品</h1>
         </div>
         
-        {/* 自动保存状态显示 */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          {autoSaving && (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-              <span>正在保存...</span>
-            </>
-          )}
-          {lastSaved && !autoSaving && (
-            <>
-              <Check className="h-4 w-4 text-green-500" />
-              <span>已保存 {new Date(lastSaved).toLocaleTimeString()}</span>
-            </>
-          )}
-        </div>
+        <AutoSaveStatus autoSaving={autoSaving} lastSaved={lastSaved} />
       </div>
       
       <div className="pb-20">
@@ -391,9 +85,7 @@ export default function EditItem() {
             />
           </TabsContent>
         </Tabs>
-        
-        
-        </div>
+      </div>
     </div>
   )
 }
