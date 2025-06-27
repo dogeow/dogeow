@@ -62,6 +62,28 @@ export default function ItemDetail() {
       return '无效日期'
     }
   }
+
+  const formatDateTime = (date: string | null) => {
+    if (!date) return '-'
+    try {
+      return format(new Date(date), 'yyyy-MM-dd HH:mm:ss')
+    } catch {
+      return '无效日期'
+    }
+  }
+
+  const calculateDaysDifference = (startDate: string | null, endDate: string | null) => {
+    if (!startDate || !endDate) return null
+    try {
+      const start = new Date(startDate)
+      const end = new Date(endDate)
+      const diffTime = Math.abs(end.getTime() - start.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+      return diffDays
+    } catch {
+      return null
+    }
+  }
   
   if (loading) {
     return (
@@ -230,18 +252,48 @@ export default function ItemDetail() {
                   <CardTitle>时间信息</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="bg-background p-3 rounded-lg border shadow-sm">
-                      <h3 className="font-medium text-xs text-muted-foreground">过期日期</h3>
-                      <p className="text-sm font-semibold">{formatDate(item.expiry_date)}</p>
+                  {/* 统一的时间轴 */}
+                  <div className="relative">
+                    <div className="space-y-6">
+                      {/* 过期日期 - 只在有数据时显示 */}
+                      {item.expiry_date && (
+                        <div className="bg-background p-3 rounded-lg border shadow-sm">
+                          <h3 className="font-medium text-xs text-muted-foreground">过期日期</h3>
+                          <p className="text-sm font-semibold">{formatDate(item.expiry_date)}</p>
+                        </div>
+                      )}
+                      
+                      {/* 创建时间 */}
+                      <div className="bg-background p-3 rounded-lg border shadow-sm">
+                        <h3 className="font-medium text-xs text-muted-foreground">创建时间</h3>
+                        <p className="text-sm font-semibold">{formatDateTime(item.created_at)}</p>
+                      </div>
+                      
+                      {/* 更新时间 */}
+                      <div className="bg-background p-3 rounded-lg border shadow-sm">
+                        <h3 className="font-medium text-xs text-muted-foreground">更新时间</h3>
+                        <p className="text-sm font-semibold">{formatDateTime(item.updated_at)}</p>
+                      </div>
                     </div>
-                    <div className="bg-background p-3 rounded-lg border shadow-sm">
-                      <h3 className="font-medium text-xs text-muted-foreground">创建时间</h3>
-                      <p className="text-sm font-semibold">{formatDate(item.created_at)}</p>
-                    </div>
-                    <div className="bg-background p-3 rounded-lg border shadow-sm col-span-1 sm:col-span-2">
-                      <h3 className="font-medium text-xs text-muted-foreground">更新时间</h3>
-                      <p className="text-sm font-semibold">{formatDate(item.updated_at)}</p>
+                    
+                    {/* 过期到创建的天数差 - 只在有过期日期时显示 */}
+                    {item.expiry_date && (
+                      <div className="absolute right-4" style={{ top: item.expiry_date ? '23%' : 'auto' }}>
+                        <div className="bg-white px-3 py-2 rounded-full border shadow-md">
+                          <span className="text-xs font-medium whitespace-nowrap">
+                            {calculateDaysDifference(item.created_at, item.expiry_date) || 0}天
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* 创建到更新的天数差 */}
+                    <div className="absolute right-4" style={{ top: item.expiry_date ? '59%' : '36%' }}>
+                      <div className="bg-white px-3 py-2 rounded-full border shadow-md">
+                        <span className="text-xs font-medium whitespace-nowrap">
+                          {calculateDaysDifference(item.created_at, item.updated_at) || 0}天
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -255,20 +307,20 @@ export default function ItemDetail() {
                   {(item.area_id || item.room_id || item.spot_id) ? (
                     <div className="grid grid-cols-3 gap-3">
                       <div className="bg-blue-50 p-3 rounded-lg border shadow-sm">
-                        <h3 className="font-medium text-xs text-muted-foreground">区域</h3>
-                        <p className="text-sm font-semibold truncate">
+                        <h3 className="font-medium text-xs text-foreground">区域</h3>
+                        <p className="text-sm font-semibold truncate text-foreground">
                           {item.spot?.room?.area?.name || (item.area_id ? `区域 ${item.area_id}` : '未指定')}
                         </p>
                       </div>
                       <div className="bg-green-50 p-3 rounded-lg border shadow-sm">
-                        <h3 className="font-medium text-xs text-muted-foreground">房间</h3>
-                        <p className="text-sm font-semibold truncate">
+                        <h3 className="font-medium text-xs text-foreground">房间</h3>
+                        <p className="text-sm font-semibold truncate text-foreground">
                           {item.spot?.room?.name || (item.room_id ? `房间 ${item.room_id}` : '未指定')}
                         </p>
                       </div>
                       <div className="bg-purple-50 p-3 rounded-lg border shadow-sm">
-                        <h3 className="font-medium text-xs text-muted-foreground">具体位置</h3>
-                        <p className="text-sm font-semibold truncate">
+                        <h3 className="font-medium text-xs text-foreground">具体位置</h3>
+                        <p className="text-sm font-semibold truncate text-foreground">
                           {item.spot?.name || ''}
                         </p>
                       </div>
