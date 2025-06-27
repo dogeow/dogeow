@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Input } from "@/components/ui/input"
-import { MapPin, Home } from "lucide-react"
+import { MapPin, Home, Search } from "lucide-react"
 import { useLocations } from '@/lib/api'
 import { cn } from '@/lib/helpers'
-import { LocationSelection, LocationTreeResponse } from '../types'
+import { LocationSelection, LocationTreeResponse, Room, Spot } from '../types'
 import FolderIcon from './FolderIcon'
 
 interface LocationTreeSelectProps {
@@ -16,6 +16,14 @@ interface LocationTreeSelectProps {
   isExpanded?: boolean;
 }
 
+// 提取常量
+const ICON_SIZE = 14;
+
+// 优化的搜索匹配函数
+const matchesSearch = (text: string, searchTerm: string): boolean => {
+  return text.toLowerCase().includes(searchTerm.toLowerCase());
+};
+
 const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({ 
   onSelect, 
   selectedLocation, 
@@ -24,242 +32,268 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
   isExpanded = true
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
-  const [expandedAreas, setExpandedAreas] = useState<number[]>([])
-  const [expandedRooms, setExpandedRooms] = useState<number[]>([])
-  const [, setMounted] = useState(false)
+  const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set())
+  const [expandedRooms, setExpandedRooms] = useState<Set<number>>(new Set())
   
+  // 使用 ref 来避免不必要的 effect 触发
   const prevIsExpandedRef = useRef(isExpanded)
-  const prevSelectionRef = useRef<{type?: string, id?: number}>({})
+  const prevSelectionRef = useRef<LocationSelection>(selectedLocation)
   
-  // 确保组件已挂载
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-  
-  // 使用统一的位置数据接口
+  // 获取位置数据
   const { data: locationData } = useLocations()
   
-  // 使用 useMemo 优化位置数据提取
-  const { areas, rooms, spots } = useMemo(() => {
+  // 优化数据提取，避免不必要的解构
+  const locationInfo = useMemo(() => {
     const data = locationData as LocationTreeResponse
+    if (!data) return { areas: [], rooms: [], spots: [] }
+    
     return {
-      areas: data?.areas || [],
-      rooms: data?.rooms || [],
-      spots: data?.spots || []
+      areas: data.areas || [],
+      rooms: data.rooms || [],
+      spots: data.spots || []
     }
   }, [locationData])
   
-  // 处理初始展开状态
+  const { areas, rooms, spots } = locationInfo
+  
+  // 优化初始展开逻辑
   useEffect(() => {
-    if (areas.length > 0 && rooms.length > 0 && prevIsExpandedRef.current !== isExpanded) {
-      prevIsExpandedRef.current = isExpanded
-      
+    if (!areas.length || !rooms.length) return
+    
+    const isExpandedChanged = prevIsExpandedRef.current !== isExpanded
+    prevIsExpandedRef.current = isExpanded
+    
+    if (isExpandedChanged) {
       if (isExpanded) {
-        setExpandedAreas(areas.map(area => area.id))
-        setExpandedRooms(rooms.map(room => room.id))
+        setExpandedAreas(new Set(areas.map(area => area.id)))
+        setExpandedRooms(new Set(rooms.map(room => room.id)))
       } else {
-        setExpandedAreas([])
-        setExpandedRooms([])
+        setExpandedAreas(new Set())
+        setExpandedRooms(new Set())
       }
     }
   }, [isExpanded, areas, rooms])
   
-  // 处理选中位置的展开状态
+  // 优化选中位置的展开逻辑
   useEffect(() => {
     if (!selectedLocation || !areas.length || !rooms.length || !spots.length) return
     
-    const hasChanged = 
-      prevSelectionRef.current.type !== selectedLocation.type || 
-      prevSelectionRef.current.id !== selectedLocation.id
+    const prevSelection = prevSelectionRef.current
+    const hasSelectionChanged = 
+      !prevSelection ||
+      prevSelection.type !== selectedLocation.type || 
+      prevSelection.id !== selectedLocation.id
     
-    if (!hasChanged) return
-
-    prevSelectionRef.current = { 
-      type: selectedLocation.type, 
-      id: selectedLocation.id 
-    }
-
-    const newAreaIds = [...expandedAreas]
-    const newRoomIds = [...expandedRooms]
-    let hasUpdates = false
-
-    if (selectedLocation.type === 'room' || selectedLocation.type === 'spot') {
-      const room = rooms.find(r => r.id === (selectedLocation.type === 'room' 
-        ? selectedLocation.id 
-        : spots.find(s => s.id === selectedLocation.id)?.room_id))
+    if (!hasSelectionChanged) return
+    
+    prevSelectionRef.current = selectedLocation
+    
+    setExpandedAreas(prev => {
+      const newSet = new Set(prev)
+      let changed = false
       
-      if (room?.area_id && !newAreaIds.includes(room.area_id)) {
-        newAreaIds.push(room.area_id)
-        hasUpdates = true
+      if (selectedLocation.type === 'room' || selectedLocation.type === 'spot') {
+        const targetRoom = selectedLocation.type === 'room' 
+          ? rooms.find(r => r.id === selectedLocation.id)
+          : rooms.find(r => r.id === spots.find(s => s.id === selectedLocation.id)?.room_id)
+        
+        if (targetRoom?.area_id && !newSet.has(targetRoom.area_id)) {
+          newSet.add(targetRoom.area_id)
+          changed = true
+        }
       }
-    }
+      
+      return changed ? newSet : prev
+    })
     
     if (selectedLocation.type === 'spot') {
       const spot = spots.find(s => s.id === selectedLocation.id)
-      if (spot?.room_id && !newRoomIds.includes(spot.room_id)) {
-        newRoomIds.push(spot.room_id)
-        hasUpdates = true
+      if (spot?.room_id) {
+        setExpandedRooms(prev => {
+          const newSet = new Set(prev)
+          if (!newSet.has(spot.room_id)) {
+            newSet.add(spot.room_id)
+            return newSet
+          }
+          return prev
+        })
       }
     }
-
-    if (hasUpdates) {
-      setExpandedAreas(newAreaIds)
-      setExpandedRooms(newRoomIds)
+  }, [selectedLocation, areas, rooms, spots])
+  
+  // 优化搜索过滤逻辑
+  const searchResults = useMemo(() => {
+    if (!searchTerm) {
+      return {
+        filteredAreas: filterType === 'room' ? [] : areas,
+        filteredRooms: rooms,
+        filteredSpots: filterType === 'area' ? [] : spots,
+        visibleAreaIds: Array.from(expandedAreas),
+        visibleRoomIds: Array.from(expandedRooms)
+      }
     }
-  }, [selectedLocation, areas, rooms, spots, expandedAreas, expandedRooms])
-  
-  // 过滤逻辑优化
-  const filteredData = useMemo(() => {
-    const searchLower = searchTerm.toLowerCase()
     
-    const filteredAreas = areas.filter(area => {
-      if (filterType === 'room') return false
-      return searchTerm === '' || area.name.toLowerCase().includes(searchLower)
+    const visibleAreaIds = new Set<number>()
+    const visibleRoomIds = new Set<number>()
+    
+    // 构建区域到房间、房间到位置的映射
+    const areaRoomsMap = new Map<number, Room[]>()
+    const roomSpotsMap = new Map<number, Spot[]>()
+    
+    rooms.forEach(room => {
+      if (!areaRoomsMap.has(room.area_id)) {
+        areaRoomsMap.set(room.area_id, [])
+      }
+      areaRoomsMap.get(room.area_id)!.push(room)
     })
     
-    const filteredRooms = rooms.filter(room => 
-      searchTerm === '' || room.name.toLowerCase().includes(searchLower)
-    )
-    
-    const filteredSpots = spots.filter(spot => {
-      if (filterType === 'area') return false
-      return searchTerm === '' || spot.name.toLowerCase().includes(searchLower)
+    spots.forEach(spot => {
+      if (!roomSpotsMap.has(spot.room_id)) {
+        roomSpotsMap.set(spot.room_id, [])
+      }
+      roomSpotsMap.get(spot.room_id)!.push(spot)
     })
     
-    return { filteredAreas, filteredRooms, filteredSpots }
-  }, [areas, rooms, spots, searchTerm, filterType])
-  
-  // 在搜索模式下，显示所有包含匹配结果的区域
-  const visibleAreas = useMemo(() => {
-    if (searchTerm === '') return filteredData.filteredAreas
+    // 查找匹配的区域
+    const matchingAreas = areas.filter(area => matchesSearch(area.name, searchTerm))
+    matchingAreas.forEach(area => visibleAreaIds.add(area.id))
     
-    const searchLower = searchTerm.toLowerCase()
-    return areas.filter(area => {
-      // 区域名称匹配
-      if (area.name.toLowerCase().includes(searchLower)) return true
-      
-      // 区域包含匹配的房间
-      const hasMatchingRoom = rooms.some(room => 
-        room.area_id === area.id && room.name.toLowerCase().includes(searchLower)
-      )
-      if (hasMatchingRoom) return true
-      
-      // 区域包含匹配的位置
-      return spots.some(spot => {
-        const room = rooms.find(r => r.id === spot.room_id)
-        return room?.area_id === area.id && spot.name.toLowerCase().includes(searchLower)
+    // 查找匹配的房间及其所属区域
+    const matchingRooms = rooms.filter(room => matchesSearch(room.name, searchTerm))
+    matchingRooms.forEach(room => {
+      visibleAreaIds.add(room.area_id)
+      visibleRoomIds.add(room.id)
+    })
+    
+    // 查找匹配的位置及其所属房间和区域
+    const matchingSpots = spots.filter(spot => matchesSearch(spot.name, searchTerm))
+    matchingSpots.forEach(spot => {
+      const room = rooms.find(r => r.id === spot.room_id)
+      if (room) {
+        visibleAreaIds.add(room.area_id)
+        visibleRoomIds.add(room.id)
+      }
+    })
+    
+    // 为包含匹配子项的父项添加可见性
+    areas.forEach(area => {
+      const areaRooms = areaRoomsMap.get(area.id) || []
+      const hasMatchingChild = areaRooms.some(room => {
+        if (matchesSearch(room.name, searchTerm)) return true
+        const roomSpots = roomSpotsMap.get(room.id) || []
+        return roomSpots.some(spot => matchesSearch(spot.name, searchTerm))
       })
-    })
-  }, [searchTerm, filteredData.filteredAreas, areas, rooms, spots])
-  
-  // 获取区域下可见的房间
-  const getVisibleRoomsForArea = useCallback((areaId: number) => {
-    const areaRooms = rooms.filter(room => room.area_id === areaId)
-    
-    if (searchTerm === '') return areaRooms
-    
-    const searchLower = searchTerm.toLowerCase()
-    return areaRooms.filter(room => {
-      // 房间名称匹配
-      if (room.name.toLowerCase().includes(searchLower)) return true
       
-      // 房间包含匹配的位置
-      return spots.some(spot => 
-        spot.room_id === room.id && spot.name.toLowerCase().includes(searchLower)
-      )
+      if (hasMatchingChild) {
+        visibleAreaIds.add(area.id)
+        areaRooms.forEach(room => {
+          const roomSpots = roomSpotsMap.get(room.id) || []
+          if (matchesSearch(room.name, searchTerm) || 
+              roomSpots.some(spot => matchesSearch(spot.name, searchTerm))) {
+            visibleRoomIds.add(room.id)
+          }
+        })
+      }
     })
-  }, [rooms, spots, searchTerm])
-  
-  // 获取应该展开的区域和房间ID
-  const { filteredAreaIds, filteredRoomIds } = useMemo(() => {
-    const filteredAreaIds = searchTerm !== '' ? visibleAreas.map(area => area.id) : expandedAreas
     
-    let filteredRoomIds: number[]
-    if (searchTerm === '') {
-      filteredRoomIds = expandedRooms
-    } else {
-      const searchLower = searchTerm.toLowerCase()
-      filteredRoomIds = rooms
-        .filter(room => 
-          visibleAreas.some(area => area.id === room.area_id) && (
-            room.name.toLowerCase().includes(searchLower) ||
-            spots.some(spot => 
-              spot.room_id === room.id && 
-              spot.name.toLowerCase().includes(searchLower)
-            )
-          )
-        )
-        .map(room => room.id)
+    return {
+      filteredAreas: filterType === 'room' ? [] : areas.filter(area => visibleAreaIds.has(area.id)),
+      filteredRooms: rooms.filter(room => visibleRoomIds.has(room.id)),
+      filteredSpots: filterType === 'area' ? [] : spots.filter(spot => {
+        const room = rooms.find(r => r.id === spot.room_id)
+        return room && visibleAreaIds.has(room.area_id) && visibleRoomIds.has(room.id)
+      }),
+      visibleAreaIds: Array.from(visibleAreaIds),
+      visibleRoomIds: Array.from(visibleRoomIds)
     }
-    
-    return { filteredAreaIds, filteredRoomIds }
-  }, [searchTerm, visibleAreas, expandedAreas, expandedRooms, rooms, spots])
+  }, [areas, rooms, spots, searchTerm, filterType, expandedAreas, expandedRooms])
   
-  // 处理展开/折叠
+  // 优化展开/折叠处理
   const toggleArea = useCallback((e: React.MouseEvent, areaId: number) => {
     e.stopPropagation()
-    setExpandedAreas(prev => 
-      prev.includes(areaId) 
-        ? prev.filter(id => id !== areaId)
-        : [...prev, areaId]
-    )
+    setExpandedAreas(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(areaId)) {
+        newSet.delete(areaId)
+      } else {
+        newSet.add(areaId)
+      }
+      return newSet
+    })
   }, [])
   
   const toggleRoom = useCallback((e: React.MouseEvent, roomId: number) => {
     e.stopPropagation()
-    setExpandedRooms(prev => 
-      prev.includes(roomId) 
-        ? prev.filter(id => id !== roomId)
-        : [...prev, roomId]
-    )
+    setExpandedRooms(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(roomId)) {
+        newSet.delete(roomId)
+      } else {
+        newSet.add(roomId)
+      }
+      return newSet
+    })
   }, [])
   
-  // 构建选择路径
+  // 优化路径构建
   const buildPath = useCallback((type: 'area' | 'room' | 'spot', id: number): string => {
+    const pathParts: string[] = []
+    
     if (type === 'area') {
       const area = areas.find(a => a.id === id)
       return area?.name || '未知区域'
-    } 
+    }
     
     if (type === 'room') {
       const room = rooms.find(r => r.id === id)
       if (!room) return '未知房间'
       
       const area = areas.find(a => a.id === room.area_id)
-      return `${area?.name || '未知区域'} / ${room.name}`
-    } 
+      pathParts.push(area?.name || '未知区域', room.name)
+      return pathParts.join(' / ')
+    }
     
     // spot
     const spot = spots.find(s => s.id === id)
     if (!spot) return '未知位置'
     
     const room = rooms.find(r => r.id === spot.room_id)
-    if (!room) return `未知房间 / ${spot.name}`
+    if (!room) {
+      pathParts.push('未知房间', spot.name)
+    } else {
+      const area = areas.find(a => a.id === room.area_id)
+      pathParts.push(area?.name || '未知区域', room.name, spot.name)
+    }
     
-    const area = areas.find(a => a.id === room.area_id)
-    return `${area?.name || '未知区域'} / ${room.name} / ${spot.name}`
+    return pathParts.join(' / ')
   }, [areas, rooms, spots])
   
-  // 选择位置
+  // 优化选择处理
   const handleSelect = useCallback((type: 'area' | 'room' | 'spot', id: number) => {
     onSelect(type, id, buildPath(type, id))
   }, [onSelect, buildPath])
-
-  const hasNoResults = filteredData.filteredAreas.length === 0 && 
-                      filteredData.filteredRooms.length === 0 && 
-                      filteredData.filteredSpots.length === 0
+  
+  // 获取房间的区域信息（用于显示）
+  const getRoomAreaName = useCallback((room: Room): string => {
+    const area = areas.find(a => a.id === room.area_id)
+    return area?.name || '未知区域'
+  }, [areas])
+  
+  // 检查是否选中
+  const isSelected = useCallback((type: 'area' | 'room' | 'spot', id: number): boolean => {
+    return selectedLocation?.type === type && selectedLocation.id === id
+  }, [selectedLocation])
+  
+  const hasNoResults = searchResults.filteredAreas.length === 0 && 
+                      searchResults.filteredRooms.length === 0 && 
+                      searchResults.filteredSpots.length === 0
 
   return (
-    <div className={cn("border rounded-md p-2 bg-card", className)}
-    >
+    <div className={cn("border rounded-md p-2 bg-card", className)}>
+      {/* 搜索框 */}
       <div className="flex items-center gap-2 mb-2">
         <div className="relative flex-1">
-          <div className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="m21 21-4.3-4.3"></path>
-            </svg>
-          </div>
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="搜索位置..."
             className="pl-7 h-8 text-sm"
@@ -269,75 +303,116 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
         </div>
       </div>
       
-      <div className="h-[300px] overflow-y-auto pr-1">
-        {hasNoResults && (
+      {/* 树形结构 */}
+              <div className="h-[300px] overflow-y-auto pr-1">
+        {hasNoResults ? (
           <div className="py-2 text-center text-sm text-muted-foreground">
             {searchTerm ? "没有匹配的位置" : "没有可用的位置"}
           </div>
-        )}
-        
-        {filterType !== 'room' && visibleAreas.map(area => (
-          <div key={area.id}>
-            <div 
-              className={cn(
-                "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                selectedLocation?.type === 'area' && selectedLocation.id === area.id 
-                  ? "bg-muted" 
-                  : ""
-              )}
-              onClick={() => handleSelect('area', area.id)}
-            >
-              <span
-                onClick={(e) => toggleArea(e, area.id)}
-                className="flex items-center"
-              >
-                <FolderIcon 
-                  isOpen={filteredAreaIds.includes(area.id)}
-                  size={14}
-                  className="mr-1"
-                />
-              </span>
-              <span className="flex-grow cursor-pointer truncate">
-                {area.name}
-              </span>
-            </div>
-            
-            {filteredAreaIds.includes(area.id) && getVisibleRoomsForArea(area.id)
-              .map(room => (
-                <div key={room.id} className="ml-4">
-                  <div 
-                    className={cn(
-                      "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                      selectedLocation?.type === 'room' && selectedLocation.id === room.id 
-                        ? "bg-muted" 
-                        : ""
-                    )}
-                    onClick={() => handleSelect('room', room.id)}
+        ) : (
+          <>
+            {/* 区域列表 */}
+            {searchResults.filteredAreas.map(area => (
+              <div key={`area-${area.id}`}>
+                <div 
+                  className={cn(
+                    "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
+                    isSelected('area', area.id) && "bg-muted"
+                  )}
+                  onClick={() => handleSelect('area', area.id)}
+                >
+                  <span
+                    onClick={(e) => toggleArea(e, area.id)}
+                    className="flex items-center"
                   >
-                    <span
-                      onClick={(e) => toggleRoom(e, room.id)}
-                      className="flex items-center"
-                    >
-                      <Home 
-                        className="h-3.5 w-3.5 mr-1 text-muted-foreground"
-                      />
-                    </span>
-                    <span className="flex-grow cursor-pointer truncate">
-                      {room.name}
-                    </span>
-                  </div>
-                  
-                  {filterType !== 'area' && filteredRoomIds.includes(room.id) && spots
+                    <FolderIcon 
+                      isOpen={searchResults.visibleAreaIds.includes(area.id)}
+                      size={ICON_SIZE}
+                      className="mr-1"
+                    />
+                  </span>
+                  <span className="flex-grow cursor-pointer truncate">
+                    {area.name}
+                  </span>
+                </div>
+                
+                {/* 区域下的房间 */}
+                {searchResults.visibleAreaIds.includes(area.id) && 
+                  rooms
+                    .filter(room => room.area_id === area.id && searchResults.visibleRoomIds.includes(room.id))
+                    .map(room => (
+                      <div key={`room-${room.id}`} className="ml-4">
+                        <div 
+                          className={cn(
+                            "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
+                            isSelected('room', room.id) && "bg-muted"
+                          )}
+                          onClick={() => handleSelect('room', room.id)}
+                        >
+                          <span
+                            onClick={(e) => toggleRoom(e, room.id)}
+                            className="flex items-center"
+                          >
+                            <Home className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                          </span>
+                          <span className="flex-grow cursor-pointer truncate">
+                            {room.name}
+                          </span>
+                        </div>
+                        
+                        {/* 房间下的位置 */}
+                        {filterType !== 'area' && searchResults.visibleRoomIds.includes(room.id) && 
+                          spots
+                            .filter(spot => spot.room_id === room.id)
+                            .filter(spot => !searchTerm || matchesSearch(spot.name, searchTerm))
+                            .map(spot => (
+                              <div 
+                                key={`spot-${spot.id}`}
+                                className={cn(
+                                  "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
+                                  isSelected('spot', spot.id) && "bg-muted"
+                                )}
+                                onClick={() => handleSelect('spot', spot.id)}
+                              >
+                                <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                                <span className="truncate">{spot.name}</span>
+                              </div>
+                            ))}
+                      </div>
+                    ))}
+              </div>
+            ))}
+            
+            {/* 当过滤模式为房间时，直接显示房间列表 */}
+            {filterType === 'room' && searchResults.filteredRooms.map(room => (
+              <div key={`direct-room-${room.id}`}>
+                <div 
+                  className={cn(
+                    "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
+                    isSelected('room', room.id) && "bg-muted"
+                  )}
+                  onClick={() => handleSelect('room', room.id)}
+                >
+                  <Home className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
+                  <span className="flex-grow cursor-pointer truncate">
+                    {room.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {getRoomAreaName(room)}
+                  </span>
+                </div>
+                
+                {/* 房间下的位置 */}
+                {searchResults.visibleRoomIds.includes(room.id) && 
+                  spots
                     .filter(spot => spot.room_id === room.id)
-                    .filter(spot => searchTerm === '' || spot.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .filter(spot => !searchTerm || matchesSearch(spot.name, searchTerm))
                     .map(spot => (
                       <div 
-                        key={spot.id} 
+                        key={`direct-spot-${spot.id}`}
                         className={cn(
                           "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                          selectedLocation?.type === 'spot' && selectedLocation.id === spot.id 
-                            ? "bg-muted" 
-                            : ""
+                          isSelected('spot', spot.id) && "bg-muted"
                         )}
                         onClick={() => handleSelect('spot', spot.id)}
                       >
@@ -345,56 +420,10 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
                         <span className="truncate">{spot.name}</span>
                       </div>
                     ))}
-                </div>
-              ))}
-          </div>
-        ))}
-        
-        {/* 当过滤模式为房间时，直接在根级显示房间列表 */}
-        {filterType === 'room' && filteredData.filteredRooms.map(room => (
-          <div key={room.id}>
-            <div 
-              className={cn(
-                "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                selectedLocation?.type === 'room' && selectedLocation.id === room.id 
-                  ? "bg-muted" 
-                  : ""
-              )}
-              onClick={() => handleSelect('room', room.id)}
-            >
-              <Home 
-                className="h-3.5 w-3.5 mr-1 text-muted-foreground"
-              />
-              <span className="flex-grow cursor-pointer truncate">
-                {room.name}
-              </span>
-              {room.area?.name && (
-                <span className="text-xs text-muted-foreground ml-2">
-                  {room.area.name}
-                </span>
-              )}
-            </div>
-            
-            {filteredRoomIds.includes(room.id) && spots
-              .filter(spot => spot.room_id === room.id)
-              .filter(spot => searchTerm === '' || spot.name.toLowerCase().includes(searchTerm.toLowerCase()))
-              .map(spot => (
-                <div 
-                  key={spot.id} 
-                  className={cn(
-                    "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                    selectedLocation?.type === 'spot' && selectedLocation.id === spot.id 
-                      ? "bg-muted" 
-                      : ""
-                  )}
-                  onClick={() => handleSelect('spot', spot.id)}
-                >
-                  <MapPin className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                  <span className="truncate">{spot.name}</span>
-                </div>
-              ))}
-          </div>
-        ))}
+              </div>
+            ))}
+          </>
+        )}
       </div>
     </div>
   )
