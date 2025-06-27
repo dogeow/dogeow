@@ -6,7 +6,6 @@ import { DatePicker } from "@/components/ui/date-picker"
 import LocationTreeSelect from './LocationTreeSelect'
 import { ItemFormData, LocationSelection } from "../types"
 import { FORM_PLACEHOLDERS, FORM_LABELS, FORM_VALIDATION } from "../constants/form"
-import { useFormHandlers } from "../hooks/useFormHandlers"
 
 interface DetailsSectionProps {
   formData: ItemFormData;
