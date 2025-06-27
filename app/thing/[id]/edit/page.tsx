@@ -18,7 +18,7 @@ import { ItemFormData, UploadedImage, Room, Spot, Tag, ItemImage } from '@/app/t
 export default function EditItem() {
   const params = useParams()
   const router = useRouter()
-  const [loading, setLoading] = useState(false)
+
   const [initialLoading, setInitialLoading] = useState(true)
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([])
   const [selectedLocation, setSelectedLocation] = useState<{ type: 'area' | 'room' | 'spot', id: number } | undefined>(undefined)
@@ -27,7 +27,11 @@ export default function EditItem() {
   const [autoSaving, setAutoSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const initialDataRef = useRef<any>(null)
+  const initialDataRef = useRef<{
+    formData: ItemFormData;
+    selectedTags: string[];
+    uploadedImages: UploadedImage[];
+  } | null>(null)
   
   const { 
     categories, 
@@ -165,37 +169,7 @@ export default function EditItem() {
     }, 2000) // 2秒后自动保存
   }, [autoSave])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    
-    try {
-      const updateData: Parameters<typeof updateItem>[1] = {
-        ...formData,
-        purchase_date: formData.purchase_date?.toISOString() || null,
-        expiry_date: formData.expiry_date?.toISOString() || null,
-        purchase_price: formData.purchase_price ? Number(formData.purchase_price) : null,
-        category_id: formData.category_id ? Number(formData.category_id) : null,
-        area_id: formData.area_id ? Number(formData.area_id) : null,
-        room_id: formData.room_id ? Number(formData.room_id) : null,
-        spot_id: formData.spot_id ? Number(formData.spot_id) : null,
-        image_ids: uploadedImages.filter(img => img.id).map(img => img.id!).filter((id): id is number => id !== undefined),
-        image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
-        tags: selectedTags.map(id => tags.find(tag => tag.id.toString() === id)).filter((tag): tag is Tag => tag !== undefined)
-      }
-      
-      const toast_id = toast.loading("正在更新物品...")
-      await updateItem(Number(params.id), updateData)
-      
-      toast.success("物品更新成功", { id: toast_id })
-      router.push(`/thing/${params.id}`)
-    } catch (error) {
-      console.error("更新物品失败:", error)
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
-    } finally {
-      setLoading(false)
-    }
-  }
+
 
   useEffect(() => {
     const loadItem = async () => {
@@ -299,7 +273,7 @@ export default function EditItem() {
     }) !== JSON.stringify({
       formData: initialDataRef.current.formData,
       selectedTags: initialDataRef.current.selectedTags,
-      uploadedImages: initialDataRef.current.uploadedImages.map((img: any) => ({ path: img.path, id: img.id }))
+      uploadedImages: initialDataRef.current.uploadedImages.map((img: UploadedImage) => ({ path: img.path, id: img.id }))
     })
     
     if (hasChanges) {
