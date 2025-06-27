@@ -50,6 +50,7 @@ export function useItemEdit() {
   }
 
   // 自动保存逻辑
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleAutoSave = useCallback(async (_data: AutoSaveData) => {
     const updateData: Parameters<typeof updateItem>[1] = {
       ...formData,
