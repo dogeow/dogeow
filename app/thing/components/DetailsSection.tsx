@@ -23,8 +23,6 @@ const DetailsSection: React.FC<DetailsSectionProps> = ({
   selectedLocation, 
   onLocationSelect 
 }) => {
-  const { handleInputChange } = useFormHandlers({ setFormData })
-  
   const handleDateChange = useCallback((name: keyof ItemFormData, date: Date | null) => {
     setFormData(prev => ({ ...prev, [name]: date }))
   }, [setFormData])
