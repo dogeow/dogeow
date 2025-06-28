@@ -6,6 +6,7 @@ export type CustomTheme = {
   color: string;
 }; 
 
+// 应用启动器图标类型
 export interface Tile {
   name: string;
   icon: string;
@@ -16,6 +17,7 @@ export interface Tile {
   rowSpan: number;
 }
 
+// 应用启动器配置类型
 export interface AppConfig {
   tiles: Tile[];
 } 
