@@ -3,19 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { apiRequest } from '@/lib/api'
-import { Button } from '@/components/ui/button'
-import { 
-  Search, 
-  Calendar, 
-  Filter
-} from 'lucide-react'
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
+import { Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
@@ -37,22 +25,9 @@ interface Note {
   is_draft: boolean
 }
 
-type SortBy = 'updated_at' | 'created_at' | 'title'
-type SortOrder = 'asc' | 'desc'
-
-// 排序选项配置
-const SORT_OPTIONS = [
-  { key: 'updated_at' as const, label: '最近更新' },
-  { key: 'created_at' as const, label: '创建时间' },
-  { key: 'title' as const, label: '标题' }
-] as const
-
 export default function NotePage() {
   const [notes, setNotes] = useState<Note[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState<SortBy>('updated_at')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc')
 
   // 获取笔记列表
   useEffect(() => {
@@ -71,25 +46,12 @@ export default function NotePage() {
     fetchNotes()
   }, [])
 
-  // 筛选和排序笔记
-  const filteredAndSortedNotes = notes
-    .filter(note => {
-      if (!searchTerm) return true
-      
-      const searchLower = searchTerm.toLowerCase()
-      return note.title.toLowerCase().includes(searchLower) ||
-        (note.content_markdown?.toLowerCase().includes(searchLower))
-    })
-    .sort((a, b) => {
-      if (sortBy === 'title') {
-        const comparison = a.title.localeCompare(b.title)
-        return sortOrder === 'asc' ? comparison : -comparison
-      }
-      
-      const valueA = new Date(a[sortBy]).getTime()
-      const valueB = new Date(b[sortBy]).getTime()
-      return sortOrder === 'asc' ? valueA - valueB : valueB - valueA
-    })
+  // 按更新时间排序笔记（最新的在前面）
+  const sortedNotes = notes.sort((a, b) => {
+    const valueA = new Date(a.updated_at).getTime()
+    const valueB = new Date(b.updated_at).getTime()
+    return valueB - valueA
+  })
 
   // 格式化日期
   const formatDate = (dateString: string) => {
@@ -111,16 +73,6 @@ export default function NotePage() {
       : plainText
   }
 
-  // 处理排序选择
-  const handleSortChange = (newSortBy: SortBy) => {
-    if (sortBy === newSortBy) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
-    } else {
-      setSortBy(newSortBy)
-      setSortOrder('desc')
-    }
-  }
-
   // 渲染加载状态
   const renderLoadingState = () => (
     <div className="animate-pulse space-y-4">
@@ -139,7 +91,7 @@ export default function NotePage() {
   const renderEmptyState = () => (
     <div className="text-center py-12 border rounded-md">
       <p className="text-muted-foreground mb-4">
-        {searchTerm ? '没有找到匹配的笔记' : '还没有创建任何笔记'}
+        还没有创建任何笔记
       </p>
     </div>
   )
@@ -187,44 +139,13 @@ export default function NotePage() {
         <h1 className="text-2xl font-bold">笔记列表</h1>
       </div>
       
-      <div className="flex flex-wrap gap-4 mb-6">
-        <div className="relative flex-1 min-w-[200px]">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="搜索笔记..." 
-            className="pl-8"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <Filter className="mr-2 h-4 w-4" />
-              排序
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {SORT_OPTIONS.map(({ key, label }) => (
-              <DropdownMenuItem key={key} onClick={() => handleSortChange(key)}>
-                {label} {sortBy === key && (sortOrder === 'desc' ? '↓' : '↑')}
-              </DropdownMenuItem>
-            ))}
-            <DropdownMenuItem onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
-              切换顺序 ({sortOrder === 'desc' ? '降序' : '升序'})
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-      
       {loading ? (
         renderLoadingState()
-      ) : filteredAndSortedNotes.length === 0 ? (
+      ) : sortedNotes.length === 0 ? (
         renderEmptyState()
       ) : (
         <div className="space-y-4">
-          {filteredAndSortedNotes.map(renderNoteCard)}
+          {sortedNotes.map(renderNoteCard)}
         </div>
       )}
       

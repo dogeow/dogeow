@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import dynamic from 'next/dynamic'
 
 // 使用dynamic import避免服务端渲染问题
-const NoteEditor = dynamic(
-  () => import('../components/NoteEditor'),
+const TailwindAdvancedEditor = dynamic(
+  () => import('@/components/novel-editor'),
   { ssr: false }
 )
 
@@ -20,7 +20,9 @@ export default function NewNotePage() {
   
   return (
     <div className="container mx-auto py-4">
-      {isLoaded && <NoteEditor />}
+      <div className="flex justify-center">
+        {isLoaded && <TailwindAdvancedEditor />}
+      </div>
     </div>
   )
 } 
