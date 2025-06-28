@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { Input } from "@/components/ui/input"
 import { MapPin, Home, Search } from "lucide-react"
-import { useLocations } from '@/lib/api'
+import { useLocations } from '../services/api'
 import { cn } from '@/lib/helpers'
 import { LocationSelection, LocationTreeResponse, Room, Spot } from '../types'
 import FolderIcon from './FolderIcon'

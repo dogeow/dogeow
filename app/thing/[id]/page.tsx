@@ -11,7 +11,7 @@ import { format } from 'date-fns'
 import Image from "next/image"
 import { toast } from "sonner"
 import { useItemStore } from '@/app/thing/stores/itemStore'
-import { useItem } from '@/lib/api'
+import { useItem } from '../services/api'
 import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
 import { isLightColor } from '@/lib/helpers'
 import { statusMap } from '../config/status'

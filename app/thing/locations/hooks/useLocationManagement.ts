@@ -7,9 +7,9 @@ import {
   updateRoom,
   deleteRoom,
   updateSpot,
-  deleteSpot,
-  post
-} from '@/lib/api'
+  deleteSpot
+} from '../../services/api'
+import { post } from '@/lib/api'
 import { LocationTreeResponse } from '@/app/thing/types'
 import { getLocationTypeText } from '../constants'
 

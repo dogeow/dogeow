@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { toast } from "sonner"
 import { useItemStore } from '@/app/thing/stores/itemStore'
-import { useAreas, useRooms, useSpots } from '@/lib/api'
+import { useAreas, useRooms, useSpots } from '../services/api'
 import { apiRequest } from '@/lib/api'
 import { ItemFormData, UploadedImage, Room, Spot, Tag, LocationSelection } from '@/app/thing/types'
 import { useAutoSave } from './useAutoSave'

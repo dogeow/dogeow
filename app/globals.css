@@ -5,7 +5,7 @@
 @plugin "tailwindcss-animate";
 
 :root {
-  /* 默认主题色彩 - 会被ThemeProvider动态覆盖 */
+  /* 默认主题色彩 - 会被 ThemeProvider 动态覆盖 */
   --primary: hsl(35 97% 55%);
   --primary-color: #fc9d1c;
 

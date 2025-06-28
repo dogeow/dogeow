@@ -1,9 +1,9 @@
 ## 目录结构说明
 
-- dogeow 是 Next.js 15
-- dogeow-api 是 Laravel 12
+- dogeow 目录是 Next.js 15 项目
+- dogeow-api 目录是 Laravel 12 项目
 
-如果你要修改，请到对应的文件夹去修改，而不是这个目录。
+如果你要修改，请到对应的文件夹去修改，而不是根目录。
 
 ## 目标
 
@@ -58,19 +58,17 @@
 ### 公共
 
 - 代码规范
-- 单元测试
 - 代码规范
-- CI/CD
+- CI/CD 使用 GitHub Actions
+- 单元测试
 - 监控
 - 日志
 - Sentry (错误跟踪)
-- GitHub Actions/GitLab CI (自动化流程)
-- Husky + lint-staged (Git钩子)
 
 ## 注意
 
-- 不要运行 npm run dev 等，我自己有运行的。
+- 不要运行 npm run dev 等，我自己会运行。
 - 不要使用 createContext，而是使用 zustand。
 - 默认使用 flex 布局，不要使用 grid 布局，除非复杂的显示结构。
-- 不要使用 fetch、axios，使用 swr。
+- 不要使用 fetch、axios，使用 SWR。
 - 按照功能模块组织代码，不要混在一起。比如 api、store、components、types、utils、hooks 等，放到对应项目功能，比如导航、物品管理、游戏的文件夹。

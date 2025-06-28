@@ -153,7 +153,8 @@ export default function Home() {
   // 获取功能封面图
   const getCoverImage = (href: string) => {
     if (!showProjectCovers) return null;
-    return configs.projectCovers[href as keyof typeof configs.projectCovers];
+    const tile = configs.tiles.find(t => t.href === href);
+    return tile?.cover;
   };
   
   // 将磁贴分组为行

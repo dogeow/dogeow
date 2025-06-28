@@ -16,7 +16,7 @@ import {
 import { Tag } from '../types'
 import { apiRequest } from '@/lib/api'
 import { toast } from 'sonner'
-import { generateRandomColor } from '@/lib/helpers'
+import { generateRandomColor } from '@/lib/helpers/colorUtils'
 
 interface CreateTagDialogProps {
   open: boolean;

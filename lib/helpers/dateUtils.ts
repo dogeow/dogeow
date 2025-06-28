@@ -6,6 +6,6 @@ export const formatDate = (dateString: string | null | undefined): string => {
     return format(new Date(dateString), 'yyyy-MM-dd');
   } catch (e) {
     console.error("Invalid date string:", dateString, e);
-    return '无效日期'; // Or 'Invalid Date' if you prefer English
+    return '无效日期';
   }
 };
