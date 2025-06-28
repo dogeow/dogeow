@@ -207,8 +207,7 @@ export default function TetrisGame() {
   const movePiece = useCallback((direction: 'left' | 'right' | 'down'): boolean => {
     if (!currentPiece || gameOver || paused) return false
 
-    // eslint-disable-next-line prefer-const
-    let newPosition = { ...currentPiece.position }
+    const newPosition = { ...currentPiece.position }
     
     switch (direction) {
       case 'left':
@@ -307,8 +306,7 @@ export default function TetrisGame() {
     if (!currentPiece || gameOver || paused) return
 
     let dropDistance = 0
-    // eslint-disable-next-line prefer-const
-    let newPosition = { ...currentPiece.position }
+    const newPosition = { ...currentPiece.position }
     
     while (isValidPosition(board, currentPiece, { ...newPosition, y: newPosition.y + 1 })) {
       newPosition.y += 1
@@ -330,8 +328,7 @@ export default function TetrisGame() {
     const softDropLoop = () => {
       if (!currentPiece || gameOver || paused) return
       
-      // eslint-disable-next-line prefer-const
-      let newPosition = { ...currentPiece.position }
+      const newPosition = { ...currentPiece.position }
       newPosition.y += 1
 
       if (isValidPosition(board, currentPiece, newPosition)) {
