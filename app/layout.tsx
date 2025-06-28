@@ -45,12 +45,12 @@ export default function RootLayout({
         <SWRProvider>
           <ThemeProvider>
             <div id="header-container" className="flex-none sticky top-0 z-30 h-[50px] bg-background border-b shadow-sm">
-              <div className="content-container flex h-full items-center">
+              <div className="w-full mx-auto max-w-7xl flex h-full items-center">
                 <AppLauncher />
               </div>
             </div>
             <div id="main-container" className="flex-1 overflow-x-hidden">
-              <div className="content-container p-0 h-full">
+              <div className="w-full mx-auto max-w-7xl p-0 h-full">
                 <BackgroundWrapper>
                   {children}
                 </BackgroundWrapper>

@@ -148,8 +148,3 @@
   display: none;  /* Chrome, Safari and Opera */
 }
 
-.content-container {
-  width: 100%;
-  margin: 0 auto;
-  max-width: 1200px;
-}

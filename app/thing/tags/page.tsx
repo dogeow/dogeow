@@ -61,7 +61,7 @@ export default function ThingTags() {
   }
 
   return (
-    <div className="content-container py-6 pb-24">
+    <div className="w-full mx-auto max-w-7xl py-6 pb-24">
       <div className="max-w-4xl mx-auto">
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
