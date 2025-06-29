@@ -89,10 +89,12 @@ export default function NotePage() {
 
   // 渲染空状态
   const renderEmptyState = () => (
-    <div className="text-center py-12 border rounded-md">
-      <p className="text-muted-foreground mb-4">
-        还没有创建任何笔记
-      </p>
+    <div className="text-center py-12">
+      <div className="text-muted-foreground">
+        <div className="text-4xl mb-4">📝</div>
+        <p className="text-lg font-medium mb-2">暂无笔记</p>
+        <p className="text-sm">请添加您的第一个笔记</p>
+      </div>
     </div>
   )
 
@@ -104,7 +106,7 @@ export default function NotePage() {
       >
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
-            <h3 className="font-medium text-lg hover:underline flex items-center">
+            <h3 className="font-medium text-base hover:underline flex items-center">
               {note.title || '(无标题)'}
               {!!note.is_draft && (
                 <Lock className="ml-2 h-4 w-4 text-muted-foreground" />
@@ -135,8 +137,11 @@ export default function NotePage() {
 
   return (
     <div className="container mx-auto py-4">
-      <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-        <h1 className="text-2xl font-bold">笔记列表</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-foreground">笔记列表</h2>
+        <div className="text-sm text-muted-foreground">
+          共 {sortedNotes.length} 个笔记
+        </div>
       </div>
       
       {loading ? (

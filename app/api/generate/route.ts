@@ -5,55 +5,91 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { option, command } = body;
 
-    // 这里应该集成实际的AI服务，比如 OpenAI API
-    // 目前返回一个占位符响应
-    let response = '';
+    // 构建发送给Ollama的提示词
+    let prompt = '';
+    const text = body.text || '';
     
     switch (option) {
       case 'improve':
-        response = '这是改进后的文本版本。';
+        prompt = `请改进以下文本的表达和流畅性，保持原意不变：\n\n${text}`;
         break;
       case 'fix':
-        response = '这是修正语法后的文本。';
+        prompt = `请修正以下文本的语法和拼写错误：\n\n${text}`;
         break;
       case 'shorter':
-        response = '这是简化后的版本。';
+        prompt = `请将以下文本简化，保留核心信息：\n\n${text}`;
         break;
       case 'longer':
-        response = '这是扩展后的详细版本，包含更多信息和细节。';
+        prompt = `请扩展以下文本，添加更多细节和信息：\n\n${text}`;
         break;
       case 'continue':
-        response = '继续写作的内容...';
+        prompt = `请继续写下去：\n\n${text}`;
         break;
       case 'zap':
-        response = `根据您的要求："${command}"，这里是AI生成的响应。`;
+        prompt = `${command}\n\n原文：${text}`;
         break;
       default:
-        response = '这是AI生成的响应。';
+        prompt = `请处理以下文本：\n\n${text}`;
     }
 
-    // 创建符合 Vercel AI SDK 格式的流式响应
+    // 调用Ollama API
+    const ollamaResponse = await fetch('http://localhost:11434/api/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'qwen2.5:0.5b', // 使用你安装的模型
+        prompt: prompt,
+        stream: true,
+      }),
+    });
+
+    if (!ollamaResponse.ok) {
+      throw new Error(`Ollama API error: ${ollamaResponse.status}`);
+    }
+
+    // 创建流式响应
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
-      start(controller) {
-        const words = response.split('');
-        let index = 0;
-        
-        const sendChunk = () => {
-          if (index < words.length) {
-            // 使用 Vercel AI SDK 期望的格式
-            const chunk = `0:"${words[index]}"\n`;
-            controller.enqueue(encoder.encode(chunk));
-            index++;
-            setTimeout(sendChunk, 50); // 50ms 延迟模拟打字效果
-          } else {
-            // 发送结束标记
-            controller.enqueue(encoder.encode('d:\n'));
-            controller.close();
+      async start(controller) {
+        const reader = ollamaResponse.body?.getReader();
+        if (!reader) return;
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = new TextDecoder().decode(value);
+            const lines = chunk.split('\n').filter(line => line.trim());
+            
+            for (const line of lines) {
+              try {
+                const data = JSON.parse(line);
+                if (data.response) {
+                  // 使用 Vercel AI SDK 期望的格式
+                  const formattedChunk = `0:"${data.response.replace(/"/g, '\\"')}"\n`;
+                  controller.enqueue(encoder.encode(formattedChunk));
+                }
+                
+                if (data.done) {
+                  controller.enqueue(encoder.encode('d:\n'));
+                  controller.close();
+                  return;
+                }
+              } catch (e) {
+                // 忽略JSON解析错误
+                console.warn('JSON parse error:', e);
+              }
+            }
           }
-        };
-        
-        sendChunk();
+        } catch (error) {
+          console.error('Stream error:', error);
+          controller.error(error);
+        } finally {
+          reader.releaseLock();
+        }
       }
     });
 
@@ -68,7 +104,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('AI API Error:', error);
     return NextResponse.json(
-      { error: 'AI服务暂时不可用' },
+      { error: 'AI服务暂时不可用，请确保Ollama服务正在运行' },
       { status: 500 }
     );
   }

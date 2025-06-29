@@ -80,7 +80,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
               onClick={() => {
                 if (completion)
                   return complete(completion, {
-                    body: { option: "zap", command: inputValue },
+                    body: { option: "zap", command: inputValue, text: completion },
                   }).then(() => setInputValue(""));
 
                 if (!editor) return;
@@ -89,7 +89,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
                 const text = editor.storage.markdown.serializer.serialize(slice.content);
 
                 complete(text, {
-                  body: { option: "zap", command: inputValue },
+                  body: { option: "zap", command: inputValue, text },
                 }).then(() => setInputValue(""));
               }}
             >
@@ -115,7 +115,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
                 const { from, to } = editor.state.selection;
                 setOriginalSelection({ from, to });
               }
-              complete(value, { body: { option } });
+              complete(value, { body: { option, text: value } });
             }} />
           )}
         </>
