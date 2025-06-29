@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { option, command, text = '' } = body;
+    // 读取请求体但不使用参数，避免TypeScript警告
+    await request.json();
 
     // 模拟响应用于测试
     const mockResponse = "你好，这是一个测试响应。";
