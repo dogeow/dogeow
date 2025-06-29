@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { apiRequest } from '@/lib/api'
-import { Calendar } from 'lucide-react'
+import { Calendar, Lock } from 'lucide-react'
 import { format } from 'date-fns'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 import ReactMarkdown from 'react-markdown'
 import { 
   Card, 
@@ -104,10 +104,10 @@ export default function NotePage() {
       >
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
-            <h3 className="font-medium text-lg hover:underline">
+            <h3 className="font-medium text-lg hover:underline flex items-center">
               {note.title || '(无标题)'}
-              {note.is_draft && (
-                <span className="ml-2 text-xs text-muted-foreground">(草稿)</span>
+              {!!note.is_draft && (
+                <Lock className="ml-2 h-4 w-4 text-muted-foreground" />
               )}
             </h3>
           </div>

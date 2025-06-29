@@ -4,8 +4,8 @@ import useSWR from "swr"
 import { get, del } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 import { useRouter, useParams } from "next/navigation"
-import { toast } from "react-hot-toast"
-import { Edit, Trash2, ArrowLeft } from "lucide-react"
+import { toast } from "sonner"
+import { Edit, Trash2, ArrowLeft, Lock } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
@@ -48,10 +48,10 @@ export default function NoteDetail() {
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold flex-1 text-center truncate">
+        <h1 className="text-xl font-bold flex-1 text-center truncate flex items-center justify-center">
           {note.title}
-          {note.is_draft && (
-            <span className="ml-2 text-xs text-muted-foreground">(草稿)</span>
+          {!!note.is_draft && (
+            <Lock className="ml-2 h-4 w-4 text-muted-foreground" />
           )}
         </h1>
         <div className="flex gap-2">

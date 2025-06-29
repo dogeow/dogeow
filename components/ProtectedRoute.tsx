@@ -13,9 +13,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, loading } = useAuthStore();
 
   useEffect(() => {
-    // 如果认证状态已加载完成且用户未认证，则重定向到登录页
+    // 如果认证状态已加载完成且用户未认证，则重定向到首页
     if (!loading && !isAuthenticated) {
-      router.push('/login');
+      router.push('/');
     }
   }, [isAuthenticated, loading, router]);
 
