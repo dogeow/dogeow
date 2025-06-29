@@ -138,11 +138,6 @@ export default function AddNavItem() {
       value: category.id.toString(),
       label: category.name || '未命名分类'
     })) || []
-  
-  // 调试信息
-  console.log("allCategories:", allCategories);
-  console.log("categoryOptions:", categoryOptions);
-  console.log("当前表单值:", form.getValues());
 
   return (
     <div className="container mx-auto p-4">

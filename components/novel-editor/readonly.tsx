@@ -7,7 +7,7 @@ import {
 import { useEffect, useState } from "react";
 import hljs from "highlight.js";
 
-// 只导入查看需要的基础扩展，不包括编辑功能
+// 导入必要的扩展，避免冲突
 import {
   StarterKit,
   TaskItem,
@@ -15,16 +15,17 @@ import {
   Mathematics,
   HighlightExtension,
   TiptapUnderline,
-  CodeBlockLowlight,
   TiptapImage,
   TiptapLink,
 } from "novel";
+import { CodeBlock } from "@tiptap/extension-code-block";
 import { Markdown } from "tiptap-markdown";
 import { cx } from "class-variance-authority";
-import { common, createLowlight } from "lowlight";
 
 const readonlyExtensions = [
   StarterKit.configure({
+    // 禁用内置的 codeBlock，因为我们要使用带高亮的版本
+    codeBlock: false,
     bulletList: {
       HTMLAttributes: {
         class: cx("list-disc list-outside leading-3 -mt-2"),
@@ -43,11 +44,6 @@ const readonlyExtensions = [
     blockquote: {
       HTMLAttributes: {
         class: cx("border-l-4 border-primary px-2"),
-      },
-    },
-    codeBlock: {
-      HTMLAttributes: {
-        class: cx("rounded-md bg-muted text-muted-foreground border p-5 font-mono font-medium"),
       },
     },
     code: {
@@ -87,8 +83,10 @@ const readonlyExtensions = [
     },
     nested: true,
   }),
-  CodeBlockLowlight.configure({
-    lowlight: createLowlight(common),
+  CodeBlock.configure({
+    HTMLAttributes: {
+      class: cx("rounded-md bg-muted text-muted-foreground border p-5 font-mono font-medium"),
+    },
   }),
   Mathematics.configure({
     HTMLAttributes: {

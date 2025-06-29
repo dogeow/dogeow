@@ -44,8 +44,6 @@ const TailwindAdvancedEditor = () => {
 
   const [isTyping, setIsTyping] = useState(false);
 
-
-
   //Apply Codeblock Highlighting on the HTML from editor.getHTML()
   const highlightCodeblocks = (content: string) => {
     const doc = new DOMParser().parseFromString(content, "text/html");
