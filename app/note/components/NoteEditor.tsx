@@ -1,14 +1,13 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiRequest } from '@/lib/api'
-// import MarkdownEditor from '@/components/markdown/MarkdownEditor' // 注释掉，使用Novel Editor
 import { Input } from '@/components/ui/input'
 import { toast } from 'react-hot-toast'
-import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
+import { apiRequest } from '@/lib/api'
 import { useEditorStore } from '../store/editorStore'
 import { useGlobalNavigationGuard } from '../hooks/useGlobalNavigationGuard'
+import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
 
 interface NoteEditorProps {
   noteId?: number
@@ -27,16 +26,12 @@ interface Note {
   is_draft: boolean
 }
 
-interface UploadResult {
-  url: string
-  path: string
-}
 
-// 工具函数：判断字符串是否为合法的 Slate JSON
+
 function isValidSlateJson(str: string) {
   try {
-    const val = JSON.parse(str)
-    return Array.isArray(val) && val.every(item => item.type && item.children)
+    const parsed = JSON.parse(str)
+    return Array.isArray(parsed) || (typeof parsed === 'object' && parsed.type === 'doc')
   } catch {
     return false
   }
@@ -47,38 +42,35 @@ export default function NoteEditor({
   title = '', 
   content = '', 
   isEditing = false,
-  initialMarkdown = '',
   isDraft = false
 }: NoteEditorProps) {
   const router = useRouter()
   const [noteTitle, setNoteTitle] = useState(title)
-  const [, setIsSaving] = useState(false)
-  const [, setMarkdownPreview] = useState(initialMarkdown)
-  const [draft, setDraft] = useState(isDraft)
+  const [currentContent] = useState(() => {
+    if (content && isValidSlateJson(content)) {
+      return content
+    }
+    return '[{"type":"paragraph","children":[{"text":""}]}]'
+  })
+  const [isSaving, setIsSaving] = useState(false)
+  const [draft] = useState(isDraft)
+  const [, setDirty] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)
-  const { setDirty, setSaveDraft } = useEditorStore()
   const [globalDialogOpen, setGlobalDialogOpen] = useState(false)
-  const globalDialogPromiseRef = useRef<{resolve: (ok: boolean) => void} | null>(null)
-  
-  // 添加当前编辑器内容状态
-  const [currentContent, setCurrentContent] = useState(() => {
-    return isValidSlateJson(content)
-      ? content
-      : '[{"type":"paragraph","children":[{"text":""}]}]'
-  })
-  
-  // 添加最后保存的内容状态，用于判断是否有未保存更改
+  const globalDialogPromiseRef = useRef<{ resolve: (value: boolean) => void } | null>(null)
+
+  const { setSaveDraft } = useEditorStore()
+
+  // 保存最后一次保存的内容和标题，用于比较是否有变化
   const [, setLastSavedContent] = useState(() => {
-    return isValidSlateJson(content)
-      ? content
+    return content && isValidSlateJson(content) 
+      ? content 
       : '[{"type":"paragraph","children":[{"text":""}]}]'
   })
   
   // 添加最后保存的标题状态
   const [, setLastSavedTitle] = useState(title)
-
-  const safeContent = currentContent
 
   // 保存笔记内容
   const handleSave = async (content: string) => {
@@ -102,16 +94,11 @@ export default function NoteEditor({
       if (isEditing && noteId) {
         // 更新笔记
         result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
-        // 更新预览
-        if (result.content_markdown) {
-          setMarkdownPreview(result.content_markdown)
-        }
+
       } else {
         // 创建新笔记
         result = await apiRequest<Note>('/notes', 'POST', data)
-        if (result.content_markdown) {
-          setMarkdownPreview(result.content_markdown)
-        }
+
       }
       
       // 保存成功后，更新最后保存的内容和标题
@@ -135,72 +122,6 @@ export default function NoteEditor({
       setIsSaving(false)
     }
   }
-
-  // 处理草稿状态变化
-  const handleDraftChange = async (newDraft: boolean) => {
-    if (!noteTitle.trim()) {
-      toast.error('请输入笔记标题')
-      return
-    }
-
-    try {
-      setIsSaving(true)
-      setDraft(newDraft)
-      
-      const data = {
-        title: noteTitle,
-        content: currentContent,
-        is_draft: newDraft
-      }
-
-      let result;
-      
-      if (isEditing && noteId) {
-        // 更新笔记
-        result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
-      } else {
-        // 创建新笔记
-        result = await apiRequest<Note>('/notes', 'POST', data)
-      }
-      
-      // 保存成功后，更新最后保存的内容和标题
-      setLastSavedContent(currentContent)
-      setLastSavedTitle(noteTitle)
-      setDirty(false)
-      
-      if (newDraft) {
-        toast.success('已保存为草稿')
-      } else {
-        toast.success('已发布为正式笔记')
-      }
-      
-      // 如果是新笔记，跳转到编辑页面
-      if (!isEditing && result.id) {
-        router.push(`/note/edit/${result.id}`)
-        router.refresh()
-      }
-      
-    } catch (error) {
-      console.error('保存笔记错误:', error)
-      toast.error('保存失败')
-      // 恢复原来的状态
-      setDraft(!newDraft)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  // 处理导航离开 - 暂时未使用
-  // const handleNavigation = (action: () => void) => {
-  //   setDirty(false)
-  //   // 比较当前内容和标题与最后保存的状态
-  //   if (noteTitle !== lastSavedTitle || currentContent !== lastSavedContent) {
-  //     setShowConfirmDialog(true)
-  //     setPendingAction(() => action)
-  //   } else {
-  //     action()
-  //   }
-  // }
 
   // 处理保存草稿并离开
   const handleSaveDraftAndLeave = async () => {
@@ -231,30 +152,6 @@ export default function NoteEditor({
     }
     setShowConfirmDialog(false)
     setPendingAction(null)
-  }
-
-  // 处理图片上传
-  const handleImageUpload = async (file: File) => {
-    try {
-      const formData = new FormData()
-      formData.append('image', file)
-      
-      const result = await apiRequest<UploadResult>('/upload/image', 'POST', formData, { 
-        handleError: false
-      })
-      
-      return result
-    } catch (error) {
-      console.error('图片上传错误:', error)
-      toast.error('图片上传失败')
-      throw error
-    }
-  }
-
-  // 编辑器内容改变时更新预览
-  const handleEditorChange = (content: string) => {
-    setDirty(true)
-    setCurrentContent(content)
   }
 
   // 保存为草稿
@@ -301,7 +198,7 @@ export default function NoteEditor({
     } finally {
       setIsSaving(false)
     }
-  }, [noteTitle, currentContent, isEditing, noteId, setDirty, setLastSavedContent, setLastSavedTitle])
+  }, [noteTitle, currentContent, isEditing, noteId, setLastSavedContent, setLastSavedTitle])
 
   // 封装 showDialog，返回 Promise<boolean>
   const showDialog = () => {
@@ -350,6 +247,7 @@ export default function NoteEditor({
           onChange={(e) => setNoteTitle(e.target.value)}
           className="mt-1"
           placeholder="请输入笔记标题"
+          disabled={isSaving}
         />
       </div>
       {/* TODO: Replace with actual editor component */}

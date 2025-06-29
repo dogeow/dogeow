@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { prompt, option, command } = body;
+    const { option, command } = body;
 
     // 这里应该集成实际的AI服务，比如 OpenAI API
     // 目前返回一个占位符响应

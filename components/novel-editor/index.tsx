@@ -1,5 +1,4 @@
 "use client";
-import { defaultEditorContent } from "@/lib/content";
 
 // 空的编辑器内容
 const emptyEditorContent = {
@@ -223,10 +222,10 @@ const TailwindAdvancedEditor = () => {
           initialContent={initialContent}
           extensions={extensions}
           className="relative min-h-[500px] w-full max-w-screen-lg border-muted bg-background p-4   sm:mb-[calc(20vh)] sm:rounded-lg sm:border sm:shadow-lg"
-          editorProps={{
+                      editorProps={{
             handleDOMEvents: {
               keydown: (_view, event) => handleCommandNavigation(event),
-              copy: (view, event) => {
+              copy: () => {
                 console.log('Copy event triggered in Novel Editor')
                 return false // 让默认的复制行为处理，但添加我们的逻辑
               }

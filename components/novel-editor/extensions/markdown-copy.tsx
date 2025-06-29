@@ -104,7 +104,6 @@ export const MarkdownCopyExtension = Extension.create({
   },
 
   addProseMirrorPlugins() {
-    const editor = this.editor
     
     return [
       new Plugin({
