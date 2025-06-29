@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { apiRequest } from '@/lib/api'
 import { useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
@@ -26,7 +25,6 @@ interface Note {
 
 // 笔记编辑页面
 export default function EditNotePage() {
-  const router = useRouter()
   const { id } = useParams()
   const [note, setNote] = useState<Note | null>(null)
   const [loading, setLoading] = useState(true)

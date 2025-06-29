@@ -51,7 +51,7 @@ const navItemSchema = z.object({
 export default function EditNavPage() {
   const params = useParams()
   const router = useRouter()
-  const { fetchCategories, categories, fetchItems, updateItem, createCategory } = useNavStore()
+  const { fetchAllCategories, allCategories, fetchItems, updateItem, createCategory } = useNavStore()
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const itemId = Number(params.id)
@@ -81,7 +81,7 @@ export default function EditNavPage() {
         try {
           // 加载分类和导航项数据
           const [, itemsResult] = await Promise.all([
-            fetchCategories(),
+            fetchAllCategories(),
             fetchItems()
           ])
           
@@ -126,7 +126,7 @@ export default function EditNavPage() {
     return () => {
       isMounted = false
     }
-  }, [fetchCategories, fetchItems, form, itemId, router, initialLoading])
+  }, [fetchAllCategories, fetchItems, form, itemId, router, initialLoading])
   
   // 处理创建新分类
   const handleCreateCategory = async (categoryName: string) => {
@@ -175,7 +175,7 @@ export default function EditNavPage() {
   }
   
   // 将分类数据转换为Combobox选项格式
-  const categoryOptions = (categories || [])
+  const categoryOptions = (allCategories || [])
     .filter(category => category && typeof category === 'object' && category.id !== undefined)
     .map(category => ({
       value: category.id.toString(),

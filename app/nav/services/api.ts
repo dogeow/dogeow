@@ -32,17 +32,23 @@ export async function recordClick(itemId: number) {
 
 // 管理员接口
 export async function getAllCategories() {
-  return await apiRequest<NavCategory[]>(`/nav/admin/categories`);
+  try {
+    const result = await apiRequest<NavCategory[]>(`/nav/categories?show_all=1`);
+    return Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error("获取所有分类API错误:", error);
+    return [];
+  }
 }
 
 export async function createCategory(category: Partial<NavCategory>) {
   try {
     console.log("发送创建分类请求:", category);
-    const result = await post<NavCategory>(`/nav/categories`, category);
+    const result = await post<{message: string, category: NavCategory}>(`/nav/categories`, category);
     console.log("创建分类API返回:", result);
     
     // 验证返回的数据
-    if (!result || typeof result !== 'object' || result.id === undefined) {
+    if (!result || typeof result !== 'object' || !result.category || result.category.id === undefined) {
       console.warn("API返回的分类数据无效，使用模拟数据:", result);
       
       // 创建一个模拟的分类对象
@@ -64,7 +70,8 @@ export async function createCategory(category: Partial<NavCategory>) {
       return mockCategory;
     }
     
-    return result;
+    // 返回正确的分类数据
+    return result.category;
   } catch (error) {
     console.error("创建分类API错误:", error);
     
@@ -88,7 +95,8 @@ export async function createCategory(category: Partial<NavCategory>) {
 }
 
 export async function updateCategory(id: number, category: Partial<NavCategory>) {
-  return await put<NavCategory>(`/nav/categories/${id}`, category);
+  const result = await put<{message: string, category: NavCategory}>(`/nav/categories/${id}`, category);
+  return result.category;
 }
 
 export async function deleteCategory(id: number) {

@@ -5,19 +5,13 @@ import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
 
 import { cn } from "@/lib/helpers"
 import { Button } from "@/components/ui/button"
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command"
+import { Input } from "@/components/ui/input"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
 
 export interface ComboboxOption {
   value: string
@@ -50,11 +44,10 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
-  
-  // 过滤选项，用于检查搜索结果是否为空
+
+  // 过滤选项
   const filteredOptions = React.useMemo(() => {
     if (!searchQuery) return options
-    
     return options.filter(option => 
       option.label.toLowerCase().includes(searchQuery.toLowerCase())
     )
@@ -69,9 +62,19 @@ export function Combobox({
     }
   }, [onCreateOption, searchQuery])
 
+  const handleSelect = React.useCallback((selectedOption: ComboboxOption) => {
+    console.log("handleSelect called with:", selectedOption)
+    onChange(selectedOption.value)
+    setSearchQuery("")
+    setOpen(false)
+  }, [onChange])
+
   // 检查是否显示创建选项
-  const showCreateOption = onCreateOption && searchQuery && searchQuery.trim().length > 0
-  const showEmpty = filteredOptions.length === 0
+  const showCreateOption = onCreateOption && searchQuery && searchQuery.trim().length > 0 && filteredOptions.length === 0
+
+  // 获取当前选中项的显示文本
+  const selectedOption = options.find(option => option.value === value)
+  const displayText = selectedOption?.label || (value ? value : placeholder)
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -82,68 +85,73 @@ export function Combobox({
           aria-expanded={open}
           className={cn("w-full justify-between", className)}
         >
-          {value ? (
-            options.find((option) => option.value === value)?.label || value
-          ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
-          )}
+          <span className={cn(
+            selectedOption ? "" : "text-muted-foreground"
+          )}>
+            {displayText}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0">
-        <Command filter={(value, search) => {
-          if (value.toLowerCase().includes(search.toLowerCase())) return 1
-          return 0
-        }}>
-          <CommandInput 
-            placeholder={searchText} 
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-          />
-          <CommandList>
-            {showCreateOption && (
-              <div 
-                className="px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground flex items-center text-primary border-b"
-                onClick={handleCreateOption}
-              >
-                <PlusCircle className="mr-2 h-4 w-4" />
-                <span>{createText}: <strong>{searchQuery}</strong></span>
-              </div>
-            )}
-            
-            {showEmpty && !showCreateOption && (
-              <CommandEmpty>
-                <div className="py-2 px-2 text-sm text-muted-foreground">
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <div className="flex flex-col">
+          {/* 搜索输入框 */}
+          <div className="p-2 border-b">
+            <Input
+              placeholder={searchText}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-8"
+            />
+          </div>
+          
+          {/* 选项列表 */}
+          <ScrollArea className="max-h-[200px]">
+            <div className="p-1">
+              {/* 创建新选项 */}
+              {showCreateOption && (
+                <div 
+                  className="flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm text-primary border-b mb-1"
+                  onClick={handleCreateOption}
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <span>{createText}: <strong>{searchQuery}</strong></span>
+                </div>
+              )}
+              
+              {/* 选项列表 */}
+              {filteredOptions.length === 0 && !showCreateOption ? (
+                <div className="py-2 px-2 text-sm text-muted-foreground text-center">
                   {emptyText}
                 </div>
-              </CommandEmpty>
-            )}
-            
-            <CommandGroup>
-              {filteredOptions.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  disabled={option.disabled}
-                  onSelect={(currentValue) => {
-                    if (currentValue) {
-                      onChange(currentValue)
-                      setOpen(false)
-                    }
-                  }}
-                >
-                  <Check
+              ) : (
+                filteredOptions.map((option) => (
+                  <div
+                    key={option.value}
                     className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
+                      "flex items-center px-2 py-1.5 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground rounded-sm",
+                      option.disabled && "opacity-50 cursor-not-allowed"
                     )}
-                  />
-                  {option.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
+                    onClick={() => {
+                      if (!option.disabled) {
+                        console.log("点击选项:", option)
+                        handleSelect(option)
+                      }
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        value === option.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {option.label}
+                  </div>
+                ))
+              )}
+            </div>
+          </ScrollArea>
+        </div>
       </PopoverContent>
     </Popover>
   )

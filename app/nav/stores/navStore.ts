@@ -5,6 +5,7 @@ import * as navApi from '@/app/nav/services/api'
 
 interface NavStore {
   categories: NavCategory[]
+  allCategories: NavCategory[]
   items: NavItem[]
   loading: boolean
   error: string | null
@@ -13,6 +14,7 @@ interface NavStore {
   
   // 获取数据
   fetchCategories: (filterName?: string) => Promise<NavCategory[]>
+  fetchAllCategories: () => Promise<NavCategory[]>
   fetchItems: (categoryId?: number) => Promise<NavItem[]>
   
   // 搜索
@@ -34,6 +36,7 @@ interface NavStore {
 
 export const useNavStore = create<NavStore>((set, get) => ({
   categories: [],
+  allCategories: [],
   items: [],
   loading: false,
   error: null,
@@ -70,7 +73,7 @@ export const useNavStore = create<NavStore>((set, get) => ({
     get().setSearchTerm(term)
   },
   
-  // 获取所有导航分类
+  // 获取所有导航分类（用于展示，只包含有导航项的分类）
   fetchCategories: async (filterName?: string) => {
     try {
       set({ loading: true, error: null })
@@ -83,6 +86,23 @@ export const useNavStore = create<NavStore>((set, get) => ({
       console.error("获取分类数据错误:", error);
       const errorMessage = error instanceof Error ? error.message : '获取导航分类失败'
       set({ loading: false, error: errorMessage, categories: [] })
+      throw error
+    }
+  },
+
+  // 获取所有分类（用于管理，包括空分类）
+  fetchAllCategories: async () => {
+    try {
+      set({ loading: true, error: null })
+      console.log("开始从API获取所有分类数据");
+      const allCategories = await navApi.getAllCategories() || [];
+      console.log("API返回所有分类数据:", allCategories);
+      set({ allCategories, loading: false })
+      return allCategories
+    } catch (error) {
+      console.error("获取所有分类数据错误:", error);
+      const errorMessage = error instanceof Error ? error.message : '获取所有导航分类失败'
+      set({ loading: false, error: errorMessage, allCategories: [] })
       throw error
     }
   },
@@ -108,9 +128,10 @@ export const useNavStore = create<NavStore>((set, get) => ({
       const newCategory = await navApi.createCategory(category);
       console.log("API返回创建分类结果:", newCategory);
       
-      // 更新categories状态
+      // 更新categories和allCategories状态
       set(state => ({
-        categories: [...state.categories, newCategory]
+        categories: [...state.categories, newCategory],
+        allCategories: [...state.allCategories, newCategory]
       }));
       
       return newCategory;
@@ -129,6 +150,9 @@ export const useNavStore = create<NavStore>((set, get) => ({
       set(state => ({
         categories: state.categories.map(c => 
           c.id === id ? updatedCategory : c
+        ),
+        allCategories: state.allCategories.map(c => 
+          c.id === id ? updatedCategory : c
         )
       }))
       return updatedCategory
@@ -144,7 +168,8 @@ export const useNavStore = create<NavStore>((set, get) => ({
     try {
       await navApi.deleteCategory(id)
       set(state => ({
-        categories: state.categories.filter(c => c.id !== id)
+        categories: state.categories.filter(c => c.id !== id),
+        allCategories: state.allCategories.filter(c => c.id !== id)
       }))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '删除导航分类失败'

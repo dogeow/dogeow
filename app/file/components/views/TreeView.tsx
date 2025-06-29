@@ -22,8 +22,8 @@ import { API_URL } from '@/lib/api'
 
 // 常量定义
 const CONSTANTS = {
-  INDENT_SIZE: 12,
-  BASE_PADDING: 4,
+  INDENT_SIZE: 8,
+  BASE_PADDING: 2,
   ICON_SIZE: 'h-4 w-4',
   PREVIEW_SIZE: { width: 20, height: 20 },
   TREE_HEIGHT: 'h-[70vh]',
@@ -115,7 +115,7 @@ const FolderNodeComponent = memo<FolderNodeComponentProps>(({
     <div>
       <div 
         className={cn(
-          "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
+          "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-1 focus:ring-primary/30",
           isSelected && "bg-muted/70 font-medium"
         )}
         style={{ paddingLeft: `${paddingLeft}px` }}
@@ -129,7 +129,7 @@ const FolderNodeComponent = memo<FolderNodeComponentProps>(({
       >
         {hasChildren ? (
           <button 
-            className="mr-1 p-1 rounded-sm hover:bg-muted focus:outline-none focus:ring-1 focus:ring-primary/50" 
+            className="mr-1 p-1 rounded-sm hover:bg-muted focus:outline-none focus:ring-1 focus:ring-primary/30" 
             onClick={handleToggle}
             aria-label={isExpanded ? '收起文件夹' : '展开文件夹'}
             tabIndex={-1}
@@ -140,7 +140,7 @@ const FolderNodeComponent = memo<FolderNodeComponentProps>(({
             }
           </button>
         ) : (
-          <span className="w-6" />
+          <span className="w-2" />
         )}
         
         {isExpanded ? 
@@ -224,7 +224,7 @@ const FileItem = memo<{ file: CloudFile; onClick: (file: CloudFile) => void }>((
 
   return (
     <div 
-      className="flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+      className="flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-1 focus:ring-primary/30"
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       tabIndex={0}
@@ -364,7 +364,7 @@ export default function TreeView({ folderTree, files, isLoading = false }: TreeV
         {/* 根目录 */}
         <div 
           className={cn(
-            "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
+            "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-1 focus:ring-primary/30",
             currentFolderId === null && "bg-muted/70 font-medium"
           )}
           onClick={handleRootFolderClick}

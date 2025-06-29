@@ -52,7 +52,7 @@ const navItemSchema = z.object({
 
 export default function AddNavItem() {
   const router = useRouter()
-  const { createItem, fetchCategories, categories, createCategory } = useNavStore()
+  const { createItem, fetchAllCategories, allCategories, createCategory } = useNavStore()
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(false)
 
@@ -73,15 +73,15 @@ export default function AddNavItem() {
 
   // 加载分类数据
   useEffect(() => {
-    console.log("开始加载分类...");
-    fetchCategories()
+    console.log("开始加载所有分类...");
+    fetchAllCategories()
       .then(result => {
-        console.log("分类加载成功:", result);
+        console.log("所有分类加载成功:", result);
       })
       .catch(error => {
-        console.error("加载分类失败:", error);
+        console.error("加载所有分类失败:", error);
       });
-  }, [fetchCategories])
+  }, [fetchAllCategories])
 
   // 处理创建新分类
   const handleCreateCategory = async (categoryName: string) => {
@@ -132,13 +132,18 @@ export default function AddNavItem() {
   }
   
   // 将分类数据转换为Combobox选项格式
-  const categoryOptions = (categories || [])
+  const categoryOptions = (allCategories || [])
     .filter(category => category && typeof category === 'object' && category.id !== undefined)
     .map(category => ({
       value: category.id.toString(),
       label: category.name || '未命名分类'
     })) || []
   
+  // 调试信息
+  console.log("allCategories:", allCategories);
+  console.log("categoryOptions:", categoryOptions);
+  console.log("当前表单值:", form.getValues());
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
@@ -165,7 +170,10 @@ export default function AddNavItem() {
                       <Combobox
                         options={categoryOptions}
                         value={field.value}
-                        onChange={field.onChange}
+                        onChange={(value) => {
+                          console.log("Combobox onChange:", value);
+                          field.onChange(value);
+                        }}
                         onCreateOption={handleCreateCategory}
                         placeholder="选择分类"
                         emptyText="没有找到分类"
