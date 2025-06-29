@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import useAuthStore from '@/stores/authStore';
 
 interface ProtectedRouteProps {
@@ -11,16 +11,22 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter();
   const { isAuthenticated, loading } = useAuthStore();
+  const [isClient, setIsClient] = useState(false);
+
+  // 确保组件只在客户端渲染，避免水合错误
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     // 如果认证状态已加载完成且用户未认证，则重定向到首页
-    if (!loading && !isAuthenticated) {
+    if (isClient && !loading && !isAuthenticated) {
       router.push('/');
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isClient, isAuthenticated, loading, router]);
 
-  // 如果正在加载认证状态，显示加载中
-  if (loading) {
+  // 在服务端渲染或客户端初始化时，显示加载状态
+  if (!isClient || loading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
         <div className="text-muted-foreground">加载中...</div>

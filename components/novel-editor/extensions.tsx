@@ -101,11 +101,7 @@ import { MarkdownCopyExtension } from "./extensions/markdown-copy";
         class: cx("border-l-4 border-primary px-2"),
       },
     },
-    codeBlock: {
-      HTMLAttributes: {
-        class: cx("rounded-md bg-muted text-muted-foreground border p-5 font-mono font-medium"),
-      },
-    },
+    codeBlock: false, // 禁用内置的 codeBlock，使用 codeBlockLowlight 替代
     code: {
       HTMLAttributes: {
         class: cx("rounded-md bg-muted  px-1.5 py-1 font-mono font-medium"),
@@ -124,6 +120,9 @@ import { MarkdownCopyExtension } from "./extensions/markdown-copy";
     // configure lowlight: common /  all / use highlightJS in case there is a need to specify certain language grammars only
     // common: covers 37 language grammars which should be good enough in most cases
     lowlight: createLowlight(common),
+    HTMLAttributes: {
+      class: cx("rounded-md bg-muted text-muted-foreground border font-mono font-medium px-4 py-3 -mx-4 my-2"),
+    },
   });
   
   const youtube = Youtube.configure({

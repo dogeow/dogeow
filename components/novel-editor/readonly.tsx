@@ -85,7 +85,7 @@ const readonlyExtensions = [
   }),
   CodeBlock.configure({
     HTMLAttributes: {
-      class: cx("rounded-md bg-muted text-muted-foreground border p-5 font-mono font-medium"),
+      class: cx("rounded-md bg-muted text-muted-foreground border font-mono font-medium px-4 py-3 -mx-4 my-2"),
     },
   }),
   Mathematics.configure({

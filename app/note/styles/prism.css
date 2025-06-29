@@ -40,15 +40,20 @@ code[class*="language-"]::selection, code[class*="language-"] ::selection {
 
 /* Code blocks */
 pre[class*="language-"] {
-    padding: 1.2em;
-    margin: .5em 0;
+    padding: 0.75em 1em;
+    margin: .5em -1rem;
     overflow: auto;
     border-radius: 0.375rem;
 }
 
 :not(pre) > code[class*="language-"],
 pre[class*="language-"] {
-    background: #f6f8fa;
+    background: #f6f8fa !important;
+}
+
+/* 确保代码块有明显的背景色 */
+pre[class*="language-"] {
+    background: #f8f9fa !important;
 }
 
 /* Inline code */
@@ -141,7 +146,65 @@ pre[class*="language-"] {
 
 .dark :not(pre) > code[class*="language-"],
 .dark pre[class*="language-"] {
-    background: #282a36;
+    background: #282a36 !important;
+}
+
+/* 深色主题下确保代码块有明显的背景色 */
+.dark pre[class*="language-"] {
+    background: #1e1e1e !important;
+}
+
+/* 为所有代码块添加背景色，包括没有语言类的 */
+pre {
+    background: #f8f9fa !important;
+    border-radius: 0.375rem;
+    padding: 0.75em 1rem;
+    margin: 0.5em -1rem;
+    overflow: auto;
+    font-family: 'SFMono-Regular', Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace;
+}
+
+/* 特别针对 hljs 高亮的代码块 */
+pre code.hljs {
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+/* 确保带有语言类的代码块也有正确的样式 */
+pre.hljs,
+pre code.language-shell,
+pre code.language-bash,
+pre code.language-javascript,
+pre code.language-typescript,
+pre code.language-python,
+pre code.language-java,
+pre code.language-css,
+pre code.language-html {
+    background: #f8f9fa !important;
+}
+
+.dark pre {
+    background: #1e1e1e !important;
+    color: #f8f8f2;
+}
+
+/* 深色主题下的 hljs 代码块 */
+.dark pre code.hljs {
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+/* 深色主题下确保带有语言类的代码块也有正确的样式 */
+.dark pre.hljs,
+.dark pre code.language-shell,
+.dark pre code.language-bash,
+.dark pre code.language-javascript,
+.dark pre code.language-typescript,
+.dark pre code.language-python,
+.dark pre code.language-java,
+.dark pre code.language-css,
+.dark pre code.language-html {
+    background: #1e1e1e !important;
 }
 
 .dark .token.comment,
