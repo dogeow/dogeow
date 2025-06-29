@@ -27,6 +27,7 @@ import {
 } from "novel";
 import { useEffect, useState } from "react";
 import { useDebouncedCallback } from "use-debounce";
+import { usePathname } from "next/navigation";
 import { defaultExtensions } from "./extensions";
 import { ColorSelector } from "./selectors/color-selector";
 import { LinkSelector } from "./selectors/link-selector";
@@ -44,6 +45,7 @@ import hljs from "highlight.js";
 const extensions = [...defaultExtensions, slashCommand];
 
 const TailwindAdvancedEditor = () => {
+  const pathname = usePathname();
   const [initialContent, setInitialContent] = useState<null | JSONContent>(null);
   const [saveStatus, setSaveStatus] = useState("Saved");
   const [charsCount, setCharsCount] = useState();
@@ -126,7 +128,7 @@ const TailwindAdvancedEditor = () => {
   }, 500);
 
   useEffect(() => {
-    const isNewNotePage = window.location.pathname === '/note/new';
+    const isNewNotePage = pathname === '/note/new';
     
     if (isNewNotePage) {
       // 新建笔记页面：清空localStorage并使用空内容
@@ -204,7 +206,7 @@ const TailwindAdvancedEditor = () => {
     return () => {
       document.removeEventListener('copy', handleGlobalCopy)
     }
-  }, []);
+  }, [pathname]);
 
   if (!initialContent) return null;
 
