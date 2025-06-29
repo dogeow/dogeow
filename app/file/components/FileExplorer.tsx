@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
-import { Loader2, AlertCircle, FolderOpen, Upload } from 'lucide-react'
+import { Loader2, AlertCircle, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import GridView from './views/GridView'
 import ListView from './views/ListView'
@@ -10,7 +10,6 @@ import TreeView from './views/TreeView'
 import BreadcrumbNav from './BreadcrumbNav'
 import useFileStore from '../store/useFileStore'
 import { useFileManagement } from '../hooks/useFileManagement'
-import { CloudFile, FolderNode } from '../types'
 
 interface FileExplorerProps {
   className?: string
@@ -101,10 +100,10 @@ export default function FileExplorer({ className }: FileExplorerProps) {
 
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <Upload className="h-16 w-16 text-muted-foreground mb-4" />
+        <FolderOpen className="h-16 w-16 text-muted-foreground mb-4" />
         <h3 className="text-lg font-medium text-foreground mb-2">还没有文件</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          点击上方的"上传文件"按钮上传您的第一个文件
+          点击上方的&quot;上传文件&quot;按钮上传您的第一个文件
         </p>
       </div>
     )

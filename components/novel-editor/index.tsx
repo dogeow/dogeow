@@ -28,7 +28,7 @@ import { uploadFn } from "./image-upload";
 import { TextButtons } from "./selectors/text-buttons";
 import { slashCommand, suggestionItems } from "./slash-command";
 
-const hljs = require("highlight.js");
+import hljs from "highlight.js";
 
 const extensions = [...defaultExtensions, slashCommand];
 
@@ -42,32 +42,78 @@ const TailwindAdvancedEditor = () => {
   const [openLink, setOpenLink] = useState(false);
   const [openAI, setOpenAI] = useState(false);
 
+  const [isTyping, setIsTyping] = useState(false);
+
+
+
   //Apply Codeblock Highlighting on the HTML from editor.getHTML()
   const highlightCodeblocks = (content: string) => {
     const doc = new DOMParser().parseFromString(content, "text/html");
     doc.querySelectorAll("pre code").forEach((el) => {
-      // @ts-ignore
-      // https://highlightjs.readthedocs.io/en/latest/api.html?highlight=highlightElement#highlightelement
-      hljs.highlightElement(el);
+      if (el instanceof HTMLElement) {
+        hljs.highlightElement(el);
+      }
     });
     return new XMLSerializer().serializeToString(doc);
   };
 
   const debouncedUpdates = useDebouncedCallback(async (editor: EditorInstance) => {
+    // 保存当前光标位置和更多状态信息
+    const { from, to } = editor.state.selection;
+    const isEditorFocused = editor.isFocused;
+    const scrollTop = editor.view.dom.scrollTop;
+    
+
+    
     const json = editor.getJSON();
     setCharsCount(editor.storage.characterCount.words());
     window.localStorage.setItem("html-content", highlightCodeblocks(editor.getHTML()));
     window.localStorage.setItem("novel-content", JSON.stringify(json));
     window.localStorage.setItem("markdown", editor.storage.markdown.getMarkdown());
     setSaveStatus("Saved");
+    setIsTyping(false);
     
-    // 应用代码高亮到当前编辑器中的代码块
-    setTimeout(() => {
-      const codeBlocks = editor.view.dom.querySelectorAll("pre code");
+    // 应用代码高亮到当前编辑器中的代码块，但避免重复处理
+    const codeBlocks = editor.view.dom.querySelectorAll("pre code:not(.hljs)");
+    if (codeBlocks.length > 0) {
+      // 立即处理代码高亮，不使用 setTimeout
       codeBlocks.forEach((block) => {
-        hljs.highlightElement(block);
+        if (block instanceof HTMLElement) {
+          try {
+            hljs.highlightElement(block);
+          } catch (error) {
+            console.warn('Failed to highlight code block:', error);
+          }
+        }
       });
-    }, 100);
+      
+      // 恢复光标位置和滚动位置
+      if (isEditorFocused) {
+        // 使用 nextTick 确保在下一个事件循环中恢复状态
+        Promise.resolve().then(() => {
+          try {
+            const docSize = editor.view.state.doc.content.size;
+            if (from <= docSize && to <= docSize) {
+              editor.commands.focus();
+              editor.commands.setTextSelection({ from, to });
+              // 恢复滚动位置
+              editor.view.dom.scrollTop = scrollTop;
+            } else {
+              editor.commands.focus();
+              editor.commands.setTextSelection({ from: docSize, to: docSize });
+            }
+          } catch (error) {
+            console.warn('Failed to restore editor state:', error);
+            // 至少保持焦点
+            try {
+              editor.commands.focus();
+            } catch {
+              // 忽略焦点恢复失败
+            }
+          }
+        });
+      }
+    }
   }, 500);
 
   useEffect(() => {
@@ -103,8 +149,11 @@ const TailwindAdvancedEditor = () => {
             },
           }}
           onUpdate={({ editor }) => {
+            if (!isTyping) {
+              setIsTyping(true);
+              setSaveStatus("Unsaved");
+            }
             debouncedUpdates(editor);
-            setSaveStatus("Unsaved");
           }}
           slotAfter={<ImageResizer />}
         >

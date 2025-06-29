@@ -9,12 +9,12 @@ import { addAIHighlight } from "novel";
 import { useState } from "react";
 import Markdown from "react-markdown";
 import { toast } from "sonner";
-import { Button } from "../ui/button.tsx";
+import { Button } from "../ui/button";
 import CrazySpinner from "../ui/icons/crazy-spinner";
 import Magic from "../ui/icons/magic";
 import { ScrollArea } from "../ui/scroll-area";
 import AICompletionCommands from "./ai-completion-command";
-import AISelectorCommands from "./ai-selector-commands.tsx";
+import AISelectorCommands from "./ai-selector-commands";
 //TODO: I think it makes more sense to create a custom Tiptap extension for this functionality https://tiptap.dev/docs/editor/ai/introduction
 
 interface AISelectorProps {
@@ -71,7 +71,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
               onValueChange={setInputValue}
               autoFocus
               placeholder={hasCompletion ? "Tell AI what to do next" : "Ask AI to edit or generate..."}
-              onFocus={() => addAIHighlight(editor)}
+              onFocus={() => editor && addAIHighlight(editor)}
             />
             <Button
               size="icon"
@@ -81,6 +81,8 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
                   return complete(completion, {
                     body: { option: "zap", command: inputValue },
                   }).then(() => setInputValue(""));
+
+                if (!editor) return;
 
                 const slice = editor.state.selection.content();
                 const text = editor.storage.markdown.serializer.serialize(slice.content);
@@ -96,7 +98,9 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
           {hasCompletion ? (
             <AICompletionCommands
               onDiscard={() => {
-                editor.chain().unsetHighlight().focus().run();
+                if (editor) {
+                  editor.chain().unsetHighlight().focus().run();
+                }
                 onOpenChange(false);
               }}
               completion={completion}

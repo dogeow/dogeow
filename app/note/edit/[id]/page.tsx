@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { apiRequest } from '@/lib/api'
 import { useParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
@@ -32,7 +32,6 @@ export default function EditNotePage() {
   const [clientReady, setClientReady] = useState(false)
   const [title, setTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  const [isLoaded, setIsLoaded] = useState(false)
   
   // 添加按钮交互状态
   const [draftButtonHovered, setDraftButtonHovered] = useState(false)
@@ -105,7 +104,7 @@ export default function EditNotePage() {
   }
 
   // 保存笔记
-  const handleSave = async (asDraft = false) => {
+  const handleSave = useCallback(async (asDraft = false) => {
     if (!title.trim()) {
       toast.error('请输入笔记标题')
       return
@@ -124,7 +123,7 @@ export default function EditNotePage() {
       }
 
       const noteId = Array.isArray(id) ? id[0] : id
-      const result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
+      await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
       
       toast.success(asDraft ? '已解锁' : '笔记已更新')
       
@@ -139,7 +138,7 @@ export default function EditNotePage() {
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [title, id])
 
   // 添加快捷键支持
   useEffect(() => {
@@ -162,7 +161,7 @@ export default function EditNotePage() {
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [title, isSaving])
+  }, [title, isSaving, handleSave])
 
   if (loading) {
     return (

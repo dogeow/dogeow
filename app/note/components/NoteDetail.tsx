@@ -6,9 +6,9 @@ import { Button } from "@/components/ui/button"
 import { useRouter, useParams } from "next/navigation"
 import { toast } from "sonner"
 import { Edit, Trash2, ArrowLeft, Lock } from "lucide-react"
-import ReactMarkdown from "react-markdown"
 import { format } from "date-fns"
 import { zhCN } from "date-fns/locale"
+import ReadonlyEditor from "@/components/novel-editor/readonly"
 
 export default function NoteDetail() {
   const router = useRouter()
@@ -64,11 +64,25 @@ export default function NoteDetail() {
         </div>
       </div>
       <div className="text-xs text-gray-500 mb-4 text-center">更新于 {formatDate(note.updated_at)}</div>
-      <div className="prose max-w-none">
-        {note.content_markdown ? (
-          <ReactMarkdown>{note.content_markdown}</ReactMarkdown>
+      <div className="max-w-none">
+        {note.content ? (
+          (() => {
+            try {
+              const parsedContent = JSON.parse(note.content);
+              return <ReadonlyEditor content={parsedContent} />;
+            } catch (error) {
+              console.error('Failed to parse note content:', error);
+              return (
+                <div className="prose max-w-none">
+                  <span className="italic text-red-500">(内容格式错误)</span>
+                </div>
+              );
+            }
+          })()
         ) : (
-          <span className="italic">(无内容)</span>
+          <div className="prose max-w-none">
+            <span className="italic">(无内容)</span>
+          </div>
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import {
   File,
   FileText,
@@ -145,13 +145,52 @@ export default function GridView({ files }: GridViewProps) {
     )
   }, [selectedFiles, setSelectedFiles])
 
+  const previewItem = useCallback(async (file: CloudFile) => {
+    if (file.is_folder) return
+
+    setPreviewFile(file)
+    setPreviewContent(null)
+    setPreviewUrl(null)
+    setPreviewType(PREVIEW_TYPES.LOADING)
+
+    try {
+      if (file.type === 'image') {
+        const directUrl = `${API_URL}/storage/${file.path}?t=${Date.now()}`
+        setPreviewType(PREVIEW_TYPES.IMAGE)
+        setPreviewUrl(directUrl)
+        return
+      }
+      
+      const response = await apiRequest<FilePreviewResponse>(`/cloud/files/${file.id}/preview`)
+      const { type, content, url } = response
+
+      setPreviewType(type)
+      
+      if (type === PREVIEW_TYPES.IMAGE || type === PREVIEW_TYPES.PDF) {
+        setPreviewUrl(url ?? null)
+      } else if (type === PREVIEW_TYPES.TEXT) {
+        setPreviewContent(content ?? null)
+      } else {
+        setPreviewContent(JSON.stringify(response))
+      }
+    } catch (error) {
+      toast.error('预览失败')
+      console.error('Preview error:', error)
+      setPreviewType(PREVIEW_TYPES.UNKNOWN)
+      setPreviewContent(JSON.stringify({
+        message: '预览失败，请稍后重试',
+        suggestion: '您可以尝试下载文件后查看'
+      }))
+    }
+  }, [])
+
   const handleItemClick = useCallback((file: CloudFile) => {
     if (file.is_folder) {
       navigateToFolder(file.id)
     } else {
       previewItem(file)
     }
-  }, [navigateToFolder])
+  }, [navigateToFolder, previewItem])
 
   const downloadFile = useCallback(async (file: CloudFile) => {
     try {
@@ -198,45 +237,6 @@ export default function GridView({ files }: GridViewProps) {
       console.error('Update error:', error)
     }
   }, [editingFile, fileName, fileDescription, mutate, getSWRKey])
-
-  const previewItem = useCallback(async (file: CloudFile) => {
-    if (file.is_folder) return
-
-    setPreviewFile(file)
-    setPreviewContent(null)
-    setPreviewUrl(null)
-    setPreviewType(PREVIEW_TYPES.LOADING)
-
-    try {
-      if (file.type === 'image') {
-        const directUrl = `${API_URL}/storage/${file.path}?t=${Date.now()}`
-        setPreviewType(PREVIEW_TYPES.IMAGE)
-        setPreviewUrl(directUrl)
-        return
-      }
-      
-      const response = await apiRequest<FilePreviewResponse>(`/cloud/files/${file.id}/preview`)
-      const { type, content, url } = response
-
-      setPreviewType(type)
-      
-      if (type === PREVIEW_TYPES.IMAGE || type === PREVIEW_TYPES.PDF) {
-        setPreviewUrl(url ?? null)
-      } else if (type === PREVIEW_TYPES.TEXT) {
-        setPreviewContent(content ?? null)
-      } else {
-        setPreviewContent(JSON.stringify(response))
-      }
-    } catch (error) {
-      toast.error('预览失败')
-      console.error('Preview error:', error)
-      setPreviewType(PREVIEW_TYPES.UNKNOWN)
-      setPreviewContent(JSON.stringify({
-        message: '预览失败，请稍后重试',
-        suggestion: '您可以尝试下载文件后查看'
-      }))
-    }
-  }, [])
 
   const closePreview = useCallback(() => {
     setPreviewFile(null)
@@ -481,7 +481,7 @@ export default function GridView({ files }: GridViewProps) {
               )}
 
               {/* 默认情况 */}
-              {previewType && ![PREVIEW_TYPES.LOADING, PREVIEW_TYPES.IMAGE, PREVIEW_TYPES.PDF, PREVIEW_TYPES.TEXT, PREVIEW_TYPES.DOCUMENT, PREVIEW_TYPES.UNKNOWN].includes(previewType as any) && (
+              {previewType && !(Object.values(PREVIEW_TYPES) as string[]).includes(previewType) && (
                 <div className="text-center">
                   <File className="h-16 w-16 text-muted-foreground mx-auto" />
                   <p className="mt-4 text-muted-foreground">此文件类型不支持预览</p>

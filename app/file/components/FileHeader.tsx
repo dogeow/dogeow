@@ -3,13 +3,10 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { 
-  Grid, 
-  List, 
   Search, 
   FolderPlus, 
   Upload,
   Trash2,
-  FolderTree,
   Loader2
 } from 'lucide-react'
 import {

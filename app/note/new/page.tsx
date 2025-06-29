@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { apiRequest } from '@/lib/api'
-import { Save, Send, Loader2, Lock, Unlock } from 'lucide-react'
+import { Save, Loader2, Lock, Unlock } from 'lucide-react'
 
 // 使用dynamic import避免服务端渲染问题
 const TailwindAdvancedEditor = dynamic(
@@ -41,29 +41,6 @@ export default function NewNotePage() {
     setIsLoaded(true)
   }, [])
 
-  // 添加快捷键支持
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+S 或 Cmd+S 保存
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault()
-        if (title.trim() && !isSaving) {
-          handleSave(false)
-        }
-      }
-      // Ctrl+Shift+S 或 Cmd+Shift+S 保存草稿
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
-        e.preventDefault()
-        if (title.trim() && !isSaving) {
-          handleSave(true)
-        }
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [title, isSaving])
-
   // 获取当前编辑器内容和markdown
   const getCurrentContent = () => {
     const content = window.localStorage.getItem("novel-content")
@@ -75,7 +52,7 @@ export default function NewNotePage() {
   }
 
   // 保存笔记
-  const handleSave = async (asDraft = false) => {
+  const handleSave = useCallback(async (asDraft = false) => {
     if (!title.trim()) {
       toast.error('请输入笔记标题')
       return
@@ -116,7 +93,30 @@ export default function NewNotePage() {
     } finally {
       setIsSaving(false)
     }
-  }
+  }, [title, router])
+
+  // 添加快捷键支持
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+S 或 Cmd+S 保存
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        if (title.trim() && !isSaving) {
+          handleSave(false)
+        }
+      }
+      // Ctrl+Shift+S 或 Cmd+Shift+S 保存草稿
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+        e.preventDefault()
+        if (title.trim() && !isSaving) {
+          handleSave(true)
+        }
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [title, isSaving, handleSave])
 
   return (
     <div className="container mx-auto py-4">
