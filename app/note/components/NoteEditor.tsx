@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { apiRequest } from '@/lib/api'
-import MarkdownEditor from '@/components/markdown/MarkdownEditor'
+// import MarkdownEditor from '@/components/markdown/MarkdownEditor' // 注释掉，使用Novel Editor
 import { Input } from '@/components/ui/input'
 import { toast } from 'react-hot-toast'
 import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
@@ -352,15 +352,10 @@ export default function NoteEditor({
           placeholder="请输入笔记标题"
         />
       </div>
-      <MarkdownEditor
-        initialContent={safeContent}
-        onSave={handleSave}
-        onImageUpload={handleImageUpload}
-        minHeight="400px"
-        isDraft={draft}
-        onDraftChange={handleDraftChange}
-        onChange={handleEditorChange}
-      />
+      {/* TODO: Replace with actual editor component */}
+      <div className="border rounded-md p-4 min-h-[400px] bg-muted/20">
+        <p className="text-muted-foreground">编辑器组件待实现</p>
+      </div>
       <SaveOptionsDialog
         open={showConfirmDialog}
         onOpenChange={setShowConfirmDialog}

@@ -23,6 +23,8 @@ import {
     UploadImagesPlugin,
     Youtube,
   } from "novel";
+
+import { MarkdownCopyExtension } from "./extensions/markdown-copy";
   
   import { cx } from "class-variance-authority";
   import { common, createLowlight } from "lowlight";
@@ -182,4 +184,5 @@ import {
     Color,
     CustomKeymap,
     GlobalDragHandle,
+    MarkdownCopyExtension,
   ];
