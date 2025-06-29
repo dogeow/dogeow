@@ -3,11 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { option, command } = body;
+    const { option, command, text = '' } = body;
 
     // 构建发送给Ollama的提示词
     let prompt = '';
-    const text = body.text || '';
     
     switch (option) {
       case 'improve':
@@ -39,7 +38,7 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'qwen2.5:0.5b', // 使用你安装的模型
+        model: 'qwen2.5:0.5b',
         prompt: prompt,
         stream: true,
       }),
@@ -49,7 +48,7 @@ export async function POST(request: NextRequest) {
       throw new Error(`Ollama API error: ${ollamaResponse.status}`);
     }
 
-    // 创建流式响应
+    // 创建正确的Vercel AI SDK流式响应
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -68,19 +67,27 @@ export async function POST(request: NextRequest) {
               try {
                 const data = JSON.parse(line);
                 if (data.response) {
-                  // 使用 Vercel AI SDK 期望的格式
-                  const formattedChunk = `0:"${data.response.replace(/"/g, '\\"')}"\n`;
+                  // 正确转义特殊字符
+                  const escapedResponse = data.response
+                    .replace(/\\/g, '\\\\')
+                    .replace(/"/g, '\\"')
+                    .replace(/\n/g, '\\n')
+                    .replace(/\r/g, '\\r')
+                    .replace(/\t/g, '\\t');
+                  
+                  // 使用正确的Vercel AI SDK流格式
+                  const formattedChunk = `0:"${escapedResponse}"\n`;
                   controller.enqueue(encoder.encode(formattedChunk));
                 }
                 
                 if (data.done) {
+                  // 发送流结束标记
                   controller.enqueue(encoder.encode('d:\n'));
                   controller.close();
                   return;
                 }
               } catch (e) {
-                // 忽略JSON解析错误
-                console.warn('JSON parse error:', e);
+                console.warn('JSON parse error:', e, 'Line:', line);
               }
             }
           }
