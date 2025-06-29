@@ -55,6 +55,8 @@ export async function POST(request: NextRequest) {
         const reader = ollamaResponse.body?.getReader();
         if (!reader) return;
 
+        let totalTokens = 0;
+
         try {
           while (true) {
             const { done, value } = await reader.read();
@@ -78,11 +80,13 @@ export async function POST(request: NextRequest) {
                   // 使用正确的Vercel AI SDK流格式
                   const formattedChunk = `0:"${escapedResponse}"\n`;
                   controller.enqueue(encoder.encode(formattedChunk));
+                  totalTokens += data.response.length;
                 }
                 
                 if (data.done) {
-                  // 发送流结束标记
-                  controller.enqueue(encoder.encode('d:\n'));
+                  // 发送正确的流结束标记 - 根据官方文档格式
+                  const finishMessage = `d:{"finishReason":"stop","usage":{"promptTokens":${prompt.length},"completionTokens":${totalTokens}}}\n`;
+                  controller.enqueue(encoder.encode(finishMessage));
                   controller.close();
                   return;
                 }
@@ -105,6 +109,8 @@ export async function POST(request: NextRequest) {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
         'Connection': 'keep-alive',
+        // 根据官方文档，数据流需要这个头
+        'x-vercel-ai-data-stream': 'v1',
       },
     });
 

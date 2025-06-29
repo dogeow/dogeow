@@ -29,7 +29,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
 
   const { completion, complete, isLoading } = useCompletion({
     // id: "novel",
-    api: "/api/generate-test", // 临时使用测试API
+    api: "/api/generate", // 使用真实API
     onResponse: (response) => {
       if (response.status === 429) {
         toast.error("You have reached your request limit for the day.");
