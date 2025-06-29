@@ -25,6 +25,7 @@ interface AISelectorProps {
 export function AISelector({ onOpenChange }: AISelectorProps) {
   const { editor } = useEditor();
   const [inputValue, setInputValue] = useState("");
+  const [originalSelection, setOriginalSelection] = useState<{from: number, to: number} | null>(null);
 
   const { completion, complete, isLoading } = useCompletion({
     // id: "novel",
@@ -101,12 +102,21 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
                 if (editor) {
                   editor.chain().unsetHighlight().focus().run();
                 }
+                setOriginalSelection(null);
                 onOpenChange(false);
               }}
               completion={completion}
+              originalSelection={originalSelection}
             />
           ) : (
-            <AISelectorCommands onSelect={(value, option) => complete(value, { body: { option } })} />
+            <AISelectorCommands onSelect={(value, option) => {
+              // 保存当前选择范围
+              if (editor) {
+                const { from, to } = editor.state.selection;
+                setOriginalSelection({ from, to });
+              }
+              complete(value, { body: { option } });
+            }} />
           )}
         </>
       )}

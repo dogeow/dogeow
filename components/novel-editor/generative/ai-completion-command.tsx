@@ -5,9 +5,10 @@ import { CommandGroup, CommandItem, CommandSeparator } from "../ui/command";
 interface AICompletionCommandsProps {
   onDiscard: () => void;
   completion: string;
+  originalSelection?: {from: number, to: number} | null;
 }
 
-const AICompletionCommands = ({ onDiscard }: AICompletionCommandsProps) => {
+const AICompletionCommands = ({ onDiscard, completion, originalSelection }: AICompletionCommandsProps) => {
   const { editor } = useEditor();
 
   if (!editor) return null;
@@ -17,7 +18,13 @@ const AICompletionCommands = ({ onDiscard }: AICompletionCommandsProps) => {
       <CommandGroup heading="Accept">
         <CommandItem
           onSelect={() => {
-            // Accept the completion
+            // Accept the completion - 替换选中的文本
+            if (editor && completion) {
+              // 使用原始选择范围，如果没有则使用当前选择
+              const selection = originalSelection || editor.state.selection;
+              const { from, to } = selection;
+              editor.chain().focus().deleteRange({ from, to }).insertContent(completion).run();
+            }
             onDiscard();
           }}
           className="flex gap-2 px-4"
