@@ -21,7 +21,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // 如果正在加载认证状态，显示加载中
   if (loading) {
-    return <div>加载中...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="text-muted-foreground">加载中...</div>
+      </div>
+    );
   }
 
   // 如果用户已认证，显示受保护的内容

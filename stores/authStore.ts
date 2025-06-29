@@ -24,7 +24,7 @@ const useAuthStore = create<AuthState>()(
     (set, get) => ({
       user: null,
       token: null,
-      loading: false,
+      loading: true, // 初始化时设置为true，等待从localStorage恢复状态
       isAuthenticated: false,
       
       setLoading: (loading) => set({ loading }),
@@ -84,15 +84,28 @@ const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated 
       }),
+      // 在从存储中恢复状态后，设置loading为false
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.loading = false;
+        }
+      },
     }
   )
 );
 
 // 初始化时检查localStorage中是否有token，并获取用户信息
 const initializeAuth = async () => {
-  const token = localStorage.getItem('auth-token');
-  if (token) {
-    useAuthStore.getState().setToken(token);
+  const { setToken, setLoading } = useAuthStore.getState();
+  
+  try {
+    const token = localStorage.getItem('auth-token');
+    if (token) {
+      setToken(token);
+    }
+  } finally {
+    // 无论是否找到token，都要设置loading为false，表示初始化完成
+    setLoading(false);
   }
 };
 

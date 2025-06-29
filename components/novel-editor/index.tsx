@@ -1,5 +1,16 @@
 "use client";
 import { defaultEditorContent } from "@/lib/content";
+
+// 空的编辑器内容
+const emptyEditorContent = {
+  type: "doc",
+  content: [
+    {
+      type: "paragraph",
+      content: []
+    }
+  ]
+};
 import {
   EditorCommand,
   EditorCommandEmpty,
@@ -115,9 +126,84 @@ const TailwindAdvancedEditor = () => {
   }, 500);
 
   useEffect(() => {
-    const content = window.localStorage.getItem("novel-content");
-    if (content) setInitialContent(JSON.parse(content));
-    else setInitialContent(defaultEditorContent);
+    const isNewNotePage = window.location.pathname === '/note/new';
+    
+    if (isNewNotePage) {
+      // 新建笔记页面：清空localStorage并使用空内容
+      window.localStorage.removeItem("novel-content");
+      window.localStorage.removeItem("html-content");
+      window.localStorage.removeItem("markdown");
+      setInitialContent(emptyEditorContent);
+    } else {
+      // 其他页面：尝试从localStorage加载内容
+      const content = window.localStorage.getItem("novel-content");
+      if (content) {
+        try {
+          setInitialContent(JSON.parse(content));
+        } catch (error) {
+          console.warn('Failed to parse stored content, using empty:', error);
+          setInitialContent(emptyEditorContent);
+        }
+      } else {
+        setInitialContent(emptyEditorContent);
+      }
+    }
+    
+    // 添加全局复制事件监听器作为备选方案
+    const handleGlobalCopy = (e: ClipboardEvent) => {
+      console.log('Global copy event detected')
+      
+      // 检查是否有选中的文本
+      const selection = window.getSelection()
+      if (!selection || selection.toString().trim() === '') {
+        return
+      }
+      
+      const selectedText = selection.toString()
+      console.log('Selected text:', selectedText)
+      
+      // 简单的格式检测和转换
+      if (selectedText.includes('##') || selectedText.includes('**') || selectedText.includes('`')) {
+        console.log('Text already contains markdown formatting')
+        return
+      }
+      
+      // 检查选中的元素是否有格式
+      const range = selection.getRangeAt(0)
+      const container = range.commonAncestorContainer
+      const parentElement = container.nodeType === Node.TEXT_NODE ? container.parentElement : container as Element
+      
+      if (parentElement) {
+        let markdownText = selectedText
+        
+        // 检查父元素的标签和样式
+        if (parentElement.tagName === 'H1') {
+          markdownText = `# ${selectedText}`
+        } else if (parentElement.tagName === 'H2') {
+          markdownText = `## ${selectedText}`
+        } else if (parentElement.tagName === 'H3') {
+          markdownText = `### ${selectedText}`
+        } else if (parentElement.tagName === 'STRONG' || window.getComputedStyle(parentElement).fontWeight === 'bold' || (parentElement as HTMLElement).style?.fontWeight === 'bold') {
+          markdownText = `**${selectedText}**`
+        } else if (parentElement.tagName === 'EM' || window.getComputedStyle(parentElement).fontStyle === 'italic' || (parentElement as HTMLElement).style?.fontStyle === 'italic') {
+          markdownText = `*${selectedText}*`
+        } else if (parentElement.tagName === 'CODE') {
+          markdownText = `\`${selectedText}\``
+        }
+        
+        if (markdownText !== selectedText) {
+          console.log('Converting to markdown:', markdownText)
+          e.clipboardData?.setData('text/plain', markdownText)
+          e.preventDefault()
+        }
+      }
+    }
+    
+    document.addEventListener('copy', handleGlobalCopy)
+    
+    return () => {
+      document.removeEventListener('copy', handleGlobalCopy)
+    }
   }, []);
 
   if (!initialContent) return null;
@@ -138,6 +224,10 @@ const TailwindAdvancedEditor = () => {
           editorProps={{
             handleDOMEvents: {
               keydown: (_view, event) => handleCommandNavigation(event),
+              copy: (view, event) => {
+                console.log('Copy event triggered in Novel Editor')
+                return false // 让默认的复制行为处理，但添加我们的逻辑
+              }
             },
             handlePaste: (view, event) => handleImagePaste(view, event, uploadFn),
             handleDrop: (view, event, _slice, moved) => handleImageDrop(view, event, moved, uploadFn),
@@ -152,6 +242,74 @@ const TailwindAdvancedEditor = () => {
               setSaveStatus("Unsaved");
             }
             debouncedUpdates(editor);
+          }}
+          onCreate={({ editor }) => {
+            console.log('Editor created, adding copy listener')
+            
+            // 添加全局复制事件监听器
+            const handleCopy = (e: ClipboardEvent) => {
+              console.log('Global copy event detected')
+              
+              const selection = editor.state.selection
+              if (selection.empty) {
+                return
+              }
+              
+              try {
+                // 获取当前完整的markdown
+                const fullMarkdown = editor.storage.markdown.getMarkdown()
+                console.log('Full markdown:', fullMarkdown)
+                
+                // 获取选中的文本
+                const selectedText = editor.state.doc.textBetween(selection.from, selection.to)
+                console.log('Selected text:', selectedText)
+                
+                // 检查选中内容是否有格式
+                const fragment = selection.content()
+                let hasFormatting = false
+                
+                fragment.content.forEach(node => {
+                  if (node.marks && node.marks.length > 0) {
+                    hasFormatting = true
+                  }
+                  if (node.type.name !== 'text' && node.type.name !== 'paragraph') {
+                    hasFormatting = true
+                  }
+                })
+                
+                if (hasFormatting && fullMarkdown.includes(selectedText)) {
+                  // 尝试从完整markdown中提取对应部分
+                  const lines = fullMarkdown.split('\n')
+                  const selectedLines = selectedText.split('\n')
+                  
+                  // 简单匹配：找到包含选中文本的行
+                  const matchingLines = lines.filter((line: string) => 
+                    selectedLines.some((selectedLine: string) => 
+                      line.includes(selectedLine.trim()) && selectedLine.trim().length > 0
+                    )
+                  )
+                  
+                  if (matchingLines.length > 0) {
+                    const markdownResult = matchingLines.join('\n')
+                    console.log('Setting markdown to clipboard:', markdownResult)
+                    
+                    e.clipboardData?.setData('text/plain', markdownResult)
+                    e.preventDefault()
+                  }
+                }
+              } catch (error) {
+                console.error('Copy processing failed:', error)
+              }
+            }
+            
+            // 添加事件监听器到编辑器DOM元素
+            const editorElement = editor.view.dom
+            editorElement.addEventListener('copy', handleCopy)
+            
+            // 清理函数
+            editor.on('destroy', () => {
+              editorElement.removeEventListener('copy', handleCopy)
+            })
           }}
           slotAfter={<ImageResizer />}
         >

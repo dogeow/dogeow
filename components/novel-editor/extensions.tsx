@@ -158,8 +158,8 @@ import { MarkdownCopyExtension } from "./extensions/markdown-copy";
     bulletListMarker: "-",
     linkify: false,
     breaks: false,
-    transformPastedText: false,
-    transformCopiedText: false,
+    transformPastedText: true, // 启用粘贴文本转换，将markdown转换为富文本
+    transformCopiedText: true, // 启用复制文本转换，将富文本转换为markdown
   });
   
   export const defaultExtensions = [

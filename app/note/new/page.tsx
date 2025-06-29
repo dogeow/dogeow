@@ -36,8 +36,13 @@ export default function NewNotePage() {
   const [publishButtonPressed, setPublishButtonPressed] = useState(false)
   const [draftSaved, setDraftSaved] = useState(false) // 草稿保存状态
 
-  // 在客户端组件挂载后设置为已加载
+  // 在客户端组件挂载后设置为已加载，并清空编辑器内容
   useEffect(() => {
+    // 清空之前的编辑器内容，确保新建笔记是空的
+    window.localStorage.removeItem("novel-content")
+    window.localStorage.removeItem("html-content")
+    window.localStorage.removeItem("markdown")
+    
     setIsLoaded(true)
   }, [])
 

@@ -8,7 +8,7 @@ import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMe
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/helpers";
-import navigationItems from "@/app/lab/configs";
+import navigationItems from "./configs";
 
 interface SubNavigationItem {
   title: string;
@@ -177,4 +177,4 @@ export function Header() {
       </div>
     </header>
   );
-}
+} 
