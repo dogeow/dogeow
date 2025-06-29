@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   File,
   FileText,
@@ -41,15 +41,31 @@ import { CloudFile, FilePreviewResponse } from '../../types'
 import { apiRequest, put, del } from '@/lib/api'
 import useFileStore from '../../store/useFileStore'
 import { API_URL } from '@/lib/api'
-import Image from "next/image";
+import Image from "next/image"
 
 interface GridViewProps {
   files: CloudFile[]
 }
 
+// 文件类型图标映射
+const FILE_TYPE_ICONS = {
+  pdf: { icon: FileType, color: 'text-red-500' },
+  document: { icon: FileText, color: 'text-green-500' },
+  spreadsheet: { icon: FileSpreadsheet, color: 'text-green-500' },
+  archive: { icon: FileArchive, color: 'text-orange-500' },
+  audio: { icon: FileAudio, color: 'text-purple-500' },
+  video: { icon: FileVideo, color: 'text-pink-500' },
+  default: { icon: File, color: 'text-gray-500' }
+} as const
+
+// 文件大小单位
+const SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const
+
 export default function GridView({ files }: GridViewProps) {
   const { mutate } = useSWRConfig()
   const { currentFolderId, navigateToFolder, selectedFiles, setSelectedFiles } = useFileStore()
+  
+  // 编辑状态
   const [editingFile, setEditingFile] = useState<CloudFile | null>(null)
   const [fileName, setFileName] = useState('')
   const [fileDescription, setFileDescription] = useState('')

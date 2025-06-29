@@ -1,91 +1,84 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useMemo } from 'react'
 import { ChevronRight, Home } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { CloudFile } from '../types'
-import { apiRequest } from '@/lib/api'
 import useFileStore from '../store/useFileStore'
-
-interface Breadcrumb {
-  id: number
-  name: string
-}
+import { useBreadcrumbs, type Breadcrumb } from '../hooks/useBreadcrumbs'
+import BreadcrumbSkeleton from './BreadcrumbSkeleton'
 
 export default function BreadcrumbNav() {
   const { currentFolderId, navigateToFolder } = useFileStore()
-  const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  
+  // 使用自定义 hook 获取面包屑数据
+  const { 
+    data: breadcrumbs = [], 
+    isLoading,
+    error 
+  } = useBreadcrumbs(currentFolderId)
 
-  const fetchBreadcrumbs = async (folderId: number | null) => {
-    if (!folderId) {
-      setBreadcrumbs([])
-      return
+  // 处理导航点击
+  const handleNavigate = useMemo(() => {
+    return (folderId: number | null) => {
+      navigateToFolder(folderId)
     }
+  }, [navigateToFolder])
 
-    setIsLoading(true)
-    try {
-      const breadcrumbList: Breadcrumb[] = []
-      let currentId: number | null = folderId
+  // 渲染面包屑项
+  const renderBreadcrumbItems = useMemo(() => {
+    if (!breadcrumbs.length) return null
 
-      while (currentId) {
-        const folder: CloudFile = await apiRequest<CloudFile>(
-          `/cloud/files/${currentId}`
-        )
-        
-        breadcrumbList.unshift({
-          id: folder.id,
-          name: folder.name
-        })
-        
-        currentId = folder.parent_id
-      }
+    return breadcrumbs.map((crumb: Breadcrumb) => (
+      <div key={crumb.id} className="flex items-center">
+        <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground" />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2 hover:bg-muted/50 transition-colors"
+          onClick={() => handleNavigate(crumb.id)}
+        >
+          {crumb.name}
+        </Button>
+      </div>
+    ))
+  }, [breadcrumbs, handleNavigate])
 
-      setBreadcrumbs(breadcrumbList)
-    } catch (error) {
-      console.error('Failed to fetch breadcrumbs:', error)
-    } finally {
-      setIsLoading(false)
-    }
+  // 加载状态显示
+  if (isLoading && currentFolderId) {
+    return <BreadcrumbSkeleton />
   }
 
-  useEffect(() => {
-    fetchBreadcrumbs(currentFolderId)
-  }, [currentFolderId])
+  // 错误状态显示
+  if (error) {
+    return (
+      <div className="flex items-center text-sm mt-4 text-destructive">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2"
+          onClick={() => handleNavigate(null)}
+        >
+          <Home className="h-4 w-4 mr-1" />
+          主目录
+        </Button>
+        <span className="ml-2 text-xs">加载路径失败</span>
+      </div>
+    )
+  }
 
   return (
     <div className="flex items-center text-sm mt-4">
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2"
-        onClick={() => navigateToFolder(null)}
+        className="h-7 px-2 hover:bg-muted/50 transition-colors"
+        onClick={() => handleNavigate(null)}
       >
         <Home className="h-4 w-4 mr-1" />
         主目录
       </Button>
 
-      {breadcrumbs.length > 0 && (
-        <>
-          {breadcrumbs.map((crumb) => (
-            <div key={crumb.id} className="flex items-center">
-              <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground" />
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 px-2"
-                onClick={() => navigateToFolder(crumb.id)}
-              >
-                {crumb.name}
-              </Button>
-            </div>
-          ))}
-        </>
-      )}
-
-      {isLoading && (
-        <div className="animate-pulse ml-2 h-2 w-16 bg-muted rounded"></div>
-      )}
+      {renderBreadcrumbItems}
     </div>
   )
 } 

@@ -1,8 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-
-import { useState, useCallback, memo } from 'react'
+import { useState, useCallback, memo, useMemo, useRef, useEffect } from 'react'
 import {
   ChevronRight,
   ChevronDown,
@@ -21,82 +20,146 @@ import { CloudFile, FolderNode } from '../../types'
 import useFileStore from '../../store/useFileStore'
 import { API_URL } from '@/lib/api'
 
+// 常量定义
+const CONSTANTS = {
+  INDENT_SIZE: 12,
+  BASE_PADDING: 4,
+  ICON_SIZE: 'h-4 w-4',
+  PREVIEW_SIZE: { width: 20, height: 20 },
+  TREE_HEIGHT: 'h-[70vh]',
+} as const
+
+// 文件类型图标映射
+const FILE_TYPE_ICONS = {
+  pdf: { icon: FileType, color: 'text-red-500' },
+  document: { icon: FileText, color: 'text-green-500' },
+  spreadsheet: { icon: FileSpreadsheet, color: 'text-green-500' },
+  archive: { icon: FileArchive, color: 'text-orange-500' },
+  audio: { icon: FileAudio, color: 'text-purple-500' },
+  video: { icon: FileVideo, color: 'text-pink-500' },
+} as const
+
+// 工具函数
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
+}
+
+const buildImagePreviewUrl = (fileId: number): string => 
+  `${API_URL}/api/cloud/files/${fileId}/preview?thumb=true`
+
+const buildFileDownloadUrl = (fileId: number): string => 
+  `${API_URL}/api/cloud/files/${fileId}/download`
+
+// 组件接口
 interface TreeViewProps {
   folderTree: FolderNode[]
   files: CloudFile[]
+  isLoading?: boolean
 }
 
 interface FolderNodeComponentProps {
   node: FolderNode
   level: number
   expandedNodes: Record<number, boolean>
-  toggleNode: (id: number) => void
+  onToggleNode: (id: number) => void
   onSelectFolder: (id: number) => void
   currentFolderId: number | null
 }
 
+interface FileIconProps {
+  file: CloudFile
+  className?: string
+}
+
+// 优化的文件夹节点组件
 const FolderNodeComponent = memo<FolderNodeComponentProps>(({
   node,
   level,
   expandedNodes,
-  toggleNode,
+  onToggleNode,
   onSelectFolder,
   currentFolderId
 }) => {
   const isExpanded = expandedNodes[node.id] || false
   const isSelected = currentFolderId === node.id
   const hasChildren = node.children?.length > 0
+  const paddingLeft = level * CONSTANTS.INDENT_SIZE + CONSTANTS.BASE_PADDING
 
   const handleToggle = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
-    toggleNode(node.id)
-  }, [node.id, toggleNode])
+    onToggleNode(node.id)
+  }, [node.id, onToggleNode])
 
   const handleSelect = useCallback(() => {
     onSelectFolder(node.id)
   }, [node.id, onSelectFolder])
 
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onSelectFolder(node.id)
+    } else if (e.key === 'ArrowRight' && hasChildren && !isExpanded) {
+      e.preventDefault()
+      onToggleNode(node.id)
+    } else if (e.key === 'ArrowLeft' && hasChildren && isExpanded) {
+      e.preventDefault()
+      onToggleNode(node.id)
+    }
+  }, [node.id, onSelectFolder, onToggleNode, hasChildren, isExpanded])
+
   return (
     <div>
       <div 
         className={cn(
-          "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors",
+          "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
           isSelected && "bg-muted/70 font-medium"
         )}
-        style={{ paddingLeft: `${level * 12 + 4}px` }}
+        style={{ paddingLeft: `${paddingLeft}px` }}
         onClick={handleSelect}
+        onKeyDown={handleKeyDown}
+        tabIndex={0}
+        role="treeitem"
+        aria-expanded={hasChildren ? isExpanded : undefined}
+        aria-selected={isSelected}
+        aria-label={`文件夹: ${node.name}`}
       >
         {hasChildren ? (
-          <span 
-            className="mr-1 p-1 rounded-sm hover:bg-muted" 
+          <button 
+            className="mr-1 p-1 rounded-sm hover:bg-muted focus:outline-none focus:ring-1 focus:ring-primary/50" 
             onClick={handleToggle}
+            aria-label={isExpanded ? '收起文件夹' : '展开文件夹'}
+            tabIndex={-1}
           >
             {isExpanded ? 
-              <ChevronDown className="h-4 w-4 text-muted-foreground" /> : 
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronDown className={cn(CONSTANTS.ICON_SIZE, "text-muted-foreground")} /> : 
+              <ChevronRight className={cn(CONSTANTS.ICON_SIZE, "text-muted-foreground")} />
             }
-          </span>
+          </button>
         ) : (
           <span className="w-6" />
         )}
         
         {isExpanded ? 
-          <FolderOpen className="h-4 w-4 text-yellow-500 mr-2" /> : 
-          <Folder className="h-4 w-4 text-yellow-500 mr-2" />
+          <FolderOpen className={cn(CONSTANTS.ICON_SIZE, "text-yellow-500 mr-2")} /> : 
+          <Folder className={cn(CONSTANTS.ICON_SIZE, "text-yellow-500 mr-2")} />
         }
         
-        <span className="truncate">{node.name}</span>
+        <span className="truncate" title={node.name}>{node.name}</span>
       </div>
 
       {isExpanded && hasChildren && (
-        <div>
+        <div role="group">
           {node.children.map(childNode => (
             <FolderNodeComponent
               key={childNode.id}
               node={childNode}
               level={level + 1}
               expandedNodes={expandedNodes}
-              toggleNode={toggleNode}
+              onToggleNode={onToggleNode}
               onSelectFolder={onSelectFolder}
               currentFolderId={currentFolderId}
             />
@@ -109,54 +172,82 @@ const FolderNodeComponent = memo<FolderNodeComponentProps>(({
 
 FolderNodeComponent.displayName = 'FolderNodeComponent'
 
-const FileIcon = memo<{ file: CloudFile }>(({ file }) => {
-  if (file.is_folder) return <Folder className="h-4 w-4 text-yellow-500" />
+// 优化的文件图标组件
+const FileIcon = memo<FileIconProps>(({ file, className }) => {
+  const [imageError, setImageError] = useState(false)
+  const imgRef = useRef<HTMLImageElement>(null)
+
+  if (file.is_folder) {
+    return <Folder className={cn(CONSTANTS.ICON_SIZE, "text-yellow-500", className)} />
+  }
   
-  if (file.type === 'image') {
+  if (file.type === 'image' && !imageError) {
     return (
-      <div className="w-5 h-5 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted">
+      <div className={cn("w-5 h-5 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted", className)}>
         <Image 
-                      src={`${API_URL}/api/cloud/files/${file.id}/preview?thumb=true`} 
-          alt={file.name} width={20} height={20} 
+          ref={imgRef}
+          src={buildImagePreviewUrl(file.id)}
+          alt={file.name}
+          width={CONSTANTS.PREVIEW_SIZE.width}
+          height={CONSTANTS.PREVIEW_SIZE.height}
           className="object-cover w-full h-full"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none'
-            e.currentTarget.parentElement?.classList.add('flex')
-            e.currentTarget.parentElement?.appendChild(
-              Object.assign(document.createElement('div'), {
-                className: 'flex items-center justify-center',
-                innerHTML: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 text-blue-500"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><circle cx="10" cy="13" r="2"></circle><path d="m20 17-1.09-1.09a2 2 0 0 0-2.82 0L10 22"></path></svg>'
-              })
-            )
-          }}
+          onError={() => setImageError(true)}
+          loading="lazy"
         />
       </div>
     )
   }
   
-  const iconMap = {
-    pdf: <FileType className="h-4 w-4 text-red-500" />,
-    document: <FileText className="h-4 w-4 text-green-500" />,
-    spreadsheet: <FileSpreadsheet className="h-4 w-4 text-green-500" />,
-    archive: <FileArchive className="h-4 w-4 text-orange-500" />,
-    audio: <FileAudio className="h-4 w-4 text-purple-500" />,
-    video: <FileVideo className="h-4 w-4 text-pink-500" />,
+  const fileTypeConfig = FILE_TYPE_ICONS[file.type as keyof typeof FILE_TYPE_ICONS]
+  if (fileTypeConfig) {
+    const { icon: IconComponent, color } = fileTypeConfig
+    return <IconComponent className={cn(CONSTANTS.ICON_SIZE, color, className)} />
   }
   
-  return iconMap[file.type as keyof typeof iconMap] || <File className="h-4 w-4 text-gray-500" />
+  return <File className={cn(CONSTANTS.ICON_SIZE, "text-gray-500", className)} />
 })
 
 FileIcon.displayName = 'FileIcon'
 
-const formatSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
-}
+// 文件项组件
+const FileItem = memo<{ file: CloudFile; onClick: (file: CloudFile) => void }>(({ file, onClick }) => {
+  const handleClick = useCallback(() => {
+    onClick(file)
+  }, [file, onClick])
 
-export default function TreeView({ folderTree, files }: TreeViewProps) {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onClick(file)
+    }
+  }, [file, onClick])
+
+  return (
+    <div 
+      className="flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+      onClick={handleClick}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`${file.is_folder ? '文件夹' : '文件'}: ${file.name}`}
+    >
+      <FileIcon file={file} />
+      <span className="ml-2 flex-1 truncate" title={file.name}>
+        {file.name}
+      </span>
+      {!file.is_folder && (
+        <span className="text-xs text-muted-foreground ml-2">
+          {formatFileSize(file.size)}
+        </span>
+      )}
+    </div>
+  )
+})
+
+FileItem.displayName = 'FileItem'
+
+// 主组件
+export default function TreeView({ folderTree, files, isLoading = false }: TreeViewProps) {
   const { currentFolderId, navigateToFolder } = useFileStore()
   const [expandedNodes, setExpandedNodes] = useState<Record<number, boolean>>({})
 
@@ -198,65 +289,111 @@ export default function TreeView({ folderTree, files }: TreeViewProps) {
       navigateToFolder(file.id)
       expandToNode(file.id)
     } else {
-      window.open(`${API_URL}/api/cloud/files/${file.id}/download`, '_blank')
+      window.open(buildFileDownloadUrl(file.id), '_blank')
     }
   }, [navigateToFolder, expandToNode])
 
+  const handleRootFolderClick = useCallback(() => {
+    navigateToFolder(null)
+  }, [navigateToFolder])
+
+  const handleRootFolderKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      navigateToFolder(null)
+    }
+  }, [navigateToFolder])
+
+  // 优化的文件夹树渲染
+  const folderTreeElements = useMemo(() => 
+    folderTree.map(node => (
+      <FolderNodeComponent 
+        key={node.id}
+        node={node}
+        level={1}
+        expandedNodes={expandedNodes}
+        onToggleNode={toggleNode}
+        onSelectFolder={handleSelectFolder}
+        currentFolderId={currentFolderId}
+      />
+    )), [folderTree, expandedNodes, toggleNode, handleSelectFolder, currentFolderId]
+  )
+
+  // 优化的文件列表渲染
+  const fileElements = useMemo(() => 
+    files.map(file => (
+      <FileItem 
+        key={file.id}
+        file={file}
+        onClick={handleFileClick}
+      />
+    )), [files, handleFileClick]
+  )
+
+  const currentFolderName = useMemo(() => {
+    if (currentFolderId === null) return '根目录'
+    
+    const findNodeName = (nodes: FolderNode[], targetId: number): string | null => {
+      for (const node of nodes) {
+        if (node.id === targetId) return node.name
+        if (node.children?.length) {
+          const foundName = findNodeName(node.children, targetId)
+          if (foundName) return foundName
+        }
+      }
+      return null
+    }
+    
+    return findNodeName(folderTree, currentFolderId) || '未知文件夹'
+  }, [currentFolderId, folderTree])
+
+  if (isLoading) {
+    return (
+      <div className={cn("flex items-center justify-center", CONSTANTS.TREE_HEIGHT)}>
+        <div className="text-muted-foreground">加载中...</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="flex h-[70vh]">
-      <div className="w-1/3 overflow-auto border-r pr-2">
+    <div className={cn("flex", CONSTANTS.TREE_HEIGHT)}>
+      {/* 左侧文件夹树 */}
+      <div className="w-1/3 overflow-auto border-r pr-2" role="tree" aria-label="文件夹树">
         <div className="font-medium text-sm mb-2">文件夹</div>
+        
+        {/* 根目录 */}
         <div 
           className={cn(
-            "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors",
+            "flex items-center py-2 px-2 rounded-md cursor-pointer hover:bg-muted/50 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50",
             currentFolderId === null && "bg-muted/70 font-medium"
           )}
-          onClick={() => navigateToFolder(null)}
+          onClick={handleRootFolderClick}
+          onKeyDown={handleRootFolderKeyDown}
+          tabIndex={0}
+          role="treeitem"
+          aria-selected={currentFolderId === null}
+          aria-label="根目录"
         >
-          <Folder className="h-4 w-4 text-yellow-500 mr-2" />
+          <Folder className={cn(CONSTANTS.ICON_SIZE, "text-yellow-500 mr-2")} />
           <span>根目录</span>
         </div>
         
-        {folderTree.map(node => (
-          <FolderNodeComponent 
-            key={node.id}
-            node={node}
-            level={1}
-            expandedNodes={expandedNodes}
-            toggleNode={toggleNode}
-            onSelectFolder={handleSelectFolder}
-            currentFolderId={currentFolderId}
-          />
-        ))}
+        {folderTreeElements}
       </div>
 
       {/* 右侧文件列表 */}
-      <div className="flex-1 pl-4 overflow-auto">
+      <div className="flex-1 pl-4 overflow-auto" role="list" aria-label="文件列表">
         <div className="font-medium text-sm mb-2">
-          {currentFolderId === null ? '根目录' : '文件'}
+          {currentFolderName}
         </div>
         
         {files.length === 0 ? (
-          <div className="text-muted-foreground text-sm mt-4">
+          <div className="text-muted-foreground text-sm mt-4" role="status">
             {currentFolderId === null ? '根目录为空' : '此文件夹为空'}
           </div>
         ) : (
           <div className="space-y-1">
-            {files.map(file => (
-              <div 
-                key={file.id}
-                className="flex items-center py-2 px-3 rounded-md cursor-pointer hover:bg-muted/50 transition-colors"
-                onClick={() => handleFileClick(file)}
-              >
-                <FileIcon file={file} />
-                <span className="ml-2 flex-1 truncate">{file.name}</span>
-                {!file.is_folder && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatSize(file.size)}
-                  </span>
-                )}
-              </div>
-            ))}
+            {fileElements}
           </div>
         )}
       </div>
