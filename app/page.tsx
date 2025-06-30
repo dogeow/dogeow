@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useCallback, Suspense } from "react"
+import { useCallback, Suspense } from "react"
 import dynamic from 'next/dynamic'
 import type { Tile } from '@/app/types'
 import Footer from "@/components/app/Footer"
@@ -11,13 +11,6 @@ const TileCard = dynamic(() => import('./components/TileCard').then(mod => ({ de
   loading: () => <div className="animate-pulse bg-gray-200 rounded-lg h-32" />,
   ssr: true
 })
-
-// 控制台Logo文本
-const LOGO_TEXT = `
-╔╦╗┌─┐┌─┐┌─┐╔═╗╦ ╦
- ║║│ ││ ┬├┤ ║ ║║║║
-═╩╝└─┘└─┘└─┘╚═╝╚╩╝
-`
 
 export default function Home() {
   const tiles = configs.tiles as Tile[]
@@ -45,7 +38,6 @@ export default function Home() {
               showCover={true}
               needsLogin={false}
               onClick={() => {
-                // 简化的点击处理，可以根据需要扩展
                 window.location.href = tile.href
               }}
             />
@@ -57,19 +49,6 @@ export default function Home() {
       return null
     }
   }, [])
-
-  // 控制台Logo输出
-  useEffect(() => {
-    console.log(`%c${LOGO_TEXT}`, "color: yellow")
-    
-    // 输出统计信息
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📊 页面统计:', {
-        total: tiles.length,
-        tiles: tiles.map(t => `${t.name}(${t.colSpan}x${t.rowSpan})`)
-      })
-    }
-  }, [tiles])
 
   return (
     <>

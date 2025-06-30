@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { format, parse } from "date-fns"
 import { zhCN } from "date-fns/locale"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -8,169 +8,209 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Copy, Check, Clock, Calendar } from "lucide-react"
+import { Copy, Check, Clock, Calendar, RefreshCw } from "lucide-react"
 import { toast } from "sonner"
 
+// 常量配置
+const CONSTANTS = {
+  DEFAULT_FORMAT: "yyyy-MM-dd HH:mm:ss",
+  MIN_YEAR: 1970,
+  MAX_YEAR: 2100,
+  MILLISECOND_THRESHOLD: 13,
+  COPY_FEEDBACK_DURATION: 2000,
+  CURRENT_TIME_UPDATE_INTERVAL: 1000,
+} as const
+
+const DATE_PATTERNS = {
+  FLEXIBLE: /^\d{4}-\d{1,2}-\d{1,2}( \d{1,2}:\d{1,2}:\d{1,2})?$/,
+  STANDARD: "yyyy-MM-dd HH:mm:ss",
+} as const
+
+const ERROR_MESSAGES = {
+  EMPTY_TIMESTAMP: "请输入时间戳",
+  INVALID_TIMESTAMP: "无效的时间戳",
+  CONVERSION_ERROR: "转换出错",
+  EMPTY_DATETIME: "请输入日期时间",
+  INVALID_DATE_FORMAT: "日期格式应为 yyyy-M-d 或 yyyy-MM-dd HH:mm:ss",
+  INVALID_DATE: "无效的日期格式",
+  OUT_OF_RANGE: (year: number) => `可能不正确的时间 (${year}年)，请检查`,
+} as const
+
+interface CopyState {
+  timestamp: boolean
+  dateTime: boolean
+}
+
 const TimeConverter = () => {
-  // 时间戳转日期时间
-  const [timestamp, setTimestamp] = useState("")
-  const [dateTime, setDateTime] = useState("")
-  const [dateFormat, setDateFormat] = useState("yyyy-MM-dd HH:mm:ss")
-  const [timestampCopied, setTimestampCopied] = useState(false)
+  // 统一状态管理
+  const [states, setStates] = useState({
+    // 时间戳转日期
+    timestamp: "",
+    dateTime: "",
+    dateFormat: CONSTANTS.DEFAULT_FORMAT,
+    
+    // 日期转时间戳
+    inputDateTime: "",
+    outputTimestamp: "",
+    
+    // 当前时间
+    currentTimestamp: 0,
+    currentDateTime: "",
+  })
 
-  // 日期时间转时间戳
-  const [inputDateTime, setInputDateTime] = useState("")
-  const [outputTimestamp, setOutputTimestamp] = useState("")
-  const [dateTimeCopied, setDateTimeCopied] = useState(false)
+  const [copyStates, setCopyStates] = useState<CopyState>({
+    timestamp: false,
+    dateTime: false,
+  })
 
-  // 当前时间相关状态
-  const [currentTimestamp, setCurrentTimestamp] = useState(0)
-  const [currentDateTime, setCurrentDateTime] = useState("")
-
-  // 更新当前时间
-  useEffect(() => {
-    const updateCurrentTime = () => {
-      const now = new Date()
-      setCurrentTimestamp(Math.floor(now.getTime() / 1000))
-      setCurrentDateTime(format(now, "yyyy-MM-dd HH:mm:ss", { locale: zhCN }))
-    }
-
-    updateCurrentTime()
-    const timer = setInterval(updateCurrentTime, 1000)
-
-    return () => clearInterval(timer)
+  // 工具函数
+  const validateYear = useCallback((year: number): boolean => {
+    return year >= CONSTANTS.MIN_YEAR && year <= CONSTANTS.MAX_YEAR
   }, [])
 
+  const cleanTimestamp = useCallback((input: string): string => {
+    return input.replace(/\D/g, '')
+  }, [])
+
+  const standardizeDateTime = useCallback((input: string): string => {
+    const parts = input.split(' ')
+    if (parts.length === 0) return input
+
+    const dateParts = parts[0].split('-')
+    if (dateParts.length !== 3) return input
+
+    const [year, month, day] = dateParts
+    const standardDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    
+    return parts.length > 1 ? `${standardDate} ${parts[1]}` : standardDate
+  }, [])
+
+  // 更新当前时间
+  const updateCurrentTime = useCallback(() => {
+    const now = new Date()
+    setStates(prev => ({
+      ...prev,
+      currentTimestamp: Math.floor(now.getTime() / 1000),
+      currentDateTime: format(now, CONSTANTS.DEFAULT_FORMAT, { locale: zhCN }),
+    }))
+  }, [])
+
+  // 设置计时器
+  useEffect(() => {
+    updateCurrentTime()
+    const timer = setInterval(updateCurrentTime, CONSTANTS.CURRENT_TIME_UPDATE_INTERVAL)
+    return () => clearInterval(timer)
+  }, [updateCurrentTime])
+
   // 时间戳转日期时间
-  const convertTimestampToDateTime = () => {
+  const convertTimestampToDateTime = useCallback(() => {
     try {
+      const { timestamp, dateFormat } = states
+      
       if (!timestamp.trim()) {
-        setDateTime("请输入时间戳")
+        setStates(prev => ({ ...prev, dateTime: ERROR_MESSAGES.EMPTY_TIMESTAMP }))
         return
       }
 
-      // 移除可能存在的非数字字符
-      const cleanTimestamp = timestamp.replace(/\D/g, '')
-      const timestampNum = Number(cleanTimestamp)
+      const cleanTs = cleanTimestamp(timestamp)
+      const timestampNum = Number(cleanTs)
       
       if (isNaN(timestampNum)) {
-        setDateTime("无效的时间戳")
+        setStates(prev => ({ ...prev, dateTime: ERROR_MESSAGES.INVALID_TIMESTAMP }))
         return
       }
 
-      let date
+      // 判断时间戳类型并创建日期对象
+      const date = cleanTs.length >= CONSTANTS.MILLISECOND_THRESHOLD 
+        ? new Date(timestampNum) 
+        : new Date(timestampNum * 1000)
       
-      // 根据时间戳位数判断是秒级还是毫秒级
-      if (cleanTimestamp.length >= 13) {
-        // 毫秒级时间戳
-        date = new Date(timestampNum)
-      } else {
-        // 秒级时间戳（包括小于10位的有效时间戳）
-        date = new Date(timestampNum * 1000)
-      }
-      
-      // 验证日期是否有效（检查是否超出了JavaScript Date支持的范围）
+      // 验证日期有效性
       if (isNaN(date.getTime()) || date.getTime() < 0) {
-        setDateTime("无效的时间戳")
+        setStates(prev => ({ ...prev, dateTime: ERROR_MESSAGES.INVALID_TIMESTAMP }))
         return
       }
       
-      // 检查日期是否明显不合理（1970年以前或远未来）
       const year = date.getFullYear()
-      if (year < 1970 || year > 2100) {
-        setDateTime(`可能不正确的时间戳 (${year}年)，请检查`)
+      if (!validateYear(year)) {
+        setStates(prev => ({ ...prev, dateTime: ERROR_MESSAGES.OUT_OF_RANGE(year) }))
         return
       }
 
       const result = format(date, dateFormat, { locale: zhCN })
-      setDateTime(result)
+      setStates(prev => ({ ...prev, dateTime: result }))
+      
       toast.success("转换成功", { 
         description: `${timestamp} → ${result}`
       })
     } catch (error) {
       console.error("时间戳转换错误:", error)
-      setDateTime("转换出错")
+      setStates(prev => ({ ...prev, dateTime: ERROR_MESSAGES.CONVERSION_ERROR }))
       toast.error("转换失败")
     }
-  }
+  }, [states.timestamp, states.dateFormat, cleanTimestamp, validateYear])
 
   // 日期时间转时间戳
-  const convertDateTimeToTimestamp = () => {
+  const convertDateTimeToTimestamp = useCallback(() => {
     try {
+      const { inputDateTime } = states
+      
       if (!inputDateTime.trim()) {
-        setOutputTimestamp("请输入日期时间")
+        setStates(prev => ({ ...prev, outputTimestamp: ERROR_MESSAGES.EMPTY_DATETIME }))
         return
       }
       
-      // 更宽松的日期格式正则表达式，支持缩写格式
-      const dateTimePattern = /^\d{4}-\d{1,2}-\d{1,2}( \d{1,2}:\d{1,2}:\d{1,2})?$/
-      if (!dateTimePattern.test(inputDateTime)) {
-        setOutputTimestamp("日期格式应为 yyyy-M-d 或 yyyy-MM-dd HH:mm:ss")
+      if (!DATE_PATTERNS.FLEXIBLE.test(inputDateTime)) {
+        setStates(prev => ({ ...prev, outputTimestamp: ERROR_MESSAGES.INVALID_DATE_FORMAT }))
         return
       }
       
-      // 标准化日期格式
-      let standardDateTime = inputDateTime
-      const parts = inputDateTime.split(' ')
-      if (parts.length > 0) {
-        const dateParts = parts[0].split('-')
-        if (dateParts.length === 3) {
-          // 确保月和日都是两位数
-          const year = dateParts[0]
-          const month = dateParts[1].padStart(2, '0')
-          const day = dateParts[2].padStart(2, '0')
-          
-          standardDateTime = `${year}-${month}-${day}`
-          if (parts.length > 1) {
-            standardDateTime += ` ${parts[1]}`
-          }
-        }
-      }
+      const standardDateTime = standardizeDateTime(inputDateTime)
       
-      // 使用date-fns解析日期时间字符串
-      let date
-      if (!standardDateTime.includes(' ')) {
-        // 只有日期部分，添加默认时间 00:00:00
-        date = parse(`${standardDateTime} 00:00:00`, "yyyy-MM-dd HH:mm:ss", new Date())
-      } else {
-        date = parse(standardDateTime, "yyyy-MM-dd HH:mm:ss", new Date())
-      }
+      // 解析日期
+      const dateTimeWithTime = standardDateTime.includes(' ') 
+        ? standardDateTime 
+        : `${standardDateTime} 00:00:00`
       
-      // 检查日期是否有效
+      const date = parse(dateTimeWithTime, DATE_PATTERNS.STANDARD, new Date())
+      
       if (isNaN(date.getTime())) {
-        setOutputTimestamp("无效的日期格式")
+        setStates(prev => ({ ...prev, outputTimestamp: ERROR_MESSAGES.INVALID_DATE }))
         return
       }
       
-      // 检查日期是否在合理范围内
       const year = date.getFullYear()
-      if (year < 1970) {
-        setOutputTimestamp(`可能不正确的日期 (${year}年)，请检查`)
+      if (year < CONSTANTS.MIN_YEAR) {
+        setStates(prev => ({ ...prev, outputTimestamp: ERROR_MESSAGES.OUT_OF_RANGE(year) }))
         return
       }
       
       const result = Math.floor(date.getTime() / 1000).toString()
-      setOutputTimestamp(result)
+      setStates(prev => ({ ...prev, outputTimestamp: result }))
+      
       toast.success("转换成功", { 
         description: `${inputDateTime} → ${result}`
       })
     } catch (error) {
       console.error("日期转换错误:", error)
-      setOutputTimestamp("转换出错")
+      setStates(prev => ({ ...prev, outputTimestamp: ERROR_MESSAGES.CONVERSION_ERROR }))
       toast.error("转换失败")
     }
-  }
+  }, [states.inputDateTime, standardizeDateTime, validateYear])
 
   // 使用当前时间戳
-  const useCurrentTimestamp = () => {
+  const useCurrentTimestamp = useCallback(() => {
     try {
       const now = new Date()
       const current = Math.floor(now.getTime() / 1000)
-      setTimestamp(current.toString())
+      const result = format(now, states.dateFormat, { locale: zhCN })
       
-      // 直接计算结果而不是调用转换函数
-      const result = format(now, dateFormat, { locale: zhCN })
-      setDateTime(result)
+      setStates(prev => ({
+        ...prev,
+        timestamp: current.toString(),
+        dateTime: result,
+      }))
+      
       toast.success("已使用当前时间", {
         description: `${current} → ${result}`
       })
@@ -178,18 +218,21 @@ const TimeConverter = () => {
       console.error("使用当前时间戳出错:", error)
       toast.error("获取当前时间戳失败")
     }
-  }
+  }, [states.dateFormat])
 
   // 使用当前日期时间
-  const useCurrentDateTime = () => {
+  const useCurrentDateTime = useCallback(() => {
     try {
       const now = new Date()
-      const formattedDate = format(now, "yyyy-MM-dd HH:mm:ss", { locale: zhCN })
-      setInputDateTime(formattedDate)
-      
-      // 直接计算结果而不是调用转换函数
+      const formattedDate = format(now, CONSTANTS.DEFAULT_FORMAT, { locale: zhCN })
       const result = Math.floor(now.getTime() / 1000).toString()
-      setOutputTimestamp(result)
+      
+      setStates(prev => ({
+        ...prev,
+        inputDateTime: formattedDate,
+        outputTimestamp: result,
+      }))
+      
       toast.success("已使用当前时间", {
         description: `${formattedDate} → ${result}`
       })
@@ -197,25 +240,47 @@ const TimeConverter = () => {
       console.error("使用当前日期时间出错:", error)
       toast.error("获取当前日期时间失败")
     }
-  }
+  }, [])
 
   // 复制到剪贴板
-  const copyToClipboard = (text: string, type: 'timestamp' | 'dateTime') => {
-    navigator.clipboard.writeText(text).then(() => {
-      if (type === 'timestamp') {
-        setTimestampCopied(true)
-        setTimeout(() => setTimestampCopied(false), 2000)
-      } else {
-        setDateTimeCopied(true)
-        setTimeout(() => setDateTimeCopied(false), 2000)
-      }
+  const copyToClipboard = useCallback(async (text: string, type: keyof CopyState) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      
+      setCopyStates(prev => ({ ...prev, [type]: true }))
+      setTimeout(() => {
+        setCopyStates(prev => ({ ...prev, [type]: false }))
+      }, CONSTANTS.COPY_FEEDBACK_DURATION)
       
       toast("已复制到剪贴板", {
         description: text,
-        duration: 2000,
+        duration: CONSTANTS.COPY_FEEDBACK_DURATION,
       })
-    })
-  }
+    } catch (error) {
+      console.error("复制失败:", error)
+      toast.error("复制失败")
+    }
+  }, [])
+
+  // 检查输出是否可复制
+  const isValidOutput = useCallback((output: string, errorMessages: string[]) => {
+    return output && !errorMessages.includes(output)
+  }, [])
+
+  // 错误消息列表（用于验证输出是否有效）
+  const errorMessageList = useMemo(() => [
+    ERROR_MESSAGES.EMPTY_TIMESTAMP,
+    ERROR_MESSAGES.INVALID_TIMESTAMP,
+    ERROR_MESSAGES.CONVERSION_ERROR,
+    ERROR_MESSAGES.EMPTY_DATETIME,
+    ERROR_MESSAGES.INVALID_DATE_FORMAT,
+    ERROR_MESSAGES.INVALID_DATE,
+  ], [])
+
+  // 更新单个状态的辅助函数
+  const updateState = useCallback((key: string, value: string) => {
+    setStates(prev => ({ ...prev, [key]: value }))
+  }, [])
 
   return (
     <div className="space-y-8">
@@ -225,6 +290,15 @@ const TimeConverter = () => {
           <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
             <Clock className="h-5 w-5" />
             当前时间
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 ml-auto text-blue-600 hover:text-blue-700"
+              onClick={updateCurrentTime}
+              title="刷新当前时间"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -234,16 +308,16 @@ const TimeConverter = () => {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">时间戳</p>
                   <p className="font-mono text-lg font-semibold text-blue-900 dark:text-blue-100">
-                    {currentTimestamp}
+                    {states.currentTimestamp}
                   </p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20" 
-                  onClick={() => copyToClipboard(currentTimestamp.toString(), 'timestamp')}
+                  onClick={() => copyToClipboard(states.currentTimestamp.toString(), 'timestamp')}
                 >
-                  <Copy className="h-4 w-4" />
+                  {copyStates.timestamp ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -253,16 +327,16 @@ const TimeConverter = () => {
                 <div>
                   <p className="text-sm text-muted-foreground mb-1">日期时间</p>
                   <p className="font-mono text-lg font-semibold text-blue-900 dark:text-blue-100">
-                    {currentDateTime}
+                    {states.currentDateTime}
                   </p>
                 </div>
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/20" 
-                  onClick={() => copyToClipboard(currentDateTime, 'dateTime')}
+                  onClick={() => copyToClipboard(states.currentDateTime, 'dateTime')}
                 >
-                  <Copy className="h-4 w-4" />
+                  {copyStates.dateTime ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -295,10 +369,11 @@ const TimeConverter = () => {
                   <div className="flex gap-3">
                     <Input 
                       id="timestamp" 
-                      value={timestamp}
-                      onChange={(e) => setTimestamp(e.target.value)}
+                      value={states.timestamp}
+                      onChange={(e) => updateState('timestamp', e.target.value)}
                       placeholder="输入时间戳（支持秒级和毫秒级）"
                       className="flex-1"
+                      onKeyDown={(e) => e.key === 'Enter' && convertTimestampToDateTime()}
                     />
                     <Button 
                       onClick={useCurrentTimestamp}
@@ -315,8 +390,8 @@ const TimeConverter = () => {
                   <Input 
                     id="format" 
                     placeholder="yyyy-MM-dd HH:mm:ss" 
-                    value={dateFormat}
-                    onChange={(e) => setDateFormat(e.target.value)}
+                    value={states.dateFormat}
+                    onChange={(e) => updateState('dateFormat', e.target.value)}
                   />
                 </div>
 
@@ -324,6 +399,7 @@ const TimeConverter = () => {
                   onClick={convertTimestampToDateTime}
                   className="w-full h-11"
                   size="lg"
+                  disabled={!states.timestamp.trim()}
                 >
                   转换
                 </Button>
@@ -334,17 +410,17 @@ const TimeConverter = () => {
                     <Input 
                       id="datetime" 
                       readOnly 
-                      value={dateTime} 
+                      value={states.dateTime} 
                       className="rounded-r-none bg-gray-50 dark:bg-gray-900"
                       placeholder="转换结果将显示在这里"
                     />
                     <Button 
                       variant="outline" 
                       className="rounded-l-none border-l-0 px-3"
-                      onClick={() => copyToClipboard(dateTime, 'dateTime')}
-                      disabled={!dateTime || dateTime === "无效的时间戳" || dateTime === "转换出错" || dateTime === "请输入时间戳"}
+                      onClick={() => copyToClipboard(states.dateTime, 'dateTime')}
+                      disabled={!isValidOutput(states.dateTime, errorMessageList)}
                     >
-                      {dateTimeCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copyStates.dateTime ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>
@@ -366,9 +442,10 @@ const TimeConverter = () => {
                     <Input 
                       id="input-datetime" 
                       placeholder="yyyy-MM-dd 或 yyyy-MM-dd HH:mm:ss" 
-                      value={inputDateTime}
-                      onChange={(e) => setInputDateTime(e.target.value)}
+                      value={states.inputDateTime}
+                      onChange={(e) => updateState('inputDateTime', e.target.value)}
                       className="flex-1"
+                      onKeyDown={(e) => e.key === 'Enter' && convertDateTimeToTimestamp()}
                     />
                     <Button 
                       onClick={useCurrentDateTime}
@@ -384,6 +461,7 @@ const TimeConverter = () => {
                   onClick={convertDateTimeToTimestamp}
                   className="w-full h-11"
                   size="lg"
+                  disabled={!states.inputDateTime.trim()}
                 >
                   转换
                 </Button>
@@ -394,17 +472,17 @@ const TimeConverter = () => {
                     <Input 
                       id="output-timestamp" 
                       readOnly 
-                      value={outputTimestamp}
+                      value={states.outputTimestamp}
                       className="rounded-r-none bg-gray-50 dark:bg-gray-900"
                       placeholder="转换结果将显示在这里"
                     />
                     <Button 
                       variant="outline" 
                       className="rounded-l-none border-l-0 px-3"
-                      onClick={() => copyToClipboard(outputTimestamp, 'timestamp')}
-                      disabled={!outputTimestamp || outputTimestamp === "转换出错" || outputTimestamp === "请输入日期时间"}
+                      onClick={() => copyToClipboard(states.outputTimestamp, 'timestamp')}
+                      disabled={!isValidOutput(states.outputTimestamp, errorMessageList)}
                     >
-                      {timestampCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                      {copyStates.timestamp ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                     </Button>
                   </div>
                 </div>

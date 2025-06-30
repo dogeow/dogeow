@@ -1,3 +1,20 @@
+// 控制台Logo文本
+const LOGO_TEXT = `
+╔╦╗┌─┐┌─┐┌─┐╔═╗╦ ╦
+ ║║│ ││ ┬├┤ ║ ║║║║
+═╩╝└─┘└─┘└─┘╚═╝╚╩╝
+`
+
+// 输出控制台Logo（仅在客户端执行）
+if (typeof window !== 'undefined') {
+  console.log(`%c${LOGO_TEXT}`, "color: yellow")
+  
+  // 开发环境下输出额外信息
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🎯 DogeOW 配置加载完成')
+  }
+}
+
 // 应用启动器配置
 export const configs = {
   tiles: [
