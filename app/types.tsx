@@ -15,6 +15,7 @@ export interface Tile {
   size: 'large' | 'medium' | 'small';
   colSpan: number;
   rowSpan: number;
+  cover?: string; // 封面图片可选属性
 }
 
 // 应用启动器配置类型
