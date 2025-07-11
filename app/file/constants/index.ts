@@ -41,15 +41,17 @@ export const FILE_TYPE_ICONS = {
   other: '📄'
 } as const
 
+// 文件大小单位
+export const FILE_SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const
+
 // 文件大小格式化
 export const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return '0 B'
   
   const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + FILE_SIZE_UNITS[i]
 }
 
 // 搜索配置

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   File,
   FileText,
@@ -15,7 +15,7 @@ import {
   Pencil,
   Trash2,
 } from 'lucide-react'
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -38,16 +38,15 @@ import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/helpers'
 import { CloudFile, FilePreviewResponse } from '../../types'
-import { apiRequest, put, del } from '@/lib/api'
+import { apiRequest, put, del, getFileDownloadUrl, getFileStorageUrl } from '@/lib/api'
 import useFileStore from '../../store/useFileStore'
-import { API_URL } from '@/lib/api'
 import Image from "next/image"
+import { formatFileSize } from '../../constants'
 
 interface GridViewProps {
   files: CloudFile[]
 }
 
-// 文件类型图标映射
 const FILE_TYPE_ICONS = {
   pdf: { icon: FileType, color: 'text-red-500' },
   document: { icon: FileText, color: 'text-green-500' },
@@ -58,10 +57,8 @@ const FILE_TYPE_ICONS = {
   default: { icon: File, color: 'text-gray-500' }
 } as const
 
-// 文件大小单位
-const SIZE_UNITS = ['B', 'KB', 'MB', 'GB', 'TB'] as const
 
-// 预览类型常量
+
 const PREVIEW_TYPES = {
   LOADING: 'loading',
   IMAGE: 'image',
@@ -71,18 +68,15 @@ const PREVIEW_TYPES = {
   UNKNOWN: 'unknown'
 } as const
 
-// 文件图标组件
 const FileIcon = ({ file }: { file: CloudFile }) => {
   if (file.is_folder) {
     return <Folder className="h-12 w-12 text-yellow-500" />
   }
-  
   if (file.type === 'image') {
-    const storageUrl = `${API_URL}/storage/${file.path}?t=${Date.now()}`
-    
+    const storageUrl = `${getFileStorageUrl(file.path)}?t=${Date.now()}`
     return (
       <div className="w-16 h-16 relative overflow-hidden rounded-md flex items-center justify-center bg-muted">
-        <Image 
+        <Image
           src={storageUrl}
           alt={file.name}
           fill
@@ -93,7 +87,6 @@ const FileIcon = ({ file }: { file: CloudFile }) => {
       </div>
     )
   }
-  
   const iconConfig = FILE_TYPE_ICONS[file.type as keyof typeof FILE_TYPE_ICONS] || FILE_TYPE_ICONS.default
   const IconComponent = iconConfig.icon
   return <IconComponent className={`h-12 w-12 ${iconConfig.color}`} />
@@ -102,8 +95,7 @@ const FileIcon = ({ file }: { file: CloudFile }) => {
 export default function GridView({ files }: GridViewProps) {
   const { mutate } = useSWRConfig()
   const { currentFolderId, navigateToFolder, selectedFiles, setSelectedFiles } = useFileStore()
-  
-  // 编辑状态
+
   const [editingFile, setEditingFile] = useState<CloudFile | null>(null)
   const [fileName, setFileName] = useState('')
   const [fileDescription, setFileDescription] = useState('')
@@ -112,13 +104,7 @@ export default function GridView({ files }: GridViewProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewType, setPreviewType] = useState<string | null>(null)
 
-  // 工具函数 - 使用 useCallback 优化性能
-  const formatSize = useCallback((bytes: number) => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${SIZE_UNITS[i]}`
-  }, [])
+
 
   const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleString('zh-CN', {
@@ -130,52 +116,40 @@ export default function GridView({ files }: GridViewProps) {
     })
   }, [])
 
-  // SWR key 生成器
-  const getSWRKey = useCallback(() => {
-    return `/cloud/files?parent_id=${currentFolderId || ''}`
-  }, [currentFolderId])
+  const getSWRKey = useCallback(() => `/cloud/files?parent_id=${currentFolderId || ''}`, [currentFolderId])
 
-  // 事件处理器 - 使用 useCallback 优化性能
   const toggleSelection = useCallback((fileId: number, event: React.MouseEvent) => {
     event.stopPropagation()
-    setSelectedFiles(
-      selectedFiles.includes(fileId) 
-        ? selectedFiles.filter(id => id !== fileId)
-        : [...selectedFiles, fileId]
+    setSelectedFiles(prev =>
+      prev.includes(fileId)
+        ? prev.filter(id => id !== fileId)
+        : [...prev, fileId]
     )
-  }, [selectedFiles, setSelectedFiles])
+  }, [setSelectedFiles])
 
   const previewItem = useCallback(async (file: CloudFile) => {
     if (file.is_folder) return
-
     setPreviewFile(file)
     setPreviewContent(null)
     setPreviewUrl(null)
     setPreviewType(PREVIEW_TYPES.LOADING)
-
     try {
       if (file.type === 'image') {
-        const directUrl = `${API_URL}/storage/${file.path}?t=${Date.now()}`
         setPreviewType(PREVIEW_TYPES.IMAGE)
-        setPreviewUrl(directUrl)
+        setPreviewUrl(`${getFileStorageUrl(file.path)}?t=${Date.now()}`)
         return
       }
-      
       const response = await apiRequest<FilePreviewResponse>(`/cloud/files/${file.id}/preview`)
-      const { type, content, url } = response
-
-      setPreviewType(type)
-      
-      if (type === PREVIEW_TYPES.IMAGE || type === PREVIEW_TYPES.PDF) {
-        setPreviewUrl(url ?? null)
-      } else if (type === PREVIEW_TYPES.TEXT) {
-        setPreviewContent(content ?? null)
+      setPreviewType(response.type)
+      if (response.type === PREVIEW_TYPES.IMAGE || response.type === PREVIEW_TYPES.PDF) {
+        setPreviewUrl(response.url ?? null)
+      } else if (response.type === PREVIEW_TYPES.TEXT) {
+        setPreviewContent(response.content ?? null)
       } else {
         setPreviewContent(JSON.stringify(response))
       }
     } catch (error) {
       toast.error('预览失败')
-      console.error('Preview error:', error)
       setPreviewType(PREVIEW_TYPES.UNKNOWN)
       setPreviewContent(JSON.stringify({
         message: '预览失败，请稍后重试',
@@ -185,20 +159,15 @@ export default function GridView({ files }: GridViewProps) {
   }, [])
 
   const handleItemClick = useCallback((file: CloudFile) => {
-    if (file.is_folder) {
-      navigateToFolder(file.id)
-    } else {
-      previewItem(file)
-    }
+    file.is_folder ? navigateToFolder(file.id) : previewItem(file)
   }, [navigateToFolder, previewItem])
 
-  const downloadFile = useCallback(async (file: CloudFile) => {
+  const downloadFile = useCallback((file: CloudFile) => {
     try {
-      window.open(`${API_URL}/api/cloud/files/${file.id}/download`, '_blank')
+      window.open(getFileDownloadUrl(file.id), '_blank')
       toast.success('开始下载')
     } catch (error) {
       toast.error('下载失败')
-      console.error('Download error:', error)
     }
   }, [])
 
@@ -209,7 +178,6 @@ export default function GridView({ files }: GridViewProps) {
       toast.success('删除成功')
     } catch (error) {
       toast.error('删除失败')
-      console.error('Delete error:', error)
     }
   }, [mutate, getSWRKey])
 
@@ -222,19 +190,16 @@ export default function GridView({ files }: GridViewProps) {
 
   const updateFile = useCallback(async () => {
     if (!editingFile || !fileName.trim()) return
-
     try {
       await put(`/cloud/files/${editingFile.id}`, {
         name: fileName.trim(),
         description: fileDescription.trim()
       })
-      
       mutate(key => typeof key === 'string' && key.startsWith(getSWRKey()))
       toast.success('更新成功')
       setEditingFile(null)
     } catch (error) {
       toast.error('更新失败')
-      console.error('Update error:', error)
     }
   }, [editingFile, fileName, fileDescription, mutate, getSWRKey])
 
@@ -251,6 +216,112 @@ export default function GridView({ files }: GridViewProps) {
     setFileDescription('')
   }, [])
 
+  // 优化: 复用渲染预览内容的逻辑
+  const renderPreviewContent = useCallback(() => {
+    if (previewType === PREVIEW_TYPES.LOADING) {
+      return (
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-12 w-12 bg-muted rounded-full"></div>
+          <div className="mt-4 h-4 w-32 bg-muted rounded"></div>
+        </div>
+      )
+    }
+    if (previewType === PREVIEW_TYPES.IMAGE && previewUrl) {
+      return (
+        <Image
+          src={previewUrl}
+          alt={previewFile?.name || ''}
+          width={800}
+          height={600}
+          className="max-h-[60vh] max-w-full object-contain"
+        />
+      )
+    }
+    if (previewType === PREVIEW_TYPES.PDF && previewUrl) {
+      return (
+        <div className="w-full h-[60vh] flex flex-col">
+          <div className="flex-1 relative">
+            <iframe
+              src={previewUrl}
+              className="w-full h-full border-0"
+              title={previewFile?.name}
+              onError={() => console.error('PDF iframe failed to load')}
+            />
+          </div>
+          <div className="mt-2 text-center text-sm text-muted-foreground">
+            如果PDF无法显示，请{' '}
+            <Button
+              variant="link"
+              className="p-0 h-auto text-sm"
+              onClick={() => window.open(previewUrl, '_blank')}
+            >
+              在新窗口中打开
+            </Button>
+            {' '}或{' '}
+            <Button
+              variant="link"
+              className="p-0 h-auto text-sm"
+              onClick={() => previewFile && downloadFile(previewFile)}
+            >
+              下载文件
+            </Button>
+          </div>
+        </div>
+      )
+    }
+    if (previewType === PREVIEW_TYPES.TEXT && previewContent && !previewContent.startsWith('{')) {
+      return (
+        <pre className="w-full h-full max-h-[60vh] overflow-auto bg-muted p-4 rounded text-sm">
+          {previewContent}
+        </pre>
+      )
+    }
+    if ((previewType === PREVIEW_TYPES.DOCUMENT || previewType === PREVIEW_TYPES.UNKNOWN) && previewContent) {
+      let response: any = null
+      try {
+        response = JSON.parse(previewContent)
+      } catch {}
+      return (
+        <div className="text-center max-w-md mx-auto">
+          <FileText className="h-16 w-16 text-muted-foreground mx-auto" />
+          <p className="mt-4 text-muted-foreground font-medium">
+            {response?.message || '此文件类型不支持预览'}
+          </p>
+          {response?.suggestion && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              {response.suggestion}
+            </p>
+          )}
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => previewFile && downloadFile(previewFile)}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            下载文件
+          </Button>
+        </div>
+      )
+    }
+    if (previewType && !(Object.values(PREVIEW_TYPES) as string[]).includes(previewType)) {
+      return (
+        <div className="text-center">
+          <File className="h-16 w-16 text-muted-foreground mx-auto" />
+          <p className="mt-4 text-muted-foreground">此文件类型不支持预览</p>
+          <Button
+            variant="outline"
+            className="mt-4"
+            onClick={() => previewFile && downloadFile(previewFile)}
+          >
+            <Download className="h-4 w-4 mr-2" />
+            下载文件
+          </Button>
+        </div>
+      )
+    }
+    return null
+  }, [previewType, previewUrl, previewContent, previewFile, downloadFile])
+
   return (
     <>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -264,40 +335,38 @@ export default function GridView({ files }: GridViewProps) {
             )}
             onClick={() => handleItemClick(file)}
           >
-                      <div className="relative">
-            <FileIcon file={file} />
-            <input
+            <div className="relative">
+              <FileIcon file={file} />
+              <input
                 type="checkbox"
                 className="absolute -top-2 -left-2 h-4 w-4 rounded-sm border border-primary"
                 checked={selectedFiles.includes(file.id)}
-                onChange={() => {}}
-                onClick={(e) => toggleSelection(file.id, e)}
+                readOnly
+                onClick={e => toggleSelection(file.id, e)}
               />
             </div>
-            
             <div className="mt-2 text-center">
               <p className="font-medium text-sm truncate max-w-[8rem] text-foreground" title={file.name}>
                 {file.name}
               </p>
               {!file.is_folder && (
                 <p className="text-xs text-muted-foreground">
-                  {formatSize(file.size)}
+                  {formatFileSize(file.size)}
                 </p>
               )}
               <p className="text-xs text-muted-foreground mt-1">
                 {formatDate(file.created_at)}
               </p>
             </div>
-
             <DropdownMenu>
-              <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
                 <Button variant="ghost" size="icon" className="absolute top-0 right-0 h-8 w-8">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {!file.is_folder && (
-                  <DropdownMenuItem onClick={(e) => {
+                  <DropdownMenuItem onClick={e => {
                     e.stopPropagation()
                     downloadFile(file)
                   }}>
@@ -305,17 +374,14 @@ export default function GridView({ files }: GridViewProps) {
                     下载
                   </DropdownMenuItem>
                 )}
-
-                <DropdownMenuItem onClick={(e) => openEditDialog(file, e)}>
+                <DropdownMenuItem onClick={e => openEditDialog(file, e)}>
                   <Pencil className="h-4 w-4 mr-2" />
                   重命名
                 </DropdownMenuItem>
-
                 <DropdownMenuSeparator />
-
                 <DropdownMenuItem
                   className="text-destructive focus:text-destructive"
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation()
                     deleteFile(file)
                   }}
@@ -331,7 +397,7 @@ export default function GridView({ files }: GridViewProps) {
 
       {/* 编辑文件对话框 */}
       {editingFile && (
-        <Dialog open={!!editingFile} onOpenChange={(open) => !open && closeEditDialog()}>
+        <Dialog open={!!editingFile} onOpenChange={open => !open && closeEditDialog()}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
@@ -344,7 +410,7 @@ export default function GridView({ files }: GridViewProps) {
                 <Input
                   id="edit-name"
                   value={fileName}
-                  onChange={(e) => setFileName(e.target.value)}
+                  onChange={e => setFileName(e.target.value)}
                   placeholder="请输入文件名"
                 />
               </div>
@@ -353,7 +419,7 @@ export default function GridView({ files }: GridViewProps) {
                 <Textarea
                   id="edit-description"
                   value={fileDescription}
-                  onChange={(e) => setFileDescription(e.target.value)}
+                  onChange={e => setFileDescription(e.target.value)}
                   placeholder="请输入文件描述"
                 />
               </div>
@@ -374,14 +440,14 @@ export default function GridView({ files }: GridViewProps) {
 
       {/* 文件预览对话框 */}
       {previewFile && (
-        <Dialog open={!!previewFile} onOpenChange={(open) => !open && closePreview()}>
+        <Dialog open={!!previewFile} onOpenChange={open => !open && closePreview()}>
           <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle className="flex items-center justify-between pr-12">
                 <span className="truncate">{previewFile.name}</span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => downloadFile(previewFile)}
                   className="ml-2 shrink-0"
                 >
@@ -391,114 +457,11 @@ export default function GridView({ files }: GridViewProps) {
               </DialogTitle>
             </DialogHeader>
             <div className="min-h-[60vh] flex items-center justify-center py-4">
-              {previewType === PREVIEW_TYPES.LOADING && (
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="h-12 w-12 bg-muted rounded-full"></div>
-                  <div className="mt-4 h-4 w-32 bg-muted rounded"></div>
-                </div>
-              )}
-
-              {previewType === PREVIEW_TYPES.IMAGE && previewUrl && (
-                <Image
-                  src={previewUrl}
-                  alt={previewFile.name}
-                  width={800}
-                  height={600}
-                  className="max-h-[60vh] max-w-full object-contain"
-                />
-              )}
-
-              {previewType === PREVIEW_TYPES.PDF && previewUrl && (
-                <div className="w-full h-[60vh] flex flex-col">
-                  <div className="flex-1 relative">
-                    <iframe
-                      src={previewUrl}
-                      className="w-full h-full border-0"
-                      title={previewFile.name}
-                      onError={() => console.error('PDF iframe failed to load')}
-                    />
-                  </div>
-                  <div className="mt-2 text-center text-sm text-muted-foreground">
-                    如果PDF无法显示，请{' '}
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-sm"
-                      onClick={() => window.open(previewUrl, '_blank')}
-                    >
-                      在新窗口中打开
-                    </Button>
-                    {' '}或{' '}
-                    <Button 
-                      variant="link" 
-                      className="p-0 h-auto text-sm"
-                      onClick={() => downloadFile(previewFile)}
-                    >
-                      下载文件
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {previewType === PREVIEW_TYPES.TEXT && previewContent && !previewContent.startsWith('{') && (
-                <pre className="w-full h-full max-h-[60vh] overflow-auto bg-muted p-4 rounded text-sm">
-                  {previewContent}
-                </pre>
-              )}
-
-              {(previewType === PREVIEW_TYPES.DOCUMENT || previewType === PREVIEW_TYPES.UNKNOWN) && previewContent && (
-                <div className="text-center max-w-md mx-auto">
-                  <FileText className="h-16 w-16 text-muted-foreground mx-auto" />
-                  {(() => {
-                    try {
-                      const response = JSON.parse(previewContent)
-                      return (
-                        <>
-                          <p className="mt-4 text-muted-foreground font-medium">
-                            {response.message || '此文件类型不支持预览'}
-                          </p>
-                          {response.suggestion && (
-                            <p className="mt-2 text-sm text-muted-foreground">
-                              {response.suggestion}
-                            </p>
-                          )}
-                        </>
-                      )
-                    } catch {
-                      return (
-                        <p className="mt-4 text-muted-foreground">此文件类型不支持预览</p>
-                      )
-                    }
-                  })()}
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => downloadFile(previewFile)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    下载文件
-                  </Button>
-                </div>
-              )}
-
-              {/* 默认情况 */}
-              {previewType && !(Object.values(PREVIEW_TYPES) as string[]).includes(previewType) && (
-                <div className="text-center">
-                  <File className="h-16 w-16 text-muted-foreground mx-auto" />
-                  <p className="mt-4 text-muted-foreground">此文件类型不支持预览</p>
-                  <Button 
-                    variant="outline" 
-                    className="mt-4"
-                    onClick={() => downloadFile(previewFile)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    下载文件
-                  </Button>
-                </div>
-              )}
+              {renderPreviewContent()}
             </div>
           </DialogContent>
         </Dialog>
       )}
     </>
   )
-} 
+}

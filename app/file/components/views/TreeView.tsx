@@ -18,7 +18,8 @@ import {
 import { cn } from '@/lib/helpers'
 import { CloudFile, FolderNode } from '../../types'
 import useFileStore from '../../store/useFileStore'
-import { API_URL } from '@/lib/api'
+import { getFilePreviewUrl, getFileDownloadUrl } from '@/lib/api'
+import { formatFileSize } from '../../constants'
 
 // 常量定义
 const CONSTANTS = {
@@ -39,20 +40,9 @@ const FILE_TYPE_ICONS = {
   video: { icon: FileVideo, color: 'text-pink-500' },
 } as const
 
-// 工具函数
-const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`
-}
 
-const buildImagePreviewUrl = (fileId: number): string => 
-  `${API_URL}/api/cloud/files/${fileId}/preview?thumb=true`
 
-const buildFileDownloadUrl = (fileId: number): string => 
-  `${API_URL}/api/cloud/files/${fileId}/download`
+
 
 // 组件接口
 interface TreeViewProps {
@@ -186,7 +176,7 @@ const FileIcon = memo<FileIconProps>(({ file, className }) => {
       <div className={cn("w-5 h-5 relative overflow-hidden rounded-sm flex items-center justify-center bg-muted", className)}>
         <Image 
           ref={imgRef}
-          src={buildImagePreviewUrl(file.id)}
+          src={getFilePreviewUrl(file.id)}
           alt={file.name}
           width={CONSTANTS.PREVIEW_SIZE.width}
           height={CONSTANTS.PREVIEW_SIZE.height}
@@ -289,7 +279,7 @@ export default function TreeView({ folderTree, files, isLoading = false }: TreeV
       navigateToFolder(file.id)
       expandToNode(file.id)
     } else {
-      window.open(buildFileDownloadUrl(file.id), '_blank')
+      window.open(getFileDownloadUrl(file.id), '_blank')
     }
   }, [navigateToFolder, expandToNode])
 

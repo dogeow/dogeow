@@ -1,4 +1,4 @@
-import { memo, useState, useCallback } from "react"
+import { memo, useState, useCallback, KeyboardEvent } from "react"
 import Image from "next/image"
 import { Lock } from 'lucide-react'
 import type { Tile } from '@/app/types'
@@ -16,7 +16,6 @@ interface TileCardProps {
 export const TileCard = memo(({
   tile,
   index,
-  keyPrefix,
   customStyles = '',
   showCover,
   needsLogin,
@@ -24,33 +23,35 @@ export const TileCard = memo(({
 }: TileCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
-  
+
   const coverImage = showCover ? tile.cover : null
   const hasBackground = !!coverImage && !imageError
 
-  // 图片加载完成回调
-  const handleImageLoad = useCallback(() => {
-    setImageLoaded(true)
-  }, [])
+  // 图片加载完成
+  const handleImageLoad = useCallback(() => setImageLoaded(true), [])
+  // 图片加载失败
+  const handleImageError = useCallback(() => setImageError(true), [])
 
-  // 图片加载错误回调
-  const handleImageError = useCallback(() => {
-    setImageError(true)
-  }, [])
+  // 键盘可访问
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onClick()
+    }
+  }, [onClick])
 
-  // 基础样式类 - 填满Grid容器
-  const baseClasses = `
-    w-full h-full min-h-[8rem]
-    relative flex flex-col items-start justify-end 
-    p-3 sm:p-4 rounded-lg overflow-hidden 
-    transition-all duration-200 ease-in-out
-    hover:scale-95 active:scale-90 cursor-pointer
-    shadow-sm hover:shadow-md
-    ${hasBackground && !imageLoaded ? 'animate-pulse' : ''}
-    ${customStyles}
-  `
+  // 样式
+  const baseClasses = [
+    "w-full h-full min-h-[8rem]",
+    "relative flex flex-col items-start justify-end",
+    "p-3 sm:p-4 rounded-lg overflow-hidden",
+    "transition-all duration-200 ease-in-out",
+    "hover:scale-95 active:scale-90 cursor-pointer",
+    "shadow-sm hover:shadow-md",
+    hasBackground && !imageLoaded ? "animate-pulse" : "",
+    customStyles
+  ].join(" ")
 
-  // 动态样式 - 只保留必要的样式
   const dynamicStyles = {
     backgroundColor: tile.color,
     opacity: needsLogin ? 0.7 : 1,
@@ -63,12 +64,7 @@ export const TileCard = memo(({
       onClick={onClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onClick()
-        }
-      }}
+      onKeyDown={handleKeyDown}
       aria-label={`打开 ${tile.name}`}
     >
       {/* 背景图片 */}
@@ -78,9 +74,7 @@ export const TileCard = memo(({
             src={`/images/projects/${coverImage}`}
             alt={`${tile.name} background`}
             fill
-            className={`object-cover z-[1] transition-opacity duration-300 ${
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`object-cover z-[1] transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             priority={index < 4}
             onLoad={handleImageLoad}
@@ -90,10 +84,8 @@ export const TileCard = memo(({
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
           />
           {/* 渐变遮罩 */}
-          <div 
-            className={`absolute inset-0 z-[2] transition-opacity duration-300 ${
-              imageLoaded ? 'opacity-100' : 'opacity-80'
-            }`}
+          <div
+            className={`absolute inset-0 z-[2] transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-80'}`}
             style={{
               background: `linear-gradient(135deg, ${tile.color}80, ${tile.color}40)`
             }}
@@ -102,13 +94,13 @@ export const TileCard = memo(({
       )}
 
       {/* 图标 */}
-      {tile.icon.length > 0 && (
+      {tile.icon && tile.icon.length > 0 && (
         <div className="absolute top-2 left-2 sm:top-3 sm:left-3 w-8 h-8 sm:w-10 sm:h-10 z-[2] flex items-center justify-center">
           <Image
             src={`/images/projects/${tile.icon}`}
             alt={tile.name}
-            width={32}
-            height={32}
+            width={40}
+            height={40}
             className="object-contain sm:w-10 sm:h-10"
             sizes="(max-width: 640px) 32px, 40px"
             priority={index < 4}
@@ -124,9 +116,9 @@ export const TileCard = memo(({
         </div>
       )}
 
-      {/* 标题 - 响应式字体大小 */}
-      <span 
-        className="text-lg sm:text-xl text-white z-[2] relative font-medium leading-tight" 
+      {/* 标题 */}
+      <span
+        className="text-lg sm:text-xl text-white z-[2] relative font-medium leading-tight"
         style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}
       >
         {tile.name}
@@ -135,4 +127,4 @@ export const TileCard = memo(({
   )
 })
 
-TileCard.displayName = 'TileCard' 
+TileCard.displayName = 'TileCard'
