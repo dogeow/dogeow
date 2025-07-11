@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { DatePicker } from "@/components/ui/date-picker"
 import LocationTreeSelect from './LocationTreeSelect'
 import { ItemFormData, LocationSelection } from "../types"
-import { FORM_PLACEHOLDERS, FORM_LABELS, FORM_VALIDATION } from "../constants/form"
+import { FORM_PLACEHOLDERS, FORM_LABELS, FORM_VALIDATION } from "../constants"
 
 interface DetailsSectionProps {
   formData: ItemFormData;

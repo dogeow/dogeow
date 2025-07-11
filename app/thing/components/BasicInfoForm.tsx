@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { ItemFormData, Category } from "../types"
 import { statusMap } from "../config/status"
-import { FORM_PLACEHOLDERS, FORM_LABELS } from "../constants/form"
+import { FORM_PLACEHOLDERS, FORM_LABELS } from "../constants"
 import { useFormHandlers } from "../hooks/useFormHandlers"
 import QuantityEditor from "./QuantityEditor"
 
