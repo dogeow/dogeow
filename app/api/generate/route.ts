@@ -170,7 +170,7 @@ export async function POST(request: NextRequest) {
     const prompt = generatePrompt(option, text, command);
     const ollamaResponse = await callOllamaAPI(prompt);
     return createStreamResponse(ollamaResponse, prompt);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('AI API错误:', error);
     const errorMessage =
       error instanceof Error

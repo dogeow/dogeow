@@ -164,16 +164,15 @@ export default function AddItem() {
               setCreateTagDialogOpen={setCreateTagDialogOpen}
               categories={categories}
               setUploadedImages={setUploadedImages}
+              watchAreaId={watchAreaId}
+              watchRoomId={watchRoomId}
+              watchSpotId={watchSpotId}
             />
           </TabsContent>
           
           <TabsContent value="details" className="space-y-6">
             <DetailInfoForm 
               formMethods={formMethods}
-              watchAreaId={watchAreaId}
-              watchRoomId={watchRoomId}
-              watchSpotId={watchSpotId}
-              setValue={setValue}
             />
           </TabsContent>
         </Tabs>

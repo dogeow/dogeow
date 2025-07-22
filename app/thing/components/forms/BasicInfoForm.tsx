@@ -1,20 +1,27 @@
-import { Dispatch, SetStateAction } from 'react'
+import { Dispatch, SetStateAction, useState, useEffect, useCallback } from 'react'
 import { Controller, UseFormReturn } from 'react-hook-form'
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
 import { Plus, Tag as TagIcon, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Combobox } from "@/components/ui/combobox"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import ImageUploader from '../ImageUploader'
+import LocationTreeSelect from '../LocationTreeSelect'
+import CategoryTreeSelect, { CategorySelection } from '../CategoryTreeSelect'
 import { ItemFormData, Category } from '../../types'
-import { TagType } from '../../add/page'
+import { TagType, Location, LocationType, SelectedLocation } from '../../add/page'
 import { isLightColor } from '@/lib/helpers'
 import { useItemStore } from '../../stores/itemStore'
+import { apiRequest } from '@/lib/api'
 import { toast } from "sonner"
 
 type UploadedImage = {
@@ -32,6 +39,9 @@ interface BasicInfoFormProps {
   setCreateTagDialogOpen: Dispatch<SetStateAction<boolean>>;
   categories: Category[];
   setUploadedImages: Dispatch<SetStateAction<UploadedImage[]>>;
+  watchAreaId: string;
+  watchRoomId: string;
+  watchSpotId: string;
 }
 
 export default function BasicInfoForm({
@@ -41,10 +51,26 @@ export default function BasicInfoForm({
   setSelectedTags,
   setCreateTagDialogOpen,
   categories,
-  setUploadedImages
+  setUploadedImages,
+  watchAreaId,
+  watchRoomId,
+  watchSpotId
 }: BasicInfoFormProps) {
   const { control, formState: { errors }, setValue } = formMethods
-  const { createCategory } = useItemStore()
+  
+  // 位置相关状态
+  const [areas, setAreas] = useState<Location[]>([])
+  const [rooms, setRooms] = useState<Location[]>([])
+  const [spots, setSpots] = useState<Location[]>([])
+  const [locationPath, setLocationPath] = useState<string>('')
+  const [selectedLocation, setSelectedLocation] = useState<SelectedLocation>(undefined)
+  
+  // 数量设置对话框状态
+  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
+  const [tempQuantity, setTempQuantity] = useState(1)
+  
+  // 分类选择状态
+  const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(undefined)
 
   // 获取标签样式
   const getTagStyle = (color: string = "#3b82f6") => ({
@@ -60,33 +86,183 @@ export default function BasicInfoForm({
     )
   }
 
-  // 处理创建新分类
-  const handleCreateCategory = async (categoryName: string) => {
-    try {
-      const newCategory = await createCategory({ name: categoryName });
-      console.log('创建分类返回结果:', newCategory);
-      
-      if (newCategory && newCategory.id) {
-        setValue('category_id', newCategory.id.toString());
-        toast.success(`已创建分类 "${categoryName}"`);
-      } else {
-        console.error('创建分类返回的数据格式不正确:', newCategory);
-        toast.error("创建分类成功，但无法自动选择，请手动选择");
+  // 处理分类选择
+  const handleCategorySelect = (type: 'parent' | 'child', id: number, fullPath?: string) => {
+    setSelectedCategory({ type, id })
+    setValue('category_id', id.toString())
+  }
+
+  // 根据当前表单值设置选中的分类
+  useEffect(() => {
+    const categoryId = formMethods.watch('category_id')
+    if (categoryId && categoryId !== 'none') {
+      const category = categories.find(cat => cat.id.toString() === categoryId)
+      if (category) {
+        setSelectedCategory({
+          type: category.parent_id ? 'child' : 'parent',
+          id: category.id
+        })
       }
+    } else {
+      setSelectedCategory(undefined)
+    }
+  }, [formMethods.watch('category_id'), categories])
+
+  // 位置相关函数
+  const loadAreas = async () => {
+    try {
+      const data = await apiRequest<Location[]>('/areas')
+      setAreas(data)
+      return data
     } catch (error) {
-      console.error("创建分类失败:", error);
-      toast.error("创建分类失败：" + (error instanceof Error ? error.message : "未知错误"));
+      console.error('加载区域失败', error)
+      return []
     }
   }
 
-  // 将分类数据转换为Combobox选项格式
-  const categoryOptions = [
-    { value: "none", label: "未分类" },
-    ...categories.map(category => ({
-      value: category.id.toString(),
-      label: category.name
-    }))
-  ]
+  const loadRooms = async (areaId: string) => {
+    if (!areaId) {
+      setRooms([])
+      return []
+    }
+    
+    try {
+      const data = await apiRequest<Location[]>(`/areas/${areaId}/rooms`)
+      setRooms(data)
+      return data
+    } catch (error) {
+      console.error('加载房间失败', error)
+      return []
+    }
+  }
+
+  const loadSpots = async (roomId: string) => {
+    if (!roomId) {
+      setSpots([])
+      return []
+    }
+    
+    try {
+      const data = await apiRequest<Location[]>(`/rooms/${roomId}/spots`)
+      setSpots(data)
+      return data
+    } catch (error) {
+      console.error('加载位置失败', error)
+      return []
+    }
+  }
+  
+  const handleLocationSelect = (type: LocationType, id: number, fullPath?: string) => {
+    setSelectedLocation({ type, id })
+    setLocationPath(fullPath || '')
+    
+    if (type === 'area') {
+      setValue('area_id', id.toString())
+      setValue('room_id', '')
+      setValue('spot_id', '')
+    } else if (type === 'room') {
+      setValue('room_id', id.toString())
+      setValue('spot_id', '')
+      
+      const room = rooms.find(r => r.id === id)
+      if (room?.area_id) {
+        setValue('area_id', room.area_id.toString())
+      }
+    } else if (type === 'spot') {
+      setValue('spot_id', id.toString())
+      
+      const spot = spots.find(s => s.id === id)
+      if (spot?.room_id) {
+        setValue('room_id', spot.room_id.toString())
+        
+        const room = rooms.find(r => r.id === spot.room_id)
+        if (room?.area_id) {
+          setValue('area_id', room.area_id.toString())
+        }
+      }
+    }
+  }
+
+  const updateLocationPath = useCallback((areaId?: string, roomId?: string, spotId?: string) => {
+    let path = '';
+    
+    if (areaId && areas.length > 0) {
+      const area = areas.find(a => a.id.toString() === areaId);
+      if (area) {
+        path = area.name;
+        
+        if (roomId && rooms.length > 0) {
+          const room = rooms.find(r => r.id.toString() === roomId);
+          if (room) {
+            path += ` > ${room.name}`;
+            
+            if (spotId && spots.length > 0) {
+              const spot = spots.find(s => s.id.toString() === spotId);
+              if (spot) {
+                path += ` > ${spot.name}`;
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    if (path) {
+      setLocationPath(path);
+      
+      if (spotId && spots.length > 0) {
+        setSelectedLocation({ type: 'spot', id: Number(spotId) });
+      } else if (roomId && rooms.length > 0) {
+        setSelectedLocation({ type: 'room', id: Number(roomId) });
+      } else if (areaId && areas.length > 0) {
+        setSelectedLocation({ type: 'area', id: Number(areaId) });
+      }
+    } else if (!areaId && !roomId && !spotId) {
+      setLocationPath('');
+      setSelectedLocation(undefined);
+    }
+  }, [areas, rooms, spots]);
+
+  // Effects
+  useEffect(() => {
+    loadAreas();
+  }, []);
+
+  useEffect(() => {
+    loadRooms(watchAreaId);
+  }, [watchAreaId]);
+  
+  useEffect(() => {
+    loadSpots(watchRoomId);
+  }, [watchRoomId]);
+  
+  useEffect(() => {
+    updateLocationPath(watchAreaId, watchRoomId, watchSpotId);
+  }, [watchAreaId, watchRoomId, watchSpotId, updateLocationPath]);
+
+  const renderLocationInfo = () => {
+    if (locationPath) {
+      return <p className="text-sm text-muted-foreground mt-2">{locationPath}</p>;
+    }
+    
+    if (watchAreaId || watchRoomId || watchSpotId) {
+      return <p className="text-sm text-orange-500 mt-2">位置数据不完整，请重新选择</p>;
+    }
+    
+    return <p className="text-sm text-muted-foreground mt-2">未指定位置</p>;
+  };
+
+  // 处理数量设置
+  const handleQuantityClick = () => {
+    const currentQuantity = formMethods.watch('quantity') || 1;
+    setTempQuantity(currentQuantity);
+    setQuantityDialogOpen(true);
+  };
+
+  const handleQuantityConfirm = () => {
+    setValue('quantity', tempQuantity);
+    setQuantityDialogOpen(false);
+  };
 
   return (
     <Card>
@@ -94,113 +270,44 @@ export default function BasicInfoForm({
         <div className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">名称</Label>
-            <Controller
-              name="name"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="name"
-                  className="h-10"
-                  {...field}
-                />
-              )}
-            />
-            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">描述</Label>
-            <Controller
-              name="description"
-              control={control}
-              render={({ field }) => (
-                <Textarea
-                  id="description"
-                  rows={4}
-                  {...field}
-                />
-              )}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="category_id">分类</Label>
-            <Controller
-              name="category_id"
-              control={control}
-              render={({ field }) => (
-                <Combobox
-                  options={categoryOptions}
-                  value={field.value}
-                  onChange={field.onChange}
-                  onCreateOption={handleCreateCategory}
-                  placeholder="选择分类"
-                  emptyText="没有找到分类"
-                  createText="创建分类"
-                  searchText="搜索分类..."
-                />
-              )}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="quantity">数量</Label>
-            <Controller
-              name="quantity"
-              control={control}
-              render={({ field }) => (
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  className="h-10"
-                  {...field}
-                  onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                />
-              )}
-            />
-            {errors.quantity && <p className="text-sm text-red-500">{errors.quantity.message}</p>}
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="status">状态</Label>
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <Select
-                  value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger id="status" className="w-full h-10">
-                    <SelectValue placeholder="选择状态" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" align="start" sideOffset={4} avoidCollisions={false} className="z-[100]">
-                    <SelectItem value="active">使用中</SelectItem>
-                    <SelectItem value="inactive">闲置</SelectItem>
-                    <SelectItem value="expired">已过期</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="is_public">公开物品</Label>
-            <div className="h-10 flex items-center">
+            <div className="flex gap-2 items-center">
               <Controller
-                name="is_public"
+                name="name"
                 control={control}
                 render={({ field }) => (
-                  <Switch
-                    id="is_public"
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
+                  <Input
+                    id="name"
+                    className="h-10 flex-1"
+                    {...field}
                   />
                 )}
               />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 px-3 text-sm font-medium"
+                onClick={handleQuantityClick}
+              >
+                X{formMethods.watch('quantity') || 1}
+              </Button>
             </div>
+            {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
           </div>
+          
+
+          
+          <div className="space-y-2">
+            <Label htmlFor="category_id">分类</Label>
+            <CategoryTreeSelect
+              onSelect={handleCategorySelect}
+              selectedCategory={selectedCategory}
+            />
+          </div>
+
+
+          
+
           
           <div className="space-y-2">
             <Label htmlFor="images">物品图片</Label>
@@ -273,8 +380,57 @@ export default function BasicInfoForm({
               </div>
             </div>
           </div>
+          
+          <div className="space-y-2">
+            <Label className="mb-2 block">存放位置</Label>
+            <LocationTreeSelect 
+              onSelect={handleLocationSelect}
+              selectedLocation={selectedLocation}
+            />
+            {renderLocationInfo()}
+          </div>
         </div>
       </CardContent>
+      
+      {/* 数量设置对话框 */}
+      <Dialog open={quantityDialogOpen} onOpenChange={setQuantityDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>设置数量</DialogTitle>
+            <DialogDescription>
+              设置物品的数量
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="temp-quantity">数量</Label>
+              <Input
+                id="temp-quantity"
+                type="number"
+                min="1"
+                value={tempQuantity}
+                onChange={(e) => setTempQuantity(e.target.valueAsNumber || 1)}
+                className="h-10"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              type="button" 
+              variant="outline" 
+              onClick={() => setQuantityDialogOpen(false)}
+            >
+              取消
+            </Button>
+            <Button 
+              type="button" 
+              onClick={handleQuantityConfirm}
+            >
+              确定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 } 

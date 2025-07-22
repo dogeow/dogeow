@@ -139,7 +139,7 @@ interface ItemState {
   fetchItems: (params?: ItemFilters) => Promise<{ data: Item[], meta: PaginationMeta } | undefined>;
   fetchCategories: () => Promise<Category[] | undefined>;
   fetchTags: () => Promise<Tag[] | undefined>;
-  createCategory: (data: { name: string }) => Promise<Category>;
+  createCategory: (data: { name: string; parent_id?: number | null }) => Promise<Category>;
   getItem: (id: number) => Promise<Item | null>;
   createItem: (data: ItemFormData) => Promise<Item>;
   updateItem: (id: number, data: ItemFormData) => Promise<Item>;
@@ -223,7 +223,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
 
   createCategory: async (data) => {
     try {
-      const response = await apiRequest<any>('/things/categories', 'POST', data);
+      const response = await apiRequest<unknown>('/things/categories', 'POST', data);
       console.log('创建分类API响应:', response);
 
       // 刷新分类列表
@@ -231,21 +231,21 @@ export const useItemStore = create<ItemState>((set, get) => ({
 
       // 根据实际API响应结构返回分类数据
       // 如果响应直接是分类对象
-      if (response && response.id) {
+      if (response && (response as { id?: number }).id) {
         return response as Category;
       }
       // 如果响应包含分类对象在某个字段中
-      if (response && response.category && response.category.id) {
-        return response.category as Category;
+      if (response && (response as { category?: { id?: number } }).category?.id) {
+        return (response as { category: Category }).category;
       }
       // 如果响应包含分类对象在data字段中
-      if (response && response.data && response.data.id) {
-        return response.data as Category;
+      if (response && (response as { data?: { id?: number } }).data?.id) {
+        return (response as { data: Category }).data;
       }
 
       // 如果无法从响应中获取分类ID，从刷新后的分类列表中找到新创建的分类
       const categories = get().categories;
-      const newCategory = categories.find(cat => cat.name === data.name);
+      const newCategory = categories.find(cat => cat.name === data.name && cat.parent_id === data.parent_id);
       if (newCategory) {
         return newCategory;
       }

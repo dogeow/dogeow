@@ -148,7 +148,7 @@ const TimeConverter = () => {
       setStates(prev => ({ ...prev, dateTime: ERROR_MESSAGES.CONVERSION_ERROR }))
       toast.error("转换失败")
     }
-  }, [states.timestamp, states.dateFormat, cleanTimestamp, validateYear])
+  }, [states, cleanTimestamp, validateYear])
 
   // 日期时间转时间戳
   const convertDateTimeToTimestamp = useCallback(() => {
@@ -196,7 +196,7 @@ const TimeConverter = () => {
       setStates(prev => ({ ...prev, outputTimestamp: ERROR_MESSAGES.CONVERSION_ERROR }))
       toast.error("转换失败")
     }
-  }, [states.inputDateTime, standardizeDateTime, validateYear])
+  }, [states, standardizeDateTime, validateYear])
 
   // 使用当前时间戳
   const useCurrentTimestamp = useCallback(() => {

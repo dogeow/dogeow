@@ -51,6 +51,7 @@ export type LocationSelection = {
 export interface Category {
   id: number;
   name: string;
+  parent_id?: number | null;
   user_id?: number;
   items_count?: number;
 }

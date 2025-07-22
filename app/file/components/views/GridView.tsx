@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback } from 'react'
 import {
   File,
   FileText,
@@ -148,7 +148,7 @@ export default function GridView({ files }: GridViewProps) {
       } else {
         setPreviewContent(JSON.stringify(response))
       }
-    } catch (error) {
+    } catch {
       toast.error('预览失败')
       setPreviewType(PREVIEW_TYPES.UNKNOWN)
       setPreviewContent(JSON.stringify({
@@ -159,14 +159,18 @@ export default function GridView({ files }: GridViewProps) {
   }, [])
 
   const handleItemClick = useCallback((file: CloudFile) => {
-    file.is_folder ? navigateToFolder(file.id) : previewItem(file)
+    if (file.is_folder) {
+      navigateToFolder(file.id)
+    } else {
+      previewItem(file)
+    }
   }, [navigateToFolder, previewItem])
 
   const downloadFile = useCallback((file: CloudFile) => {
     try {
       window.open(getFileDownloadUrl(file.id), '_blank')
       toast.success('开始下载')
-    } catch (error) {
+    } catch {
       toast.error('下载失败')
     }
   }, [])
@@ -176,7 +180,7 @@ export default function GridView({ files }: GridViewProps) {
       await del(`/cloud/files/${file.id}`)
       mutate(key => typeof key === 'string' && key.startsWith(getSWRKey()))
       toast.success('删除成功')
-    } catch (error) {
+    } catch {
       toast.error('删除失败')
     }
   }, [mutate, getSWRKey])
@@ -198,7 +202,7 @@ export default function GridView({ files }: GridViewProps) {
       mutate(key => typeof key === 'string' && key.startsWith(getSWRKey()))
       toast.success('更新成功')
       setEditingFile(null)
-    } catch (error) {
+    } catch {
       toast.error('更新失败')
     }
   }, [editingFile, fileName, fileDescription, mutate, getSWRKey])
@@ -277,7 +281,7 @@ export default function GridView({ files }: GridViewProps) {
       )
     }
     if ((previewType === PREVIEW_TYPES.DOCUMENT || previewType === PREVIEW_TYPES.UNKNOWN) && previewContent) {
-      let response: any = null
+      let response: unknown = null
       try {
         response = JSON.parse(previewContent)
       } catch {}
@@ -285,11 +289,11 @@ export default function GridView({ files }: GridViewProps) {
         <div className="text-center max-w-md mx-auto">
           <FileText className="h-16 w-16 text-muted-foreground mx-auto" />
           <p className="mt-4 text-muted-foreground font-medium">
-            {response?.message || '此文件类型不支持预览'}
+            {(response as { message?: string })?.message || '此文件类型不支持预览'}
           </p>
-          {response?.suggestion && (
+          {(response as { suggestion?: string })?.suggestion && (
             <p className="mt-2 text-sm text-muted-foreground">
-              {response.suggestion}
+              {(response as { suggestion: string }).suggestion}
             </p>
           )}
           <Button
