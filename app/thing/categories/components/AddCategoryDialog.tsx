@@ -3,6 +3,8 @@
 import React, { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import {
   Dialog,
@@ -12,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { post } from '@/lib/api'
+import { useItemStore } from '../../stores/itemStore'
 import { API_ENDPOINTS, ERROR_MESSAGES, SUCCESS_MESSAGES, VALIDATION } from '../constants'
 
 interface AddCategoryDialogProps {
@@ -27,11 +29,20 @@ export default function AddCategoryDialog({
   onCategoryAdded
 }: AddCategoryDialogProps) {
   const [categoryName, setCategoryName] = useState("")
+  const [categoryType, setCategoryType] = useState<'parent' | 'child'>('parent')
+  const [selectedParentId, setSelectedParentId] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  
+  const { categories, createCategory } = useItemStore()
+  
+  // 获取主分类列表
+  const parentCategories = categories.filter(cat => !cat.parent_id)
 
   // 重置表单
   const resetForm = useCallback(() => {
     setCategoryName("")
+    setCategoryType('parent')
+    setSelectedParentId('')
   }, [])
 
   // 处理对话框关闭
@@ -59,20 +70,36 @@ export default function AddCategoryDialog({
       return
     }
 
+    // 如果是子分类，检查是否选择了父分类
+    if (categoryType === 'child' && !selectedParentId) {
+      toast.error("请选择父分类")
+      return
+    }
+
     setLoading(true)
     try {
-      await post(API_ENDPOINTS.CATEGORIES, { name: trimmedName })
+      const categoryData = {
+        name: trimmedName,
+        parent_id: categoryType === 'child' ? Number(selectedParentId) : null
+      }
       
-      toast.success(SUCCESS_MESSAGES.CATEGORY_CREATED)
+      await createCategory(categoryData)
+      
+      const successMessage = categoryType === 'parent' 
+        ? `已创建主分类 "${trimmedName}"` 
+        : `已创建子分类 "${trimmedName}"`
+      
+      toast.success(successMessage)
       resetForm()
       onCategoryAdded()
       onOpenChange(false)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : ERROR_MESSAGES.CREATE_FAILED)
+      console.error("创建分类失败:", error)
+      toast.error("创建分类失败：" + (error instanceof Error ? error.message : "未知错误"))
     } finally {
       setLoading(false)
     }
-  }, [categoryName, resetForm, onCategoryAdded, onOpenChange])
+  }, [categoryName, categoryType, selectedParentId, createCategory, resetForm, onCategoryAdded, onOpenChange])
 
   // 处理键盘事件
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -93,9 +120,52 @@ export default function AddCategoryDialog({
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
+              <Label htmlFor="categoryType">分类类型</Label>
+              <Select
+                value={categoryType}
+                onValueChange={(value: 'parent' | 'child') => {
+                  setCategoryType(value)
+                  if (value === 'parent') {
+                    setSelectedParentId('')
+                  }
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="选择分类类型" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="parent">主分类</SelectItem>
+                  <SelectItem value="child">子分类</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {categoryType === 'child' && (
+              <div className="grid gap-2">
+                <Label htmlFor="parentCategory">父分类</Label>
+                <Select
+                  value={selectedParentId}
+                  onValueChange={setSelectedParentId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择父分类" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {parentCategories.map((parent) => (
+                      <SelectItem key={parent.id} value={parent.id.toString()}>
+                        {parent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            <div className="grid gap-2">
+              <Label htmlFor="categoryName">分类名称</Label>
               <Input
                 id="categoryName"
-                placeholder="输入分类名称"
+                placeholder={categoryType === 'parent' ? "输入主分类名称" : "输入子分类名称"}
                 value={categoryName}
                 onChange={(e) => setCategoryName(e.target.value)}
                 disabled={loading}
@@ -115,9 +185,9 @@ export default function AddCategoryDialog({
             </Button>
             <Button 
               type="submit" 
-              disabled={loading || !categoryName.trim()}
+              disabled={loading || !categoryName.trim() || (categoryType === 'child' && !selectedParentId)}
             >
-              {loading ? "添加中..." : "添加分类"}
+              {loading ? "创建中..." : `创建${categoryType === 'parent' ? '主分类' : '子分类'}`}
             </Button>
           </DialogFooter>
         </form>

@@ -196,7 +196,7 @@ const TimeConverter = () => {
       setStates(prev => ({ ...prev, outputTimestamp: ERROR_MESSAGES.CONVERSION_ERROR }))
       toast.error("转换失败")
     }
-  }, [states, standardizeDateTime, validateYear])
+  }, [states, standardizeDateTime])
 
   // 使用当前时间戳
   const useCurrentTimestamp = useCallback(() => {

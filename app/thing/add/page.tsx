@@ -78,7 +78,7 @@ export default function AddItem() {
     }
   })
   
-  const { handleSubmit, watch, setValue } = formMethods
+  const { handleSubmit, watch } = formMethods
   
   // 监听表单值变化 - 位置相关
   const watchAreaId = watch('area_id')

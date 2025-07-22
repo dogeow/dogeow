@@ -16,7 +16,7 @@ interface DetailInfoFormProps {
 export default function DetailInfoForm({
   formMethods
 }: DetailInfoFormProps) {
-  const { control, formState: { errors } } = formMethods
+  const { control } = formMethods
 
   return (
     <Card>

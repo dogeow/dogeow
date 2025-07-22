@@ -20,9 +20,7 @@ import CategoryTreeSelect, { CategorySelection } from '../CategoryTreeSelect'
 import { ItemFormData, Category } from '../../types'
 import { TagType, Location, LocationType, SelectedLocation } from '../../add/page'
 import { isLightColor } from '@/lib/helpers'
-import { useItemStore } from '../../stores/itemStore'
 import { apiRequest } from '@/lib/api'
-import { toast } from "sonner"
 
 type UploadedImage = {
   path: string;
@@ -106,7 +104,7 @@ export default function BasicInfoForm({
     } else {
       setSelectedCategory(undefined)
     }
-  }, [formMethods.watch('category_id'), categories])
+  }, [formMethods, categories])
 
   // 位置相关函数
   const loadAreas = async () => {
@@ -152,9 +150,9 @@ export default function BasicInfoForm({
     }
   }
   
-  const handleLocationSelect = (type: LocationType, id: number, fullPath?: string) => {
+  const handleLocationSelect = (type: LocationType, id: number) => {
     setSelectedLocation({ type, id })
-    setLocationPath(fullPath || '')
+    setLocationPath('')
     
     if (type === 'area') {
       setValue('area_id', id.toString())

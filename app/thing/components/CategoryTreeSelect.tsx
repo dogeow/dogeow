@@ -1,9 +1,15 @@
 "use client"
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Input } from "@/components/ui/input"
-import { Search, Folder, FolderOpen, Tag } from "lucide-react"
+import { Folder, Tag, ChevronDown, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Dialog,
   DialogContent,
@@ -12,6 +18,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import { cn } from '@/lib/helpers'
 import { useItemStore } from '../stores/itemStore'
 import { toast } from "sonner"
@@ -37,25 +51,21 @@ interface CategoryTreeSelectProps {
   className?: string;
 }
 
-// 优化的搜索匹配函数
-const matchesSearch = (text: string, searchTerm: string): boolean => {
-  return text.toLowerCase().includes(searchTerm.toLowerCase());
-};
+
 
 const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({ 
   onSelect, 
   selectedCategory, 
   className
 }) => {
-  const [searchTerm, setSearchTerm] = useState('')
-  const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set())
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [createType, setCreateType] = useState<'parent' | 'child'>('parent')
   const [createParentId, setCreateParentId] = useState<number | null>(null)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [selectedParentForChild, setSelectedParentForChild] = useState<string>('')
   
-  const { categories, createCategory, fetchCategories } = useItemStore()
+  const { categories, createCategory } = useItemStore()
   
   // 将扁平的分类数据转换为树形结构
   const categoryTree = useMemo(() => {
@@ -87,105 +97,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
     return parentCategories
   }, [categories])
   
-  // 初始展开所有分类
-  useEffect(() => {
-    if (categoryTree.length > 0) {
-      setExpandedCategories(new Set(categoryTree.map(cat => cat.id)))
-    }
-  }, [categoryTree])
-  
-  // 根据选中的分类自动展开
-  useEffect(() => {
-    if (!selectedCategory || categoryTree.length === 0) return
-    
-    if (selectedCategory.type === 'child') {
-      // 找到子分类的父分类并展开
-      const childCategory = categoryTree
-        .flatMap(parent => parent.children || [])
-        .find(child => child.id === selectedCategory.id)
-      
-      if (childCategory?.parent_id) {
-        setExpandedCategories(prev => new Set([...prev, childCategory.parent_id!]))
-      }
-    }
-  }, [selectedCategory, categoryTree])
-  
-  // 搜索过滤逻辑
-  const searchResults = useMemo(() => {
-    if (!searchTerm) {
-      return {
-        filteredCategories: categoryTree,
-        visibleCategoryIds: Array.from(expandedCategories)
-      }
-    }
-    
-    const visibleCategoryIds = new Set<number>()
-    const filteredCategories: CategoryWithChildren[] = []
-    
-    categoryTree.forEach(parent => {
-      const matchingChildren = (parent.children || []).filter(child => 
-        matchesSearch(child.name, searchTerm)
-      )
-      
-      const parentMatches = matchesSearch(parent.name, searchTerm)
-      const hasMatchingChildren = matchingChildren.length > 0
-      
-      if (parentMatches || hasMatchingChildren) {
-        visibleCategoryIds.add(parent.id)
-        filteredCategories.push({
-          ...parent,
-          children: hasMatchingChildren ? matchingChildren : parent.children
-        })
-      }
-    })
-    
-    return {
-      filteredCategories,
-      visibleCategoryIds: Array.from(visibleCategoryIds)
-    }
-  }, [categoryTree, searchTerm, expandedCategories])
-  
-  // 展开/折叠处理
-  const toggleCategory = useCallback((e: React.MouseEvent, categoryId: number) => {
-    e.stopPropagation()
-    setExpandedCategories(prev => {
-      const newSet = new Set(prev)
-      if (newSet.has(categoryId)) {
-        newSet.delete(categoryId)
-      } else {
-        newSet.add(categoryId)
-      }
-      return newSet
-    })
-  }, [])
-  
-  // 构建路径
-  const buildPath = useCallback((type: 'parent' | 'child', id: number): string => {
-    if (type === 'parent') {
-      const parent = categoryTree.find(p => p.id === id)
-      return parent?.name || '未知分类'
-    }
-    
-    // child
-    const child = categoryTree
-      .flatMap(parent => parent.children || [])
-      .find(child => child.id === id)
-    
-    if (!child) return '未知分类'
-    
-    const parent = categoryTree.find(p => p.id === child.parent_id)
-    return parent ? `${parent.name} / ${child.name}` : child.name
-  }, [categoryTree])
-  
-  // 选择处理
-  const handleSelect = useCallback((type: 'parent' | 'child', id: number) => {
-    onSelect(type, id, buildPath(type, id))
-  }, [onSelect, buildPath])
-  
-  // 检查是否选中
-  const isSelected = useCallback((type: 'parent' | 'child', id: number): boolean => {
-    return selectedCategory?.type === type && selectedCategory.id === id
-  }, [selectedCategory])
+
   
   // 创建分类
   const handleCreateCategory = async () => {
@@ -194,11 +106,21 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
       return
     }
     
+    // 如果是创建子分类，检查是否选择了父分类
+    if (createType === 'child' && !createParentId && !selectedParentForChild) {
+      toast.error("请选择父分类")
+      return
+    }
+    
     setLoading(true)
     try {
+      const parentId = createType === 'child' 
+        ? (createParentId || Number(selectedParentForChild))
+        : null
+        
       const categoryData = {
         name: newCategoryName.trim(),
-        parent_id: createType === 'child' ? createParentId : null
+        parent_id: parentId
       }
       
       await createCategory(categoryData)
@@ -208,6 +130,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
       setNewCategoryName('')
       setCreateType('parent')
       setCreateParentId(null)
+      setSelectedParentForChild('')
     } catch (error) {
       console.error("创建分类失败:", error)
       toast.error("创建分类失败：" + (error instanceof Error ? error.message : "未知错误"))
@@ -220,102 +143,150 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   const openCreateDialog = (type: 'parent' | 'child', parentId?: number) => {
     setCreateType(type)
     setCreateParentId(parentId || null)
+    setSelectedParentForChild('')
     setNewCategoryName('')
     setCreateDialogOpen(true)
   }
   
-  const hasNoResults = searchResults.filteredCategories.length === 0
+  // 当前选择的主分类
+  const [selectedParentId, setSelectedParentId] = useState<string>('')
+  const [selectedChildId, setSelectedChildId] = useState<string>('')
+  
+  // 根据选择的主分类获取子分类
+  const availableChildren = useMemo(() => {
+    if (!selectedParentId) return []
+    const parent = categoryTree.find(p => p.id.toString() === selectedParentId)
+    return parent?.children || []
+  }, [selectedParentId, categoryTree])
+  
+  // 处理主分类选择
+  const handleParentSelect = useCallback((parentId: string) => {
+    setSelectedParentId(parentId)
+    setSelectedChildId('') // 清空子分类选择
+    
+    if (parentId === 'none') {
+      onSelect('parent', 0, '未分类')
+    } else if (parentId) {
+      const parent = categoryTree.find(p => p.id.toString() === parentId)
+      if (parent) {
+        onSelect('parent', parent.id, parent.name)
+      }
+    }
+  }, [categoryTree, onSelect])
+  
+  // 处理子分类选择
+  const handleChildSelect = useCallback((childId: string) => {
+    setSelectedChildId(childId)
+    
+    if (childId) {
+      const child = availableChildren.find(c => c.id.toString() === childId)
+      const parent = categoryTree.find(p => p.id.toString() === selectedParentId)
+      if (child && parent) {
+        onSelect('child', child.id, `${parent.name} / ${child.name}`)
+      }
+    }
+  }, [availableChildren, categoryTree, selectedParentId, onSelect])
+  
+  // 根据当前选择更新下拉框状态
+  useEffect(() => {
+    if (selectedCategory) {
+      if (selectedCategory.type === 'parent') {
+        setSelectedParentId(selectedCategory.id.toString())
+        setSelectedChildId('')
+      } else if (selectedCategory.type === 'child') {
+        const child = categoryTree
+          .flatMap(p => p.children || [])
+          .find(c => c.id === selectedCategory.id)
+        if (child?.parent_id) {
+          setSelectedParentId(child.parent_id.toString())
+          setSelectedChildId(selectedCategory.id.toString())
+        }
+      }
+    } else {
+      setSelectedParentId('')
+      setSelectedChildId('')
+    }
+  }, [selectedCategory, categoryTree])
 
   return (
     <>
-      <div className={cn("border rounded-md p-2 bg-card", className)}>
-        {/* 搜索框 */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="搜索分类..."
-              className="pl-7 h-8 text-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+      <div className={cn("space-y-3", className)}>
+        {/* 主分类选择 */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-sm font-medium">主分类</Label>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2"
+                >
+                  新建
+                  <ChevronDown className="h-3 w-3 ml-1" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => openCreateDialog('parent')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  创建主分类
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => openCreateDialog('child')}
+                  disabled={categoryTree.length === 0}
+                >
+                  <Tag className="h-4 w-4 mr-2" />
+                  创建子分类
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-8 px-2"
-            onClick={() => openCreateDialog('parent')}
-          >
-            新建
-          </Button>
+          <Select value={selectedParentId} onValueChange={handleParentSelect}>
+            <SelectTrigger>
+              <SelectValue placeholder="选择主分类" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">未分类</SelectItem>
+              {categoryTree.map((parent) => (
+                <SelectItem key={parent.id} value={parent.id.toString()}>
+                  <div className="flex items-center">
+                    <Folder className="h-4 w-4 mr-2" />
+                    {parent.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         
-        {/* 树形结构 */}
-        <div className="h-[300px] overflow-y-auto pr-1">
-          {hasNoResults ? (
-            <div className="py-2 text-center text-sm text-muted-foreground">
-              {searchTerm ? "没有匹配的分类" : "没有可用的分类"}
-            </div>
-          ) : (
-            <>
-              {/* 分类列表 */}
-              {searchResults.filteredCategories.map(parent => (
-                <div key={`parent-${parent.id}`}>
-                  <div 
-                    className={cn(
-                      "flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm group",
-                      isSelected('parent', parent.id) && "bg-muted"
-                    )}
-                    onClick={() => handleSelect('parent', parent.id)}
-                  >
-                    <span
-                      onClick={(e) => toggleCategory(e, parent.id)}
-                      className="flex items-center"
-                    >
-                      {searchResults.visibleCategoryIds.includes(parent.id) ? (
-                        <FolderOpen className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                      ) : (
-                        <Folder className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                      )}
-                    </span>
-                    <span className="flex-grow cursor-pointer truncate">
-                      {parent.name}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        openCreateDialog('child', parent.id)
-                      }}
-                    >
-                      +
-                    </Button>
+        {/* 子分类选择 */}
+        {selectedParentId && selectedParentId !== 'none' && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">子分类</Label>
+            <Select value={selectedChildId} onValueChange={handleChildSelect}>
+              <SelectTrigger>
+                <SelectValue placeholder="选择子分类（可选）" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableChildren.length === 0 ? (
+                  <div className="px-2 py-1 text-sm text-muted-foreground">
+                    暂无子分类
                   </div>
-                  
-                  {/* 父分类下的子分类 */}
-                  {searchResults.visibleCategoryIds.includes(parent.id) && 
-                    (parent.children || []).map(child => (
-                      <div 
-                        key={`child-${child.id}`}
-                        className={cn(
-                          "ml-4 flex items-center py-1 px-2 rounded hover:bg-muted cursor-pointer text-sm",
-                          isSelected('child', child.id) && "bg-muted"
-                        )}
-                        onClick={() => handleSelect('child', child.id)}
-                      >
-                        <Tag className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                        <span className="truncate">{child.name}</span>
+                ) : (
+                  availableChildren.map((child) => (
+                    <SelectItem key={child.id} value={child.id.toString()}>
+                      <div className="flex items-center">
+                        <Tag className="h-4 w-4 mr-2" />
+                        {child.name}
                       </div>
-                    ))}
-                </div>
-              ))}
-            </>
-          )}
-        </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
       
       {/* 创建分类对话框 */}
@@ -328,18 +299,42 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
             <DialogDescription>
               {createType === 'parent' 
                 ? '创建一个新的主分类' 
-                : `在 "${categoryTree.find(p => p.id === createParentId)?.name}" 下创建子分类`
+                : createParentId 
+                  ? `在 "${categoryTree.find(p => p.id === createParentId)?.name}" 下创建子分类`
+                  : '创建一个新的子分类'
               }
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {createType === 'child' && !createParentId && (
+              <div className="grid gap-2">
+                <Label htmlFor="parentCategory">父分类</Label>
+                <Select
+                  value={selectedParentForChild}
+                  onValueChange={setSelectedParentForChild}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择父分类" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categoryTree.map((parent) => (
+                      <SelectItem key={parent.id} value={parent.id.toString()}>
+                        {parent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="grid gap-2">
+              <Label htmlFor="categoryName">分类名称</Label>
               <Input
-                placeholder="输入分类名称"
+                id="categoryName"
+                placeholder={createType === 'parent' ? "输入主分类名称" : "输入子分类名称"}
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 disabled={loading}
-                autoFocus
+                autoFocus={createType === 'parent' || !!createParentId}
               />
             </div>
           </div>
@@ -355,9 +350,9 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
             <Button 
               type="button" 
               onClick={handleCreateCategory}
-              disabled={loading || !newCategoryName.trim()}
+              disabled={loading || !newCategoryName.trim() || (createType === 'child' && !createParentId && !selectedParentForChild)}
             >
-              {loading ? "创建中..." : "创建"}
+              {loading ? "创建中..." : `创建${createType === 'parent' ? '主分类' : '子分类'}`}
             </Button>
           </DialogFooter>
         </DialogContent>
