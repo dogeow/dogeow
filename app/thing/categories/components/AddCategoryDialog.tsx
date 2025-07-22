@@ -15,7 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useItemStore } from '../../stores/itemStore'
-import { API_ENDPOINTS, ERROR_MESSAGES, SUCCESS_MESSAGES, VALIDATION } from '../constants'
+import { ERROR_MESSAGES, VALIDATION } from '../constants'
 
 interface AddCategoryDialogProps {
   open: boolean

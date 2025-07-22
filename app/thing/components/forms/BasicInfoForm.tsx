@@ -85,7 +85,7 @@ export default function BasicInfoForm({
   }
 
   // 处理分类选择
-  const handleCategorySelect = (type: 'parent' | 'child', id: number, fullPath?: string) => {
+  const handleCategorySelect = (type: 'parent' | 'child', id: number) => {
     setSelectedCategory({ type, id })
     setValue('category_id', id.toString())
   }
