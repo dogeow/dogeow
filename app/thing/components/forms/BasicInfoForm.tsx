@@ -9,10 +9,13 @@ import { Switch } from "@/components/ui/switch"
 import { Plus, Tag as TagIcon, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Combobox } from "@/components/ui/combobox"
 import ImageUploader from '../ImageUploader'
 import { ItemFormData, Category } from '../../types'
 import { TagType } from '../../add/page'
 import { isLightColor } from '@/lib/helpers'
+import { useItemStore } from '../../stores/itemStore'
+import { toast } from "sonner"
 
 type UploadedImage = {
   path: string;
@@ -40,7 +43,8 @@ export default function BasicInfoForm({
   categories,
   setUploadedImages
 }: BasicInfoFormProps) {
-  const { control, formState: { errors } } = formMethods
+  const { control, formState: { errors }, setValue } = formMethods
+  const { createCategory } = useItemStore()
 
   // 获取标签样式
   const getTagStyle = (color: string = "#3b82f6") => ({
@@ -55,6 +59,34 @@ export default function BasicInfoForm({
         : [...prev, tagId]
     )
   }
+
+  // 处理创建新分类
+  const handleCreateCategory = async (categoryName: string) => {
+    try {
+      const newCategory = await createCategory({ name: categoryName });
+      console.log('创建分类返回结果:', newCategory);
+      
+      if (newCategory && newCategory.id) {
+        setValue('category_id', newCategory.id.toString());
+        toast.success(`已创建分类 "${categoryName}"`);
+      } else {
+        console.error('创建分类返回的数据格式不正确:', newCategory);
+        toast.error("创建分类成功，但无法自动选择，请手动选择");
+      }
+    } catch (error) {
+      console.error("创建分类失败:", error);
+      toast.error("创建分类失败：" + (error instanceof Error ? error.message : "未知错误"));
+    }
+  }
+
+  // 将分类数据转换为Combobox选项格式
+  const categoryOptions = [
+    { value: "none", label: "未分类" },
+    ...categories.map(category => ({
+      value: category.id.toString(),
+      label: category.name
+    }))
+  ]
 
   return (
     <Card>
@@ -97,22 +129,16 @@ export default function BasicInfoForm({
               name="category_id"
               control={control}
               render={({ field }) => (
-                <Select
+                <Combobox
+                  options={categoryOptions}
                   value={field.value}
-                  onValueChange={field.onChange}
-                >
-                  <SelectTrigger id="category_id" className="w-full h-10">
-                    <SelectValue placeholder="选择分类" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" align="start" sideOffset={4} avoidCollisions={false} className="z-[100]">
-                    <SelectItem value="none">未分类</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id.toString()}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={field.onChange}
+                  onCreateOption={handleCreateCategory}
+                  placeholder="选择分类"
+                  emptyText="没有找到分类"
+                  createText="创建分类"
+                  searchText="搜索分类..."
+                />
               )}
             />
           </div>

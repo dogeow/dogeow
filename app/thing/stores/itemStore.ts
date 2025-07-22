@@ -5,9 +5,9 @@ import { Item, Category, Tag } from '@/app/thing/types';
 
 // 前端专用过滤器，不发送到后端
 const FRONTEND_ONLY_FILTERS = [
-  'include_null_purchase_date', 
-  'include_null_expiry_date', 
-  'exclude_null_purchase_date', 
+  'include_null_purchase_date',
+  'include_null_expiry_date',
+  'exclude_null_purchase_date',
   'exclude_null_expiry_date'
 ] as const;
 
@@ -24,14 +24,14 @@ const handleError = (error: unknown, defaultMessage = '未知错误'): string =>
 // 处理表单数据的辅助函数
 const prepareFormData = (data: Record<string, unknown>) => {
   const formData = new FormData();
-  
+
   // 处理基本字段
   Object.entries(data).forEach(([key, value]) => {
     if (!SPECIAL_FIELDS.includes(key as typeof SPECIAL_FIELDS[number]) && value != null) {
       formData.append(key, key === 'is_public' ? (value ? "1" : "0") : String(value));
     }
   });
-  
+
   // 处理数组字段
   const arrayFields = {
     images: data.images,
@@ -39,7 +39,7 @@ const prepareFormData = (data: Record<string, unknown>) => {
     image_ids: data.image_ids,
     tags: data.tags
   };
-  
+
   Object.entries(arrayFields).forEach(([fieldName, fieldValue]) => {
     if (Array.isArray(fieldValue)) {
       fieldValue.forEach((item, index) => {
@@ -48,18 +48,18 @@ const prepareFormData = (data: Record<string, unknown>) => {
       });
     }
   });
-  
+
   return formData;
 };
 
 // 构建查询参数
 const buildQueryParams = (params: ItemFilters) => {
   const queryParams = new URLSearchParams();
-  
+
   Object.entries(params).forEach(([key, value]) => {
     if (value != null && value !== '') {
       let paramValue: string;
-      
+
       if (value instanceof Date) {
         paramValue = format(value, 'yyyy-MM-dd');
       } else if (Array.isArray(value)) {
@@ -67,25 +67,25 @@ const buildQueryParams = (params: ItemFilters) => {
       } else {
         paramValue = String(value);
       }
-      
+
       // 特殊处理 search 参数
       const paramKey = key === 'search' ? 'filter[name]' : `filter[${key}]`;
       queryParams.append(paramKey, paramValue);
     }
   });
-  
+
   return queryParams;
 };
 
 // 过滤前端专用参数
 const filterBackendParams = (params: ItemFilters) => {
   const filtered = { ...params };
-  
+
   // 移除前端专用参数
   ['itemsOnly', ...FRONTEND_ONLY_FILTERS].forEach(key => {
     delete filtered[key];
   });
-  
+
   return filtered;
 };
 
@@ -135,10 +135,11 @@ interface ItemState {
   error: string | null;
   meta: PaginationMeta | null;
   filters: ItemFilters;
-  
-  fetchItems: (params?: ItemFilters) => Promise<{data: Item[], meta: PaginationMeta} | undefined>;
+
+  fetchItems: (params?: ItemFilters) => Promise<{ data: Item[], meta: PaginationMeta } | undefined>;
   fetchCategories: () => Promise<Category[] | undefined>;
   fetchTags: () => Promise<Tag[] | undefined>;
+  createCategory: (data: { name: string }) => Promise<Category>;
   getItem: (id: number) => Promise<Item | null>;
   createItem: (data: ItemFormData) => Promise<Item>;
   updateItem: (id: number, data: ItemFormData) => Promise<Item>;
@@ -155,49 +156,49 @@ export const useItemStore = create<ItemState>((set, get) => ({
   error: null,
   meta: null,
   filters: {},
-  
+
   fetchItems: async (params = {}) => {
     const state = get();
-    
+
     // 防止重复请求
     if (state.loading) {
       console.log('ItemStore: 请求已在进行中，跳过重复请求');
       return;
     }
-    
+
     set({ loading: true, error: null });
-    
+
     try {
       const finalParams = Object.keys(params).length === 0 ? state.filters : params;
       const backendParams = filterBackendParams(finalParams);
       const queryParams = buildQueryParams(backendParams);
-      
+
       // 处理分页参数
       if (finalParams.page) {
         queryParams.delete('filter[page]');
         queryParams.append('page', String(finalParams.page));
       }
-      
+
       const queryString = queryParams.toString();
       const url = `/things/items${queryString ? `?${queryString}` : ''}`;
-      
+
       console.log(`请求 API: ${API_URL}/api/things/items${queryString ? `?${queryString}` : ''}`);
-      
-      const data = await apiRequest<{data: Item[], meta: PaginationMeta}>(url);
-      
+
+      const data = await apiRequest<{ data: Item[], meta: PaginationMeta }>(url);
+
       set({
         items: data.data || [],
         loading: false,
         meta: data.meta || null,
       });
-      
+
       return data;
     } catch (error) {
       const errorMessage = handleError(error, '获取物品列表失败');
       set({ loading: false, error: errorMessage });
     }
   },
-  
+
   fetchCategories: async () => {
     try {
       const data = await apiRequest<Category[]>('/things/categories');
@@ -208,7 +209,7 @@ export const useItemStore = create<ItemState>((set, get) => ({
       return undefined;
     }
   },
-  
+
   fetchTags: async () => {
     try {
       const data = await apiRequest<Tag[]>('/things/tags');
@@ -219,10 +220,46 @@ export const useItemStore = create<ItemState>((set, get) => ({
       return undefined;
     }
   },
-  
+
+  createCategory: async (data) => {
+    try {
+      const response = await apiRequest<any>('/things/categories', 'POST', data);
+      console.log('创建分类API响应:', response);
+
+      // 刷新分类列表
+      await get().fetchCategories();
+
+      // 根据实际API响应结构返回分类数据
+      // 如果响应直接是分类对象
+      if (response && response.id) {
+        return response as Category;
+      }
+      // 如果响应包含分类对象在某个字段中
+      if (response && response.category && response.category.id) {
+        return response.category as Category;
+      }
+      // 如果响应包含分类对象在data字段中
+      if (response && response.data && response.data.id) {
+        return response.data as Category;
+      }
+
+      // 如果无法从响应中获取分类ID，从刷新后的分类列表中找到新创建的分类
+      const categories = get().categories;
+      const newCategory = categories.find(cat => cat.name === data.name);
+      if (newCategory) {
+        return newCategory;
+      }
+
+      throw new Error('无法获取新创建的分类信息');
+    } catch (error) {
+      const errorMessage = handleError(error, '创建分类失败');
+      throw new Error(errorMessage);
+    }
+  },
+
   getItem: async (id) => {
     set({ loading: true, error: null });
-    
+
     try {
       const item = await apiRequest<Item>(`/things/items/${id}`);
       set({ loading: false });
@@ -233,18 +270,18 @@ export const useItemStore = create<ItemState>((set, get) => ({
       return null;
     }
   },
-  
+
   createItem: async (data) => {
     set({ loading: true, error: null });
-    
+
     try {
       const formData = prepareFormData(data);
-      const result = await apiRequest<{item: Item}>('/things/items', 'POST', formData);
-      
+      const result = await apiRequest<{ item: Item }>('/things/items', 'POST', formData);
+
       set({ loading: false });
       // 刷新列表
       await get().fetchItems();
-      
+
       return result.item;
     } catch (error) {
       const errorMessage = handleError(error, '创建物品失败');
@@ -252,20 +289,20 @@ export const useItemStore = create<ItemState>((set, get) => ({
       throw error;
     }
   },
-  
+
   updateItem: async (id, data) => {
     set({ loading: true, error: null });
-    
+
     try {
       const formData = prepareFormData(data);
       formData.append('_method', 'PUT');
-      
-      const result = await apiRequest<{item: Item}>(`/things/items/${id}`, 'POST', formData);
-      
+
+      const result = await apiRequest<{ item: Item }>(`/things/items/${id}`, 'POST', formData);
+
       set({ loading: false });
       // 刷新列表
       await get().fetchItems();
-      
+
       return result.item;
     } catch (error) {
       const errorMessage = handleError(error, '更新物品失败');
@@ -273,18 +310,18 @@ export const useItemStore = create<ItemState>((set, get) => ({
       throw error;
     }
   },
-  
+
   deleteItem: async (id: number) => {
     set({ loading: true, error: null });
-    
+
     try {
       await apiRequest(`/things/items/${id}`, 'DELETE');
-      
+
       set(state => ({
         items: state.items.filter(item => item.id !== id),
         loading: false
       }));
-      
+
       // 刷新列表以确保数据一致性
       await get().fetchItems();
     } catch (error) {
@@ -293,11 +330,11 @@ export const useItemStore = create<ItemState>((set, get) => ({
       throw error;
     }
   },
-  
+
   saveFilters: (filters) => {
     set({ filters });
   },
-  
+
   clearError: () => {
     set({ error: null });
   }
