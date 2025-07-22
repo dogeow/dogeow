@@ -16,9 +16,17 @@ export interface Tile {
   colSpan: number;
   rowSpan: number;
   cover?: string; // 封面图片可选属性
+  gridArea?: string; // CSS Grid Area 名称
+}
+
+// 网格布局配置类型
+export interface GridLayout {
+  columns: number;
+  templateAreas: string;
 }
 
 // 应用启动器配置类型
 export interface AppConfig {
+  gridLayout: GridLayout;
   tiles: Tile[];
 } 

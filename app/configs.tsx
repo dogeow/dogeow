@@ -16,16 +16,27 @@ if (typeof window !== 'undefined') {
 }
 
 // 应用启动器配置
-export const configs = {
+export const configs = { 
   tiles: [
-    { name: "物品管理", icon: "", href: "/thing", color: "#2196F3", size: "large", colSpan: 3, rowSpan: 1, cover: "thing.png" },
-    { name: "实验室", icon: "", href: "/lab", color: "#388e3c", size: "medium", colSpan: 1, rowSpan: 2, cover: "lab.png" },
-    { name: "文件", icon: "", href: "/file", color: "#FF5722", size: "medium", colSpan: 2, rowSpan: 1, cover: "file.png" },
-    { name: "工具", icon: "", href: "/tool", color: "#8B5A2B", size: "medium", colSpan: 2, rowSpan: 1, cover: "tool.png" },
-    { name: "导航", icon: "", href: "/nav", color: "#FFA000", size: "small", colSpan: 1, rowSpan: 1, cover: "nav.png" },
-    { name: "笔记", icon: "", href: "/note", color: "#1976D2", size: "small", colSpan: 1, rowSpan: 1, cover: "note.png" },
-    { name: "游戏", icon: "", href: "/game", color: "#424242", size: "small", colSpan: 1, rowSpan: 1, cover: "game.png" },
+    { name: "物品管理", icon: "", href: "/thing", color: "#2196F3", size: "large", colSpan: 3, rowSpan: 1, cover: "thing.png", gridArea: "thing" },
+    { name: "实验室", icon: "", href: "/lab", color: "#388e3c", size: "medium", colSpan: 1, rowSpan: 2, cover: "lab.png", gridArea: "lab" },
+    { name: "文件", icon: "", href: "/file", color: "#FF5722", size: "medium", colSpan: 2, rowSpan: 1, cover: "file.png", gridArea: "file" },
+    { name: "工具", icon: "", href: "/tool", color: "#8B5A2B", size: "medium", colSpan: 2, rowSpan: 1, cover: "tool.png", gridArea: "tool" },
+    { name: "导航", icon: "", href: "/nav", color: "#FFA000", size: "small", colSpan: 1, rowSpan: 1, cover: "nav.png", gridArea: "nav" },
+    { name: "笔记", icon: "", href: "/note", color: "#1976D2", size: "small", colSpan: 1, rowSpan: 1, cover: "note.png", gridArea: "note" },
+    { name: "游戏", icon: "", href: "/game", color: "#424242", size: "small", colSpan: 1, rowSpan: 1, cover: "game.png", gridArea: "game" },
   ],
+
+   // 网格布局配置
+   gridLayout: {
+    columns: 3,
+    templateAreas: `
+      "thing thing thing"
+      "lab file file"
+      "lab tool tool"
+      "nav note game"
+    `
+  },
 
   // 游戏列表数据
   games: [
