@@ -61,6 +61,8 @@ const callOllamaAPI = async (prompt: string): Promise<Response> => {
 // 创建流式响应
 function createStreamResponse(ollamaResponse: Response, prompt: string): Response {
   const encoder = new TextEncoder();
+  const decoder = new TextDecoder();
+
   const stream = new ReadableStream({
     async start(controller) {
       const reader = ollamaResponse.body?.getReader();
@@ -68,25 +70,43 @@ function createStreamResponse(ollamaResponse: Response, prompt: string): Respons
         controller.error(new Error('无法获取响应流'));
         return;
       }
+
+      let buffer = '';
       let totalTokens = 0;
+      const promptTokens = Math.ceil(prompt.length / 4); // 更准确的token估算
+
       try {
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          const chunk = new TextDecoder().decode(value);
-          for (const line of chunk.split('\n').filter(Boolean)) {
+
+          // 累积缓冲区处理不完整的JSON行
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || ''; // 保留最后一个可能不完整的行
+
+          for (const line of lines) {
+            if (!line.trim()) continue;
+
             try {
               const data: OllamaResponse = JSON.parse(line);
+
               if (data.response) {
-                controller.enqueue(encoder.encode(`0:"${escapeJsonString(data.response)}"\n`));
-                totalTokens += data.response.length;
+                const escapedResponse = escapeJsonString(data.response);
+                controller.enqueue(encoder.encode(`0:"${escapedResponse}"\n`));
+                totalTokens += Math.ceil(data.response.length / 4); // 更准确的token计算
               }
+
               if (data.done) {
-                controller.enqueue(
-                  encoder.encode(
-                    `d:{"finishReason":"stop","usage":{"promptTokens":${prompt.length},"completionTokens":${totalTokens}}}\n`
-                  )
-                );
+                const finalData = {
+                  finishReason: "stop",
+                  usage: {
+                    promptTokens,
+                    completionTokens: totalTokens,
+                    totalTokens: promptTokens + totalTokens
+                  }
+                };
+                controller.enqueue(encoder.encode(`d:${JSON.stringify(finalData)}\n`));
                 controller.close();
                 return;
               }
@@ -95,6 +115,28 @@ function createStreamResponse(ollamaResponse: Response, prompt: string): Respons
             }
           }
         }
+
+        // 处理剩余缓冲区
+        if (buffer.trim()) {
+          try {
+            const data: OllamaResponse = JSON.parse(buffer);
+            if (data.done) {
+              const finalData = {
+                finishReason: "stop",
+                usage: {
+                  promptTokens,
+                  completionTokens: totalTokens,
+                  totalTokens: promptTokens + totalTokens
+                }
+              };
+              controller.enqueue(encoder.encode(`d:${JSON.stringify(finalData)}\n`));
+            }
+          } catch (e) {
+            console.warn('处理剩余缓冲区时出错:', e);
+          }
+        }
+
+        controller.close();
       } catch (e) {
         console.error('流处理错误:', e);
         controller.error(e);
