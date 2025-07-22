@@ -8,7 +8,7 @@ const LOGO_TEXT = `
 // 输出控制台Logo（仅在客户端执行）
 if (typeof window !== 'undefined') {
   console.log(`%c${LOGO_TEXT}`, "color: yellow")
-  
+
   // 开发环境下输出额外信息
   if (process.env.NODE_ENV === 'development') {
     console.log('🎯 DogeOW 配置加载完成')
@@ -150,7 +150,7 @@ export const configs = {
     { id: "bg1", name: "你的名字？·untitled", url: "wallhaven-72rd8e_2560x1440-1.webp" },
     { id: "bg3", name: "2·untitled", url: "F_RIhiObMAA-c8N.jpeg" },
   ],
-  
+
   // 预设的主题色彩配置
   themeColors: [
     {
@@ -165,7 +165,7 @@ export const configs = {
       primary: "hsl(101 50% 43%)",
       color: "#5d9c32"
     },
-     {
+    {
       id: "zelda",
       name: "塞尔达传说",
       primary: "hsl(41 38% 56%)",
