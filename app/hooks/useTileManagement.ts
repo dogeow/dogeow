@@ -5,25 +5,22 @@ import type { Tile } from '@/app/types'
 import { useProjectCoverStore } from '@/stores/projectCoverStore'
 import { useLoginTrigger } from '@/hooks/useLoginTrigger'
 
-// 常量定义
-const PROTECTED_ROUTES = ['/thing', '/nav', '/note', '/dashboard', '/file', '/tool'] as const
-
 export function useTileManagement() {
   const router = useRouter()
   const tiles = configs.tiles as Tile[]
   const { showProjectCovers } = useProjectCoverStore()
   const { requireLogin, isAuthenticated } = useLoginTrigger()
 
-  // 检查是否需要登录
-  const isProtectedRoute = useCallback((href: string) => {
-    return PROTECTED_ROUTES.some(route => href.startsWith(route))
+  // 检查瓦片是否需要登录 - 直接使用配置文件中的 needLogin 属性
+  const isProtectedTile = useCallback((tile: Tile) => {
+    return tile.needLogin === true
   }, [])
 
   // 处理瓦片点击
   const handleTileClick = useCallback(
     (tile: Tile) => {
       try {
-        if (isProtectedRoute(tile.href)) {
+        if (isProtectedTile(tile)) {
           requireLogin(() => {
             router.push(tile.href)
           })
@@ -34,13 +31,13 @@ export function useTileManagement() {
         console.error('导航失败:', error)
       }
     },
-    [isProtectedRoute, requireLogin, router]
+    [isProtectedTile, requireLogin, router]
   )
 
   // 检查瓦片状态
   const getTileStatus = useCallback(
     (tile: Tile) => {
-      const isProtected = isProtectedRoute(tile.href)
+      const isProtected = isProtectedTile(tile)
       const needsLogin = isProtected && !isAuthenticated
 
       return {
@@ -49,7 +46,7 @@ export function useTileManagement() {
         isActive: !needsLogin,
       }
     },
-    [isProtectedRoute, isAuthenticated]
+    [isProtectedTile, isAuthenticated]
   )
 
   return {

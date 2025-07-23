@@ -5,30 +5,40 @@ import type { Tile } from '@/app/types'
 import Footer from '@/components/app/Footer'
 import { configs } from '@/app/configs'
 import { TileCard } from './components/TileCard'
+import { useTileManagement } from '@/app/hooks/useTileManagement'
 
 export default function Home() {
-  const tiles = configs.tiles as Tile[]
+  const { tiles, handleTileClick, getTileStatus, isAuthenticated } = useTileManagement()
 
   // 渲染单个瓦片
-  const renderTile = useCallback((tile: Tile, index: number, gridArea?: string) => {
-    const gridStyle = gridArea ? { gridArea } : {}
+  const renderTile = useCallback(
+    (tile: Tile, index: number, gridArea?: string) => {
+      const gridStyle = gridArea ? { gridArea } : {}
+      const { needsLogin, isProtected } = getTileStatus(tile)
 
-    return (
-      <div key={tile.name} className="min-h-[8rem]" style={gridStyle}>
-        <TileCard
-          tile={tile}
-          index={index}
-          keyPrefix="main"
-          customStyles=""
-          showCover={true}
-          needsLogin={tile.needLogin}
-          onClick={() => {
-            window.location.href = tile.href
-          }}
-        />
-      </div>
-    )
-  }, [])
+      // 开发环境下的调试信息
+      if (process.env.NODE_ENV === 'development') {
+        console.log(
+          `Tile ${tile.name}: needsLogin=${needsLogin}, isProtected=${isProtected}, isAuthenticated=${isAuthenticated}`
+        )
+      }
+
+      return (
+        <div key={tile.name} className="min-h-[8rem]" style={gridStyle}>
+          <TileCard
+            tile={tile}
+            index={index}
+            keyPrefix="main"
+            customStyles=""
+            showCover={true}
+            needsLogin={needsLogin}
+            onClick={() => handleTileClick(tile)}
+          />
+        </div>
+      )
+    },
+    [getTileStatus, handleTileClick, isAuthenticated]
+  )
 
   return (
     <>
