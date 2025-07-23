@@ -108,14 +108,9 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
         const parent = categoryTree.find(p => p.id.toString() === parentId)
         if (parent) {
           console.log('找到父分类:', parent.name, '子分类数量:', parent.children?.length || 0)
-          // 只有没有子分类时才触发 onSelect
-          if (!parent.children || parent.children.length === 0) {
-            console.log('没有子分类，调用 onSelect')
-            onSelect('parent', parent.id, parent.name)
-          } else {
-            console.log('有子分类，不调用 onSelect')
-          }
-          // 有子分类时，仅切换父分类，不触发 onSelect
+          // 选择父分类时总是立即触发搜索
+          console.log('选择父分类，立即调用 onSelect')
+          onSelect('parent', parent.id, parent.name)
         }
       }
     },
