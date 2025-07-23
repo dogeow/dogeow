@@ -46,21 +46,9 @@
 
 /* 移动端键盘弹出时的样式优化 */
 @media (max-width: 768px) {
-  /* 使用 dvh (dynamic viewport height) 来处理移动端键盘问题 */
+  /* 使用 vh 单位来处理移动端键盘问题 */
   [data-radix-popover-content] {
-    max-height: min(300px, 40dvh) !important;
-  }
-
-  /* 确保弹出层不会被键盘遮挡 */
-  [data-radix-popover-content][data-side='bottom'] {
-    transform: translateY(0) !important;
-  }
-
-  /* 当键盘弹出时，调整弹出层位置 */
-  @supports (height: 100dvh) {
-    [data-radix-popover-content] {
-      max-height: min(200px, 30dvh) !important;
-    }
+    max-height: min(250px, 35vh) !important;
   }
 }
 
