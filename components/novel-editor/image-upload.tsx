@@ -17,12 +17,8 @@ const onUpload = (file: File) => {
         // Successfully uploaded image
         if (res.status === 200) {
           const { url } = (await res.json()) as { url: string }
-          // preload the image
-          const image = new Image()
-          image.src = url
-          image.onload = () => {
-            resolve(url)
-          }
+          // 直接返回URL，不等待图片加载
+          resolve(url)
           // No blob store configured
         } else if (res.status === 401) {
           resolve(file)

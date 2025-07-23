@@ -1,21 +1,13 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import type { Tile } from '@/app/types'
 import Footer from '@/components/app/Footer'
 import { configs } from '@/app/configs'
 import { TileCard } from './components/TileCard'
-import { ImagePreloader } from './components/ImagePreloader'
 
 export default function Home() {
   const tiles = configs.tiles as Tile[]
-  const [imagesLoaded, setImagesLoaded] = useState(false)
-
-  // 预加载所有卡片图片
-  const imagesToPreload = tiles
-    .filter(tile => tile.cover)
-    .map(tile => `/images/projects/${tile.cover}`)
-    .concat(tiles.filter(tile => tile.icon).map(tile => `/images/projects/${tile.icon}`))
 
   // 渲染单个瓦片
   const renderTile = useCallback((tile: Tile, index: number, gridArea?: string) => {
@@ -40,9 +32,6 @@ export default function Home() {
 
   return (
     <>
-      {/* 预加载图片 */}
-      <ImagePreloader images={imagesToPreload} onAllLoaded={() => setImagesLoaded(true)} />
-
       {/* SEO 优化 */}
       <div className="sr-only">
         <h1>DogeOW - 个人工具和游戏平台</h1>
@@ -53,9 +42,7 @@ export default function Home() {
       <main className="max-w-7xl p-2">
         {/* 动态网格布局 - 根据配置自动生成 */}
         <div
-          className={`tile-grid grid grid-cols-3 gap-3 transition-opacity duration-300 sm:gap-4 ${
-            imagesLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          className="tile-grid grid grid-cols-3 gap-3 sm:gap-4"
           style={{
             gridTemplateRows: 'auto auto auto auto',
             gridTemplateAreas: configs.gridLayout.templateAreas,
@@ -63,22 +50,6 @@ export default function Home() {
         >
           {tiles.map((tile, index) => renderTile(tile, index, tile.gridArea))}
         </div>
-
-        {/* 加载占位符 */}
-        {!imagesLoaded && (
-          <div className="absolute inset-0 grid grid-cols-3 gap-3 p-2 sm:gap-4">
-            {tiles.map(tile => (
-              <div
-                key={`skeleton-${tile.name}`}
-                className="min-h-[8rem] animate-pulse rounded-lg"
-                style={{
-                  backgroundColor: tile.color + '40',
-                  gridArea: tile.gridArea,
-                }}
-              />
-            ))}
-          </div>
-        )}
       </main>
 
       <Footer />

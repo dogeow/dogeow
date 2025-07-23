@@ -15,10 +15,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import ImageUploader from '../ImageUploader'
-import LocationTreeSelect from '../LocationTreeSelect'
+import LocationComboboxSelectSimple from '../LocationComboboxSelectSimple'
 import CategoryTreeSelect, { CategorySelection } from '../CategoryTreeSelect'
 import { ItemFormData, Category } from '../../types'
-import { TagType, Location, LocationType, SelectedLocation } from '../../add/page'
+import { TagType, Location, LocationType } from '../../add/page'
+import { LocationSelection } from '../LocationComboboxSelectSimple'
 import { isLightColor } from '@/lib/helpers'
 import { apiRequest } from '@/lib/api'
 
@@ -65,7 +66,7 @@ export default function BasicInfoForm({
   const [rooms, setRooms] = useState<Location[]>([])
   const [spots, setSpots] = useState<Location[]>([])
   const [locationPath, setLocationPath] = useState<string>('')
-  const [selectedLocation, setSelectedLocation] = useState<SelectedLocation>(undefined)
+  const [selectedLocation, setSelectedLocation] = useState<LocationSelection>(undefined)
 
   // 数量设置对话框状态
   const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
@@ -152,9 +153,9 @@ export default function BasicInfoForm({
     }
   }
 
-  const handleLocationSelect = (type: LocationType, id: number) => {
+  const handleLocationSelect = (type: LocationType, id: number, fullPath?: string) => {
     setSelectedLocation({ type, id })
-    setLocationPath('')
+    setLocationPath(fullPath || '')
 
     if (type === 'area') {
       setValue('area_id', id.toString())
@@ -370,7 +371,7 @@ export default function BasicInfoForm({
 
           <div className="space-y-2">
             <Label className="mb-2 block">存放位置</Label>
-            <LocationTreeSelect
+            <LocationComboboxSelectSimple
               onSelect={handleLocationSelect}
               selectedLocation={selectedLocation}
             />

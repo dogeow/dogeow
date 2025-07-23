@@ -176,7 +176,7 @@ export function AppLauncher() {
           onCanPlay={() => audioManager.setReadyToPlay(true)}
           loop={false}
           hidden
-          preload="auto"
+          preload="none"
         />
       </div>
     </>

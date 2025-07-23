@@ -127,7 +127,7 @@ export function Combobox({
           </div>
 
           {/* 选项列表 */}
-          <ScrollArea className="max-h-[150px]">
+          <ScrollArea>
             <div className="p-1">
               {/* 创建新选项 */}
               {showCreateOption && (
