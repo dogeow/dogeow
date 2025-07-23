@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import React, { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { toast } from "sonner"
+import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { toast } from 'sonner'
 import {
   Dialog,
   DialogContent,
@@ -12,8 +12,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
-import { useNavStore } from "@/app/nav/stores/navStore"
+} from '@/components/ui/dialog'
+import { useNavStore } from '@/app/nav/stores/navStore'
 
 interface AddCategoryDialogProps {
   open: boolean
@@ -21,21 +21,21 @@ interface AddCategoryDialogProps {
   onCategoryAdded: () => void
 }
 
-export default function AddCategoryDialog({ 
-  open, 
+export default function AddCategoryDialog({
+  open,
   onOpenChange,
-  onCategoryAdded
+  onCategoryAdded,
 }: AddCategoryDialogProps) {
-  const [categoryName, setCategoryName] = useState("")
-  const [categoryDescription, setCategoryDescription] = useState("")
+  const [categoryName, setCategoryName] = useState('')
+  const [categoryDescription, setCategoryDescription] = useState('')
   const [loading, setLoading] = useState(false)
   const { createCategory } = useNavStore()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!categoryName.trim()) {
-      toast.error("分类名称不能为空")
+      toast.error('分类名称不能为空')
       return
     }
 
@@ -45,16 +45,16 @@ export default function AddCategoryDialog({
         name: categoryName,
         description: categoryDescription || null,
         is_visible: true,
-        sort_order: 0
+        sort_order: 0,
       })
-      
-      toast.success("分类创建成功")
-      setCategoryName("")
-      setCategoryDescription("")
+
+      toast.success('分类创建成功')
+      setCategoryName('')
+      setCategoryDescription('')
       onCategoryAdded()
       onOpenChange(false)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : '发生错误，请重试')
     } finally {
       setLoading(false)
     }
@@ -65,9 +65,7 @@ export default function AddCategoryDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>添加分类</DialogTitle>
-          <DialogDescription>
-            创建一个新的导航分类，以便更好地组织您的网站导航。
-          </DialogDescription>
+          <DialogDescription>创建一个新的导航分类，以便更好地组织您的网站导航。</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -76,7 +74,7 @@ export default function AddCategoryDialog({
                 id="categoryName"
                 placeholder="输入分类名称"
                 value={categoryName}
-                onChange={(e) => setCategoryName(e.target.value)}
+                onChange={e => setCategoryName(e.target.value)}
                 autoFocus
               />
             </div>
@@ -85,7 +83,7 @@ export default function AddCategoryDialog({
                 id="categoryDescription"
                 placeholder="输入分类描述（可选）"
                 value={categoryDescription}
-                onChange={(e) => setCategoryDescription(e.target.value)}
+                onChange={e => setCategoryDescription(e.target.value)}
                 rows={3}
                 className="resize-none"
               />
@@ -96,11 +94,11 @@ export default function AddCategoryDialog({
               取消
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? "添加中..." : "添加分类"}
+              {loading ? '添加中...' : '添加分类'}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   )
-} 
+}

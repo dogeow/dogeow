@@ -1,4 +1,4 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
@@ -23,6 +23,6 @@ const nextConfig: NextConfig = {
     ],
     deviceSizes: [80, 100, 200, 300, 400, 500, 600, 700, 800, 900, 1000, 1200],
   },
-};
+}
 
-export default nextConfig;
+export default nextConfig

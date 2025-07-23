@@ -1,17 +1,17 @@
-import { ComponentType } from "react"
-import TimeConverter from "./components/TimeConverter"
+import { ComponentType } from 'react'
+import TimeConverter from './components/TimeConverter'
 
 // 工具类别定义
-export type ToolCategory = 
-  | "日期时间" 
-  | "文本处理" 
-  | "编码转换" 
-  | "格式化" 
-  | "计算工具" 
-  | "网络工具" 
-  | "开发辅助" 
-  | "多媒体"
-  | "其他"
+export type ToolCategory =
+  | '日期时间'
+  | '文本处理'
+  | '编码转换'
+  | '格式化'
+  | '计算工具'
+  | '网络工具'
+  | '开发辅助'
+  | '多媒体'
+  | '其他'
 
 // 工具接口定义
 export interface Tool {
@@ -28,12 +28,12 @@ export interface Tool {
 // 所有工具列表
 export const tools: Tool[] = [
   {
-    id: "time-converter",
-    title: "时间转换器",
-    description: "时间戳与日期时间相互转换",
+    id: 'time-converter',
+    title: '时间转换器',
+    description: '时间戳与日期时间相互转换',
     component: TimeConverter,
-    category: "日期时间",
-    tags: ["时间戳", "日期", "转换"],
+    category: '日期时间',
+    tags: ['时间戳', '日期', '转换'],
   },
 ]
 
@@ -55,9 +55,10 @@ export const getToolsByCategory = (category: ToolCategory): Tool[] => {
 // 搜索工具
 export const searchTools = (query: string): Tool[] => {
   const lowerQuery = query.toLowerCase()
-  return tools.filter(tool => 
-    tool.title.toLowerCase().includes(lowerQuery) ||
-    tool.description.toLowerCase().includes(lowerQuery) ||
-    tool.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
+  return tools.filter(
+    tool =>
+      tool.title.toLowerCase().includes(lowerQuery) ||
+      tool.description.toLowerCase().includes(lowerQuery) ||
+      tool.tags.some(tag => tag.toLowerCase().includes(lowerQuery))
   )
-} 
+}

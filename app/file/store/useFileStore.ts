@@ -9,7 +9,7 @@ interface FileStore {
   selectedFiles: number[]
   sortField: SortField
   sortDirection: SortDirection
-  
+
   // 动作
   setCurrentView: (view: FileView) => void
   setSearchQuery: (query: string) => void
@@ -18,7 +18,7 @@ interface FileStore {
   handleSort: (field: SortField) => void
 }
 
-const useFileStore = create<FileStore>((set) => ({
+const useFileStore = create<FileStore>(set => ({
   // 初始状态
   currentView: 'grid',
   searchQuery: '',
@@ -26,25 +26,27 @@ const useFileStore = create<FileStore>((set) => ({
   selectedFiles: [],
   sortField: 'created_at',
   sortDirection: 'desc',
-  
+
   // 动作
-  setCurrentView: (view) => set({ currentView: view }),
-  setSearchQuery: (query) => set({ searchQuery: query }),
-  navigateToFolder: (folderId) => set({ 
-    currentFolderId: folderId,
-    selectedFiles: [] 
-  }),
-  setSelectedFiles: (fileIds) => set({ selectedFiles: fileIds }),
-  handleSort: (field) => set((state) => {
-    if (state.sortField === field) {
-      return { sortDirection: state.sortDirection === 'asc' ? 'desc' : 'asc' }
-    } else {
-      return {
-        sortField: field,
-        sortDirection: 'asc'
+  setCurrentView: view => set({ currentView: view }),
+  setSearchQuery: query => set({ searchQuery: query }),
+  navigateToFolder: folderId =>
+    set({
+      currentFolderId: folderId,
+      selectedFiles: [],
+    }),
+  setSelectedFiles: fileIds => set({ selectedFiles: fileIds }),
+  handleSort: field =>
+    set(state => {
+      if (state.sortField === field) {
+        return { sortDirection: state.sortDirection === 'asc' ? 'desc' : 'asc' }
+      } else {
+        return {
+          sortField: field,
+          sortDirection: 'asc',
+        }
       }
-    }
-  })
+    }),
 }))
 
-export default useFileStore 
+export default useFileStore

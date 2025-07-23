@@ -1,5 +1,5 @@
-import { useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { configs } from '@/app/configs'
 import type { Tile } from '@/app/types'
 import { useProjectCoverStore } from '@/stores/projectCoverStore'
@@ -20,37 +20,43 @@ export function useTileManagement() {
   }, [])
 
   // 处理瓦片点击
-  const handleTileClick = useCallback((tile: Tile) => {
-    try {
-      if (isProtectedRoute(tile.href)) {
-        requireLogin(() => {
+  const handleTileClick = useCallback(
+    (tile: Tile) => {
+      try {
+        if (isProtectedRoute(tile.href)) {
+          requireLogin(() => {
+            router.push(tile.href)
+          })
+        } else {
           router.push(tile.href)
-        })
-      } else {
-        router.push(tile.href)
+        }
+      } catch (error) {
+        console.error('导航失败:', error)
       }
-    } catch (error) {
-      console.error('导航失败:', error)
-    }
-  }, [isProtectedRoute, requireLogin, router])
+    },
+    [isProtectedRoute, requireLogin, router]
+  )
 
   // 检查瓦片状态
-  const getTileStatus = useCallback((tile: Tile) => {
-    const isProtected = isProtectedRoute(tile.href)
-    const needsLogin = isProtected && !isAuthenticated
+  const getTileStatus = useCallback(
+    (tile: Tile) => {
+      const isProtected = isProtectedRoute(tile.href)
+      const needsLogin = isProtected && !isAuthenticated
 
-    return {
-      isProtected,
-      needsLogin,
-      isActive: !needsLogin
-    }
-  }, [isProtectedRoute, isAuthenticated])
+      return {
+        isProtected,
+        needsLogin,
+        isActive: !needsLogin,
+      }
+    },
+    [isProtectedRoute, isAuthenticated]
+  )
 
   return {
     tiles,
     showProjectCovers,
     handleTileClick,
     getTileStatus,
-    isAuthenticated
+    isAuthenticated,
   }
-} 
+}

@@ -1,5 +1,5 @@
-import * as THREE from "three"
-import * as CANNON from "cannon-es"
+import * as THREE from 'three'
+import * as CANNON from 'cannon-es'
 
 // 场景引用接口
 export interface SceneRef {
@@ -44,4 +44,4 @@ export interface BallObject {
 export interface PinObject {
   mesh: THREE.Mesh
   body: CANNON.Body
-} 
+}

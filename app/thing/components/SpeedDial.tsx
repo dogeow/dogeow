@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import React from "react"
-import { Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
+import React from 'react'
+import { Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useRouter } from 'next/navigation'
 
 interface SpeedDialProps {
   href?: string
@@ -12,11 +12,11 @@ interface SpeedDialProps {
   className?: string
 }
 
-export function SpeedDial({ 
-  href = "/thing/add", 
+export function SpeedDial({
+  href = '/thing/add',
   onClick,
   icon = <Plus className="h-6 w-6" />,
-  className = "h-14 w-14 rounded-full shadow-lg bg-[#78B15E] hover:bg-[#6CA052] text-white"
+  className = 'h-14 w-14 rounded-full shadow-lg bg-[#78B15E] hover:bg-[#6CA052] text-white',
 }: SpeedDialProps) {
   const router = useRouter()
 
@@ -29,12 +29,8 @@ export function SpeedDial({
   }
 
   return (
-    <div className="fixed bottom-24 right-6 z-50">
-      <Button
-        size="icon"
-        className={className}
-        onClick={handleClick}
-      >
+    <div className="fixed right-6 bottom-24 z-50">
+      <Button size="icon" className={className} onClick={handleClick}>
         {icon}
       </Button>
     </div>
@@ -43,4 +39,4 @@ export function SpeedDial({
 
 export default function ThingSpeedDial() {
   return <SpeedDial />
-} 
+}

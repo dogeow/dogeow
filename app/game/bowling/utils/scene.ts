@@ -1,12 +1,12 @@
-import * as THREE from "three"
-import * as CANNON from "cannon-es"
-import { PHYSICS_CONFIG, PIN_POSITIONS } from "../config/constants"
-import type { PhysicsMaterials, SceneElements, BallObject, PinObject } from "../types/scene"
+import * as THREE from 'three'
+import * as CANNON from 'cannon-es'
+import { PHYSICS_CONFIG, PIN_POSITIONS } from '../config/constants'
+import type { PhysicsMaterials, SceneElements, BallObject, PinObject } from '../types/scene'
 
 // 创建场景元素（球道、地面等）
 export function createSceneElements(
-  scene: THREE.Scene, 
-  world: CANNON.World, 
+  scene: THREE.Scene,
+  world: CANNON.World,
   materials: PhysicsMaterials
 ): SceneElements {
   const { groundMaterial } = materials
@@ -27,10 +27,10 @@ export function createSceneElements(
   const laneWidth = PHYSICS_CONFIG.LANE_WIDTH
 
   // 视觉球道
-  const laneMaterial = new THREE.MeshPhongMaterial({ 
-    color: 0xdeb887, 
-    shininess: 80, 
-    specular: 0x444444 
+  const laneMaterial = new THREE.MeshPhongMaterial({
+    color: 0xdeb887,
+    shininess: 80,
+    specular: 0x444444,
   })
   const laneGeometry = new THREE.PlaneGeometry(laneWidth, laneLength)
   const laneMesh = new THREE.Mesh(laneGeometry, laneMaterial)
@@ -61,19 +61,19 @@ export function createSceneElements(
 
 // 创建球
 export function createBall(
-  scene: THREE.Scene, 
-  world: CANNON.World, 
+  scene: THREE.Scene,
+  world: CANNON.World,
   ballMaterial: CANNON.Material
 ): BallObject {
   const ballGeometry = new THREE.SphereGeometry(PHYSICS_CONFIG.BALL_RADIUS, 32, 32)
   const ballMesh = new THREE.Mesh(
     ballGeometry,
-    new THREE.MeshPhongMaterial({ 
+    new THREE.MeshPhongMaterial({
       color: 0xcc0000,
       shininess: 100,
       specular: 0x666666,
       emissive: 0x220000,
-      transparent: false
+      transparent: false,
     })
   )
   ballMesh.position.set(0, 1, 10)
@@ -82,13 +82,13 @@ export function createBall(
   scene.add(ballMesh)
 
   const ballShape = new CANNON.Sphere(PHYSICS_CONFIG.BALL_RADIUS)
-  const ballBody = new CANNON.Body({ 
+  const ballBody = new CANNON.Body({
     mass: PHYSICS_CONFIG.BALL_MASS,
     material: ballMaterial,
     linearDamping: 0.1,
     angularDamping: 0.05,
     fixedRotation: false,
-    type: CANNON.Body.DYNAMIC
+    type: CANNON.Body.DYNAMIC,
   })
   ballBody.addShape(ballShape)
   ballBody.position.set(0, 1, 10)
@@ -99,8 +99,8 @@ export function createBall(
 
 // 创建球瓶
 export function createPins(
-  scene: THREE.Scene, 
-  world: CANNON.World, 
+  scene: THREE.Scene,
+  world: CANNON.World,
   pinMaterial: CANNON.Material
 ): PinObject[] {
   const pinHeight = PHYSICS_CONFIG.PIN_HEIGHT
@@ -141,12 +141,12 @@ export function createPins(
     map: pinTexture,
     shininess: 120,
     specular: 0x444444,
-    emissive: 0x111111
+    emissive: 0x111111,
   })
-  
+
   const pins: PinObject[] = []
 
-  PIN_POSITIONS.forEach((pos) => {
+  PIN_POSITIONS.forEach(pos => {
     const pinMesh = new THREE.Mesh(pinGeometry, pinMaterial3D)
     pinMesh.position.set(pos[0], pos[1], pos[2])
     pinMesh.castShadow = true
@@ -154,16 +154,16 @@ export function createPins(
     scene.add(pinMesh)
 
     const pinShape = new CANNON.Cylinder(
-      PHYSICS_CONFIG.PIN_RADIUS_TOP, 
-      PHYSICS_CONFIG.PIN_RADIUS_BOTTOM, 
-      PHYSICS_CONFIG.PIN_HEIGHT, 
+      PHYSICS_CONFIG.PIN_RADIUS_TOP,
+      PHYSICS_CONFIG.PIN_RADIUS_BOTTOM,
+      PHYSICS_CONFIG.PIN_HEIGHT,
       8
     )
-    const pinBody = new CANNON.Body({ 
+    const pinBody = new CANNON.Body({
       mass: PHYSICS_CONFIG.PIN_MASS,
       material: pinMaterial,
       linearDamping: 0.2,
-      angularDamping: 0.3
+      angularDamping: 0.3,
     })
     pinBody.addShape(pinShape)
     pinBody.position.set(pos[0], pos[1], pos[2])
@@ -179,10 +179,15 @@ export function createPins(
 export function createWalls(scene: THREE.Scene, world: CANNON.World) {
   const wallLength = 37
   const wallPositionZ = -3.5
-  const wallCenterX = PHYSICS_CONFIG.LANE_WIDTH / 2 + PHYSICS_CONFIG.GUTTER_WIDTH + PHYSICS_CONFIG.WALL_THICKNESS / 2
+  const wallCenterX =
+    PHYSICS_CONFIG.LANE_WIDTH / 2 + PHYSICS_CONFIG.GUTTER_WIDTH + PHYSICS_CONFIG.WALL_THICKNESS / 2
 
   const createWall = (x: number) => {
-    const wallGeometry = new THREE.BoxGeometry(PHYSICS_CONFIG.WALL_THICKNESS, PHYSICS_CONFIG.WALL_HEIGHT, wallLength)
+    const wallGeometry = new THREE.BoxGeometry(
+      PHYSICS_CONFIG.WALL_THICKNESS,
+      PHYSICS_CONFIG.WALL_HEIGHT,
+      wallLength
+    )
     const wallMesh = new THREE.Mesh(
       wallGeometry,
       new THREE.MeshLambertMaterial({ color: 0x666666 })
@@ -190,7 +195,13 @@ export function createWalls(scene: THREE.Scene, world: CANNON.World) {
     wallMesh.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT / 2, wallPositionZ)
     scene.add(wallMesh)
 
-    const wallShape = new CANNON.Box(new CANNON.Vec3(PHYSICS_CONFIG.WALL_THICKNESS / 2, PHYSICS_CONFIG.WALL_HEIGHT / 2, wallLength / 2))
+    const wallShape = new CANNON.Box(
+      new CANNON.Vec3(
+        PHYSICS_CONFIG.WALL_THICKNESS / 2,
+        PHYSICS_CONFIG.WALL_HEIGHT / 2,
+        wallLength / 2
+      )
+    )
     const wallBody = new CANNON.Body({ mass: 0 })
     wallBody.addShape(wallShape)
     wallBody.position.set(x, PHYSICS_CONFIG.WALL_HEIGHT / 2, wallPositionZ)
@@ -198,7 +209,7 @@ export function createWalls(scene: THREE.Scene, world: CANNON.World) {
   }
 
   createWall(-wallCenterX) // 左墙
-  createWall(wallCenterX)  // 右墙
+  createWall(wallCenterX) // 右墙
 
   // 创建视觉上的边沟
   const gutterGeometry = new THREE.BoxGeometry(PHYSICS_CONFIG.GUTTER_WIDTH, 0.1, wallLength)
@@ -273,4 +284,4 @@ export function createLighting(scene: THREE.Scene) {
   const backLight = new THREE.PointLight(0x444444, 0.5, 30)
   backLight.position.set(0, 5, -25)
   scene.add(backLight)
-} 
+}

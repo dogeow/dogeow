@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Home, DoorOpen, MapPin, FolderTree } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Home, DoorOpen, MapPin, FolderTree } from 'lucide-react'
 import AreaTab from './components/AreaTab'
 import RoomTab from './components/RoomTab'
 import SpotTab from './components/SpotTab'
@@ -15,7 +15,7 @@ export default function Locations() {
   // 使用自定义hook管理位置相关的状态和操作
   const {
     areas,
-    rooms, 
+    rooms,
     spots,
     loading,
     deleteDialogOpen,
@@ -30,32 +30,29 @@ export default function Locations() {
     handleUpdateSpot,
     confirmDelete,
     handleDelete,
-    handleLocationSelect
-  } = useLocationManagement();
+    handleLocationSelect,
+  } = useLocationManagement()
 
   // 状态
   const [activeTab, setActiveTab] = useState<LocationType | 'tree'>('tree')
 
   // 处理位置选择
   const handleTabLocationSelect = (type: LocationType, id: number) => {
-    handleLocationSelect(type, id);
-    setActiveTab(type);
-  };
-  
+    handleLocationSelect(type, id)
+    setActiveTab(type)
+  }
+
   const tabItems = [
-    { value: 'tree', icon: <FolderTree className="h-4 w-4"/>, label: '树形视图' },
-    { value: 'area', icon: <Home className="h-4 w-4"/>, label: '区域' },
-    { value: 'room', icon: <DoorOpen className="h-4 w-4"/>, label: '房间' },
-    { value: 'spot', icon: <MapPin className="h-4 w-4"/>, label: '具体位置' }
-  ];
+    { value: 'tree', icon: <FolderTree className="h-4 w-4" />, label: '树形视图' },
+    { value: 'area', icon: <Home className="h-4 w-4" />, label: '区域' },
+    { value: 'room', icon: <DoorOpen className="h-4 w-4" />, label: '房间' },
+    { value: 'spot', icon: <MapPin className="h-4 w-4" />, label: '具体位置' },
+  ]
 
   // Tab内容配置
   const tabContents = {
     tree: (
-      <TreeViewTab
-        selectedLocation={selectedLocation}
-        onLocationSelect={handleTabLocationSelect}
-      />
+      <TreeViewTab selectedLocation={selectedLocation} onLocationSelect={handleTabLocationSelect} />
     ),
     area: (
       <AreaTab
@@ -63,7 +60,7 @@ export default function Locations() {
         loading={loading}
         onAddArea={handleAddArea}
         onUpdateArea={handleUpdateArea}
-        onDeleteArea={(areaId) => confirmDelete(areaId, 'area')}
+        onDeleteArea={areaId => confirmDelete(areaId, 'area')}
       />
     ),
     room: (
@@ -73,7 +70,7 @@ export default function Locations() {
         loading={loading}
         onAddRoom={handleAddRoom}
         onUpdateRoom={handleUpdateRoom}
-        onDeleteRoom={(roomId) => confirmDelete(roomId, 'room')}
+        onDeleteRoom={roomId => confirmDelete(roomId, 'room')}
       />
     ),
     spot: (
@@ -83,14 +80,18 @@ export default function Locations() {
         loading={loading}
         onAddSpot={handleAddSpot}
         onUpdateSpot={handleUpdateSpot}
-        onDeleteSpot={(spotId) => confirmDelete(spotId, 'spot')}
+        onDeleteSpot={spotId => confirmDelete(spotId, 'spot')}
       />
-    )
-  };
-  
+    ),
+  }
+
   return (
     <div>
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as LocationType | 'tree')} className="mt-2">
+      <Tabs
+        value={activeTab}
+        onValueChange={value => setActiveTab(value as LocationType | 'tree')}
+        className="mt-2"
+      >
         <TabsList className="w-full">
           {tabItems.map(tab => (
             <TabsTrigger key={tab.value} value={tab.value} className="flex-1">
@@ -99,7 +100,7 @@ export default function Locations() {
             </TabsTrigger>
           ))}
         </TabsList>
-        
+
         {Object.entries(tabContents).map(([key, content]) => (
           <TabsContent key={key} value={key} className="mt-4">
             {content}
@@ -126,4 +127,4 @@ export default function Locations() {
       />
     </div>
   )
-} 
+}

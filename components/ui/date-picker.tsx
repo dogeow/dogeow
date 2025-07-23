@@ -1,12 +1,12 @@
-"use client"
+'use client'
 
-import * as React from "react"
-import { format } from "date-fns"
-import { Calendar as CalendarIcon } from "lucide-react"
-import { cn } from "@/lib/helpers"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import * as React from 'react'
+import { format } from 'date-fns'
+import { Calendar as CalendarIcon } from 'lucide-react'
+import { cn } from '@/lib/helpers'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
 interface DatePickerProps {
   date: Date | null
@@ -18,7 +18,7 @@ interface DatePickerProps {
 export function DatePicker({
   date,
   setDate,
-  placeholder = "选择日期",
+  placeholder = '选择日期',
   className,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = React.useState(false)
@@ -35,20 +35,20 @@ export function DatePicker({
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground",
+            'w-full justify-start text-left font-normal',
+            !date && 'text-muted-foreground',
             className
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, "yyyy-MM-dd") : <span>{placeholder}</span>}
+          {date ? format(date, 'yyyy-MM-dd') : <span>{placeholder}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <div className="p-3">
           <Input
             type="date"
-            value={date ? format(date, "yyyy-MM-dd") : ""}
+            value={date ? format(date, 'yyyy-MM-dd') : ''}
             onChange={handleDateChange}
             className="w-full"
           />
@@ -56,4 +56,4 @@ export function DatePicker({
       </PopoverContent>
     </Popover>
   )
-} 
+}

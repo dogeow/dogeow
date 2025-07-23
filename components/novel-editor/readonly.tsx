@@ -1,11 +1,7 @@
-"use client";
-import {
-  EditorContent,
-  EditorRoot,
-  type JSONContent,
-} from "novel";
-import { useEffect, useState } from "react";
-import hljs from "highlight.js";
+'use client'
+import { EditorContent, EditorRoot, type JSONContent } from 'novel'
+import { useEffect, useState } from 'react'
+import hljs from 'highlight.js'
 
 // 导入必要的扩展，避免冲突
 import {
@@ -17,10 +13,10 @@ import {
   TiptapUnderline,
   TiptapImage,
   TiptapLink,
-} from "novel";
-import { CodeBlock } from "@tiptap/extension-code-block";
-import { Markdown } from "tiptap-markdown";
-import { cx } from "class-variance-authority";
+} from 'novel'
+import { CodeBlock } from '@tiptap/extension-code-block'
+import { Markdown } from 'tiptap-markdown'
+import { cx } from 'class-variance-authority'
 
 const readonlyExtensions = [
   StarterKit.configure({
@@ -28,33 +24,33 @@ const readonlyExtensions = [
     codeBlock: false,
     bulletList: {
       HTMLAttributes: {
-        class: cx("list-disc list-outside leading-3 -mt-2"),
+        class: cx('list-disc list-outside leading-3 -mt-2'),
       },
     },
     orderedList: {
       HTMLAttributes: {
-        class: cx("list-decimal list-outside leading-3 -mt-2"),
+        class: cx('list-decimal list-outside leading-3 -mt-2'),
       },
     },
     listItem: {
       HTMLAttributes: {
-        class: cx("leading-normal -mb-2"),
+        class: cx('leading-normal -mb-2'),
       },
     },
     blockquote: {
       HTMLAttributes: {
-        class: cx("border-l-4 border-primary px-2"),
+        class: cx('border-l-4 border-primary px-2'),
       },
     },
     code: {
       HTMLAttributes: {
-        class: cx("rounded-md bg-muted px-1.5 py-1 font-mono font-medium"),
-        spellcheck: "false",
+        class: cx('rounded-md bg-muted px-1.5 py-1 font-mono font-medium'),
+        spellcheck: 'false',
       },
     },
     horizontalRule: false,
     dropcursor: {
-      color: "#DBEAFE",
+      color: '#DBEAFE',
       width: 4,
     },
     gapcursor: false,
@@ -62,35 +58,37 @@ const readonlyExtensions = [
   TiptapLink.configure({
     HTMLAttributes: {
       class: cx(
-        "text-muted-foreground underline underline-offset-[3px] hover:text-primary transition-colors cursor-pointer",
+        'text-muted-foreground underline underline-offset-[3px] hover:text-primary transition-colors cursor-pointer'
       ),
     },
   }),
   TiptapImage.configure({
     allowBase64: true,
     HTMLAttributes: {
-      class: cx("rounded-lg border border-muted"),
+      class: cx('rounded-lg border border-muted'),
     },
   }),
   TaskList.configure({
     HTMLAttributes: {
-      class: cx("not-prose pl-2 "),
+      class: cx('not-prose pl-2 '),
     },
   }),
   TaskItem.configure({
     HTMLAttributes: {
-      class: cx("flex gap-2 items-start"),
+      class: cx('flex gap-2 items-start'),
     },
     nested: true,
   }),
   CodeBlock.configure({
     HTMLAttributes: {
-      class: cx("rounded-md bg-muted text-muted-foreground border font-mono font-medium px-4 py-3 -mx-4 my-2"),
+      class: cx(
+        'rounded-md bg-muted text-muted-foreground border font-mono font-medium px-4 py-3 -mx-4 my-2'
+      ),
     },
   }),
   Mathematics.configure({
     HTMLAttributes: {
-      class: cx("text-foreground rounded p-1 hover:bg-accent cursor-pointer"),
+      class: cx('text-foreground rounded p-1 hover:bg-accent cursor-pointer'),
     },
     katexOptions: {
       throwOnError: false,
@@ -99,8 +97,8 @@ const readonlyExtensions = [
   Markdown.configure({
     html: true,
     tightLists: true,
-    tightListClass: "tight",
-    bulletListMarker: "-",
+    tightListClass: 'tight',
+    bulletListMarker: '-',
     linkify: false,
     breaks: false,
     transformPastedText: false,
@@ -108,45 +106,45 @@ const readonlyExtensions = [
   }),
   HighlightExtension,
   TiptapUnderline,
-];
+]
 
 interface ReadonlyEditorProps {
-  content?: JSONContent | null;
-  className?: string;
+  content?: JSONContent | null
+  className?: string
 }
 
 const ReadonlyEditor = ({ content, className }: ReadonlyEditorProps) => {
-  const [initialContent, setInitialContent] = useState<JSONContent | null>(null);
+  const [initialContent, setInitialContent] = useState<JSONContent | null>(null)
 
   // 应用代码高亮
   const highlightCodeblocks = () => {
     setTimeout(() => {
-      const codeBlocks = document.querySelectorAll("pre code:not(.hljs)");
-      codeBlocks.forEach((block) => {
+      const codeBlocks = document.querySelectorAll('pre code:not(.hljs)')
+      codeBlocks.forEach(block => {
         if (block instanceof HTMLElement) {
           try {
-            hljs.highlightElement(block);
+            hljs.highlightElement(block)
           } catch (error) {
-            console.warn('Failed to highlight code block:', error);
+            console.warn('Failed to highlight code block:', error)
           }
         }
-      });
-    }, 100);
-  };
+      })
+    }, 100)
+  }
 
   useEffect(() => {
     if (content) {
-      setInitialContent(content);
+      setInitialContent(content)
     }
-  }, [content]);
+  }, [content])
 
   useEffect(() => {
     if (initialContent) {
-      highlightCodeblocks();
+      highlightCodeblocks()
     }
-  }, [initialContent]);
+  }, [initialContent])
 
-  if (!initialContent) return null;
+  if (!initialContent) return null
 
   return (
     <div className={`relative w-full ${className || ''}`}>
@@ -154,18 +152,18 @@ const ReadonlyEditor = ({ content, className }: ReadonlyEditorProps) => {
         <EditorContent
           initialContent={initialContent}
           extensions={readonlyExtensions}
-          className="prose prose-lg dark:prose-invert prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl font-sans focus:outline-none max-w-full"
+          className="prose prose-lg dark:prose-invert prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl max-w-full font-sans focus:outline-none"
           editable={false}
           editorProps={{
             attributes: {
               class:
-                "prose prose-lg dark:prose-invert prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl font-sans focus:outline-none max-w-full",
+                'prose prose-lg dark:prose-invert prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl font-sans focus:outline-none max-w-full',
             },
           }}
         />
       </EditorRoot>
     </div>
-  );
-};
+  )
+}
 
-export default ReadonlyEditor; 
+export default ReadonlyEditor

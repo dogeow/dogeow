@@ -1,12 +1,19 @@
-"use client"
+'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Card, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
-import { Folder, FolderOpen, Tag, Plus, Trash2, Check, X } from "lucide-react"
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+  TableCell,
+} from '@/components/ui/table'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
+import { Folder, FolderOpen, Tag, Plus, Trash2, Check, X } from 'lucide-react'
 import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 import { useCategories } from './hooks/useCategories'
 import { useInlineEdit } from './hooks/useInlineEdit'
@@ -15,11 +22,11 @@ import UncategorizedRow from './components/UncategorizedRow'
 import EmptyState from './components/EmptyState'
 import { Category } from '../types'
 import { useItemStore } from '../stores/itemStore'
-import { toast } from "sonner"
+import { toast } from 'sonner'
 
 // 扩展的分类类型，包含子分类
 interface CategoryWithChildren extends Category {
-  children?: Category[];
+  children?: Category[]
 }
 
 export default function Categories() {
@@ -34,9 +41,9 @@ export default function Categories() {
     startEdit,
     cancelEdit,
     handleKeyDown,
-    isEditing
+    isEditing,
   } = useInlineEdit()
-  
+
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
   const [expandedCategories, setExpandedCategories] = useState<Set<number>>(new Set())
@@ -48,7 +55,7 @@ export default function Categories() {
   const categoryTree = useMemo(() => {
     const parentCategories: CategoryWithChildren[] = []
     const childCategories: Category[] = []
-    
+
     // 分离父分类和子分类
     categories.forEach(category => {
       if (category.parent_id) {
@@ -56,11 +63,11 @@ export default function Categories() {
       } else {
         parentCategories.push({
           ...category,
-          children: []
+          children: [],
         })
       }
     })
-    
+
     // 将子分类添加到对应的父分类下
     childCategories.forEach(child => {
       const parent = parentCategories.find(p => p.id === child.parent_id)
@@ -68,7 +75,7 @@ export default function Categories() {
         parent.children!.push(child)
       }
     })
-    
+
     return parentCategories
   }, [categories])
 
@@ -87,7 +94,7 @@ export default function Categories() {
   // 处理保存编辑
   const handleSaveEdit = useCallback(async () => {
     if (!editingId) return
-    
+
     const success = await updateCategory(editingId, editingValue)
     if (success) {
       cancelEdit()
@@ -100,9 +107,12 @@ export default function Categories() {
   }, [cancelEdit])
 
   // 处理键盘事件
-  const handleEditKeyDown = useCallback((e: React.KeyboardEvent) => {
-    handleKeyDown(e, handleSaveEdit, handleCancelEdit)
-  }, [handleKeyDown, handleSaveEdit, handleCancelEdit])
+  const handleEditKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      handleKeyDown(e, handleSaveEdit, handleCancelEdit)
+    },
+    [handleKeyDown, handleSaveEdit, handleCancelEdit]
+  )
 
   // 处理删除确认
   const handleConfirmDelete = useCallback((id: number) => {
@@ -113,7 +123,7 @@ export default function Categories() {
   // 处理删除操作
   const handleDeleteCategory = useCallback(async () => {
     if (!categoryToDelete) return
-    
+
     const success = await deleteCategory(categoryToDelete)
     if (success) {
       setDeleteDialogOpen(false)
@@ -149,39 +159,40 @@ export default function Categories() {
   // 保存子分类
   const saveChild = useCallback(async () => {
     if (!creatingChildFor || !newChildName.trim()) return
-    
+
     setCreatingChild(true)
     try {
       await createCategory({
         name: newChildName.trim(),
-        parent_id: creatingChildFor
+        parent_id: creatingChildFor,
       })
-      
+
       toast.success(`已创建子分类 "${newChildName}"`)
       cancelCreateChild()
       await refreshCategories()
     } catch (error) {
-      console.error("创建子分类失败:", error)
-      toast.error("创建子分类失败：" + (error instanceof Error ? error.message : "未知错误"))
+      console.error('创建子分类失败:', error)
+      toast.error('创建子分类失败：' + (error instanceof Error ? error.message : '未知错误'))
     } finally {
       setCreatingChild(false)
     }
   }, [creatingChildFor, newChildName, createCategory, cancelCreateChild, refreshCategories])
 
   // 处理子分类输入的键盘事件
-  const handleChildKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      saveChild()
-    } else if (e.key === 'Escape') {
-      cancelCreateChild()
-    }
-  }, [saveChild, cancelCreateChild])
+  const handleChildKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        saveChild()
+      } else if (e.key === 'Escape') {
+        cancelCreateChild()
+      }
+    },
+    [saveChild, cancelCreateChild]
+  )
 
   // 获取要删除的分类名称
   const categoryToDeleteName = useMemo(() => {
-    return categoryToDelete 
-      ? categories.find(c => c.id === categoryToDelete)?.name || '' 
-      : ''
+    return categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''
   }, [categoryToDelete, categories])
 
   // 渲染表格内容
@@ -201,7 +212,7 @@ export default function Categories() {
         </TableHeader>
         <TableBody>
           <UncategorizedRow count={uncategorizedCount} />
-          {categoryTree.map((parent) => (
+          {categoryTree.map(parent => (
             <React.Fragment key={parent.id}>
               {/* 父分类行 */}
               <TableRow>
@@ -220,17 +231,17 @@ export default function Categories() {
                       )}
                     </Button>
                     {isEditing(parent.id) ? (
-                      <div className="flex gap-2 items-center flex-1">
+                      <div className="flex flex-1 items-center gap-2">
                         <Input
                           ref={inputRef}
                           value={editingValue}
-                          onChange={(e) => setEditingValue(e.target.value)}
+                          onChange={e => setEditingValue(e.target.value)}
                           className="h-8"
                           onKeyDown={handleEditKeyDown}
                           disabled={loading}
                         />
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={handleSaveEdit}
                           disabled={loading}
@@ -238,8 +249,8 @@ export default function Categories() {
                         >
                           <Check className="h-4 w-4 text-green-500" />
                         </Button>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={handleCancelEdit}
                           disabled={loading}
@@ -249,9 +260,9 @@ export default function Categories() {
                         </Button>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between flex-1 group">
-                        <div 
-                          className="cursor-pointer hover:underline font-medium" 
+                      <div className="group flex flex-1 items-center justify-between">
+                        <div
+                          className="cursor-pointer font-medium hover:underline"
                           onClick={() => startEdit(parent.id, parent.name)}
                         >
                           {parent.name}
@@ -262,25 +273,23 @@ export default function Categories() {
                           className="h-6 px-2 opacity-0 group-hover:opacity-100"
                           onClick={() => startCreateChild(parent.id)}
                         >
-                          <Plus className="h-3 w-3 mr-1" />
+                          <Plus className="mr-1 h-3 w-3" />
                           子分类
                         </Button>
                       </div>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="text-center">
-                  {parent.items_count ?? 0}
-                </TableCell>
+                <TableCell className="text-center">{parent.items_count ?? 0}</TableCell>
                 <TableCell>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     onClick={() => handleConfirmDelete(parent.id)}
                     disabled={loading}
                     className="h-8 w-8"
                   >
-                    <Trash2 className="h-4 w-4 text-destructive" />
+                    <Trash2 className="text-destructive h-4 w-4" />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -288,23 +297,23 @@ export default function Categories() {
               {/* 子分类行 */}
               {expandedCategories.has(parent.id) && (
                 <>
-                  {parent.children?.map((child) => (
+                  {parent.children?.map(child => (
                     <TableRow key={child.id}>
                       <TableCell>
-                        <div className="flex items-center gap-2 ml-8">
-                          <Tag className="h-4 w-4 text-muted-foreground" />
+                        <div className="ml-8 flex items-center gap-2">
+                          <Tag className="text-muted-foreground h-4 w-4" />
                           {isEditing(child.id) ? (
-                            <div className="flex gap-2 items-center flex-1">
+                            <div className="flex flex-1 items-center gap-2">
                               <Input
                                 ref={inputRef}
                                 value={editingValue}
-                                onChange={(e) => setEditingValue(e.target.value)}
+                                onChange={e => setEditingValue(e.target.value)}
                                 className="h-8"
                                 onKeyDown={handleEditKeyDown}
                                 disabled={loading}
                               />
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="icon"
                                 onClick={handleSaveEdit}
                                 disabled={loading}
@@ -312,8 +321,8 @@ export default function Categories() {
                               >
                                 <Check className="h-4 w-4 text-green-500" />
                               </Button>
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="icon"
                                 onClick={handleCancelEdit}
                                 disabled={loading}
@@ -323,8 +332,8 @@ export default function Categories() {
                               </Button>
                             </div>
                           ) : (
-                            <div 
-                              className="cursor-pointer hover:underline flex-1" 
+                            <div
+                              className="flex-1 cursor-pointer hover:underline"
                               onClick={() => startEdit(child.id, child.name)}
                             >
                               {child.name}
@@ -332,18 +341,16 @@ export default function Categories() {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">
-                        {child.items_count ?? 0}
-                      </TableCell>
+                      <TableCell className="text-center">{child.items_count ?? 0}</TableCell>
                       <TableCell>
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          variant="ghost"
                           size="icon"
                           onClick={() => handleConfirmDelete(child.id)}
                           disabled={loading}
                           className="h-8 w-8"
                         >
-                          <Trash2 className="h-4 w-4 text-destructive" />
+                          <Trash2 className="text-destructive h-4 w-4" />
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -353,20 +360,20 @@ export default function Categories() {
                   {creatingChildFor === parent.id && (
                     <TableRow>
                       <TableCell>
-                        <div className="flex items-center gap-2 ml-8">
-                          <Tag className="h-4 w-4 text-muted-foreground" />
-                          <div className="flex gap-2 items-center flex-1">
+                        <div className="ml-8 flex items-center gap-2">
+                          <Tag className="text-muted-foreground h-4 w-4" />
+                          <div className="flex flex-1 items-center gap-2">
                             <Input
                               value={newChildName}
-                              onChange={(e) => setNewChildName(e.target.value)}
+                              onChange={e => setNewChildName(e.target.value)}
                               className="h-8"
                               placeholder="输入子分类名称"
                               onKeyDown={handleChildKeyDown}
                               disabled={creatingChild}
                               autoFocus
                             />
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="icon"
                               onClick={saveChild}
                               disabled={creatingChild || !newChildName.trim()}
@@ -374,8 +381,8 @@ export default function Categories() {
                             >
                               <Check className="h-4 w-4 text-green-500" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="icon"
                               onClick={cancelCreateChild}
                               disabled={creatingChild}
@@ -419,15 +426,13 @@ export default function Categories() {
     handleChildKeyDown,
     creatingChild,
     saveChild,
-    cancelCreateChild
+    cancelCreateChild,
   ])
 
   return (
     <div className="py-2 pb-24">
       <Card>
-        <CardContent className="p-0">
-          {renderTableContent}
-        </CardContent>
+        <CardContent className="p-0">{renderTableContent}</CardContent>
       </Card>
 
       <DeleteConfirmationDialog

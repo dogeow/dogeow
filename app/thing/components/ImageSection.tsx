@@ -1,12 +1,12 @@
 import React from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { UploadedImage } from "../types"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { UploadedImage } from '../types'
 import ImageUploader from './ImageUploader'
 
 interface ImageSectionProps {
-  uploadedImages: UploadedImage[];
-  setUploadedImages: React.Dispatch<React.SetStateAction<UploadedImage[]>>;
+  uploadedImages: UploadedImage[]
+  setUploadedImages: React.Dispatch<React.SetStateAction<UploadedImage[]>>
 }
 
 const ImageSection = ({ uploadedImages, setUploadedImages }: ImageSectionProps) => {
@@ -19,7 +19,7 @@ const ImageSection = ({ uploadedImages, setUploadedImages }: ImageSectionProps) 
       <CardContent>
         <div className="space-y-4">
           <Label>物品图片</Label>
-          <ImageUploader 
+          <ImageUploader
             onImagesChange={setUploadedImages}
             existingImages={uploadedImages}
             maxImages={10}

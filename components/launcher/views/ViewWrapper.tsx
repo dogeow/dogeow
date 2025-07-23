@@ -5,9 +5,5 @@ interface ViewWrapperProps {
 }
 
 export function ViewWrapper({ children }: ViewWrapperProps) {
-  return (
-    <div className="h-full flex items-center">
-      {children}
-    </div>
-  )
-} 
+  return <div className="flex h-full items-center">{children}</div>
+}

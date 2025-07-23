@@ -1,5 +1,3 @@
 export default function Lab() {
-    return (
-        <div>Lab</div>
-    )
+  return <div>Lab</div>
 }

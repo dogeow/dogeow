@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 interface MoveCounterProps {
   moves: number
@@ -11,4 +11,4 @@ export function MoveCounter({ moves }: MoveCounterProps) {
       <div className="font-semibold">{moves}</div>
     </div>
   )
-} 
+}

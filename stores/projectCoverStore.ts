@@ -8,7 +8,7 @@ interface ProjectCoverState {
 
 export const useProjectCoverStore = create<ProjectCoverState>()(
   persist(
-    (set) => ({
+    set => ({
       showProjectCovers: false,
       setShowProjectCovers: (show: boolean) => set({ showProjectCovers: show }),
     }),
@@ -16,4 +16,4 @@ export const useProjectCoverStore = create<ProjectCoverState>()(
       name: 'project-cover-storage',
     }
   )
-) 
+)

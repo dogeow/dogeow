@@ -16,25 +16,28 @@ interface MinesweeperState {
 const initialStats: MinesweeperStats = {
   easy: { gamesPlayed: 0, gamesWon: 0, bestTime: 0 },
   medium: { gamesPlayed: 0, gamesWon: 0, bestTime: 0 },
-  hard: { gamesPlayed: 0, gamesWon: 0, bestTime: 0 }
+  hard: { gamesPlayed: 0, gamesWon: 0, bestTime: 0 },
 }
 
 export const useMinesweeperStore = create<MinesweeperState>()(
   persist(
-    (set) => ({
+    set => ({
       stats: initialStats,
       updateStats: (difficulty: 'easy' | 'medium' | 'hard', won: boolean, time?: number) => {
-        set((state) => {
+        set(state => {
           const newStats = { ...state.stats }
           newStats[difficulty].gamesPlayed += 1
-          
+
           if (won) {
             newStats[difficulty].gamesWon += 1
-            if (time && (newStats[difficulty].bestTime === 0 || time < newStats[difficulty].bestTime)) {
+            if (
+              time &&
+              (newStats[difficulty].bestTime === 0 || time < newStats[difficulty].bestTime)
+            ) {
               newStats[difficulty].bestTime = time
             }
           }
-          
+
           return { stats: newStats }
         })
       },
@@ -44,4 +47,4 @@ export const useMinesweeperStore = create<MinesweeperState>()(
       name: 'minesweeper-storage',
     }
   )
-) 
+)

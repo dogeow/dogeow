@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
@@ -26,8 +26,6 @@ interface Note {
   is_draft: boolean
 }
 
-
-
 function isValidSlateJson(str: string) {
   try {
     const parsed = JSON.parse(str)
@@ -37,12 +35,12 @@ function isValidSlateJson(str: string) {
   }
 }
 
-export default function NoteEditor({ 
-  noteId, 
-  title = '', 
-  content = '', 
+export default function NoteEditor({
+  noteId,
+  title = '',
+  content = '',
   isEditing = false,
-  isDraft = false
+  isDraft = false,
 }: NoteEditorProps) {
   const router = useRouter()
   const [noteTitle, setNoteTitle] = useState(title)
@@ -64,11 +62,11 @@ export default function NoteEditor({
 
   // 保存最后一次保存的内容和标题，用于比较是否有变化
   const [, setLastSavedContent] = useState(() => {
-    return content && isValidSlateJson(content) 
-      ? content 
+    return content && isValidSlateJson(content)
+      ? content
       : '[{"type":"paragraph","children":[{"text":""}]}]'
   })
-  
+
   // 添加最后保存的标题状态
   const [, setLastSavedTitle] = useState(title)
 
@@ -82,37 +80,35 @@ export default function NoteEditor({
     try {
       setIsSaving(true)
       setDirty(false)
-      
+
       const data = {
         title: noteTitle,
         content,
-        is_draft: draft
+        is_draft: draft,
       }
 
-      let result;
-      
+      let result
+
       if (isEditing && noteId) {
         // 更新笔记
         result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
-
       } else {
         // 创建新笔记
         result = await apiRequest<Note>('/notes', 'POST', data)
-
       }
-      
+
       // 保存成功后，更新最后保存的内容和标题
       setLastSavedContent(content)
       setLastSavedTitle(noteTitle)
-      
+
       toast.success(isEditing ? '笔记已更新' : '笔记已创建')
-      
+
       // 如果是新笔记，跳转到编辑页面
       if (!isEditing && result.id) {
         router.push(`/note/edit/${result.id}`)
         router.refresh()
       }
-      
+
       return Promise.resolve()
     } catch (error) {
       console.error('保存笔记错误:', error)
@@ -160,24 +156,24 @@ export default function NoteEditor({
       toast.error('请输入笔记标题')
       return
     }
-    
+
     console.log('开始保存草稿...', {
       title: noteTitle,
       content: currentContent,
       isEditing,
-      noteId
+      noteId,
     })
-    
+
     try {
       setIsSaving(true)
       const data = {
         title: noteTitle,
         content: currentContent,
-        is_draft: true
+        is_draft: true,
       }
-      
+
       console.log('发送草稿保存请求:', data)
-      
+
       let result
       if (isEditing && noteId) {
         result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
@@ -186,7 +182,7 @@ export default function NoteEditor({
         result = await apiRequest<Note>('/notes', 'POST', data)
         console.log('创建草稿成功:', result)
       }
-      
+
       setDirty(false)
       // 保存草稿成功后，也更新最后保存的内容和标题
       setLastSavedContent(currentContent)
@@ -203,7 +199,7 @@ export default function NoteEditor({
   // 封装 showDialog，返回 Promise<boolean>
   const showDialog = () => {
     setGlobalDialogOpen(true)
-    return new Promise<boolean>((resolve) => {
+    return new Promise<boolean>(resolve => {
       globalDialogPromiseRef.current = { resolve }
     })
   }
@@ -239,19 +235,19 @@ export default function NoteEditor({
   }, [noteTitle, currentContent, isEditing, noteId, saveDraft, setSaveDraft])
 
   return (
-    <div className="w-full max-w-6xl mx-auto">
+    <div className="mx-auto w-full max-w-6xl">
       <div className="mb-4">
         <Input
           id="title"
           value={noteTitle}
-          onChange={(e) => setNoteTitle(e.target.value)}
+          onChange={e => setNoteTitle(e.target.value)}
           className="mt-1"
           placeholder="请输入笔记标题"
           disabled={isSaving}
         />
       </div>
       {/* TODO: Replace with actual editor component */}
-      <div className="border rounded-md p-4 min-h-[400px] bg-muted/20">
+      <div className="bg-muted/20 min-h-[400px] rounded-md border p-4">
         <p className="text-muted-foreground">编辑器组件待实现</p>
       </div>
       <SaveOptionsDialog
@@ -280,4 +276,4 @@ export default function NoteEditor({
       />
     </div>
   )
-} 
+}

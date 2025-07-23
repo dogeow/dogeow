@@ -1,24 +1,24 @@
-import { useState, useEffect, useCallback, useRef } from "react"
-import { toast } from "sonner"
-import { useTetrisStore } from "../store"
-import { GameState, Position } from "../types"
-import { 
-  createEmptyBoard, 
-  generateRandomTetromino, 
-  isValidPosition, 
-  rotateTetromino, 
-  placeTetromino, 
-  clearLines, 
-  calculateScore, 
-  calculateLevel, 
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { toast } from 'sonner'
+import { useTetrisStore } from '../store'
+import { GameState, Position } from '../types'
+import {
+  createEmptyBoard,
+  generateRandomTetromino,
+  isValidPosition,
+  rotateTetromino,
+  placeTetromino,
+  clearLines,
+  calculateScore,
+  calculateLevel,
   getDropSpeed,
-  calculateHardDropDistance
-} from "../utils"
-import { SCORING, GAME_SPEED } from "../constants"
+  calculateHardDropDistance,
+} from '../utils'
+import { SCORING, GAME_SPEED } from '../constants'
 
 export function useTetrisGame() {
   const { bestScore, setBestScore, incrementGamesPlayed, addLinesCleared } = useTetrisStore()
-  
+
   const [gameState, setGameState] = useState<GameState>(() => ({
     board: createEmptyBoard(),
     currentPiece: null,
@@ -28,7 +28,7 @@ export function useTetrisGame() {
     level: 1,
     gameOver: false,
     paused: false,
-    isClient: false
+    isClient: false,
   }))
 
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null)
@@ -42,7 +42,7 @@ export function useTetrisGame() {
       ...prev,
       isClient: true,
       currentPiece: generateRandomTetromino(),
-      nextPiece: generateRandomTetromino()
+      nextPiece: generateRandomTetromino(),
     }))
   }, [])
 
@@ -51,50 +51,53 @@ export function useTetrisGame() {
     if (gameState.isClient && !gameState.nextPiece) {
       setGameState(prev => ({
         ...prev,
-        nextPiece: generateRandomTetromino()
+        nextPiece: generateRandomTetromino(),
       }))
     }
   }, [gameState.isClient, gameState.nextPiece])
 
   // 移动方块
-  const movePiece = useCallback((direction: 'left' | 'right' | 'down'): boolean => {
-    if (!gameState.currentPiece || gameState.gameOver || gameState.paused) return false
+  const movePiece = useCallback(
+    (direction: 'left' | 'right' | 'down'): boolean => {
+      if (!gameState.currentPiece || gameState.gameOver || gameState.paused) return false
 
-    const newPosition: Position = { ...gameState.currentPiece.position }
-    
-    switch (direction) {
-      case 'left':
-        newPosition.x -= 1
-        break
-      case 'right':
-        newPosition.x += 1
-        break
-      case 'down':
-        newPosition.y += 1
-        break
-    }
+      const newPosition: Position = { ...gameState.currentPiece.position }
 
-    if (isValidPosition(gameState.board, gameState.currentPiece, newPosition)) {
-      setGameState(prev => ({
-        ...prev,
-        currentPiece: prev.currentPiece ? { ...prev.currentPiece, position: newPosition } : null
-      }))
-      return true
-    }
-    
-    return false
-  }, [gameState.currentPiece, gameState.board, gameState.gameOver, gameState.paused])
+      switch (direction) {
+        case 'left':
+          newPosition.x -= 1
+          break
+        case 'right':
+          newPosition.x += 1
+          break
+        case 'down':
+          newPosition.y += 1
+          break
+      }
+
+      if (isValidPosition(gameState.board, gameState.currentPiece, newPosition)) {
+        setGameState(prev => ({
+          ...prev,
+          currentPiece: prev.currentPiece ? { ...prev.currentPiece, position: newPosition } : null,
+        }))
+        return true
+      }
+
+      return false
+    },
+    [gameState.currentPiece, gameState.board, gameState.gameOver, gameState.paused]
+  )
 
   // 旋转方块
   const rotatePiece = useCallback(() => {
     if (!gameState.currentPiece || gameState.gameOver || gameState.paused) return
 
     const rotated = rotateTetromino(gameState.currentPiece)
-    
+
     if (isValidPosition(gameState.board, rotated, rotated.position)) {
       setGameState(prev => ({
         ...prev,
-        currentPiece: rotated
+        currentPiece: rotated,
       }))
     }
   }, [gameState.currentPiece, gameState.board, gameState.gameOver, gameState.paused])
@@ -104,17 +107,17 @@ export function useTetrisGame() {
     if (!gameState.currentPiece || gameState.gameOver || gameState.paused) return
 
     const dropDistance = calculateHardDropDistance(gameState.board, gameState.currentPiece)
-    
+
     if (dropDistance > 0) {
-      const newPosition = { 
-        ...gameState.currentPiece.position, 
-        y: gameState.currentPiece.position.y + dropDistance 
+      const newPosition = {
+        ...gameState.currentPiece.position,
+        y: gameState.currentPiece.position.y + dropDistance,
       }
-      
+
       setGameState(prev => ({
         ...prev,
         currentPiece: prev.currentPiece ? { ...prev.currentPiece, position: newPosition } : null,
-        score: prev.score + dropDistance * SCORING.HARD_DROP_BONUS
+        score: prev.score + dropDistance * SCORING.HARD_DROP_BONUS,
       }))
     }
   }, [gameState.currentPiece, gameState.board, gameState.gameOver, gameState.paused])
@@ -122,12 +125,12 @@ export function useTetrisGame() {
   // 开始软降
   const startSoftDrop = useCallback(() => {
     if (isSoftDropping || gameState.gameOver || gameState.paused) return
-    
+
     setIsSoftDropping(true)
-    
+
     const softDropLoop = () => {
       if (!gameState.currentPiece || gameState.gameOver || gameState.paused) return
-      
+
       const newPosition = { ...gameState.currentPiece.position }
       newPosition.y += 1
 
@@ -135,16 +138,22 @@ export function useTetrisGame() {
         setGameState(prev => ({
           ...prev,
           currentPiece: prev.currentPiece ? { ...prev.currentPiece, position: newPosition } : null,
-          score: prev.score + SCORING.SOFT_DROP_BONUS
+          score: prev.score + SCORING.SOFT_DROP_BONUS,
         }))
         softDropRef.current = setTimeout(softDropLoop, GAME_SPEED.SOFT_DROP)
       } else {
         setIsSoftDropping(false)
       }
     }
-    
+
     softDropLoop()
-  }, [isSoftDropping, gameState.gameOver, gameState.paused, gameState.currentPiece, gameState.board])
+  }, [
+    isSoftDropping,
+    gameState.gameOver,
+    gameState.paused,
+    gameState.currentPiece,
+    gameState.board,
+  ])
 
   // 停止软降
   const stopSoftDrop = useCallback(() => {
@@ -157,10 +166,11 @@ export function useTetrisGame() {
 
   // 游戏循环
   useEffect(() => {
-    if (!gameState.isClient || gameState.gameOver || gameState.paused || !gameState.currentPiece) return
+    if (!gameState.isClient || gameState.gameOver || gameState.paused || !gameState.currentPiece)
+      return
 
     const dropSpeed = getDropSpeed(gameState.level)
-    
+
     const gameLoop = () => {
       const now = Date.now()
       if (now - lastDropTime.current >= dropSpeed) {
@@ -168,34 +178,34 @@ export function useTetrisGame() {
           // 方块无法下移，固定到棋盘上
           const newBoard = placeTetromino(gameState.board, gameState.currentPiece!)
           const { newBoard: clearedBoard, linesCleared } = clearLines(newBoard)
-          
+
           let newScore = gameState.score
           let newLines = gameState.lines
           let newLevel = gameState.level
-          
+
           if (linesCleared > 0) {
             newScore += calculateScore(linesCleared, gameState.level)
             newLines += linesCleared
             newLevel = calculateLevel(newLines)
             addLinesCleared(linesCleared)
-            
+
             if (newScore > bestScore) {
               setBestScore(newScore)
             }
-            
+
             toast.success(`消除了 ${linesCleared} 行！`)
           }
-          
+
           // 生成新方块
           const newPiece = gameState.nextPiece || generateRandomTetromino()
           const nextNewPiece = generateRandomTetromino()
-          
+
           // 检查游戏是否结束
           if (!isValidPosition(clearedBoard, newPiece, newPiece.position)) {
             setGameState(prev => ({
               ...prev,
               gameOver: true,
-              score: newScore
+              score: newScore,
             }))
             incrementGamesPlayed()
             if (newScore > bestScore) {
@@ -210,7 +220,7 @@ export function useTetrisGame() {
               nextPiece: nextNewPiece,
               score: newScore,
               lines: newLines,
-              level: newLevel
+              level: newLevel,
             }))
           }
         }
@@ -219,7 +229,7 @@ export function useTetrisGame() {
     }
 
     gameLoopRef.current = setInterval(gameLoop, GAME_SPEED.NORMAL_DROP)
-    
+
     return () => {
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current)
@@ -238,7 +248,7 @@ export function useTetrisGame() {
       lines: 0,
       level: 1,
       gameOver: false,
-      paused: false
+      paused: false,
     }))
     setIsSoftDropping(false)
     if (softDropRef.current) {
@@ -252,7 +262,7 @@ export function useTetrisGame() {
   const togglePause = useCallback(() => {
     setGameState(prev => ({
       ...prev,
-      paused: !prev.paused
+      paused: !prev.paused,
     }))
   }, [])
 
@@ -278,6 +288,6 @@ export function useTetrisGame() {
     stopSoftDrop,
     resetGame,
     togglePause,
-    bestScore
+    bestScore,
   }
-} 
+}

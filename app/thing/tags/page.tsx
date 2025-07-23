@@ -1,14 +1,14 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import useSWR, { mutate } from "swr"
-import { get, del } from "@/lib/api"
-import { toast } from "sonner"
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { X } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import useSWR, { mutate } from 'swr'
+import { get, del } from '@/lib/api'
+import { toast } from 'sonner'
 import { isLightColor } from '@/lib/helpers'
-import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
+import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
 
 // 标签类型定义
 type Tag = {
@@ -37,12 +37,12 @@ export default function ThingTags() {
   // 删除标签
   const deleteTag = async () => {
     if (!tagToDelete) return
-    
+
     setDeleting(true)
     try {
       await del(`/things/tags/${tagToDelete}`)
-      mutate("/things/tags")
-      toast.success("标签删除成功")
+      mutate('/things/tags')
+      toast.success('标签删除成功')
     } catch (deleteError) {
       console.error('删除标签失败:', deleteError)
     } finally {
@@ -53,31 +53,31 @@ export default function ThingTags() {
   }
 
   // 生成标签样式
-  const getTagStyle = (color: string = "#3b82f6") => {
+  const getTagStyle = (color: string = '#3b82f6') => {
     return {
       backgroundColor: color,
-      color: isLightColor(color) ? "#000" : "#fff"
+      color: isLightColor(color) ? '#000' : '#fff',
     }
   }
 
   return (
-    <div className="w-full mx-auto max-w-7xl py-6 pb-24">
-      <div className="max-w-4xl mx-auto">
+    <div className="mx-auto w-full max-w-7xl py-6 pb-24">
+      <div className="mx-auto max-w-4xl">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+          <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-red-700">
             加载标签失败，请稍后重试
           </div>
         )}
-        
+
         {!tags && !error && (
           <div className="flex items-center justify-center py-12">
             <div className="text-gray-500">加载中...</div>
           </div>
         )}
-        
+
         {tags?.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-500 mb-4">暂无标签</div>
+          <div className="py-12 text-center">
+            <div className="mb-4 text-gray-500">暂无标签</div>
             <p className="text-sm text-gray-400">您还没有创建任何标签，请先添加一些标签</p>
           </div>
         )}
@@ -85,7 +85,7 @@ export default function ThingTags() {
         {tags && tags.length > 0 && (
           <div className="space-y-6">
             {/* 标签统计 */}
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
+            <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
               <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
                 <span>共 {tags.length} 个标签</span>
                 <span>总计 {tags.reduce((sum, tag) => sum + tag.items_count, 0)} 个物品</span>
@@ -94,9 +94,9 @@ export default function ThingTags() {
 
             {/* 标签网格 - 调整为一行显示两个 */}
             <div className="grid grid-cols-2 gap-4">
-              {tags.map((tag) => (
-                <div key={tag.id} className="relative group">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 hover:shadow-md transition-shadow">
+              {tags.map(tag => (
+                <div key={tag.id} className="group relative">
+                  <div className="rounded-lg border border-gray-200 bg-white p-2 transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
                     {/* 标签头部 - 合并为一行 */}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -113,7 +113,7 @@ export default function ThingTags() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 opacity-20 group-hover:opacity-100 transition-opacity hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                        className="h-7 w-7 opacity-20 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                         onClick={() => openDeleteDialog(tag.id)}
                         disabled={deleting}
                         title="删除标签"
@@ -124,13 +124,13 @@ export default function ThingTags() {
 
                     {/* 使用频率指示器 */}
                     {tag.items_count > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
+                      <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-                            <div 
-                              className="bg-primary rounded-full h-1.5 transition-all"
-                              style={{ 
-                                width: `${Math.min(100, (tag.items_count / Math.max(...tags.map(t => t.items_count))) * 100)}%` 
+                          <div className="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-gray-700">
+                            <div
+                              className="bg-primary h-1.5 rounded-full transition-all"
+                              style={{
+                                width: `${Math.min(100, (tag.items_count / Math.max(...tags.map(t => t.items_count))) * 100)}%`,
                               }}
                             />
                           </div>
@@ -160,4 +160,4 @@ export default function ThingTags() {
       </div>
     </div>
   )
-} 
+}

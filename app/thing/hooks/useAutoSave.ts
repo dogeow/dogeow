@@ -16,7 +16,7 @@ interface UseAutoSaveReturn<T> {
 export function useAutoSave<T>({
   onSave,
   delay = 2000,
-  initialData
+  initialData,
 }: UseAutoSaveOptions<T>): UseAutoSaveReturn<T> {
   const [autoSaving, setAutoSaving] = useState(false)
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -25,13 +25,13 @@ export function useAutoSave<T>({
 
   const autoSave = useCallback(async () => {
     if (!initialDataRef.current) return
-    
+
     setAutoSaving(true)
     try {
       await onSave(initialDataRef.current)
       setLastSaved(new Date())
     } catch (error) {
-      console.error("自动保存失败:", error)
+      console.error('自动保存失败:', error)
       // 自动保存失败不显示错误提示，避免打扰用户
     } finally {
       setAutoSaving(false)
@@ -42,7 +42,7 @@ export function useAutoSave<T>({
     if (autoSaveTimeoutRef.current) {
       clearTimeout(autoSaveTimeoutRef.current)
     }
-    
+
     autoSaveTimeoutRef.current = setTimeout(() => {
       autoSave()
     }, delay)
@@ -65,6 +65,6 @@ export function useAutoSave<T>({
     autoSaving,
     lastSaved,
     triggerAutoSave,
-    setInitialData
+    setInitialData,
   }
-} 
+}

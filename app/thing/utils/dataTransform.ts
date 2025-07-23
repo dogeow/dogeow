@@ -5,22 +5,18 @@ import { ItemImage, UploadedImage, Tag } from '@/app/thing/types'
  */
 export function convertImagesToUploadedFormat(images: ItemImage[]): UploadedImage[] {
   return images.map((img: ItemImage) => ({
-    path: img.path || '', 
+    path: img.path || '',
     thumbnail_path: img.thumbnail_path || '',
     url: img.url || '',
     thumbnail_url: img.thumbnail_url || '',
-    id: img.id
+    id: img.id,
   }))
 }
 
 /**
  * 构建位置路径字符串
  */
-export function buildLocationPath(
-  areaName?: string, 
-  roomName?: string, 
-  spotName?: string
-): string {
+export function buildLocationPath(areaName?: string, roomName?: string, spotName?: string): string {
   const parts = [areaName, roomName, spotName].filter(Boolean)
   return parts.join(' / ')
 }
@@ -37,4 +33,4 @@ export function hasDataChanged<T>(current: T, initial: T): boolean {
  */
 export function tagsToIdStrings(tags: Tag[]): string[] {
   return tags.map(tag => tag.id.toString())
-} 
+}

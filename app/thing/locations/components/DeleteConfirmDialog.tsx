@@ -1,21 +1,21 @@
-"use client"
+'use client'
 
-import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
+import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
 import { LocationType } from '../hooks/useLocationManagement'
 import { getLocationTypeText } from '../constants'
 
 interface DeleteConfirmDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  itemToDelete: {id: number, type: LocationType} | null;
-  onConfirm: () => Promise<boolean | undefined>;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  itemToDelete: { id: number; type: LocationType } | null
+  onConfirm: () => Promise<boolean | undefined>
 }
 
-export default function DeleteConfirmDialog({ 
-  open, 
-  onOpenChange, 
-  itemToDelete, 
-  onConfirm 
+export default function DeleteConfirmDialog({
+  open,
+  onOpenChange,
+  itemToDelete,
+  onConfirm,
 }: DeleteConfirmDialogProps) {
   const getItemName = () => {
     if (!itemToDelete) return ''
@@ -31,4 +31,4 @@ export default function DeleteConfirmDialog({
       itemName={getItemName()}
     />
   )
-} 
+}

@@ -1,11 +1,11 @@
 import { Dispatch, SetStateAction, useState, useEffect, useCallback } from 'react'
 import { Controller, UseFormReturn } from 'react-hook-form'
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
-import { Plus, Tag as TagIcon, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Plus, Tag as TagIcon, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 import ImageUploader from '../ImageUploader'
 import LocationTreeSelect from '../LocationTreeSelect'
 import CategoryTreeSelect, { CategorySelection } from '../CategoryTreeSelect'
@@ -23,23 +23,23 @@ import { isLightColor } from '@/lib/helpers'
 import { apiRequest } from '@/lib/api'
 
 type UploadedImage = {
-  path: string;
-  thumbnail_path: string;
-  url: string;
-  thumbnail_url: string;
+  path: string
+  thumbnail_path: string
+  url: string
+  thumbnail_url: string
 }
 
 interface BasicInfoFormProps {
-  formMethods: UseFormReturn<ItemFormData>;
-  tags: TagType[];
-  selectedTags: string[];
-  setSelectedTags: Dispatch<SetStateAction<string[]>>;
-  setCreateTagDialogOpen: Dispatch<SetStateAction<boolean>>;
-  categories: Category[];
-  setUploadedImages: Dispatch<SetStateAction<UploadedImage[]>>;
-  watchAreaId: string;
-  watchRoomId: string;
-  watchSpotId: string;
+  formMethods: UseFormReturn<ItemFormData>
+  tags: TagType[]
+  selectedTags: string[]
+  setSelectedTags: Dispatch<SetStateAction<string[]>>
+  setCreateTagDialogOpen: Dispatch<SetStateAction<boolean>>
+  categories: Category[]
+  setUploadedImages: Dispatch<SetStateAction<UploadedImage[]>>
+  watchAreaId: string
+  watchRoomId: string
+  watchSpotId: string
 }
 
 export default function BasicInfoForm({
@@ -52,35 +52,37 @@ export default function BasicInfoForm({
   setUploadedImages,
   watchAreaId,
   watchRoomId,
-  watchSpotId
+  watchSpotId,
 }: BasicInfoFormProps) {
-  const { control, formState: { errors }, setValue } = formMethods
-  
+  const {
+    control,
+    formState: { errors },
+    setValue,
+  } = formMethods
+
   // 位置相关状态
   const [areas, setAreas] = useState<Location[]>([])
   const [rooms, setRooms] = useState<Location[]>([])
   const [spots, setSpots] = useState<Location[]>([])
   const [locationPath, setLocationPath] = useState<string>('')
   const [selectedLocation, setSelectedLocation] = useState<SelectedLocation>(undefined)
-  
+
   // 数量设置对话框状态
   const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
   const [tempQuantity, setTempQuantity] = useState(1)
-  
+
   // 分类选择状态
   const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(undefined)
 
   // 获取标签样式
-  const getTagStyle = (color: string = "#3b82f6") => ({
+  const getTagStyle = (color: string = '#3b82f6') => ({
     backgroundColor: color,
-    color: isLightColor(color) ? "#000" : "#fff"
+    color: isLightColor(color) ? '#000' : '#fff',
   })
 
   const toggleTag = (tagId: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId)
-        ? prev.filter(id => id !== tagId)
-        : [...prev, tagId]
+    setSelectedTags(prev =>
+      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
     )
   }
 
@@ -98,7 +100,7 @@ export default function BasicInfoForm({
       if (category) {
         setSelectedCategory({
           type: category.parent_id ? 'child' : 'parent',
-          id: category.id
+          id: category.id,
         })
       }
     } else {
@@ -123,7 +125,7 @@ export default function BasicInfoForm({
       setRooms([])
       return []
     }
-    
+
     try {
       const data = await apiRequest<Location[]>(`/areas/${areaId}/rooms`)
       setRooms(data)
@@ -139,7 +141,7 @@ export default function BasicInfoForm({
       setSpots([])
       return []
     }
-    
+
     try {
       const data = await apiRequest<Location[]>(`/rooms/${roomId}/spots`)
       setSpots(data)
@@ -149,11 +151,11 @@ export default function BasicInfoForm({
       return []
     }
   }
-  
+
   const handleLocationSelect = (type: LocationType, id: number) => {
     setSelectedLocation({ type, id })
     setLocationPath('')
-    
+
     if (type === 'area') {
       setValue('area_id', id.toString())
       setValue('room_id', '')
@@ -161,18 +163,18 @@ export default function BasicInfoForm({
     } else if (type === 'room') {
       setValue('room_id', id.toString())
       setValue('spot_id', '')
-      
+
       const room = rooms.find(r => r.id === id)
       if (room?.area_id) {
         setValue('area_id', room.area_id.toString())
       }
     } else if (type === 'spot') {
       setValue('spot_id', id.toString())
-      
+
       const spot = spots.find(s => s.id === id)
       if (spot?.room_id) {
         setValue('room_id', spot.room_id.toString())
-        
+
         const room = rooms.find(r => r.id === spot.room_id)
         if (room?.area_id) {
           setValue('area_id', room.area_id.toString())
@@ -181,86 +183,89 @@ export default function BasicInfoForm({
     }
   }
 
-  const updateLocationPath = useCallback((areaId?: string, roomId?: string, spotId?: string) => {
-    let path = '';
-    
-    if (areaId && areas.length > 0) {
-      const area = areas.find(a => a.id.toString() === areaId);
-      if (area) {
-        path = area.name;
-        
-        if (roomId && rooms.length > 0) {
-          const room = rooms.find(r => r.id.toString() === roomId);
-          if (room) {
-            path += ` > ${room.name}`;
-            
-            if (spotId && spots.length > 0) {
-              const spot = spots.find(s => s.id.toString() === spotId);
-              if (spot) {
-                path += ` > ${spot.name}`;
+  const updateLocationPath = useCallback(
+    (areaId?: string, roomId?: string, spotId?: string) => {
+      let path = ''
+
+      if (areaId && areas.length > 0) {
+        const area = areas.find(a => a.id.toString() === areaId)
+        if (area) {
+          path = area.name
+
+          if (roomId && rooms.length > 0) {
+            const room = rooms.find(r => r.id.toString() === roomId)
+            if (room) {
+              path += ` > ${room.name}`
+
+              if (spotId && spots.length > 0) {
+                const spot = spots.find(s => s.id.toString() === spotId)
+                if (spot) {
+                  path += ` > ${spot.name}`
+                }
               }
             }
           }
         }
       }
-    }
-    
-    if (path) {
-      setLocationPath(path);
-      
-      if (spotId && spots.length > 0) {
-        setSelectedLocation({ type: 'spot', id: Number(spotId) });
-      } else if (roomId && rooms.length > 0) {
-        setSelectedLocation({ type: 'room', id: Number(roomId) });
-      } else if (areaId && areas.length > 0) {
-        setSelectedLocation({ type: 'area', id: Number(areaId) });
+
+      if (path) {
+        setLocationPath(path)
+
+        if (spotId && spots.length > 0) {
+          setSelectedLocation({ type: 'spot', id: Number(spotId) })
+        } else if (roomId && rooms.length > 0) {
+          setSelectedLocation({ type: 'room', id: Number(roomId) })
+        } else if (areaId && areas.length > 0) {
+          setSelectedLocation({ type: 'area', id: Number(areaId) })
+        }
+      } else if (!areaId && !roomId && !spotId) {
+        setLocationPath('')
+        setSelectedLocation(undefined)
       }
-    } else if (!areaId && !roomId && !spotId) {
-      setLocationPath('');
-      setSelectedLocation(undefined);
-    }
-  }, [areas, rooms, spots]);
+    },
+    [areas, rooms, spots]
+  )
 
   // Effects
   useEffect(() => {
-    loadAreas();
-  }, []);
+    loadAreas()
+  }, [])
 
   useEffect(() => {
-    loadRooms(watchAreaId);
-  }, [watchAreaId]);
-  
+    loadRooms(watchAreaId)
+  }, [watchAreaId])
+
   useEffect(() => {
-    loadSpots(watchRoomId);
-  }, [watchRoomId]);
-  
+    loadSpots(watchRoomId)
+  }, [watchRoomId])
+
   useEffect(() => {
-    updateLocationPath(watchAreaId, watchRoomId, watchSpotId);
-  }, [watchAreaId, watchRoomId, watchSpotId, updateLocationPath]);
+    updateLocationPath(watchAreaId, watchRoomId, watchSpotId)
+  }, [watchAreaId, watchRoomId, watchSpotId, updateLocationPath])
 
   const renderLocationInfo = () => {
     if (locationPath) {
-      return <p className="text-sm text-muted-foreground mt-2">{locationPath}</p>;
+      return <p className="text-muted-foreground mt-2 text-sm">{locationPath}</p>
     }
-    
+
     if (watchAreaId || watchRoomId || watchSpotId) {
-      return <p className="text-sm text-orange-500 mt-2">位置数据不完整，请重新选择</p>;
+      return <p className="mt-2 text-sm text-orange-500">位置数据不完整，请重新选择</p>
     }
-    
-    return <p className="text-sm text-muted-foreground mt-2">未指定位置</p>;
-  };
+
+    return <p className="text-muted-foreground mt-2 text-sm">未指定位置</p>
+  }
 
   // 处理数量设置
   const handleQuantityClick = () => {
-    const currentQuantity = formMethods.watch('quantity') || 1;
-    setTempQuantity(currentQuantity);
-    setQuantityDialogOpen(true);
-  };
+    const currentQuantity = formMethods.watch('quantity') || 1
+    setTempQuantity(currentQuantity)
+    setQuantityDialogOpen(true)
+  }
 
   const handleQuantityConfirm = () => {
-    setValue('quantity', tempQuantity);
-    setQuantityDialogOpen(false);
-  };
+    setValue('quantity', tempQuantity)
+    setQuantityDialogOpen(false)
+  }
 
   return (
     <Card>
@@ -268,17 +273,11 @@ export default function BasicInfoForm({
         <div className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="name">名称</Label>
-            <div className="flex gap-2 items-center">
+            <div className="flex items-center gap-2">
               <Controller
                 name="name"
                 control={control}
-                render={({ field }) => (
-                  <Input
-                    id="name"
-                    className="h-10 flex-1"
-                    {...field}
-                  />
-                )}
+                render={({ field }) => <Input id="name" className="h-10 flex-1" {...field} />}
               />
               <Button
                 type="button"
@@ -292,9 +291,7 @@ export default function BasicInfoForm({
             </div>
             {errors.name && <p className="text-sm text-red-500">{errors.name.message}</p>}
           </div>
-          
 
-          
           <div className="space-y-2">
             <Label htmlFor="category_id">分类</Label>
             <CategoryTreeSelect
@@ -303,71 +300,63 @@ export default function BasicInfoForm({
             />
           </div>
 
-
-          
-
-          
           <div className="space-y-2">
             <Label htmlFor="images">物品图片</Label>
-            <ImageUploader 
-              onImagesChange={setUploadedImages}
-              existingImages={[]}
-              maxImages={10}
-            />
+            <ImageUploader onImagesChange={setUploadedImages} existingImages={[]} maxImages={10} />
           </div>
-          
+
           <div className="space-y-2">
-            <div className="flex justify-between items-center mb-2">
+            <div className="mb-2 flex items-center justify-between">
               <Label htmlFor="tags">标签</Label>
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="sm" 
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
                 className="h-7 px-2"
                 onClick={() => setCreateTagDialogOpen(true)}
               >
-                <Plus className="h-3.5 w-3.5 mr-1" />
-                <TagIcon className="h-3.5 w-3.5 mr-1" />
+                <Plus className="mr-1 h-3.5 w-3.5" />
+                <TagIcon className="mr-1 h-3.5 w-3.5" />
                 新建标签
               </Button>
             </div>
-            
+
             <div>
-              <div className="flex flex-wrap gap-1 mb-3">
+              <div className="mb-3 flex flex-wrap gap-1">
                 {selectedTags.length > 0 ? (
                   selectedTags.map(tagId => {
-                    const tag = tags.find(t => t.id.toString() === tagId);
+                    const tag = tags.find(t => t.id.toString() === tagId)
                     return tag ? (
-                      <Badge 
-                        key={tag.id} 
+                      <Badge
+                        key={tag.id}
                         style={getTagStyle(tag.color)}
-                        className="py-0.5 px-2 my-0.5 flex items-center"
+                        className="my-0.5 flex items-center px-2 py-0.5"
                       >
                         {tag.name}
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          className="h-4 w-4 p-0 ml-1 hover:bg-transparent"
+                          className="ml-1 h-4 w-4 p-0 hover:bg-transparent"
                           onClick={() => toggleTag(tagId)}
                         >
                           <X size={12} />
                         </Button>
                       </Badge>
-                    ) : null;
+                    ) : null
                   })
                 ) : (
-                  <div className="text-sm text-muted-foreground">未选择标签</div>
+                  <div className="text-muted-foreground text-sm">未选择标签</div>
                 )}
               </div>
-              
-              <div className="text-sm font-medium mb-2">可用标签：</div>
-              <div className="flex flex-wrap gap-1 max-h-40 overflow-y-auto p-1">
+
+              <div className="mb-2 text-sm font-medium">可用标签：</div>
+              <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto p-1">
                 {tags.map(tag => (
-                  <Badge 
-                    key={tag.id} 
+                  <Badge
+                    key={tag.id}
                     style={getTagStyle(tag.color)}
-                    className={`py-0.5 px-2 my-0.5 cursor-pointer transition-opacity ${
+                    className={`my-0.5 cursor-pointer px-2 py-0.5 transition-opacity ${
                       selectedTags.includes(tag.id.toString()) ? 'opacity-50' : ''
                     }`}
                     onClick={() => toggleTag(tag.id.toString())}
@@ -378,10 +367,10 @@ export default function BasicInfoForm({
               </div>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <Label className="mb-2 block">存放位置</Label>
-            <LocationTreeSelect 
+            <LocationTreeSelect
               onSelect={handleLocationSelect}
               selectedLocation={selectedLocation}
             />
@@ -389,15 +378,13 @@ export default function BasicInfoForm({
           </div>
         </div>
       </CardContent>
-      
+
       {/* 数量设置对话框 */}
       <Dialog open={quantityDialogOpen} onOpenChange={setQuantityDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>设置数量</DialogTitle>
-            <DialogDescription>
-              设置物品的数量
-            </DialogDescription>
+            <DialogDescription>设置物品的数量</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
@@ -407,23 +394,16 @@ export default function BasicInfoForm({
                 type="number"
                 min="1"
                 value={tempQuantity}
-                onChange={(e) => setTempQuantity(e.target.valueAsNumber || 1)}
+                onChange={e => setTempQuantity(e.target.valueAsNumber || 1)}
                 className="h-10"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => setQuantityDialogOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => setQuantityDialogOpen(false)}>
               取消
             </Button>
-            <Button 
-              type="button" 
-              onClick={handleQuantityConfirm}
-            >
+            <Button type="button" onClick={handleQuantityConfirm}>
               确定
             </Button>
           </DialogFooter>
@@ -431,4 +411,4 @@ export default function BasicInfoForm({
       </Dialog>
     </Card>
   )
-} 
+}

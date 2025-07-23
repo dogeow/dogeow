@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import React, { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -10,15 +10,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
-import { Room } from "../../hooks/useLocationManagement"
+} from '@/components/ui/select'
+import { Room } from '../../hooks/useLocationManagement'
 
 interface AddSpotDialogProps {
   open: boolean
@@ -28,15 +28,15 @@ interface AddSpotDialogProps {
   rooms: Room[]
 }
 
-export default function AddSpotDialog({ 
-  open, 
+export default function AddSpotDialog({
+  open,
   onOpenChange,
   onAddSpot,
   loading,
-  rooms
+  rooms,
 }: AddSpotDialogProps) {
-  const [spotName, setSpotName] = useState("")
-  const [selectedRoomId, setSelectedRoomId] = useState<string>("")
+  const [spotName, setSpotName] = useState('')
+  const [selectedRoomId, setSelectedRoomId] = useState<string>('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -45,8 +45,8 @@ export default function AddSpotDialog({
     }
     const success = await onAddSpot(spotName, parseInt(selectedRoomId))
     if (success) {
-      setSpotName("")
-      setSelectedRoomId("")
+      setSpotName('')
+      setSelectedRoomId('')
       onOpenChange(false)
     }
   }
@@ -56,23 +56,18 @@ export default function AddSpotDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>添加具体位置</DialogTitle>
-          <DialogDescription>
-            为房间添加一个新位置，如书柜、抽屉等。
-          </DialogDescription>
+          <DialogDescription>为房间添加一个新位置，如书柜、抽屉等。</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label className="text-sm font-medium">所属房间</label>
-              <Select
-                value={selectedRoomId}
-                onValueChange={setSelectedRoomId}
-              >
+              <Select value={selectedRoomId} onValueChange={setSelectedRoomId}>
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="选择房间" />
                 </SelectTrigger>
                 <SelectContent>
-                  {rooms.map((room) => (
+                  {rooms.map(room => (
                     <SelectItem key={room.id} value={room.id.toString()}>
                       {room.name} {room.area?.name ? `(${room.area.name})` : ''}
                     </SelectItem>
@@ -86,7 +81,7 @@ export default function AddSpotDialog({
                 id="spotName"
                 placeholder="输入具体位置名称"
                 value={spotName}
-                onChange={(e) => setSpotName(e.target.value)}
+                onChange={e => setSpotName(e.target.value)}
               />
             </div>
           </div>
@@ -94,15 +89,12 @@ export default function AddSpotDialog({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               取消
             </Button>
-            <Button 
-              type="submit" 
-              disabled={loading || !spotName.trim() || !selectedRoomId}
-            >
-              {loading ? "添加中..." : "添加位置"}
+            <Button type="submit" disabled={loading || !spotName.trim() || !selectedRoomId}>
+              {loading ? '添加中...' : '添加位置'}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   )
-} 
+}

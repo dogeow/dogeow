@@ -11,16 +11,16 @@ export const GameBoard = memo<GameBoardProps>(({ board, currentPiece }) => {
   const displayBoard = createDisplayBoard(board, currentPiece)
 
   return (
-    <div className="bg-gray-900 p-2 rounded border border-gray-600 dark:border-green-500/30 shadow-lg">
+    <div className="rounded border border-gray-600 bg-gray-900 p-2 shadow-lg dark:border-green-500/30">
       <div className="relative">
         {displayBoard.map((row, y) => (
           <div key={y} className="flex">
             {row.map((cell, x) => (
               <div
                 key={`${y}-${x}`}
-                className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5 transition-colors duration-150"
+                className="h-3 w-3 transition-colors duration-150 sm:h-4 sm:w-4 md:h-5 md:w-5"
                 style={{
-                  backgroundColor: cell || 'rgb(17, 24, 39)'
+                  backgroundColor: cell || 'rgb(17, 24, 39)',
                 }}
               />
             ))}
@@ -31,4 +31,4 @@ export const GameBoard = memo<GameBoardProps>(({ board, currentPiece }) => {
   )
 })
 
-GameBoard.displayName = 'GameBoard' 
+GameBoard.displayName = 'GameBoard'

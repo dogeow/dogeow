@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 import { useBackgroundStore } from '@/stores/backgroundStore'
@@ -10,16 +10,16 @@ interface BackgroundWrapperProps {
 
 export function BackgroundWrapper({ children }: BackgroundWrapperProps) {
   const { backgroundImage } = useBackgroundStore()
-  
+
   return (
-    <div 
+    <div
       className={cn(
-        "flex flex-col min-h-[calc(100vh-var(--navbar-height,64px))]",
-        backgroundImage && "bg-cover bg-center bg-fixed"
+        'flex min-h-[calc(100vh-var(--navbar-height,64px))] flex-col',
+        backgroundImage && 'bg-cover bg-fixed bg-center'
       )}
       style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
     >
       {children}
     </div>
   )
-} 
+}

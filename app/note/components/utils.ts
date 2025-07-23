@@ -1,27 +1,27 @@
 import { Text } from 'slate'
 
 // 标准化tokens，使其扁平化并按行分组
-export const normalizeTokens = (tokens: unknown[]): { types: string[], content: string }[][] => {
-  const normalizedTokens: { types: string[], content: string }[][] = [[]]
+export const normalizeTokens = (tokens: unknown[]): { types: string[]; content: string }[][] => {
+  const normalizedTokens: { types: string[]; content: string }[][] = [[]]
   let currentLine = 0
 
   const processToken = (token: unknown, types: string[] = []): void => {
     if (typeof token === 'string') {
       const lines = token.split('\n')
-      
+
       if (lines.length > 1) {
         for (let i = 0; i < lines.length; i++) {
           if (i !== 0) {
             normalizedTokens[currentLine] = normalizedTokens[currentLine] || []
           }
-          
+
           if (lines[i] !== '') {
             normalizedTokens[currentLine].push({
               types,
               content: lines[i],
             })
           }
-          
+
           if (i !== lines.length - 1) {
             currentLine++
           }
@@ -56,7 +56,7 @@ export const getTokensForCodeBlock = (node: unknown): unknown[] => {
   if (!Text.isText(node)) return []
 
   const ranges: unknown[] = []
-  
+
   return ranges
 }
 
@@ -71,4 +71,4 @@ export const mergeMaps = <K, V>(...maps: Map<K, V>[]) => {
   }
 
   return map
-} 
+}

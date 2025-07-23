@@ -25,4 +25,4 @@ export interface UncategorizedCountResponse {
   meta?: {
     total: number
   }
-} 
+}

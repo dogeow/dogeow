@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect } from 'react'
 
 interface KeyboardControlsProps {
   movePiece: (direction: 'left' | 'right' | 'down') => boolean
@@ -13,7 +13,7 @@ export function useKeyboardControls({
   rotatePiece,
   hardDrop,
   togglePause,
-  gameOver
+  gameOver,
 }: KeyboardControlsProps) {
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -55,4 +55,4 @@ export function useKeyboardControls({
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [movePiece, rotatePiece, hardDrop, togglePause, gameOver])
-} 
+}

@@ -29,11 +29,7 @@ export function useDebounce<T>(value: T, delay: number): T {
  * @param minLength 最小搜索长度
  * @returns 防抖后的搜索查询和是否正在搜索的状态
  */
-export function useSearchDebounce(
-  searchQuery: string, 
-  delay: number = 300, 
-  minLength: number = 1
-) {
+export function useSearchDebounce(searchQuery: string, delay: number = 300, minLength: number = 1) {
   const [isSearching, setIsSearching] = useState(false)
   const debouncedQuery = useDebounce(searchQuery, delay)
 
@@ -51,6 +47,6 @@ export function useSearchDebounce(
   return {
     debouncedQuery: effectiveQuery,
     isSearching,
-    hasQuery: effectiveQuery.length > 0
+    hasQuery: effectiveQuery.length > 0,
   }
-} 
+}

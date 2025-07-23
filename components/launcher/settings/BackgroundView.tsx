@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 import { BackButton } from '@/components/ui/back-button'
@@ -21,17 +21,14 @@ export function BackgroundView({
   backgroundImage,
   onSetBackground,
   customBackgrounds,
-  onUploadBackground
+  onUploadBackground,
 }: BackgroundViewProps) {
   return (
     <>
-      <BackButton 
-        onClick={onBack}
-        className="shrink-0"
-      />
-      
+      <BackButton onClick={onBack} className="shrink-0" />
+
       <SettingsDivider />
-      
+
       {/* 系统背景图片选项 */}
       {configs.systemBackgrounds.map(bg => (
         <BackgroundButton
@@ -41,7 +38,7 @@ export function BackgroundView({
           onSelect={onSetBackground}
         />
       ))}
-      
+
       {/* 用户自定义背景 */}
       {customBackgrounds.map(bg => (
         <BackgroundButton
@@ -51,12 +48,9 @@ export function BackgroundView({
           onSelect={onSetBackground}
         />
       ))}
-      
+
       {/* 上传按钮 */}
-      <UploadButton
-        onUpload={onUploadBackground}
-        title="上传自定义背景"
-      />
+      <UploadButton onUpload={onUploadBackground} title="上传自定义背景" />
     </>
   )
-} 
+}

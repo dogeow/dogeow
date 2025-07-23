@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 import { motion } from 'framer-motion'
@@ -18,33 +18,29 @@ interface BackgroundButtonProps {
 
 export function BackgroundButton({ background, isSelected, onSelect }: BackgroundButtonProps) {
   return (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      className="shrink-0"
-    >
-      <Button 
-        variant="ghost" 
+    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="shrink-0">
+      <Button
+        variant="ghost"
         className={cn(
-          "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-          isSelected && "ring-2 ring-primary"
+          'relative h-9 w-9 overflow-hidden rounded-md p-1',
+          isSelected && 'ring-primary ring-2'
         )}
         onClick={() => onSelect(background.url)}
         title={background.name}
       >
         {background.url ? (
-          <Image 
-            src={`/images/backgrounds/${background.url}`} 
-            alt={background.name} 
-            fill 
-            className="object-cover" 
+          <Image
+            src={`/images/backgrounds/${background.url}`}
+            alt={background.name}
+            fill
+            className="object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-muted flex items-center justify-center">
+          <div className="bg-muted flex h-full w-full items-center justify-center">
             <span className="text-xs">无</span>
           </div>
         )}
       </Button>
     </motion.div>
   )
-} 
+}

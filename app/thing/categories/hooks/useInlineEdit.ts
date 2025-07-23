@@ -23,19 +23,18 @@ export const useInlineEdit = () => {
     setEditingValue('')
   }, [])
 
-  const handleKeyDown = useCallback((
-    e: React.KeyboardEvent,
-    onSave: () => void,
-    onCancel: () => void
-  ) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      onSave()
-    } else if (e.key === 'Escape') {
-      e.preventDefault()
-      onCancel()
-    }
-  }, [])
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent, onSave: () => void, onCancel: () => void) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        onSave()
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        onCancel()
+      }
+    },
+    []
+  )
 
   return {
     editingId,
@@ -45,6 +44,6 @@ export const useInlineEdit = () => {
     startEdit,
     cancelEdit,
     handleKeyDown,
-    isEditing: (id: number) => editingId === id
+    isEditing: (id: number) => editingId === id,
   }
-} 
+}

@@ -1,17 +1,17 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
 
 interface QuantityEditorProps {
-  quantity: number;
-  onQuantityChange: (quantity: number) => void;
-  className?: string;
+  quantity: number
+  onQuantityChange: (quantity: number) => void
+  className?: string
 }
 
-const QuantityEditor: React.FC<QuantityEditorProps> = ({ 
-  quantity, 
-  onQuantityChange, 
-  className = "" 
+const QuantityEditor: React.FC<QuantityEditorProps> = ({
+  quantity,
+  onQuantityChange,
+  className = '',
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [tempQuantity, setTempQuantity] = useState(quantity.toString())
@@ -41,13 +41,16 @@ const QuantityEditor: React.FC<QuantityEditorProps> = ({
     setIsEditing(false)
   }, [quantity])
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSave()
-    } else if (e.key === 'Escape') {
-      handleCancel()
-    }
-  }, [handleSave, handleCancel])
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleSave()
+      } else if (e.key === 'Escape') {
+        handleCancel()
+      }
+    },
+    [handleSave, handleCancel]
+  )
 
   const handleTempQuantityChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setTempQuantity(e.target.value)
@@ -62,7 +65,7 @@ const QuantityEditor: React.FC<QuantityEditorProps> = ({
         onChange={handleTempQuantityChange}
         onKeyDown={handleKeyDown}
         onBlur={handleSave}
-        className={`w-16 h-8 text-sm text-center ${className}`}
+        className={`h-8 w-16 text-center text-sm ${className}`}
         autoFocus
       />
     )
@@ -71,7 +74,7 @@ const QuantityEditor: React.FC<QuantityEditorProps> = ({
   return (
     <Badge
       variant="secondary"
-      className={`cursor-pointer hover:bg-secondary/80 transition-colors ${className}`}
+      className={`hover:bg-secondary/80 cursor-pointer transition-colors ${className}`}
       onClick={handleEdit}
     >
       <span className="text-xs">× {quantity}</span>
@@ -79,4 +82,4 @@ const QuantityEditor: React.FC<QuantityEditorProps> = ({
   )
 }
 
-export default QuantityEditor 
+export default QuantityEditor

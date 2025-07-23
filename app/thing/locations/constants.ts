@@ -6,7 +6,7 @@ import { LocationType } from './hooks/useLocationManagement'
 export const LOCATION_TYPE_TEXT_MAP: Record<LocationType, string> = {
   area: '区域',
   room: '房间',
-  spot: '位置'
+  spot: '位置',
 }
 
 /**
@@ -14,4 +14,4 @@ export const LOCATION_TYPE_TEXT_MAP: Record<LocationType, string> = {
  */
 export const getLocationTypeText = (type: LocationType): string => {
   return LOCATION_TYPE_TEXT_MAP[type]
-} 
+}

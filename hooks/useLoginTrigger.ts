@@ -55,22 +55,28 @@ export function useLoginTrigger() {
     return false
   }, [isAuthenticated])
 
-  const requireLogin = useCallback((callback: () => void) => {
-    if (triggerLogin()) {
-      callback()
-    }
-  }, [triggerLogin])
+  const requireLogin = useCallback(
+    (callback: () => void) => {
+      if (triggerLogin()) {
+        callback()
+      }
+    },
+    [triggerLogin]
+  )
 
-  const requireLoginAsync = useCallback(async (callback: () => Promise<void>) => {
-    if (triggerLogin()) {
-      await callback()
-    }
-  }, [triggerLogin])
+  const requireLoginAsync = useCallback(
+    async (callback: () => Promise<void>) => {
+      if (triggerLogin()) {
+        await callback()
+      }
+    },
+    [triggerLogin]
+  )
 
   return {
     isAuthenticated,
     triggerLogin,
     requireLogin,
-    requireLoginAsync
+    requireLoginAsync,
   }
-} 
+}

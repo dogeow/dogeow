@@ -1,25 +1,21 @@
-import React from 'react';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
+import React from 'react'
+import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { motion } from 'framer-motion'
 
 interface BackButtonProps {
-  onClick: () => void;
-  title?: string;
-  className?: string;
+  onClick: () => void
+  title?: string
+  className?: string
 }
 
-export function BackButton({ 
-  onClick, 
-  title = '返回', 
-  className = ''
-}: BackButtonProps) {
+export function BackButton({ onClick, title = '返回', className = '' }: BackButtonProps) {
   return (
     <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className={`h-7 w-7 mr-1 ${className}`}
+      <Button
+        variant="ghost"
+        size="icon"
+        className={`mr-1 h-7 w-7 ${className}`}
         onClick={onClick}
         title={title}
       >
@@ -27,7 +23,7 @@ export function BackButton({
         <span className="sr-only">{title}</span>
       </Button>
     </motion.div>
-  );
+  )
 }
 
-export default BackButton;
+export default BackButton

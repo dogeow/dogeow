@@ -16,21 +16,9 @@ interface FileExplorerProps {
 }
 
 export default function FileExplorer({ className }: FileExplorerProps) {
-  const { 
-    currentView, 
-    currentFolderId, 
-    searchQuery,
-    sortField,
-    sortDirection
-  } = useFileStore()
+  const { currentView, currentFolderId, searchQuery, sortField, sortDirection } = useFileStore()
 
-  const {
-    files,
-    folderTree,
-    isLoading,
-    error,
-    mutateFiles,
-  } = useFileManagement({
+  const { files, folderTree, isLoading, error, mutateFiles } = useFileManagement({
     currentFolderId,
     searchQuery,
     sortField,
@@ -74,11 +62,9 @@ export default function FileExplorer({ className }: FileExplorerProps) {
     if (isSearching) {
       return (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <FolderOpen className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">没有找到匹配的文件</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            尝试使用不同的关键词搜索
-          </p>
+          <FolderOpen className="text-muted-foreground mb-4 h-16 w-16" />
+          <h3 className="text-foreground mb-2 text-lg font-medium">没有找到匹配的文件</h3>
+          <p className="text-muted-foreground mb-4 text-sm">尝试使用不同的关键词搜索</p>
           <Button variant="outline" onClick={handleRefresh}>
             刷新
           </Button>
@@ -89,20 +75,18 @@ export default function FileExplorer({ className }: FileExplorerProps) {
     if (isInFolder) {
       return (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <FolderOpen className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium text-foreground mb-2">此文件夹是空的</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            上传文件或创建文件夹来开始使用
-          </p>
+          <FolderOpen className="text-muted-foreground mb-4 h-16 w-16" />
+          <h3 className="text-foreground mb-2 text-lg font-medium">此文件夹是空的</h3>
+          <p className="text-muted-foreground mb-4 text-sm">上传文件或创建文件夹来开始使用</p>
         </div>
       )
     }
 
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <FolderOpen className="h-16 w-16 text-muted-foreground mb-4" />
-        <h3 className="text-lg font-medium text-foreground mb-2">还没有文件</h3>
-        <p className="text-sm text-muted-foreground mb-4">
+        <FolderOpen className="text-muted-foreground mb-4 h-16 w-16" />
+        <h3 className="text-foreground mb-2 text-lg font-medium">还没有文件</h3>
+        <p className="text-muted-foreground mb-4 text-sm">
           点击上方的&quot;上传文件&quot;按钮上传您的第一个文件
         </p>
       </div>
@@ -112,7 +96,7 @@ export default function FileExplorer({ className }: FileExplorerProps) {
   // 错误处理优化
   if (error) {
     const errorMessage = error instanceof Error ? error.message : '加载文件失败'
-    
+
     // 只在首次加载时显示 toast
     if (!files) {
       toast.error(errorMessage)
@@ -120,16 +104,12 @@ export default function FileExplorer({ className }: FileExplorerProps) {
 
     return (
       <div className={className}>
-        <div className="flex items-center justify-between p-4 border border-destructive/50 rounded-lg bg-destructive/10">
+        <div className="border-destructive/50 bg-destructive/10 flex items-center justify-between rounded-lg border p-4">
           <div className="flex items-center space-x-2">
-            <AlertCircle className="h-4 w-4 text-destructive" />
-            <span className="text-sm text-destructive">{errorMessage}</span>
+            <AlertCircle className="text-destructive h-4 w-4" />
+            <span className="text-destructive text-sm">{errorMessage}</span>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh}
-          >
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
             重试
           </Button>
         </div>
@@ -142,8 +122,8 @@ export default function FileExplorer({ className }: FileExplorerProps) {
     return (
       <div className={`flex items-center justify-center py-12 ${className}`}>
         <div className="flex flex-col items-center space-y-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">正在加载文件...</p>
+          <Loader2 className="text-primary h-8 w-8 animate-spin" />
+          <p className="text-muted-foreground text-sm">正在加载文件...</p>
         </div>
       </div>
     )
@@ -153,12 +133,12 @@ export default function FileExplorer({ className }: FileExplorerProps) {
     <div className={className}>
       {/* 不在树形视图时显示面包屑导航 */}
       {currentView !== 'tree' && <BreadcrumbNav />}
-      
-      <div className="mt-4 relative">
+
+      <div className="relative mt-4">
         {/* 显示加载指示器（当有数据时的刷新状态） */}
         {isLoading && files && (
           <div className="absolute top-0 right-0 z-10">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <Loader2 className="text-primary h-4 w-4 animate-spin" />
           </div>
         )}
 

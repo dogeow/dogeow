@@ -37,15 +37,20 @@ const initialState: GameState = {
   gameMode: 'pvp',
   difficulty: 'medium',
   scores: { X: 0, O: 0, draws: 0 },
-  isAiThinking: false
+  isAiThinking: false,
 }
 
 // 检查获胜条件
 const checkWinner = (board: Board): Player => {
   const winPatterns = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8], // 行
-    [0, 3, 6], [1, 4, 7], [2, 5, 8], // 列
-    [0, 4, 8], [2, 4, 6] // 对角线
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8], // 行
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8], // 列
+    [0, 4, 8],
+    [2, 4, 6], // 对角线
   ]
 
   for (const pattern of winPatterns) {
@@ -60,13 +65,19 @@ const checkWinner = (board: Board): Player => {
 
 // 获取空位置
 const getEmptyPositions = (board: Board): number[] => {
-  return board.map((cell, index) => cell === null ? index : -1).filter(index => index !== -1)
+  return board.map((cell, index) => (cell === null ? index : -1)).filter(index => index !== -1)
 }
 
 // Minimax 算法（困难模式）
-const minimax = (board: Board, depth: number, isMaximizing: boolean, alpha = -Infinity, beta = Infinity): number => {
+const minimax = (
+  board: Board,
+  depth: number,
+  isMaximizing: boolean,
+  alpha = -Infinity,
+  beta = Infinity
+): number => {
   const winner = checkWinner(board)
-  
+
   if (winner === 'O') return 10 - depth
   if (winner === 'X') return depth - 10
   if (board.every(cell => cell !== null)) return 0
@@ -103,39 +114,39 @@ const minimax = (board: Board, depth: number, isMaximizing: boolean, alpha = -In
 // AI 移动策略
 const getAiMove = (board: Board, difficulty: Difficulty): number => {
   const emptyPositions = getEmptyPositions(board)
-  
+
   if (emptyPositions.length === 0) return -1
 
   switch (difficulty) {
     case 'easy':
       // 随机移动
       return emptyPositions[Math.floor(Math.random() * emptyPositions.length)]
-    
+
     case 'medium':
       // 50% 最优移动，50% 随机移动
       if (Math.random() < 0.5) {
         return emptyPositions[Math.floor(Math.random() * emptyPositions.length)]
       }
-      // 继续执行困难模式逻辑
-    
+    // 继续执行困难模式逻辑
+
     case 'hard':
       // 使用 Minimax 算法找最优移动
       let bestMove = -1
       let bestValue = -Infinity
-      
+
       for (const position of emptyPositions) {
         board[position] = 'O'
         const moveValue = minimax([...board], 0, false)
         board[position] = null
-        
+
         if (moveValue > bestValue) {
           bestValue = moveValue
           bestMove = position
         }
       }
-      
+
       return bestMove
-    
+
     default:
       return emptyPositions[0]
   }
@@ -150,7 +161,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
     const newBoard = [...state.board]
     newBoard[index] = state.currentPlayer
-    
+
     const gameWinner = checkWinner(newBoard)
     const isBoardFull = newBoard.every(cell => cell !== null)
 
@@ -161,8 +172,8 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         gameOver: true,
         scores: {
           ...state.scores,
-          [gameWinner]: state.scores[gameWinner] + 1
-        }
+          [gameWinner]: state.scores[gameWinner] + 1,
+        },
       })
     } else if (isBoardFull) {
       set({
@@ -170,14 +181,14 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
         gameOver: true,
         scores: {
           ...state.scores,
-          draws: state.scores.draws + 1
-        }
+          draws: state.scores.draws + 1,
+        },
       })
     } else {
       const nextPlayer = state.currentPlayer === 'X' ? 'O' : 'X'
       set({
         board: newBoard,
-        currentPlayer: nextPlayer
+        currentPlayer: nextPlayer,
       })
 
       // 如果是 AI 模式且轮到 O（AI）
@@ -196,7 +207,7 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
     set({ isAiThinking: true })
 
     const aiMoveIndex = getAiMove([...state.board], state.difficulty)
-    
+
     if (aiMoveIndex !== -1) {
       setTimeout(() => {
         set({ isAiThinking: false })
@@ -213,13 +224,13 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
       currentPlayer: 'X',
       winner: null,
       gameOver: false,
-      isAiThinking: false
+      isAiThinking: false,
     })
   },
 
   resetScores: () => {
     set({
-      scores: { X: 0, O: 0, draws: 0 }
+      scores: { X: 0, O: 0, draws: 0 },
     })
   },
 
@@ -230,5 +241,5 @@ export const useGameStore = create<GameState & GameActions>((set, get) => ({
 
   setDifficulty: (difficulty: Difficulty) => {
     set({ difficulty })
-  }
+  },
 }))

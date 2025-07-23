@@ -36,96 +36,99 @@ const initialStats: TetrisStats = {
   sessionStats: {
     gamesPlayed: 0,
     bestScore: 0,
-    totalLines: 0
-  }
+    totalLines: 0,
+  },
 }
 
 export const useTetrisStore = create<TetrisState>()(
   persist(
     (set, get) => ({
       ...initialStats,
-      
+
       setBestScore: (score: number) => {
         const currentBest = get().bestScore
         if (score > currentBest) {
           set({ bestScore: score })
         }
       },
-      
+
       incrementGamesPlayed: () => {
         const state = get()
         const newGamesPlayed = state.gamesPlayed + 1
-        const newAverageScore = state.gamesPlayed > 0 
-          ? Math.round((state.averageScore * state.gamesPlayed + state.bestScore) / newGamesPlayed)
-          : state.bestScore
-        
-        set({ 
+        const newAverageScore =
+          state.gamesPlayed > 0
+            ? Math.round(
+                (state.averageScore * state.gamesPlayed + state.bestScore) / newGamesPlayed
+              )
+            : state.bestScore
+
+        set({
           gamesPlayed: newGamesPlayed,
           averageScore: newAverageScore,
           sessionStats: {
             ...state.sessionStats,
-            gamesPlayed: state.sessionStats.gamesPlayed + 1
-          }
+            gamesPlayed: state.sessionStats.gamesPlayed + 1,
+          },
         })
       },
-      
+
       addLinesCleared: (lines: number) => {
         const state = get()
-        set({ 
+        set({
           totalLinesCleared: state.totalLinesCleared + lines,
           sessionStats: {
             ...state.sessionStats,
-            totalLines: state.sessionStats.totalLines + lines
-          }
+            totalLines: state.sessionStats.totalLines + lines,
+          },
         })
       },
-      
+
       addPlayTime: (seconds: number) => {
         const state = get()
         set({ totalPlayTime: state.totalPlayTime + seconds })
       },
-      
+
       updateHighestLevel: (level: number) => {
         const currentHighest = get().highestLevel
         if (level > currentHighest) {
           set({ highestLevel: level })
         }
       },
-      
+
       updateSessionStats: (score: number) => {
         const state = get()
         const currentSessionBest = state.sessionStats.bestScore
         set({
           sessionStats: {
             ...state.sessionStats,
-            bestScore: score > currentSessionBest ? score : currentSessionBest
-          }
+            bestScore: score > currentSessionBest ? score : currentSessionBest,
+          },
         })
       },
-      
+
       resetStats: () => set(initialStats),
-      
+
       resetSessionStats: () => {
         set({
           sessionStats: {
             gamesPlayed: 0,
             bestScore: 0,
-            totalLines: 0
-          }
+            totalLines: 0,
+          },
         })
-      }
+      },
     }),
     {
       name: 'tetris-game-storage',
       // 只持久化非会话数据
-      partialize: (state) => ({
+      partialize: state => ({
         bestScore: state.bestScore,
         gamesPlayed: state.gamesPlayed,
         totalLinesCleared: state.totalLinesCleared,
         totalPlayTime: state.totalPlayTime,
         averageScore: state.averageScore,
-        highestLevel: state.highestLevel
-      })
+        highestLevel: state.highestLevel,
+      }),
     }
   )
-) 
+)

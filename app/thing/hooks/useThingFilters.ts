@@ -25,20 +25,25 @@ export function useThingFilters(): UseThingFiltersReturn {
 
   const hasActiveFilters = useCallback(() => {
     const activeFilters = Object.entries(filters).filter(([key, value]) => {
-      if (value === undefined || value === null || value === '' || value === 'all' || 
-          (Array.isArray(value) && value.length === 0) ||
-          (key === 'include_null_purchase_date' && value === true) ||
-          (key === 'include_null_expiry_date' && value === true)) {
+      if (
+        value === undefined ||
+        value === null ||
+        value === '' ||
+        value === 'all' ||
+        (Array.isArray(value) && value.length === 0) ||
+        (key === 'include_null_purchase_date' && value === true) ||
+        (key === 'include_null_expiry_date' && value === true)
+      ) {
         return false
       }
-      
+
       if (key === 'category_id' && (value === 'none' || value === '')) {
         return false
       }
-      
+
       return true
     })
-    
+
     return activeFilters.length > 0
   }, [filters])
 
@@ -48,6 +53,6 @@ export function useThingFilters(): UseThingFiltersReturn {
     clearFilters,
     hasActiveFilters,
     currentPage,
-    setCurrentPage
+    setCurrentPage,
   }
-} 
+}

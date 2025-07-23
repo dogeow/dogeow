@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Globe, AlertTriangleIcon } from 'lucide-react'
 
-
 // Define ImageData interface locally as specified
 export interface ImageData {
   id?: number
@@ -27,12 +26,12 @@ export interface ItemCardImageProps {
 
 // Define itemStatusColors and getStatusBorderColor function
 const itemStatusColors: Record<string, string> = {
-  '良好': 'border-green-500',
-  '损坏': 'border-red-500',
-  '维修中': 'border-yellow-500',
-  '借出': 'border-blue-500',
-  '遗失': 'border-gray-500',
-  '处置中': 'border-purple-500',
+  良好: 'border-green-500',
+  损坏: 'border-red-500',
+  维修中: 'border-yellow-500',
+  借出: 'border-blue-500',
+  遗失: 'border-gray-500',
+  处置中: 'border-purple-500',
 }
 
 const getStatusBorderColor = (status: string): string => {
@@ -68,8 +67,8 @@ export default function ItemCardImage({
     <div
       className={
         size
-          ? `relative rounded overflow-hidden border-b-2 ${getStatusBorderColor(status)}`
-          : `relative w-full h-48 overflow-hidden rounded-t-lg border-b-2 ${getStatusBorderColor(status)}`
+          ? `relative overflow-hidden rounded border-b-2 ${getStatusBorderColor(status)}`
+          : `relative h-48 w-full overflow-hidden rounded-t-lg border-b-2 ${getStatusBorderColor(status)}`
       }
       style={size ? { width: size, height: size } : {}}
     >
@@ -85,13 +84,13 @@ export default function ItemCardImage({
           unoptimized={imageSrc.startsWith('http')}
         />
       ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <AlertTriangleIcon className="w-1/2 h-1/2 opacity-50" />
+        <div className="flex h-full w-full items-center justify-center">
+          <AlertTriangleIcon className="h-1/2 w-1/2 opacity-50" />
         </div>
       )}
       {isPublic && (
         <Badge variant="secondary" className="absolute top-2 right-2">
-          <Globe className="h-3 w-3 mr-1" />
+          <Globe className="mr-1 h-3 w-3" />
           公开
         </Badge>
       )}

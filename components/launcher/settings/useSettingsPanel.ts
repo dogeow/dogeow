@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
 import { toast } from 'sonner'
@@ -19,26 +19,26 @@ interface UseSettingsPanelProps {
 
 export function useSettingsPanel({
   setBackgroundImage,
-  setCustomBackgrounds
+  setCustomBackgrounds,
 }: UseSettingsPanelProps) {
-  const { 
-    currentTheme, 
-    customThemes, 
-    setCurrentTheme, 
-    removeCustomTheme, 
-    followSystem, 
-    setFollowSystem, 
-    addCustomTheme 
+  const {
+    currentTheme,
+    customThemes,
+    setCurrentTheme,
+    removeCustomTheme,
+    followSystem,
+    setFollowSystem,
+    addCustomTheme,
   } = useThemeStore()
-  
+
   const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
-  
+
   const [currentView, setCurrentView] = useState<SettingsView>('main')
 
   // 设置背景图片
   const handleSetBackground = (url: string) => {
     setBackgroundImage(url)
-    toast.success("背景已更新")
+    toast.success('背景已更新')
   }
 
   // 处理用户上传背景图片
@@ -47,18 +47,18 @@ export function useSettingsPanel({
     if (!file) return
 
     const reader = new FileReader()
-    reader.onload = (event) => {
+    reader.onload = event => {
       const result = event.target?.result
       if (typeof result === 'string') {
         const newBackground = {
           id: `custom-${Date.now()}`,
           name: `自定义-${file.name}`,
-          url: result
+          url: result,
         }
 
         setCustomBackgrounds(prev => [...prev, newBackground])
         handleSetBackground(newBackground.url)
-        toast.success("自定义背景已上传")
+        toast.success('自定义背景已上传')
       }
     }
 
@@ -68,13 +68,13 @@ export function useSettingsPanel({
   // 处理跟随系统选项切换
   const handleToggleFollowSystem = (checked: boolean) => {
     setFollowSystem(checked)
-    toast.success(checked ? "已启用跟随系统主题" : "已关闭跟随系统主题")
+    toast.success(checked ? '已启用跟随系统主题' : '已关闭跟随系统主题')
   }
 
   // 处理功能封面图选项切换
   const handleToggleProjectCovers = (checked: boolean) => {
     setShowProjectCovers(checked)
-    toast.success(checked ? "已启用功能封面图" : "已关闭功能封面图")
+    toast.success(checked ? '已启用功能封面图' : '已关闭功能封面图')
   }
 
   // 处理添加自定义主题
@@ -84,18 +84,18 @@ export function useSettingsPanel({
       id: `custom-${Date.now()}`,
       name,
       primary: hslColor,
-      color
+      color,
     }
 
     addCustomTheme(newTheme)
     setCurrentTheme(newTheme.id)
-    toast.success("自定义主题已添加")
+    toast.success('自定义主题已添加')
   }
 
   // 处理删除自定义主题
   const handleRemoveCustomTheme = (id: string) => {
     removeCustomTheme(id)
-    toast.success("主题已删除")
+    toast.success('主题已删除')
   }
 
   return {
@@ -105,21 +105,21 @@ export function useSettingsPanel({
     customThemes,
     followSystem,
     showProjectCovers,
-    
+
     // 导航方法
     setCurrentView,
-    
+
     // 背景相关方法
     handleSetBackground,
     handleUploadBackground,
-    
+
     // 主题相关方法
     setCurrentTheme,
     handleAddCustomTheme,
     handleRemoveCustomTheme,
-    
+
     // 系统设置方法
     handleToggleFollowSystem,
-    handleToggleProjectCovers
+    handleToggleProjectCovers,
   }
-} 
+}

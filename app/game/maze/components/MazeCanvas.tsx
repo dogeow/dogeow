@@ -1,22 +1,17 @@
-"use client"
+'use client'
 
 import { useEffect, useRef, forwardRef, useCallback } from 'react'
 import { useMazeStore } from '../store'
 
 const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { 
-    maze,
-    ball,
-    mazeSize,
-    gameStarted
-  } = useMazeStore()
+  const { maze, ball, mazeSize, gameStarted } = useMazeStore()
 
-  // console.log('🎨 MazeCanvas 渲染状态:', { 
-  //   gameStarted, 
-  //   mazeLength: maze.length, 
+  // console.log('🎨 MazeCanvas 渲染状态:', {
+  //   gameStarted,
+  //   mazeLength: maze.length,
   //   ballPosition: ball,
-  //   mazeSize 
+  //   mazeSize
   // })
 
   // 合并内部ref和外部ref
@@ -46,13 +41,13 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     const canvasWidth = rect.width
     const canvasHeight = rect.height
     const cellSize = Math.min(canvasWidth, canvasHeight) / mazeSize
-    
+
     // 计算迷宫在Canvas中的实际偏移
     const mazeRenderSize = cellSize * mazeSize
     const offsetX = (canvasWidth - mazeRenderSize) / 2
     const offsetY = (canvasHeight - mazeRenderSize) / 2
-    
-    // console.log('🎨 Canvas尺寸:', { 
+
+    // console.log('🎨 Canvas尺寸:', {
     //   rect: { width: rect.width, height: rect.height },
     //   canvas: { width: canvas.width, height: canvas.height },
     //   cellSize,
@@ -84,31 +79,31 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
 
         // 绘制墙壁
         ctx.beginPath()
-        
+
         // 顶部墙壁
         if (cell.top) {
           ctx.moveTo(cellX, cellY)
           ctx.lineTo(cellX + cellSize, cellY)
         }
-        
+
         // 右侧墙壁
         if (cell.right) {
           ctx.moveTo(cellX + cellSize, cellY)
           ctx.lineTo(cellX + cellSize, cellY + cellSize)
         }
-        
+
         // 底部墙壁
         if (cell.bottom) {
           ctx.moveTo(cellX, cellY + cellSize)
           ctx.lineTo(cellX + cellSize, cellY + cellSize)
         }
-        
+
         // 左侧墙壁
         if (cell.left) {
           ctx.moveTo(cellX, cellY)
           ctx.lineTo(cellX, cellY + cellSize)
         }
-        
+
         ctx.stroke()
       }
     }
@@ -128,11 +123,11 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     const ballGridY = ball.z
     const ballX = ballGridX * cellSize + cellSize / 2 + offsetX
     const ballY = ballGridY * cellSize + cellSize / 2 + offsetY
-    
-    // console.log('🎨 绘制小球:', { 
-    //   ballGrid: { x: ballGridX, y: ballGridY }, 
+
+    // console.log('🎨 绘制小球:', {
+    //   ballGrid: { x: ballGridX, y: ballGridY },
     //   ballCanvas: { x: ballX, y: ballY },
-    //   cellSize 
+    //   cellSize
     // })
 
     ctx.fillStyle = '#3b82f6'
@@ -175,17 +170,13 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
   }, [drawMaze])
 
   return (
-    <div className="relative w-full h-96 bg-gray-100 rounded-lg overflow-hidden border-2 border-gray-300">
-      <canvas
-        ref={setRef}
-        className="w-full h-full cursor-pointer"
-        style={{ display: 'block' }}
-      />
-      
+    <div className="relative h-96 w-full overflow-hidden rounded-lg border-2 border-gray-300 bg-gray-100">
+      <canvas ref={setRef} className="h-full w-full cursor-pointer" style={{ display: 'block' }} />
+
       {!gameStarted && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-lg">
-          <div className="text-white text-center">
-            <h3 className="text-xl font-bold mb-2">🎮 点击开始游戏</h3>
+        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
+          <div className="text-center text-white">
+            <h3 className="mb-2 text-xl font-bold">🎮 点击开始游戏</h3>
             <p className="text-sm opacity-90">将蓝色小球移动到红色终点</p>
           </div>
         </div>
@@ -196,4 +187,4 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
 
 MazeCanvas.displayName = 'MazeCanvas'
 
-export default MazeCanvas 
+export default MazeCanvas

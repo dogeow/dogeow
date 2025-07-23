@@ -31,4 +31,4 @@ export interface GameConfig {
   BOARD_HEIGHT: number
   TETROMINO_SHAPES: Record<TetrominoType, number[][]>
   TETROMINO_COLORS: Record<TetrominoType, string>
-} 
+}

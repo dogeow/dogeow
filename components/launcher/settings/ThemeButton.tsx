@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 import { motion } from 'framer-motion'
@@ -18,42 +18,40 @@ interface ThemeButtonProps {
   onRemove?: (id: string) => void
 }
 
-export function ThemeButton({ 
-  theme, 
-  isSelected, 
-  isCustom = false, 
-  onSelect, 
-  onRemove 
+export function ThemeButton({
+  theme,
+  isSelected,
+  isCustom = false,
+  onSelect,
+  onRemove,
 }: ThemeButtonProps) {
   return (
     <motion.div
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
-      className="shrink-0 relative"
+      className="relative shrink-0"
     >
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className={cn(
-          "p-1 h-9 w-9 rounded-md overflow-hidden relative",
-          isSelected && "ring-2 ring-primary"
+          'relative h-9 w-9 overflow-hidden rounded-md p-1',
+          isSelected && 'ring-primary ring-2'
         )}
         onClick={() => onSelect(theme.id)}
         title={theme.name}
         style={{ backgroundColor: theme.color }}
       >
-        {isSelected && (
-          <Check className="h-5 w-5 text-white" />
-        )}
+        {isSelected && <Check className="h-5 w-5 text-white" />}
       </Button>
-      
+
       {isCustom && onRemove && (
         <Button
           variant="ghost"
           size="icon"
-          className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-background border shadow-sm hover:bg-destructive hover:text-destructive-foreground"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(theme.id);
+          className="bg-background hover:bg-destructive hover:text-destructive-foreground absolute -top-2 -right-2 h-5 w-5 rounded-full border shadow-sm"
+          onClick={e => {
+            e.stopPropagation()
+            onRemove(theme.id)
           }}
           title={`删除 ${theme.name}`}
         >
@@ -62,4 +60,4 @@ export function ThemeButton({
       )}
     </motion.div>
   )
-} 
+}

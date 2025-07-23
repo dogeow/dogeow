@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { apiRequest } from '@/lib/api'
@@ -10,10 +10,7 @@ import { toast } from 'sonner'
 import { Save, Loader2, Lock, Unlock } from 'lucide-react'
 
 // 使用dynamic import避免服务端渲染问题
-const TailwindAdvancedEditor = dynamic(
-  () => import('@/components/novel-editor'),
-  { ssr: false }
-)
+const TailwindAdvancedEditor = dynamic(() => import('@/components/novel-editor'), { ssr: false })
 
 interface Note {
   id: number
@@ -32,7 +29,7 @@ export default function EditNotePage() {
   const [clientReady, setClientReady] = useState(false)
   const [title, setTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  
+
   // 添加按钮交互状态
   const [draftButtonHovered, setDraftButtonHovered] = useState(false)
   const [saveButtonHovered, setSaveButtonHovered] = useState(false)
@@ -50,38 +47,37 @@ export default function EditNotePage() {
         const data = await apiRequest<Note>(`/notes/${noteId}`)
         setNote(data)
         setTitle(data.title)
-        
+
         // 将笔记内容加载到 Novel 编辑器
         if (data.content) {
           try {
             // 尝试解析内容，如果是有效的JSON则使用，否则创建默认内容
             const parsedContent = JSON.parse(data.content)
-            window.localStorage.setItem("novel-content", JSON.stringify(parsedContent))
+            window.localStorage.setItem('novel-content', JSON.stringify(parsedContent))
           } catch {
             // 如果内容不是有效的JSON，创建包含文本的默认结构
             const defaultContent = {
-              "type": "doc",
-              "content": [
+              type: 'doc',
+              content: [
                 {
-                  "type": "paragraph",
-                  "content": [
+                  type: 'paragraph',
+                  content: [
                     {
-                      "type": "text",
-                      "text": data.content || ""
-                    }
-                  ]
-                }
-              ]
+                      type: 'text',
+                      text: data.content || '',
+                    },
+                  ],
+                },
+              ],
             }
-            window.localStorage.setItem("novel-content", JSON.stringify(defaultContent))
+            window.localStorage.setItem('novel-content', JSON.stringify(defaultContent))
           }
         }
-        
+
         // 同时设置 markdown 内容
         if (data.content_markdown) {
-          window.localStorage.setItem("markdown", data.content_markdown)
+          window.localStorage.setItem('markdown', data.content_markdown)
         }
-        
       } catch (err) {
         console.error('获取笔记失败', err)
         setError('无法加载笔记，请重试')
@@ -95,50 +91,54 @@ export default function EditNotePage() {
 
   // 获取当前编辑器内容和markdown
   const getCurrentContent = () => {
-    const content = window.localStorage.getItem("novel-content")
-    const markdown = window.localStorage.getItem("markdown")
+    const content = window.localStorage.getItem('novel-content')
+    const markdown = window.localStorage.getItem('markdown')
     return {
-      content: content || '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}',
-      markdown: markdown || ''
+      content:
+        content ||
+        '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}',
+      markdown: markdown || '',
     }
   }
 
   // 保存笔记
-  const handleSave = useCallback(async (asDraft = false) => {
-    if (!title.trim()) {
-      toast.error('请输入笔记标题')
-      return
-    }
-
-    const { content, markdown } = getCurrentContent()
-    
-    try {
-      setIsSaving(true)
-      
-      const data = {
-        title: title.trim(),
-        content,
-        content_markdown: markdown,
-        is_draft: asDraft
+  const handleSave = useCallback(
+    async (asDraft = false) => {
+      if (!title.trim()) {
+        toast.error('请输入笔记标题')
+        return
       }
 
-      const noteId = Array.isArray(id) ? id[0] : id
-      await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
-      
-      toast.success(asDraft ? '已解锁' : '笔记已更新')
-      
-      // 如果是草稿，设置草稿保存状态
-      if (asDraft) {
-        setDraftSaved(true)
+      const { content, markdown } = getCurrentContent()
+
+      try {
+        setIsSaving(true)
+
+        const data = {
+          title: title.trim(),
+          content,
+          content_markdown: markdown,
+          is_draft: asDraft,
+        }
+
+        const noteId = Array.isArray(id) ? id[0] : id
+        await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
+
+        toast.success(asDraft ? '已解锁' : '笔记已更新')
+
+        // 如果是草稿，设置草稿保存状态
+        if (asDraft) {
+          setDraftSaved(true)
+        }
+      } catch (error) {
+        console.error('保存笔记错误:', error)
+        toast.error('保存失败')
+      } finally {
+        setIsSaving(false)
       }
-      
-    } catch (error) {
-      console.error('保存笔记错误:', error)
-      toast.error('保存失败')
-    } finally {
-      setIsSaving(false)
-    }
-  }, [title, id])
+    },
+    [title, id]
+  )
 
   // 添加快捷键支持
   useEffect(() => {
@@ -167,8 +167,8 @@ export default function EditNotePage() {
     return (
       <div className="container mx-auto py-4">
         <div className="animate-pulse">
-          <div className="h-8 w-1/3 mb-4 bg-gray-200 rounded"></div>
-          <div className="h-64 w-full bg-gray-200 rounded"></div>
+          <div className="mb-4 h-8 w-1/3 rounded bg-gray-200"></div>
+          <div className="h-64 w-full rounded bg-gray-200"></div>
         </div>
       </div>
     )
@@ -177,7 +177,7 @@ export default function EditNotePage() {
   if (error) {
     return (
       <div className="container mx-auto py-4">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="rounded border border-red-200 bg-red-50 px-4 py-3 text-red-700">
           {error}
         </div>
       </div>
@@ -187,7 +187,7 @@ export default function EditNotePage() {
   if (!note) {
     return (
       <div className="container mx-auto py-4">
-        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 px-4 py-3 rounded">
+        <div className="rounded border border-yellow-200 bg-yellow-50 px-4 py-3 text-yellow-700">
           找不到笔记
         </div>
       </div>
@@ -202,11 +202,11 @@ export default function EditNotePage() {
           <div className="mb-4 flex items-center gap-2">
             <Input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={e => setTitle(e.target.value)}
               placeholder="请输入笔记标题"
-              className="text-lg font-medium flex-1"
+              className="flex-1 text-lg font-medium"
             />
-            <Button 
+            <Button
               onClick={() => handleSave(true)}
               onMouseEnter={() => setDraftButtonHovered(true)}
               onMouseLeave={() => setDraftButtonHovered(false)}
@@ -220,12 +220,18 @@ export default function EditNotePage() {
               style={{
                 transform: `translateY(${draftButtonHovered ? '-2px' : '0'}) scale(${draftButtonPressed ? '0.95' : '1'})`,
                 transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: draftButtonHovered ? '0 4px 8px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: draftButtonHovered ? '0 4px 8px rgba(0,0,0,0.1)' : 'none',
               }}
             >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : (draftSaved ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />)}
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : draftSaved ? (
+                <Unlock className="h-4 w-4" />
+              ) : (
+                <Lock className="h-4 w-4" />
+              )}
             </Button>
-            <Button 
+            <Button
               onClick={() => handleSave(false)}
               onMouseEnter={() => setSaveButtonHovered(true)}
               onMouseLeave={() => setSaveButtonHovered(false)}
@@ -238,17 +244,21 @@ export default function EditNotePage() {
               style={{
                 transform: `translateY(${saveButtonHovered ? '-2px' : '0'}) scale(${saveButtonPressed ? '0.95' : '1'})`,
                 transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: saveButtonHovered ? '0 6px 12px rgba(0,0,0,0.15)' : 'none'
+                boxShadow: saveButtonHovered ? '0 6px 12px rgba(0,0,0,0.15)' : 'none',
               }}
             >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
             </Button>
           </div>
-          
+
           {/* Novel 编辑器 */}
           {clientReady && <TailwindAdvancedEditor />}
         </div>
       </div>
     </div>
   )
-} 
+}

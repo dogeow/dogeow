@@ -1,34 +1,34 @@
-import { EditorBubble, removeAIHighlight, useEditor } from "novel";
-import { Fragment, type ReactNode, useEffect } from "react";
-import { Button } from "../ui/button";
-import Magic from "../ui/icons/magic";
-import { AISelector } from "./ai-selector";
+import { EditorBubble, removeAIHighlight, useEditor } from 'novel'
+import { Fragment, type ReactNode, useEffect } from 'react'
+import { Button } from '../ui/button'
+import Magic from '../ui/icons/magic'
+import { AISelector } from './ai-selector'
 
 interface GenerativeMenuSwitchProps {
-  children: ReactNode;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  children: ReactNode
+  open: boolean
+  onOpenChange: (open: boolean) => void
 }
 const GenerativeMenuSwitch = ({ children, open, onOpenChange }: GenerativeMenuSwitchProps) => {
-  const { editor } = useEditor();
+  const { editor } = useEditor()
 
   useEffect(() => {
     if (!open && editor) {
-      removeAIHighlight(editor);
+      removeAIHighlight(editor)
     }
-  }, [open, editor]);
+  }, [open, editor])
   return (
     <EditorBubble
       tippyOptions={{
-        placement: open ? "bottom-start" : "top",
+        placement: open ? 'bottom-start' : 'top',
         onHidden: () => {
-          onOpenChange(false);
+          onOpenChange(false)
           if (editor) {
-            editor.chain().unsetHighlight().run();
+            editor.chain().unsetHighlight().run()
           }
         },
       }}
-      className="flex w-fit max-w-[90vw] overflow-hidden rounded-md border border-muted bg-background shadow-xl"
+      className="border-muted bg-background flex w-fit max-w-[90vw] overflow-hidden rounded-md border shadow-xl"
     >
       {open && <AISelector open={open} onOpenChange={onOpenChange} />}
       {!open && (
@@ -46,7 +46,7 @@ const GenerativeMenuSwitch = ({ children, open, onOpenChange }: GenerativeMenuSw
         </Fragment>
       )}
     </EditorBubble>
-  );
-};
+  )
+}
 
-export default GenerativeMenuSwitch;
+export default GenerativeMenuSwitch

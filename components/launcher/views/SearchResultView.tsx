@@ -11,33 +11,22 @@ interface SearchResultViewProps {
 
 export function SearchResultView({ searchText, onReset }: SearchResultViewProps) {
   return (
-    <div className="h-full flex items-center justify-between w-full">
-      <div className="flex items-center shrink-0 mr-6">
-        <Image 
-          src={Logo} 
-          alt="apps" 
-          className="h-10 w-10 cursor-pointer" 
-          onClick={onReset}
-        />
+    <div className="flex h-full w-full items-center justify-between">
+      <div className="mr-6 flex shrink-0 items-center">
+        <Image src={Logo} alt="apps" className="h-10 w-10 cursor-pointer" onClick={onReset} />
       </div>
-      
+
       <div className="flex-1 overflow-auto px-4 py-1">
-        <div className="prose prose-sm max-w-none dark:prose-invert prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-li:my-0">
-          <ReactMarkdown>
-            {searchText}
-          </ReactMarkdown>
+        <div className="prose prose-sm dark:prose-invert prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-li:my-0 max-w-none">
+          <ReactMarkdown>{searchText}</ReactMarkdown>
         </div>
       </div>
-      
+
       <div className="ml-auto">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onReset}
-        >
+        <Button variant="ghost" size="sm" onClick={onReset}>
           关闭
         </Button>
       </div>
     </div>
   )
-} 
+}

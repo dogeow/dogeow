@@ -1,16 +1,16 @@
-"use client"
+'use client'
 
 import React, { useState, useEffect } from 'react'
 import { Settings, Music } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { Moon, Sun } from "lucide-react"
-import { useTheme } from "next-themes"
+import { Moon, Sun } from 'lucide-react'
+import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
 import { useMusicStore } from '@/stores/musicStore'
 import { cn } from '@/lib/helpers'
 
-type DisplayMode = 'music' | 'apps' | 'settings';
+type DisplayMode = 'music' | 'apps' | 'settings'
 
 export interface AppGridProps {
   toggleDisplayMode: (mode: DisplayMode) => void
@@ -28,8 +28,8 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
   }, [])
 
   // 自定义按钮样式，确保在任何背景下都有足够的对比度
-  const buttonStyle = "h-9 w-9 bg-background/60 backdrop-blur-sm"
-  
+  const buttonStyle = 'h-9 w-9 bg-background/60 backdrop-blur-sm'
+
   // 定义按钮配置
   const buttons = [
     {
@@ -37,22 +37,22 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
         <motion.div
           animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
           transition={
-            isPlaying 
-              ? { 
-                  duration: 10, 
-                  repeat: Infinity, 
-                  ease: "linear" 
+            isPlaying
+              ? {
+                  duration: 10,
+                  repeat: Infinity,
+                  ease: 'linear',
                 }
-              : { 
-                  duration: 10
+              : {
+                  duration: 10,
                 }
           }
         >
           <Music className="h-5 w-5" />
         </motion.div>
       ),
-      label: "打开音乐",
-      onClick: () => toggleDisplayMode('music')
+      label: '打开音乐',
+      onClick: () => toggleDisplayMode('music'),
     },
     {
       icon: (
@@ -68,33 +68,29 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
           )}
         </div>
       ),
-      label: "切换主题",
+      label: '切换主题',
       onClick: () => {
-        if (!mounted) return;
+        if (!mounted) return
         setFollowSystem(false)
-        const newTheme = theme === 'dark' ? 'light' : 'dark';
+        const newTheme = theme === 'dark' ? 'light' : 'dark'
         setTheme(newTheme)
-      }
+      },
     },
     {
       icon: <Settings className="h-5 w-5" />,
-      label: "打开设置",
-      onClick: () => toggleDisplayMode('settings')
-    }
+      label: '打开设置',
+      onClick: () => toggleDisplayMode('settings'),
+    },
   ]
-  
+
   return (
     <div className="flex items-center space-x-4">
       {buttons.map((button, index) => (
-        <motion.div 
-          key={index}
-          whileHover={{ scale: 1.05 }} 
-          whileTap={{ scale: 0.95 }}
-        >
-          <Button 
-            variant="ghost" 
+        <motion.div key={index} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="ghost"
             size="icon"
-            className={cn(buttonStyle, "hover:bg-background/80")}
+            className={cn(buttonStyle, 'hover:bg-background/80')}
             onClick={button.onClick}
           >
             {button.icon}

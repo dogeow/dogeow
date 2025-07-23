@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
 import { useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import useSWR from "swr"
-import { apiRequest } from "@/lib/api"
+import useSWR from 'swr'
+import { apiRequest } from '@/lib/api'
 
 // Components
 import ThingHeader from './components/ThingHeader'
@@ -20,32 +20,13 @@ import { Tag, LocationTreeResponse } from '@/app/thing/types'
 
 export default function Thing() {
   const router = useRouter()
-  const { 
-    items, 
-    categories, 
-    loading, 
-    error, 
-    fetchItems, 
-    fetchCategories, 
-    meta 
-  } = useItemStore()
+  const { items, categories, loading, error, fetchItems, fetchCategories, meta } = useItemStore()
 
   // 使用自定义hooks管理复杂逻辑
-  const {
-    filters,
-    updateFilters,
-    clearFilters,
-    hasActiveFilters,
-    currentPage,
-    setCurrentPage
-  } = useThingFilters()
+  const { filters, updateFilters, clearFilters, hasActiveFilters, currentPage, setCurrentPage } =
+    useThingFilters()
 
-  const {
-    searchTerm,
-    setSearchTerm,
-    handleSearch,
-    isSearching
-  } = useThingSearch()
+  const { searchTerm, setSearchTerm, handleSearch, isSearching } = useThingSearch()
 
   // 基础数据加载
   const { data: tags } = useSWR<Tag[]>('/things/tags', apiRequest)
@@ -57,11 +38,11 @@ export default function Thing() {
       if (categories.length === 0) {
         await fetchCategories()
       }
-      
+
       // 处理URL搜索参数
       const searchParams = new URLSearchParams(window.location.search)
       const searchFromURL = searchParams.get('search')
-      
+
       if (searchFromURL) {
         setSearchTerm(searchFromURL)
         handleSearch(searchFromURL)
@@ -74,19 +55,25 @@ export default function Thing() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 处理页面变化
-  const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page)
-    fetchItems({ ...filters, page })
-  }, [filters, fetchItems, setCurrentPage])
+  const handlePageChange = useCallback(
+    (page: number) => {
+      setCurrentPage(page)
+      fetchItems({ ...filters, page })
+    },
+    [filters, fetchItems, setCurrentPage]
+  )
 
   // 处理筛选应用
-  const handleApplyFilters = useCallback((newFilters: Record<string, unknown>) => {
-    if (isSearching) return
-    
-    setCurrentPage(1)
-    updateFilters(newFilters)
-    fetchItems({ ...newFilters, page: 1 })
-  }, [isSearching, setCurrentPage, updateFilters, fetchItems])
+  const handleApplyFilters = useCallback(
+    (newFilters: Record<string, unknown>) => {
+      if (isSearching) return
+
+      setCurrentPage(1)
+      updateFilters(newFilters)
+      fetchItems({ ...newFilters, page: 1 })
+    },
+    [isSearching, setCurrentPage, updateFilters, fetchItems]
+  )
 
   // 处理重新加载
   const handleReload = useCallback(() => {
@@ -101,13 +88,19 @@ export default function Thing() {
   }, [setSearchTerm, clearFilters, fetchItems])
 
   // 导航处理
-  const handleItemEdit = useCallback((id: number) => {
-    router.push(`/thing/${id}/edit`)
-  }, [router])
+  const handleItemEdit = useCallback(
+    (id: number) => {
+      router.push(`/thing/${id}/edit`)
+    },
+    [router]
+  )
 
-  const handleItemView = useCallback((id: number) => {
-    router.push(`/thing/${id}`)
-  }, [router])
+  const handleItemView = useCallback(
+    (id: number) => {
+      router.push(`/thing/${id}`)
+    },
+    [router]
+  )
 
   return (
     <div className="container mx-auto py-2">
@@ -122,7 +115,7 @@ export default function Thing() {
           hasActiveFilters={hasActiveFilters()}
           onApplyFilters={handleApplyFilters}
         />
-        
+
         <ThingContent
           items={items}
           loading={loading}
@@ -138,7 +131,7 @@ export default function Thing() {
           onClearFilters={handleClearFilters}
         />
       </div>
-      
+
       <ThingSpeedDial />
     </div>
   )

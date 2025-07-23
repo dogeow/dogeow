@@ -25,34 +25,36 @@ interface AppsViewProps {
   toggleDisplayMode: (mode: DisplayMode) => void
 }
 
-export function AppsView({ 
-  router, 
-  searchManager, 
-  isAuthenticated, 
-  toggleDisplayMode 
+export function AppsView({
+  router,
+  searchManager,
+  isAuthenticated,
+  toggleDisplayMode,
 }: AppsViewProps) {
   return (
-    <div className="h-full flex items-center justify-between">
+    <div className="flex h-full items-center justify-between">
       {/* 左侧：应用切换按钮 */}
-      <div className="flex items-center shrink-0 mr-6">
-        <Image 
-          src={Logo} 
-          alt="apps" 
-          className="h-10 w-10 cursor-pointer" 
+      <div className="mr-6 flex shrink-0 items-center">
+        <Image
+          src={Logo}
+          alt="apps"
+          className="h-10 w-10 cursor-pointer"
           onClick={() => router.push('/')}
         />
       </div>
-      
+
       {/* 中间：应用图标 */}
       {!searchManager.isSearchVisible && (
-        <div className="flex-1 flex items-center justify-start">
+        <div className="flex flex-1 items-center justify-start">
           <AppGrid toggleDisplayMode={toggleDisplayMode} />
         </div>
       )}
-      
+
       {/* 右侧：搜索和用户 */}
-      <div className={`flex items-center gap-3 ${searchManager.isSearchVisible ? 'flex-1 justify-between' : 'ml-auto'}`}>
-        <SearchBar 
+      <div
+        className={`flex items-center gap-3 ${searchManager.isSearchVisible ? 'flex-1 justify-between' : 'ml-auto'}`}
+      >
+        <SearchBar
           isVisible={searchManager.isSearchVisible}
           searchTerm={searchManager.searchTerm}
           setSearchTerm={searchManager.setSearchTerm}
@@ -60,10 +62,10 @@ export function AppsView({
           onToggleSearch={searchManager.toggleSearch}
           currentApp={searchManager.currentApp}
         />
-        
+
         {/* 用户按钮 */}
-        {!(searchManager.isSearchVisible && !searchManager.isHomePage) && (
-          isAuthenticated ? (
+        {!(searchManager.isSearchVisible && !searchManager.isHomePage) &&
+          (isAuthenticated ? (
             <Button
               variant="ghost"
               size="icon"
@@ -81,9 +83,8 @@ export function AppsView({
             >
               登录
             </Button>
-          )
-        )}
+          ))}
       </div>
     </div>
   )
-} 
+}

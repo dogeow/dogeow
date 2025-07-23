@@ -1,17 +1,14 @@
-import { Header } from "./Header";
+import { Header } from './Header'
 
 export default function RootLayout({
-    children,
-  }: Readonly<{
-    children: React.ReactNode;
-  }>) {
-    return (
-      <div className="mx-auto container">
-        <Header/>
-        <main className="py-4">
-            {children}
-        </main>
-      </div>
-    );
-  }
-  
+  children,
+}: Readonly<{
+  children: React.ReactNode
+}>) {
+  return (
+    <div className="container mx-auto">
+      <Header />
+      <main className="py-4">{children}</main>
+    </div>
+  )
+}

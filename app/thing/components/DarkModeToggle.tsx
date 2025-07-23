@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import { useTheme } from "next-themes"
-import { Moon, Sun } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { useEffect, useState } from "react"
+import { useTheme } from 'next-themes'
+import { Moon, Sun } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useEffect, useState } from 'react'
 
 export function DarkModeToggle() {
   const { theme, setTheme } = useTheme()
@@ -12,16 +12,18 @@ export function DarkModeToggle() {
   // 等待组件挂载后再处理主题，避免水合不匹配错误
   useEffect(() => {
     setMounted(true)
-    
+
     // 调试暗色模式状态
-    console.log("DarkModeToggle mounted:", {
+    console.log('DarkModeToggle mounted:', {
       theme,
-      htmlHasDarkClass: typeof document !== 'undefined' ? 
-        document.documentElement.classList.contains('dark') : 'unknown',
-      bodyHasDarkClass: typeof document !== 'undefined' ? 
-        document.body.classList.contains('dark') : 'unknown'
+      htmlHasDarkClass:
+        typeof document !== 'undefined'
+          ? document.documentElement.classList.contains('dark')
+          : 'unknown',
+      bodyHasDarkClass:
+        typeof document !== 'undefined' ? document.body.classList.contains('dark') : 'unknown',
     })
-    
+
     // 确保深色模式类被正确应用
     if (theme === 'dark' && typeof document !== 'undefined') {
       document.documentElement.classList.add('dark')
@@ -33,8 +35,8 @@ export function DarkModeToggle() {
   }
 
   return (
-    <div className="flex items-center gap-2 mb-4 p-3 bg-card border rounded-md">
-      <span className="text-sm font-medium mr-2">主题:</span>
+    <div className="bg-card mb-4 flex items-center gap-2 rounded-md border p-3">
+      <span className="mr-2 text-sm font-medium">主题:</span>
       <Button
         variant="outline"
         size="icon"
@@ -56,9 +58,9 @@ export function DarkModeToggle() {
         <Moon className="h-[1.2rem] w-[1.2rem]" />
         <span className="sr-only">深色模式</span>
       </Button>
-      <div className="ml-auto text-xs text-muted-foreground">
+      <div className="text-muted-foreground ml-auto text-xs">
         当前模式: {theme === 'dark' ? '深色' : '浅色'}
       </div>
     </div>
   )
-} 
+}

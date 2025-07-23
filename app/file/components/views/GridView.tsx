@@ -20,7 +20,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,17 +30,17 @@ import {
   DialogTitle,
   DialogFooter,
   DialogClose,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'react-hot-toast'
 import { useSWRConfig } from 'swr'
 import { cn } from '@/lib/helpers'
 import { CloudFile, FilePreviewResponse } from '../../types'
 import { apiRequest, put, del, getFileDownloadUrl, getFileStorageUrl } from '@/lib/api'
 import useFileStore from '../../store/useFileStore'
-import Image from "next/image"
+import Image from 'next/image'
 import { formatFileSize } from '../../constants'
 
 interface GridViewProps {
@@ -54,10 +54,8 @@ const FILE_TYPE_ICONS = {
   archive: { icon: FileArchive, color: 'text-orange-500' },
   audio: { icon: FileAudio, color: 'text-purple-500' },
   video: { icon: FileVideo, color: 'text-pink-500' },
-  default: { icon: File, color: 'text-gray-500' }
+  default: { icon: File, color: 'text-gray-500' },
 } as const
-
-
 
 const PREVIEW_TYPES = {
   LOADING: 'loading',
@@ -65,7 +63,7 @@ const PREVIEW_TYPES = {
   PDF: 'pdf',
   TEXT: 'text',
   DOCUMENT: 'document',
-  UNKNOWN: 'unknown'
+  UNKNOWN: 'unknown',
 } as const
 
 const FileIcon = ({ file }: { file: CloudFile }) => {
@@ -75,7 +73,7 @@ const FileIcon = ({ file }: { file: CloudFile }) => {
   if (file.type === 'image') {
     const storageUrl = `${getFileStorageUrl(file.path)}?t=${Date.now()}`
     return (
-      <div className="w-16 h-16 relative overflow-hidden rounded-md flex items-center justify-center bg-muted">
+      <div className="bg-muted relative flex h-16 w-16 items-center justify-center overflow-hidden rounded-md">
         <Image
           src={storageUrl}
           alt={file.name}
@@ -87,7 +85,8 @@ const FileIcon = ({ file }: { file: CloudFile }) => {
       </div>
     )
   }
-  const iconConfig = FILE_TYPE_ICONS[file.type as keyof typeof FILE_TYPE_ICONS] || FILE_TYPE_ICONS.default
+  const iconConfig =
+    FILE_TYPE_ICONS[file.type as keyof typeof FILE_TYPE_ICONS] || FILE_TYPE_ICONS.default
   const IconComponent = iconConfig.icon
   return <IconComponent className={`h-12 w-12 ${iconConfig.color}`} />
 }
@@ -104,28 +103,32 @@ export default function GridView({ files }: GridViewProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [previewType, setPreviewType] = useState<string | null>(null)
 
-
-
   const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleString('zh-CN', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })
   }, [])
 
-  const getSWRKey = useCallback(() => `/cloud/files?parent_id=${currentFolderId || ''}`, [currentFolderId])
+  const getSWRKey = useCallback(
+    () => `/cloud/files?parent_id=${currentFolderId || ''}`,
+    [currentFolderId]
+  )
 
-  const toggleSelection = useCallback((fileId: number, event: React.MouseEvent) => {
-    event.stopPropagation()
-    setSelectedFiles(
-      selectedFiles.includes(fileId)
-        ? selectedFiles.filter(id => id !== fileId)
-        : [...selectedFiles, fileId]
-    )
-  }, [selectedFiles, setSelectedFiles])
+  const toggleSelection = useCallback(
+    (fileId: number, event: React.MouseEvent) => {
+      event.stopPropagation()
+      setSelectedFiles(
+        selectedFiles.includes(fileId)
+          ? selectedFiles.filter(id => id !== fileId)
+          : [...selectedFiles, fileId]
+      )
+    },
+    [selectedFiles, setSelectedFiles]
+  )
 
   const previewItem = useCallback(async (file: CloudFile) => {
     if (file.is_folder) return
@@ -151,20 +154,25 @@ export default function GridView({ files }: GridViewProps) {
     } catch {
       toast.error('预览失败')
       setPreviewType(PREVIEW_TYPES.UNKNOWN)
-      setPreviewContent(JSON.stringify({
-        message: '预览失败，请稍后重试',
-        suggestion: '您可以尝试下载文件后查看'
-      }))
+      setPreviewContent(
+        JSON.stringify({
+          message: '预览失败，请稍后重试',
+          suggestion: '您可以尝试下载文件后查看',
+        })
+      )
     }
   }, [])
 
-  const handleItemClick = useCallback((file: CloudFile) => {
-    if (file.is_folder) {
-      navigateToFolder(file.id)
-    } else {
-      previewItem(file)
-    }
-  }, [navigateToFolder, previewItem])
+  const handleItemClick = useCallback(
+    (file: CloudFile) => {
+      if (file.is_folder) {
+        navigateToFolder(file.id)
+      } else {
+        previewItem(file)
+      }
+    },
+    [navigateToFolder, previewItem]
+  )
 
   const downloadFile = useCallback((file: CloudFile) => {
     try {
@@ -175,15 +183,18 @@ export default function GridView({ files }: GridViewProps) {
     }
   }, [])
 
-  const deleteFile = useCallback(async (file: CloudFile) => {
-    try {
-      await del(`/cloud/files/${file.id}`)
-      mutate(key => typeof key === 'string' && key.startsWith(getSWRKey()))
-      toast.success('删除成功')
-    } catch {
-      toast.error('删除失败')
-    }
-  }, [mutate, getSWRKey])
+  const deleteFile = useCallback(
+    async (file: CloudFile) => {
+      try {
+        await del(`/cloud/files/${file.id}`)
+        mutate(key => typeof key === 'string' && key.startsWith(getSWRKey()))
+        toast.success('删除成功')
+      } catch {
+        toast.error('删除失败')
+      }
+    },
+    [mutate, getSWRKey]
+  )
 
   const openEditDialog = useCallback((file: CloudFile, event: React.MouseEvent) => {
     event.stopPropagation()
@@ -197,7 +208,7 @@ export default function GridView({ files }: GridViewProps) {
     try {
       await put(`/cloud/files/${editingFile.id}`, {
         name: fileName.trim(),
-        description: fileDescription.trim()
+        description: fileDescription.trim(),
       })
       mutate(key => typeof key === 'string' && key.startsWith(getSWRKey()))
       toast.success('更新成功')
@@ -224,9 +235,9 @@ export default function GridView({ files }: GridViewProps) {
   const renderPreviewContent = useCallback(() => {
     if (previewType === PREVIEW_TYPES.LOADING) {
       return (
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="h-12 w-12 bg-muted rounded-full"></div>
-          <div className="mt-4 h-4 w-32 bg-muted rounded"></div>
+        <div className="flex animate-pulse flex-col items-center">
+          <div className="bg-muted h-12 w-12 rounded-full"></div>
+          <div className="bg-muted mt-4 h-4 w-32 rounded"></div>
         </div>
       )
     }
@@ -243,28 +254,28 @@ export default function GridView({ files }: GridViewProps) {
     }
     if (previewType === PREVIEW_TYPES.PDF && previewUrl) {
       return (
-        <div className="w-full h-[60vh] flex flex-col">
-          <div className="flex-1 relative">
+        <div className="flex h-[60vh] w-full flex-col">
+          <div className="relative flex-1">
             <iframe
               src={previewUrl}
-              className="w-full h-full border-0"
+              className="h-full w-full border-0"
               title={previewFile?.name}
               onError={() => console.error('PDF iframe failed to load')}
             />
           </div>
-          <div className="mt-2 text-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground mt-2 text-center text-sm">
             如果PDF无法显示，请{' '}
             <Button
               variant="link"
-              className="p-0 h-auto text-sm"
+              className="h-auto p-0 text-sm"
               onClick={() => window.open(previewUrl, '_blank')}
             >
               在新窗口中打开
-            </Button>
-            {' '}或{' '}
+            </Button>{' '}
+            或{' '}
             <Button
               variant="link"
-              className="p-0 h-auto text-sm"
+              className="h-auto p-0 text-sm"
               onClick={() => previewFile && downloadFile(previewFile)}
             >
               下载文件
@@ -275,24 +286,27 @@ export default function GridView({ files }: GridViewProps) {
     }
     if (previewType === PREVIEW_TYPES.TEXT && previewContent && !previewContent.startsWith('{')) {
       return (
-        <pre className="w-full h-full max-h-[60vh] overflow-auto bg-muted p-4 rounded text-sm">
+        <pre className="bg-muted h-full max-h-[60vh] w-full overflow-auto rounded p-4 text-sm">
           {previewContent}
         </pre>
       )
     }
-    if ((previewType === PREVIEW_TYPES.DOCUMENT || previewType === PREVIEW_TYPES.UNKNOWN) && previewContent) {
+    if (
+      (previewType === PREVIEW_TYPES.DOCUMENT || previewType === PREVIEW_TYPES.UNKNOWN) &&
+      previewContent
+    ) {
       let response: unknown = null
       try {
         response = JSON.parse(previewContent)
       } catch {}
       return (
-        <div className="text-center max-w-md mx-auto">
-          <FileText className="h-16 w-16 text-muted-foreground mx-auto" />
-          <p className="mt-4 text-muted-foreground font-medium">
+        <div className="mx-auto max-w-md text-center">
+          <FileText className="text-muted-foreground mx-auto h-16 w-16" />
+          <p className="text-muted-foreground mt-4 font-medium">
             {(response as { message?: string })?.message || '此文件类型不支持预览'}
           </p>
           {(response as { suggestion?: string })?.suggestion && (
-            <p className="mt-2 text-sm text-muted-foreground">
+            <p className="text-muted-foreground mt-2 text-sm">
               {(response as { suggestion: string }).suggestion}
             </p>
           )}
@@ -301,7 +315,7 @@ export default function GridView({ files }: GridViewProps) {
             className="mt-4"
             onClick={() => previewFile && downloadFile(previewFile)}
           >
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             下载文件
           </Button>
         </div>
@@ -310,14 +324,14 @@ export default function GridView({ files }: GridViewProps) {
     if (previewType && !(Object.values(PREVIEW_TYPES) as string[]).includes(previewType)) {
       return (
         <div className="text-center">
-          <File className="h-16 w-16 text-muted-foreground mx-auto" />
-          <p className="mt-4 text-muted-foreground">此文件类型不支持预览</p>
+          <File className="text-muted-foreground mx-auto h-16 w-16" />
+          <p className="text-muted-foreground mt-4">此文件类型不支持预览</p>
           <Button
             variant="outline"
             className="mt-4"
             onClick={() => previewFile && downloadFile(previewFile)}
           >
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="mr-2 h-4 w-4" />
             下载文件
           </Button>
         </div>
@@ -328,14 +342,14 @@ export default function GridView({ files }: GridViewProps) {
 
   return (
     <>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {files.map(file => (
           <div
             key={file.id}
             className={cn(
-              "flex flex-col items-center p-4 rounded-lg border cursor-pointer transition-colors shadow-sm",
-              "bg-card hover:bg-accent/50 border-border",
-              selectedFiles.includes(file.id) && "ring-2 ring-primary border-primary"
+              'flex cursor-pointer flex-col items-center rounded-lg border p-4 shadow-sm transition-colors',
+              'bg-card hover:bg-accent/50 border-border',
+              selectedFiles.includes(file.id) && 'ring-primary border-primary ring-2'
             )}
             onClick={() => handleItemClick(file)}
           >
@@ -343,24 +357,23 @@ export default function GridView({ files }: GridViewProps) {
               <FileIcon file={file} />
               <input
                 type="checkbox"
-                className="absolute -top-2 -left-2 h-4 w-4 rounded-sm border border-primary"
+                className="border-primary absolute -top-2 -left-2 h-4 w-4 rounded-sm border"
                 checked={selectedFiles.includes(file.id)}
                 readOnly
                 onClick={e => toggleSelection(file.id, e)}
               />
             </div>
             <div className="mt-2 text-center">
-              <p className="font-medium text-sm truncate max-w-[8rem] text-foreground" title={file.name}>
+              <p
+                className="text-foreground max-w-[8rem] truncate text-sm font-medium"
+                title={file.name}
+              >
                 {file.name}
               </p>
               {!file.is_folder && (
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(file.size)}
-                </p>
+                <p className="text-muted-foreground text-xs">{formatFileSize(file.size)}</p>
               )}
-              <p className="text-xs text-muted-foreground mt-1">
-                {formatDate(file.created_at)}
-              </p>
+              <p className="text-muted-foreground mt-1 text-xs">{formatDate(file.created_at)}</p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
@@ -370,16 +383,18 @@ export default function GridView({ files }: GridViewProps) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {!file.is_folder && (
-                  <DropdownMenuItem onClick={e => {
-                    e.stopPropagation()
-                    downloadFile(file)
-                  }}>
-                    <Download className="h-4 w-4 mr-2" />
+                  <DropdownMenuItem
+                    onClick={e => {
+                      e.stopPropagation()
+                      downloadFile(file)
+                    }}
+                  >
+                    <Download className="mr-2 h-4 w-4" />
                     下载
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={e => openEditDialog(file, e)}>
-                  <Pencil className="h-4 w-4 mr-2" />
+                  <Pencil className="mr-2 h-4 w-4" />
                   重命名
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -390,7 +405,7 @@ export default function GridView({ files }: GridViewProps) {
                     deleteFile(file)
                   }}
                 >
-                  <Trash2 className="h-4 w-4 mr-2" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                   删除
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -404,9 +419,7 @@ export default function GridView({ files }: GridViewProps) {
         <Dialog open={!!editingFile} onOpenChange={open => !open && closeEditDialog()}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                编辑{editingFile.is_folder ? '文件夹' : '文件'}
-              </DialogTitle>
+              <DialogTitle>编辑{editingFile.is_folder ? '文件夹' : '文件'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
@@ -455,12 +468,12 @@ export default function GridView({ files }: GridViewProps) {
                   onClick={() => downloadFile(previewFile)}
                   className="ml-2 shrink-0"
                 >
-                  <Download className="h-4 w-4 mr-2" />
+                  <Download className="mr-2 h-4 w-4" />
                   下载
                 </Button>
               </DialogTitle>
             </DialogHeader>
-            <div className="min-h-[60vh] flex items-center justify-center py-4">
+            <div className="flex min-h-[60vh] items-center justify-center py-4">
               {renderPreviewContent()}
             </div>
           </DialogContent>

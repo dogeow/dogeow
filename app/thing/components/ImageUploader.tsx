@@ -1,73 +1,76 @@
-"use client"
+'use client'
 
 import React, { useState, useRef } from 'react'
-import { Button } from "@/components/ui/button"
-import { Upload, X } from "lucide-react"
-import { toast } from "sonner"
-import { UploadedImage } from "../types"
+import { Button } from '@/components/ui/button'
+import { Upload, X } from 'lucide-react'
+import { toast } from 'sonner'
+import { UploadedImage } from '../types'
 import useSWRMutation from 'swr/mutation'
 import { post } from '@/lib/api'
-import Image from "next/image"
+import Image from 'next/image'
 
 interface ImageUploaderProps {
-  onImagesChange: (images: UploadedImage[]) => void;
-  existingImages?: UploadedImage[];
-  maxImages?: number;
-  maxSize?: number; // 单位：MB
+  onImagesChange: (images: UploadedImage[]) => void
+  existingImages?: UploadedImage[]
+  maxImages?: number
+  maxSize?: number // 单位：MB
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
   onImagesChange,
   existingImages = [],
   maxImages = 10,
-  maxSize = 20
+  maxSize = 20,
 }) => {
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [images, setImages] = useState<UploadedImage[]>(existingImages)
-  
-  const { trigger: uploadImages } = useSWRMutation('/upload/images', async (url, { arg }: { arg: FormData }) => {
-    return post<UploadedImage[]>(url, arg)
-  })
-  
+
+  const { trigger: uploadImages } = useSWRMutation(
+    '/upload/images',
+    async (url, { arg }: { arg: FormData }) => {
+      return post<UploadedImage[]>(url, arg)
+    }
+  )
+
   // 处理文件选择
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
-    
+
     // 检查文件数量限制
     if (images.length + files.length > maxImages) {
       toast.error(`最多只能上传${maxImages}张图片`)
       return
     }
-    
+
     // 检查文件大小
     const oversizedFiles = Array.from(files).filter(file => file.size > maxSize * 1024 * 1024)
     if (oversizedFiles.length > 0) {
       toast.error(`有${oversizedFiles.length}个文件超过${maxSize}MB限制`)
       return
     }
-    
+
     setUploading(true)
-    
+
     // 先同步当前图片到父组件，防止父组件丢失旧图片
     onImagesChange(images)
-    
+
     // 准备上传表单数据
     const formData = new FormData()
     Array.from(files).forEach(file => {
       formData.append('images[]', file)
     })
-    
+
     try {
       // 调用上传API
       const response = await uploadImages(formData)
-      
+
       // 更新图片列表
       const newImages = [...images, ...response]
       setImages(newImages)
       onImagesChange(newImages)
-      
+
       toast.success('图片上传成功')
     } catch (error) {
       toast.error('图片上传失败')
@@ -80,7 +83,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
       }
     }
   }
-  
+
   // 移除图片
   const removeImage = (index: number) => {
     const newImages = [...images]
@@ -88,57 +91,60 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     setImages(newImages)
     onImagesChange(newImages)
   }
-  
+
   // 设置主图
   const setPrimaryImage = (index: number) => {
     const newImages = images.map((img, idx) => ({
       ...img,
-      is_primary: idx === index
+      is_primary: idx === index,
     }))
     setImages(newImages)
     onImagesChange(newImages)
   }
-  
+
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {images.map((image, index) => (
-          <div key={index} className="relative group aspect-square">
+          <div key={index} className="group relative aspect-square">
             <Image
               src={image.thumbnail_url || image.url}
               alt={`上传图片 ${index + 1}`}
               fill
-              className={`object-cover rounded-md border ${image.is_primary ? 'ring-2 ring-primary' : ''}`}
+              className={`rounded-md border object-cover ${image.is_primary ? 'ring-primary ring-2' : ''}`}
               onClick={() => setPrimaryImage(index)}
-              style={{ objectFit: "cover" }}
+              style={{ objectFit: 'cover' }}
             />
             {image.is_primary && (
-              <div className="absolute top-2 left-2 bg-primary text-white text-xs px-2 py-1 rounded-md">
+              <div className="bg-primary absolute top-2 left-2 rounded-md px-2 py-1 text-xs text-white">
                 主图
               </div>
             )}
             <button
               onClick={() => removeImage(index)}
-              className="absolute top-2 right-2 bg-black/70 text-white p-1 rounded-full opacity-100 hover:bg-red-600 hover:text-white transition-colors z-10"
+              className="absolute top-2 right-2 z-10 rounded-full bg-black/70 p-1 text-white opacity-100 transition-colors hover:bg-red-600 hover:text-white"
               type="button"
               aria-label="删除图片"
             >
-              <X className="w-4 h-4" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         ))}
-        
+
         {images.length < maxImages && (
           <Button
             type="button"
             variant="outline"
-            className="w-full h-full aspect-square flex flex-col items-center justify-center border-dashed"
+            className="flex aspect-square h-full w-full flex-col items-center justify-center border-dashed"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
             {uploading ? (
               <div className="flex flex-col items-center">
-                <svg className="animate-spin h-6 w-6 text-muted-foreground mb-2" viewBox="0 0 24 24">
+                <svg
+                  className="text-muted-foreground mb-2 h-6 w-6 animate-spin"
+                  viewBox="0 0 24 24"
+                >
                   <circle
                     className="opacity-25"
                     cx="12"
@@ -157,14 +163,14 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               </div>
             ) : (
               <>
-                <Upload className="h-8 w-8 mb-2 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">上传图片</span>
+                <Upload className="text-muted-foreground mb-2 h-8 w-8" />
+                <span className="text-muted-foreground text-xs">上传图片</span>
               </>
             )}
           </Button>
         )}
       </div>
-      
+
       <input
         type="file"
         className="hidden"
@@ -173,9 +179,10 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         accept="image/*"
         multiple
       />
-      
-      <p className="text-xs text-muted-foreground">
-        支持JPG、PNG、GIF格式，每张图片不超过{maxSize}MB，最多上传{maxImages}张。点击图片可设为主图。
+
+      <p className="text-muted-foreground text-xs">
+        支持JPG、PNG、GIF格式，每张图片不超过{maxSize}MB，最多上传{maxImages}
+        张。点击图片可设为主图。
       </p>
     </div>
   )

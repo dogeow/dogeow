@@ -8,4 +8,4 @@ export const useSlateEditor = () => {
   return useMemo(() => withHistory(withReact(createEditor())), [])
 }
 
-export default useSlateEditor 
+export default useSlateEditor

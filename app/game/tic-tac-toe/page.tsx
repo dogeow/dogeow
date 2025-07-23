@@ -3,7 +3,13 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { RotateCcw, Trophy, Users, Bot, User, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from './stores/game-store'
@@ -24,29 +30,29 @@ const TicTacToe = () => {
     resetGame,
     resetScores,
     setGameMode,
-    setDifficulty
+    setDifficulty,
   } = useGameStore()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4 dark:from-gray-900 dark:to-gray-800">
+      <div className="mx-auto max-w-6xl">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* 主游戏区域 */}
           <div className="lg:col-span-2">
             <Card className="mb-6">
               <CardHeader className="text-center">
-                <CardTitle className="text-3xl font-bold text-gray-800 dark:text-gray-100 flex items-center justify-center gap-2">
-                  <Trophy className="w-8 h-8 text-yellow-500" />
+                <CardTitle className="flex items-center justify-center gap-2 text-3xl font-bold text-gray-800 dark:text-gray-100">
+                  <Trophy className="h-8 w-8 text-yellow-500" />
                   井字棋
                   <GameRulesDialog
                     title="井字棋游戏规则"
                     rules={[
-                      "两名玩家轮流在 3×3 的棋盘上放置标记（X 和 O）",
-                      "率先在横、竖或斜线上连成三个标记的玩家获胜",
-                      "如果棋盘填满且无人获胜，则为平局",
-                      "点击\"重新开始\"可以开始新一轮游戏",
-                      "人机对战模式下，你是 X，AI 是 O",
-                      "AI 有三种难度：简单（随机）、中等（混合策略）、困难（最优策略）"
+                      '两名玩家轮流在 3×3 的棋盘上放置标记（X 和 O）',
+                      '率先在横、竖或斜线上连成三个标记的玩家获胜',
+                      '如果棋盘填满且无人获胜，则为平局',
+                      '点击"重新开始"可以开始新一轮游戏',
+                      '人机对战模式下，你是 X，AI 是 O',
+                      'AI 有三种难度：简单（随机）、中等（混合策略）、困难（最优策略）',
                     ]}
                     className="ml-auto"
                   />
@@ -54,14 +60,14 @@ const TicTacToe = () => {
               </CardHeader>
               <CardContent>
                 {/* 游戏模式选择 */}
-                <div className="flex justify-center gap-4 mb-6">
+                <div className="mb-6 flex justify-center gap-4">
                   <div className="flex items-center gap-2">
                     <Button
                       variant={gameMode === 'pvp' ? 'default' : 'outline'}
                       onClick={() => setGameMode('pvp')}
                       className="flex items-center gap-2"
                     >
-                      <Users className="w-4 h-4" />
+                      <Users className="h-4 w-4" />
                       双人对战
                     </Button>
                     <Button
@@ -69,7 +75,7 @@ const TicTacToe = () => {
                       onClick={() => setGameMode('ai')}
                       className="flex items-center gap-2"
                     >
-                      <Bot className="w-4 h-4" />
+                      <Bot className="h-4 w-4" />
                       人机对战
                     </Button>
                   </div>
@@ -77,7 +83,7 @@ const TicTacToe = () => {
 
                 {/* AI 难度选择 */}
                 {gameMode === 'ai' && (
-                  <div className="flex justify-center mb-6">
+                  <div className="mb-6 flex justify-center">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600 dark:text-gray-300">AI 难度:</span>
                       <Select value={difficulty} onValueChange={setDifficulty}>
@@ -95,22 +101,26 @@ const TicTacToe = () => {
                 )}
 
                 {/* 分数显示 */}
-                <div className="flex justify-center gap-4 mb-6">
-                  <Badge variant="outline" className="text-lg px-4 py-2">
-                    <User className="w-4 h-4 mr-2" />
+                <div className="mb-6 flex justify-center gap-4">
+                  <Badge variant="outline" className="px-4 py-2 text-lg">
+                    <User className="mr-2 h-4 w-4" />
                     X: {scores.X}
                   </Badge>
-                  <Badge variant="outline" className="text-lg px-4 py-2">
+                  <Badge variant="outline" className="px-4 py-2 text-lg">
                     平局: {scores.draws}
                   </Badge>
-                  <Badge variant="outline" className="text-lg px-4 py-2">
-                    {gameMode === 'ai' ? <Bot className="w-4 h-4 mr-2" /> : <User className="w-4 h-4 mr-2" />}
+                  <Badge variant="outline" className="px-4 py-2 text-lg">
+                    {gameMode === 'ai' ? (
+                      <Bot className="mr-2 h-4 w-4" />
+                    ) : (
+                      <User className="mr-2 h-4 w-4" />
+                    )}
                     O: {scores.O}
                   </Badge>
                 </div>
 
                 {/* 游戏状态 */}
-                <div className="text-center mb-6">
+                <div className="mb-6 text-center">
                   <AnimatePresence mode="wait">
                     {isAiThinking ? (
                       <motion.div
@@ -118,9 +128,9 @@ const TicTacToe = () => {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8 }}
-                        className="text-xl text-blue-600 flex items-center justify-center gap-2"
+                        className="flex items-center justify-center gap-2 text-xl text-blue-600"
                       >
-                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <Loader2 className="h-5 w-5 animate-spin" />
                         AI 思考中...
                       </motion.div>
                     ) : winner ? (
@@ -151,8 +161,11 @@ const TicTacToe = () => {
                         exit={{ opacity: 0, y: 10 }}
                         className="text-xl text-gray-700 dark:text-gray-200"
                       >
-                        当前玩家: <span className="font-bold text-blue-600 dark:text-blue-400">
-                          {gameMode === 'ai' && currentPlayer === 'O' ? 'AI (O)' : `${currentPlayer}`}
+                        当前玩家:{' '}
+                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                          {gameMode === 'ai' && currentPlayer === 'O'
+                            ? 'AI (O)'
+                            : `${currentPlayer}`}
                         </span>
                       </motion.div>
                     )}
@@ -160,21 +173,14 @@ const TicTacToe = () => {
                 </div>
 
                 {/* 游戏棋盘 */}
-                <div className="grid grid-cols-3 gap-2 max-w-xs mx-auto mb-6">
+                <div className="mx-auto mb-6 grid max-w-xs grid-cols-3 gap-2">
                   {board.map((cell, index) => (
                     <motion.button
                       key={index}
                       whileHover={{ scale: cell ? 1 : 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => makeMove(index)}
-                      className={`
-                        aspect-square bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-lg
-                        text-4xl font-bold transition-all duration-200
-                        hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md
-                        ${cell ? 'cursor-default' : 'cursor-pointer'}
-                        ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'}
-                        ${isAiThinking && gameMode === 'ai' ? 'pointer-events-none opacity-50' : ''}
-                      `}
+                      className={`aspect-square rounded-lg border-2 border-gray-300 bg-white text-4xl font-bold transition-all duration-200 hover:border-blue-400 hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:hover:border-blue-500 ${cell ? 'cursor-default' : 'cursor-pointer'} ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'} ${isAiThinking && gameMode === 'ai' ? 'pointer-events-none opacity-50' : ''} `}
                       disabled={!!cell || gameOver || isAiThinking}
                     >
                       <AnimatePresence>
@@ -183,7 +189,7 @@ const TicTacToe = () => {
                             initial={{ opacity: 0, scale: 0 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                           >
                             {cell}
                           </motion.span>
@@ -201,7 +207,7 @@ const TicTacToe = () => {
                     className="flex items-center gap-2"
                     disabled={isAiThinking}
                   >
-                    <RotateCcw className="w-4 h-4" />
+                    <RotateCcw className="h-4 w-4" />
                     重新开始
                   </Button>
                   <Button
@@ -215,8 +221,6 @@ const TicTacToe = () => {
                 </div>
               </CardContent>
             </Card>
-
-
           </div>
 
           {/* 侧边栏统计 */}
@@ -224,10 +228,9 @@ const TicTacToe = () => {
             <GameStats />
           </div>
         </div>
-
       </div>
     </div>
   )
 }
 
-export default TicTacToe 
+export default TicTacToe

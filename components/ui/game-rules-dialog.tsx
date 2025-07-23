@@ -1,9 +1,15 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { HelpCircle } from "lucide-react"
+import { useState } from 'react'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { HelpCircle } from 'lucide-react'
 
 interface GameRulesDialogProps {
   title: string
@@ -11,7 +17,7 @@ interface GameRulesDialogProps {
   className?: string
 }
 
-export function GameRulesDialog({ title, rules, className = "" }: GameRulesDialogProps) {
+export function GameRulesDialog({ title, rules, className = '' }: GameRulesDialogProps) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -20,16 +26,16 @@ export function GameRulesDialog({ title, rules, className = "" }: GameRulesDialo
         <Button
           variant="outline"
           size="icon"
-          className={`bg-white hover:bg-gray-50 border-gray-200 shadow-sm dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-700 ${className}`}
+          className={`border-gray-200 bg-white shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 ${className}`}
           title="游戏规则"
         >
-          <HelpCircle className="h-5 w-5 text-primary" />
+          <HelpCircle className="text-primary h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <HelpCircle className="h-5 w-5 text-primary" />
+            <HelpCircle className="text-primary h-5 w-5" />
             {title}
           </DialogTitle>
         </DialogHeader>
@@ -46,4 +52,4 @@ export function GameRulesDialog({ title, rules, className = "" }: GameRulesDialo
       </DialogContent>
     </Dialog>
   )
-} 
+}

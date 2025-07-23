@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
@@ -23,30 +23,33 @@ export const useThemeStore = create<ThemeState>()(
       customThemes: [],
       followSystem: false,
       previousThemeMode: 'light',
-      setCurrentTheme: (theme) => set({ currentTheme: theme }),
-      addCustomTheme: (theme) => set((state) => ({ 
-        customThemes: [...state.customThemes, theme] 
-      })),
-      removeCustomTheme: (id) => set((state) => ({ 
-        customThemes: state.customThemes.filter(theme => theme.id !== id),
-        // 如果删除的是当前主题，则切换回默认主题
-        currentTheme: state.currentTheme === id ? 'default' : state.currentTheme
-      })),
-      setFollowSystem: (follow, currentMode) => set((state) => {
-        if (follow) {
-          // 启用跟随系统主题时，保存当前主题和模式
-          return { 
-            followSystem: follow, 
-            previousThemeMode: currentMode || 'light'
+      setCurrentTheme: theme => set({ currentTheme: theme }),
+      addCustomTheme: theme =>
+        set(state => ({
+          customThemes: [...state.customThemes, theme],
+        })),
+      removeCustomTheme: id =>
+        set(state => ({
+          customThemes: state.customThemes.filter(theme => theme.id !== id),
+          // 如果删除的是当前主题，则切换回默认主题
+          currentTheme: state.currentTheme === id ? 'default' : state.currentTheme,
+        })),
+      setFollowSystem: (follow, currentMode) =>
+        set(state => {
+          if (follow) {
+            // 启用跟随系统主题时，保存当前主题和模式
+            return {
+              followSystem: follow,
+              previousThemeMode: currentMode || 'light',
+            }
+          } else {
+            // 取消跟随系统主题时，恢复到之前的主题和模式
+            return {
+              followSystem: follow,
+              previousThemeMode: state.previousThemeMode,
+            }
           }
-        } else {
-          // 取消跟随系统主题时，恢复到之前的主题和模式
-          return { 
-            followSystem: follow, 
-            previousThemeMode: state.previousThemeMode
-          }
-        }
-      })
+        }),
     }),
     {
       name: 'theme-storage',
@@ -55,15 +58,18 @@ export const useThemeStore = create<ThemeState>()(
 )
 
 // 获取当前主题的色彩值
-export const getCurrentThemeColor = (currentTheme: string, customThemes: CustomTheme[]): CustomTheme => {
+export const getCurrentThemeColor = (
+  currentTheme: string,
+  customThemes: CustomTheme[]
+): CustomTheme => {
   // 先从预设主题中查找
-  const presetTheme = configs.themeColors.find(theme => theme.id === currentTheme);
-  if (presetTheme) return presetTheme;
-  
+  const presetTheme = configs.themeColors.find(theme => theme.id === currentTheme)
+  if (presetTheme) return presetTheme
+
   // 再从自定义主题中查找
-  const userTheme = customThemes.find(theme => theme.id === currentTheme);
-  if (userTheme) return userTheme;
-  
+  const userTheme = customThemes.find(theme => theme.id === currentTheme)
+  if (userTheme) return userTheme
+
   // 默认返回第一个预设主题
-  return configs.themeColors[0];
-}; 
+  return configs.themeColors[0]
+}

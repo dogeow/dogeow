@@ -14,12 +14,12 @@ const fetchBreadcrumbs = async (folderId: number): Promise<Breadcrumb[]> => {
 
   while (currentId) {
     const folder: CloudFile = await get<CloudFile>(`cloud/files/${currentId}`)
-    
+
     breadcrumbList.unshift({
       id: folder.id,
-      name: folder.name
+      name: folder.name,
     })
-    
+
     currentId = folder.parent_id
   }
 
@@ -41,4 +41,4 @@ export const useBreadcrumbs = (currentFolderId: number | null) => {
   )
 }
 
-export type { Breadcrumb } 
+export type { Breadcrumb }

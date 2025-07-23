@@ -8,26 +8,26 @@ export type SortField = 'name' | 'size' | 'created_at' | 'updated_at'
 export type SortDirection = 'asc' | 'desc'
 
 // 文件类型枚举
-export type FileType = 
-  | 'folder' 
-  | 'image' 
-  | 'pdf' 
-  | 'document' 
-  | 'spreadsheet' 
-  | 'archive' 
-  | 'audio' 
-  | 'video' 
+export type FileType =
+  | 'folder'
+  | 'image'
+  | 'pdf'
+  | 'document'
+  | 'spreadsheet'
+  | 'archive'
+  | 'audio'
+  | 'video'
   | 'other'
 
 // 预览类型
-export type PreviewType = 
-  | 'image' 
-  | 'pdf' 
-  | 'text' 
-  | 'video' 
-  | 'audio' 
-  | 'document' 
-  | 'unknown' 
+export type PreviewType =
+  | 'image'
+  | 'pdf'
+  | 'text'
+  | 'video'
+  | 'audio'
+  | 'document'
+  | 'unknown'
   | 'other'
 
 // 云文件接口

@@ -13,9 +13,9 @@ export const ImagePreloader = ({ images, onAllLoaded }: ImagePreloaderProps) => 
     }
 
     let loaded = 0
-    
+
     // 预加载关键图片
-    images.forEach((src) => {
+    images.forEach(src => {
       const img = new Image()
       img.onload = () => {
         loaded++

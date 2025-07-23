@@ -19,11 +19,11 @@ export const INITIAL_FORM_DATA = {
 
 // 错误消息
 export const ERROR_MESSAGES = {
-  ITEM_NOT_FOUND: "物品不存在",
-  LOAD_ROOMS_FAILED: "加载房间失败",
-  LOAD_SPOTS_FAILED: "加载位置失败",
-  AUTO_SAVE_FAILED: "自动保存失败",
-  GENERAL_ERROR: "发生错误，请重试"
+  ITEM_NOT_FOUND: '物品不存在',
+  LOAD_ROOMS_FAILED: '加载房间失败',
+  LOAD_SPOTS_FAILED: '加载位置失败',
+  AUTO_SAVE_FAILED: '自动保存失败',
+  GENERAL_ERROR: '发生错误，请重试',
 } as const
 
 // 表单字段的占位符文本
@@ -69,4 +69,4 @@ export const FORM_LABELS = {
   purchase_price: '购买价格',
   location: '存放位置',
   is_public: '公开物品',
-} as const 
+} as const

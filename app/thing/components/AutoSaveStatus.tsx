@@ -1,4 +1,4 @@
-import { Check } from "lucide-react"
+import { Check } from 'lucide-react'
 
 interface AutoSaveStatusProps {
   autoSaving: boolean
@@ -7,10 +7,10 @@ interface AutoSaveStatusProps {
 
 export default function AutoSaveStatus({ autoSaving, lastSaved }: AutoSaveStatusProps) {
   return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="text-muted-foreground flex items-center gap-2 text-sm">
       {autoSaving && (
         <>
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+          <div className="border-primary h-4 w-4 animate-spin rounded-full border-b-2"></div>
           <span>正在保存...</span>
         </>
       )}
@@ -22,4 +22,4 @@ export default function AutoSaveStatus({ autoSaving, lastSaved }: AutoSaveStatus
       )}
     </div>
   )
-} 
+}

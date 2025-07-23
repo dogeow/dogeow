@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
-import React, { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import React, { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog"
+} from '@/components/ui/dialog'
 
 interface AddAreaDialogProps {
   open: boolean
@@ -19,19 +19,19 @@ interface AddAreaDialogProps {
   loading: boolean
 }
 
-export default function AddAreaDialog({ 
-  open, 
+export default function AddAreaDialog({
+  open,
   onOpenChange,
   onAddArea,
-  loading
+  loading,
 }: AddAreaDialogProps) {
-  const [areaName, setAreaName] = useState("")
+  const [areaName, setAreaName] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const success = await onAddArea(areaName)
     if (success) {
-      setAreaName("")
+      setAreaName('')
       onOpenChange(false)
     }
   }
@@ -41,9 +41,7 @@ export default function AddAreaDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>添加区域</DialogTitle>
-          <DialogDescription>
-            创建一个新的区域，如家、办公室等。
-          </DialogDescription>
+          <DialogDescription>创建一个新的区域，如家、办公室等。</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -52,7 +50,7 @@ export default function AddAreaDialog({
                 id="areaName"
                 placeholder="输入区域名称"
                 value={areaName}
-                onChange={(e) => setAreaName(e.target.value)}
+                onChange={e => setAreaName(e.target.value)}
                 autoFocus
               />
             </div>
@@ -62,11 +60,11 @@ export default function AddAreaDialog({
               取消
             </Button>
             <Button type="submit" disabled={loading || !areaName.trim()}>
-              {loading ? "添加中..." : "添加区域"}
+              {loading ? '添加中...' : '添加区域'}
             </Button>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
   )
-} 
+}

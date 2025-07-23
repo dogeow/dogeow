@@ -1,15 +1,15 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { X, Pencil } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import useSWR, { mutate } from "swr"
-import { get, put, del } from "@/lib/api"
-import { toast } from "sonner"
-import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
-import CategorySpeedDial from "./components/CategorySpeedDial"
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { X, Pencil } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Input } from '@/components/ui/input'
+import useSWR, { mutate } from 'swr'
+import { get, put, del } from '@/lib/api'
+import { toast } from 'sonner'
+import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
+import CategorySpeedDial from './components/CategorySpeedDial'
 
 // 分类类型定义
 type Category = {
@@ -24,7 +24,7 @@ export default function NoteCategories() {
   const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null)
   const [alertOpen, setAlertOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [editingName, setEditingName] = useState("")
+  const [editingName, setEditingName] = useState('')
 
   // 加载分类数据
   const { data: categories, error } = useSWR<Category[]>('/notes/categories', get)
@@ -38,12 +38,12 @@ export default function NoteCategories() {
   // 删除分类
   const deleteCategory = async () => {
     if (!categoryToDelete) return
-    
+
     setLoading(true)
     try {
       await del(`/notes/categories/${categoryToDelete}`)
-      mutate("/notes/categories")
-      toast.success("分类删除成功")
+      mutate('/notes/categories')
+      toast.success('分类删除成功')
     } catch {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
     } finally {
@@ -62,13 +62,13 @@ export default function NoteCategories() {
   // 取消编辑
   const cancelEditing = () => {
     setEditingCategory(null)
-    setEditingName("")
+    setEditingName('')
   }
 
   // 保存编辑
   const saveEditing = async () => {
     if (!editingCategory || !editingName.trim()) {
-      toast.error("请输入分类名称")
+      toast.error('请输入分类名称')
       return
     }
 
@@ -77,8 +77,8 @@ export default function NoteCategories() {
       await put(`/notes/categories/${editingCategory.id}`, {
         name: editingName.trim(),
       })
-      mutate("/notes/categories")
-      toast.success("分类更新成功")
+      mutate('/notes/categories')
+      toast.success('分类更新成功')
       cancelEditing()
     } catch {
       // API的统一错误处理已经显示了错误提示，这里不需要重复显示
@@ -95,47 +95,45 @@ export default function NoteCategories() {
       cancelEditing()
     }
   }
-  
+
   return (
     <div className="container mx-auto py-4 pb-24">
       <div>
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-foreground">分类列表</h2>
-          <div className="text-sm text-muted-foreground">
-            共 {categories?.length || 0} 个分类
-          </div>
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-foreground text-xl font-semibold">分类列表</h2>
+          <div className="text-muted-foreground text-sm">共 {categories?.length || 0} 个分类</div>
         </div>
-        
+
         {error && <p className="text-red-500">加载分类失败</p>}
         {!categories && !error && <p>加载中...</p>}
         {categories?.length === 0 && (
-          <div className="text-center py-12">
+          <div className="py-12 text-center">
             <div className="text-muted-foreground">
-              <div className="text-4xl mb-4">📝</div>
-              <p className="text-lg font-medium mb-2">暂无分类</p>
+              <div className="mb-4 text-4xl">📝</div>
+              <p className="mb-2 text-lg font-medium">暂无分类</p>
               <p className="text-sm">请添加您的第一个笔记分类</p>
             </div>
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2 mt-4">
-          {categories?.map((category) => (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {categories?.map(category => (
             <div key={category.id} className="flex items-center">
               {editingCategory?.id === category.id ? (
-                <div className="flex items-center gap-2 bg-background border rounded-full px-3 py-1">
+                <div className="bg-background flex items-center gap-2 rounded-full border px-3 py-1">
                   <Input
                     value={editingName}
-                    onChange={(e) => setEditingName(e.target.value)}
+                    onChange={e => setEditingName(e.target.value)}
                     onKeyDown={handleKeyDown}
                     autoFocus
-                    className="h-6 text-sm border-none bg-transparent p-0 focus-visible:ring-0"
+                    className="h-6 border-none bg-transparent p-0 text-sm focus-visible:ring-0"
                     style={{ width: `${Math.max(editingName.length * 8, 60)}px` }}
                   />
                   <div className="flex items-center gap-1">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-5 w-5 p-0 hover:bg-transparent text-green-600"
+                      className="h-5 w-5 p-0 text-green-600 hover:bg-transparent"
                       onClick={saveEditing}
                       disabled={loading || !editingName.trim()}
                     >
@@ -144,7 +142,7 @@ export default function NoteCategories() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-5 w-5 p-0 hover:bg-transparent text-red-600"
+                      className="h-5 w-5 p-0 text-red-600 hover:bg-transparent"
                       onClick={cancelEditing}
                       disabled={loading}
                     >
@@ -153,14 +151,12 @@ export default function NoteCategories() {
                   </div>
                 </div>
               ) : (
-                <Badge
-                  className="h-8 px-3 flex items-center bg-blue-100 text-blue-800 hover:bg-blue-200"
-                >
+                <Badge className="flex h-8 items-center bg-blue-100 px-3 text-blue-800 hover:bg-blue-200">
                   {category.name}
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
+                    className="ml-1 h-5 w-5 p-0 hover:bg-transparent"
                     onClick={() => startEditing(category)}
                     disabled={loading}
                   >
@@ -169,7 +165,7 @@ export default function NoteCategories() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-5 w-5 ml-1 p-0 hover:bg-transparent"
+                    className="ml-1 h-5 w-5 p-0 hover:bg-transparent"
                     onClick={() => openDeleteDialog(category.id)}
                     disabled={loading}
                   >
@@ -187,10 +183,12 @@ export default function NoteCategories() {
         open={alertOpen}
         onOpenChange={setAlertOpen}
         onConfirm={deleteCategory}
-        itemName={categoryToDelete ? categories?.find(c => c.id === categoryToDelete)?.name || '' : ''}
+        itemName={
+          categoryToDelete ? categories?.find(c => c.id === categoryToDelete)?.name || '' : ''
+        }
       />
 
-      <CategorySpeedDial onCategoryAdded={() => mutate("/notes/categories")} />
+      <CategorySpeedDial onCategoryAdded={() => mutate('/notes/categories')} />
     </div>
   )
 }

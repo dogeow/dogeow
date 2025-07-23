@@ -3,6 +3,7 @@
 ## 优化内容
 
 ### 1. 代码结构优化
+
 - **提取自定义 Hooks**: 将业务逻辑从组件中分离到 `hooks/` 目录
   - `useCategories`: 管理分类的 CRUD 操作
   - `useInlineEdit`: 管理内联编辑功能
@@ -12,27 +13,32 @@
   - `EmptyState`: 空状态组件
 
 ### 2. 性能优化
+
 - 使用 `useCallback` 优化函数引用稳定性
 - 使用 `useMemo` 优化复杂计算和渲染
 - 使用 `memo` 优化组件重渲染
 - 避免不必要的状态更新和重渲染
 
 ### 3. 类型安全
+
 - 创建统一的类型定义文件 `types.ts`
 - 改进 TypeScript 类型检查
 - 统一接口定义
 
 ### 4. 常量管理
+
 - 创建 `constants.ts` 文件统一管理常量
 - 分离 API 端点、验证规则、错误消息等
 - 提高代码可维护性
 
 ### 5. 错误处理优化
+
 - 统一错误处理逻辑
 - 改进用户反馈机制
 - 添加表单验证
 
 ### 6. 用户体验优化
+
 - 改进键盘交互（Enter 保存，Escape 取消）
 - 自动聚焦和选中文本
 - 防止在加载时进行操作
@@ -84,4 +90,4 @@ const { editingId, editingValue, startEdit, cancelEdit, isEditing } = useInlineE
 />
 ```
 
-这种架构使代码更易于测试、维护和扩展。 
+这种架构使代码更易于测试、维护和扩展。

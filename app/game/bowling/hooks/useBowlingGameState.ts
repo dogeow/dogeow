@@ -1,5 +1,5 @@
-import { useRef, useEffect, useCallback } from "react"
-import { useBowlingStore } from "../store"
+import { useRef, useEffect, useCallback } from 'react'
+import { useBowlingStore } from '../store'
 
 interface GameStateRefs {
   ballThrownRef: React.RefObject<boolean>
@@ -17,14 +17,8 @@ export function useBowlingGameState() {
   const isProcessingResultRef = useRef(false)
   const isMountedRef = useRef(false)
 
-  const {
-    ballThrown,
-    canThrow,
-    showingResult,
-    currentFrame,
-    currentThrow,
-    processThrowResult,
-  } = useBowlingStore()
+  const { ballThrown, canThrow, showingResult, currentFrame, currentThrow, processThrowResult } =
+    useBowlingStore()
 
   // 同步状态到refs
   useEffect(() => {
@@ -41,15 +35,18 @@ export function useBowlingGameState() {
   }, [showingResult])
 
   // 处理投球结果
-  const handleResultProcessed = useCallback((knockedDownCount: number) => {
-    if (showingResult) {
-      console.log('⚠️ 结果正在显示中，跳过处理')
-      return
-    }
-    console.log(`🎳 最终击倒球瓶数: ${knockedDownCount}`)
-    processThrowResult(knockedDownCount)
-    isProcessingResultRef.current = false
-  }, [processThrowResult, showingResult])
+  const handleResultProcessed = useCallback(
+    (knockedDownCount: number) => {
+      if (showingResult) {
+        console.log('⚠️ 结果正在显示中，跳过处理')
+        return
+      }
+      console.log(`🎳 最终击倒球瓶数: ${knockedDownCount}`)
+      processThrowResult(knockedDownCount)
+      isProcessingResultRef.current = false
+    },
+    [processThrowResult, showingResult]
+  )
 
   // 重置处理状态
   const resetProcessingState = useCallback(() => {
@@ -66,7 +63,7 @@ export function useBowlingGameState() {
     canThrowRef,
     showingResultRef,
     isProcessingResultRef,
-    isMountedRef
+    isMountedRef,
   }
 
   return {
@@ -76,10 +73,10 @@ export function useBowlingGameState() {
       canThrow,
       showingResult,
       currentFrame,
-      currentThrow
+      currentThrow,
     },
     handleResultProcessed,
     resetProcessingState,
-    setMounted
+    setMounted,
   }
-} 
+}

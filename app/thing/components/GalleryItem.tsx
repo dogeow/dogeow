@@ -1,32 +1,27 @@
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { Globe, AlertTriangleIcon } from "lucide-react";
-import { Item } from "@/app/thing/types";
+import Image from 'next/image'
+import { Badge } from '@/components/ui/badge'
+import { Globe, AlertTriangleIcon } from 'lucide-react'
+import { Item } from '@/app/thing/types'
 
 interface GalleryItemProps {
-  item: Item;
-  imageSize: number;
-  onClick: (item: Item) => void;
+  item: Item
+  imageSize: number
+  onClick: (item: Item) => void
 }
 
-export function GalleryItem({
-  item,
-  imageSize,
-  onClick,
-}: GalleryItemProps) {
-  const thumbnailUrl = item.thumbnail_url;
+export function GalleryItem({ item, imageSize, onClick }: GalleryItemProps) {
+  const thumbnailUrl = item.thumbnail_url
 
   // Determine border color based on status
-  let borderColorClass = "border-transparent";
-  if (item.status === "expired") borderColorClass = "border-red-500";
-  else if (item.status === "damaged") borderColorClass = "border-orange-500";
-  else if (item.status === "idle") borderColorClass = "border-amber-500";
-
+  let borderColorClass = 'border-transparent'
+  if (item.status === 'expired') borderColorClass = 'border-red-500'
+  else if (item.status === 'damaged') borderColorClass = 'border-orange-500'
+  else if (item.status === 'idle') borderColorClass = 'border-amber-500'
 
   return (
     <div
       key={item.id}
-      className={`relative group cursor-pointer overflow-hidden rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out border-2 ${borderColorClass}`}
+      className={`group relative cursor-pointer overflow-hidden rounded-lg border-2 shadow-sm transition-all duration-200 ease-in-out hover:shadow-md ${borderColorClass}`}
       style={{ width: `${imageSize}px`, height: `${imageSize}px` }}
       onClick={() => onClick(item)}
     >
@@ -36,31 +31,27 @@ export function GalleryItem({
           alt={item.name}
           fill
           sizes={`${imageSize}px`}
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          className="object-cover transition-transform duration-300 group-hover:scale-105"
         />
       ) : (
-        <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground">
-          <AlertTriangleIcon className="w-1/2 h-1/2 opacity-50" />
+        <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center">
+          <AlertTriangleIcon className="h-1/2 w-1/2 opacity-50" />
         </div>
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 flex flex-col justify-end">
-        <h3 className="text-sm font-semibold text-white truncate">
-          {item.name}
-        </h3>
-        <p className="text-xs text-gray-200 truncate">
-          {item.category?.name || "Uncategorized"}
-        </p>
+      <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-black/30 to-transparent p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <h3 className="truncate text-sm font-semibold text-white">{item.name}</h3>
+        <p className="truncate text-xs text-gray-200">{item.category?.name || 'Uncategorized'}</p>
       </div>
       {item.is_public && (
         <Badge
           variant="outline"
-          className="absolute top-1.5 right-1.5 bg-background/70 backdrop-blur-sm p-1"
+          className="bg-background/70 absolute top-1.5 right-1.5 p-1 backdrop-blur-sm"
         >
           <Globe className="h-3 w-3" />
         </Badge>
       )}
-       {/* Minimal status indicator if needed, or rely on border */}
-       {/* Example: <div className={`absolute top-1 left-1 w-2 h-2 rounded-full ${item.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`} title={`Status: ${item.status}`}></div> */}
+      {/* Minimal status indicator if needed, or rely on border */}
+      {/* Example: <div className={`absolute top-1 left-1 w-2 h-2 rounded-full ${item.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`} title={`Status: ${item.status}`}></div> */}
     </div>
-  );
+  )
 }

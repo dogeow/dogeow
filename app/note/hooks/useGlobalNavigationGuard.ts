@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react"
-import { usePathname, useRouter } from "next/navigation"
-import { useEditorStore } from "../store/editorStore"
+import { useEffect, useRef } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { useEditorStore } from '../store/editorStore'
 
 export function useGlobalNavigationGuard(showDialog: () => Promise<boolean>) {
   const router = useRouter()
@@ -31,7 +31,7 @@ export function useGlobalNavigationGuard(showDialog: () => Promise<boolean>) {
       ) {
         const ok = await showDialog()
         if (!ok) {
-          throw "Navigation cancelled"
+          throw 'Navigation cancelled'
         } else {
           allowNext.current = true
           router.push(url)
@@ -40,7 +40,12 @@ export function useGlobalNavigationGuard(showDialog: () => Promise<boolean>) {
     }
 
     // 兼容 next/navigation 没有 events 的情况
-    const nav = router as { events?: { on: (event: string, handler: (url: string) => void) => void; off: (event: string, handler: (url: string) => void) => void } }
+    const nav = router as {
+      events?: {
+        on: (event: string, handler: (url: string) => void) => void
+        off: (event: string, handler: (url: string) => void) => void
+      }
+    }
     if (nav.events?.on) {
       nav.events.on('routeChangeStart', handleRouteChange)
       return () => {
@@ -48,4 +53,4 @@ export function useGlobalNavigationGuard(showDialog: () => Promise<boolean>) {
       }
     }
   }, [isDirty, pathname, router, showDialog])
-} 
+}

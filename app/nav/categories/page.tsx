@@ -1,37 +1,29 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useRef } from "react"
-import { useNavStore } from "@/app/nav/stores/navStore"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { 
-  Card, 
-  CardContent
-} from "@/components/ui/card"
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table"
-import { Trash2, Check, X, ArrowLeft } from "lucide-react"
-import { NavCategory } from "@/app/nav/types"
-import { useRouter } from "next/navigation"
-import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog"
-import CategorySpeedDial from "./components/CategorySpeedDial"
+import { useState, useEffect, useRef } from 'react'
+import { useNavStore } from '@/app/nav/stores/navStore'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Trash2, Check, X, ArrowLeft } from 'lucide-react'
+import { NavCategory } from '@/app/nav/types'
+import { useRouter } from 'next/navigation'
+import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
+import CategorySpeedDial from './components/CategorySpeedDial'
 
 export default function CategoryManager() {
   const router = useRouter()
-  const { 
-    categories, 
-    fetchCategories, 
-    updateCategory, 
-    deleteCategory 
-  } = useNavStore()
-  
+  const { categories, fetchCategories, updateCategory, deleteCategory } = useNavStore()
+
   const [loading, setLoading] = useState(false)
   const [inlineEditingId, setInlineEditingId] = useState<number | null>(null)
   const [inlineEditingName, setInlineEditingName] = useState('')
@@ -57,7 +49,7 @@ export default function CategoryManager() {
 
   const saveInlineEdit = async () => {
     if (!inlineEditingId || !inlineEditingName.trim()) {
-      toast.error("分类名称不能为空")
+      toast.error('分类名称不能为空')
       return
     }
 
@@ -69,12 +61,12 @@ export default function CategoryManager() {
           name: inlineEditingName,
           description: categoryToUpdate.description,
           is_visible: categoryToUpdate.is_visible,
-          sort_order: categoryToUpdate.sort_order
+          sort_order: categoryToUpdate.sort_order,
         })
-        toast.success("分类更新成功")
+        toast.success('分类更新成功')
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : '发生错误，请重试')
     } finally {
       setLoading(false)
       setInlineEditingId(null)
@@ -94,10 +86,10 @@ export default function CategoryManager() {
     setLoading(true)
     try {
       await deleteCategory(categoryToDelete)
-      
-      toast.success("分类删除成功")
+
+      toast.success('分类删除成功')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "发生错误，请重试")
+      toast.error(error instanceof Error ? error.message : '发生错误，请重试')
     } finally {
       setLoading(false)
       setDeleteDialogOpen(false)
@@ -118,12 +110,17 @@ export default function CategoryManager() {
 
   return (
     <div className="container mx-auto p-4">
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
-          <Button variant="outline" size="icon" onClick={() => router.push('/nav')} className="mr-4">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => router.push('/nav')}
+            className="mr-4"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl md:text-3xl font-bold">导航分类管理</h1>
+          <h1 className="text-2xl font-bold md:text-3xl">导航分类管理</h1>
         </div>
       </div>
 
@@ -131,7 +128,7 @@ export default function CategoryManager() {
         <Card>
           <CardContent>
             {categories.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-muted-foreground py-8 text-center">
                 暂无分类，请添加您的第一个分类
               </div>
             ) : (
@@ -144,17 +141,17 @@ export default function CategoryManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {categories.map((category) => (
+                  {categories.map(category => (
                     <TableRow key={category.id}>
                       <TableCell>
                         {inlineEditingId === category.id ? (
-                          <div className="flex gap-2 items-center">
+                          <div className="flex items-center gap-2">
                             <Input
                               ref={inlineInputRef}
                               value={inlineEditingName}
-                              onChange={(e) => setInlineEditingName(e.target.value)}
+                              onChange={e => setInlineEditingName(e.target.value)}
                               className="h-8"
-                              onKeyDown={(e) => {
+                              onKeyDown={e => {
                                 if (e.key === 'Enter') {
                                   saveInlineEdit()
                                 } else if (e.key === 'Escape') {
@@ -162,16 +159,16 @@ export default function CategoryManager() {
                                 }
                               }}
                             />
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="icon"
                               onClick={saveInlineEdit}
                               disabled={loading}
                             >
                               <Check className="h-4 w-4 text-green-500" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="icon"
                               onClick={cancelInlineEdit}
                               disabled={loading}
@@ -181,32 +178,30 @@ export default function CategoryManager() {
                           </div>
                         ) : (
                           <div>
-                            <div 
-                              className="cursor-pointer hover:underline font-medium" 
+                            <div
+                              className="cursor-pointer font-medium hover:underline"
                               onClick={() => handleInlineEdit(category)}
                             >
                               {category.name}
                             </div>
                             {category.description && (
-                              <div className="text-sm text-muted-foreground mt-1">
+                              <div className="text-muted-foreground mt-1 text-sm">
                                 {category.description}
                               </div>
                             )}
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="text-center">
-                        {category.items_count || 0}
-                      </TableCell>
+                      <TableCell className="text-center">{category.items_count || 0}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
                             onClick={() => confirmDelete(category.id)}
                             disabled={loading}
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="text-destructive h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
@@ -226,9 +221,11 @@ export default function CategoryManager() {
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDeleteCategory}
-          itemName={categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''}
+          itemName={
+            categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''
+          }
         />
       </div>
     </div>
   )
-} 
+}

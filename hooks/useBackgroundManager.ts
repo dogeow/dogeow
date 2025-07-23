@@ -3,34 +3,34 @@ import { useBackgroundStore } from '@/stores/backgroundStore'
 
 export const useBackgroundManager = () => {
   const { backgroundImage, setBackgroundImage } = useBackgroundStore()
-  
+
   useEffect(() => {
     if (!backgroundImage) {
-      document.body.style.backgroundImage = '';
-      return;
+      document.body.style.backgroundImage = ''
+      return
     }
 
-    let imageUrl = '';
-    
+    let imageUrl = ''
+
     // 系统背景图片
     if (backgroundImage.startsWith('wallhaven') || backgroundImage.startsWith('F_RIhiObMAA')) {
-      imageUrl = `/images/backgrounds/${backgroundImage}`;
-    } 
+      imageUrl = `/images/backgrounds/${backgroundImage}`
+    }
     // 自定义上传的背景图片（base64格式）
     else if (backgroundImage.startsWith('data:')) {
-      imageUrl = backgroundImage;
+      imageUrl = backgroundImage
     }
-    
+
     if (imageUrl) {
       Object.assign(document.body.style, {
         backgroundImage: `url(${imageUrl})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
-        backgroundAttachment: 'fixed'
-      });
+        backgroundAttachment: 'fixed',
+      })
     }
-  }, [backgroundImage]);
+  }, [backgroundImage])
 
   return { backgroundImage, setBackgroundImage }
-} 
+}

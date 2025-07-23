@@ -7,13 +7,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from '@/components/ui/alert-dialog'
 
 interface DeleteConfirmationDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onConfirm: () => void;
-  itemName: string;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onConfirm: () => void
+  itemName: string
 }
 
 export function DeleteConfirmationDialog({
@@ -37,5 +37,5 @@ export function DeleteConfirmationDialog({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
-  );
+  )
 }

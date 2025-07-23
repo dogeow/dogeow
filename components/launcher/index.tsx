@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React, { useState, useMemo, useCallback } from 'react'
 import { MusicPlayer } from './MusicPlayer'
@@ -14,34 +14,37 @@ import { AppsView } from './views/AppsView'
 import { SearchResultView } from './views/SearchResultView'
 import { ViewWrapper } from './views/ViewWrapper'
 
-type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result';
+type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
 export function AppLauncher() {
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated } = useAuthStore()
-  
+
   const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
-  
+
   // 使用自定义 hooks
   const audioManager = useAudioManager()
   const searchManager = useSearchManager(pathname)
   const { backgroundImage, setBackgroundImage } = useBackgroundManager()
 
   // 切换显示模式
-  const toggleDisplayMode = useCallback((mode: DisplayMode) => {
-    setDisplayMode(mode)
-    
-    // 当切换到音乐模式时，加载音频列表并初始化音频源
-    if (mode === 'music') {
-      audioManager.fetchAvailableTracks();
-      
-      if (audioManager.currentTrack && !audioManager.audioRef.current?.src) {
-        audioManager.setupMediaSource()
+  const toggleDisplayMode = useCallback(
+    (mode: DisplayMode) => {
+      setDisplayMode(mode)
+
+      // 当切换到音乐模式时，加载音频列表并初始化音频源
+      if (mode === 'music') {
+        audioManager.fetchAvailableTracks()
+
+        if (audioManager.currentTrack && !audioManager.audioRef.current?.src) {
+          audioManager.setupMediaSource()
+        }
       }
-    }
-  }, [audioManager])
+    },
+    [audioManager]
+  )
 
   const switchToNextTrack = useCallback(() => audioManager.switchTrack('next'), [audioManager])
   const switchToPrevTrack = useCallback(() => audioManager.switchTrack('prev'), [audioManager])
@@ -53,59 +56,82 @@ export function AppLauncher() {
   }, [searchManager])
 
   // 渲染内容的配置
-  const contentConfig = useMemo(() => ({
-    music: {
-      component: MusicPlayer,
-      props: {
-        isPlaying: audioManager.isPlaying,
-        audioError: audioManager.audioError,
-        currentTime: audioManager.currentTime,
-        duration: audioManager.duration,
-        volume: audioManager.volume,
-        isMuted: audioManager.isMuted,
-        toggleMute: audioManager.toggleMute,
-        switchToPrevTrack,
-        switchToNextTrack,
-        togglePlay: audioManager.togglePlay,
-        handleProgressChange: audioManager.handleProgressChange,
-        getCurrentTrackName: audioManager.getCurrentTrackName,
-        formatTime: audioManager.formatTime,
-        toggleDisplayMode,
-      }
-    },
-    settings: {
-      component: SettingsPanel,
-      props: {
-        toggleDisplayMode,
-        backgroundImage,
-        setBackgroundImage,
-        customBackgrounds,
-        setCustomBackgrounds,
-      }
-    },
-    auth: {
-      component: AuthPanel,
-      props: { toggleDisplayMode }
-    }
-  }), [audioManager, toggleDisplayMode, backgroundImage, setBackgroundImage, customBackgrounds, switchToPrevTrack, switchToNextTrack])
+  const contentConfig = useMemo(
+    () => ({
+      music: {
+        component: MusicPlayer,
+        props: {
+          isPlaying: audioManager.isPlaying,
+          audioError: audioManager.audioError,
+          currentTime: audioManager.currentTime,
+          duration: audioManager.duration,
+          volume: audioManager.volume,
+          isMuted: audioManager.isMuted,
+          toggleMute: audioManager.toggleMute,
+          switchToPrevTrack,
+          switchToNextTrack,
+          togglePlay: audioManager.togglePlay,
+          handleProgressChange: audioManager.handleProgressChange,
+          getCurrentTrackName: audioManager.getCurrentTrackName,
+          formatTime: audioManager.formatTime,
+          toggleDisplayMode,
+        },
+      },
+      settings: {
+        component: SettingsPanel,
+        props: {
+          toggleDisplayMode,
+          backgroundImage,
+          setBackgroundImage,
+          customBackgrounds,
+          setCustomBackgrounds,
+        },
+      },
+      auth: {
+        component: AuthPanel,
+        props: { toggleDisplayMode },
+      },
+    }),
+    [
+      audioManager,
+      toggleDisplayMode,
+      backgroundImage,
+      setBackgroundImage,
+      customBackgrounds,
+      switchToPrevTrack,
+      switchToNextTrack,
+    ]
+  )
 
   const renderContent = () => {
     switch (displayMode) {
       case 'music': {
-        const { component: Component, props } = contentConfig.music;
-        return <ViewWrapper><Component {...props} /></ViewWrapper>;
+        const { component: Component, props } = contentConfig.music
+        return (
+          <ViewWrapper>
+            <Component {...props} />
+          </ViewWrapper>
+        )
       }
-      
+
       case 'settings': {
-        const { component: Component, props } = contentConfig.settings;
-        return <ViewWrapper><Component {...props} /></ViewWrapper>;
+        const { component: Component, props } = contentConfig.settings
+        return (
+          <ViewWrapper>
+            <Component {...props} />
+          </ViewWrapper>
+        )
       }
-      
+
       case 'auth': {
-        const { component: Component, props } = contentConfig.auth;
-        return <ViewWrapper><Component {...props} /></ViewWrapper>;
+        const { component: Component, props } = contentConfig.auth
+        return (
+          <ViewWrapper>
+            <Component {...props} />
+          </ViewWrapper>
+        )
       }
-      
+
       case 'apps':
         return (
           <AppsView
@@ -114,36 +140,33 @@ export function AppLauncher() {
             isAuthenticated={isAuthenticated}
             toggleDisplayMode={toggleDisplayMode}
           />
-        );
-      
+        )
+
       case 'search-result':
         return (
-          <SearchResultView
-            searchText={searchManager.searchText}
-            onReset={resetSearchResult}
-          />
-        );
-      
+          <SearchResultView searchText={searchManager.searchText} onReset={resetSearchResult} />
+        )
+
       default:
-        return null;
+        return null
     }
-  };
-  
+  }
+
   return (
     <>
-      <SearchDialog 
-        open={searchManager.isSearchDialogOpen} 
+      <SearchDialog
+        open={searchManager.isSearchDialogOpen}
         onOpenChange={searchManager.setIsSearchDialogOpen}
         initialSearchTerm={searchManager.searchTerm}
         currentRoute={!searchManager.isHomePage ? pathname : undefined}
       />
-      
-      <div 
+
+      <div
         id="app-launcher-bar"
-        className="bg-background/80 backdrop-blur-md z-50 flex flex-col px-2 h-full w-full relative"
+        className="bg-background/80 relative z-50 flex h-full w-full flex-col px-2 backdrop-blur-md"
       >
         {renderContent()}
-        
+
         <audio
           ref={audioManager.audioRef}
           onLoadedMetadata={audioManager.handleLoadedMetadata}
@@ -157,5 +180,5 @@ export function AppLauncher() {
         />
       </div>
     </>
-  );
-} 
+  )
+}

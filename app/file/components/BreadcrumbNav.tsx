@@ -9,13 +9,9 @@ import BreadcrumbSkeleton from './BreadcrumbSkeleton'
 
 export default function BreadcrumbNav() {
   const { currentFolderId, navigateToFolder } = useFileStore()
-  
+
   // 使用自定义 hook 获取面包屑数据
-  const { 
-    data: breadcrumbs = [], 
-    isLoading,
-    error 
-  } = useBreadcrumbs(currentFolderId)
+  const { data: breadcrumbs = [], isLoading, error } = useBreadcrumbs(currentFolderId)
 
   // 处理导航点击
   const handleNavigate = useMemo(() => {
@@ -30,11 +26,11 @@ export default function BreadcrumbNav() {
 
     return breadcrumbs.map((crumb: Breadcrumb) => (
       <div key={crumb.id} className="flex items-center">
-        <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground" />
+        <ChevronRight className="text-muted-foreground mx-1 h-4 w-4" />
         <Button
           variant="ghost"
           size="sm"
-          className="h-7 px-2 hover:bg-muted/50 transition-colors"
+          className="hover:bg-muted/50 h-7 px-2 transition-colors"
           onClick={() => handleNavigate(crumb.id)}
         >
           {crumb.name}
@@ -51,14 +47,9 @@ export default function BreadcrumbNav() {
   // 错误状态显示
   if (error) {
     return (
-      <div className="flex items-center text-sm mt-4 text-destructive">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2"
-          onClick={() => handleNavigate(null)}
-        >
-          <Home className="h-4 w-4 mr-1" />
+      <div className="text-destructive mt-4 flex items-center text-sm">
+        <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => handleNavigate(null)}>
+          <Home className="mr-1 h-4 w-4" />
           主目录
         </Button>
         <span className="ml-2 text-xs">加载路径失败</span>
@@ -67,18 +58,18 @@ export default function BreadcrumbNav() {
   }
 
   return (
-    <div className="flex items-center text-sm mt-4">
+    <div className="mt-4 flex items-center text-sm">
       <Button
         variant="ghost"
         size="sm"
-        className="h-7 px-2 hover:bg-muted/50 transition-colors"
+        className="hover:bg-muted/50 h-7 px-2 transition-colors"
         onClick={() => handleNavigate(null)}
       >
-        <Home className="h-4 w-4 mr-1" />
+        <Home className="mr-1 h-4 w-4" />
         主目录
       </Button>
 
       {renderBreadcrumbItems}
     </div>
   )
-} 
+}

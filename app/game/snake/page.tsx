@@ -1,11 +1,11 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
-import { useSnakeGameStore } from "./store"
-import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { useSnakeGameStore } from './store'
+import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
 
 type Position = { x: number; y: number }
 type Direction = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT'
@@ -21,7 +21,7 @@ const DIRECTION_MAP = {
   UP: { x: 0, y: -1 },
   DOWN: { x: 0, y: 1 },
   LEFT: { x: -1, y: 0 },
-  RIGHT: { x: 1, y: 0 }
+  RIGHT: { x: 1, y: 0 },
 } as const
 
 // 相反方向映射
@@ -29,7 +29,7 @@ const OPPOSITE_DIRECTIONS = {
   UP: 'DOWN',
   DOWN: 'UP',
   LEFT: 'RIGHT',
-  RIGHT: 'LEFT'
+  RIGHT: 'LEFT',
 } as const
 
 // 键盘映射
@@ -37,22 +37,22 @@ const KEY_DIRECTION_MAP = {
   ArrowUp: 'UP',
   ArrowDown: 'DOWN',
   ArrowLeft: 'LEFT',
-  ArrowRight: 'RIGHT'
+  ArrowRight: 'RIGHT',
 } as const
 
 export default function SnakeGame() {
   const { bestScore, setBestScore, incrementGamesPlayed, addFoodEaten } = useSnakeGameStore()
-  
+
   const [snake, setSnake] = useState<Position[]>(INITIAL_SNAKE)
   const [food, setFood] = useState<Position>(INITIAL_FOOD)
   const [direction, setDirection] = useState<Direction>('RIGHT')
   const [gameOver, setGameOver] = useState(false)
   const [gameStarted, setGameStarted] = useState(false)
   const [score, setScore] = useState(0)
-  
+
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null)
   const touchStartRef = useRef({ x: 0, y: 0 })
-  
+
   // 使用 ref 存储最新的状态值，避免闭包问题
   const directionRef = useRef<Direction>('RIGHT')
   const foodRef = useRef<Position>(INITIAL_FOOD)
@@ -60,20 +60,20 @@ export default function SnakeGame() {
   const gameStartedRef = useRef(false)
   const directionQueueRef = useRef<Direction[]>([])
   const resetGameRef = useRef<() => void>(() => {})
-  
+
   // 同步 ref 值
   useEffect(() => {
     directionRef.current = direction
   }, [direction])
-  
+
   useEffect(() => {
     foodRef.current = food
   }, [food])
-  
+
   useEffect(() => {
     gameOverRef.current = gameOver
   }, [gameOver])
-  
+
   useEffect(() => {
     gameStartedRef.current = gameStarted
   }, [gameStarted])
@@ -84,7 +84,7 @@ export default function SnakeGame() {
     do {
       newFood = {
         x: Math.floor(Math.random() * BOARD_SIZE),
-        y: Math.floor(Math.random() * BOARD_SIZE)
+        y: Math.floor(Math.random() * BOARD_SIZE),
       }
     } while (currentSnake.some(segment => segment.x === newFood.x && segment.y === newFood.y))
     return newFood
@@ -118,7 +118,7 @@ export default function SnakeGame() {
       const newSnake = [...currentSnake]
       const head = { ...newSnake[0] }
       const movement = DIRECTION_MAP[directionRef.current]
-      
+
       head.x += movement.x
       head.y += movement.y
 
@@ -156,13 +156,15 @@ export default function SnakeGame() {
   // 方向控制
   const changeDirection = useCallback((newDirection: Direction) => {
     if (!gameStartedRef.current || gameOverRef.current) return
-    
+
     // 防止反向移动和重复方向
-    if (OPPOSITE_DIRECTIONS[directionRef.current] === newDirection || 
-        directionRef.current === newDirection) {
+    if (
+      OPPOSITE_DIRECTIONS[directionRef.current] === newDirection ||
+      directionRef.current === newDirection
+    ) {
       return
     }
-    
+
     // 将方向变化加入队列，避免快速按键时丢失
     if (directionQueueRef.current.length < 2) {
       directionQueueRef.current.push(newDirection)
@@ -211,13 +213,13 @@ export default function SnakeGame() {
     const handleTouchStart = (e: TouchEvent) => {
       touchStartRef.current = {
         x: e.touches[0].clientX,
-        y: e.touches[0].clientY
+        y: e.touches[0].clientY,
       }
     }
 
     const handleTouchEnd = (e: TouchEvent) => {
       if (!gameStartedRef.current || gameOverRef.current) return
-      
+
       const { x: startX, y: startY } = touchStartRef.current
       if (!startX || !startY) return
 
@@ -264,7 +266,7 @@ export default function SnakeGame() {
     setGameOver(false)
     setGameStarted(false)
     setScore(0)
-    
+
     // 重置 ref 值
     directionRef.current = 'RIGHT'
     foodRef.current = INITIAL_FOOD
@@ -272,7 +274,7 @@ export default function SnakeGame() {
     gameStartedRef.current = false
     directionQueueRef.current = []
   }, [])
-  
+
   // 同步 resetGame ref
   useEffect(() => {
     resetGameRef.current = resetGame
@@ -288,80 +290,79 @@ export default function SnakeGame() {
   }, [gameOver, resetGame])
 
   // 渲染游戏格子
-  const renderGameCell = useCallback((index: number) => {
-    const x = index % BOARD_SIZE
-    const y = Math.floor(index / BOARD_SIZE)
-    
-    const isSnakeHead = snake[0]?.x === x && snake[0]?.y === y
-    const isSnakeBody = snake.slice(1).some(segment => segment.x === x && segment.y === y)
-    const isFood = food.x === x && food.y === y
-    
-    let cellClass = 'aspect-square rounded-sm transition-all duration-100 '
-    
-    if (isSnakeHead) {
-      cellClass += 'bg-green-500 shadow-lg'
-    } else if (isSnakeBody) {
-      cellClass += 'bg-green-400'
-    } else if (isFood) {
-      cellClass += 'bg-red-500'
-    } else {
-      cellClass += 'bg-gray-100 dark:bg-gray-800'
-    }
-    
-    return (
-      <div key={index} className={cellClass}>
-        {isFood && (
-          <div className="w-full h-full flex items-center justify-center text-xs">
-            🍎
-          </div>
-        )}
-        {isSnakeHead && (
-          <div className="w-full h-full flex items-center justify-center text-xs">
-            🐍
-          </div>
-        )}
-      </div>
-    )
-  }, [snake, food])
+  const renderGameCell = useCallback(
+    (index: number) => {
+      const x = index % BOARD_SIZE
+      const y = Math.floor(index / BOARD_SIZE)
+
+      const isSnakeHead = snake[0]?.x === x && snake[0]?.y === y
+      const isSnakeBody = snake.slice(1).some(segment => segment.x === x && segment.y === y)
+      const isFood = food.x === x && food.y === y
+
+      let cellClass = 'aspect-square rounded-sm transition-all duration-100 '
+
+      if (isSnakeHead) {
+        cellClass += 'bg-green-500 shadow-lg'
+      } else if (isSnakeBody) {
+        cellClass += 'bg-green-400'
+      } else if (isFood) {
+        cellClass += 'bg-red-500'
+      } else {
+        cellClass += 'bg-gray-100 dark:bg-gray-800'
+      }
+
+      return (
+        <div key={index} className={cellClass}>
+          {isFood && (
+            <div className="flex h-full w-full items-center justify-center text-xs">🍎</div>
+          )}
+          {isSnakeHead && (
+            <div className="flex h-full w-full items-center justify-center text-xs">🐍</div>
+          )}
+        </div>
+      )
+    },
+    [snake, food]
+  )
 
   // 渲染控制按钮
-  const renderControlButton = useCallback((direction: Direction, emoji: string, className?: string) => (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => changeDirection(direction)}
-      disabled={!gameStarted || gameOver}
-      className={`w-12 h-12 ${className || ''}`}
-    >
-      {emoji}
-    </Button>
-  ), [changeDirection, gameStarted, gameOver])
+  const renderControlButton = useCallback(
+    (direction: Direction, emoji: string, className?: string) => (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => changeDirection(direction)}
+        disabled={!gameStarted || gameOver}
+        className={`h-12 w-12 ${className || ''}`}
+      >
+        {emoji}
+      </Button>
+    ),
+    [changeDirection, gameStarted, gameOver]
+  )
 
   return (
-    <div 
-      className="container py-4 px-4 max-w-md mx-auto"
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center gap-4 mb-2">
+    <div className="container mx-auto max-w-md px-4 py-4" onContextMenu={e => e.preventDefault()}>
+      <div className="mb-6 text-center">
+        <div className="mb-2 flex items-center justify-center gap-4">
           <h1 className="text-3xl font-bold">贪吃蛇</h1>
           <GameRulesDialog
             title="贪吃蛇游戏规则"
             rules={[
-              "控制蛇移动吃食物",
-              "每个食物+10分",
-              "不能撞墙或撞自己",
-              "使用方向键或滑动控制",
-              "按空格键暂停/开始游戏",
-              "游戏结束后可以重新开始"
+              '控制蛇移动吃食物',
+              '每个食物+10分',
+              '不能撞墙或撞自己',
+              '使用方向键或滑动控制',
+              '按空格键暂停/开始游戏',
+              '游戏结束后可以重新开始',
             ]}
           />
         </div>
-        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
+        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
           控制蛇吃食物，避免撞墙和撞自己！
         </p>
-        
-        <div className="flex justify-center gap-8 mb-4">
+
+        <div className="mb-4 flex justify-center gap-8">
           <div className="text-center">
             <div className="text-sm text-gray-600 dark:text-gray-400">当前分数</div>
             <div className="text-xl font-bold">{score}</div>
@@ -371,8 +372,8 @@ export default function SnakeGame() {
             <div className="text-xl font-bold">{bestScore}</div>
           </div>
         </div>
-        
-        <div className="flex justify-center space-x-2 mb-4">
+
+        <div className="mb-4 flex justify-center space-x-2">
           <Button onClick={toggleGame} variant="outline" size="sm">
             {gameOver ? '重新开始' : gameStarted ? '暂停' : '开始'}
           </Button>
@@ -382,13 +383,13 @@ export default function SnakeGame() {
         </div>
       </div>
 
-      <Card className="p-2 mb-4">
-        <div 
-          className="grid gap-0 bg-gray-50 dark:bg-gray-900 rounded-lg p-2"
-          style={{ 
+      <Card className="mb-4 p-2">
+        <div
+          className="grid gap-0 rounded-lg bg-gray-50 p-2 dark:bg-gray-900"
+          style={{
             gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
             aspectRatio: '1',
-            touchAction: 'none'
+            touchAction: 'none',
           }}
         >
           {Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => renderGameCell(index))}
@@ -397,16 +398,12 @@ export default function SnakeGame() {
 
       {/* 移动端控制按钮 */}
       <div className="mb-4">
-        <div className="flex justify-center mb-2">
-          {renderControlButton('UP', '⬆️')}
-        </div>
-        <div className="flex justify-center space-x-4 mb-2">
+        <div className="mb-2 flex justify-center">{renderControlButton('UP', '⬆️')}</div>
+        <div className="mb-2 flex justify-center space-x-4">
           {renderControlButton('LEFT', '⬅️')}
           {renderControlButton('RIGHT', '➡️')}
         </div>
-        <div className="flex justify-center">
-          {renderControlButton('DOWN', '⬇️')}
-        </div>
+        <div className="flex justify-center">{renderControlButton('DOWN', '⬇️')}</div>
       </div>
     </div>
   )

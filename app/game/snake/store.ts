@@ -23,20 +23,23 @@ export const useSnakeGameStore = create<SnakeGameState>()(
           set({ bestScore: score })
         }
       },
-      incrementGamesPlayed: () => set((state) => ({ 
-        gamesPlayed: state.gamesPlayed + 1 
-      })),
-      addFoodEaten: (count: number) => set((state) => ({ 
-        totalFoodEaten: state.totalFoodEaten + count 
-      })),
-      resetStats: () => set({ 
-        bestScore: 0, 
-        gamesPlayed: 0, 
-        totalFoodEaten: 0 
-      }),
+      incrementGamesPlayed: () =>
+        set(state => ({
+          gamesPlayed: state.gamesPlayed + 1,
+        })),
+      addFoodEaten: (count: number) =>
+        set(state => ({
+          totalFoodEaten: state.totalFoodEaten + count,
+        })),
+      resetStats: () =>
+        set({
+          bestScore: 0,
+          gamesPlayed: 0,
+          totalFoodEaten: 0,
+        }),
     }),
     {
       name: 'snake-game-storage',
     }
   )
-) 
+)

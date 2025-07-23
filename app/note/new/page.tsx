@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
@@ -10,10 +10,7 @@ import { apiRequest } from '@/lib/api'
 import { Save, Loader2, Lock, Unlock } from 'lucide-react'
 
 // 使用dynamic import避免服务端渲染问题
-const TailwindAdvancedEditor = dynamic(
-  () => import('@/components/novel-editor'),
-  { ssr: false }
-)
+const TailwindAdvancedEditor = dynamic(() => import('@/components/novel-editor'), { ssr: false })
 
 interface Note {
   id: number
@@ -28,7 +25,7 @@ export default function NewNotePage() {
   const [isLoaded, setIsLoaded] = useState(false)
   const [title, setTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  
+
   // 添加按钮交互状态
   const [draftButtonHovered, setDraftButtonHovered] = useState(false)
   const [publishButtonHovered, setPublishButtonHovered] = useState(false)
@@ -39,66 +36,70 @@ export default function NewNotePage() {
   // 在客户端组件挂载后设置为已加载，并清空编辑器内容
   useEffect(() => {
     // 清空之前的编辑器内容，确保新建笔记是空的
-    window.localStorage.removeItem("novel-content")
-    window.localStorage.removeItem("html-content")
-    window.localStorage.removeItem("markdown")
-    
+    window.localStorage.removeItem('novel-content')
+    window.localStorage.removeItem('html-content')
+    window.localStorage.removeItem('markdown')
+
     setIsLoaded(true)
   }, [])
 
   // 获取当前编辑器内容和markdown
   const getCurrentContent = () => {
-    const content = window.localStorage.getItem("novel-content")
-    const markdown = window.localStorage.getItem("markdown")
+    const content = window.localStorage.getItem('novel-content')
+    const markdown = window.localStorage.getItem('markdown')
     return {
-      content: content || '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}',
-      markdown: markdown || ''
+      content:
+        content ||
+        '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}',
+      markdown: markdown || '',
     }
   }
 
   // 保存笔记
-  const handleSave = useCallback(async (asDraft = false) => {
-    if (!title.trim()) {
-      toast.error('请输入笔记标题')
-      return
-    }
-
-    const { content, markdown } = getCurrentContent()
-    
-    try {
-      setIsSaving(true)
-      
-      const data = {
-        title: title.trim(),
-        content,
-        content_markdown: markdown,
-        is_draft: asDraft
+  const handleSave = useCallback(
+    async (asDraft = false) => {
+      if (!title.trim()) {
+        toast.error('请输入笔记标题')
+        return
       }
 
-      const result = await apiRequest<Note>('/notes', 'POST', data)
-      
-      toast.success(asDraft ? '已解锁' : '笔记已创建')
-      
-      // 如果是草稿，设置草稿保存状态
-      if (asDraft) {
-        setDraftSaved(true)
+      const { content, markdown } = getCurrentContent()
+
+      try {
+        setIsSaving(true)
+
+        const data = {
+          title: title.trim(),
+          content,
+          content_markdown: markdown,
+          is_draft: asDraft,
+        }
+
+        const result = await apiRequest<Note>('/notes', 'POST', data)
+
+        toast.success(asDraft ? '已解锁' : '笔记已创建')
+
+        // 如果是草稿，设置草稿保存状态
+        if (asDraft) {
+          setDraftSaved(true)
+        }
+
+        // 清除本地存储的内容
+        window.localStorage.removeItem('novel-content')
+        window.localStorage.removeItem('html-content')
+        window.localStorage.removeItem('markdown')
+
+        // 跳转到编辑页面
+        router.push(`/note/edit/${result.id}`)
+      } catch (error) {
+        console.error('保存笔记错误:', error)
+        toast.error('保存失败')
+      } finally {
+        setIsSaving(false)
       }
-      
-      // 清除本地存储的内容
-      window.localStorage.removeItem("novel-content")
-      window.localStorage.removeItem("html-content")
-      window.localStorage.removeItem("markdown")
-      
-      // 跳转到编辑页面
-      router.push(`/note/edit/${result.id}`)
-      
-    } catch (error) {
-      console.error('保存笔记错误:', error)
-      toast.error('保存失败')
-    } finally {
-      setIsSaving(false)
-    }
-  }, [title, router])
+    },
+    [title, router]
+  )
 
   // 添加快捷键支持
   useEffect(() => {
@@ -131,11 +132,11 @@ export default function NewNotePage() {
           <div className="mb-4 flex items-center gap-2">
             <Input
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              onChange={e => setTitle(e.target.value)}
               placeholder="请输入笔记标题"
-              className="text-lg font-medium flex-1"
+              className="flex-1 text-lg font-medium"
             />
-            <Button 
+            <Button
               onClick={() => handleSave(true)}
               onMouseEnter={() => setDraftButtonHovered(true)}
               onMouseLeave={() => setDraftButtonHovered(false)}
@@ -149,12 +150,18 @@ export default function NewNotePage() {
               style={{
                 transform: `translateY(${draftButtonHovered ? '-2px' : '0'}) scale(${draftButtonPressed ? '0.95' : '1'})`,
                 transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: draftButtonHovered ? '0 4px 8px rgba(0,0,0,0.1)' : 'none'
+                boxShadow: draftButtonHovered ? '0 4px 8px rgba(0,0,0,0.1)' : 'none',
               }}
             >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : (draftSaved ? <Unlock className="h-4 w-4" /> : <Lock className="h-4 w-4" />)}
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : draftSaved ? (
+                <Unlock className="h-4 w-4" />
+              ) : (
+                <Lock className="h-4 w-4" />
+              )}
             </Button>
-            <Button 
+            <Button
               onClick={() => handleSave(false)}
               onMouseEnter={() => setPublishButtonHovered(true)}
               onMouseLeave={() => setPublishButtonHovered(false)}
@@ -167,17 +174,21 @@ export default function NewNotePage() {
               style={{
                 transform: `translateY(${publishButtonHovered ? '-2px' : '0'}) scale(${publishButtonPressed ? '0.95' : '1'})`,
                 transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: publishButtonHovered ? '0 6px 12px rgba(0,0,0,0.15)' : 'none'
+                boxShadow: publishButtonHovered ? '0 6px 12px rgba(0,0,0,0.15)' : 'none',
               }}
             >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
             </Button>
           </div>
-          
+
           {/* Novel 编辑器 */}
           {isLoaded && <TailwindAdvancedEditor />}
         </div>
       </div>
     </div>
   )
-} 
+}

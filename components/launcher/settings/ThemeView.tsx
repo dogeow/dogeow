@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 import { BackButton } from '@/components/ui/back-button'
@@ -23,17 +23,14 @@ export function ThemeView({
   customThemes,
   onSetTheme,
   onRemoveTheme,
-  onAddTheme
+  onAddTheme,
 }: ThemeViewProps) {
   return (
     <>
-      <BackButton 
-        onClick={onBack}
-        className="shrink-0"
-      />
-      
+      <BackButton onClick={onBack} className="shrink-0" />
+
       <SettingsDivider />
-      
+
       {/* 预设主题色 */}
       {configs.themeColors.map(theme => (
         <ThemeButton
@@ -43,7 +40,7 @@ export function ThemeView({
           onSelect={onSetTheme}
         />
       ))}
-      
+
       {/* 用户自定义主题 */}
       {customThemes.map(theme => (
         <ThemeButton
@@ -55,9 +52,9 @@ export function ThemeView({
           onRemove={onRemoveTheme}
         />
       ))}
-      
+
       {/* 添加自定义主题按钮 */}
       <AddThemeDialog onAddTheme={onAddTheme} />
     </>
   )
-} 
+}

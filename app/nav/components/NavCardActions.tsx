@@ -17,7 +17,7 @@ import { toast } from 'react-hot-toast'
 interface NavCardActionsProps {
   item: NavItem
   // Assuming deleteItem from useNavStore returns a Promise and takes an id
-  deleteItem: (id: number) => Promise<void> 
+  deleteItem: (id: number) => Promise<void>
 }
 
 export default function NavCardActions({ item, deleteItem }: NavCardActionsProps) {

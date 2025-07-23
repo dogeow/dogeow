@@ -1,11 +1,11 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
-import { useGame2048Store } from "./store"
-import { GameRulesDialog } from "@/components/ui/game-rules-dialog"
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { Card } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
+import { useGame2048Store } from './store'
+import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
 
 type Board = number[][]
 type Direction = 'up' | 'down' | 'left' | 'right'
@@ -31,12 +31,14 @@ const DIRECTION_SYMBOLS = {
   up: '↑',
   down: '↓',
   left: '←',
-  right: '→'
+  right: '→',
 } as const
 
 // 工具函数
 const initializeBoard = (): Board => {
-  const newBoard = Array(BOARD_SIZE).fill(null).map(() => Array(BOARD_SIZE).fill(0))
+  const newBoard = Array(BOARD_SIZE)
+    .fill(null)
+    .map(() => Array(BOARD_SIZE).fill(0))
   addRandomTile(newBoard)
   addRandomTile(newBoard)
   return newBoard
@@ -51,7 +53,7 @@ const addRandomTile = (board: Board): void => {
       }
     }
   }
-  
+
   if (emptyCells.length > 0) {
     const randomIndex = Math.floor(Math.random() * emptyCells.length)
     const [row, col] = emptyCells[randomIndex]
@@ -88,7 +90,7 @@ const isGameOver = (board: Board): boolean => {
 
 const getNextDirection = (current: Direction, clockwise: boolean): Direction => {
   const currentIndex = DIRECTIONS.indexOf(current)
-  
+
   if (clockwise) {
     return DIRECTIONS[(currentIndex + 1) % 4]
   } else {
@@ -114,14 +116,23 @@ const getTileColor = (value: number): string => {
     256: 'bg-yellow-400 text-yellow-900 dark:bg-yellow-500 dark:text-yellow-100',
     512: 'bg-yellow-500 text-white dark:bg-yellow-400 dark:text-yellow-900',
     1024: 'bg-green-400 text-white dark:bg-green-500',
-    2048: 'bg-green-500 text-white dark:bg-green-400 shadow-lg shadow-green-500/50'
+    2048: 'bg-green-500 text-white dark:bg-green-400 shadow-lg shadow-green-500/50',
   }
-  return colorMap[value] || 'bg-purple-500 text-white dark:bg-purple-400 shadow-lg shadow-purple-500/50'
+  return (
+    colorMap[value] || 'bg-purple-500 text-white dark:bg-purple-400 shadow-lg shadow-purple-500/50'
+  )
 }
 
 export default function Game2048() {
-  const { bestScore, setBestScore, incrementGamesPlayed, incrementGamesWon, gamesPlayed, gamesWon } = useGame2048Store()
-  
+  const {
+    bestScore,
+    setBestScore,
+    incrementGamesPlayed,
+    incrementGamesWon,
+    gamesPlayed,
+    gamesWon,
+  } = useGame2048Store()
+
   // 游戏状态
   const [board, setBoard] = useState<Board>(() => initializeBoard())
   const [score, setScore] = useState(0)
@@ -129,7 +140,7 @@ export default function Game2048() {
   const [gameWon, setGameWon] = useState(false)
   const [history, setHistory] = useState<{ board: Board; score: number }[]>([])
   const [canUndo, setCanUndo] = useState(false)
-  
+
   // 自动运行状态
   const [isAutoRunning, setIsAutoRunning] = useState(false)
   const [isDirectionalRunning, setIsDirectionalRunning] = useState(false)
@@ -137,7 +148,7 @@ export default function Game2048() {
   const [isClockwise, setIsClockwise] = useState(true)
   const [speed, setSpeed] = useState(500)
   const [showRandomDirection, setShowRandomDirection] = useState<Direction | null>(null)
-  
+
   // Refs
   const autoRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const directionalRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -153,7 +164,7 @@ export default function Game2048() {
       const row = newBoard[i].filter(cell => cell !== 0)
       const mergedRow: number[] = []
       let j = 0
-      
+
       while (j < row.length) {
         if (j < row.length - 1 && row[j] === row[j + 1]) {
           const mergedValue = row[j] * 2
@@ -165,101 +176,119 @@ export default function Game2048() {
           j += 1
         }
       }
-      
+
       while (mergedRow.length < BOARD_SIZE) {
         mergedRow.push(0)
       }
-      
+
       for (let k = 0; k < BOARD_SIZE; k++) {
         if (newBoard[i][k] !== mergedRow[k]) {
           moved = true
         }
       }
-      
+
       newBoard[i] = mergedRow
     }
 
     return { newBoard, scoreGained, moved }
   }, [])
 
-  const moveRight = useCallback((board: Board): MoveResult => {
-    const rotatedBoard = board.map(row => [...row].reverse())
-    const { newBoard, scoreGained, moved } = moveLeft(rotatedBoard)
-    return {
-      newBoard: newBoard.map(row => [...row].reverse()),
-      scoreGained,
-      moved
-    }
-  }, [moveLeft])
+  const moveRight = useCallback(
+    (board: Board): MoveResult => {
+      const rotatedBoard = board.map(row => [...row].reverse())
+      const { newBoard, scoreGained, moved } = moveLeft(rotatedBoard)
+      return {
+        newBoard: newBoard.map(row => [...row].reverse()),
+        scoreGained,
+        moved,
+      }
+    },
+    [moveLeft]
+  )
 
-  const moveUp = useCallback((board: Board): MoveResult => {
-    const transposedBoard = transpose(board)
-    const { newBoard, scoreGained, moved } = moveLeft(transposedBoard)
-    return {
-      newBoard: transpose(newBoard),
-      scoreGained,
-      moved
-    }
-  }, [moveLeft])
+  const moveUp = useCallback(
+    (board: Board): MoveResult => {
+      const transposedBoard = transpose(board)
+      const { newBoard, scoreGained, moved } = moveLeft(transposedBoard)
+      return {
+        newBoard: transpose(newBoard),
+        scoreGained,
+        moved,
+      }
+    },
+    [moveLeft]
+  )
 
-  const moveDown = useCallback((board: Board): MoveResult => {
-    const transposedBoard = transpose(board)
-    const { newBoard, scoreGained, moved } = moveRight(transposedBoard)
-    return {
-      newBoard: transpose(newBoard),
-      scoreGained,
-      moved
-    }
-  }, [moveRight])
+  const moveDown = useCallback(
+    (board: Board): MoveResult => {
+      const transposedBoard = transpose(board)
+      const { newBoard, scoreGained, moved } = moveRight(transposedBoard)
+      return {
+        newBoard: transpose(newBoard),
+        scoreGained,
+        moved,
+      }
+    },
+    [moveRight]
+  )
 
   // 移动处理器映射
-  const moveHandlers = useMemo(() => ({
-    left: moveLeft,
-    right: moveRight,
-    up: moveUp,
-    down: moveDown
-  }), [moveLeft, moveRight, moveUp, moveDown])
+  const moveHandlers = useMemo(
+    () => ({
+      left: moveLeft,
+      right: moveRight,
+      up: moveUp,
+      down: moveDown,
+    }),
+    [moveLeft, moveRight, moveUp, moveDown]
+  )
 
   // 处理移动的核心逻辑
-  const handleMove = useCallback((direction: Direction) => {
-    if (gameOver) return
+  const handleMove = useCallback(
+    (direction: Direction) => {
+      if (gameOver) return
 
-    setBoard(currentBoard => {
-      const result = moveHandlers[direction](currentBoard)
+      setBoard(currentBoard => {
+        const result = moveHandlers[direction](currentBoard)
 
-      if (result.moved) {
-        const newBoard = [...result.newBoard]
-        addRandomTile(newBoard)
-        
-        // 检查是否达到2048
-        if (!gameWon) {
-          const has2048 = newBoard.some(row => row.some(cell => cell === 2048))
-          if (has2048) {
-            setGameWon(true)
-            incrementGamesWon()
+        if (result.moved) {
+          const newBoard = [...result.newBoard]
+          addRandomTile(newBoard)
+
+          // 检查是否达到2048
+          if (!gameWon) {
+            const has2048 = newBoard.some(row => row.some(cell => cell === 2048))
+            if (has2048) {
+              setGameWon(true)
+              incrementGamesWon()
+            }
           }
+
+          // 更新分数和历史
+          setScore(currentScore => {
+            setHistory(prev => [
+              ...prev.slice(-4),
+              { board: [...currentBoard], score: currentScore },
+            ])
+            return currentScore + result.scoreGained
+          })
+          setCanUndo(true)
+
+          // 检查游戏结束
+          if (isGameOver(newBoard)) {
+            setGameOver(true)
+            incrementGamesPlayed()
+            toast.error('游戏结束！')
+          }
+
+          return newBoard
         }
-        
-        // 更新分数和历史
-        setScore(currentScore => {
-          setHistory(prev => [...prev.slice(-4), { board: [...currentBoard], score: currentScore }])
-          return currentScore + result.scoreGained
-        })
-        setCanUndo(true)
-        
-        // 检查游戏结束
-        if (isGameOver(newBoard)) {
-          setGameOver(true)
-          incrementGamesPlayed()
-          toast.error('游戏结束！')
-        }
-        
-        return newBoard
-      }
-      
-      return currentBoard
-    })
-  }, [gameOver, gameWon, incrementGamesPlayed, incrementGamesWon, moveHandlers])
+
+        return currentBoard
+      })
+    },
+    [gameOver, gameWon, incrementGamesPlayed, incrementGamesWon, moveHandlers]
+  )
 
   // 自动运行逻辑
   const startAutoRun = useCallback(() => {
@@ -325,31 +354,41 @@ export default function Game2048() {
     toast.success(`切换为${!isClockwise ? '顺时针' : '逆时针'}模式`)
   }, [isClockwise])
 
-  const changeSpeed = useCallback((newSpeed: number) => {
-    setSpeed(newSpeed)
-    
-    // 重新启动正在运行的定时器
-    if (isAutoRunning) {
-      stopAutoRun()
-      setTimeout(() => startAutoRun(), 0)
-    }
-    
-    if (isDirectionalRunning) {
-      stopDirectionalRun()
-      setTimeout(() => startDirectionalRun(), 0)
-    }
-    
-    const speedLabel = SPEED_OPTIONS.find(option => option.value === newSpeed)?.label || '自定义'
-    toast.success(`速度已调整为：${speedLabel}`)
-  }, [isAutoRunning, isDirectionalRunning, startAutoRun, startDirectionalRun, stopAutoRun, stopDirectionalRun])
+  const changeSpeed = useCallback(
+    (newSpeed: number) => {
+      setSpeed(newSpeed)
+
+      // 重新启动正在运行的定时器
+      if (isAutoRunning) {
+        stopAutoRun()
+        setTimeout(() => startAutoRun(), 0)
+      }
+
+      if (isDirectionalRunning) {
+        stopDirectionalRun()
+        setTimeout(() => startDirectionalRun(), 0)
+      }
+
+      const speedLabel = SPEED_OPTIONS.find(option => option.value === newSpeed)?.label || '自定义'
+      toast.success(`速度已调整为：${speedLabel}`)
+    },
+    [
+      isAutoRunning,
+      isDirectionalRunning,
+      startAutoRun,
+      startDirectionalRun,
+      stopAutoRun,
+      stopDirectionalRun,
+    ]
+  )
 
   const randomMoveOnce = useCallback(() => {
     if (gameOver || isAutoRunning || isDirectionalRunning) return
-    
+
     const randomDirection = getRandomDirection()
     setShowRandomDirection(randomDirection)
     handleMove(randomDirection)
-    
+
     if (randomDirectionTimeoutRef.current) {
       clearTimeout(randomDirectionTimeoutRef.current)
     }
@@ -361,7 +400,7 @@ export default function Game2048() {
   const resetGame = useCallback(() => {
     stopAutoRun()
     stopDirectionalRun()
-    
+
     setBoard(initializeBoard())
     setScore(0)
     setGameOver(false)
@@ -391,12 +430,12 @@ export default function Game2048() {
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       const keyToDirection: Record<string, Direction> = {
-        'ArrowLeft': 'left',
-        'ArrowRight': 'right',
-        'ArrowUp': 'up',
-        'ArrowDown': 'down'
+        ArrowLeft: 'left',
+        ArrowRight: 'right',
+        ArrowUp: 'up',
+        ArrowDown: 'down',
       }
-      
+
       const direction = keyToDirection[e.key]
       if (direction) {
         e.preventDefault()
@@ -429,7 +468,7 @@ export default function Game2048() {
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isGameAreaTouch || !startX || !startY) return
-      
+
       const currentTime = Date.now()
       if (currentTime - lastMoveTime < MOVE_THROTTLE) return
 
@@ -519,217 +558,217 @@ export default function Game2048() {
   }, [stopAutoRun, stopDirectionalRun])
 
   // 渲染优化的组件
-  const GameStats = useMemo(() => (
-    <div className="grid grid-cols-2 gap-4 mb-4">
-      <div className="text-center">
-        <div className="text-sm text-gray-600 dark:text-gray-400">当前分数</div>
-        <div className="text-xl font-bold">{score}</div>
+  const GameStats = useMemo(
+    () => (
+      <div className="mb-4 grid grid-cols-2 gap-4">
+        <div className="text-center">
+          <div className="text-sm text-gray-600 dark:text-gray-400">当前分数</div>
+          <div className="text-xl font-bold">{score}</div>
+        </div>
+        <div className="text-center">
+          <div className="text-sm text-gray-600 dark:text-gray-400">最高分</div>
+          <div className="text-xl font-bold">{bestScore}</div>
+        </div>
       </div>
-      <div className="text-center">
-        <div className="text-sm text-gray-600 dark:text-gray-400">最高分</div>
-        <div className="text-xl font-bold">{bestScore}</div>
-      </div>
-    </div>
-  ), [score, bestScore])
+    ),
+    [score, bestScore]
+  )
 
-  const GameBoard = useMemo(() => (
-    <Card className="p-4 mb-4">
-      <div 
-        className="grid grid-cols-4 gap-2"
-        style={{ touchAction: 'none' }}
-        data-game-board
-      >
-        {board.map((row, i) =>
-          row.map((cell, j) => (
-            <div
-              key={`${i}-${j}`}
-              className={`
-                aspect-square rounded-lg flex items-center justify-center
-                ${cell >= 1000 ? 'text-sm' : cell >= 100 ? 'text-base' : 'text-lg'} 
-                font-bold transition-all duration-200 ease-in-out
-                ${getTileColor(cell)}
-                ${cell !== 0 ? 'scale-100' : 'scale-95'}
-                hover:scale-105
-              `}
+  const GameBoard = useMemo(
+    () => (
+      <Card className="mb-4 p-4">
+        <div className="grid grid-cols-4 gap-2" style={{ touchAction: 'none' }} data-game-board>
+          {board.map((row, i) =>
+            row.map((cell, j) => (
+              <div
+                key={`${i}-${j}`}
+                className={`flex aspect-square items-center justify-center rounded-lg ${cell >= 1000 ? 'text-sm' : cell >= 100 ? 'text-base' : 'text-lg'} font-bold transition-all duration-200 ease-in-out ${getTileColor(cell)} ${cell !== 0 ? 'scale-100' : 'scale-95'} hover:scale-105`}
+              >
+                {cell !== 0 && (
+                  <span className="animate-in fade-in-0 zoom-in-95 duration-200">{cell}</span>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </Card>
+    ),
+    [board]
+  )
+
+  const DirectionControls = useMemo(
+    () => (
+      <div className="mb-6">
+        <div className="flex flex-col items-center space-y-2">
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-12 w-12 p-0 text-xl"
+            onClick={() => handleMove('up')}
+            disabled={gameOver || isAutoRunning || isDirectionalRunning}
+          >
+            {DIRECTION_SYMBOLS.up}
+          </Button>
+
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-12 p-0 text-xl"
+              onClick={() => handleMove('left')}
+              disabled={gameOver || isAutoRunning || isDirectionalRunning}
             >
-              {cell !== 0 && (
-                <span className="animate-in fade-in-0 zoom-in-95 duration-200">
-                  {cell}
-                </span>
+              {DIRECTION_SYMBOLS.left}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-12 p-0 text-lg"
+              onClick={randomMoveOnce}
+              disabled={gameOver || isAutoRunning || isDirectionalRunning}
+            >
+              {showRandomDirection ? DIRECTION_SYMBOLS[showRandomDirection] : '🎲'}
+            </Button>
+
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-12 p-0 text-xl"
+              onClick={() => handleMove('right')}
+              disabled={gameOver || isAutoRunning || isDirectionalRunning}
+            >
+              {DIRECTION_SYMBOLS.right}
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-12 w-12 p-0 text-xl"
+            onClick={() => handleMove('down')}
+            disabled={gameOver || isAutoRunning || isDirectionalRunning}
+          >
+            {DIRECTION_SYMBOLS.down}
+          </Button>
+        </div>
+      </div>
+    ),
+    [gameOver, isAutoRunning, isDirectionalRunning, showRandomDirection, handleMove, randomMoveOnce]
+  )
+
+  const AutoRunControls = useMemo(
+    () => (
+      <div className="mb-6 space-y-3">
+        <div className="text-center">
+          <div className="mb-3">
+            <div className="flex flex-wrap justify-center gap-1">
+              {SPEED_OPTIONS.map(option => (
+                <Button
+                  key={option.value}
+                  variant={speed === option.value ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => changeSpeed(option.value)}
+                  disabled={gameOver}
+                  className="px-2 py-1 text-xs"
+                >
+                  {option.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center space-x-2">
+            <Button
+              variant={isAutoRunning ? 'destructive' : 'default'}
+              size="default"
+              onClick={toggleAutoRun}
+              disabled={gameOver || isDirectionalRunning}
+              className="px-4 text-sm"
+            >
+              {isAutoRunning ? '🛑' : '🎲'}
+            </Button>
+
+            <span className="text-gray-400">|</span>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleClockwise}
+              disabled={gameOver || isAutoRunning}
+              className="px-2 text-xs"
+            >
+              {isClockwise ? '🔄' : '🔃'}
+            </Button>
+
+            <Button
+              variant={isDirectionalRunning ? 'destructive' : 'default'}
+              size="default"
+              onClick={toggleDirectionalRun}
+              disabled={gameOver || isAutoRunning}
+              className="px-4 text-sm"
+            >
+              {isDirectionalRunning ? '🛑' : '🔄'}
+            </Button>
+          </div>
+
+          {(isAutoRunning || isDirectionalRunning) && (
+            <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
+              {isAutoRunning && <div>🎲 随机运行中...</div>}
+              {isDirectionalRunning && (
+                <div>
+                  🔄 {isClockwise ? '顺时针' : '逆时针'}循环中
+                  <span className="ml-1 font-mono text-lg">
+                    ({DIRECTION_SYMBOLS[currentDirection]})
+                  </span>
+                </div>
               )}
             </div>
-          ))
-        )}
-      </div>
-    </Card>
-  ), [board])
-
-  const DirectionControls = useMemo(() => (
-    <div className="mb-6">
-      <div className="flex flex-col items-center space-y-2">
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-12 h-12 p-0 text-xl"
-          onClick={() => handleMove('up')}
-          disabled={gameOver || isAutoRunning || isDirectionalRunning}
-        >
-          {DIRECTION_SYMBOLS.up}
-        </Button>
-        
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-12 h-12 p-0 text-xl"
-            onClick={() => handleMove('left')}
-            disabled={gameOver || isAutoRunning || isDirectionalRunning}
-          >
-            {DIRECTION_SYMBOLS.left}
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-12 h-12 p-0 text-lg"
-            onClick={randomMoveOnce}
-            disabled={gameOver || isAutoRunning || isDirectionalRunning}
-          >
-            {showRandomDirection ? DIRECTION_SYMBOLS[showRandomDirection] : '🎲'}
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-12 h-12 p-0 text-xl"
-            onClick={() => handleMove('right')}
-            disabled={gameOver || isAutoRunning || isDirectionalRunning}
-          >
-            {DIRECTION_SYMBOLS.right}
-          </Button>
+          )}
         </div>
-        
-        <Button
-          variant="outline"
-          size="lg"
-          className="w-12 h-12 p-0 text-xl"
-          onClick={() => handleMove('down')}
-          disabled={gameOver || isAutoRunning || isDirectionalRunning}
-        >
-          {DIRECTION_SYMBOLS.down}
-        </Button>
       </div>
-    </div>
-  ), [gameOver, isAutoRunning, isDirectionalRunning, showRandomDirection, handleMove, randomMoveOnce])
-
-  const AutoRunControls = useMemo(() => (
-    <div className="mb-6 space-y-3">
-      <div className="text-center">
-        <div className="mb-3">
-          <div className="flex justify-center flex-wrap gap-1">
-            {SPEED_OPTIONS.map((option) => (
-              <Button
-                key={option.value}
-                variant={speed === option.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => changeSpeed(option.value)}
-                disabled={gameOver}
-                className="text-xs px-2 py-1"
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex justify-center items-center space-x-2">
-          <Button
-            variant={isAutoRunning ? "destructive" : "default"}
-            size="default"
-            onClick={toggleAutoRun}
-            disabled={gameOver || isDirectionalRunning}
-            className="text-sm px-4"
-          >
-            {isAutoRunning ? '🛑' : '🎲'}
-          </Button>
-          
-          <span className="text-gray-400">|</span>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleClockwise}
-            disabled={gameOver || isAutoRunning}
-            className="text-xs px-2"
-          >
-            {isClockwise ? '🔄' : '🔃'}
-          </Button>
-          
-          <Button
-            variant={isDirectionalRunning ? "destructive" : "default"}
-            size="default"
-            onClick={toggleDirectionalRun}
-            disabled={gameOver || isAutoRunning}
-            className="text-sm px-4"
-          >
-            {isDirectionalRunning ? '🛑' : '🔄'}
-          </Button>
-        </div>
-        
-        {(isAutoRunning || isDirectionalRunning) && (
-          <div className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-            {isAutoRunning && <div>🎲 随机运行中...</div>}
-            {isDirectionalRunning && (
-              <div>
-                🔄 {isClockwise ? '顺时针' : '逆时针'}循环中 
-                <span className="ml-1 font-mono text-lg">
-                  ({DIRECTION_SYMBOLS[currentDirection]})
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  ), [speed, gameOver, isAutoRunning, isDirectionalRunning, isClockwise, currentDirection, changeSpeed, toggleAutoRun, toggleDirectionalRun, toggleClockwise])
+    ),
+    [
+      speed,
+      gameOver,
+      isAutoRunning,
+      isDirectionalRunning,
+      isClockwise,
+      currentDirection,
+      changeSpeed,
+      toggleAutoRun,
+      toggleDirectionalRun,
+      toggleClockwise,
+    ]
+  )
 
   return (
-    <div 
-      className="container py-4 px-4 max-w-md mx-auto"
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      <div className="text-center mb-6">
-        <div className="flex items-center justify-center gap-4 mb-2">
+    <div className="container mx-auto max-w-md px-4 py-4" onContextMenu={e => e.preventDefault()}>
+      <div className="mb-6 text-center">
+        <div className="mb-2 flex items-center justify-center gap-4">
           <h1 className="text-3xl font-bold">2048</h1>
           <GameRulesDialog
             title="2048游戏规则"
             rules={[
-              "滑动屏幕或使用方向键移动方块",
-              "相同数字的方块会合并成更大的数字",
-              "目标：合并出2048方块！",
-              "可使用按钮手动控制或自动运行",
-              "支持撤销上一步操作",
-              "游戏结束条件：棋盘填满且无法合并"
+              '滑动屏幕或使用方向键移动方块',
+              '相同数字的方块会合并成更大的数字',
+              '目标：合并出2048方块！',
+              '可使用按钮手动控制或自动运行',
+              '支持撤销上一步操作',
+              '游戏结束条件：棋盘填满且无法合并',
             ]}
           />
         </div>
-        <p className="text-gray-600 text-sm mb-4">
-          滑动合并数字，达到2048！
-        </p>
-        
+        <p className="mb-4 text-sm text-gray-600">滑动合并数字，达到2048！</p>
+
         {GameStats}
-        
-        <div className="flex justify-between items-center mb-4">
+
+        <div className="mb-4 flex items-center justify-between">
           <div className="text-xs text-gray-500 dark:text-gray-400">
             游戏次数: {gamesPlayed} | 胜利次数: {gamesWon}
           </div>
           <div className="flex space-x-2">
-            <Button 
-              onClick={undoMove} 
-              variant="outline" 
-              size="sm"
-              disabled={!canUndo}
-            >
+            <Button onClick={undoMove} variant="outline" size="sm" disabled={!canUndo}>
               撤销
             </Button>
             <Button onClick={resetGame} variant="outline" size="sm">
@@ -742,16 +781,18 @@ export default function Game2048() {
       {GameBoard}
 
       {gameWon && (
-        <div className="text-center mb-4 p-4 bg-green-100 dark:bg-green-900/20 rounded-lg">
-          <div className="text-green-800 dark:text-green-200 font-bold">🎉 恭喜！你达到了2048！</div>
-          <div className="text-green-600 dark:text-green-300 text-sm">继续游戏挑战更高分数</div>
+        <div className="mb-4 rounded-lg bg-green-100 p-4 text-center dark:bg-green-900/20">
+          <div className="font-bold text-green-800 dark:text-green-200">
+            🎉 恭喜！你达到了2048！
+          </div>
+          <div className="text-sm text-green-600 dark:text-green-300">继续游戏挑战更高分数</div>
         </div>
       )}
 
       {gameOver && (
-        <div className="text-center mb-4 p-4 bg-red-100 dark:bg-red-900/20 rounded-lg">
-          <div className="text-red-800 dark:text-red-200 font-bold">游戏结束</div>
-          <div className="text-red-600 dark:text-red-300 text-sm">最终分数: {score}</div>
+        <div className="mb-4 rounded-lg bg-red-100 p-4 text-center dark:bg-red-900/20">
+          <div className="font-bold text-red-800 dark:text-red-200">游戏结束</div>
+          <div className="text-sm text-red-600 dark:text-red-300">最终分数: {score}</div>
         </div>
       )}
 
@@ -759,4 +800,4 @@ export default function Game2048() {
       {AutoRunControls}
     </div>
   )
-} 
+}

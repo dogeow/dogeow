@@ -8,7 +8,7 @@ interface BackgroundState {
 
 export const useBackgroundStore = create<BackgroundState>()(
   persist(
-    (set) => ({
+    set => ({
       backgroundImage: '',
       setBackgroundImage: (url: string) => set({ backgroundImage: url }),
     }),
@@ -16,4 +16,4 @@ export const useBackgroundStore = create<BackgroundState>()(
       name: 'background-storage',
     }
   )
-) 
+)

@@ -13,7 +13,7 @@ export const PHYSICS_CONFIG = {
   WALL_THICKNESS: 0.5, // 墙壁厚度
   GUTTER_WIDTH: 0.25, // 边沟宽度
   THROW_TIMEOUT: 15000, // 增加到15秒，给球更多时间滚到球瓶
-  PHYSICS_STEP: 1 / 60 // 物理步长
+  PHYSICS_STEP: 1 / 60, // 物理步长
 } as const
 
 // 材质配置
@@ -21,7 +21,7 @@ export const MATERIALS_CONFIG = {
   BALL_GROUND: { friction: 0.08, restitution: 0.0 }, // 适当增加摩擦力，防止球滑太远
   BALL_PIN: { friction: 0.6, restitution: 0.1 }, // 大幅减少反弹，防止球往回走
   PIN_GROUND: { friction: 0.4, restitution: 0.05 }, // 减少球瓶反弹，让它们更容易倒下
-  PIN_PIN: { friction: 0.4, restitution: 0.2 } // 减少球瓶间反弹
+  PIN_PIN: { friction: 0.4, restitution: 0.2 }, // 减少球瓶间反弹
 } as const
 
 // 相机配置
@@ -33,13 +33,19 @@ export const CAMERA_CONFIG = {
   FOLLOW_HEIGHT: 8, // 跟随时相机的高度
   FIXED_VIEW: { x: 0, y: 8, z: -12 }, // 调整固定观看位置
   LERP_SPEED: 0.1, // 线性插值速度
-  SLOW_LERP_SPEED: 0.05 // 慢速线性插值速度
+  SLOW_LERP_SPEED: 0.05, // 慢速线性插值速度
 } as const
 
 // 球瓶位置配置
 export const PIN_POSITIONS = [
   [0, 1.0, -18.3], // 第1号球瓶，距离投球线18.288米（约-18.3）
-  [-0.6, 1.0, -19.2], [0.6, 1.0, -19.2], // 第二排，增加间距
-  [-1.2, 1.0, -20.1], [0, 1.0, -20.1], [1.2, 1.0, -20.1], // 第三排，增加间距
-  [-1.8, 1.0, -21.0], [-0.6, 1.0, -21.0], [0.6, 1.0, -21.0], [1.8, 1.0, -21.0] // 第四排，增加间距
-] as const 
+  [-0.6, 1.0, -19.2],
+  [0.6, 1.0, -19.2], // 第二排，增加间距
+  [-1.2, 1.0, -20.1],
+  [0, 1.0, -20.1],
+  [1.2, 1.0, -20.1], // 第三排，增加间距
+  [-1.8, 1.0, -21.0],
+  [-0.6, 1.0, -21.0],
+  [0.6, 1.0, -21.0],
+  [1.8, 1.0, -21.0], // 第四排，增加间距
+] as const

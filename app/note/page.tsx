@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -7,11 +7,7 @@ import { Calendar, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import ReactMarkdown from 'react-markdown'
-import { 
-  Card, 
-  CardContent, 
-  CardHeader
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { zhCN } from 'date-fns/locale'
 import NoteSpeedDial from './components/NoteSpeedDial'
 
@@ -42,7 +38,7 @@ export default function NotePage() {
         setLoading(false)
       }
     }
-    
+
     fetchNotes()
   }, [])
 
@@ -65,12 +61,10 @@ export default function NotePage() {
   // 获取Markdown摘要
   const getMarkdownPreview = (markdown: string, maxLength = 150) => {
     if (!markdown) return ''
-    
+
     // 移除Markdown语法字符
     const plainText = markdown.replace(/[#*`>-]/g, '').trim()
-    return plainText.length > maxLength 
-      ? plainText.substring(0, maxLength) + '...'
-      : plainText
+    return plainText.length > maxLength ? plainText.substring(0, maxLength) + '...' : plainText
   }
 
   // 渲染加载状态
@@ -78,10 +72,10 @@ export default function NotePage() {
     <div className="animate-pulse space-y-4">
       {Array.from({ length: 3 }, (_, i) => (
         <Card key={i} className="border p-0 dark:border-slate-700">
-          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-2 mx-4 mt-4"></div>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-4 mx-4"></div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-1 mx-4"></div>
-          <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mx-4 mb-4"></div>
+          <div className="mx-4 mt-4 mb-2 h-5 w-1/3 rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div className="mx-4 mb-4 h-4 w-1/4 rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div className="mx-4 mb-1 h-3 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
+          <div className="mx-4 mb-4 h-3 w-full rounded bg-gray-200 dark:bg-gray-700"></div>
         </Card>
       ))}
     </div>
@@ -89,10 +83,10 @@ export default function NotePage() {
 
   // 渲染空状态
   const renderEmptyState = () => (
-    <div className="text-center py-12">
+    <div className="py-12 text-center">
       <div className="text-muted-foreground">
-        <div className="text-4xl mb-4">📝</div>
-        <p className="text-lg font-medium mb-2">暂无笔记</p>
+        <div className="mb-4 text-4xl">📝</div>
+        <p className="mb-2 text-lg font-medium">暂无笔记</p>
         <p className="text-sm">请添加您的第一个笔记</p>
       </div>
     </div>
@@ -101,31 +95,25 @@ export default function NotePage() {
   // 渲染笔记卡片
   const renderNoteCard = (note: Note) => (
     <Link key={note.id} href={`/note/${note.id}`} passHref legacyBehavior>
-      <Card 
-        className="hover:shadow-md transition-all duration-200 hover:border-primary cursor-pointer"
-      >
+      <Card className="hover:border-primary cursor-pointer transition-all duration-200 hover:shadow-md">
         <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <h3 className="font-medium text-base hover:underline flex items-center">
+          <div className="flex items-start justify-between">
+            <h3 className="flex items-center text-base font-medium hover:underline">
               {note.title || '(无标题)'}
-              {!!note.is_draft && (
-                <Lock className="ml-2 h-4 w-4 text-muted-foreground" />
-              )}
+              {!!note.is_draft && <Lock className="text-muted-foreground ml-2 h-4 w-4" />}
             </h3>
           </div>
-          
-          <div className="text-sm text-muted-foreground mt-1 flex items-center">
+
+          <div className="text-muted-foreground mt-1 flex items-center text-sm">
             <Calendar className="mr-1 h-3 w-3" />
             <span>更新于 {formatDate(note.updated_at)}</span>
           </div>
         </CardHeader>
-        
+
         <CardContent className="py-2">
-          <div className="text-sm text-muted-foreground prose prose-sm max-w-none">
+          <div className="text-muted-foreground prose prose-sm max-w-none text-sm">
             {note.content_markdown ? (
-              <ReactMarkdown>
-                {getMarkdownPreview(note.content_markdown)}
-              </ReactMarkdown>
+              <ReactMarkdown>{getMarkdownPreview(note.content_markdown)}</ReactMarkdown>
             ) : (
               <span className="italic">(无内容)</span>
             )}
@@ -137,23 +125,19 @@ export default function NotePage() {
 
   return (
     <div className="container mx-auto py-4">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-foreground">笔记列表</h2>
-        <div className="text-sm text-muted-foreground">
-          共 {sortedNotes.length} 个笔记
-        </div>
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-foreground text-xl font-semibold">笔记列表</h2>
+        <div className="text-muted-foreground text-sm">共 {sortedNotes.length} 个笔记</div>
       </div>
-      
+
       {loading ? (
         renderLoadingState()
       ) : sortedNotes.length === 0 ? (
         renderEmptyState()
       ) : (
-        <div className="space-y-4">
-          {sortedNotes.map(renderNoteCard)}
-        </div>
+        <div className="space-y-4">{sortedNotes.map(renderNoteCard)}</div>
       )}
-      
+
       <NoteSpeedDial />
     </div>
   )

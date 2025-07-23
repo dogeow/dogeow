@@ -1,4 +1,4 @@
-import { create } from "zustand"
+import { create } from 'zustand'
 
 interface EditorState {
   isDirty: boolean
@@ -7,9 +7,9 @@ interface EditorState {
   setSaveDraft: (fn: (() => Promise<void>) | undefined) => void
 }
 
-export const useEditorStore = create<EditorState>((set) => ({
+export const useEditorStore = create<EditorState>(set => ({
   isDirty: false,
-  setDirty: (dirty) => set({ isDirty: dirty }),
+  setDirty: dirty => set({ isDirty: dirty }),
   saveDraft: undefined,
-  setSaveDraft: (fn) => set({ saveDraft: fn }),
-})) 
+  setSaveDraft: fn => set({ saveDraft: fn }),
+}))

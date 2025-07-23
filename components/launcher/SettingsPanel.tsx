@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React from 'react'
 import { BackButton } from '@/components/ui/back-button'
@@ -24,12 +24,12 @@ interface SettingsPanelProps {
   setCustomBackgrounds: React.Dispatch<React.SetStateAction<CustomBackground[]>>
 }
 
-export function SettingsPanel({ 
-  toggleDisplayMode, 
-  backgroundImage, 
+export function SettingsPanel({
+  toggleDisplayMode,
+  backgroundImage,
   setBackgroundImage,
   customBackgrounds,
-  setCustomBackgrounds
+  setCustomBackgrounds,
 }: SettingsPanelProps) {
   const {
     currentView,
@@ -44,12 +44,12 @@ export function SettingsPanel({
     handleAddCustomTheme,
     handleRemoveCustomTheme,
     handleToggleFollowSystem,
-    handleToggleProjectCovers
+    handleToggleProjectCovers,
   } = useSettingsPanel({
     backgroundImage,
     setBackgroundImage,
     customBackgrounds,
-    setCustomBackgrounds
+    setCustomBackgrounds,
   })
 
   const renderCurrentView = () => {
@@ -64,7 +64,7 @@ export function SettingsPanel({
             onUploadBackground={handleUploadBackground}
           />
         )
-      
+
       case 'theme':
         return (
           <ThemeView
@@ -76,18 +76,15 @@ export function SettingsPanel({
             onAddTheme={handleAddCustomTheme}
           />
         )
-      
+
       default:
         return (
           <>
             {/* 返回按钮 */}
-            <BackButton 
-              onClick={() => toggleDisplayMode('apps')}
-              className="shrink-0"
-            />
-            
+            <BackButton onClick={() => toggleDisplayMode('apps')} className="shrink-0" />
+
             <SettingsDivider />
-            
+
             {/* 主视图选项 */}
             <MainView
               onNavigateToBackground={() => setCurrentView('background')}
@@ -103,8 +100,8 @@ export function SettingsPanel({
   }
 
   return (
-    <div className="w-full h-full flex items-center space-x-3 overflow-x-auto scrollbar-none">
+    <div className="scrollbar-none flex h-full w-full items-center space-x-3 overflow-x-auto">
       {renderCurrentView()}
     </div>
   )
-} 
+}

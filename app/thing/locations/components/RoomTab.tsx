@@ -1,47 +1,50 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Pencil, Trash2 } from "lucide-react"
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Pencil, Trash2 } from 'lucide-react'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from '@/components/ui/select'
 import { Area, Room } from '../hooks/useLocationManagement'
 
 interface RoomTabProps {
-  rooms: Room[];
-  areas: Area[];
-  loading: boolean;
-  onAddRoom: (name: string, areaId: number) => Promise<boolean | undefined>;
-  onUpdateRoom: (roomId: number, data: { name: string, area_id: number }) => Promise<boolean | undefined>;
-  onDeleteRoom: (roomId: number) => void;
+  rooms: Room[]
+  areas: Area[]
+  loading: boolean
+  onAddRoom: (name: string, areaId: number) => Promise<boolean | undefined>
+  onUpdateRoom: (
+    roomId: number,
+    data: { name: string; area_id: number }
+  ) => Promise<boolean | undefined>
+  onDeleteRoom: (roomId: number) => void
 }
 
-export default function RoomTab({ 
-  rooms, 
-  areas, 
-  loading, 
-  onUpdateRoom, 
-  onDeleteRoom 
+export default function RoomTab({
+  rooms,
+  areas,
+  loading,
+  onUpdateRoom,
+  onDeleteRoom,
 }: RoomTabProps) {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
 
   const handleUpdateRoom = async () => {
-    if (!editingRoom) return;
+    if (!editingRoom) return
     const success = await onUpdateRoom(editingRoom.id, {
       name: editingRoom.name,
-      area_id: editingRoom.area_id
-    });
+      area_id: editingRoom.area_id,
+    })
     if (success) {
-      setEditingRoom(null);
+      setEditingRoom(null)
     }
-  };
+  }
 
   return (
     <div className="flex flex-col">
@@ -50,9 +53,7 @@ export default function RoomTab({
         <div className="mb-6 border-b pb-6">
           <div className="mb-4">
             <h3 className="text-lg font-semibold">编辑房间</h3>
-            <p className="text-sm text-muted-foreground">
-              修改房间的信息
-            </p>
+            <p className="text-muted-foreground text-sm">修改房间的信息</p>
           </div>
           <div>
             <div className="space-y-4">
@@ -62,22 +63,24 @@ export default function RoomTab({
                   id="roomName"
                   placeholder="输入房间名称，如：卧室、厨房"
                   value={editingRoom.name}
-                  onChange={(e) => setEditingRoom({...editingRoom, name: e.target.value})}
-                  onKeyDown={(e) => e.key === 'Enter' && handleUpdateRoom()}
+                  onChange={e => setEditingRoom({ ...editingRoom, name: e.target.value })}
+                  onKeyDown={e => e.key === 'Enter' && handleUpdateRoom()}
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="areaSelect">所属区域</Label>
                 <Select
                   value={String(editingRoom.area_id)}
-                  onValueChange={(value) => setEditingRoom({...editingRoom, area_id: parseInt(value)})}
+                  onValueChange={value =>
+                    setEditingRoom({ ...editingRoom, area_id: parseInt(value) })
+                  }
                 >
                   <SelectTrigger id="areaSelect">
                     <SelectValue placeholder="选择区域" />
                   </SelectTrigger>
                   <SelectContent>
-                    {areas.map((area) => (
+                    {areas.map(area => (
                       <SelectItem key={area.id} value={area.id.toString()}>
                         {area.name}
                       </SelectItem>
@@ -87,11 +90,11 @@ export default function RoomTab({
               </div>
             </div>
           </div>
-          <div className="flex justify-between mt-4">
+          <div className="mt-4 flex justify-between">
             <Button variant="outline" onClick={() => setEditingRoom(null)}>
               取消
             </Button>
-            <Button 
+            <Button
               onClick={handleUpdateRoom}
               disabled={loading || !editingRoom.area_id || !editingRoom.name.trim()}
             >
@@ -105,34 +108,28 @@ export default function RoomTab({
       <div>
         <div>
           {rooms.length === 0 ? (
-            <div className="text-center py-4 text-muted-foreground">
+            <div className="text-muted-foreground py-4 text-center">
               暂无房间，请点击右下角的&quot;+&quot;按钮添加房间
             </div>
           ) : (
             <div className="space-y-2">
-              {rooms.map((room) => (
-                <div key={room.id} className="flex items-center justify-between p-2 border rounded-md"
+              {rooms.map(room => (
+                <div
+                  key={room.id}
+                  className="flex items-center justify-between rounded-md border p-2"
                 >
                   <div>
                     <span className="font-medium">{room.name}</span>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-muted-foreground text-xs">
                       区域: {room.area?.name || `未知区域 (ID: ${room.area_id})`}
                     </p>
                   </div>
                   <div className="flex space-x-2">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => setEditingRoom(room)}
-                    >
-                      <Pencil className="h-4 w-4"/>
+                    <Button variant="ghost" size="icon" onClick={() => setEditingRoom(room)}>
+                      <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      onClick={() => onDeleteRoom(room.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
+                    <Button variant="ghost" size="icon" onClick={() => onDeleteRoom(room.id)}>
+                      <Trash2 className="text-destructive h-4 w-4" />
                     </Button>
                   </div>
                 </div>
@@ -143,4 +140,4 @@ export default function RoomTab({
       </div>
     </div>
   )
-} 
+}

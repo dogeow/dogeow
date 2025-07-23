@@ -1,31 +1,26 @@
-"use client"
+'use client'
 
 import React from 'react'
 import { motion } from 'framer-motion'
-import { FolderOpen, FolderClosed } from "lucide-react"
+import { FolderOpen, FolderClosed } from 'lucide-react'
 import { cn } from '@/lib/helpers'
 
 interface FolderIconProps {
-  isOpen: boolean;
-  onClick?: (e: React.MouseEvent) => void;
-  className?: string;
-  size?: number;
+  isOpen: boolean
+  onClick?: (e: React.MouseEvent) => void
+  className?: string
+  size?: number
 }
 
-const FolderIcon: React.FC<FolderIconProps> = ({ 
-  isOpen, 
-  onClick, 
-  className,
-  size = 20
-}) => {
-  const transition = { duration: 0.2 };
-  
+const FolderIcon: React.FC<FolderIconProps> = ({ isOpen, onClick, className, size = 20 }) => {
+  const transition = { duration: 0.2 }
+
   return (
-    <div 
-      onClick={onClick} 
+    <div
+      onClick={onClick}
       className={cn(
-        "relative cursor-pointer transition-colors",
-        isOpen ? "text-primary" : "text-muted-foreground hover:text-primary/80",
+        'relative cursor-pointer transition-colors',
+        isOpen ? 'text-primary' : 'text-muted-foreground hover:text-primary/80',
         className
       )}
     >
@@ -45,7 +40,7 @@ const FolderIcon: React.FC<FolderIconProps> = ({
         <FolderOpen size={size} />
       </motion.div>
     </div>
-  );
-};
+  )
+}
 
-export default FolderIcon; 
+export default FolderIcon

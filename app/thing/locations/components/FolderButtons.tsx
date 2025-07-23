@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import React, { useState } from 'react'
 import { cn } from '@/lib/helpers'
@@ -17,7 +17,7 @@ const FolderButtons: React.FC<FolderButtonsProps> = ({ onFolderSelect }) => {
     } else {
       setActiveFolder(type)
     }
-    
+
     if (onFolderSelect) {
       onFolderSelect(type)
     }
@@ -31,30 +31,26 @@ const FolderButtons: React.FC<FolderButtonsProps> = ({ onFolderSelect }) => {
   ]
 
   return (
-    <div className="flex items-center justify-center gap-4 p-2 mb-4">
-      {folders.map((folder) => (
+    <div className="mb-4 flex items-center justify-center gap-4 p-2">
+      {folders.map(folder => (
         <button
           key={folder.id}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 p-1 rounded-lg transition-colors",
-            activeFolder === folder.id ? "bg-primary/10" : "hover:bg-primary/5"
+            'flex flex-col items-center justify-center gap-1 rounded-lg p-1 transition-colors',
+            activeFolder === folder.id ? 'bg-primary/10' : 'hover:bg-primary/5'
           )}
           onClick={() => handleFolderClick(folder.id)}
         >
           <FolderIcon
             isOpen={activeFolder === folder.id}
             size={24}
-            className={cn(
-              activeFolder === folder.id ? "text-primary" : "text-muted-foreground"
-            )}
+            className={cn(activeFolder === folder.id ? 'text-primary' : 'text-muted-foreground')}
           />
-          <span className="text-xs font-medium">
-            {folder.label}
-          </span>
+          <span className="text-xs font-medium">{folder.label}</span>
         </button>
       ))}
     </div>
   )
 }
 
-export default FolderButtons 
+export default FolderButtons
