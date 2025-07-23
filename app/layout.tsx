@@ -8,6 +8,7 @@ import './globals.css'
 import 'prismjs/themes/prism.css'
 import './note/styles/prism.css'
 import { SWRProvider } from '@/components/provider/SWRProvider'
+import ProtectedRoute from '@/components/ProtectedRoute'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -56,7 +57,9 @@ export default function RootLayout({
             </div>
             <div id="main-container" className="flex-1 overflow-x-hidden">
               <div className="mx-auto h-full w-full max-w-7xl p-0">
-                <BackgroundWrapper>{children}</BackgroundWrapper>
+                <BackgroundWrapper>
+                  <ProtectedRoute>{children}</ProtectedRoute>
+                </BackgroundWrapper>
               </div>
             </div>
             <Toaster />

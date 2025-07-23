@@ -212,32 +212,38 @@ function NavContent() {
   )
 }
 
+// 加载骨架屏组件
+const LoadingSkeleton = () => (
+  <div className="flex p-4">
+    <aside className="w-20 shrink-0">
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="bg-muted h-8 animate-pulse rounded" />
+        ))}
+      </div>
+    </aside>
+    <div className="mx-2 flex-1">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="bg-muted h-8 w-32 animate-pulse rounded" />
+        <div className="flex gap-2">
+          <div className="bg-muted h-8 w-20 animate-pulse rounded" />
+          <div className="bg-muted h-8 w-20 animate-pulse rounded" />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="bg-muted h-24 animate-pulse rounded" />
+        ))}
+      </div>
+    </div>
+  </div>
+)
+
 // 主页面组件
 export default function NavPage() {
   return (
     <Suspense fallback={<LoadingSkeleton />}>
       <NavContent />
     </Suspense>
-  )
-}
-
-// 加载骨架屏组件
-function LoadingSkeleton() {
-  return (
-    <div className="space-y-4">
-      {[1, 2, 3].map(i => (
-        <div key={i} className="animate-pulse">
-          <div className="mb-2 h-4 w-1/4 rounded bg-gray-200"></div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map(j => (
-              <div key={j} className="rounded-lg bg-gray-100 p-4">
-                <div className="mb-2 h-4 w-3/4 rounded bg-gray-200"></div>
-                <div className="h-3 w-1/2 rounded bg-gray-200"></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
   )
 }

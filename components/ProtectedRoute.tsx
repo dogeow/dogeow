@@ -1,8 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { useEffect, useState, useCallback } from 'react'
 import useAuthStore from '@/stores/authStore'
+import { configs } from '@/app/configs'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -10,6 +11,7 @@ interface ProtectedRouteProps {
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const { isAuthenticated, loading } = useAuthStore()
   const [isClient, setIsClient] = useState(false)
 
@@ -18,12 +20,27 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     setIsClient(true)
   }, [])
 
+  // 根据当前路径判断是否需要登录保护
+  const needsProtection = useCallback(() => {
+    // 查找匹配的瓦片配置
+    const matchingTile = configs.tiles.find(tile => pathname.startsWith(tile.href))
+
+    // 如果找到匹配的瓦片，使用其 needLogin 配置
+    if (matchingTile) {
+      return matchingTile.needLogin === true
+    }
+
+    // 对于一些特殊路径，直接判断
+    const protectedPaths = ['/dashboard'] // dashboard 不在 tiles 配置中但需要保护
+    return protectedPaths.some(path => pathname.startsWith(path))
+  }, [pathname])
+
   useEffect(() => {
-    // 如果认证状态已加载完成且用户未认证，则重定向到首页
-    if (isClient && !loading && !isAuthenticated) {
+    // 只有需要保护的路径才进行登录检查
+    if (isClient && !loading && needsProtection() && !isAuthenticated) {
       router.push('/')
     }
-  }, [isClient, isAuthenticated, loading, router])
+  }, [isClient, isAuthenticated, loading, router, needsProtection])
 
   // 在服务端渲染或客户端初始化时，显示加载状态
   if (!isClient || loading) {
@@ -34,6 +51,6 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  // 如果用户已认证，显示受保护的内容
-  return isAuthenticated ? <>{children}</> : null
+  // 如果不需要保护，或者用户已认证，显示内容
+  return !needsProtection() || isAuthenticated ? <>{children}</> : null
 }
