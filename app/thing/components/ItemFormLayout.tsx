@@ -30,12 +30,7 @@ export default function ItemFormLayout({
     <div className="container mx-auto py-2">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onBack}
-            className="mr-4"
-          >
+          <Button variant="outline" size="icon" onClick={onBack} className="mr-4">
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl font-bold md:text-3xl">{title}</h1>
@@ -62,11 +57,7 @@ export default function ItemFormLayout({
           </TabsContent>
         </Tabs>
 
-        {footer && (
-          <div className="mt-6 flex justify-end">
-            {footer}
-          </div>
-        )}
+        {footer && <div className="mt-6 flex justify-end">{footer}</div>}
       </div>
     </div>
   )

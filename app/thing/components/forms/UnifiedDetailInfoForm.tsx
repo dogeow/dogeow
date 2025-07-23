@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
 import { DatePicker } from '@/components/ui/date-picker'
-import { format } from 'date-fns'
 import { ItemFormData } from '../../types'
 import { ItemFormSchemaType } from './formConstants'
 
@@ -23,7 +22,7 @@ type FormDataType = ItemFormSchemaType
 interface UnifiedDetailInfoFormProps {
   // React Hook Form 相关 (用于创建页面)
   formMethods?: UseFormReturn<FormDataType>
-  
+
   // 直接状态管理相关 (用于编辑页面)
   formData?: ItemFormData
   setFormData?: Dispatch<SetStateAction<ItemFormData>>
@@ -39,25 +38,31 @@ export default function UnifiedDetailInfoForm({
   const isEditMode = !!formData && !!setFormData
 
   // 获取当前表单值的辅助函数
-  const getCurrentValue = useCallback((field: keyof FormDataType | keyof ItemFormData) => {
-    if (isCreateMode && formMethods) {
-      return formMethods.watch(field as keyof FormDataType)
-    }
-    if (isEditMode && formData) {
-      return formData[field as keyof ItemFormData]
-    }
-    return ''
-  }, [isCreateMode, formMethods, isEditMode, formData])
+  const getCurrentValue = useCallback(
+    (field: keyof FormDataType | keyof ItemFormData) => {
+      if (isCreateMode && formMethods) {
+        return formMethods.watch(field as keyof FormDataType)
+      }
+      if (isEditMode && formData) {
+        return formData[field as keyof ItemFormData]
+      }
+      return ''
+    },
+    [isCreateMode, formMethods, isEditMode, formData]
+  )
 
   // 设置表单值的辅助函数
-  const setCurrentValue = useCallback((field: keyof FormDataType | keyof ItemFormData, value: unknown) => {
-    if (isCreateMode && formMethods) {
-      formMethods.setValue(field as keyof FormDataType, value as FormDataType[keyof FormDataType])
-    }
-    if (isEditMode && setFormData) {
-      setFormData(prev => ({ ...prev, [field]: value }))
-    }
-  }, [isCreateMode, formMethods, isEditMode, setFormData])
+  const setCurrentValue = useCallback(
+    (field: keyof FormDataType | keyof ItemFormData, value: unknown) => {
+      if (isCreateMode && formMethods) {
+        formMethods.setValue(field as keyof FormDataType, value as FormDataType[keyof FormDataType])
+      }
+      if (isEditMode && setFormData) {
+        setFormData(prev => ({ ...prev, [field]: value }))
+      }
+    },
+    [isCreateMode, formMethods, isEditMode, setFormData]
+  )
 
   // 渲染描述输入框
   const renderDescriptionInput = () => {
@@ -77,7 +82,7 @@ export default function UnifiedDetailInfoForm({
           id="description"
           rows={4}
           value={formData.description}
-          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+          onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
         />
       )
     }
@@ -122,7 +127,7 @@ export default function UnifiedDetailInfoForm({
 
     if (isEditMode) {
       return (
-        <Select value={currentStatus} onValueChange={handleStatusChange}>
+        <Select value={currentStatus as string} onValueChange={handleStatusChange}>
           <SelectTrigger id="status" className="h-10 w-full">
             <SelectValue placeholder="选择状态" />
           </SelectTrigger>
@@ -166,7 +171,11 @@ export default function UnifiedDetailInfoForm({
 
     if (isEditMode) {
       return (
-        <Switch id="is_public" checked={currentIsPublic} onCheckedChange={handlePublicChange} />
+        <Switch
+          id="is_public"
+          checked={currentIsPublic as boolean}
+          onCheckedChange={handlePublicChange}
+        />
       )
     }
 
@@ -174,12 +183,12 @@ export default function UnifiedDetailInfoForm({
   }
 
   // 渲染日期选择器
-  const renderDatePicker = (fieldName: string, placeholder: string) => {
+  const renderDatePicker = (fieldName: keyof FormDataType, placeholder: string) => {
     const currentDate = getCurrentValue(fieldName)
 
     const handleDateChange = (date: Date | null) => {
       if (isCreateMode && formMethods) {
-        formMethods.setValue(fieldName, date)
+        formMethods.setValue(fieldName, date as FormDataType[keyof FormDataType])
       }
       if (isEditMode && setFormData) {
         setFormData(prev => ({ ...prev, [fieldName]: date }))
@@ -193,7 +202,11 @@ export default function UnifiedDetailInfoForm({
           control={formMethods.control}
           render={({ field }) => (
             <DatePicker
-              date={field.value ? new Date(field.value) : null}
+              date={
+                field.value && typeof field.value !== 'boolean'
+                  ? new Date(field.value as string | number | Date)
+                  : null
+              }
               setDate={field.onChange}
               placeholder={placeholder}
             />
@@ -205,7 +218,7 @@ export default function UnifiedDetailInfoForm({
     if (isEditMode) {
       return (
         <DatePicker
-          date={currentDate}
+          date={currentDate as Date | null}
           setDate={handleDateChange}
           placeholder={placeholder}
         />
@@ -253,7 +266,7 @@ export default function UnifiedDetailInfoForm({
           step="0.01"
           min="0"
           placeholder="0.00"
-          value={currentPrice !== null ? currentPrice : ''}
+          value={(currentPrice as number) !== null ? (currentPrice as number) : ''}
           onChange={handlePriceChange}
         />
       )
@@ -278,9 +291,7 @@ export default function UnifiedDetailInfoForm({
 
           <div className="space-y-2">
             <Label htmlFor="is_public">公开物品</Label>
-            <div className="flex h-10 items-center">
-              {renderPublicSwitch()}
-            </div>
+            <div className="flex h-10 items-center">{renderPublicSwitch()}</div>
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -29,11 +29,11 @@ type FormDataType = ItemFormSchemaType
 interface UnifiedBasicInfoFormProps {
   // React Hook Form 相关 (用于创建页面)
   formMethods?: UseFormReturn<FormDataType>
-  
+
   // 直接状态管理相关 (用于编辑页面)
   formData?: ItemFormData
   setFormData?: Dispatch<SetStateAction<ItemFormData>>
-  
+
   // 共同的 props
   tags: Tag[]
   selectedTags: string[]
@@ -42,12 +42,12 @@ interface UnifiedBasicInfoFormProps {
   categories: Category[]
   uploadedImages: UploadedImage[]
   setUploadedImages: Dispatch<SetStateAction<UploadedImage[]>>
-  
+
   // 位置相关 (仅创建页面需要)
   watchAreaId?: string
   watchRoomId?: string
   watchSpotId?: string
-  
+
   // 位置相关 (仅编辑页面需要)
   locationPath?: string
   selectedLocation?: LocationSelection
@@ -81,7 +81,8 @@ export default function UnifiedBasicInfoForm({
   const [rooms, setRooms] = useState<Location[]>([])
   const [spots, setSpots] = useState<Location[]>([])
   const [internalLocationPath, setInternalLocationPath] = useState<string>('')
-  const [internalSelectedLocation, setInternalSelectedLocation] = useState<LocationSelection>(undefined)
+  const [internalSelectedLocation, setInternalSelectedLocation] =
+    useState<LocationSelection>(undefined)
 
   // 数量设置对话框状态
   const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
@@ -91,25 +92,31 @@ export default function UnifiedBasicInfoForm({
   const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(undefined)
 
   // 获取当前表单值的辅助函数
-  const getCurrentValue = useCallback((field: keyof FormDataType | keyof ItemFormData) => {
-    if (isCreateMode && formMethods) {
-      return formMethods.watch(field as keyof FormDataType)
-    }
-    if (isEditMode && formData) {
-      return formData[field as keyof ItemFormData]
-    }
-    return ''
-  }, [isCreateMode, formMethods, isEditMode, formData])
+  const getCurrentValue = useCallback(
+    (field: keyof FormDataType | keyof ItemFormData) => {
+      if (isCreateMode && formMethods) {
+        return formMethods.watch(field as keyof FormDataType)
+      }
+      if (isEditMode && formData) {
+        return formData[field as keyof ItemFormData]
+      }
+      return ''
+    },
+    [isCreateMode, formMethods, isEditMode, formData]
+  )
 
   // 设置表单值的辅助函数
-  const setCurrentValue = useCallback((field: keyof FormDataType | keyof ItemFormData, value: unknown) => {
-    if (isCreateMode && formMethods) {
-      formMethods.setValue(field as keyof FormDataType, value as FormDataType[keyof FormDataType])
-    }
-    if (isEditMode && setFormData) {
-      setFormData(prev => ({ ...prev, [field]: value }))
-    }
-  }, [isCreateMode, formMethods, isEditMode, setFormData])
+  const setCurrentValue = useCallback(
+    (field: keyof FormDataType | keyof ItemFormData, value: unknown) => {
+      if (isCreateMode && formMethods) {
+        formMethods.setValue(field as keyof FormDataType, value as FormDataType[keyof FormDataType])
+      }
+      if (isEditMode && setFormData) {
+        setFormData(prev => ({ ...prev, [field]: value }))
+      }
+    },
+    [isCreateMode, formMethods, isEditMode, setFormData]
+  )
 
   // 获取标签样式
   const getTagStyle = (color: string = '#3b82f6') => ({
@@ -146,7 +153,7 @@ export default function UnifiedBasicInfoForm({
   }, [formMethods, formData, categories, getCurrentValue])
 
   // 位置相关函数 (仅创建模式需要)
-  const loadAreas = async () => {
+  const loadAreas = useCallback(async () => {
     if (!isCreateMode) return []
     try {
       const data = await apiRequest<Location[]>('/areas')
@@ -156,39 +163,45 @@ export default function UnifiedBasicInfoForm({
       console.error('加载区域失败', error)
       return []
     }
-  }
+  }, [isCreateMode])
 
-  const loadRooms = async (areaId: string) => {
-    if (!isCreateMode || !areaId) {
-      setRooms([])
-      return []
-    }
+  const loadRooms = useCallback(
+    async (areaId: string) => {
+      if (!isCreateMode || !areaId) {
+        setRooms([])
+        return []
+      }
 
-    try {
-      const data = await apiRequest<Location[]>(`/areas/${areaId}/rooms`)
-      setRooms(data)
-      return data
-    } catch (error) {
-      console.error('加载房间失败', error)
-      return []
-    }
-  }
+      try {
+        const data = await apiRequest<Location[]>(`/areas/${areaId}/rooms`)
+        setRooms(data)
+        return data
+      } catch (error) {
+        console.error('加载房间失败', error)
+        return []
+      }
+    },
+    [isCreateMode]
+  )
 
-  const loadSpots = async (roomId: string) => {
-    if (!isCreateMode || !roomId) {
-      setSpots([])
-      return []
-    }
+  const loadSpots = useCallback(
+    async (roomId: string) => {
+      if (!isCreateMode || !roomId) {
+        setSpots([])
+        return []
+      }
 
-    try {
-      const data = await apiRequest<Location[]>(`/rooms/${roomId}/spots`)
-      setSpots(data)
-      return data
-    } catch (error) {
-      console.error('加载位置失败', error)
-      return []
-    }
-  }
+      try {
+        const data = await apiRequest<Location[]>(`/rooms/${roomId}/spots`)
+        setSpots(data)
+        return data
+      } catch (error) {
+        console.error('加载位置失败', error)
+        return []
+      }
+    },
+    [isCreateMode]
+  )
 
   const handleLocationSelect = (type: LocationType, id: number, fullPath?: string) => {
     if (isCreateMode) {
@@ -275,22 +288,27 @@ export default function UnifiedBasicInfoForm({
     if (isCreateMode) {
       loadAreas()
     }
-  }, [isCreateMode])
+  }, [isCreateMode, loadAreas])
 
   useEffect(() => {
     if (isCreateMode && watchAreaId) {
       loadRooms(watchAreaId)
     }
-  }, [watchAreaId, isCreateMode])
+  }, [watchAreaId, isCreateMode, loadRooms])
 
   useEffect(() => {
     if (isCreateMode && watchRoomId) {
       loadSpots(watchRoomId)
     }
-  }, [watchRoomId, isCreateMode])
+  }, [watchRoomId, isCreateMode, loadSpots])
 
   useEffect(() => {
-    if (isCreateMode && watchAreaId !== undefined && watchRoomId !== undefined && watchSpotId !== undefined) {
+    if (
+      isCreateMode &&
+      watchAreaId !== undefined &&
+      watchRoomId !== undefined &&
+      watchSpotId !== undefined
+    ) {
       updateLocationPath(watchAreaId, watchRoomId, watchSpotId)
     }
   }, [watchAreaId, watchRoomId, watchSpotId, updateLocationPath, isCreateMode])
@@ -314,7 +332,7 @@ export default function UnifiedBasicInfoForm({
 
   // 处理数量设置
   const handleQuantityClick = () => {
-    const currentQuantity = getCurrentValue('quantity') || 1
+    const currentQuantity = (getCurrentValue('quantity') as number) || 1
     setTempQuantity(currentQuantity)
     setQuantityDialogOpen(true)
   }
@@ -342,7 +360,7 @@ export default function UnifiedBasicInfoForm({
           id="name"
           className="h-10 flex-1"
           value={formData.name}
-          onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+          onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
         />
       )
     }
@@ -365,7 +383,7 @@ export default function UnifiedBasicInfoForm({
                 className="h-10 px-3 text-sm font-medium"
                 onClick={handleQuantityClick}
               >
-                X{getCurrentValue('quantity') || 1}
+                X{(getCurrentValue('quantity') as number) || 1}
               </Button>
             </div>
             {isCreateMode && formMethods?.formState.errors.name && (
@@ -383,10 +401,10 @@ export default function UnifiedBasicInfoForm({
 
           <div className="space-y-2">
             <Label htmlFor="images">物品图片</Label>
-            <ImageUploader 
-              onImagesChange={setUploadedImages} 
-              existingImages={uploadedImages} 
-              maxImages={10} 
+            <ImageUploader
+              onImagesChange={setUploadedImages}
+              existingImages={uploadedImages}
+              maxImages={10}
             />
           </div>
 

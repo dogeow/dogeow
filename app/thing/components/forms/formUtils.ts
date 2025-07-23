@@ -1,6 +1,28 @@
 import { ItemFormData } from '../../types'
 import { ItemFormSchemaType } from './formConstants'
 
+// API 返回的物品数据类型
+interface ApiItemData {
+  name?: string
+  description?: string
+  quantity?: number
+  status?: string
+  purchase_date?: string | null
+  expiry_date?: string | null
+  purchase_price?: number | null
+  category_id?: string | number
+  spot_id?: string | number
+  spot?: {
+    room?: {
+      id?: number
+      area?: {
+        id?: number
+      }
+    }
+  }
+  is_public?: boolean
+}
+
 /**
  * 将表单数据转换为API提交格式
  */
@@ -14,30 +36,24 @@ export function transformFormDataForSubmit(
     description: data.description,
     quantity: data.quantity,
     status: data.status,
-    purchase_date: data.purchase_date
-      ? data.purchase_date.toISOString().split('T')[0]
-      : null,
-    expiry_date: data.expiry_date
-      ? data.expiry_date.toISOString().split('T')[0]
-      : null,
+    purchase_date: data.purchase_date ?? null,
+    expiry_date: data.expiry_date ?? null,
     purchase_price: data.purchase_price,
-    category_id:
-      data.category_id && data.category_id !== 'none' ? Number(data.category_id) : null,
-    area_id: data.area_id ? Number(data.area_id) : null,
-    room_id: data.room_id ? Number(data.room_id) : null,
-    spot_id: data.spot_id ? Number(data.spot_id) : null,
+    category_id: data.category_id ? String(data.category_id) : '',
+    area_id: data.area_id ? String(data.area_id) : '',
+    room_id: data.room_id ? String(data.room_id) : '',
+    spot_id: data.spot_id ? String(data.spot_id) : '',
     is_public: data.is_public,
     thumbnail_url: null,
     image_paths: uploadedImages.map(img => img.path),
-    tags:
-      selectedTags.length > 0 ? (selectedTags.map(id => Number(id)) as number[]) : undefined,
+    tags: selectedTags.length > 0 ? (selectedTags.map(id => Number(id)) as number[]) : undefined,
   }
 }
 
 /**
  * 将API数据转换为表单格式
  */
-export function transformApiDataToFormData(item: any): ItemFormSchemaType {
+export function transformApiDataToFormData(item: ApiItemData): ItemFormSchemaType {
   return {
     name: item.name || '',
     description: item.description || '',

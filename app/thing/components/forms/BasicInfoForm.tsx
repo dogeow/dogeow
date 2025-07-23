@@ -17,8 +17,7 @@ import {
 import ImageUploader from '../ImageUploader'
 import LocationComboboxSelectSimple from '../LocationComboboxSelectSimple'
 import CategoryTreeSelect, { CategorySelection } from '../CategoryTreeSelect'
-import { ItemFormData, Category } from '../../types'
-import { TagType, Location, LocationType } from '../../add/page'
+import { ItemFormData, Category, Tag, Area, Room, Spot } from '../../types'
 import { LocationSelection } from '../LocationComboboxSelectSimple'
 import { isLightColor } from '@/lib/helpers'
 import { apiRequest } from '@/lib/api'
@@ -32,7 +31,7 @@ type UploadedImage = {
 
 interface BasicInfoFormProps {
   formMethods: UseFormReturn<ItemFormData>
-  tags: TagType[]
+  tags: Tag[]
   selectedTags: string[]
   setSelectedTags: Dispatch<SetStateAction<string[]>>
   setCreateTagDialogOpen: Dispatch<SetStateAction<boolean>>
@@ -62,9 +61,9 @@ export default function BasicInfoForm({
   } = formMethods
 
   // 位置相关状态
-  const [areas, setAreas] = useState<Location[]>([])
-  const [rooms, setRooms] = useState<Location[]>([])
-  const [spots, setSpots] = useState<Location[]>([])
+  const [areas, setAreas] = useState<Area[]>([])
+  const [rooms, setRooms] = useState<Room[]>([])
+  const [spots, setSpots] = useState<Spot[]>([])
   const [locationPath, setLocationPath] = useState<string>('')
   const [selectedLocation, setSelectedLocation] = useState<LocationSelection>(undefined)
 
@@ -112,7 +111,7 @@ export default function BasicInfoForm({
   // 位置相关函数
   const loadAreas = async () => {
     try {
-      const data = await apiRequest<Location[]>('/areas')
+      const data = await apiRequest<Area[]>('/areas')
       setAreas(data)
       return data
     } catch (error) {
@@ -128,7 +127,7 @@ export default function BasicInfoForm({
     }
 
     try {
-      const data = await apiRequest<Location[]>(`/areas/${areaId}/rooms`)
+      const data = await apiRequest<Room[]>(`/areas/${areaId}/rooms`)
       setRooms(data)
       return data
     } catch (error) {
@@ -144,7 +143,7 @@ export default function BasicInfoForm({
     }
 
     try {
-      const data = await apiRequest<Location[]>(`/rooms/${roomId}/spots`)
+      const data = await apiRequest<Spot[]>(`/rooms/${roomId}/spots`)
       setSpots(data)
       return data
     } catch (error) {
@@ -153,7 +152,7 @@ export default function BasicInfoForm({
     }
   }
 
-  const handleLocationSelect = (type: LocationType, id: number, fullPath?: string) => {
+  const handleLocationSelect = (type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => {
     setSelectedLocation({ type, id })
     setLocationPath(fullPath || '')
 

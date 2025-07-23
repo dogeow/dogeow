@@ -51,13 +51,13 @@ export function useItemEdit() {
   const handleAutoSave = useCallback(async () => {
     const updateData: Parameters<typeof updateItem>[1] = {
       ...formData,
-      purchase_date: formData.purchase_date?.toISOString() || null,
-      expiry_date: formData.expiry_date?.toISOString() || null,
+      purchase_date: formData.purchase_date ?? null,
+      expiry_date: formData.expiry_date ?? null,
       purchase_price: formData.purchase_price ? Number(formData.purchase_price) : null,
-      category_id: formData.category_id ? Number(formData.category_id) : null,
-      area_id: formData.area_id ? Number(formData.area_id) : null,
-      room_id: formData.room_id ? Number(formData.room_id) : null,
-      spot_id: formData.spot_id ? Number(formData.spot_id) : null,
+      category_id: formData.category_id ? String(formData.category_id) : '',
+      area_id: formData.area_id ? String(formData.area_id) : '',
+      room_id: formData.room_id ? String(formData.room_id) : '',
+      spot_id: formData.spot_id ? String(formData.spot_id) : '',
       image_ids: uploadedImages
         .filter(img => img.id)
         .map(img => img.id!)

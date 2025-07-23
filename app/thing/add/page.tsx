@@ -2,21 +2,17 @@
 
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { useItemStore, ItemFormData } from '@/app/thing/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
+import { ItemFormData } from '@/app/thing/types'
 import ItemFormWrapper from '../components/forms/ItemFormWrapper'
-import { UploadedImage } from '../types'
 
 export default function AddItem() {
   const router = useRouter()
   const { createItem } = useItemStore()
 
-  const handleSubmit = async (
-    itemData: ItemFormData,
-    selectedTags: string[],
-    uploadedImages: UploadedImage[]
-  ) => {
+  const handleSubmit = async (itemData: ItemFormData) => {
     const toast_id = toast.loading('正在创建物品...')
-    
+
     try {
       const newItem = await createItem(itemData)
       toast.success('物品创建成功', { id: toast_id })
@@ -27,11 +23,5 @@ export default function AddItem() {
     }
   }
 
-  return (
-    <ItemFormWrapper
-      mode="create"
-      title="添加物品"
-      onSubmit={handleSubmit}
-    />
-  )
+  return <ItemFormWrapper mode="create" title="添加物品" onSubmit={handleSubmit} />
 }

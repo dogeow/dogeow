@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect, ReactNode } from 'react'
+import { useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { useItemStore, ItemFormData } from '@/app/thing/stores/itemStore'
+import { useItemStore } from '@/app/thing/stores/itemStore'
+import { ItemFormData } from '@/app/thing/types'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import ItemFormLayout from '../ItemFormLayout'
@@ -12,7 +13,13 @@ import UnifiedBasicInfoForm from './UnifiedBasicInfoForm'
 import UnifiedDetailInfoForm from './UnifiedDetailInfoForm'
 import CreateTagDialog from '../CreateTagDialog'
 import { UploadedImage, Tag } from '../../types'
-import { itemFormSchema, defaultFormValues, ItemFormSchemaType } from './formConstants'
+import {
+  itemFormSchema,
+  defaultFormValues,
+  ItemFormSchemaType,
+  LocationType,
+  SelectedLocation,
+} from './formConstants'
 import { transformFormDataForSubmit } from './formUtils'
 
 interface ItemFormWrapperProps {
@@ -21,17 +28,17 @@ interface ItemFormWrapperProps {
   initialData?: Partial<ItemFormData>
   uploadedImages?: UploadedImage[]
   selectedTags?: string[]
-  onUploadedImagesChange?: (images: UploadedImage[]) => void
-  onSelectedTagsChange?: (tags: string[]) => void
-  onSubmit?: (data: ItemFormData, selectedTags: string[], uploadedImages: UploadedImage[]) => Promise<void>
+  onUploadedImagesChange?: Dispatch<SetStateAction<UploadedImage[]>>
+  onSelectedTagsChange?: Dispatch<SetStateAction<string[]>>
+  onSubmit?: (data: ItemFormData) => Promise<void>
   autoSaving?: boolean
   lastSaved?: Date | null
   // 编辑模式特有的 props
   formData?: ItemFormData
   setFormData?: (data: ItemFormData | ((prev: ItemFormData) => ItemFormData)) => void
   locationPath?: string
-  selectedLocation?: any
-  onLocationSelect?: (type: any, id: number, fullPath?: string) => void
+  selectedLocation?: SelectedLocation
+  onLocationSelect?: (type: LocationType, id: number, fullPath?: string) => void
   watchAreaId?: string
   watchRoomId?: string
   watchSpotId?: string
@@ -110,7 +117,7 @@ export default function ItemFormWrapper({
 
     try {
       const itemData = transformFormDataForSubmit(data, uploadedImages, selectedTags)
-      await onSubmit(itemData, selectedTags, uploadedImages)
+      await onSubmit(itemData)
     } catch (error) {
       console.error('提交失败:', error)
       toast.error(error instanceof Error ? error.message : '发生错误，请重试')
@@ -176,12 +183,7 @@ export default function ItemFormWrapper({
       return <UnifiedDetailInfoForm formMethods={formMethods} />
     }
 
-    return (
-      <UnifiedDetailInfoForm
-        formData={formData}
-        setFormData={setFormData}
-      />
-    )
+    return <UnifiedDetailInfoForm formData={formData} setFormData={setFormData} />
   }
 
   return (

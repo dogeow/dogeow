@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { format } from 'date-fns'
 import { apiRequest, API_URL } from '@/lib/api'
-import { Item, Category, Tag } from '@/app/thing/types'
+import { Item, Category, Tag, ItemFormData } from '@/app/thing/types'
 
 // 前端专用过滤器，不发送到后端
 const FRONTEND_ONLY_FILTERS = [
@@ -87,13 +87,6 @@ const filterBackendParams = (params: ItemFilters) => {
   })
 
   return filtered
-}
-
-export type ItemFormData = Omit<Partial<Item>, 'images' | 'tags'> & {
-  images?: File[]
-  image_paths?: string[]
-  image_ids?: number[]
-  tags?: Tag[] | number[]
 }
 
 // 分页元数据类型

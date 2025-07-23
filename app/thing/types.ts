@@ -14,6 +14,7 @@ export interface ItemFormData {
   room_id: string
   spot_id: string
   is_public: boolean
+  [key: string]: unknown // 兼容 Record<string, unknown>
 }
 
 // 物品图片类型
