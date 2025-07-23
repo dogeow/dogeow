@@ -87,9 +87,13 @@ export default function BasicInfoForm({
   }
 
   // 处理分类选择
-  const handleCategorySelect = (type: 'parent' | 'child', id: number) => {
+  const handleCategorySelect = (
+    type: 'parent' | 'child',
+    id: number,
+  ) => {
     setSelectedCategory({ type, id })
     setValue('category_id', id.toString())
+    // 注意：在表单中，我们不需要处理弹窗关闭逻辑
   }
 
   // 根据当前表单值设置选中的分类

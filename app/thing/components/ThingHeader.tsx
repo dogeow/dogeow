@@ -72,18 +72,19 @@ export default function ThingHeader({
         setTagMenuOpen(false)
       }
 
-      // 暂时禁用分类弹窗的自动关闭，避免干扰 CategoryTreeSelect
-      // if (categoryMenuOpen && !target.closest('.category-dropdown-container')) {
-      //   // 检查是否点击的是 Combobox 相关元素
-      //   const isComboboxClick = target.closest('[role="combobox"]') ||
-      //                          target.closest('[data-radix-popover-content]') ||
-      //                          target.closest('.combobox-option') ||
-      //                          target.closest('[data-radix-popper-content-wrapper]')
-      //
-      //   if (!isComboboxClick) {
-      //     setCategoryMenuOpen(false)
-      //   }
-      // }
+      // 重新启用分类弹窗的自动关闭逻辑
+      if (categoryMenuOpen && !target.closest('.category-dropdown-container')) {
+        // 检查是否点击的是 Combobox 相关元素
+        const isComboboxClick =
+          target.closest('[role="combobox"]') ||
+          target.closest('[data-radix-popover-content]') ||
+          target.closest('.combobox-option') ||
+          target.closest('[data-radix-popper-content-wrapper]')
+
+        if (!isComboboxClick) {
+          setCategoryMenuOpen(false)
+        }
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
@@ -92,8 +93,8 @@ export default function ThingHeader({
 
   // 分类筛选变化时，更新 filters 并立即应用
   const handleCategorySelect = useCallback(
-    (type: 'parent' | 'child', id: number) => {
-      console.log('handleCategorySelect 被调用:', { type, id, filters })
+    (type: 'parent' | 'child', id: number, fullPath?: string, shouldClosePopup?: boolean) => {
+      console.log('handleCategorySelect 被调用:', { type, id, shouldClosePopup, filters })
       setSelectedCategory(type === 'parent' && id === 0 ? undefined : { type, id })
       console.log('即将调用 onApplyFilters:', {
         ...filters,
@@ -105,8 +106,14 @@ export default function ThingHeader({
         category_id: id === 0 ? undefined : id,
         page: 1,
       })
-      console.log('关闭分类菜单')
-      setCategoryMenuOpen(false)
+
+      // 只有当 shouldClosePopup 为 true 时才关闭弹窗
+      if (shouldClosePopup) {
+        console.log('关闭分类菜单')
+        setCategoryMenuOpen(false)
+      } else {
+        console.log('保持分类菜单打开')
+      }
     },
     [filters, onApplyFilters]
   )

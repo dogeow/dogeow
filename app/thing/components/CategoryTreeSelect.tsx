@@ -25,7 +25,12 @@ export interface CategoryWithChildren {
 }
 
 interface CategoryTreeSelectProps {
-  onSelect: (type: 'parent' | 'child', id: number, fullPath?: string) => void
+  onSelect: (
+    type: 'parent' | 'child',
+    id: number,
+    fullPath?: string,
+    shouldClosePopup?: boolean
+  ) => void
   selectedCategory?: CategorySelection
   className?: string
 }
@@ -103,14 +108,14 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
 
       if (parentId === 'none') {
         console.log('选择未分类，调用 onSelect')
-        onSelect('parent', 0, '未分类')
+        onSelect('parent', 0, '未分类', true) // 选择未分类时关闭弹窗
       } else if (parentId) {
         const parent = categoryTree.find(p => p.id.toString() === parentId)
         if (parent) {
           console.log('找到父分类:', parent.name, '子分类数量:', parent.children?.length || 0)
-          // 选择父分类时总是立即触发搜索
-          console.log('选择父分类，立即调用 onSelect')
-          onSelect('parent', parent.id, parent.name)
+          // 选择父分类时搜索但不关闭弹窗
+          console.log('选择父分类，立即调用 onSelect 但不关闭弹窗')
+          onSelect('parent', parent.id, parent.name, false) // false 表示不关闭弹窗
         }
       }
     },
@@ -128,7 +133,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
         const child = parent?.children?.find(c => c.id.toString() === childId)
         if (child && parent) {
           console.log('选择子分类，调用 onSelect:', child.name)
-          onSelect('child', child.id, `${parent.name} / ${child.name}`)
+          onSelect('child', child.id, `${parent.name} / ${child.name}`, true) // 选择子分类时关闭弹窗
         }
       }
     },
@@ -146,7 +151,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
 
         toast.success(`已创建主分类 "${categoryName}"`)
         setSelectedParentId(newCategory.id.toString())
-        onSelect('parent', newCategory.id, newCategory.name)
+        onSelect('parent', newCategory.id, newCategory.name, false) // 创建主分类后不关闭弹窗
       } catch (error) {
         console.error('创建主分类失败:', error)
         toast.error('创建主分类失败：' + (error instanceof Error ? error.message : '未知错误'))
@@ -174,7 +179,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
         setSelectedChildId(newCategory.id.toString())
 
         if (parent) {
-          onSelect('child', newCategory.id, `${parent.name} / ${newCategory.name}`)
+          onSelect('child', newCategory.id, `${parent.name} / ${newCategory.name}`, true) // 创建子分类后关闭弹窗
         }
       } catch (error) {
         console.error('创建子分类失败:', error)

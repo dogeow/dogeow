@@ -51,7 +51,7 @@ interface UnifiedBasicInfoFormProps {
   // 位置相关 (仅编辑页面需要)
   locationPath?: string
   selectedLocation?: LocationSelection
-  onLocationSelect?: (type: LocationType, id: number, fullPath?: string) => void
+  onLocationSelect?: (type: LocationType, id: number) => void
 }
 
 export default function UnifiedBasicInfoForm({
@@ -131,9 +131,13 @@ export default function UnifiedBasicInfoForm({
   }
 
   // 处理分类选择
-  const handleCategorySelect = (type: 'parent' | 'child', id: number) => {
+  const handleCategorySelect = (
+    type: 'parent' | 'child',
+    id: number
+  ) => {
     setSelectedCategory({ type, id })
     setCurrentValue('category_id', id.toString())
+    // 注意：在表单中，我们不需要处理弹窗关闭逻辑
   }
 
   // 根据当前表单值设置选中的分类
@@ -234,7 +238,7 @@ export default function UnifiedBasicInfoForm({
         }
       }
     } else if (isEditMode && onLocationSelect) {
-      onLocationSelect(type, id, fullPath)
+      onLocationSelect(type, id)
     }
   }
 

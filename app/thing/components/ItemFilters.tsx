@@ -294,6 +294,7 @@ export default function ItemFilters({
         ...filters,
         category_id: id === 0 ? 'all' : id.toString(),
       })
+      // 注意：在筛选器对话框中，我们不需要处理弹窗关闭逻辑，因为这是在一个固定的对话框内
     },
     [applyFilters, filters]
   )
