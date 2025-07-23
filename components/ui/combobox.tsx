@@ -44,6 +44,41 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState("")
+  
+  // 检测是否为移动设备和键盘状态
+  const [isMobile, setIsMobile] = React.useState(false)
+  const [keyboardHeight, setKeyboardHeight] = React.useState(0)
+  
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+  
+  // 监听键盘弹出/收起
+  React.useEffect(() => {
+    if (!isMobile) return
+    
+    const handleViewportChange = () => {
+      const visualViewport = window.visualViewport
+      if (visualViewport) {
+        const keyboardHeight = window.innerHeight - visualViewport.height
+        setKeyboardHeight(keyboardHeight)
+      }
+    }
+    
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange)
+      return () => {
+        window.visualViewport?.removeEventListener('resize', handleViewportChange)
+      }
+    }
+  }, [isMobile])
 
   // 过滤选项
   const filteredOptions = React.useMemo(() => {
@@ -76,8 +111,26 @@ export function Combobox({
   const selectedOption = options.find(option => option.value === value)
   const displayText = selectedOption?.label || (value ? value : placeholder)
 
+  // 处理移动端键盘弹出时的滚动
+  const handleOpen = React.useCallback((isOpen: boolean) => {
+    setOpen(isOpen)
+    
+    if (isMobile && isOpen) {
+      // 延迟一点时间确保弹出层已经渲染
+      setTimeout(() => {
+        const trigger = document.querySelector('[role="combobox"]')
+        if (trigger) {
+          trigger.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'center' 
+          })
+        }
+      }, 100)
+    }
+  }, [isMobile])
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpen}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -93,7 +146,21 @@ export function Combobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+      <PopoverContent 
+        className={cn(
+          "w-[--radix-popover-trigger-width] p-0 z-50",
+          isMobile && keyboardHeight > 0 && "shadow-2xl border-2"
+        )}
+        side={isMobile && keyboardHeight > 0 ? "top" : "bottom"}
+        align="start"
+        sideOffset={isMobile && keyboardHeight > 0 ? 8 : 4}
+        avoidCollisions={true}
+        collisionPadding={isMobile ? Math.max(32, keyboardHeight + 16) : 16}
+        style={isMobile && keyboardHeight > 0 ? {
+          maxHeight: `calc(100vh - ${keyboardHeight}px - 120px)`,
+          position: 'fixed'
+        } : undefined}
+      >
         <div className="flex flex-col">
           {/* 搜索输入框 */}
           <div className="p-2 border-b">
@@ -101,12 +168,25 @@ export function Combobox({
               placeholder={searchText}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-8"
+              className={cn(
+                "h-8",
+                isMobile && "text-base" // 防止iOS缩放
+              )}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
           </div>
           
           {/* 选项列表 */}
-          <ScrollArea className="max-h-[200px]">
+          <ScrollArea className={cn(
+            isMobile 
+              ? keyboardHeight > 0 
+                ? `max-h-[min(120px,calc(100vh - ${keyboardHeight}px - 160px))]`
+                : "max-h-[min(150px,25dvh)]"
+              : "max-h-[200px]"
+          )}>
             <div className="p-1">
               {/* 创建新选项 */}
               {showCreateOption && (

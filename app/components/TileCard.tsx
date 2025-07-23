@@ -21,16 +21,17 @@ export const TileCard = memo(({
   needsLogin,
   onClick
 }: TileCardProps) => {
-  const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   const coverImage = showCover ? tile.cover : null
   const hasBackground = !!coverImage && !imageError
 
-  // 图片加载完成
-  const handleImageLoad = useCallback(() => setImageLoaded(true), [])
   // 图片加载失败
   const handleImageError = useCallback(() => setImageError(true), [])
+  
+  // 图片加载完成
+  const handleImageLoad = useCallback(() => setImageLoaded(true), [])
 
   // 键盘可访问
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
@@ -40,15 +41,16 @@ export const TileCard = memo(({
     }
   }, [onClick])
 
-  // 样式
+  // 样式 - 移除 animate-pulse 避免闪烁
   const baseClasses = [
+    "tile-card",
     "w-full h-full min-h-[8rem]",
     "relative flex flex-col items-start justify-end",
     "p-3 sm:p-4 rounded-lg overflow-hidden",
     "transition-all duration-200 ease-in-out",
     "hover:scale-95 active:scale-90 cursor-pointer",
     "shadow-sm hover:shadow-md",
-    hasBackground && !imageLoaded ? "animate-pulse" : "",
+    "will-change-transform", // 优化动画性能
     customStyles
   ].join(" ")
 
@@ -74,18 +76,20 @@ export const TileCard = memo(({
             src={`/images/projects/${coverImage}`}
             alt={`${tile.name} background`}
             fill
-            className={`object-cover z-[1] transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`tile-image object-cover z-[1] transition-opacity duration-300 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
             priority={index < 4}
-            onLoad={handleImageLoad}
             onError={handleImageError}
+            onLoad={handleImageLoad}
             quality={85}
             placeholder="blur"
             blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
           />
-          {/* 渐变遮罩 */}
+          {/* 渐变遮罩 - 移除透明度变化 */}
           <div
-            className={`absolute inset-0 z-[2] transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-80'}`}
+            className="absolute inset-0 z-[2]"
             style={{
               background: `linear-gradient(135deg, ${tile.color}80, ${tile.color}40)`
             }}

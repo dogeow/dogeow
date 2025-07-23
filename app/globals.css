@@ -44,6 +44,26 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
+/* 移动端键盘弹出时的样式优化 */
+@media (max-width: 768px) {
+  /* 使用 dvh (dynamic viewport height) 来处理移动端键盘问题 */
+  [data-radix-popover-content] {
+    max-height: min(300px, 40dvh) !important;
+  }
+  
+  /* 确保弹出层不会被键盘遮挡 */
+  [data-radix-popover-content][data-side="bottom"] {
+    transform: translateY(0) !important;
+  }
+  
+  /* 当键盘弹出时，调整弹出层位置 */
+  @supports (height: 100dvh) {
+    [data-radix-popover-content] {
+      max-height: min(200px, 30dvh) !important;
+    }
+  }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -147,5 +167,22 @@
 
 .scrollbar-none::-webkit-scrollbar {
   display: none;  /* Chrome, Safari and Opera */
+}
+
+/* 优化渲染性能，减少闪烁 */
+.tile-grid {
+  contain: layout style paint;
+  will-change: opacity;
+}
+
+.tile-card {
+  contain: layout style paint;
+  transform: translateZ(0); /* 强制硬件加速 */
+}
+
+/* 图片加载优化 */
+.tile-image {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
