@@ -28,6 +28,7 @@ export const configs = {
       rowSpan: 1,
       cover: 'thing.png',
       gridArea: 'thing',
+      needLogin: true,
     },
     {
       name: '实验室',
@@ -39,6 +40,7 @@ export const configs = {
       rowSpan: 2,
       cover: 'lab.png',
       gridArea: 'lab',
+      needLogin: false,
     },
     {
       name: '文件',
@@ -50,6 +52,7 @@ export const configs = {
       rowSpan: 1,
       cover: 'file.png',
       gridArea: 'file',
+      needLogin: true,
     },
     {
       name: '工具',
@@ -61,6 +64,7 @@ export const configs = {
       rowSpan: 1,
       cover: 'tool.png',
       gridArea: 'tool',
+      needLogin: false,
     },
     {
       name: '导航',
@@ -72,6 +76,7 @@ export const configs = {
       rowSpan: 1,
       cover: 'nav.png',
       gridArea: 'nav',
+      needLogin: true,
     },
     {
       name: '笔记',
@@ -83,6 +88,7 @@ export const configs = {
       rowSpan: 1,
       cover: 'note.png',
       gridArea: 'note',
+      needLogin: true,
     },
     {
       name: '游戏',
@@ -94,6 +100,7 @@ export const configs = {
       rowSpan: 1,
       cover: 'game.png',
       gridArea: 'game',
+      needLogin: false,
     },
   ],
 

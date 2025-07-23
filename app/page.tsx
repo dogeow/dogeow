@@ -21,7 +21,7 @@ export default function Home() {
           keyPrefix="main"
           customStyles=""
           showCover={true}
-          needsLogin={false}
+          needsLogin={tile.needLogin}
           onClick={() => {
             window.location.href = tile.href
           }}

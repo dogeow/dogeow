@@ -17,6 +17,7 @@ export interface Tile {
   rowSpan: number
   cover?: string // 封面图片可选属性
   gridArea?: string // CSS Grid Area 名称
+  needLogin: boolean
 }
 
 // 网格布局配置类型
