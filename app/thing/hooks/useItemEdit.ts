@@ -300,6 +300,11 @@ export function useItemEdit() {
     handleLocationSelect,
     handleTagCreated,
 
+    // 位置监听值 (为了与创建页面保持一致)
+    watchAreaId: formData.area_id,
+    watchRoomId: formData.room_id,
+    watchSpotId: formData.spot_id,
+
     // 导航
     router,
   }
