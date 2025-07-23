@@ -21,6 +21,7 @@ import { CalendarIcon } from 'lucide-react'
 import type { Area, Room, Spot } from '@/app/thing/types'
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import { TagSelector, Tag } from '@/components/ui/tag-selector'
+import CategoryTreeSelect, { CategorySelection } from './CategoryTreeSelect'
 
 // import useSWR from 'swr' // SWR will be removed
 // import { get } from '@/lib/api' // get will be removed
@@ -118,7 +119,7 @@ export default function ItemFilters({
 }: ItemFiltersProps) {
   console.log('[ItemFilters] 组件被渲染')
 
-  const { filters: savedFilters } = useItemStore()
+  const { filters: savedFilters, categories } = useItemStore()
   // SWR hooks for _categories, areas, rooms, spots, tags are removed.
   // These are now passed as props.
   const [activeTab, setActiveTab] = useState('basic')
@@ -277,6 +278,39 @@ export default function ItemFilters({
     [applyFilters]
   )
 
+  // 分类选择状态
+  const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(undefined)
+
+  // 分类筛选变化时，更新 filters 并立即应用
+  const handleCategorySelect = useCallback(
+    (type: 'parent' | 'child', id: number) => {
+      setSelectedCategory(type === 'parent' && id === 0 ? undefined : { type, id })
+      setFilters(prev => ({
+        ...prev,
+        category_id: id === 0 ? 'all' : id.toString(),
+      }))
+      // 立即应用筛选
+      applyFilters({
+        ...filters,
+        category_id: id === 0 ? 'all' : id.toString(),
+      })
+    },
+    [applyFilters, filters]
+  )
+
+  // 初始化分类选择状态
+  useEffect(() => {
+    if (filters.category_id && filters.category_id !== 'all') {
+      const idNum = Number(filters.category_id)
+      const category = categories.find(cat => cat.id === idNum)
+      if (category) {
+        setSelectedCategory({ type: category.parent_id ? 'child' : 'parent', id: idNum })
+      }
+    } else {
+      setSelectedCategory(undefined)
+    }
+  }, [filters.category_id, categories])
+
   const renderDateRangePicker = useCallback(
     (
       label: string,
@@ -396,6 +430,25 @@ export default function ItemFilters({
                 onChange={e => handleChange('description', e.target.value)}
                 className="bg-background border-input text-foreground placeholder:text-muted-foreground focus:ring-primary focus:border-primary h-11 border"
               />
+            </div>
+
+            {/* 分类筛选：父子级联，可清空 */}
+            <div className="space-y-3">
+              <Label className="text-base font-medium">分类</Label>
+              <CategoryTreeSelect
+                onSelect={handleCategorySelect}
+                selectedCategory={selectedCategory}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground mt-2 text-xs"
+                onClick={() => handleCategorySelect('parent', 0)}
+                disabled={!selectedCategory}
+              >
+                清空分类筛选
+              </Button>
             </div>
 
             <div className="space-y-3">

@@ -97,15 +97,25 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   // 处理主分类选择
   const handleParentSelect = useCallback(
     (parentId: string) => {
+      console.log('handleParentSelect 被调用:', parentId)
       setSelectedParentId(parentId)
       setSelectedChildId('') // 清空子分类选择
 
       if (parentId === 'none') {
+        console.log('选择未分类，调用 onSelect')
         onSelect('parent', 0, '未分类')
       } else if (parentId) {
         const parent = categoryTree.find(p => p.id.toString() === parentId)
         if (parent) {
-          onSelect('parent', parent.id, parent.name)
+          console.log('找到父分类:', parent.name, '子分类数量:', parent.children?.length || 0)
+          // 只有没有子分类时才触发 onSelect
+          if (!parent.children || parent.children.length === 0) {
+            console.log('没有子分类，调用 onSelect')
+            onSelect('parent', parent.id, parent.name)
+          } else {
+            console.log('有子分类，不调用 onSelect')
+          }
+          // 有子分类时，仅切换父分类，不触发 onSelect
         }
       }
     },
@@ -115,12 +125,14 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   // 处理子分类选择
   const handleChildSelect = useCallback(
     (childId: string) => {
+      console.log('handleChildSelect 被调用:', childId)
       setSelectedChildId(childId)
 
       if (childId) {
         const parent = categoryTree.find(p => p.id.toString() === selectedParentId)
         const child = parent?.children?.find(c => c.id.toString() === childId)
         if (child && parent) {
+          console.log('选择子分类，调用 onSelect:', child.name)
           onSelect('child', child.id, `${parent.name} / ${child.name}`)
         }
       }

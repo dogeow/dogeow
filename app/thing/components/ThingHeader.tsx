@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import ItemFilters from './ItemFilters'
 import { Category, Tag, Area, Room, Spot, ViewMode, FilterParams } from '@/app/thing/types'
 import { isLightColor } from '@/lib/helpers'
-import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
+import CategoryTreeSelect, { CategorySelection } from './CategoryTreeSelect'
 
 interface ThingHeaderProps {
   categories: Category[]
@@ -32,20 +32,29 @@ export default function ThingHeader({
   hasActiveFilters,
   onApplyFilters,
 }: ThingHeaderProps) {
-  const [selectedCategory, setSelectedCategory] = useState<string>('none')
+  // 分类选择状态
+  const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(undefined)
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [tagMenuOpen, setTagMenuOpen] = useState(false)
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('list')
 
-  const { count: uncategorizedCount } = useUncategorizedCount()
-
-  // 同步filters到本地状态
+  // 初始化分类选择状态
   useEffect(() => {
-    if (filters.category_id) {
-      setSelectedCategory(String(filters.category_id))
+    if (filters.category_id && filters.category_id !== 'all') {
+      const idNum = Number(filters.category_id)
+      const category = categories.find(cat => cat.id === idNum)
+      if (category) {
+        setSelectedCategory({ type: category.parent_id ? 'child' : 'parent', id: idNum })
+      }
+    } else {
+      setSelectedCategory(undefined)
     }
+  }, [filters.category_id, categories])
+
+  // 同步filters到本地状态（只同步标签）
+  useEffect(() => {
     if (filters.tags) {
       const tagsArray = Array.isArray(filters.tags)
         ? filters.tags.map(t => String(t))
@@ -63,24 +72,41 @@ export default function ThingHeader({
         setTagMenuOpen(false)
       }
 
-      if (categoryMenuOpen && !target.closest('.category-dropdown-container')) {
-        setCategoryMenuOpen(false)
-      }
+      // 暂时禁用分类弹窗的自动关闭，避免干扰 CategoryTreeSelect
+      // if (categoryMenuOpen && !target.closest('.category-dropdown-container')) {
+      //   // 检查是否点击的是 Combobox 相关元素
+      //   const isComboboxClick = target.closest('[role="combobox"]') ||
+      //                          target.closest('[data-radix-popover-content]') ||
+      //                          target.closest('.combobox-option') ||
+      //                          target.closest('[data-radix-popper-content-wrapper]')
+      //
+      //   if (!isComboboxClick) {
+      //     setCategoryMenuOpen(false)
+      //   }
+      // }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [tagMenuOpen, categoryMenuOpen])
 
-  // 处理分类变化
-  const handleCategoryChange = useCallback(
-    (value: string) => {
-      setSelectedCategory(value)
-      onApplyFilters({
+  // 分类筛选变化时，更新 filters 并立即应用
+  const handleCategorySelect = useCallback(
+    (type: 'parent' | 'child', id: number) => {
+      console.log('handleCategorySelect 被调用:', { type, id, filters })
+      setSelectedCategory(type === 'parent' && id === 0 ? undefined : { type, id })
+      console.log('即将调用 onApplyFilters:', {
         ...filters,
-        category_id: value === 'none' ? undefined : value === 'uncategorized' ? undefined : value,
+        category_id: id === 0 ? undefined : id,
         page: 1,
       })
+      onApplyFilters({
+        ...filters,
+        category_id: id === 0 ? undefined : id,
+        page: 1,
+      })
+      console.log('关闭分类菜单')
+      setCategoryMenuOpen(false)
     },
     [filters, onApplyFilters]
   )
@@ -120,52 +146,32 @@ export default function ThingHeader({
         onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
         className="border-primary/20 flex w-[110px] items-center justify-between rounded-lg bg-white/90 shadow"
       >
-        {selectedCategory === 'none'
-          ? '所有分类'
-          : selectedCategory === 'uncategorized'
-            ? '未分类'
-            : categories.find(c => c.id.toString() === selectedCategory)?.name || '所有分类'}
+        {selectedCategory
+          ? (() => {
+              const id = selectedCategory.id
+              const category = categories.find(c => c.id === id)
+              if (selectedCategory.type === 'parent' && id === 0) return '未分类'
+              return category ? category.name : '所有分类'
+            })()
+          : '所有分类'}
         <ChevronDownIcon className="ml-2 h-4 w-4" />
       </Button>
-
       {categoryMenuOpen && (
-        <div className="border-border bg-popover absolute top-full left-0 z-50 mt-1 w-56 rounded-md border shadow-lg">
-          <div className="p-2">
-            <div
-              className={`hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center rounded-md p-2 text-sm ${selectedCategory === 'none' ? 'bg-accent/50 text-accent-foreground' : 'text-popover-foreground'}`}
-              onClick={() => {
-                handleCategoryChange('none')
-                setCategoryMenuOpen(false)
-              }}
-            >
-              所有分类
-            </div>
-            <div
-              className={`hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center rounded-md p-2 text-sm ${selectedCategory === 'uncategorized' ? 'bg-accent/50 text-accent-foreground' : 'text-popover-foreground'}`}
-              onClick={() => {
-                handleCategoryChange('uncategorized')
-                setCategoryMenuOpen(false)
-              }}
-            >
-              <span className="flex-1">未分类</span>
-              <span className="text-muted-foreground ml-2 text-xs">{uncategorizedCount}</span>
-            </div>
-            {categories.map(category => (
-              <div
-                key={category.id}
-                className={`hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center rounded-md p-2 text-sm ${selectedCategory === category.id.toString() ? 'bg-accent/50 text-accent-foreground' : 'text-popover-foreground'}`}
-                onClick={() => {
-                  handleCategoryChange(category.id.toString())
-                  setCategoryMenuOpen(false)
-                }}
-              >
-                <span className="flex-1">{category.name}</span>
-                <span className="text-muted-foreground ml-2 text-xs">
-                  {category.items_count ?? 0}
-                </span>
-              </div>
-            ))}
-          </div>
+        <div
+          className="border-border bg-popover absolute top-full left-0 z-[100] mt-1 w-72 rounded-md border p-4 shadow-lg"
+          onClick={e => e.stopPropagation()}
+        >
+          <CategoryTreeSelect onSelect={handleCategorySelect} selectedCategory={selectedCategory} />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground mt-2 text-xs"
+            onClick={() => handleCategorySelect('parent', 0)}
+            disabled={!selectedCategory}
+          >
+            清空分类筛选
+          </Button>
         </div>
       )}
     </div>
