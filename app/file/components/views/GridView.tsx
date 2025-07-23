@@ -80,6 +80,7 @@ const FileIcon = ({ file }: { file: CloudFile }) => {
           fill
           className="object-cover"
           loading="lazy"
+          sizes="64px"
           onError={() => console.error('图片加载失败:', file.name)}
         />
       </div>

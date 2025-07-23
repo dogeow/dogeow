@@ -83,6 +83,12 @@ export function ItemDetailDialog({
 
   const imageUrl = getImageUrl(item)
 
+  // 优化图片尺寸请求
+  const getImageSizes = () => {
+    // 对话框图片尺寸：小屏100vw，中屏及以上50vw（因为是两列布局）
+    return '(max-width: 768px) 100vw, 50vw'
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl">
@@ -114,7 +120,7 @@ export function ItemDetailDialog({
                   alt={item.name}
                   fill
                   className="object-contain"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  sizes={getImageSizes()}
                 />
               </div>
             ) : (

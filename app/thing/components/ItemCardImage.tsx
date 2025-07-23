@@ -24,18 +24,18 @@ export interface ItemCardImageProps {
   size?: number // 新增 size 属性，单位 px
 }
 
-// Define itemStatusColors and getStatusBorderColor function
-const itemStatusColors: Record<string, string> = {
-  良好: 'border-green-500',
-  损坏: 'border-red-500',
-  维修中: 'border-yellow-500',
-  借出: 'border-blue-500',
-  遗失: 'border-gray-500',
-  处置中: 'border-purple-500',
-}
-
-const getStatusBorderColor = (status: string): string => {
-  return itemStatusColors[status] || 'border-gray-300'
+// 状态颜色映射
+const getStatusBorderColor = (status: string) => {
+  switch (status) {
+    case 'expired':
+      return 'border-red-500'
+    case 'damaged':
+      return 'border-orange-500'
+    case 'idle':
+      return 'border-amber-500'
+    default:
+      return 'border-transparent'
+  }
 }
 
 export default function ItemCardImage({
@@ -63,6 +63,15 @@ export default function ItemCardImage({
 
   const imageSrc = primaryImage?.thumbnail_url || primaryImage?.url
 
+  // 根据size动态设置sizes属性
+  const getSizesAttribute = () => {
+    if (size) {
+      return `${size}px`
+    }
+    // 默认情况下的sizes（用于fill layout）
+    return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'
+  }
+
   return (
     <div
       className={
@@ -82,6 +91,7 @@ export default function ItemCardImage({
           objectFit="cover"
           onError={() => setImageError(true)}
           unoptimized={imageSrc.startsWith('http')}
+          sizes={getSizesAttribute()}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center">

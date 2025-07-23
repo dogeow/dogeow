@@ -189,6 +189,7 @@ const FileIcon = memo<FileIconProps>(({ file, className }) => {
           className="h-full w-full object-cover"
           onError={() => setImageError(true)}
           loading="lazy"
+          sizes="20px"
         />
       </div>
     )

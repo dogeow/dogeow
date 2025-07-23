@@ -95,7 +95,13 @@ const ImageGallery = ({
   return (
     <div className="space-y-3">
       <div className="bg-muted relative aspect-square overflow-hidden rounded-lg shadow-sm">
-        <Image src={images[activeIndex].url || ''} alt={itemName} fill className="object-cover" />
+        <Image
+          src={images[activeIndex].url || ''}
+          alt={itemName}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        />
       </div>
 
       {images.length > 1 && (
@@ -115,6 +121,7 @@ const ImageGallery = ({
                 alt={`${itemName} 图片 ${index + 1}`}
                 fill
                 className="object-cover"
+                sizes="64px"
               />
             </div>
           ))}

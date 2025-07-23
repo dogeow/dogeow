@@ -797,7 +797,13 @@ export default function JigsawPuzzle({ imageUrl, size, onComplete }: JigsawPuzzl
                   onTouchMove={handleMagnifierMove}
                   onTouchEnd={handleMagnifierEnd}
                 >
-                  <Image src={imageUrl} alt="浮动原图参考" fill className="object-cover" />
+                  <Image
+                    src={imageUrl}
+                    alt="浮动原图参考"
+                    fill
+                    className="object-cover"
+                    sizes="128px"
+                  />
 
                   {/* 放大镜 */}
                   {magnifierVisible && (

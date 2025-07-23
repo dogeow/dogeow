@@ -114,6 +114,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
               className={`rounded-md border object-cover ${image.is_primary ? 'ring-primary ring-2' : ''}`}
               onClick={() => setPrimaryImage(index)}
               style={{ objectFit: 'cover' }}
+              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
             />
             {image.is_primary && (
               <div className="bg-primary absolute top-2 left-2 rounded-md px-2 py-1 text-xs text-white">

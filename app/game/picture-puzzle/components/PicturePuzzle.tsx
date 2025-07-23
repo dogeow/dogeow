@@ -400,6 +400,7 @@ export default function PicturePuzzle({ imageUrl, size, onComplete }: PicturePuz
                 width={192}
                 height={192}
                 className="object-cover"
+                sizes="192px"
               />
             </div>
             <div className="mt-3 text-center">

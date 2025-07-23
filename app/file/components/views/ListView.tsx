@@ -90,6 +90,7 @@ const FileIcon = ({ file }: { file: CloudFile }) => {
           width={24}
           height={24}
           className="h-full w-full object-cover"
+          sizes="24px"
           onError={handleImageError}
         />
       </div>

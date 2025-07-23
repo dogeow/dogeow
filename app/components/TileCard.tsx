@@ -38,7 +38,6 @@ export const TileCard = memo(
       [onClick]
     )
 
-    // 样式 - 移除 animate-pulse 避免闪烁
     const baseClasses = [
       'tile-card',
       'w-full h-full min-h-[8rem]',
@@ -54,6 +53,57 @@ export const TileCard = memo(
     const dynamicStyles = {
       backgroundColor: tile.color,
       opacity: needsLogin ? 0.7 : 1,
+    }
+
+    // 根据卡片尺寸优化图片sizes属性
+    const getImageSizes = () => {
+      // 根据tile的colSpan动态计算sizes，避免100vw在高分辨率屏幕上产生过大值：
+      const colSpan = tile.colSpan || 1
+
+      let sizes = ''
+      if (colSpan === 3) {
+        // 占满整行的tile（如物品管理）- 即使在小屏幕也限制尺寸
+        sizes = '(max-width: 640px) 300px, 200px'
+      } else if (colSpan === 2) {
+        // 占2/3宽度的tile（如文件、工具）- 中等尺寸
+        sizes = '(max-width: 640px) 200px, 150px'
+      } else {
+        // 占1/3宽度的tile（如实验室、导航、笔记、游戏）- 极小尺寸
+        sizes = '(max-width: 640px) 150px, 120px'
+      }
+
+      // 添加详细调试信息
+      if (typeof window !== 'undefined') {
+        const isSmallScreen = window.innerWidth <= 640
+        const effectiveSize = isSmallScreen
+          ? colSpan === 3
+            ? 300
+            : colSpan === 2
+              ? 200
+              : 150
+          : colSpan === 3
+            ? 200
+            : colSpan === 2
+              ? 150
+              : 120
+
+        console.log(`TileCard ${tile.name}: colSpan=${colSpan}, sizes="${sizes}"`, {
+          screenWidth: window.screen.width,
+          viewportWidth: window.innerWidth,
+          devicePixelRatio: window.devicePixelRatio,
+          isSmallScreen,
+          effectiveSize,
+          withPixelRatio: effectiveSize * window.devicePixelRatio,
+          expectedNextJSChoice: effectiveSize * window.devicePixelRatio,
+        })
+      }
+
+      return sizes
+    }
+
+    const getIconSizes = () => {
+      // 图标固定尺寸：小屏32px，大屏40px
+      return '(max-width: 640px) 32px, 40px'
     }
 
     return (
@@ -76,7 +126,7 @@ export const TileCard = memo(
               className={`tile-image z-[1] object-cover transition-opacity duration-300 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              sizes={getImageSizes()}
               priority={index < 4}
               onError={handleImageError}
               onLoad={handleImageLoad}
@@ -103,7 +153,7 @@ export const TileCard = memo(
               width={40}
               height={40}
               className="object-contain sm:h-10 sm:w-10"
-              sizes="(max-width: 640px) 32px, 40px"
+              sizes={getIconSizes()}
               priority={index < 4}
               quality={85}
             />
