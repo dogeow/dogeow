@@ -120,12 +120,12 @@ export default function GridView({ files }: GridViewProps) {
 
   const toggleSelection = useCallback((fileId: number, event: React.MouseEvent) => {
     event.stopPropagation()
-    setSelectedFiles(prev =>
-      prev.includes(fileId)
-        ? prev.filter(id => id !== fileId)
-        : [...prev, fileId]
+    setSelectedFiles(
+      selectedFiles.includes(fileId)
+        ? selectedFiles.filter(id => id !== fileId)
+        : [...selectedFiles, fileId]
     )
-  }, [setSelectedFiles])
+  }, [selectedFiles, setSelectedFiles])
 
   const previewItem = useCallback(async (file: CloudFile) => {
     if (file.is_folder) return
