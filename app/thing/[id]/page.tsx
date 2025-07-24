@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Edit, Trash2, Lock, Unlock } from 'lucide-react'
 import { format } from 'date-fns'
 import Image from 'next/image'
+import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
 import { toast } from 'sonner'
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import { useItem } from '../services/api'
@@ -87,7 +88,10 @@ const ImageGallery = ({
   if (!images || images.length === 0) {
     return (
       <div className="bg-muted flex h-48 items-center justify-center rounded-lg">
-        <p className="text-muted-foreground">无图片</p>
+        <ImagePlaceholder 
+          className="opacity-40 text-gray-400" 
+          size={64}
+        />
       </div>
     )
   }

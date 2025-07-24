@@ -9,6 +9,7 @@ import { get, del } from '@/lib/api'
 import { toast } from 'sonner'
 import { isLightColor } from '@/lib/helpers'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
+import TagSpeedDial from './components/TagSpeedDial'
 
 // 标签类型定义
 type Tag = {
@@ -156,7 +157,7 @@ export default function ThingTags() {
         />
 
         {/* 添加标签Speed Dial */}
-        {/* <TagSpeedDial /> */}
+        <TagSpeedDial />
       </div>
     </div>
   )

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
-import { Globe, AlertTriangleIcon } from 'lucide-react'
+import { Globe } from 'lucide-react'
+import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
 
 // Define ImageData interface locally as specified
 export interface ImageData {
@@ -94,8 +95,11 @@ export default function ItemCardImage({
           sizes={getSizesAttribute()}
         />
       ) : (
-        <div className="flex h-full w-full items-center justify-center">
-          <AlertTriangleIcon className="h-1/2 w-1/2 opacity-50" />
+        <div className="flex h-full w-full items-center justify-center bg-gray-50">
+          <ImagePlaceholder 
+            className="opacity-40 text-gray-400" 
+            size={size ? Math.floor(size * 0.6) : 48}
+          />
         </div>
       )}
       {isPublic && (

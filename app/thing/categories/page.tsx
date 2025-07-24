@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
-import { Folder, FolderOpen, Tag, Plus, Trash2, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
+import { Folder, FolderOpen, Plus, Trash2, Check, X, ChevronDown, ChevronRight, FileText } from 'lucide-react'
 import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 import { useCategories } from './hooks/useCategories'
 import { useInlineEdit } from './hooks/useInlineEdit'
@@ -219,10 +219,10 @@ export default function Categories() {
     return (
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead className="w-full">分类名称</TableHead>
-            <TableHead className="text-center">物品数量</TableHead>
-            <TableHead className="w-[100px]">操作</TableHead>
+          <TableRow className="border-b-2 border-border/50">
+            <TableHead className="w-full font-semibold text-foreground">分类名称</TableHead>
+            <TableHead className="text-center font-semibold text-foreground">物品数量</TableHead>
+            <TableHead className="w-[100px] font-semibold text-foreground">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -230,69 +230,80 @@ export default function Categories() {
           {categoryTree.map(parent => (
             <React.Fragment key={parent.id}>
               {/* 父分类行 */}
-              <TableRow>
+              <TableRow className="hover:bg-accent/30 transition-colors">
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-6 w-6 p-0"
+                      className="h-8 w-8 p-0 rounded-md hover:bg-accent/50 transition-all duration-200"
                       onClick={() => toggleCategory(parent.id)}
                     >
                       {expandedCategories.has(parent.id) ? (
-                        <FolderOpen className="h-4 w-4" />
+                        <div className="flex items-center justify-center">
+                          <ChevronDown className="h-4 w-4 text-primary" />
+                        </div>
                       ) : (
-                        <Folder className="h-4 w-4" />
+                        <div className="flex items-center justify-center">
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
                       )}
                     </Button>
-                    {isEditing(parent.id) ? (
-                      <div className="flex flex-1 items-center gap-2">
-                        <Input
-                          ref={inputRef}
-                          value={editingValue}
-                          onChange={e => setEditingValue(e.target.value)}
-                          className="h-8"
-                          onKeyDown={handleEditKeyDown}
-                          disabled={loading}
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleSaveEdit}
-                          disabled={loading}
-                          className="h-8 w-8"
-                        >
-                          <Check className="h-4 w-4 text-green-500" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleCancelEdit}
-                          disabled={loading}
-                          className="h-8 w-8"
-                        >
-                          <X className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="group flex flex-1 items-center justify-between">
-                        <div
-                          className="cursor-pointer font-medium hover:underline"
-                          onClick={() => startEdit(parent.id, parent.name)}
-                        >
-                          {parent.name}
+                    <div className="flex items-center gap-2">
+                      {expandedCategories.has(parent.id) ? (
+                        <FolderOpen className="h-5 w-5 text-primary" />
+                      ) : (
+                        <Folder className="h-5 w-5 text-muted-foreground" />
+                      )}
+                      {isEditing(parent.id) ? (
+                        <div className="flex flex-1 items-center gap-2">
+                          <Input
+                            ref={inputRef}
+                            value={editingValue}
+                            onChange={e => setEditingValue(e.target.value)}
+                            className="h-8 border-primary/50 focus:border-primary"
+                            onKeyDown={handleEditKeyDown}
+                            disabled={loading}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleSaveEdit}
+                            disabled={loading}
+                            className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
+                          >
+                            <Check className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleCancelEdit}
+                            disabled={loading}
+                            className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 opacity-0 group-hover:opacity-100"
-                          onClick={() => startCreateChild(parent.id)}
-                        >
-                          <Plus className="mr-1 h-3 w-3" />
-                          子分类
-                        </Button>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="group flex flex-1 items-center justify-between">
+                          <div
+                            className="cursor-pointer font-semibold text-foreground hover:text-primary hover:underline transition-colors"
+                            onClick={() => startEdit(parent.id, parent.name)}
+                          >
+                            {parent.name}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 px-3 opacity-60 group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20"
+                            onClick={() => startCreateChild(parent.id)}
+                          >
+                            <Plus className="mr-1 h-3 w-3" />
+                            <span className="text-xs">子分类</span>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-center">{parent.items_count ?? 0}</TableCell>
@@ -313,17 +324,20 @@ export default function Categories() {
               {expandedCategories.has(parent.id) && (
                 <>
                   {parent.children?.map(child => (
-                    <TableRow key={child.id}>
+                    <TableRow key={child.id} className="hover:bg-accent/20 transition-colors border-l-2 border-l-primary/20">
                       <TableCell>
-                        <div className="ml-8 flex items-center gap-2">
-                          <Tag className="text-muted-foreground h-4 w-4" />
+                        <div className="ml-8 flex items-center gap-3">
+                          <div className="w-6 h-6 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-primary/40"></div>
+                          </div>
+                          <FileText className="text-primary/60 h-4 w-4" />
                           {isEditing(child.id) ? (
                             <div className="flex flex-1 items-center gap-2">
                               <Input
                                 ref={inputRef}
                                 value={editingValue}
                                 onChange={e => setEditingValue(e.target.value)}
-                                className="h-8"
+                                className="h-8 border-primary/50 focus:border-primary"
                                 onKeyDown={handleEditKeyDown}
                                 disabled={loading}
                               />
@@ -332,23 +346,23 @@ export default function Categories() {
                                 size="icon"
                                 onClick={handleSaveEdit}
                                 disabled={loading}
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
                               >
-                                <Check className="h-4 w-4 text-green-500" />
+                                <Check className="h-4 w-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleCancelEdit}
                                 disabled={loading}
-                                className="h-8 w-8"
+                                className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
                               >
-                                <X className="h-4 w-4 text-red-500" />
+                                <X className="h-4 w-4" />
                               </Button>
                             </div>
                           ) : (
                             <div
-                              className="flex-1 cursor-pointer hover:underline"
+                              className="flex-1 cursor-pointer text-muted-foreground hover:text-foreground hover:underline transition-colors font-medium"
                               onClick={() => startEdit(child.id, child.name)}
                             >
                               {child.name}
@@ -373,15 +387,18 @@ export default function Categories() {
 
                   {/* 创建子分类行 */}
                   {creatingChildFor === parent.id && (
-                    <TableRow>
+                    <TableRow className="bg-accent/10 border-l-2 border-l-primary/40">
                       <TableCell>
-                        <div className="ml-8 flex items-center gap-2">
-                          <Tag className="text-muted-foreground h-4 w-4" />
+                        <div className="ml-8 flex items-center gap-3">
+                          <div className="w-6 h-6 flex items-center justify-center">
+                            <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse"></div>
+                          </div>
+                          <FileText className="text-primary/60 h-4 w-4" />
                           <div className="flex flex-1 items-center gap-2">
                             <Input
                               value={newChildName}
                               onChange={e => setNewChildName(e.target.value)}
-                              className="h-8"
+                              className="h-8 border-primary/50 focus:border-primary bg-background"
                               placeholder="输入子分类名称"
                               onKeyDown={handleChildKeyDown}
                               disabled={creatingChild}
@@ -392,18 +409,18 @@ export default function Categories() {
                               size="icon"
                               onClick={saveChild}
                               disabled={creatingChild || !newChildName.trim()}
-                              className="h-8 w-8"
+                              className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
                             >
-                              <Check className="h-4 w-4 text-green-500" />
+                              <Check className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
                               size="icon"
                               onClick={cancelCreateChild}
                               disabled={creatingChild}
-                              className="h-8 w-8"
+                              className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
                             >
-                              <X className="h-4 w-4 text-red-500" />
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -448,26 +465,34 @@ export default function Categories() {
     <div className="py-2 pb-24">
       <Card>
         {categoryTree.length > 0 && (
-          <CardHeader className="pb-3">
-            <div className="flex justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={isAllExpanded ? collapseAll : expandAll}
-                className="flex items-center gap-1"
-              >
-                {isAllExpanded ? (
-                  <>
-                    <ChevronRight className="h-4 w-4" />
-                    全部折叠
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4" />
-                    全部展开
-                  </>
-                )}
-              </Button>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-semibold">分类管理</h2>
+                <span className="text-sm text-muted-foreground">
+                  共 {categories.length} 个分类
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={isAllExpanded ? collapseAll : expandAll}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 hover:border-border hover:bg-accent/50 transition-all duration-200"
+                >
+                  {isAllExpanded ? (
+                    <>
+                      <ChevronRight className="h-4 w-4" />
+                      <span className="text-sm font-medium">全部折叠</span>
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4" />
+                      <span className="text-sm font-medium">全部展开</span>
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardHeader>
         )}

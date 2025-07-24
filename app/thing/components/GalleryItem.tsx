@@ -1,7 +1,8 @@
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
-import { Globe, AlertTriangleIcon } from 'lucide-react'
+import { Globe } from 'lucide-react'
 import { Item } from '@/app/thing/types'
+import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
 
 interface GalleryItemProps {
   item: Item
@@ -35,7 +36,10 @@ export function GalleryItem({ item, imageSize, onClick }: GalleryItemProps) {
         />
       ) : (
         <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center">
-          <AlertTriangleIcon className="h-1/2 w-1/2 opacity-50" />
+          <ImagePlaceholder 
+            className="opacity-40 text-gray-400" 
+            size={Math.floor(imageSize * 0.4)}
+          />
         </div>
       )}
       <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/70 via-black/30 to-transparent p-2 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
