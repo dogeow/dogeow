@@ -304,7 +304,7 @@ export function SearchDialog({
         })
 
         try {
-          const response = await get<SearchApiResponse>(`/db-search?${queryParams}`)
+          const response = await get<SearchApiResponse>(`/things/search?${queryParams}`)
 
           if (response.results?.length) {
             const thingResults = response.results.map(item => ({
