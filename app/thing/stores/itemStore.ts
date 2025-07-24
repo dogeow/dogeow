@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { format } from 'date-fns'
 import { apiRequest, API_URL } from '@/lib/api'
-import { Item, Category, Tag, ItemFormData } from '@/app/thing/types'
+import { Item, Category, Tag, ItemFormData, ApiSubmitItemData } from '@/app/thing/types'
 
 // 前端专用过滤器，不发送到后端
 const FRONTEND_ONLY_FILTERS = [
@@ -22,7 +22,7 @@ const handleError = (error: unknown, defaultMessage = '未知错误'): string =>
 }
 
 // 处理表单数据的辅助函数
-const prepareFormData = (data: Record<string, unknown>) => {
+const prepareFormData = (data: Record<string, unknown> | ApiSubmitItemData) => {
   const formData = new FormData()
 
   // 处理基本字段
@@ -33,11 +33,12 @@ const prepareFormData = (data: Record<string, unknown>) => {
   })
 
   // 处理数组字段
+  const dataAsRecord = data as Record<string, unknown>
   const arrayFields = {
-    images: data.images,
-    image_paths: data.image_paths,
-    image_ids: data.image_ids,
-    tags: data.tags,
+    images: dataAsRecord.images,
+    image_paths: dataAsRecord.image_paths,
+    image_ids: dataAsRecord.image_ids,
+    tags: dataAsRecord.tags,
   }
 
   Object.entries(arrayFields).forEach(([fieldName, fieldValue]) => {
@@ -134,7 +135,7 @@ interface ItemState {
   fetchTags: () => Promise<Tag[] | undefined>
   createCategory: (data: { name: string; parent_id?: number | null }) => Promise<Category>
   getItem: (id: number) => Promise<Item | null>
-  createItem: (data: ItemFormData) => Promise<Item>
+  createItem: (data: ApiSubmitItemData) => Promise<Item>
   updateItem: (id: number, data: ItemFormData) => Promise<Item>
   deleteItem: (id: number) => Promise<void>
   saveFilters: (filters: ItemFilters) => void

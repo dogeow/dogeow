@@ -79,7 +79,7 @@ const BasicInfoForm: React.FC<BasicInfoFormProps> = ({ formData, setFormData, ca
           <div className="min-w-[200px] flex-1 space-y-2">
             <Label htmlFor="category_id">{FORM_LABELS.category_id}</Label>
             <Select
-              value={formData.category_id}
+              value={formData.category_id || 'none'}
               onValueChange={value => handleSelectChange('category_id', value)}
             >
               <SelectTrigger id="category_id">

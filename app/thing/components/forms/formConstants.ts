@@ -25,7 +25,7 @@ export const itemFormSchema = z.object({
   purchase_date: z.union([z.date(), z.null()]),
   expiry_date: z.union([z.date(), z.null()]),
   purchase_price: z.union([z.number(), z.null()]),
-  category_id: z.string(),
+  category_id: z.string(), // 空字符串表示未分类，提交时会转换为null
   area_id: z.string(),
   room_id: z.string(),
   spot_id: z.string(),
@@ -44,7 +44,7 @@ export const defaultFormValues: ItemFormSchemaType = {
   purchase_date: null,
   expiry_date: null,
   purchase_price: null,
-  category_id: 'none',
+  category_id: '', // 空字符串表示未分类，提交时会转换为null
   area_id: '',
   room_id: '',
   spot_id: '',

@@ -21,6 +21,7 @@ import {
   SelectedLocation,
 } from './formConstants'
 import { transformFormDataForSubmit } from './formUtils'
+import { ApiSubmitItemData } from '../../types'
 
 interface ItemFormWrapperProps {
   mode: 'create' | 'edit'
@@ -30,7 +31,7 @@ interface ItemFormWrapperProps {
   selectedTags?: string[]
   onUploadedImagesChange?: Dispatch<SetStateAction<UploadedImage[]>>
   onSelectedTagsChange?: Dispatch<SetStateAction<string[]>>
-  onSubmit?: (data: ItemFormData) => Promise<void>
+  onSubmit?: (data: ApiSubmitItemData) => Promise<void>
   autoSaving?: boolean
   lastSaved?: Date | null
   // 编辑模式特有的 props

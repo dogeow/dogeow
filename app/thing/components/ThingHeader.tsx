@@ -19,7 +19,9 @@ interface ThingHeaderProps {
   spots: Spot[]
   filters: FilterParams
   hasActiveFilters: boolean
+  viewMode: ViewMode
   onApplyFilters: (filters: Record<string, unknown>) => void
+  onViewModeChange: (viewMode: ViewMode) => void
 }
 
 export default function ThingHeader({
@@ -30,7 +32,9 @@ export default function ThingHeader({
   spots,
   filters,
   hasActiveFilters,
+  viewMode,
   onApplyFilters,
+  onViewModeChange,
 }: ThingHeaderProps) {
   // 分类选择状态
   const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(undefined)
@@ -38,7 +42,6 @@ export default function ThingHeader({
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [tagMenuOpen, setTagMenuOpen] = useState(false)
   const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   // 初始化分类选择状态
   useEffect(() => {
@@ -93,19 +96,30 @@ export default function ThingHeader({
 
   // 分类筛选变化时，更新 filters 并立即应用
   const handleCategorySelect = useCallback(
-    (type: 'parent' | 'child', id: number, fullPath?: string, shouldClosePopup?: boolean) => {
+    (
+      type: 'parent' | 'child',
+      id: number | null,
+      fullPath?: string,
+      shouldClosePopup?: boolean
+    ) => {
       console.log('handleCategorySelect 被调用:', { type, id, shouldClosePopup, filters })
-      setSelectedCategory(type === 'parent' && id === 0 ? undefined : { type, id })
-      console.log('即将调用 onApplyFilters:', {
-        ...filters,
-        category_id: id === 0 ? undefined : id,
-        page: 1,
-      })
-      onApplyFilters({
-        ...filters,
-        category_id: id === 0 ? undefined : id,
-        page: 1,
-      })
+
+      if (id === null) {
+        // 未分类
+        setSelectedCategory(undefined)
+        onApplyFilters({
+          ...filters,
+          category_id: undefined,
+          page: 1,
+        })
+      } else {
+        setSelectedCategory({ type, id })
+        onApplyFilters({
+          ...filters,
+          category_id: id,
+          page: 1,
+        })
+      }
 
       // 只有当 shouldClosePopup 为 true 时才关闭弹窗
       if (shouldClosePopup) {
@@ -157,7 +171,6 @@ export default function ThingHeader({
           ? (() => {
               const id = selectedCategory.id
               const category = categories.find(c => c.id === id)
-              if (selectedCategory.type === 'parent' && id === 0) return '未分类'
               return category ? category.name : '所有分类'
             })()
           : '所有分类'}
@@ -174,7 +187,7 @@ export default function ThingHeader({
             variant="ghost"
             size="sm"
             className="text-muted-foreground mt-2 text-xs"
-            onClick={() => handleCategorySelect('parent', 0)}
+            onClick={() => handleCategorySelect('parent', null)}
             disabled={!selectedCategory}
           >
             清空分类筛选
@@ -247,7 +260,7 @@ export default function ThingHeader({
   // 渲染视图切换
   const renderViewControls = () => (
     <div className="flex items-center gap-2">
-      <Tabs value={viewMode} onValueChange={value => setViewMode(value as ViewMode)}>
+      <Tabs value={viewMode} onValueChange={value => onViewModeChange(value as ViewMode)}>
         <TabsList className="bg-primary/10 dark:bg-primary/20 grid grid-cols-2">
           <TabsTrigger
             value="list"

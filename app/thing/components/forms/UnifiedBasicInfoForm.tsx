@@ -131,19 +131,22 @@ export default function UnifiedBasicInfoForm({
   }
 
   // 处理分类选择
-  const handleCategorySelect = (
-    type: 'parent' | 'child',
-    id: number
-  ) => {
-    setSelectedCategory({ type, id })
-    setCurrentValue('category_id', id.toString())
+  const handleCategorySelect = (type: 'parent' | 'child', id: number | null) => {
+    if (id === null) {
+      // 未分类
+      setSelectedCategory(undefined)
+      setCurrentValue('category_id', '')
+    } else {
+      setSelectedCategory({ type, id })
+      setCurrentValue('category_id', id.toString())
+    }
     // 注意：在表单中，我们不需要处理弹窗关闭逻辑
   }
 
   // 根据当前表单值设置选中的分类
   useEffect(() => {
     const categoryId = getCurrentValue('category_id')
-    if (categoryId && categoryId !== 'none') {
+    if (categoryId && categoryId !== '') {
       const category = categories.find(cat => cat.id.toString() === categoryId)
       if (category) {
         setSelectedCategory({
@@ -152,6 +155,7 @@ export default function UnifiedBasicInfoForm({
         })
       }
     } else {
+      // 空字符串表示未分类
       setSelectedCategory(undefined)
     }
   }, [formMethods, formData, categories, getCurrentValue])

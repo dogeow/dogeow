@@ -8,7 +8,8 @@ import { TileCard } from './components/TileCard'
 import { useTileManagement } from '@/app/hooks/useTileManagement'
 
 export default function Home() {
-  const { tiles, showProjectCovers, handleTileClick, getTileStatus, isAuthenticated } = useTileManagement()
+  const { tiles, showProjectCovers, handleTileClick, getTileStatus, isAuthenticated } =
+    useTileManagement()
 
   // 渲染单个瓦片
   const renderTile = useCallback(

@@ -283,17 +283,31 @@ export default function ItemFilters({
 
   // 分类筛选变化时，更新 filters 并立即应用
   const handleCategorySelect = useCallback(
-    (type: 'parent' | 'child', id: number) => {
-      setSelectedCategory(type === 'parent' && id === 0 ? undefined : { type, id })
-      setFilters(prev => ({
-        ...prev,
-        category_id: id === 0 ? 'all' : id.toString(),
-      }))
-      // 立即应用筛选
-      applyFilters({
-        ...filters,
-        category_id: id === 0 ? 'all' : id.toString(),
-      })
+    (type: 'parent' | 'child', id: number | null) => {
+      if (id === null) {
+        // 未分类
+        setSelectedCategory(undefined)
+        setFilters(prev => ({
+          ...prev,
+          category_id: 'all',
+        }))
+        // 立即应用筛选
+        applyFilters({
+          ...filters,
+          category_id: 'all',
+        })
+      } else {
+        setSelectedCategory({ type, id })
+        setFilters(prev => ({
+          ...prev,
+          category_id: id.toString(),
+        }))
+        // 立即应用筛选
+        applyFilters({
+          ...filters,
+          category_id: id.toString(),
+        })
+      }
       // 注意：在筛选器对话框中，我们不需要处理弹窗关闭逻辑，因为这是在一个固定的对话框内
     },
     [applyFilters, filters]
@@ -445,7 +459,7 @@ export default function ItemFilters({
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground mt-2 text-xs"
-                onClick={() => handleCategorySelect('parent', 0)}
+                onClick={() => handleCategorySelect('parent', null)}
                 disabled={!selectedCategory}
               >
                 清空分类筛选

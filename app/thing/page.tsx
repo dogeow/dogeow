@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { apiRequest } from '@/lib/api'
@@ -16,11 +16,14 @@ import { useThingFilters } from '@/app/thing/hooks/useThingFilters'
 import { useThingSearch } from '@/app/thing/hooks/useThingSearch'
 
 // Types
-import { Tag, LocationTreeResponse } from '@/app/thing/types'
+import { Tag, LocationTreeResponse, ViewMode } from '@/app/thing/types'
 
 export default function Thing() {
   const router = useRouter()
   const { items, categories, loading, error, fetchItems, fetchCategories, meta } = useItemStore()
+
+  // 视图模式状态
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
 
   // 使用自定义hooks管理复杂逻辑
   const { filters, updateFilters, clearFilters, hasActiveFilters, currentPage, setCurrentPage } =
@@ -113,7 +116,9 @@ export default function Thing() {
           spots={locationData?.spots || []}
           filters={filters}
           hasActiveFilters={hasActiveFilters()}
+          viewMode={viewMode}
           onApplyFilters={handleApplyFilters}
+          onViewModeChange={setViewMode}
         />
 
         <ThingContent
@@ -124,6 +129,7 @@ export default function Thing() {
           currentPage={currentPage}
           searchTerm={searchTerm}
           hasActiveFilters={hasActiveFilters()}
+          viewMode={viewMode}
           onPageChange={handlePageChange}
           onItemEdit={handleItemEdit}
           onItemView={handleItemView}

@@ -9,12 +9,31 @@ export interface ItemFormData {
   purchase_date: Date | null
   expiry_date: Date | null
   purchase_price: number | null
-  category_id: string
+  category_id: string // 空字符串表示未分类，提交时会转换为null
   area_id: string
   room_id: string
   spot_id: string
   is_public: boolean
   [key: string]: unknown // 兼容 Record<string, unknown>
+}
+
+// API 提交的物品数据类型（支持category_id为null）
+export interface ApiSubmitItemData {
+  name: string
+  description: string
+  quantity: number
+  status: string
+  purchase_date: Date | null
+  expiry_date: Date | null
+  purchase_price: number | null
+  category_id: string | null // API提交时支持null
+  area_id: string
+  room_id: string
+  spot_id: string
+  is_public: boolean
+  thumbnail_url: null
+  image_paths: string[]
+  tags?: number[]
 }
 
 // 物品图片类型

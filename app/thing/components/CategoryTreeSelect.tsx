@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 export type CategorySelection =
   | {
       type: 'parent' | 'child'
-      id: number
+      id: number // 未分类时不使用CategorySelection，而是undefined
     }
   | undefined
 
@@ -27,7 +27,7 @@ export interface CategoryWithChildren {
 interface CategoryTreeSelectProps {
   onSelect: (
     type: 'parent' | 'child',
-    id: number,
+    id: number | null, // 支持null（未分类）
     fullPath?: string,
     shouldClosePopup?: boolean
   ) => void
@@ -108,7 +108,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
 
       if (parentId === 'none') {
         console.log('选择未分类，调用 onSelect')
-        onSelect('parent', 0, '未分类', true) // 选择未分类时关闭弹窗
+        onSelect('parent', null, '未分类', true) // 选择未分类时关闭弹窗
       } else if (parentId) {
         const parent = categoryTree.find(p => p.id.toString() === parentId)
         if (parent) {
@@ -193,11 +193,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   useEffect(() => {
     if (selectedCategory) {
       if (selectedCategory.type === 'parent') {
-        if (selectedCategory.id === 0) {
-          setSelectedParentId('none')
-        } else {
-          setSelectedParentId(selectedCategory.id.toString())
-        }
+        setSelectedParentId(selectedCategory.id.toString())
         setSelectedChildId('')
       } else if (selectedCategory.type === 'child') {
         const child = categoryTree
@@ -209,7 +205,8 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
         }
       }
     } else {
-      setSelectedParentId('')
+      // 未分类或未选择任何分类
+      setSelectedParentId('none')
       setSelectedChildId('')
     }
   }, [selectedCategory, categoryTree])

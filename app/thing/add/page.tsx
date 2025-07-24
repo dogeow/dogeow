@@ -3,14 +3,14 @@
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { useItemStore } from '@/app/thing/stores/itemStore'
-import { ItemFormData } from '@/app/thing/types'
+import { ApiSubmitItemData } from '@/app/thing/types'
 import ItemFormWrapper from '../components/forms/ItemFormWrapper'
 
 export default function AddItem() {
   const router = useRouter()
   const { createItem } = useItemStore()
 
-  const handleSubmit = async (itemData: ItemFormData) => {
+  const handleSubmit = async (itemData: ApiSubmitItemData) => {
     const toast_id = toast.loading('正在创建物品...')
 
     try {

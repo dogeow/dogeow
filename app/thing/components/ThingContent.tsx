@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Pagination,
@@ -31,6 +30,7 @@ interface ThingContentProps {
   currentPage: number
   searchTerm: string
   hasActiveFilters: boolean
+  viewMode: ViewMode
   onPageChange: (page: number) => void
   onItemEdit: (id: number) => void
   onItemView: (id: number) => void
@@ -46,13 +46,13 @@ export default function ThingContent({
   currentPage,
   searchTerm,
   hasActiveFilters,
+  viewMode,
   onPageChange,
   onItemEdit,
   onItemView,
   onReload,
   onClearFilters,
 }: ThingContentProps) {
-  const [viewMode] = useState<ViewMode>('list')
   const totalPages = meta?.last_page || 1
 
   // 渲染加载状态
