@@ -1,3 +1,5 @@
+import { ReactNode } from 'react'
+
 // 自定义主题类型
 export type CustomTheme = {
   id: string
@@ -8,15 +10,13 @@ export type CustomTheme = {
 
 // 应用启动器图标类型
 export interface Tile {
-  name: string
-  icon: string
+  name: string // 英文名称，从 href 自动生成
+  nameCn: string // 中文名称
+  icon: string | ReactNode
   href: string
   color: string
-  size: 'large' | 'medium' | 'small'
-  colSpan: number
-  rowSpan: number
-  cover?: string // 封面图片可选属性
-  gridArea?: string // CSS Grid Area 名称
+  cover?: string // 封面图片，自动根据 name 生成
+  gridArea?: string // CSS Grid Area 名称，自动根据 name 生成
   needLogin: boolean
 }
 

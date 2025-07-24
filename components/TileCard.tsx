@@ -18,7 +18,7 @@ export const TileCard = memo(
     const [imageError, setImageError] = useState(false)
     const [imageLoaded, setImageLoaded] = useState(false)
 
-    const coverImage = showCover ? tile.cover : null
+    const coverImage = showCover ? tile.cover || `${tile.name}.png` : null
     const hasBackground = !!coverImage && !imageError
 
     // 图片加载失败
@@ -55,47 +55,21 @@ export const TileCard = memo(
       opacity: needsLogin ? 0.7 : 1,
     }
 
-    // 根据卡片尺寸优化图片sizes属性
+    // 根据网格区域优化图片sizes属性
     const getImageSizes = () => {
-      // 根据tile的colSpan动态计算sizes，避免100vw在高分辨率屏幕上产生过大值：
-      const colSpan = tile.colSpan || 1
+      // 根据 grid area 名称判断大小
+      const gridArea = tile.gridArea || tile.name
 
       let sizes = ''
-      if (colSpan === 3) {
-        // 占满整行的tile（如物品管理）- 即使在小屏幕也限制尺寸
+      if (gridArea === 'thing') {
+        // 占满整行的tile（物品管理）
         sizes = '(max-width: 640px) 300px, 200px'
-      } else if (colSpan === 2) {
-        // 占2/3宽度的tile（如文件、工具）- 中等尺寸
+      } else if (gridArea === 'file' || gridArea === 'tool') {
+        // 占2/3宽度的tile（文件、工具）
         sizes = '(max-width: 640px) 200px, 150px'
       } else {
-        // 占1/3宽度的tile（如实验室、导航、笔记、游戏）- 极小尺寸
+        // 占1/3宽度的tile（实验室、导航、笔记、游戏）
         sizes = '(max-width: 640px) 150px, 120px'
-      }
-
-      // 添加详细调试信息
-      if (typeof window !== 'undefined') {
-        const isSmallScreen = window.innerWidth <= 640
-        const effectiveSize = isSmallScreen
-          ? colSpan === 3
-            ? 300
-            : colSpan === 2
-              ? 200
-              : 150
-          : colSpan === 3
-            ? 200
-            : colSpan === 2
-              ? 150
-              : 120
-
-        console.log(`TileCard ${tile.name}: colSpan=${colSpan}, sizes="${sizes}"`, {
-          screenWidth: window.screen.width,
-          viewportWidth: window.innerWidth,
-          devicePixelRatio: window.devicePixelRatio,
-          isSmallScreen,
-          effectiveSize,
-          withPixelRatio: effectiveSize * window.devicePixelRatio,
-          expectedNextJSChoice: effectiveSize * window.devicePixelRatio,
-        })
       }
 
       return sizes
@@ -114,14 +88,14 @@ export const TileCard = memo(
         role="button"
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        aria-label={`打开 ${tile.name}`}
+        aria-label={`打开 ${tile.nameCn}`}
       >
         {/* 背景图片 */}
         {hasBackground && (
           <>
             <Image
               src={`/images/projects/${coverImage}`}
-              alt={`${tile.name} background`}
+              alt={`${tile.nameCn} background`}
               fill
               className={`tile-image z-[1] object-cover transition-opacity duration-300 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -144,22 +118,6 @@ export const TileCard = memo(
           </>
         )}
 
-        {/* 图标 */}
-        {tile.icon && tile.icon.length > 0 && (
-          <div className="absolute top-2 left-2 z-[2] flex h-8 w-8 items-center justify-center sm:top-3 sm:left-3 sm:h-10 sm:w-10">
-            <Image
-              src={`/images/projects/${tile.icon}`}
-              alt={tile.name}
-              width={40}
-              height={40}
-              className="object-contain sm:h-10 sm:w-10"
-              sizes={getIconSizes()}
-              priority={index < 4}
-              quality={85}
-            />
-          </div>
-        )}
-
         {/* 登录锁定图标 */}
         {needsLogin && (
           <div className="bg-opacity-60 absolute top-1.5 right-1.5 z-[3] flex h-5 w-5 items-center justify-center rounded-full bg-black backdrop-blur-sm sm:top-2 sm:right-2 sm:h-6 sm:w-6">
@@ -167,13 +125,41 @@ export const TileCard = memo(
           </div>
         )}
 
-        {/* 标题 */}
-        <span
-          className="relative z-[2] text-lg leading-tight font-medium text-white sm:text-xl"
-          style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}
-        >
-          {tile.name}
-        </span>
+        {/* 标题和图标 */}
+        <div className="relative z-[2] flex items-center gap-2">
+          {/* 图标 */}
+          {tile.icon && (
+            <div className="flex items-center justify-center">
+              {typeof tile.icon === 'string' && tile.icon.length > 0 ? (
+                <Image
+                  src={`/images/projects/${tile.icon}`}
+                  alt={tile.nameCn}
+                  width={24}
+                  height={24}
+                  className="object-contain sm:h-6 sm:w-6"
+                  sizes={getIconSizes()}
+                  priority={index < 4}
+                  quality={85}
+                />
+              ) : (
+                <div
+                  className="h-5 w-5 text-white sm:h-6 sm:w-6"
+                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))' }}
+                >
+                  {tile.icon}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 标题 */}
+          <span
+            className="text-lg leading-tight font-medium text-white sm:text-xl"
+            style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}
+          >
+            {tile.nameCn}
+          </span>
+        </div>
       </div>
     )
   }

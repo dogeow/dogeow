@@ -267,11 +267,6 @@ const fetcher = <T>(url: string): Promise<T> => get<T>(url)
 export const fetchCurrentUser = () => get<User>('/user')
 export const useUser = () => useSWR<User>('/user', fetcher)
 
-// 导航相关API
-export const useNavCategories = () => useSWR('/nav-categories', fetcher)
-export const useNavItems = (categoryId?: number) =>
-  useSWR(categoryId ? `/nav-categories/${categoryId}/items` : null, fetcher)
-
 // 创建变更函数
 export const createMutation = <T>(endpoint: string, method: string = 'POST') => {
   return async (data: unknown): Promise<T> => {
@@ -286,12 +281,3 @@ export const createMutation = <T>(endpoint: string, method: string = 'POST') => 
     return result
   }
 }
-
-// 文件相关URL生成函数
-export const getFilePreviewUrl = (fileId: number): string =>
-  `${API_URL}/api/cloud/files/${fileId}/preview?thumb=true`
-
-export const getFileDownloadUrl = (fileId: number): string =>
-  `${API_URL}/api/cloud/files/${fileId}/download`
-
-export const getFileStorageUrl = (path: string): string => `${API_URL}/storage/${path}`

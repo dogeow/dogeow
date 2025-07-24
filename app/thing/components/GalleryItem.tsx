@@ -36,8 +36,8 @@ export function GalleryItem({ item, imageSize, onClick }: GalleryItemProps) {
         />
       ) : (
         <div className="bg-muted text-muted-foreground flex h-full w-full items-center justify-center">
-          <ImagePlaceholder 
-            className="opacity-40 text-gray-400" 
+          <ImagePlaceholder
+            className="text-gray-400 opacity-40"
             size={Math.floor(imageSize * 0.4)}
           />
         </div>

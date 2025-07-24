@@ -1,3 +1,5 @@
+import { Package, FlaskConical, FileText, Wrench, Compass, BookOpen, Gamepad2 } from 'lucide-react'
+
 // 控制台Logo文本
 const LOGO_TEXT = `
 ╔╦╗┌─┐┌─┐┌─┐╔═╗╦ ╦
@@ -11,7 +13,7 @@ if (typeof window !== 'undefined') {
 
   // 开发环境下输出额外信息
   if (process.env.NODE_ENV === 'development') {
-    console.log('🎯 DogeOW 配置加载完成')
+    console.log('🎯 本地开发环境')
   }
 }
 
@@ -19,87 +21,59 @@ if (typeof window !== 'undefined') {
 export const configs = {
   tiles: [
     {
-      name: '物品管理',
-      icon: '',
+      name: 'thing',
+      nameCn: '物品管理',
+      icon: <Package />,
       href: '/thing',
       color: '#2196F3',
-      size: 'large',
-      colSpan: 3,
-      rowSpan: 1,
-      cover: 'thing.png',
-      gridArea: 'thing',
       needLogin: true,
     },
     {
-      name: '实验室',
-      icon: '',
+      name: 'lab',
+      nameCn: '实验室',
+      icon: <FlaskConical />,
       href: '/lab',
       color: '#388e3c',
-      size: 'medium',
-      colSpan: 1,
-      rowSpan: 2,
-      cover: 'lab.png',
-      gridArea: 'lab',
       needLogin: false,
     },
     {
-      name: '文件',
-      icon: '',
+      name: 'file',
+      nameCn: '文件',
+      icon: <FileText />,
       href: '/file',
       color: '#FF5722',
-      size: 'medium',
-      colSpan: 2,
-      rowSpan: 1,
-      cover: 'file.png',
-      gridArea: 'file',
       needLogin: true,
     },
     {
-      name: '工具',
-      icon: '',
+      name: 'tool',
+      nameCn: '工具',
+      icon: <Wrench />,
       href: '/tool',
       color: '#8B5A2B',
-      size: 'medium',
-      colSpan: 2,
-      rowSpan: 1,
-      cover: 'tool.png',
-      gridArea: 'tool',
       needLogin: false,
     },
     {
-      name: '导航',
-      icon: '',
+      name: 'nav',
+      nameCn: '导航',
+      icon: <Compass />,
       href: '/nav',
       color: '#FFA000',
-      size: 'small',
-      colSpan: 1,
-      rowSpan: 1,
-      cover: 'nav.png',
-      gridArea: 'nav',
       needLogin: true,
     },
     {
-      name: '笔记',
-      icon: '',
+      name: 'note',
+      nameCn: '笔记',
+      icon: <BookOpen />,
       href: '/note',
       color: '#1976D2',
-      size: 'small',
-      colSpan: 1,
-      rowSpan: 1,
-      cover: 'note.png',
-      gridArea: 'note',
       needLogin: true,
     },
     {
-      name: '游戏',
-      icon: '',
+      name: 'game',
+      nameCn: '游戏',
+      icon: <Gamepad2 />,
       href: '/game',
       color: '#424242',
-      size: 'small',
-      colSpan: 1,
-      rowSpan: 1,
-      cover: 'game.png',
-      gridArea: 'game',
       needLogin: false,
     },
   ],

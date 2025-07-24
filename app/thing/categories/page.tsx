@@ -13,7 +13,17 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
-import { Folder, FolderOpen, Plus, Trash2, Check, X, ChevronDown, ChevronRight, FileText } from 'lucide-react'
+import {
+  Folder,
+  FolderOpen,
+  Plus,
+  Trash2,
+  Check,
+  X,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+} from 'lucide-react'
 import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 import { useCategories } from './hooks/useCategories'
 import { useInlineEdit } from './hooks/useInlineEdit'
@@ -219,10 +229,10 @@ export default function Categories() {
     return (
       <Table>
         <TableHeader>
-          <TableRow className="border-b-2 border-border/50">
-            <TableHead className="w-full font-semibold text-foreground">分类名称</TableHead>
-            <TableHead className="text-center font-semibold text-foreground">物品数量</TableHead>
-            <TableHead className="w-[100px] font-semibold text-foreground">操作</TableHead>
+          <TableRow className="border-border/50 border-b-2">
+            <TableHead className="text-foreground w-full font-semibold">分类名称</TableHead>
+            <TableHead className="text-foreground text-center font-semibold">物品数量</TableHead>
+            <TableHead className="text-foreground w-[100px] font-semibold">操作</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -236,24 +246,24 @@ export default function Categories() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 rounded-md hover:bg-accent/50 transition-all duration-200"
+                      className="hover:bg-accent/50 h-8 w-8 rounded-md p-0 transition-all duration-200"
                       onClick={() => toggleCategory(parent.id)}
                     >
                       {expandedCategories.has(parent.id) ? (
                         <div className="flex items-center justify-center">
-                          <ChevronDown className="h-4 w-4 text-primary" />
+                          <ChevronDown className="text-primary h-4 w-4" />
                         </div>
                       ) : (
                         <div className="flex items-center justify-center">
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          <ChevronRight className="text-muted-foreground h-4 w-4" />
                         </div>
                       )}
                     </Button>
                     <div className="flex items-center gap-2">
                       {expandedCategories.has(parent.id) ? (
-                        <FolderOpen className="h-5 w-5 text-primary" />
+                        <FolderOpen className="text-primary h-5 w-5" />
                       ) : (
-                        <Folder className="h-5 w-5 text-muted-foreground" />
+                        <Folder className="text-muted-foreground h-5 w-5" />
                       )}
                       {isEditing(parent.id) ? (
                         <div className="flex flex-1 items-center gap-2">
@@ -261,7 +271,7 @@ export default function Categories() {
                             ref={inputRef}
                             value={editingValue}
                             onChange={e => setEditingValue(e.target.value)}
-                            className="h-8 border-primary/50 focus:border-primary"
+                            className="border-primary/50 focus:border-primary h-8"
                             onKeyDown={handleEditKeyDown}
                             disabled={loading}
                           />
@@ -287,7 +297,7 @@ export default function Categories() {
                       ) : (
                         <div className="group flex flex-1 items-center justify-between">
                           <div
-                            className="cursor-pointer font-semibold text-foreground hover:text-primary hover:underline transition-colors"
+                            className="text-foreground hover:text-primary cursor-pointer font-semibold transition-colors hover:underline"
                             onClick={() => startEdit(parent.id, parent.name)}
                           >
                             {parent.name}
@@ -295,7 +305,7 @@ export default function Categories() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 px-3 opacity-60 group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10 hover:text-primary border border-transparent hover:border-primary/20"
+                            className="hover:bg-primary/10 hover:text-primary hover:border-primary/20 h-7 border border-transparent px-3 opacity-60 transition-all duration-200 group-hover:opacity-100"
                             onClick={() => startCreateChild(parent.id)}
                           >
                             <Plus className="mr-1 h-3 w-3" />
@@ -324,11 +334,14 @@ export default function Categories() {
               {expandedCategories.has(parent.id) && (
                 <>
                   {parent.children?.map(child => (
-                    <TableRow key={child.id} className="hover:bg-accent/20 transition-colors border-l-2 border-l-primary/20">
+                    <TableRow
+                      key={child.id}
+                      className="hover:bg-accent/20 border-l-primary/20 border-l-2 transition-colors"
+                    >
                       <TableCell>
                         <div className="ml-8 flex items-center gap-3">
-                          <div className="w-6 h-6 flex items-center justify-center">
-                            <div className="w-2 h-2 rounded-full bg-primary/40"></div>
+                          <div className="flex h-6 w-6 items-center justify-center">
+                            <div className="bg-primary/40 h-2 w-2 rounded-full"></div>
                           </div>
                           <FileText className="text-primary/60 h-4 w-4" />
                           {isEditing(child.id) ? (
@@ -337,7 +350,7 @@ export default function Categories() {
                                 ref={inputRef}
                                 value={editingValue}
                                 onChange={e => setEditingValue(e.target.value)}
-                                className="h-8 border-primary/50 focus:border-primary"
+                                className="border-primary/50 focus:border-primary h-8"
                                 onKeyDown={handleEditKeyDown}
                                 disabled={loading}
                               />
@@ -362,7 +375,7 @@ export default function Categories() {
                             </div>
                           ) : (
                             <div
-                              className="flex-1 cursor-pointer text-muted-foreground hover:text-foreground hover:underline transition-colors font-medium"
+                              className="text-muted-foreground hover:text-foreground flex-1 cursor-pointer font-medium transition-colors hover:underline"
                               onClick={() => startEdit(child.id, child.name)}
                             >
                               {child.name}
@@ -387,18 +400,18 @@ export default function Categories() {
 
                   {/* 创建子分类行 */}
                   {creatingChildFor === parent.id && (
-                    <TableRow className="bg-accent/10 border-l-2 border-l-primary/40">
+                    <TableRow className="bg-accent/10 border-l-primary/40 border-l-2">
                       <TableCell>
                         <div className="ml-8 flex items-center gap-3">
-                          <div className="w-6 h-6 flex items-center justify-center">
-                            <div className="w-2 h-2 rounded-full bg-primary/60 animate-pulse"></div>
+                          <div className="flex h-6 w-6 items-center justify-center">
+                            <div className="bg-primary/60 h-2 w-2 animate-pulse rounded-full"></div>
                           </div>
                           <FileText className="text-primary/60 h-4 w-4" />
                           <div className="flex flex-1 items-center gap-2">
                             <Input
                               value={newChildName}
                               onChange={e => setNewChildName(e.target.value)}
-                              className="h-8 border-primary/50 focus:border-primary bg-background"
+                              className="border-primary/50 focus:border-primary bg-background h-8"
                               placeholder="输入子分类名称"
                               onKeyDown={handleChildKeyDown}
                               disabled={creatingChild}
@@ -469,16 +482,14 @@ export default function Categories() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold">分类管理</h2>
-                <span className="text-sm text-muted-foreground">
-                  共 {categories.length} 个分类
-                </span>
+                <span className="text-muted-foreground text-sm">共 {categories.length} 个分类</span>
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={isAllExpanded ? collapseAll : expandAll}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border/50 hover:border-border hover:bg-accent/50 transition-all duration-200"
+                  className="border-border/50 hover:border-border hover:bg-accent/50 flex items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200"
                 >
                   {isAllExpanded ? (
                     <>

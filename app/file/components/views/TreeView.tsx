@@ -18,7 +18,7 @@ import {
 import { cn } from '@/lib/helpers'
 import { CloudFile, FolderNode } from '../../types'
 import useFileStore from '../../store/useFileStore'
-import { getFilePreviewUrl, getFileDownloadUrl } from '@/lib/api'
+import { getFilePreviewUrl, getFileDownloadUrl } from '../../services/api'
 import { formatFileSize } from '../../constants'
 
 // 常量定义

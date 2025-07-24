@@ -156,20 +156,3 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
-
-/* 优化渲染性能，减少闪烁 */
-.tile-grid {
-  contain: layout style paint;
-  will-change: opacity;
-}
-
-.tile-card {
-  contain: layout style paint;
-  transform: translateZ(0); /* 强制硬件加速 */
-}
-
-/* 图片加载优化 */
-.tile-image {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-}

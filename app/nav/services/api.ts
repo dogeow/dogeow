@@ -1,5 +1,14 @@
+import useSWR from 'swr'
 import { NavCategory, NavItem } from '@/app/nav/types'
 import { apiRequest, post, put, del } from '@/lib/api'
+
+// SWR fetcher
+const fetcher = <T>(url: string): Promise<T> => apiRequest<T>(url)
+
+// SWR hooks
+export const useNavCategories = () => useSWR('/nav-categories', fetcher)
+export const useNavItems = (categoryId?: number) =>
+  useSWR(categoryId ? `/nav-categories/${categoryId}/items` : null, fetcher)
 
 // 获取所有导航分类（及其导航项）
 export async function getCategories(filterName?: string) {

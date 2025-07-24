@@ -4,8 +4,8 @@ import { useCallback } from 'react'
 import type { Tile } from '@/app/types'
 import Footer from '@/components/app/Footer'
 import { configs } from '@/app/configs'
-import { TileCard } from './components/TileCard'
-import { useTileManagement } from '@/app/hooks/useTileManagement'
+import { TileCard } from '@/components/TileCard'
+import { useTileManagement } from '@/hooks/useTileManagement'
 
 export default function Home() {
   const { tiles, showProjectCovers, handleTileClick, getTileStatus, isAuthenticated } =
@@ -59,7 +59,7 @@ export default function Home() {
             gridTemplateAreas: configs.gridLayout.templateAreas,
           }}
         >
-          {tiles.map((tile, index) => renderTile(tile, index, tile.gridArea))}
+          {tiles.map((tile, index) => renderTile(tile, index, tile.gridArea || tile.name))}
         </div>
       </main>
 

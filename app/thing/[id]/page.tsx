@@ -88,10 +88,7 @@ const ImageGallery = ({
   if (!images || images.length === 0) {
     return (
       <div className="bg-muted flex h-48 items-center justify-center rounded-lg">
-        <ImagePlaceholder 
-          className="opacity-40 text-gray-400" 
-          size={64}
-        />
+        <ImagePlaceholder className="text-gray-400 opacity-40" size={64} />
       </div>
     )
   }

@@ -21,7 +21,7 @@ import { toast } from 'react-hot-toast'
 import { cn } from '@/lib/helpers'
 import { CloudFile, SortField } from '../../types'
 import useFileStore from '../../store/useFileStore'
-import { getFileDownloadUrl, getFilePreviewUrl } from '@/lib/api'
+import { getFileDownloadUrl, getFilePreviewUrl } from '../../services/api'
 import { formatFileSize } from '../../constants'
 
 interface ListViewProps {

@@ -238,13 +238,13 @@ export function useItemEdit() {
   const initialDataRef = useRef<CompareData | null>(null)
 
   useEffect(() => {
-    console.log('useEffect 被触发:', { 
-      initialLoading, 
-      formData, 
-      selectedTags, 
-      uploadedImages: uploadedImages.length 
+    console.log('useEffect 被触发:', {
+      initialLoading,
+      formData,
+      selectedTags,
+      uploadedImages: uploadedImages.length,
     })
-    
+
     if (initialLoading) {
       console.log('跳过：仍在初始加载中')
       return
@@ -270,7 +270,7 @@ export function useItemEdit() {
     if (hasChanges) {
       console.log('检测到数据变化，触发自动保存:', {
         current: currentData,
-        initial: initialDataRef.current
+        initial: initialDataRef.current,
       })
       triggerAutoSave()
       // 更新参考数据
@@ -305,7 +305,7 @@ export function useItemEdit() {
     if (hasChanges) {
       console.log('检测到数据变化，触发自动保存:', {
         current: currentData,
-        initial: initialDataRef.current
+        initial: initialDataRef.current,
       })
       triggerAutoSave()
       // 更新参考数据
@@ -318,7 +318,7 @@ export function useItemEdit() {
     purchaseDateTime,
     expiryDateTime,
     triggerAutoSave,
-    initialLoading
+    initialLoading,
   ])
 
   // 区域变化时加载房间

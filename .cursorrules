@@ -1,74 +1,66 @@
-## 目录结构说明
+# Next.js 前端项目规则
 
-- dogeow 目录是 Next.js 15 项目
-- dogeow-api 目录是 Laravel 12 项目
+## 项目概述
+这是一个 Next.js 15 前端项目，配合 dogeow-api (Laravel) 后端使用。
 
-如果你要修改，请到对应的文件夹去修改，而不是根目录。
-
-## 目标
-
-建议一个自给自足的网站，不要依赖其他网站。
-
-有 APi 工具，有小游戏，有 Markdonw 笔记等等。
+## 项目目标
+构建一个自给自足的多功能网站，包含：
+- API 工具集
+- 小游戏
+- Markdown 笔记系统
+- 其他实用功能
 
 ## 技术栈
 
-### 前端
-
-- Next.js 15
-- Tailwind CSS
-- Shadcn UI（Radix UI）
-- Lucide
+### 核心框架
+- Next.js 15 (App Router)
 - TypeScript
-- React
-- Vercel
-- axios
-- react-hook-form
-- zod
-- zustand
-- framer-motion
-- date-fns
-- react-hot-toast
-- SWR / TanStack Query
-- React DnD
+- React 18+
 
-### 后端
+### UI & 样式
+- Tailwind CSS
+- Shadcn UI (基于 Radix UI)
+- Lucide React (图标)
+- Framer Motion (动画)
 
-- Laravel 12
-    - Laravel
-        - Scout
-        - intervention/image
-        - Reverb
-        - Sanctum
-    - spatie
-        - laravel-query-builder
-        - laravel-permission
-        - laravel-activitylog
-        - laravel-backup
-        - laravel-medialibrary
-- PHP 8.4
-- MySQL 8
-- Redis 7
-- Nginx
-- Laravel Octane (性能优化)
-- Laravel Horizon (队列监控)
-- Laravel Telescope (调试工具)
-- Laravel Pint (代码格式化)
+### 状态管理 & 数据获取
+- Zustand (状态管理)
+- SWR (数据获取，优先使用)
+- TanStack Query (复杂场景备选)
 
-### 公共
+### 表单 & 验证
+- React Hook Form
+- Zod (数据验证)
 
-- 代码规范
-- 代码规范
-- CI/CD 使用 GitHub Actions
-- 单元测试
-- 监控
-- 日志
-- Sentry (错误跟踪)
+### 工具库
+- date-fns (日期处理)
+- React Hot Toast (通知)
+- React DnD (拖拽功能)
 
-## 注意
+### 部署
+- Vercel (推荐)
 
-- 不要运行 npm run dev 等，我自己会运行。
-- 不要使用 createContext，而是使用 zustand。
-- 默认使用 flex 布局，不要使用 grid 布局，除非复杂的显示结构。
-- 不要使用 fetch、axios，使用 SWR。
-- 按照功能模块组织代码，不要混在一起。比如 api、store、components、types、utils、hooks 等，放到对应项目功能，比如导航、物品管理、游戏的文件夹。
+## 开发规范
+
+### 代码组织
+- 按功能模块组织代码结构
+- 每个功能模块包含：`components/`、`hooks/`、`types/`、`utils/`、`api/`
+- 示例结构：`features/navigation/`、`features/inventory/`、`features/games/`
+
+### 技术选择
+- **状态管理**：使用 Zustand，避免 React Context
+- **数据获取**：优先使用 SWR，避免 fetch/axios
+- **布局**：默认使用 Flexbox，仅在复杂网格布局时使用 CSS Grid
+- **样式**：使用 Tailwind CSS，组件库使用 Shadcn UI
+
+### 代码质量
+- 使用 TypeScript 严格模式
+- 组件使用函数式组件 + hooks
+- 遵循 React 最佳实践
+- 保持组件单一职责
+
+### 开发流程
+- 不要自动运行开发服务器 (npm run dev)
+- 优先考虑用户体验和性能
+- 确保响应式设计
+- 注重无障碍访问性 (a11y)
