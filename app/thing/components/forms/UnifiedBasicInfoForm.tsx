@@ -108,10 +108,12 @@ export default function UnifiedBasicInfoForm({
   // 设置表单值的辅助函数
   const setCurrentValue = useCallback(
     (field: keyof FormDataType | keyof ItemFormData, value: unknown) => {
+      console.log('setCurrentValue 被调用:', { field, value, isEditMode })
       if (isCreateMode && formMethods) {
         formMethods.setValue(field as keyof FormDataType, value as FormDataType[keyof FormDataType])
       }
       if (isEditMode && setFormData) {
+        console.log('更新编辑模式的表单数据:', { field, value })
         setFormData(prev => ({ ...prev, [field]: value }))
       }
     },
@@ -125,9 +127,12 @@ export default function UnifiedBasicInfoForm({
   })
 
   const toggleTag = (tagId: string) => {
-    setSelectedTags(prev =>
-      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-    )
+    console.log('toggleTag 被调用:', { tagId })
+    setSelectedTags(prev => {
+      const newTags = prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+      console.log('标签更新:', { prev, newTags })
+      return newTags
+    })
   }
 
   // 处理分类选择

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import {
   Table,
   TableBody,
@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
-import { Folder, FolderOpen, Tag, Plus, Trash2, Check, X } from 'lucide-react'
+import { Folder, FolderOpen, Tag, Plus, Trash2, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 import { useCategories } from './hooks/useCategories'
 import { useInlineEdit } from './hooks/useInlineEdit'
@@ -143,6 +143,21 @@ export default function Categories() {
       return newSet
     })
   }, [])
+
+  // 全部展开
+  const expandAll = useCallback(() => {
+    setExpandedCategories(new Set(categoryTree.map(cat => cat.id)))
+  }, [categoryTree])
+
+  // 全部折叠
+  const collapseAll = useCallback(() => {
+    setExpandedCategories(new Set())
+  }, [])
+
+  // 判断是否全部展开
+  const isAllExpanded = useMemo(() => {
+    return categoryTree.length > 0 && categoryTree.every(cat => expandedCategories.has(cat.id))
+  }, [categoryTree, expandedCategories])
 
   // 开始创建子分类
   const startCreateChild = useCallback((parentId: number) => {
@@ -432,6 +447,30 @@ export default function Categories() {
   return (
     <div className="py-2 pb-24">
       <Card>
+        {categoryTree.length > 0 && (
+          <CardHeader className="pb-3">
+            <div className="flex justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={isAllExpanded ? collapseAll : expandAll}
+                className="flex items-center gap-1"
+              >
+                {isAllExpanded ? (
+                  <>
+                    <ChevronRight className="h-4 w-4" />
+                    全部折叠
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4" />
+                    全部展开
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardHeader>
+        )}
         <CardContent className="p-0">{renderTableContent}</CardContent>
       </Card>
 
