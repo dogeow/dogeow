@@ -13,7 +13,6 @@ interface GalleryItemProps {
 export function GalleryItem({ item, imageSize, onClick }: GalleryItemProps) {
   const thumbnailUrl = item.thumbnail_url
 
-  // Determine border color based on status
   let borderColorClass = 'border-transparent'
   if (item.status === 'expired') borderColorClass = 'border-red-500'
   else if (item.status === 'damaged') borderColorClass = 'border-orange-500'
@@ -46,16 +45,14 @@ export function GalleryItem({ item, imageSize, onClick }: GalleryItemProps) {
         <h3 className="truncate text-sm font-semibold text-white">{item.name}</h3>
         <p className="truncate text-xs text-gray-200">{item.category?.name || 'Uncategorized'}</p>
       </div>
-      {item.is_public && (
+      {item.is_public ? (
         <Badge
           variant="outline"
           className="bg-background/70 absolute top-1.5 right-1.5 p-1 backdrop-blur-sm"
         >
           <Globe className="h-3 w-3" />
         </Badge>
-      )}
-      {/* Minimal status indicator if needed, or rely on border */}
-      {/* Example: <div className={`absolute top-1 left-1 w-2 h-2 rounded-full ${item.status === 'active' ? 'bg-green-500' : 'bg-yellow-500'}`} title={`Status: ${item.status}`}></div> */}
+      ) : null}
     </div>
   )
 }
