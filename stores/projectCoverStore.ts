@@ -9,7 +9,7 @@ interface ProjectCoverState {
 export const useProjectCoverStore = create<ProjectCoverState>()(
   persist(
     set => ({
-      showProjectCovers: false,
+      showProjectCovers: true,
       setShowProjectCovers: (show: boolean) => set({ showProjectCovers: show }),
     }),
     {
