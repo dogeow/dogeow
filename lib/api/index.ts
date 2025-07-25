@@ -6,19 +6,7 @@ import useAuthStore from '../../stores/authStore'
 import type { User, ApiError } from '@/app'
 import { toast } from 'sonner'
 
-// API配置
-const getApiUrl = (): string => {
-  let apiUrl = process.env.NEXT_PUBLIC_API_URL
-
-  if (!apiUrl) {
-    apiUrl = 'http://127.0.0.1:8000'
-    console.warn('未找到NEXT_PUBLIC_API_URL环境变量，使用默认值:', apiUrl)
-  }
-
-  return apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl
-}
-
-export const API_URL = getApiUrl()
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
 // 自定义API错误类
 export class ApiRequestError extends Error {

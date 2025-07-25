@@ -14,6 +14,10 @@
 - Canvas / Three.js
 - (Lucide)[https://lucide.dev/]（图标）
 
+## 编写本代码时的规范
+
+VS Code 保存时自动格式化代码（Prettier）+ 提交代码时 ESLint 检查 + 推送时 TypeScript 检查
+
 ## 其他尚未使用
 
 - dayjs

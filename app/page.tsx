@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import type { Tile } from '@/app/types'
 import Footer from '@/components/app/Footer'
 import { configs } from '@/app/configs'
-import { TileCard } from '@/components/TileCard'
+import { TileCard } from '@/components/app/TileCard'
 import { useTileManagement } from '@/hooks/useTileManagement'
 
 export default function Home() {
