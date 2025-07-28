@@ -55,19 +55,20 @@ function ChatPageContent() {
   }, [setConnectionStatus])
 
   const handleMessage = useCallback(
-    (data: { type: string; message?: ChatMessage; [key: string]: unknown }) => {
-      console.log('🔥 ChatPage: handleMessage called with:', data)
+    (data: unknown) => {
+      const messageData = data as { type: string; message?: ChatMessage; [key: string]: unknown }
+      console.log('🔥 ChatPage: handleMessage called with:', messageData)
       console.log('🔥 ChatPage: Current room:', currentRoom)
 
-      if (data.type === 'message' && data.message) {
+      if (messageData.type === 'message' && messageData.message) {
         // 直接使用消息中的 room_id，而不依赖 currentRoom 状态
-        const roomId = data.message.room_id
-        console.log('🔥 ChatPage: Adding message to room:', roomId, data.message)
+        const roomId = messageData.message.room_id
+        console.log('🔥 ChatPage: Adding message to room:', roomId, messageData.message)
         console.log('🔥 ChatPage: Message details:', {
-          id: data.message.id,
-          room_id: data.message.room_id,
-          message: data.message.message,
-          user: data.message.user.name,
+          id: messageData.message.id,
+          room_id: messageData.message.room_id,
+          message: messageData.message.message,
+          user: messageData.message.user.name,
         })
 
         // 检查store状态
@@ -77,7 +78,7 @@ function ChatPageContent() {
           targetRoomMessages: beforeMessages[roomId.toString()]?.length || 0,
         })
 
-        addMessage(roomId, data.message)
+        addMessage(roomId, messageData.message)
 
         // 检查store状态
         const afterMessages = useChatStore.getState().messages
@@ -87,16 +88,19 @@ function ChatPageContent() {
         })
 
         console.log('🔥 ChatPage: Message added successfully')
-      } else if ((data.type === 'user_joined' || data.type === 'user_left') && currentRoom) {
+      } else if (
+        (messageData.type === 'user_joined' || messageData.type === 'user_left') &&
+        currentRoom
+      ) {
         console.log('ChatPage: User event, reloading online users')
         loadOnlineUsers(currentRoom.id).catch(() => {})
       } else {
         console.warn('❌ ChatPage: Message not processed:', {
-          type: data.type,
+          type: messageData.type,
           hasCurrentRoom: !!currentRoom,
-          hasMessage: !!data.message,
-          messageRoomId: data.message?.room_id,
-          data,
+          hasMessage: !!messageData.message,
+          messageRoomId: messageData.message?.room_id,
+          data: messageData,
         })
       }
     },
@@ -111,9 +115,10 @@ function ChatPageContent() {
   const handleMessageFailed = useCallback(() => {}, [])
 
   const handleMessageSentSuccess = useCallback(
-    (messageData: ChatMessage) => {
+    (messageData: unknown) => {
+      const chatMessage = messageData as ChatMessage
       if (currentRoom) {
-        addMessage(currentRoom.id, messageData)
+        addMessage(currentRoom.id, chatMessage)
       }
     },
     [currentRoom, addMessage]
