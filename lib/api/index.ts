@@ -200,6 +200,22 @@ export async function apiRequest<T>(
 
     return await handleResponse<T>(response)
   } catch (error) {
+    // 添加错误调试信息
+    if (process.env.NODE_ENV === 'development') {
+      console.group('API Request Error Debug')
+      console.error('Error type:', typeof error)
+      console.error('Error value:', error)
+      console.error('Error instanceof Error:', error instanceof Error)
+      console.error('Error instanceof ApiRequestError:', error instanceof ApiRequestError)
+      console.error('Error instanceof DOMException:', error instanceof DOMException)
+      if (error instanceof Error) {
+        console.error('Error name:', error.name)
+        console.error('Error message:', error.message)
+        console.error('Error stack:', error.stack)
+      }
+      console.groupEnd()
+    }
+
     // 处理各种错误类型
     if (error instanceof DOMException && error.name === 'AbortError') {
       const timeoutError = new Error('请求超时，请重试')
@@ -218,7 +234,14 @@ export async function apiRequest<T>(
       throw error
     }
 
-    if (handleError && error instanceof Error) {
+    // 确保所有错误都是Error实例
+    if (!(error instanceof Error)) {
+      const genericError = new Error(`API请求失败: ${String(error)}`)
+      if (handleError) handleApiError(genericError)
+      throw genericError
+    }
+
+    if (handleError) {
       handleApiError(error)
     }
 

@@ -115,7 +115,11 @@ function UserProfilePopover({
           {/* User Header */}
           <div className="flex items-center space-x-3">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
+              <AvatarImage
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+                width={48}
+                height={48}
+              />
               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
@@ -372,6 +376,8 @@ export default function OnlineUsers({
                       <Avatar className="h-8 w-8">
                         <AvatarImage
                           src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
+                          width={32}
+                          height={32}
                         />
                         <AvatarFallback className="text-xs">
                           {getInitials(user.name)}

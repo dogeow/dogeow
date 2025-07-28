@@ -91,12 +91,24 @@ class ChatApiErrorHandler {
     if (!error || (typeof error === 'object' && Object.keys(error).length === 0)) {
       type = 'unknown'
       message = context ? `${context}: Unknown error occurred` : 'Unknown error occurred'
+
+      // 添加更多调试信息
+      const debugInfo = {
+        errorType: typeof error,
+        errorValue: error,
+        context,
+        timestamp: new Date().toISOString(),
+        stack: new Error().stack,
+      }
+
+      console.warn('Chat API: Received empty error object:', debugInfo)
+
       return {
         type,
         message,
         code,
         status,
-        details,
+        details: debugInfo,
         timestamp: new Date(),
         retryable,
         userFriendly,
@@ -277,7 +289,13 @@ class ChatApiErrorHandler {
         console.error('Chat API Server Error:', logData)
         break
       default:
-        console.error('Chat API Unknown Error:', logData)
+        console.error('Chat API Unknown Error:', {
+          ...logData,
+          errorType: typeof error,
+          errorValue: error,
+          context: logData.details?.context || 'unknown',
+          stack: logData.details?.stack || 'no stack available',
+        })
     }
   }
 

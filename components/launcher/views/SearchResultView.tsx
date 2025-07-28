@@ -13,7 +13,14 @@ export function SearchResultView({ searchText, onReset }: SearchResultViewProps)
   return (
     <div className="flex h-full w-full items-center justify-between">
       <div className="mr-6 flex shrink-0 items-center">
-        <Image src={Logo} alt="apps" className="h-10 w-10 cursor-pointer" onClick={onReset} />
+        <Image
+          src={Logo}
+          alt="apps"
+          width={40}
+          height={40}
+          className="h-10 w-10 cursor-pointer"
+          onClick={onReset}
+        />
       </div>
 
       <div className="flex-1 overflow-auto px-4 py-1">

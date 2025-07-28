@@ -37,6 +37,17 @@ class ChatErrorBoundary extends React.Component<ChatErrorBoundaryProps, ChatErro
       logError: true,
     })
 
+    // 添加额外的调试信息
+    if (process.env.NODE_ENV === 'development') {
+      console.group('ChatErrorBoundary: Component Error')
+      console.error('Original error:', error)
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+      console.error('Converted ChatApiError:', chatError)
+      console.groupEnd()
+    }
+
     return {
       hasError: true,
       error: chatError,
