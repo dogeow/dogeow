@@ -31,7 +31,25 @@ const useAuthStore = create<AuthState>()(
 
       setUser: user => set({ user, isAuthenticated: !!user }),
 
-      setToken: token => set({ token, isAuthenticated: !!token }),
+      setToken: async token => {
+        // const currentToken = get().token
+        set({ token, isAuthenticated: !!token })
+
+        // Always sync token with WebSocket auth manager
+        if (typeof window !== 'undefined') {
+          try {
+            const { getAuthManager } = await import('@/lib/websocket/auth')
+            const authManager = getAuthManager()
+            if (token) {
+              authManager.setToken(token)
+            } else {
+              authManager.removeToken()
+            }
+          } catch (error) {
+            console.warn('Failed to sync token with WebSocket auth manager:', error)
+          }
+        }
+      },
 
       // 获取token的方法
       getToken: () => get().token,
@@ -61,7 +79,7 @@ const useAuthStore = create<AuthState>()(
         }
       },
 
-      logout: () => {
+      logout: async () => {
         // 可以选择调用后端的登出接口
         // 如果需要的话，可以在这里添加 API 调用
 
@@ -73,6 +91,17 @@ const useAuthStore = create<AuthState>()(
 
         // 清除localStorage中的备份token
         localStorage.removeItem('auth-token')
+
+        // 同步到WebSocket认证管理器
+        if (typeof window !== 'undefined') {
+          try {
+            const { getAuthManager } = await import('@/lib/websocket/auth')
+            const authManager = getAuthManager()
+            authManager.removeToken()
+          } catch (error) {
+            console.warn('Failed to sync logout with WebSocket auth manager:', error)
+          }
+        }
       },
     }),
     {

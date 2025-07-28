@@ -9,6 +9,7 @@ import { Edit, Trash2, ArrowLeft, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import ReadonlyEditor from '@/components/novel-editor/readonly'
+import ReactMarkdown from 'react-markdown'
 
 export default function NoteDetail() {
   const router = useRouter()
@@ -69,14 +70,54 @@ export default function NoteDetail() {
           (() => {
             try {
               const parsedContent = JSON.parse(note.content)
-              return <ReadonlyEditor content={parsedContent} />
+
+              // 检查是否是空的编辑器内容
+              const isEmpty =
+                !parsedContent ||
+                !parsedContent.content ||
+                parsedContent.content.length === 0 ||
+                (parsedContent.content.length === 1 &&
+                  parsedContent.content[0].type === 'paragraph' &&
+                  (!parsedContent.content[0].content ||
+                    parsedContent.content[0].content.length === 0 ||
+                    (parsedContent.content[0].content.length === 1 &&
+                      parsedContent.content[0].content[0].text === '')))
+
+              if (isEmpty) {
+                return (
+                  <div className="prose max-w-none">
+                    <span className="text-gray-500 italic">(无内容)</span>
+                  </div>
+                )
+              }
+
+              // 尝试渲染内容，如果失败则显示备用内容
+              try {
+                return <ReadonlyEditor content={parsedContent} />
+              } catch (renderError) {
+                console.error('ReadonlyEditor render failed:', renderError)
+                return (
+                  <div className="prose max-w-none">
+                    <span className="text-gray-500 italic">(内容渲染失败)</span>
+                  </div>
+                )
+              }
             } catch (error) {
               console.error('Failed to parse note content:', error)
-              return (
-                <div className="prose max-w-none">
-                  <span className="text-red-500 italic">(内容格式错误)</span>
-                </div>
-              )
+              // 如果JSON解析失败，尝试显示原始内容或markdown内容
+              if (note.content_markdown) {
+                return (
+                  <div className="prose max-w-none">
+                    <ReactMarkdown>{note.content_markdown}</ReactMarkdown>
+                  </div>
+                )
+              } else {
+                return (
+                  <div className="prose max-w-none">
+                    <pre className="whitespace-pre-wrap">{note.content}</pre>
+                  </div>
+                )
+              }
             }
           })()
         ) : (

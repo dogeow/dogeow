@@ -10,6 +10,10 @@ export default function LegalLinks() {
       <Link href="/about/terms" className="transition-colors hover:text-gray-900">
         用户协议
       </Link>
+      <span className="text-gray-400">|</span>
+      <Link href="/about/site" className="transition-colors hover:text-gray-900">
+        网站日志
+      </Link>
     </div>
   )
 }

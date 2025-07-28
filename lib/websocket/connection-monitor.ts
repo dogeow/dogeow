@@ -1,0 +1,237 @@
+import Echo from 'laravel-echo'
+import { getEchoInstance } from './echo'
+import WebSocketErrorHandler, { ConnectionError } from './error-handler'
+
+export type ConnectionStatus =
+  | 'connecting'
+  | 'connected'
+  | 'disconnected'
+  | 'reconnecting'
+  | 'error'
+
+export interface ConnectionMonitor {
+  status: ConnectionStatus
+  lastConnected: Date | null
+  reconnectAttempts: number
+  maxReconnectAttempts: number
+  lastError: ConnectionError | null
+  isRetrying: boolean
+}
+
+class WebSocketConnectionMonitor {
+  private status: ConnectionStatus = 'disconnected'
+  private lastConnected: Date | null = null
+  private reconnectAttempts = 0
+  private maxReconnectAttempts = 5
+  private lastError: ConnectionError | null = null
+  private isRetrying = false
+  private listeners: Array<(monitor: ConnectionMonitor) => void> = []
+  private reconnectTimeout: NodeJS.Timeout | null = null
+  private errorHandler: WebSocketErrorHandler
+
+  constructor() {
+    this.errorHandler = new WebSocketErrorHandler({
+      onError: error => {
+        this.lastError = error
+        this.notifyListeners()
+      },
+      onRetry: (attempt, delay) => {
+        this.isRetrying = true
+        this.reconnectAttempts = attempt
+        this.updateStatus('reconnecting')
+        console.log(`WebSocket retry attempt ${attempt} in ${delay}ms`)
+      },
+      onMaxRetriesReached: () => {
+        this.isRetrying = false
+        this.updateStatus('error')
+        console.error('WebSocket max retry attempts reached')
+      },
+      retryConfig: {
+        maxAttempts: this.maxReconnectAttempts,
+        baseDelay: 1000,
+        maxDelay: 30000,
+        backoffMultiplier: 2,
+        jitter: true,
+      },
+    })
+    this.setupEventListeners()
+  }
+
+  private setupEventListeners() {
+    // This will be called when Echo instance is created
+  }
+
+  public initializeWithEcho(echo: Echo<'reverb'>) {
+    if (echo && echo.connector && echo.connector.pusher) {
+      // Pusher connection events
+      echo.connector.pusher.connection.bind('connected', () => {
+        this.updateStatus('connected')
+        this.lastConnected = new Date()
+        this.reconnectAttempts = 0
+        this.lastError = null
+        this.isRetrying = false
+        this.errorHandler.resetRetryCount()
+        this.clearReconnectTimeout()
+      })
+
+      echo.connector.pusher.connection.bind('connecting', () => {
+        this.updateStatus('connecting')
+      })
+
+      echo.connector.pusher.connection.bind('disconnected', () => {
+        this.updateStatus('disconnected')
+        // 暂时禁用自动重连以避免循环
+        // this.scheduleReconnect()
+      })
+
+      echo.connector.pusher.connection.bind('error', (error: unknown) => {
+        const connectionError = this.errorHandler.handleError(error, 'WebSocket connection')
+        this.updateStatus('error')
+
+        if (this.errorHandler.shouldRetry(connectionError)) {
+          this.scheduleReconnectWithErrorHandler()
+        }
+      })
+
+      echo.connector.pusher.connection.bind('unavailable', (error: unknown) => {
+        const connectionError = this.errorHandler.handleError(
+          error || { message: 'WebSocket unavailable' },
+          'WebSocket unavailable'
+        )
+        this.updateStatus('error')
+
+        if (this.errorHandler.shouldRetry(connectionError)) {
+          this.scheduleReconnectWithErrorHandler()
+        }
+      })
+
+      // Additional error events
+      echo.connector.pusher.connection.bind('failed', (error: unknown) => {
+        const connectionError = this.errorHandler.handleError(error, 'WebSocket connection failed')
+        this.updateStatus('error')
+
+        if (this.errorHandler.shouldRetry(connectionError)) {
+          this.scheduleReconnectWithErrorHandler()
+        }
+      })
+    }
+  }
+
+  private updateStatus(newStatus: ConnectionStatus) {
+    this.status = newStatus
+    this.notifyListeners()
+  }
+
+  private scheduleReconnect() {
+    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+      return
+    }
+
+    this.clearReconnectTimeout()
+
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 16000)
+
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectAttempts++
+      this.updateStatus('reconnecting')
+
+      const echo = getEchoInstance()
+      if (echo) {
+        echo.connector.pusher.connect()
+      }
+    }, delay)
+  }
+
+  private scheduleReconnectWithErrorHandler() {
+    this.errorHandler.scheduleRetry(() => {
+      const echo = getEchoInstance()
+      if (echo) {
+        echo.connector.pusher.connect()
+      }
+    })
+  }
+
+  private clearReconnectTimeout() {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout)
+      this.reconnectTimeout = null
+    }
+  }
+
+  private notifyListeners() {
+    const monitor: ConnectionMonitor = {
+      status: this.status,
+      lastConnected: this.lastConnected,
+      reconnectAttempts: this.reconnectAttempts,
+      maxReconnectAttempts: this.maxReconnectAttempts,
+      lastError: this.lastError,
+      isRetrying: this.isRetrying,
+    }
+
+    this.listeners.forEach(listener => listener(monitor))
+  }
+
+  public subscribe(listener: (monitor: ConnectionMonitor) => void): () => void {
+    this.listeners.push(listener)
+
+    // Immediately notify with current status
+    this.notifyListeners()
+
+    // Return unsubscribe function
+    return () => {
+      const index = this.listeners.indexOf(listener)
+      if (index > -1) {
+        this.listeners.splice(index, 1)
+      }
+    }
+  }
+
+  public getStatus(): ConnectionMonitor {
+    return {
+      status: this.status,
+      lastConnected: this.lastConnected,
+      reconnectAttempts: this.reconnectAttempts,
+      maxReconnectAttempts: this.maxReconnectAttempts,
+      lastError: this.lastError,
+      isRetrying: this.isRetrying,
+    }
+  }
+
+  public forceReconnect() {
+    this.reconnectAttempts = 0
+    this.lastError = null
+    this.isRetrying = false
+    this.errorHandler.resetRetryCount()
+    this.clearReconnectTimeout()
+
+    const echo = getEchoInstance()
+    if (echo) {
+      echo.connector.pusher.disconnect()
+      echo.connector.pusher.connect()
+    }
+  }
+
+  public destroy() {
+    this.clearReconnectTimeout()
+    this.errorHandler.destroy()
+    this.listeners = []
+  }
+}
+
+// Singleton instance
+let connectionMonitor: WebSocketConnectionMonitor | null = null
+
+export const getConnectionMonitor = (): WebSocketConnectionMonitor => {
+  if (!connectionMonitor) {
+    connectionMonitor = new WebSocketConnectionMonitor()
+  }
+  return connectionMonitor
+}
+
+export const destroyConnectionMonitor = (): void => {
+  if (connectionMonitor) {
+    connectionMonitor.destroy()
+    connectionMonitor = null
+  }
+}

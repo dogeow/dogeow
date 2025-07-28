@@ -113,7 +113,7 @@ export default function ItemCardImage({
           <ImagePlaceholder className="text-gray-400 opacity-40" size={placeholderSize} />
         </div>
       )}
-      {isPublic  ? (
+      {isPublic ? (
         <Badge variant="secondary" className="absolute top-2 right-2">
           <Globe className="mr-1 h-3 w-3" />
           公开
