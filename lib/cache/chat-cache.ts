@@ -1,4 +1,4 @@
-import type { ChatMessage, ChatRoom, ChatUser } from '@/types/chat'
+import type { ChatMessage, ChatRoom, ChatUser } from '@/app/chat/types'
 
 interface CacheItem<T> {
   data: T

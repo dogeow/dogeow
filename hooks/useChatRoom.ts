@@ -7,7 +7,7 @@ import type {
   OnlineUser,
   CreateRoomData,
   MessagePagination,
-} from '@/types/chat'
+} from '@/app/chat/types'
 
 export interface UseChatRoomReturn {
   // Room management

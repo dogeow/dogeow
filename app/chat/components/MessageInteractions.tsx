@@ -31,7 +31,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/helpers'
-import type { ChatMessage } from '@/types/chat'
+import type { ChatMessage } from '../types'
 
 interface MessageInteractionsProps {
   message: ChatMessage

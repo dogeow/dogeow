@@ -6,7 +6,7 @@ import type {
   OnlineUser,
   CreateRoomData,
   MessagePagination,
-} from '../types/chat'
+} from '../app/chat/types'
 import { get as apiGet, post as apiPost } from '@/lib/api'
 import { handleChatApiError, type ChatApiError } from '@/lib/api/chat-error-handler'
 import chatCache from '@/lib/cache/chat-cache'

@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import useChatStore from '@/stores/chatStore'
-import type { CreateRoomData } from '@/types/chat'
+import type { CreateRoomData } from '../types'
 
 const createRoomSchema = z.object({
   name: z

@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 import useChatStore from '@/stores/chatStore'
-import type { ChatRoom } from '@/types/chat'
+import type { ChatRoom } from '../types'
 
 interface DeleteRoomDialogProps {
   room: ChatRoom

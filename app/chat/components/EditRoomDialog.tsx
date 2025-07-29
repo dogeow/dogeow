@@ -27,7 +27,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { put } from '@/lib/api'
 import useChatStore from '@/stores/chatStore'
-import type { ChatRoom } from '@/types/chat'
+import type { ChatRoom } from '../types'
 
 const editRoomSchema = z.object({
   name: z

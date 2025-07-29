@@ -38,7 +38,7 @@ import { Separator } from '@/components/ui/separator'
 import useChatStore from '@/stores/chatStore'
 import { NotificationHistory } from './NotificationHistory'
 import { NotificationIndicator } from './NotificationBadge'
-import type { ChatRoom } from '@/types/chat'
+import type { ChatRoom } from '../types'
 import { useTranslation } from '@/hooks/useTranslation'
 
 interface ChatHeaderProps {

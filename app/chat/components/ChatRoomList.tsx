@@ -30,7 +30,7 @@ import { CreateRoomDialog } from './CreateRoomDialog'
 import { EditRoomDialog } from './EditRoomDialog'
 import { DeleteRoomDialog } from './DeleteRoomDialog'
 import { NotificationBadge } from './NotificationBadge'
-import type { ChatRoom } from '@/types/chat'
+import type { ChatRoom } from '../types'
 
 interface ChatRoomListProps {
   onRoomSelect?: () => void

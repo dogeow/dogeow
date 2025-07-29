@@ -40,7 +40,7 @@ import {
   MoreVertical,
 } from 'lucide-react'
 import useChatStore from '@/stores/chatStore'
-import type { OnlineUser } from '@/types/chat'
+import type { OnlineUser } from '../types'
 
 interface OnlineUsersProps {
   roomId: number
