@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Send, Loader2, Smile, Paperclip, X } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import { toast } from '@/components/ui/use-toast'
 import { useDebounce } from 'use-debounce'
 import Image from 'next/image'

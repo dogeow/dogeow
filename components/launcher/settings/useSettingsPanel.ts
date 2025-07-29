@@ -5,7 +5,6 @@ import { toast } from 'sonner'
 import { useThemeStore } from '@/stores/themeStore'
 import { useProjectCoverStore } from '@/stores/projectCoverStore'
 import { hexToHSL } from '@/lib/helpers'
-import { useTranslation } from '@/hooks/useTranslation'
 import type { CustomTheme } from '@/app/types'
 import type { CustomBackground } from '../SettingsPanel'
 
@@ -33,14 +32,13 @@ export function useSettingsPanel({
   } = useThemeStore()
 
   const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
-  const { t } = useTranslation()
 
   const [currentView, setCurrentView] = useState<SettingsView>('main')
 
   // 设置背景图片
   const handleSetBackground = (url: string) => {
     setBackgroundImage(url)
-    toast.success(t('success.updated', '背景已更新'))
+    toast.success('Background updated')
   }
 
   // 处理用户上传背景图片
@@ -54,13 +52,13 @@ export function useSettingsPanel({
       if (typeof result === 'string') {
         const newBackground = {
           id: `custom-${Date.now()}`,
-          name: `自定义-${file.name}`,
+          name: `Custom-${file.name}`,
           url: result,
         }
 
         setCustomBackgrounds(prev => [...prev, newBackground])
         handleSetBackground(newBackground.url)
-        toast.success(t('success.created', '自定义背景已上传'))
+        toast.success('Custom background uploaded')
       }
     }
 
@@ -70,19 +68,13 @@ export function useSettingsPanel({
   // 处理跟随系统选项切换
   const handleToggleFollowSystem = (checked: boolean) => {
     setFollowSystem(checked)
-    toast.success(
-      checked
-        ? t('success.updated', '已启用跟随系统主题')
-        : t('success.updated', '已关闭跟随系统主题')
-    )
+    toast.success(checked ? 'System theme enabled' : 'System theme disabled')
   }
 
   // 处理功能封面图选项切换
   const handleToggleProjectCovers = (checked: boolean) => {
     setShowProjectCovers(checked)
-    toast.success(
-      checked ? t('success.updated', '已启用功能封面图') : t('success.updated', '已关闭功能封面图')
-    )
+    toast.success(checked ? 'Project covers enabled' : 'Project covers disabled')
   }
 
   // 处理添加自定义主题
@@ -97,13 +89,13 @@ export function useSettingsPanel({
 
     addCustomTheme(newTheme)
     setCurrentTheme(newTheme.id)
-    toast.success('自定义主题已添加')
+    toast.success('Custom theme added')
   }
 
   // 处理删除自定义主题
   const handleRemoveCustomTheme = (id: string) => {
     removeCustomTheme(id)
-    toast.success('主题已删除')
+    toast.success('Theme removed')
   }
 
   return {

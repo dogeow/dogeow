@@ -27,7 +27,7 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
 
   const handleAddTheme = () => {
     if (!themeName.trim()) {
-      toast.error('请输入主题名称')
+      toast.error('Please enter theme name')
       return
     }
 
@@ -47,7 +47,7 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
               'relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md p-1',
               'bg-primary/10 hover:bg-primary/20 border-primary/30 border-2 border-dashed'
             )}
-            title="添加自定义主题"
+            title="Add Theme"
           >
             <Plus className="text-primary/70 h-5 w-5" />
           </Button>
@@ -56,26 +56,26 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
 
       <DialogContent className="max-w-[80%]">
         <DialogHeader>
-          <DialogTitle>添加自定义主题</DialogTitle>
+          <DialogTitle>Add Theme</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4">
           <div className="flex items-center gap-4">
             <Label htmlFor="theme-name" className="w-1/4 text-right">
-              主题名称
+              Name
             </Label>
             <Input
               id="theme-name"
               value={themeName}
               onChange={e => setThemeName(e.target.value)}
               className="w-3/4"
-              placeholder="例如：我的主题"
+              placeholder="e.g. My Theme"
             />
           </div>
 
           <div className="flex items-center gap-4">
             <Label htmlFor="theme-color" className="w-1/4 text-right">
-              主题颜色
+              Color
             </Label>
             <div className="w-3/4">
               <Input
@@ -90,7 +90,7 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
         </div>
 
         <div className="flex justify-end">
-          <Button onClick={handleAddTheme}>添加主题</Button>
+          <Button onClick={handleAddTheme}>Add</Button>
         </div>
       </DialogContent>
     </Dialog>

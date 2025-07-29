@@ -7,7 +7,7 @@ import { ChatRoomList, MessageList, MessageInput, OnlineUsers, ChatHeader } from
 import ConnectionStatusIndicator from './components/ConnectionStatusIndicator'
 import ChatErrorBoundary, { useChatErrorHandler } from './components/ChatErrorBoundary'
 import ErrorFallback from './components/ErrorFallback'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import useAuthStore from '@/stores/authStore'
 import { useChatWebSocket } from '@/hooks/useChatWebSocket'
 import type { ChatMessage } from './types'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { useTranslation } from '@/hooks/useTranslation'
 
 interface UseLanguageTransitionReturn {
@@ -18,38 +18,11 @@ export function useLanguageTransition(): UseLanguageTransitionReturn {
   const { currentLanguage, setLanguage } = useTranslation()
   const [isTransitioning, setIsTransitioning] = useState(false)
   const [transitionProgress, setTransitionProgress] = useState(0)
-  const [prevLanguage, setPrevLanguage] = useState(currentLanguage)
-
-  // 检测语言变化
-  useEffect(() => {
-    if (prevLanguage !== currentLanguage) {
-      setIsTransitioning(true)
-      setPrevLanguage(currentLanguage)
-
-      // 重置进度
-      setTransitionProgress(0)
-
-      // 模拟过渡进度
-      const progressInterval = setInterval(() => {
-        setTransitionProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(progressInterval)
-            setIsTransitioning(false)
-            return 100
-          }
-          return prev + 10
-        })
-      }, 30)
-
-      return () => clearInterval(progressInterval)
-    }
-  }, [currentLanguage, prevLanguage])
 
   // 语言切换函数
   const switchLanguage = useCallback(
     async (languageCode: string) => {
-      if (languageCode === currentLanguage) return
-
+      console.log('switchLanguage called with:', languageCode, 'current:', currentLanguage)
       setIsTransitioning(true)
       setTransitionProgress(0)
 
@@ -57,15 +30,34 @@ export function useLanguageTransition(): UseLanguageTransitionReturn {
         // 设置新语言
         setLanguage(languageCode)
 
-        // 等待一小段时间确保状态更新
-        await new Promise(resolve => setTimeout(resolve, 100))
+        // 模拟过渡进度
+        const progressInterval = setInterval(() => {
+          setTransitionProgress(prev => {
+            console.log('Progress update:', prev + 10)
+            if (prev >= 100) {
+              console.log('Transition complete, setting isTransitioning to false')
+              clearInterval(progressInterval)
+              setIsTransitioning(false)
+              return 100
+            }
+            return prev + 10
+          })
+        }, 30)
+
+        // 确保过渡在3秒后结束（防止卡住）
+        setTimeout(() => {
+          clearInterval(progressInterval)
+          setIsTransitioning(false)
+          setTransitionProgress(100)
+          console.log('Transition timeout, forcing completion')
+        }, 3000)
       } catch (error) {
         console.error('Language switch failed:', error)
         setIsTransitioning(false)
         setTransitionProgress(0)
       }
     },
-    [currentLanguage, setLanguage]
+    [setLanguage, currentLanguage]
   )
 
   return {
@@ -82,29 +74,18 @@ export function useLanguageTransition(): UseLanguageTransitionReturn {
 export function useLanguageTransitionWithDuration(duration: number = 300) {
   const { currentLanguage, setLanguage } = useTranslation()
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [prevLanguage, setPrevLanguage] = useState(currentLanguage)
-
-  useEffect(() => {
-    if (prevLanguage !== currentLanguage) {
-      setIsTransitioning(true)
-      setPrevLanguage(currentLanguage)
-
-      const timer = setTimeout(() => {
-        setIsTransitioning(false)
-      }, duration)
-
-      return () => clearTimeout(timer)
-    }
-  }, [currentLanguage, prevLanguage, duration])
 
   const switchLanguage = useCallback(
     async (languageCode: string) => {
-      if (languageCode === currentLanguage) return
-
       setIsTransitioning(true)
       setLanguage(languageCode)
+
+      // 使用定时器确保过渡状态能正确重置
+      setTimeout(() => {
+        setIsTransitioning(false)
+      }, duration)
     },
-    [currentLanguage, setLanguage]
+    [setLanguage, duration]
   )
 
   return {

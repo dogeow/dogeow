@@ -25,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/helpers'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import { CreateRoomDialog } from './CreateRoomDialog'
 import { EditRoomDialog } from './EditRoomDialog'
 import { DeleteRoomDialog } from './DeleteRoomDialog'

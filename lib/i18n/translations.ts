@@ -49,6 +49,23 @@ export const translations: Translations = {
     'language.current': '当前语言',
     'settings.current_language': '当前语言',
 
+    // Footer
+    'footer.privacy_policy': '隐私政策',
+    'footer.terms_of_service': '用户协议',
+    'footer.site_info': '网站信息',
+
+    // Development Log
+    'devlog.title': '开发日志',
+    'devlog.subtitle': '记录网站的开发历程、功能更新和重要里程碑',
+    'devlog.filter.label': '筛选:',
+    'devlog.filter.all': '全部',
+    'devlog.type.feature': '新功能',
+    'devlog.type.bugfix': '修复',
+    'devlog.type.update': '更新',
+    'devlog.type.release': '发布',
+    'devlog.type.milestone': '里程碑',
+    'devlog.no_results': '没有找到符合条件的日志',
+
     // Games
     'game.sliding-puzzle': '滑块拼图',
     'game.sliding-puzzle.desc': '经典的数字滑块拼图游戏，通过移动数字方块来排列顺序',
@@ -292,6 +309,23 @@ export const translations: Translations = {
     'language.current': '目前語言',
     'settings.current_language': '目前語言',
 
+    // Footer
+    'footer.privacy_policy': '隱私政策',
+    'footer.terms_of_service': '用戶協議',
+    'footer.site_info': '網站信息',
+
+    // Development Log
+    'devlog.title': '開發日誌',
+    'devlog.subtitle': '記錄網站的開發歷程、功能更新和重要里程碑',
+    'devlog.filter.label': '篩選:',
+    'devlog.filter.all': '全部',
+    'devlog.type.feature': '新功能',
+    'devlog.type.bugfix': '修復',
+    'devlog.type.update': '更新',
+    'devlog.type.release': '發布',
+    'devlog.type.milestone': '里程碑',
+    'devlog.no_results': '沒有找到符合條件的日誌',
+
     // Games
     'game.sliding-puzzle': '滑塊拼圖',
     'game.sliding-puzzle.desc': '經典的數字滑塊拼圖遊戲，通過移動數字方塊來排列順序',
@@ -534,6 +568,24 @@ export const translations: Translations = {
     'language.selector.title': 'Select Language',
     'language.current': 'Current Language',
     'settings.current_language': 'Current Language',
+
+    // Footer
+    'footer.privacy_policy': 'Privacy Policy',
+    'footer.terms_of_service': 'Terms of Service',
+    'footer.site_info': 'Site Info',
+
+    // Development Log
+    'devlog.title': 'Development Log',
+    'devlog.subtitle':
+      'Record the development history, feature updates, and important milestones of the website',
+    'devlog.filter.label': 'Filter:',
+    'devlog.filter.all': 'All',
+    'devlog.type.feature': 'New Feature',
+    'devlog.type.bugfix': 'Bugfix',
+    'devlog.type.update': 'Update',
+    'devlog.type.release': 'Release',
+    'devlog.type.milestone': 'Milestone',
+    'devlog.no_results': 'No logs found matching the criteria',
 
     // Games
     'game.sliding-puzzle': 'Sliding Puzzle',
@@ -781,6 +833,23 @@ export const translations: Translations = {
     'language.selector.title': '言語を選択',
     'language.current': '現在の言語',
     'settings.current_language': '現在の言語',
+
+    // Footer
+    'footer.privacy_policy': 'プライバシーポリシー',
+    'footer.terms_of_service': '利用規約',
+    'footer.site_info': 'サイト情報',
+
+    // Development Log
+    'devlog.title': '開発日誌',
+    'devlog.subtitle': 'ウェブサイトの開発歴史、機能更新、重要なマイルストーンを記録',
+    'devlog.filter.label': 'フィルター:',
+    'devlog.filter.all': 'すべて',
+    'devlog.type.feature': '新機能',
+    'devlog.type.bugfix': '修正',
+    'devlog.type.update': '更新',
+    'devlog.type.release': 'リリース',
+    'devlog.type.milestone': 'マイルストーン',
+    'devlog.no_results': '条件に合致するログが見つかりません',
 
     // Games
     'game.sliding-puzzle': 'スライディングパズル',

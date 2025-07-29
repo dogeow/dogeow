@@ -1,12 +1,12 @@
 'use client'
 
 import React from 'react'
-import { Palette, Image as ImageIcon, Computer, Languages } from 'lucide-react'
+import { Palette, Image, Computer, Languages } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { SettingsDivider } from './SettingsDivider'
-import { useTranslation } from '@/hooks/useTranslation'
+// import { useTranslation } from '@/hooks/useTranslation'
 
 interface MainViewProps {
   onNavigateToBackground: () => void
@@ -27,7 +27,7 @@ export function MainView({
   showProjectCovers,
   onToggleProjectCovers,
 }: MainViewProps) {
-  const { t } = useTranslation()
+  // const { t } = useTranslation()
 
   return (
     <>
@@ -36,8 +36,8 @@ export function MainView({
         className="flex h-9 shrink-0 items-center gap-2 px-3"
         onClick={onNavigateToBackground}
       >
-        <ImageIcon className="h-4 w-4" />
-        <span className="text-sm font-medium">{t('settings.background', '背景')}</span>
+        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+        <Image className="h-4 w-4" />
       </Button>
 
       <Button
@@ -46,7 +46,6 @@ export function MainView({
         onClick={onNavigateToTheme}
       >
         <Palette className="h-4 w-4" />
-        <span className="text-sm font-medium">{t('settings.theme', '主题')}</span>
       </Button>
 
       <Button
@@ -55,17 +54,14 @@ export function MainView({
         onClick={onNavigateToLanguage}
       >
         <Languages className="h-4 w-4" />
-        <span className="text-sm font-medium">{t('settings.language', '语言')}</span>
       </Button>
 
       <SettingsDivider />
 
       {/* 功能封面图选项 */}
       <div className="flex h-9 shrink-0 items-center gap-2 px-3">
-        <ImageIcon className="h-4 w-4" />
-        <Label htmlFor="project-covers" className="cursor-pointer text-sm font-medium">
-          {t('settings.project_covers', '功能封面图')}
-        </Label>
+        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+        <Image className="h-4 w-4" />
         <Switch
           id="project-covers"
           checked={showProjectCovers}
@@ -77,7 +73,7 @@ export function MainView({
       <div className="flex h-9 shrink-0 items-center gap-2 px-3">
         <Computer className="h-4 w-4" />
         <Label htmlFor="follow-system" className="cursor-pointer text-sm font-medium">
-          {t('settings.follow_system', '跟随系统')}
+          System
         </Label>
         <Switch id="follow-system" checked={followSystem} onCheckedChange={onToggleFollowSystem} />
       </div>

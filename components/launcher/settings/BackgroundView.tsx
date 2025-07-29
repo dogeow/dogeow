@@ -54,7 +54,7 @@ export function BackgroundView({
       ))}
 
       {/* 上传按钮 */}
-      <UploadButton onUpload={onUploadBackground} title="上传自定义背景" />
+      <UploadButton onUpload={onUploadBackground} title="Upload" />
     </>
   )
 }

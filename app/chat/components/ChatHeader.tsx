@@ -35,7 +35,7 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import { NotificationHistory } from './NotificationHistory'
 import { NotificationIndicator } from './NotificationBadge'
 import type { ChatRoom } from '../types'

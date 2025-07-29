@@ -29,7 +29,7 @@ import {
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/helpers'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 
 interface NotificationItem {
   id: string

@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Settings, Bell, Volume2, MessageSquare, AtSign } from 'lucide-react'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import NotificationService from '@/lib/services/notificationService'
 
 interface NotificationSettingsProps {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef, RefObject } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/helpers'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import chatCache from '@/lib/cache/chat-cache'
 import type { ChatRoom } from '../types'
 import { Badge } from '@/components/ui/badge'

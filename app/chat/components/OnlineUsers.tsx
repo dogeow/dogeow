@@ -39,7 +39,7 @@ import {
   Crown,
   MoreVertical,
 } from 'lucide-react'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import type { OnlineUser } from '../types'
 
 interface OnlineUsersProps {

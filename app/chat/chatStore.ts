@@ -1,12 +1,6 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
-import type {
-  ChatRoom,
-  ChatMessage,
-  OnlineUser,
-  CreateRoomData,
-  MessagePagination,
-} from '../app/chat/types'
+import type { ChatRoom, ChatMessage, OnlineUser, CreateRoomData, MessagePagination } from './types'
 import { get as apiGet, post as apiPost } from '@/lib/api'
 import { handleChatApiError, type ChatApiError } from '@/lib/api/chat-error-handler'
 import chatCache from '@/lib/cache/chat-cache'

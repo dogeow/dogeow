@@ -37,7 +37,7 @@ export function BackgroundButton({ background, isSelected, onSelect }: Backgroun
           />
         ) : (
           <div className="bg-muted flex h-full w-full items-center justify-center">
-            <span className="text-xs">无</span>
+            <span className="text-xs">None</span>
           </div>
         )}
       </Button>

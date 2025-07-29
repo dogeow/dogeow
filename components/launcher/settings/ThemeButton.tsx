@@ -53,7 +53,7 @@ export function ThemeButton({
             e.stopPropagation()
             onRemove(theme.id)
           }}
-          title={`删除 ${theme.name}`}
+          title={`Delete ${theme.name}`}
         >
           <Trash2 className="h-3 w-3" />
         </Button>

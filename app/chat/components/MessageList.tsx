@@ -5,7 +5,7 @@ import { format, isToday, isYesterday } from 'date-fns'
 
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/helpers'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import type { ChatMessage } from '../types'
 import { MessageInteractions, MessageSearch, MessageThread } from './MessageInteractions'
 import { MentionHighlight, useMentionDetection } from './MentionHighlight'

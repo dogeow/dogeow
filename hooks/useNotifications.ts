@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useCallback, useRef } from 'react'
-import useChatStore from '@/stores/chatStore'
+import useChatStore from '@/app/chat/chatStore'
 import NotificationService from '@/lib/services/notificationService'
 
 interface UseNotificationsOptions {
