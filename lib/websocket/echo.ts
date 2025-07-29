@@ -18,8 +18,8 @@ const echoConfig = {
   key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'jnwliwk8ulk32jkwqcy7',
   wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || '127.0.0.1',
   wsPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || '8080'),
-  wssPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || '8080'),
-  forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME || 'http') === 'https',
+  wssPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || '443'),
+  forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME || 'https') === 'https',
   enabledTransports: ['ws', 'wss'],
   disableStats: true,
   authEndpoint: `${process.env.NEXT_PUBLIC_API_BASE_URL}/broadcasting/auth`,
@@ -55,17 +55,22 @@ export function createEchoInstance(): Echo<'reverb'> | null {
 
   console.log('Echo: Creating new Echo instance')
 
+  // 智能端口配置：当使用 HTTPS 且端口是标准端口时，不设置端口号
+  const scheme = process.env.NEXT_PUBLIC_REVERB_SCHEME || 'https'
+  const isHttps = scheme === 'https'
+  const port = process.env.NEXT_PUBLIC_REVERB_PORT
+    ? parseInt(process.env.NEXT_PUBLIC_REVERB_PORT)
+    : isHttps
+      ? 443
+      : 8080
+
   const config = {
     broadcaster: 'reverb',
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
     wsHost: process.env.NEXT_PUBLIC_REVERB_HOST,
-    wsPort: process.env.NEXT_PUBLIC_REVERB_PORT
-      ? parseInt(process.env.NEXT_PUBLIC_REVERB_PORT)
-      : 80,
-    wssPort: process.env.NEXT_PUBLIC_REVERB_PORT
-      ? parseInt(process.env.NEXT_PUBLIC_REVERB_PORT)
-      : 443,
-    forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME || 'https') === 'https',
+    wsPort: isHttps ? (port === 443 ? undefined : port) : port,
+    wssPort: isHttps ? (port === 443 ? undefined : port) : port,
+    forceTLS: isHttps,
     enabledTransports: ['ws', 'wss'],
     authEndpoint: `${process.env.NEXT_PUBLIC_API_BASE_URL}/broadcasting/auth`,
     auth: {
