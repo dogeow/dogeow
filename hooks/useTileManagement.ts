@@ -7,6 +7,7 @@ import { useLoginTrigger } from '@/hooks/useLoginTrigger'
 
 export function useTileManagement() {
   const router = useRouter()
+  // 直接使用原始configs.tiles，保持name为英文用于gridArea
   const tiles = configs.tiles as Tile[]
   const { showProjectCovers } = useProjectCoverStore()
   const { requireLogin, isAuthenticated } = useLoginTrigger()

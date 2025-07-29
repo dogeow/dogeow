@@ -2,6 +2,7 @@ import { memo, useState, useCallback, KeyboardEvent } from 'react'
 import Image from 'next/image'
 import { Lock } from 'lucide-react'
 import type { Tile } from '@/app/types'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface TileCardProps {
   tile: Tile
@@ -15,8 +16,12 @@ interface TileCardProps {
 
 export const TileCard = memo(
   ({ tile, index, customStyles = '', showCover, needsLogin, onClick }: TileCardProps) => {
+    const { t } = useTranslation()
     const [imageError, setImageError] = useState(false)
     const [imageLoaded, setImageLoaded] = useState(false)
+
+    // Get translated name, fallback to nameCn for backward compatibility
+    const tileName = t(tile.nameKey, tile.nameCn || tile.nameKey)
 
     const coverImage = showCover ? tile.cover || `${tile.name}.png` : null
     const hasBackground = !!coverImage && !imageError
@@ -88,14 +93,14 @@ export const TileCard = memo(
         role="button"
         tabIndex={0}
         onKeyDown={handleKeyDown}
-        aria-label={`打开 ${tile.nameCn}`}
+        aria-label={`打开 ${tileName}`}
       >
         {/* 背景图片 */}
         {hasBackground && (
           <>
             <Image
               src={`/images/projects/${coverImage}`}
-              alt={`${tile.nameCn} background`}
+              alt={`${tileName} background`}
               fill
               className={`tile-image z-[1] object-cover transition-opacity duration-300 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
@@ -133,7 +138,7 @@ export const TileCard = memo(
               {typeof tile.icon === 'string' && tile.icon.length > 0 ? (
                 <Image
                   src={`/images/projects/${tile.icon}`}
-                  alt={tile.nameCn}
+                  alt={tileName}
                   width={24}
                   height={24}
                   className="object-contain sm:h-6 sm:w-6"
@@ -157,7 +162,7 @@ export const TileCard = memo(
             className="text-lg leading-tight font-medium text-white sm:text-xl"
             style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}
           >
-            {tile.nameCn}
+            {tileName}
           </span>
         </div>
       </div>

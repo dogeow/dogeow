@@ -8,6 +8,7 @@ import { Moon, Sun } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
 import { useMusicStore } from '@/stores/musicStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import { cn } from '@/lib/helpers'
 
 type DisplayMode = 'music' | 'apps' | 'settings'
@@ -17,6 +18,7 @@ export interface AppGridProps {
 }
 
 export function AppGrid({ toggleDisplayMode }: AppGridProps) {
+  const { t } = useTranslation()
   const { theme, setTheme } = useTheme()
   const { setFollowSystem } = useThemeStore()
   const { isPlaying } = useMusicStore()
@@ -51,7 +53,7 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
           <Music className="h-5 w-5" />
         </motion.div>
       ),
-      label: '打开音乐',
+      label: t('appgrid.music'),
       onClick: () => toggleDisplayMode('music'),
     },
     {
@@ -68,7 +70,7 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
           )}
         </div>
       ),
-      label: '切换主题',
+      label: t('appgrid.theme'),
       onClick: () => {
         if (!mounted) return
         setFollowSystem(false)
@@ -78,7 +80,7 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
     },
     {
       icon: <Settings className="h-5 w-5" />,
-      label: '打开设置',
+      label: t('appgrid.settings'),
       onClick: () => toggleDisplayMode('settings'),
     },
   ]

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Search, X } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { SearchBarProps } from './types'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export function SearchBar({
   isVisible,
@@ -15,6 +16,7 @@ export function SearchBar({
   onToggleSearch,
   currentApp,
 }: SearchBarProps) {
+  const { t } = useTranslation()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const pathname = usePathname()
@@ -126,7 +128,7 @@ export function SearchBar({
           <Input
             ref={searchInputRef}
             type="text"
-            placeholder={`搜索${currentApp ? currentApp + '...' : '...'}`}
+            placeholder={`${t('search.in')}${currentApp ? currentApp + '...' : '...'}`}
             value={searchTerm}
             onChange={handleSearchChange}
             className="border-primary/20 animate-in fade-in h-9 w-full pr-8 pl-8 duration-150"

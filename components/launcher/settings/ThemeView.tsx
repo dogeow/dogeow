@@ -5,7 +5,8 @@ import { BackButton } from '@/components/ui/back-button'
 import { ThemeButton } from './ThemeButton'
 import { AddThemeDialog } from './AddThemeDialog'
 import { SettingsDivider } from './SettingsDivider'
-import { configs } from '@/app/configs'
+import { getTranslatedConfigs } from '@/app/configs'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { CustomTheme } from '@/app/types'
 
 interface ThemeViewProps {
@@ -25,6 +26,9 @@ export function ThemeView({
   onRemoveTheme,
   onAddTheme,
 }: ThemeViewProps) {
+  const { t } = useTranslation()
+  const translatedConfigs = getTranslatedConfigs(t)
+
   return (
     <>
       <BackButton onClick={onBack} className="shrink-0" />
@@ -32,7 +36,7 @@ export function ThemeView({
       <SettingsDivider />
 
       {/* 预设主题色 */}
-      {configs.themeColors.map(theme => (
+      {translatedConfigs.themeColors.map(theme => (
         <ThemeButton
           key={theme.id}
           theme={theme}

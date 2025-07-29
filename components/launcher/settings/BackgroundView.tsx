@@ -5,7 +5,8 @@ import { BackButton } from '@/components/ui/back-button'
 import { BackgroundButton } from './BackgroundButton'
 import { UploadButton } from './UploadButton'
 import { SettingsDivider } from './SettingsDivider'
-import { configs } from '@/app/configs'
+import { getTranslatedConfigs } from '@/app/configs'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { CustomBackground } from '../SettingsPanel'
 
 interface BackgroundViewProps {
@@ -23,6 +24,9 @@ export function BackgroundView({
   customBackgrounds,
   onUploadBackground,
 }: BackgroundViewProps) {
+  const { t } = useTranslation()
+  const translatedConfigs = getTranslatedConfigs(t)
+
   return (
     <>
       <BackButton onClick={onBack} className="shrink-0" />
@@ -30,7 +34,7 @@ export function BackgroundView({
       <SettingsDivider />
 
       {/* 系统背景图片选项 */}
-      {configs.systemBackgrounds.map(bg => (
+      {translatedConfigs.systemBackgrounds.map(bg => (
         <BackgroundButton
           key={bg.id}
           background={bg}

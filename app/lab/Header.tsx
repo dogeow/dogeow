@@ -16,6 +16,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/helpers'
 import navigationItems from './configs'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface SubNavigationItem {
   title: string
@@ -137,13 +138,14 @@ const MobileNavigationItem = ({ item, pathname }: NavigationItemProps) => {
 
 export function Header() {
   const pathname = usePathname()
+  const { t } = useTranslation()
 
   return (
     <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 w-full border-b backdrop-blur">
       <div className="container mx-auto flex h-14 items-center">
         <div className="mr-8 flex items-center">
           <Link href="/lab" className="flex items-center space-x-2">
-            <span className="font-bold">实验室</span>
+            <span className="font-bold">{t('page.laboratory', '实验室')}</span>
           </Link>
         </div>
 

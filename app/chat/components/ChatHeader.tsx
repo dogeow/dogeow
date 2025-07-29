@@ -39,6 +39,7 @@ import useChatStore from '@/stores/chatStore'
 import { NotificationHistory } from './NotificationHistory'
 import { NotificationIndicator } from './NotificationBadge'
 import type { ChatRoom } from '@/types/chat'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface ChatHeaderProps {
   room: ChatRoom
@@ -54,6 +55,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
     connectionStatus,
     isConnected,
   } = useChatStore()
+  const { t } = useTranslation()
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isHelpOpen, setIsHelpOpen] = useState(false)
@@ -75,7 +77,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
           {showBackButton && (
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">Go back</span>
+              <span className="sr-only">{t('chat.go_back', 'Go back')}</span>
             </Button>
           )}
 
@@ -83,7 +85,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
           <nav className="flex items-center gap-1 text-sm">
             <span className="text-muted-foreground">Chat</span>
             <ChevronRight className="text-muted-foreground h-3 w-3" />
-            <span className="font-medium">Rooms</span>
+            <span className="font-medium">{t('chat.rooms', 'Rooms')}</span>
             <ChevronRight className="text-muted-foreground h-3 w-3" />
             <button
               onClick={() => setIsRoomInfoOpen(true)}
@@ -163,7 +165,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Chat Settings</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('page.chat_settings', 'Chat Settings')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
 
               <DropdownMenuCheckboxItem
@@ -171,7 +173,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                 onCheckedChange={checked => handleSettingsChange('browserNotifications', checked)}
               >
                 <Bell className="mr-2 h-4 w-4" />
-                Browser Notifications
+                {t('chat.browser_notifications', 'Browser Notifications')}
               </DropdownMenuCheckboxItem>
 
               <DropdownMenuCheckboxItem
@@ -183,7 +185,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                 ) : (
                   <VolumeX className="mr-2 h-4 w-4" />
                 )}
-                Sound Notifications
+                {t('chat.sound_notifications', 'Sound Notifications')}
               </DropdownMenuCheckboxItem>
 
               <DropdownMenuCheckboxItem
@@ -191,14 +193,14 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                 onCheckedChange={checked => handleSettingsChange('mentionNotifications', checked)}
               >
                 <span className="mr-2 text-sm">@</span>
-                Mention Notifications
+                {t('chat.mention_notifications', 'Mention Notifications')}
               </DropdownMenuCheckboxItem>
 
               <DropdownMenuSeparator />
 
               <DropdownMenuItem onClick={() => setIsSettingsOpen(true)}>
                 <Palette className="mr-2 h-4 w-4" />
-                More Settings
+                {t('chat.more_settings', 'More Settings')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

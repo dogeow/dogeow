@@ -18,7 +18,7 @@ interface ThemeState {
 
 export const useThemeStore = create<ThemeState>()(
   persist(
-    (set, get) => ({
+    set => ({
       currentTheme: configs.themeColors[0].id,
       customThemes: [],
       followSystem: false,
@@ -64,12 +64,25 @@ export const getCurrentThemeColor = (
 ): CustomTheme => {
   // 先从预设主题中查找
   const presetTheme = configs.themeColors.find(theme => theme.id === currentTheme)
-  if (presetTheme) return presetTheme
+  if (presetTheme) {
+    return {
+      id: presetTheme.id,
+      name: presetTheme.nameKey, // Use nameKey as fallback for name
+      primary: presetTheme.primary,
+      color: presetTheme.color,
+    }
+  }
 
   // 再从自定义主题中查找
   const userTheme = customThemes.find(theme => theme.id === currentTheme)
   if (userTheme) return userTheme
 
   // 默认返回第一个预设主题
-  return configs.themeColors[0]
+  const defaultTheme = configs.themeColors[0]
+  return {
+    id: defaultTheme.id,
+    name: defaultTheme.nameKey,
+    primary: defaultTheme.primary,
+    color: defaultTheme.color,
+  }
 }

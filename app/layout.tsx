@@ -9,6 +9,7 @@ import 'prismjs/themes/prism.css'
 import './note/styles/prism.css'
 import { SWRProvider } from '@/components/provider/SWRProvider'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import { LanguageProvider } from '@/components/provider/LanguageProvider'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -47,22 +48,24 @@ export default function RootLayout({
       >
         <SWRProvider>
           <ThemeProvider>
-            <div
-              id="header-container"
-              className="bg-background sticky top-0 z-30 h-[50px] flex-none border-b shadow-sm"
-            >
-              <div className="mx-auto flex h-full w-full max-w-7xl items-center">
-                <AppLauncher />
+            <LanguageProvider>
+              <div
+                id="header-container"
+                className="bg-background sticky top-0 z-30 h-[50px] flex-none border-b shadow-sm"
+              >
+                <div className="mx-auto flex h-full w-full max-w-7xl items-center">
+                  <AppLauncher />
+                </div>
               </div>
-            </div>
-            <div id="main-container" className="flex-1 overflow-x-hidden">
-              <div className="mx-auto h-full w-full max-w-7xl p-0">
-                <BackgroundWrapper>
-                  <ProtectedRoute>{children}</ProtectedRoute>
-                </BackgroundWrapper>
+              <div id="main-container" className="flex-1 overflow-x-hidden">
+                <div className="mx-auto h-full w-full max-w-7xl p-0">
+                  <BackgroundWrapper>
+                    <ProtectedRoute>{children}</ProtectedRoute>
+                  </BackgroundWrapper>
+                </div>
               </div>
-            </div>
-            <Toaster />
+              <Toaster />
+            </LanguageProvider>
           </ThemeProvider>
         </SWRProvider>
       </body>

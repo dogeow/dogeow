@@ -11,7 +11,8 @@ export type CustomTheme = {
 // 应用启动器图标类型
 export interface Tile {
   name: string // 英文名称，从 href 自动生成
-  nameCn: string // 中文名称
+  nameKey: string // 翻译键
+  nameCn?: string // 中文名称（向后兼容，已弃用）
   icon: string | ReactNode
   href: string
   color: string

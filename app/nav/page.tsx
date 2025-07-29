@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { useNavStore } from '@/app/nav/stores/navStore'
 import { useThemeStore, getCurrentThemeColor } from '@/stores/themeStore'
 import { useLoginTrigger } from '@/hooks/useLoginTrigger'
+import { useTranslation } from '@/hooks/useTranslation'
 import { NavCard } from './components/NavCard'
 import { NavCategory } from '@/app/nav/types'
 
@@ -32,6 +33,7 @@ function NavContent() {
   const { currentTheme, customThemes } = useThemeStore()
   const themeColor = getCurrentThemeColor(currentTheme, customThemes)
   const { requireLogin, isAuthenticated } = useLoginTrigger()
+  const { t } = useTranslation()
 
   // 监听URL中filter[name]参数的变化
   useEffect(() => {
@@ -164,7 +166,7 @@ function NavContent() {
         <div className="flex items-center">
           <div className="mt-2 flex items-center gap-1">
             <Folder className="h-6 w-6" />
-            <h1 className="text-2xl font-bold">导航</h1>
+            <h1 className="text-2xl font-bold">{t('page.navigation', '导航')}</h1>
           </div>
           <div className="ml-auto flex items-center gap-2">
             <Button
@@ -176,7 +178,7 @@ function NavContent() {
               style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
             >
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">管理分类</span>
+              <span className="hidden sm:inline">{t('nav.manage_categories', '管理分类')}</span>
               {!isAuthenticated && <Lock className="text-muted-foreground ml-1 h-3 w-3" />}
             </Button>
             <Button

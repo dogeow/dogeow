@@ -5,6 +5,7 @@ import { BackButton } from '@/components/ui/back-button'
 import { MainView } from './settings/MainView'
 import { BackgroundView } from './settings/BackgroundView'
 import { ThemeView } from './settings/ThemeView'
+import { LanguageView } from './settings/LanguageView'
 import { SettingsDivider } from './settings/SettingsDivider'
 import { useSettingsPanel } from './settings/useSettingsPanel'
 
@@ -77,6 +78,9 @@ export function SettingsPanel({
           />
         )
 
+      case 'language':
+        return <LanguageView onBack={() => setCurrentView('main')} />
+
       default:
         return (
           <>
@@ -89,6 +93,7 @@ export function SettingsPanel({
             <MainView
               onNavigateToBackground={() => setCurrentView('background')}
               onNavigateToTheme={() => setCurrentView('theme')}
+              onNavigateToLanguage={() => setCurrentView('language')}
               followSystem={followSystem}
               onToggleFollowSystem={handleToggleFollowSystem}
               showProjectCovers={showProjectCovers}

@@ -5,10 +5,11 @@ import { toast } from 'sonner'
 import { useThemeStore } from '@/stores/themeStore'
 import { useProjectCoverStore } from '@/stores/projectCoverStore'
 import { hexToHSL } from '@/lib/helpers'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { CustomTheme } from '@/app/types'
 import type { CustomBackground } from '../SettingsPanel'
 
-type SettingsView = 'main' | 'background' | 'theme'
+type SettingsView = 'main' | 'background' | 'theme' | 'language'
 
 interface UseSettingsPanelProps {
   backgroundImage: string
@@ -32,13 +33,14 @@ export function useSettingsPanel({
   } = useThemeStore()
 
   const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
+  const { t } = useTranslation()
 
   const [currentView, setCurrentView] = useState<SettingsView>('main')
 
   // 设置背景图片
   const handleSetBackground = (url: string) => {
     setBackgroundImage(url)
-    toast.success('背景已更新')
+    toast.success(t('success.updated', '背景已更新'))
   }
 
   // 处理用户上传背景图片
@@ -58,7 +60,7 @@ export function useSettingsPanel({
 
         setCustomBackgrounds(prev => [...prev, newBackground])
         handleSetBackground(newBackground.url)
-        toast.success('自定义背景已上传')
+        toast.success(t('success.created', '自定义背景已上传'))
       }
     }
 
@@ -68,13 +70,19 @@ export function useSettingsPanel({
   // 处理跟随系统选项切换
   const handleToggleFollowSystem = (checked: boolean) => {
     setFollowSystem(checked)
-    toast.success(checked ? '已启用跟随系统主题' : '已关闭跟随系统主题')
+    toast.success(
+      checked
+        ? t('success.updated', '已启用跟随系统主题')
+        : t('success.updated', '已关闭跟随系统主题')
+    )
   }
 
   // 处理功能封面图选项切换
   const handleToggleProjectCovers = (checked: boolean) => {
     setShowProjectCovers(checked)
-    toast.success(checked ? '已启用功能封面图' : '已关闭功能封面图')
+    toast.success(
+      checked ? t('success.updated', '已启用功能封面图') : t('success.updated', '已关闭功能封面图')
+    )
   }
 
   // 处理添加自定义主题

@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button'
 import { Search, X, Loader2, Lock, Unlock } from 'lucide-react'
 import { get } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
-import { configs } from '@/app/configs'
+import { getTranslatedConfigs } from '@/app/configs'
 import useAuthStore from '@/stores/authStore'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface Category {
   id: string
@@ -90,6 +91,7 @@ export function SearchDialog({
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated } = useAuthStore()
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
   const [activeCategory, setActiveCategory] = useState('all')
   const [results, setResults] = useState<SearchResult[]>([])
@@ -143,10 +145,11 @@ export function SearchDialog({
     (searchTerm: string, category: string) => {
       const results: SearchResult[] = []
       const lowerSearchTerm = searchTerm.toLowerCase()
+      const translatedConfigs = getTranslatedConfigs(t)
 
       // 搜索游戏（游戏对所有用户开放）
       if (category === 'all' || category === 'game') {
-        const gameResults = configs.games
+        const gameResults = translatedConfigs.games
           .filter(
             game =>
               game.name.toLowerCase().includes(lowerSearchTerm) ||
@@ -168,7 +171,7 @@ export function SearchDialog({
       if (isAuthenticated) {
         // 搜索导航
         if (category === 'all' || category === 'nav') {
-          const navResults = configs.navigation
+          const navResults = translatedConfigs.navigation
             .filter(
               nav =>
                 nav.name.toLowerCase().includes(lowerSearchTerm) ||
@@ -187,7 +190,7 @@ export function SearchDialog({
 
         // 搜索笔记
         if (category === 'all' || category === 'note') {
-          const noteResults = configs.notes
+          const noteResults = translatedConfigs.notes
             .filter(
               note =>
                 note.name.toLowerCase().includes(lowerSearchTerm) ||
@@ -206,7 +209,7 @@ export function SearchDialog({
 
         // 搜索文件
         if (category === 'all' || category === 'file') {
-          const fileResults = configs.files
+          const fileResults = translatedConfigs.files
             .filter(
               file =>
                 file.name.toLowerCase().includes(lowerSearchTerm) ||
@@ -225,7 +228,7 @@ export function SearchDialog({
 
         // 搜索实验室
         if (category === 'all' || category === 'lab') {
-          const labResults = configs.lab
+          const labResults = translatedConfigs.lab
             .filter(
               lab =>
                 lab.name.toLowerCase().includes(lowerSearchTerm) ||
@@ -245,7 +248,7 @@ export function SearchDialog({
 
       return results
     },
-    [isAuthenticated]
+    [isAuthenticated, t]
   )
 
   const performSearch = useCallback(async () => {

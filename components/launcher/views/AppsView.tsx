@@ -5,6 +5,7 @@ import { User } from 'lucide-react'
 import { AppGrid } from '../AppGrid'
 import { SearchBar } from '../SearchBar'
 import Logo from '@/public/80.png'
+import { useTranslation } from '@/hooks/useTranslation'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
@@ -31,6 +32,8 @@ export function AppsView({
   isAuthenticated,
   toggleDisplayMode,
 }: AppsViewProps) {
+  const { t } = useTranslation()
+
   return (
     <div className="flex h-full items-center justify-between">
       {/* 左侧：应用切换按钮 */}
@@ -81,7 +84,7 @@ export function AppsView({
               data-login-trigger
               onClick={() => toggleDisplayMode('auth')}
             >
-              登录
+              {t('auth.login')}
             </Button>
           ))}
       </div>

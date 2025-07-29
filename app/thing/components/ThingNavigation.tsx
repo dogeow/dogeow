@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Package, FolderTree, MapPin, Tag } from 'lucide-react'
 import { cn } from '@/lib/helpers'
+import { useTranslation } from '@/hooks/useTranslation'
 
 // 定义导航项类型
 type NavItem = {
@@ -16,6 +17,7 @@ type NavItem = {
 
 export default function ThingNavigation() {
   const pathname = usePathname()
+  const { t } = useTranslation()
 
   // 检查当前路径是否激活
   const isActive = (href: string, exact = false) => {
@@ -29,23 +31,23 @@ export default function ThingNavigation() {
   const navItems: NavItem[] = [
     {
       href: '/thing',
-      label: '所有物品',
+      label: t('nav.all_things', '所有物品'),
       icon: <Package className="h-4 w-4" />,
       exact: true,
     },
     {
       href: '/thing/categories',
-      label: '分类',
+      label: t('nav.categories', '分类'),
       icon: <FolderTree className="h-4 w-4" />,
     },
     {
       href: '/thing/locations',
-      label: '位置',
+      label: t('nav.locations', '位置'),
       icon: <MapPin className="h-4 w-4" />,
     },
     {
       href: '/thing/tags',
-      label: '标签',
+      label: t('nav.tags', '标签'),
       icon: <Tag className="h-4 w-4" />,
     },
   ]

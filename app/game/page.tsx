@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { Card } from '@/components/ui/card'
-import { configs } from '@/app/configs'
+import { getTranslatedConfigs } from '@/app/configs'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function GamePage() {
-  const games = configs.games
+  const { t } = useTranslation()
+  const games = getTranslatedConfigs(t).games
 
   return (
     <div className="container px-4 py-4">
-      <h1 className="mb-6 text-3xl font-bold">游戏中心</h1>
+      <h1 className="mb-6 text-3xl font-bold">{t('nav.game')}</h1>
 
       <div className="flex flex-wrap justify-center gap-4">
         {games.map(game => (

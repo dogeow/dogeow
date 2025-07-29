@@ -156,3 +156,22 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
+
+/* 瓦片网格布局样式 */
+.tile-grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .tile-grid {
+    gap: 1rem;
+  }
+}
+
+/* 确保网格项目正确显示 */
+.tile-grid > div {
+  min-height: 8rem;
+  display: flex;
+  align-items: stretch;
+}

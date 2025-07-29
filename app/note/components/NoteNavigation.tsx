@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { FileText, Tag, FolderTree } from 'lucide-react'
 import { useState } from 'react'
 import { useEditorStore } from '../store/editorStore'
+import { useTranslation } from '@/hooks/useTranslation'
 // import { ConfirmDialog } from '@/components/ui/confirm-dialog' // 暂时未使用
 import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
 
@@ -14,6 +15,7 @@ export default function NoteNavigation() {
   const { isDirty, setDirty, saveDraft } = useEditorStore()
   const [showConfirm, setShowConfirm] = useState(false)
   const [pendingHref, setPendingHref] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   // 检查当前路径是否激活 - 暂时未使用
   // const isActive = (href: string, exact = false) => {
@@ -74,29 +76,29 @@ export default function NoteNavigation() {
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" onClick={() => handleNavigate('/note')}>
             <FileText className="mr-2 h-4 w-4" />
-            我的笔记
+            {t('nav.my_notes', '我的笔记')}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => handleNavigate('/note/categories')}>
             <FolderTree className="mr-2 h-4 w-4" />
-            分类
+            {t('nav.categories', '分类')}
           </Button>
           <Button variant="ghost" size="sm" onClick={() => handleNavigate('/note/tags')}>
             <Tag className="mr-2 h-4 w-4" />
-            标签
+            {t('nav.tags', '标签')}
           </Button>
         </div>
       </nav>
       <SaveOptionsDialog
         open={showConfirm}
         onOpenChange={setShowConfirm}
-        title="确认离开"
-        description="您有未保存的内容，请选择如何处理："
+        title={t('confirm.leave_without_save', '确认离开')}
+        description={t('confirm.leave_description', '您有未保存的内容，请选择如何处理：')}
         onSaveDraft={handleConfirm}
         onSave={handleSave}
         onDiscard={handleDiscard}
-        saveDraftText="保存为草稿"
-        saveText="保存"
-        discardText="放弃保存"
+        saveDraftText={t('confirm.save_draft', '保存为草稿')}
+        saveText={t('confirm.save', '保存')}
+        discardText={t('confirm.discard', '放弃保存')}
       />
     </div>
   )
