@@ -46,21 +46,35 @@ export function createEchoInstance(): Echo<'reverb'> | null {
 
   const config = {
     broadcaster: 'reverb',
-    key: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
-    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST,
+    key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'jnwliwk8ulk32jkwqcy7',
+    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || 'ws.game.dogeow.com',
     wsPort: isHttps ? (port === 443 ? undefined : port) : port,
     wssPort: isHttps ? (port === 443 ? undefined : port) : port,
     forceTLS: isHttps,
     enabledTransports: ['ws', 'wss'],
+    disableStats: true,
     authEndpoint: `${process.env.NEXT_PUBLIC_API_BASE_URL}/broadcasting/auth`,
     auth: {
-      headers: {},
+      headers: {
+        Authorization: '',
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
     },
   }
 
   console.log('Echo: Configuration:', {
     ...config,
     auth: { headers: '[HIDDEN]' },
+  })
+
+  // 添加环境变量调试信息
+  console.log('Echo: Environment variables:', {
+    NEXT_PUBLIC_REVERB_APP_KEY: process.env.NEXT_PUBLIC_REVERB_APP_KEY,
+    NEXT_PUBLIC_REVERB_HOST: process.env.NEXT_PUBLIC_REVERB_HOST,
+    NEXT_PUBLIC_REVERB_PORT: process.env.NEXT_PUBLIC_REVERB_PORT,
+    NEXT_PUBLIC_REVERB_SCHEME: process.env.NEXT_PUBLIC_REVERB_SCHEME,
+    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
   })
 
   // Destroy existing instance first
@@ -100,6 +114,16 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     } catch (monitorError) {
       console.warn('Echo: Failed to initialize connection monitor:', monitorError)
       // Don't fail the entire creation for monitor issues
+    }
+
+    // 尝试连接 Echo 实例
+    try {
+      if (echo && typeof echo.connect === 'function') {
+        echo.connect()
+        console.log('Echo: Connection initiated')
+      }
+    } catch (connectError) {
+      console.warn('Echo: Failed to initiate connection:', connectError)
     }
 
     console.log('Echo: Instance initialized and ready')
