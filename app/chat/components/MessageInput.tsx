@@ -362,7 +362,7 @@ export function MessageInput({
       console.log('🔥 发送消息调试信息:', {
         messageToSend,
         currentRoom: currentRoom?.id,
-        apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+        apiUrl: process.env.NEXT_PUBLIC_API_URL,
       })
 
       const success = await sendMessage(roomId.toString(), messageToSend)

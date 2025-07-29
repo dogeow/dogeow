@@ -53,7 +53,7 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     forceTLS: isHttps,
     enabledTransports: ['ws', 'wss'],
     disableStats: true,
-    authEndpoint: `${process.env.NEXT_PUBLIC_API_BASE_URL}/broadcasting/auth`,
+    authEndpoint: `${process.env.NEXT_PUBLIC_API_URL}/broadcasting/auth`,
     auth: {
       headers: {
         Authorization: '',
@@ -74,7 +74,7 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     NEXT_PUBLIC_REVERB_HOST: process.env.NEXT_PUBLIC_REVERB_HOST,
     NEXT_PUBLIC_REVERB_PORT: process.env.NEXT_PUBLIC_REVERB_PORT,
     NEXT_PUBLIC_REVERB_SCHEME: process.env.NEXT_PUBLIC_REVERB_SCHEME,
-    NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   })
 
   // Destroy existing instance first

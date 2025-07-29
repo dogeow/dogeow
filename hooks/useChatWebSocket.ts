@@ -285,7 +285,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
           return !!offlineManagerRef.current
         }
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/chat/rooms/${roomId}/messages`,
+          `${process.env.NEXT_PUBLIC_API_URL}/api/chat/rooms/${roomId}/messages`,
           {
             method: 'POST',
             headers: {

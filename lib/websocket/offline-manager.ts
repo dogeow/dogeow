@@ -158,7 +158,7 @@ class OfflineManager {
     }
 
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/chat/rooms/${queuedMessage.roomId}/messages`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/chat/rooms/${queuedMessage.roomId}/messages`,
       {
         method: 'POST',
         headers: {

@@ -150,7 +150,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
       throw new Error('No authentication token available')
     }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}${endpoint}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
       ...options,
       headers: {
         'Content-Type': 'application/json',
