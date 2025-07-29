@@ -26,6 +26,14 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'ui-avatars.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'robohash.org',
+      },
+      {
+        protocol: 'https',
         hostname: 'public.blob.vercel-storage.com',
       },
     ],
@@ -35,6 +43,10 @@ const nextConfig: NextConfig = {
     ],
     // 添加imageSizes配置，用于响应式图片
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // 禁用对 SVG 的优化，因为 dicebear 返回的是 SVG
+    unoptimized: false,
+    // 添加加载器配置
+    loader: 'default',
   },
 }
 

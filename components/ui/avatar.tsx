@@ -15,10 +15,16 @@ Avatar.displayName = 'Avatar'
 
 const AvatarImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<HTMLImageElement>>(
   ({ className, alt = '', src, width, height, ...props }, ref) => {
+    const [imageError, setImageError] = React.useState(false)
+
     // 确保 src 存在，否则不渲染 Image 组件
-    if (!src) {
+    if (!src || imageError) {
       return null
     }
+
+    // For dicebear SVGs, use unoptimized loading
+    const shouldUnoptimize =
+      src.includes('dicebear.com') || src.includes('ui-avatars.com') || src.includes('robohash.org')
 
     return (
       <Image
@@ -28,6 +34,14 @@ const AvatarImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<H
         src={src}
         width={typeof width === 'number' ? width : undefined}
         height={typeof height === 'number' ? height : undefined}
+        unoptimized={shouldUnoptimize}
+        onLoad={() => {
+          console.log('Avatar image loaded:', src)
+        }}
+        onError={e => {
+          console.error('Avatar image failed to load:', src, e)
+          setImageError(true)
+        }}
         {...props}
       />
     )

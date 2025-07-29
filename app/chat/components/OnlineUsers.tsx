@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useAvatarImage } from '@/hooks/useAvatarImage'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -53,6 +54,58 @@ interface OnlineUsersProps {
 type SortOption = 'name' | 'joined' | 'status'
 type FilterOption = 'all' | 'online' | 'moderators'
 
+interface UserAvatarProps {
+  user: OnlineUser
+  size?: 'sm' | 'md' | 'lg'
+  className?: string
+}
+
+function UserAvatar({ user, size = 'md', className }: UserAvatarProps) {
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  const { src, onError, onLoad } = useAvatarImage({
+    seed: user.name,
+    fallbackInitials: getInitials(user.name),
+  })
+
+  const sizeClasses = {
+    sm: 'h-8 w-8',
+    md: 'h-10 w-10',
+    lg: 'h-12 w-12',
+  }
+
+  const imageSizes = {
+    sm: { width: 32, height: 32 },
+    md: { width: 40, height: 40 },
+    lg: { width: 48, height: 48 },
+  }
+
+  return (
+    <Avatar className={`${sizeClasses[size]} ${className}`}>
+      {src && (
+        <AvatarImage
+          src={src}
+          alt={`${user.name}'s avatar`}
+          width={imageSizes[size].width}
+          height={imageSizes[size].height}
+          onError={onError}
+          onLoad={onLoad}
+        />
+      )}
+      <AvatarFallback className={size === 'sm' ? 'text-xs' : ''}>
+        {getInitials(user.name)}
+      </AvatarFallback>
+    </Avatar>
+  )
+}
+
 interface UserProfilePopoverProps {
   user: OnlineUser
   children: React.ReactNode
@@ -81,15 +134,6 @@ function UserProfilePopover({
     return date.toLocaleDateString()
   }
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
-
   // Check if user is a moderator (simplified - would need proper role checking)
   const isModerator = (user: OnlineUser) => {
     // For demo purposes, assume users with certain email domains are moderators
@@ -114,14 +158,7 @@ function UserProfilePopover({
         <div className="space-y-4">
           {/* User Header */}
           <div className="flex items-center space-x-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage
-                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
-                width={48}
-                height={48}
-              />
-              <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-            </Avatar>
+            <UserAvatar user={user} size="lg" />
             <div className="flex-1">
               <div className="flex items-center space-x-2">
                 <h3 className="font-semibold">{user.name}</h3>
@@ -230,16 +267,6 @@ export default function OnlineUsers({
   const roomUsers = useMemo(() => {
     return onlineUsers[roomId.toString()] || []
   }, [onlineUsers, roomId])
-
-  // Get user initials for avatar fallback
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
-  }
 
   // Check if user is a moderator (simplified - would need proper role checking)
   const isModerator = (user: OnlineUser) => {
@@ -373,16 +400,7 @@ export default function OnlineUsers({
                 >
                   <div className="hover:bg-muted flex cursor-pointer items-center space-x-3 rounded-lg p-2 transition-colors">
                     <div className="relative">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`}
-                          width={32}
-                          height={32}
-                        />
-                        <AvatarFallback className="text-xs">
-                          {getInitials(user.name)}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar user={user} size="sm" />
                       {/* Online status indicator */}
                       <div className="absolute -right-0.5 -bottom-0.5">
                         <Circle
