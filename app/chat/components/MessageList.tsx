@@ -9,7 +9,6 @@ import useChatStore from '@/app/chat/chatStore'
 import type { ChatMessage } from '../types'
 import { MessageInteractions, MessageSearch, MessageThread } from './MessageInteractions'
 import { MentionHighlight, useMentionDetection } from './MentionHighlight'
-import { NotificationBadge } from './NotificationBadge'
 
 interface MessageListProps {
   roomId: number
@@ -95,15 +94,6 @@ function MessageContent({
               onMentionClick={onMentionClick}
               className="flex-1"
             />
-            {mentionInfo.hasCurrentUserMention && (
-              <NotificationBadge
-                count={1}
-                hasMentions={true}
-                showIcon={true}
-                size="sm"
-                className="flex-shrink-0"
-              />
-            )}
           </div>
           <MessageInteractions message={message} onReply={onReply} onReact={onReact} />
           {/* Mock thread data - in real app this would come from message relationships */}

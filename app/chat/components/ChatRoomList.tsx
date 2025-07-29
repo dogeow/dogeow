@@ -29,7 +29,8 @@ import useChatStore from '@/app/chat/chatStore'
 import { CreateRoomDialog } from './CreateRoomDialog'
 import { EditRoomDialog } from './EditRoomDialog'
 import { DeleteRoomDialog } from './DeleteRoomDialog'
-import { NotificationBadge } from './NotificationBadge'
+
+import { useTranslation } from '@/hooks/useTranslation'
 import type { ChatRoom } from '../types'
 
 interface ChatRoomListProps {
@@ -37,16 +38,9 @@ interface ChatRoomListProps {
 }
 
 export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
-  const {
-    rooms,
-    currentRoom,
-    isLoading,
-    error,
-    setCurrentRoom,
-    joinRoom,
-    getRoomUnreadCount,
-    hasUnreadMentions,
-  } = useChatStore()
+  const { t } = useTranslation()
+  const { rooms, currentRoom, isLoading, error, setCurrentRoom, joinRoom, getRoomUnreadCount } =
+    useChatStore()
 
   // Get loadRooms function with stable reference
   const loadRooms = useCallback(() => {
@@ -195,10 +189,10 @@ export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
       {/* Header */}
       <div className="space-y-3 border-b p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Chat Rooms</h2>
+          <h2 className="text-lg font-semibold">{t('chat.chat_rooms', 'Chat Rooms')}</h2>
           <Button size="sm" onClick={handleCreateRoom} disabled={isLoading}>
             <Plus className="h-4 w-4" />
-            Create
+            {t('chat.create_room', 'Create')}
           </Button>
         </div>
 
@@ -206,7 +200,7 @@ export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
         <div className="relative">
           <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
           <Input
-            placeholder="Search rooms..."
+            placeholder={t('chat.search_rooms', 'Search rooms...')}
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -221,7 +215,7 @@ export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
             onClick={() => setFilterType('all')}
             className="h-8"
           >
-            All
+            {t('chat.all_rooms', 'All')}
           </Button>
           <Button
             variant={filterType === 'favorites' ? 'default' : 'ghost'}
@@ -230,7 +224,7 @@ export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
             className="h-8"
           >
             <Star className="mr-1 h-3 w-3" />
-            Favorites
+            {t('chat.favorites', 'Favorites')}
           </Button>
           <Button
             variant={filterType === 'recent' ? 'default' : 'ghost'}
@@ -239,7 +233,7 @@ export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
             className="h-8"
           >
             <Clock className="mr-1 h-3 w-3" />
-            Recent
+            {t('chat.recent', 'Recent')}
           </Button>
         </div>
       </div>
@@ -259,17 +253,19 @@ export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
           <div className="text-muted-foreground p-4 text-center">
             <Hash className="mx-auto mb-2 h-8 w-8 opacity-50" />
             <p className="text-sm">
-              {searchQuery.trim() ? 'No rooms found' : 'No chat rooms available'}
+              {searchQuery.trim()
+                ? t('chat.no_rooms_found', 'No rooms found')
+                : t('chat.no_rooms_available', 'No chat rooms available')}
             </p>
             <p className="mt-1 text-xs">
-              {searchQuery.trim() ? 'Try a different search term' : 'Create one to get started'}
+              {searchQuery.trim()
+                ? t('chat.try_different_search', 'Try a different search term')
+                : t('chat.create_to_get_started', 'Create one to get started')}
             </p>
           </div>
         ) : (
           <div className="space-y-1 p-2">
             {filteredRooms.map(room => {
-              const unreadCount = getRoomUnreadCount(room.id)
-              const hasMentions = hasUnreadMentions(room.id)
               const isActive = currentRoom?.id === room.id
 
               return (
@@ -295,37 +291,17 @@ export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
                       <div className="flex items-center gap-2">
                         <Hash className="text-muted-foreground h-4 w-4 shrink-0" />
                         <span className="truncate font-medium">{room.name}</span>
-                        {hasMentions && (
-                          <NotificationBadge
-                            count={1}
-                            hasMentions={true}
-                            showIcon={true}
-                            size="sm"
-                          />
+                        {room.description && (
+                          <span className="text-muted-foreground text-xs">
+                            • {room.description}
+                          </span>
                         )}
-                        {favoriteRooms.has(room.id) && (
-                          <Star className="h-3 w-3 fill-current text-yellow-500" />
-                        )}
-                      </div>
-
-                      {room.description && (
-                        <p className="text-muted-foreground mt-1 truncate text-xs">
-                          {room.description}
-                        </p>
-                      )}
-
-                      <div className="mt-2 flex items-center gap-2">
                         <div className="text-muted-foreground flex items-center gap-1 text-xs">
                           <Users className="h-3 w-3" />
                           <span>{room.online_count || 0}</span>
                         </div>
-
-                        {unreadCount > 0 && (
-                          <NotificationBadge
-                            count={unreadCount}
-                            hasMentions={hasMentions}
-                            size="sm"
-                          />
+                        {favoriteRooms.has(room.id) && (
+                          <Star className="h-3 w-3 fill-current text-yellow-500" />
                         )}
                       </div>
                     </div>

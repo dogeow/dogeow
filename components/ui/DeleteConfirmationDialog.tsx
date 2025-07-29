@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface DeleteConfirmationDialogProps {
   open: boolean
@@ -22,18 +23,20 @@ export function DeleteConfirmationDialog({
   onConfirm,
   itemName,
 }: DeleteConfirmationDialogProps) {
+  const { t } = useTranslation()
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>确定要删除吗？</AlertDialogTitle>
+          <AlertDialogTitle>{t('delete.confirm_title')}</AlertDialogTitle>
           <AlertDialogDescription>
-            此操作将永久删除&quot;{itemName}&quot;。此操作无法撤销。
+            {t('delete.confirm_description').replace('{itemName}', itemName)}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>取消</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>删除</AlertDialogAction>
+          <AlertDialogCancel>{t('delete.confirm_cancel')}</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>{t('delete.confirm_action')}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

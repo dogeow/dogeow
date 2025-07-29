@@ -10,6 +10,7 @@ import useChatStore from '@/app/chat/chatStore'
 import { toast } from '@/components/ui/use-toast'
 import { useDebounce } from 'use-debounce'
 import Image from 'next/image'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface MessageInputProps {
   roomId: number
@@ -123,6 +124,7 @@ export function MessageInput({
   sendMessage,
   isConnected,
 }: MessageInputProps) {
+  const { t } = useTranslation()
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
@@ -223,7 +225,12 @@ export function MessageInput({
     files.forEach(file => {
       // Check file size
       if (file.size > MAX_FILE_SIZE) {
-        toast.error(`File ${file.name} is too large. Maximum size is 5MB.`)
+        toast.error(
+          t('chat.file_too_large', 'File {name} is too large. Maximum size is 5MB.').replace(
+            '{name}',
+            file.name
+          )
+        )
         return
       }
 
@@ -313,11 +320,14 @@ export function MessageInput({
     const trimmed = msg.trim()
 
     if (!trimmed) {
-      return 'Message cannot be empty'
+      return t('chat.message_cannot_be_empty', 'Message cannot be empty')
     }
 
     if (trimmed.length > MAX_MESSAGE_LENGTH) {
-      return `Message cannot exceed ${MAX_MESSAGE_LENGTH} characters`
+      return t('chat.message_too_long', 'Message cannot exceed {count} characters').replace(
+        '{count}',
+        MAX_MESSAGE_LENGTH.toString()
+      )
     }
 
     return null
@@ -332,12 +342,12 @@ export function MessageInput({
     }
 
     if (!isConnected) {
-      toast.error('Not connected to chat server')
+      toast.error(t('chat.not_connected', 'Not connected to chat server'))
       return
     }
 
     if (!currentRoom) {
-      toast.error('No room selected')
+      toast.error(t('chat.no_room_selected', 'No room selected'))
       return
     }
 
@@ -355,7 +365,7 @@ export function MessageInput({
       // For now, we'll just send the text message
       // File upload would require backend API changes to handle multipart/form-data
       if (uploadedFiles.length > 0) {
-        toast.info('File upload feature coming soon!')
+        toast.info(t('chat.file_upload_coming_soon', 'File upload feature coming soon!'))
         // In a real implementation, you would upload files first, then include file URLs in the message
       }
 
@@ -383,11 +393,11 @@ export function MessageInput({
         // Focus back on input
         textareaRef.current?.focus()
       } else {
-        toast.error('Failed to send message')
+        toast.error(t('chat.failed_to_send', 'Failed to send message'))
       }
     } catch (error) {
       console.error('🔥 发送消息错误:', error)
-      toast.error('Failed to send message')
+      toast.error(t('chat.failed_to_send', 'Failed to send message'))
     } finally {
       setIsSending(false)
       setIsTyping(false)
@@ -562,7 +572,11 @@ export function MessageInput({
             value={message}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder={replyingTo ? `Reply to ${replyingTo.user.name}...` : 'Type a message...'}
+            placeholder={
+              replyingTo
+                ? t('chat.reply_to', 'Reply to {name}...').replace('{name}', replyingTo.user.name)
+                : t('chat.type_message', 'Type a message...')
+            }
             disabled={isSending || !isConnected}
             className="max-h-[120px] min-h-[40px] resize-none"
             rows={1}
@@ -597,11 +611,15 @@ export function MessageInput({
           {/* Character count */}
           <div className="mt-1 flex justify-between text-xs">
             <div className="text-muted-foreground">
-              {!isConnected && <span className="text-destructive">Disconnected</span>}
-              {isTyping && isConnected && <span className="text-muted-foreground">Typing...</span>}
+              {!isConnected && (
+                <span className="text-destructive">{t('chat.disconnected', 'Disconnected')}</span>
+              )}
+              {isTyping && isConnected && (
+                <span className="text-muted-foreground">{t('chat.typing', 'Typing...')}</span>
+              )}
             </div>
             <div className={`${isNearLimit ? 'text-warning' : 'text-muted-foreground'}`}>
-              {remainingChars} characters remaining
+              {remainingChars} {t('chat.characters_remaining', 'characters remaining')}
             </div>
           </div>
         </div>

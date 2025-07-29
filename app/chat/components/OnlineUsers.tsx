@@ -40,6 +40,7 @@ import {
   MoreVertical,
 } from 'lucide-react'
 import useChatStore from '@/app/chat/chatStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { OnlineUser } from '../types'
 
 interface OnlineUsersProps {
@@ -259,6 +260,7 @@ export default function OnlineUsers({
   onBlockUser,
   onReportUser,
 }: OnlineUsersProps) {
+  const { t } = useTranslation()
   const { onlineUsers } = useChatStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('name')
@@ -332,7 +334,7 @@ export default function OnlineUsers({
         <CardTitle className="flex items-center justify-between text-base">
           <div className="flex items-center space-x-2">
             <Users className="h-4 w-4" />
-            <span>Online Users</span>
+            <span>{t('chat.online_users_title', 'Online Users')}</span>
           </div>
           <Badge variant="secondary" className="text-xs">
             {onlineCount}/{totalCount}
@@ -344,7 +346,7 @@ export default function OnlineUsers({
           <div className="relative">
             <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
             <Input
-              placeholder="Search users..."
+              placeholder={t('chat.search_users', 'Search users...')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="pl-8"
@@ -357,9 +359,9 @@ export default function OnlineUsers({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="name">Sort by Name</SelectItem>
-                <SelectItem value="joined">Sort by Joined</SelectItem>
-                <SelectItem value="status">Sort by Status</SelectItem>
+                <SelectItem value="name">{t('chat.sort_by_name', 'Sort by Name')}</SelectItem>
+                <SelectItem value="joined">{t('chat.sort_by_joined', 'Sort by Joined')}</SelectItem>
+                <SelectItem value="status">{t('chat.sort_by_status', 'Sort by Status')}</SelectItem>
               </SelectContent>
             </Select>
 
@@ -369,9 +371,9 @@ export default function OnlineUsers({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Users</SelectItem>
-                <SelectItem value="online">Online Only</SelectItem>
-                <SelectItem value="moderators">Moderators</SelectItem>
+                <SelectItem value="all">{t('chat.all_users', 'All Users')}</SelectItem>
+                <SelectItem value="online">{t('chat.online_only', 'Online Only')}</SelectItem>
+                <SelectItem value="moderators">{t('chat.moderators', 'Moderators')}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -385,7 +387,9 @@ export default function OnlineUsers({
               <div className="py-8 text-center">
                 <Users className="text-muted-foreground mx-auto h-8 w-8" />
                 <p className="text-muted-foreground mt-2 text-sm">
-                  {searchQuery.trim() ? 'No users found' : 'No users online'}
+                  {searchQuery.trim()
+                    ? t('chat.no_users_found', 'No users found')
+                    : t('chat.no_users_online', 'No users online')}
                 </p>
               </div>
             ) : (

@@ -44,7 +44,7 @@ export const handleApiError = (error: unknown): void => {
 
       toast.error(message || `请求失败 (${status})`)
     } else if (status >= 500) {
-      toast.error('服务器错误，请稍后再试')
+      toast.error('服务器错误，请稍后重试')
     }
   } else if (error instanceof Error) {
     toast.error(error.message || '请求失败，请重试')
@@ -132,7 +132,7 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     return (await response.json()) as T
   } catch (error) {
     console.error('解析JSON响应失败:', error)
-    throw new Error('解析服务器响应失败')
+    throw new Error('解析响应失败')
   }
 }
 
@@ -224,7 +224,7 @@ export async function apiRequest<T>(
     }
 
     if (error instanceof Error && error.message === 'Failed to fetch') {
-      const networkError = new Error('网络连接失败，请检查您的网络连接')
+      const networkError = new Error('网络连接失败，请检查网络')
       if (handleError) handleApiError(networkError)
       throw networkError
     }

@@ -14,9 +14,11 @@ import type { ChatMessage } from './types'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { useTranslation } from '@/hooks/useTranslation'
 
 function ChatPageContent() {
   const router = useRouter()
+  const { t } = useTranslation()
   const { isAuthenticated, loading: authLoading, token } = useAuthStore()
   const {
     currentRoom,
@@ -275,14 +277,14 @@ function ChatPageContent() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <MenuIcon className="h-5 w-5" />
-                <span className="sr-only">Open room list</span>
+                <span className="sr-only">{t('chat.open_room_list', 'Open room list')}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-80 p-0">
               <SheetHeader className="border-b p-4">
                 <SheetTitle className="flex items-center gap-2">
                   <MessageSquareIcon className="h-5 w-5" />
-                  Chat Rooms
+                  {t('chat.chat_rooms', 'Chat Rooms')}
                 </SheetTitle>
               </SheetHeader>
               <div className="flex-1 overflow-hidden">
@@ -293,14 +295,14 @@ function ChatPageContent() {
 
           <div className="flex-1">
             {currentRoom ? (
-              <div>
+              <div className="flex items-center gap-2">
                 <h1 className="text-lg font-semibold">{currentRoom.name}</h1>
                 {currentRoom.description && (
-                  <p className="text-muted-foreground text-sm">{currentRoom.description}</p>
+                  <span className="text-muted-foreground text-sm">• {currentRoom.description}</span>
                 )}
               </div>
             ) : (
-              <h1 className="text-lg font-semibold">Chat</h1>
+              <h1 className="text-lg font-semibold">{t('nav.chat', 'Chat')}</h1>
             )}
           </div>
         </div>
@@ -322,14 +324,14 @@ function ChatPageContent() {
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <UsersIcon className="h-5 w-5" />
-                <span className="sr-only">Open users list</span>
+                <span className="sr-only">{t('chat.open_users_list', 'Open users list')}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80 p-0">
               <SheetHeader className="border-b p-4">
                 <SheetTitle className="flex items-center gap-2">
                   <UsersIcon className="h-5 w-5" />
-                  Online Users
+                  {t('chat.online_users_title', 'Online Users')}
                 </SheetTitle>
               </SheetHeader>
               <div className="flex-1 overflow-hidden">
@@ -354,7 +356,7 @@ function ChatPageContent() {
             <div className="flex items-center justify-between">
               <h2 className="flex items-center gap-2 font-semibold">
                 <MessageSquareIcon className="h-5 w-5" />
-                Chat Rooms
+                {t('chat.chat_rooms', 'Chat Rooms')}
               </h2>
             </div>
             {/* Connection Status - Desktop */}
@@ -368,6 +370,10 @@ function ChatPageContent() {
                 className="relative"
               />
             </div>
+          </div>
+          {/* Room List Content */}
+          <div className="flex-1 overflow-hidden">
+            <ChatRoomList />
           </div>
         </div>
 
@@ -396,9 +402,9 @@ function ChatPageContent() {
             <div className="flex flex-1 items-center justify-center">
               <div className="text-center">
                 <MessageSquareIcon className="text-muted-foreground/50 mx-auto h-12 w-12" />
-                <h3 className="mt-4 text-lg font-medium">Welcome to Chat</h3>
+                <h3 className="mt-4 text-lg font-medium">{t('chat.welcome', 'Welcome to Chat')}</h3>
                 <p className="text-muted-foreground mt-2">
-                  Select a room to start chatting or create a new one
+                  {t('chat.select_room', 'Select a room to start chatting or create a new one')}
                 </p>
               </div>
             </div>
@@ -410,7 +416,7 @@ function ChatPageContent() {
           <div className="border-b p-4">
             <h2 className="flex items-center gap-2 font-semibold">
               <UsersIcon className="h-5 w-5" />
-              Online Users
+              {t('chat.online_users_title', 'Online Users')}
             </h2>
           </div>
           <div className="flex-1 overflow-hidden">
@@ -425,7 +431,7 @@ function ChatPageContent() {
             ) : (
               <div className="flex items-center justify-center p-4">
                 <p className="text-muted-foreground text-center text-sm">
-                  Select a room to see online users
+                  {t('chat.select_room_to_see_users', 'Select a room to see online users')}
                 </p>
               </div>
             )}

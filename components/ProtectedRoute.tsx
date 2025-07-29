@@ -4,12 +4,14 @@ import { useRouter, usePathname } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
 import useAuthStore from '@/stores/authStore'
 import { configs } from '@/app/configs'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { t } = useTranslation()
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated, loading } = useAuthStore()
@@ -46,7 +48,7 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   if (!isClient || loading) {
     return (
       <div className="flex min-h-[200px] items-center justify-center">
-        <div className="text-muted-foreground">加载中...</div>
+        <div className="text-muted-foreground">{t('loading.text')}</div>
       </div>
     )
   }
