@@ -12,26 +12,6 @@ declare global {
 // Configure Pusher
 window.Pusher = Pusher
 
-// Echo configuration for Laravel Reverb
-const echoConfig = {
-  broadcaster: 'reverb' as const,
-  key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'jnwliwk8ulk32jkwqcy7',
-  wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || '127.0.0.1',
-  wsPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || '8080'),
-  wssPort: parseInt(process.env.NEXT_PUBLIC_REVERB_PORT || '443'),
-  forceTLS: (process.env.NEXT_PUBLIC_REVERB_SCHEME || 'https') === 'https',
-  enabledTransports: ['ws', 'wss'],
-  disableStats: true,
-  authEndpoint: `${process.env.NEXT_PUBLIC_API_BASE_URL}/broadcasting/auth`,
-  auth: {
-    headers: {
-      Authorization: '',
-      Accept: 'application/json',
-      'Content-Type': 'application/json',
-    },
-  },
-}
-
 // Create Echo instance and track creation state
 let echoInstance: Echo<'reverb'> | null = null
 let isCreating = false
@@ -93,8 +73,8 @@ export function createEchoInstance(): Echo<'reverb'> | null {
 
   try {
     // Create new instance
-    console.log('Echo: Final config:', echoConfig)
-    const echo = new Echo(echoConfig as unknown as ConstructorParameters<typeof Echo>[0])
+    console.log('Echo: Final config:', config)
+    const echo = new Echo(config as unknown as ConstructorParameters<typeof Echo>[0])
     console.log('Echo: Instance created successfully, type:', typeof echo)
 
     // Verify the instance is valid
