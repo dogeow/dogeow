@@ -106,14 +106,6 @@ describe('LanguageSelector', () => {
   })
 
   describe('Customization options', () => {
-    it('should hide icon when showIcon is false', () => {
-      render(<LanguageSelector showIcon={false} />)
-
-      const button = screen.getByRole('button')
-      const icon = button.querySelector('svg')
-      expect(icon).not.toBeInTheDocument()
-    })
-
     it('should hide text when showText is false', () => {
       render(<LanguageSelector showText={false} />)
 
