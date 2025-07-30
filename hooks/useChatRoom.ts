@@ -259,7 +259,6 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         setIsLoading(false)
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [currentRoom, rooms, connect, onError]
   )
 
@@ -359,7 +358,6 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
     if (autoLoadRooms) {
       loadRooms()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoLoadRooms]) // Remove loadRooms from dependencies to avoid infinite loop
 
   // Cleanup on unmount - safe cleanup without state updates
@@ -368,7 +366,6 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
       // Only call disconnect, avoid state updates during cleanup
       disconnect()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return {

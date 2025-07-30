@@ -4,6 +4,7 @@
 
 import { renderHook, act } from '@testing-library/react'
 import { useLanguageStore, getCurrentLanguageInfo } from '../languageStore'
+import { type SupportedLanguage } from '@/lib/i18n'
 
 // Mock the i18n utilities
 jest.mock('@/lib/i18n', () => ({
@@ -100,8 +101,7 @@ describe('getCurrentLanguageInfo', () => {
   })
 
   it('should return default language info for invalid code', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const info = getCurrentLanguageInfo('invalid' as any)
+    const info = getCurrentLanguageInfo('invalid' as SupportedLanguage)
     expect(info?.code).toBe('zh-CN')
     expect(info?.isDefault).toBe(true)
   })

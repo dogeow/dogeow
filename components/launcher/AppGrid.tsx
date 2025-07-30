@@ -1,12 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React from 'react'
 import { Settings, Music } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
-import { Moon, Sun } from 'lucide-react'
-import { useTheme } from 'next-themes'
-import { useThemeStore } from '@/stores/themeStore'
 import { useMusicStore } from '@/stores/musicStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import { cn } from '@/lib/helpers'
@@ -19,18 +16,7 @@ export interface AppGridProps {
 
 export function AppGrid({ toggleDisplayMode }: AppGridProps) {
   const { t } = useTranslation()
-  const { theme, setTheme } = useTheme()
-  const { setFollowSystem } = useThemeStore()
   const { isPlaying } = useMusicStore()
-  const [mounted, setMounted] = useState(false)
-
-  // 等待组件挂载后再处理主题，避免水合不匹配错误
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // 自定义按钮样式，确保在任何背景下都有足够的对比度
-  const buttonStyle = 'h-9 w-9 bg-background/60 backdrop-blur-sm'
 
   // 定义按钮配置
   const buttons = [
@@ -57,33 +43,14 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
       onClick: () => toggleDisplayMode('music'),
     },
     {
-      icon: (
-        <div className="relative">
-          {mounted ? (
-            theme === 'dark' ? (
-              <Moon className="h-[1.2rem] w-[1.2rem]" />
-            ) : (
-              <Sun className="h-[1.2rem] w-[1.2rem]" />
-            )
-          ) : (
-            <Sun className="h-[1.2rem] w-[1.2rem]" />
-          )}
-        </div>
-      ),
-      label: t('appgrid.theme'),
-      onClick: () => {
-        if (!mounted) return
-        setFollowSystem(false)
-        const newTheme = theme === 'dark' ? 'light' : 'dark'
-        setTheme(newTheme)
-      },
-    },
-    {
       icon: <Settings className="h-5 w-5" />,
       label: t('appgrid.settings'),
       onClick: () => toggleDisplayMode('settings'),
     },
   ]
+
+  // 自定义按钮样式，确保在任何背景下都有足够的对比度
+  const buttonStyle = 'h-9 w-9 bg-background/60 backdrop-blur-sm'
 
   return (
     <div className="flex items-center space-x-4">

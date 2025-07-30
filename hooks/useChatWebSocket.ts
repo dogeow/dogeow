@@ -158,7 +158,6 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
   // 自动连接
   useEffect(() => {
     if (autoConnect) connect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoConnect])
 
   // 组件卸载清理
@@ -174,7 +173,6 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         shouldCleanup = false
       }, 100)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const connect = useCallback(async (): Promise<boolean> => {
