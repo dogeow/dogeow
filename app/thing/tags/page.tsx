@@ -122,25 +122,6 @@ export default function ThingTags() {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-
-                    {/* 使用频率指示器 */}
-                    {tag.items_count > 0 && (
-                      <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 flex-1 rounded-full bg-gray-200 dark:bg-gray-700">
-                            <div
-                              className="bg-primary h-1.5 rounded-full transition-all"
-                              style={{
-                                width: `${Math.min(100, (tag.items_count / Math.max(...tags.map(t => t.items_count))) * 100)}%`,
-                              }}
-                            />
-                          </div>
-                          <span className="text-xs text-gray-500">
-                            {tag.items_count > 10 ? '高频' : tag.items_count > 3 ? '中频' : '低频'}
-                          </span>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               ))}
