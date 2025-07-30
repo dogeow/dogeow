@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { Area, Room, LocationType } from '../hooks/useLocationManagement'
 import { cn } from '@/lib/helpers'
+// import { useTheme } from 'next-themes'
 
 interface LocationsSpeedDialProps {
   areas: Area[]
@@ -33,6 +34,7 @@ export default function LocationsSpeedDial({
   onAddRoom,
   onAddSpot,
 }: LocationsSpeedDialProps) {
+  // const { theme, systemTheme } = useTheme()
   const [isOpen, setIsOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogType, setDialogType] = useState<LocationType>('area')
@@ -40,26 +42,29 @@ export default function LocationsSpeedDial({
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null)
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
 
+  // 根据主题模式获取弹出按钮的样式
+  const getPopupButtonStyle = () => {
+    // 使用蓝色背景配白色图标，无论白天还是夜晚模式
+    return 'bg-blue-500 hover:bg-blue-600 text-white shadow-sm'
+  }
+
   const speedDialItems = [
     {
       type: 'area' as LocationType,
       icon: Home,
       label: '添加区域',
-      color: 'bg-blue-500 hover:bg-blue-600',
       show: true,
     },
     {
       type: 'room' as LocationType,
       icon: DoorOpen,
       label: '添加房间',
-      color: 'bg-green-500 hover:bg-green-600',
       show: areas.length > 0,
     },
     {
       type: 'spot' as LocationType,
       icon: MapPin,
       label: '添加位置',
-      color: 'bg-purple-500 hover:bg-purple-600',
       show: rooms.length > 0,
     },
   ]
@@ -103,31 +108,31 @@ export default function LocationsSpeedDial({
         setSelectedRoomId(null)
       }
     } catch (error) {
-      console.error('添加失败:', error)
+      console.error('添加位置失败:', error)
     }
   }
 
   const getDialogTitle = () => {
     switch (dialogType) {
       case 'area':
-        return '添加新区域'
+        return '添加区域'
       case 'room':
-        return '添加新房间'
+        return '添加房间'
       case 'spot':
-        return '添加新位置'
+        return '添加位置'
       default:
-        return '添加'
+        return '添加位置'
     }
   }
 
   const getPlaceholder = () => {
     switch (dialogType) {
       case 'area':
-        return '输入区域名称，如：客厅、卧室'
+        return '输入区域名称'
       case 'room':
-        return '输入房间名称，如：主卧、次卧'
+        return '输入房间名称'
       case 'spot':
-        return '输入具体位置，如：书柜、抽屉'
+        return '输入位置名称'
       default:
         return '输入名称'
     }
@@ -165,32 +170,28 @@ export default function LocationsSpeedDial({
                     size="icon"
                     className={cn(
                       'h-12 w-12 rounded-full shadow-lg transition-all duration-200 hover:scale-110 active:scale-95',
-                      item.color
+                      getPopupButtonStyle()
                     )}
                     onClick={() => handleSpeedDialClick(item.type)}
                   >
-                    <item.icon className="h-5 w-5 text-white" />
+                    <item.icon className="h-5 w-5" />
                   </Button>
                 </div>
               ))}
           </div>
 
-          {/* 主按钮 */}
+          {/* 主按钮 - 使用主题色 */}
           <Button
             size="icon"
             className={cn(
-              'h-14 w-14 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95',
+              'text-primary-foreground h-14 w-14 rounded-full shadow-lg transition-all duration-300 hover:scale-110 active:scale-95',
               isOpen
-                ? 'rotate-45 bg-red-500 hover:bg-red-600'
+                ? 'bg-destructive hover:bg-destructive/90 rotate-45'
                 : 'bg-primary hover:bg-primary/90 rotate-0'
             )}
             onClick={() => setIsOpen(!isOpen)}
           >
-            {isOpen ? (
-              <X className="h-6 w-6 text-white" />
-            ) : (
-              <Plus className="h-6 w-6 text-white" />
-            )}
+            {isOpen ? <X className="h-6 w-6" /> : <Plus className="h-6 w-6" />}
           </Button>
         </div>
 
@@ -205,46 +206,39 @@ export default function LocationsSpeedDial({
 
       {/* 添加对话框 */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {dialogType === 'area' && <Home className="h-5 w-5 text-blue-500" />}
-              {dialogType === 'room' && <DoorOpen className="h-5 w-5 text-green-500" />}
-              {dialogType === 'spot' && <MapPin className="h-5 w-5 text-purple-500" />}
-              {getDialogTitle()}
-            </DialogTitle>
+            <DialogTitle>{getDialogTitle()}</DialogTitle>
           </DialogHeader>
-
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">名称</Label>
               <Input
                 id="name"
-                placeholder={getPlaceholder()}
                 value={newName}
                 onChange={e => setNewName(e.target.value)}
+                placeholder={getPlaceholder()}
+                disabled={loading}
+                maxLength={50}
                 autoFocus
-                className="focus:ring-primary/20 transition-all duration-200 focus:ring-2"
               />
             </div>
 
+            {/* 房间选择 */}
             {dialogType === 'room' && (
               <div className="space-y-2">
                 <Label htmlFor="area">所属区域</Label>
                 <Select
-                  value={selectedAreaId?.toString()}
-                  onValueChange={value => setSelectedAreaId(parseInt(value))}
+                  value={selectedAreaId?.toString() || ''}
+                  onValueChange={value => setSelectedAreaId(Number(value))}
                 >
-                  <SelectTrigger id="area">
+                  <SelectTrigger>
                     <SelectValue placeholder="选择区域" />
                   </SelectTrigger>
                   <SelectContent>
                     {areas.map(area => (
                       <SelectItem key={area.id} value={area.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <Home className="h-4 w-4 text-blue-500" />
-                          {area.name}
-                        </div>
+                        {area.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -252,28 +246,21 @@ export default function LocationsSpeedDial({
               </div>
             )}
 
+            {/* 位置选择 */}
             {dialogType === 'spot' && (
               <div className="space-y-2">
                 <Label htmlFor="room">所属房间</Label>
                 <Select
-                  value={selectedRoomId?.toString()}
-                  onValueChange={value => setSelectedRoomId(parseInt(value))}
+                  value={selectedRoomId?.toString() || ''}
+                  onValueChange={value => setSelectedRoomId(Number(value))}
                 >
-                  <SelectTrigger id="room">
+                  <SelectTrigger>
                     <SelectValue placeholder="选择房间" />
                   </SelectTrigger>
                   <SelectContent>
                     {rooms.map(room => (
                       <SelectItem key={room.id} value={room.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <DoorOpen className="h-4 w-4 text-green-500" />
-                          {room.name}
-                          {room.area?.name && (
-                            <span className="text-muted-foreground text-xs">
-                              ({room.area.name})
-                            </span>
-                          )}
-                        </div>
+                        {room.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -281,12 +268,12 @@ export default function LocationsSpeedDial({
               </div>
             )}
 
-            <div className="flex justify-between pt-4">
+            <div className="flex justify-end gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setDialogOpen(false)}
-                className="hover:bg-muted/80 transition-all duration-200"
+                disabled={loading}
               >
                 取消
               </Button>
@@ -298,7 +285,6 @@ export default function LocationsSpeedDial({
                   (dialogType === 'room' && !selectedAreaId) ||
                   (dialogType === 'spot' && !selectedRoomId)
                 }
-                className="transition-all duration-200 hover:scale-105 active:scale-95"
               >
                 {loading ? '添加中...' : '添加'}
               </Button>
