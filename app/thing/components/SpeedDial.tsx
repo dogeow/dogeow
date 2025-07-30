@@ -16,7 +16,7 @@ export function SpeedDial({
   href = '/thing/add',
   onClick,
   icon = <Plus className="h-6 w-6" />,
-  className = 'h-14 w-14 rounded-full shadow-lg bg-[#78B15E] hover:bg-[#6CA052] text-white',
+  className = 'h-14 w-14 rounded-full shadow-lg bg-primary hover:bg-primary/90 text-white',
 }: SpeedDialProps) {
   const router = useRouter()
 

@@ -10,6 +10,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
     <Sonner
       theme={theme as ToasterProps['theme']}
       className="toaster group"
+      position="bottom-right"
       style={
         {
           '--normal-bg': 'var(--popover)',
@@ -17,6 +18,11 @@ const Toaster = ({ ...props }: ToasterProps) => {
           '--normal-border': 'var(--border)',
         } as React.CSSProperties
       }
+      toastOptions={{
+        style: {
+          marginBottom: '80px', // 为speed dial留出空间
+        },
+      }}
       {...props}
     />
   )
