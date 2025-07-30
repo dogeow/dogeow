@@ -165,7 +165,7 @@ export default function ThingHeader({
       <Button
         variant="outline"
         onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
-        className="border-primary/20 flex w-[110px] items-center justify-between rounded-lg bg-white/90 shadow"
+        className="border-primary/20 flex w-[100px] items-center justify-between rounded-lg bg-white/90 shadow"
       >
         {selectedCategory
           ? (() => {
@@ -174,7 +174,7 @@ export default function ThingHeader({
               return category ? category.name : '所有分类'
             })()
           : '所有分类'}
-        <ChevronDownIcon className="ml-2 h-4 w-4" />
+        <ChevronDownIcon className="h-4 w-4" />
       </Button>
       {categoryMenuOpen && (
         <div
@@ -203,10 +203,10 @@ export default function ThingHeader({
       <Button
         variant="outline"
         onClick={() => setTagMenuOpen(!tagMenuOpen)}
-        className="border-primary/20 flex w-[110px] items-center justify-between rounded-lg bg-white/90 shadow"
+        className="border-primary/20 flex w-[100px] items-center justify-between rounded-lg bg-white/90 shadow"
       >
-        {selectedTags.length > 0 ? `${selectedTags.length}个标签` : '选择标签'}
-        <ChevronDownIcon className="ml-2 h-4 w-4" />
+        {selectedTags.length > 0 ? `${selectedTags.length}个标签` : '标签'}
+        <ChevronDownIcon className="h-4 w-4" />
       </Button>
 
       {tagMenuOpen && (

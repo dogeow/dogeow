@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { ChevronDownIcon, GlobeIcon } from 'lucide-react'
+import { ChevronDownIcon } from 'lucide-react'
 import { cn } from '@/lib/helpers'
 import { useTranslation } from '@/hooks/useTranslation'
 import {
@@ -11,14 +11,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-// import { motion, AnimatePresence } from 'framer-motion'
 import { useLanguageTransition } from '@/hooks/useLanguageTransition'
 
 interface LanguageSelectorProps {
   className?: string
   variant?: 'dropdown' | 'button'
   size?: 'sm' | 'default' | 'lg'
-  showIcon?: boolean
   showText?: boolean
   showFlag?: boolean
 }
@@ -50,7 +48,6 @@ export function LanguageSelector({
   className,
   variant = 'dropdown',
   size = 'default',
-  showIcon = true,
   showText = true,
   showFlag = true,
   ...props
@@ -59,23 +56,8 @@ export function LanguageSelector({
   const { isTransitioning, switchLanguage } = useLanguageTransition()
 
   const handleLanguageChange = async (languageCode: string) => {
-    console.log(
-      'Language change requested:',
-      languageCode,
-      'Current:',
-      currentLanguage,
-      'Transitioning:',
-      isTransitioning
-    )
     await switchLanguage(languageCode)
   }
-
-  console.log(
-    'LanguageSelector render - isTransitioning:',
-    isTransitioning,
-    'currentLanguage:',
-    currentLanguage
-  )
 
   if (variant === 'button') {
     return (
@@ -94,7 +76,6 @@ export function LanguageSelector({
             )}
           >
             {showFlag && <FlagIcon languageCode={language.code} />}
-            {showIcon && !showFlag && <GlobeIcon className="size-4" />}
             {showText && <span>{language.nativeName}</span>}
           </Button>
         ))}
@@ -119,7 +100,6 @@ export function LanguageSelector({
         >
           <div className="flex items-center gap-2">
             {showFlag && <FlagIcon languageCode={currentLanguage} />}
-            {showIcon && !showFlag && <GlobeIcon className="size-4" />}
             {showText && <span className="font-medium">{currentLanguageInfo.nativeName}</span>}
           </div>
           <ChevronDownIcon className="size-4 opacity-50 transition-transform duration-200 group-data-[state=open]:rotate-180" />

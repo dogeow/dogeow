@@ -19,13 +19,7 @@ export function LanguageView({ onBack }: LanguageViewProps) {
 
       {/* 语言选择器 */}
       <div className="flex shrink-0 items-center gap-2 px-3">
-        <LanguageSelector
-          variant="button"
-          size="sm"
-          className="flex-wrap"
-          showIcon={false}
-          showFlag={true}
-        />
+        <LanguageSelector variant="button" size="sm" className="flex-wrap" showFlag={true} />
       </div>
     </>
   )
