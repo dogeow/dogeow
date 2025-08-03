@@ -217,10 +217,9 @@ const useChatStore = create<ChatState>()(
       },
 
       joinRoom: async roomId => {
-        set({ isLoading: true, error: null })
+        set({ error: null })
         try {
           await apiPost(`/chat/rooms/${roomId}/join`, {})
-          set({ isLoading: false })
         } catch (error) {
           const chatError = handleChatApiError(error, 'Failed to join chat room', {
             showToast: true,
@@ -229,7 +228,6 @@ const useChatStore = create<ChatState>()(
           set({
             error: chatError,
             lastError: chatError,
-            isLoading: false,
           })
           throw chatError
         }

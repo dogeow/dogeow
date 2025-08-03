@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select'
 import { Area, Room, LocationType } from '../hooks/useLocationManagement'
 import { cn } from '@/lib/helpers'
+import { useTranslation } from '@/hooks/useTranslation'
 // import { useTheme } from 'next-themes'
 
 interface LocationsSpeedDialProps {
@@ -35,6 +36,7 @@ export default function LocationsSpeedDial({
   onAddSpot,
 }: LocationsSpeedDialProps) {
   // const { theme, systemTheme } = useTheme()
+  const { t } = useTranslation()
   const [isOpen, setIsOpen] = useState(false)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogType, setDialogType] = useState<LocationType>('area')
@@ -52,19 +54,19 @@ export default function LocationsSpeedDial({
     {
       type: 'area' as LocationType,
       icon: Home,
-      label: '添加区域',
+      label: t('location.add_area'),
       show: true,
     },
     {
       type: 'room' as LocationType,
       icon: DoorOpen,
-      label: '添加房间',
+      label: t('location.add_room'),
       show: areas.length > 0,
     },
     {
       type: 'spot' as LocationType,
       icon: MapPin,
-      label: '添加位置',
+      label: t('location.add_spot'),
       show: rooms.length > 0,
     },
   ]
@@ -115,26 +117,26 @@ export default function LocationsSpeedDial({
   const getDialogTitle = () => {
     switch (dialogType) {
       case 'area':
-        return '添加区域'
+        return t('location.add_area')
       case 'room':
-        return '添加房间'
+        return t('location.add_room')
       case 'spot':
-        return '添加位置'
+        return t('location.add_spot')
       default:
-        return '添加位置'
+        return t('location.add_area')
     }
   }
 
   const getPlaceholder = () => {
     switch (dialogType) {
       case 'area':
-        return '输入区域名称'
+        return t('location.enter_area_name')
       case 'room':
-        return '输入房间名称'
+        return t('location.enter_room_name')
       case 'spot':
-        return '输入位置名称'
+        return t('location.enter_spot_name')
       default:
-        return '输入名称'
+        return t('location.enter_area_name')
     }
   }
 
@@ -212,7 +214,7 @@ export default function LocationsSpeedDial({
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">名称</Label>
+              <Label htmlFor="name">{t('location.name')}</Label>
               <Input
                 id="name"
                 value={newName}
@@ -227,13 +229,13 @@ export default function LocationsSpeedDial({
             {/* 房间选择 */}
             {dialogType === 'room' && (
               <div className="space-y-2">
-                <Label htmlFor="area">所属区域</Label>
+                <Label htmlFor="area">{t('location.belongs_to_area')}</Label>
                 <Select
                   value={selectedAreaId?.toString() || ''}
                   onValueChange={value => setSelectedAreaId(Number(value))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="选择区域" />
+                    <SelectValue placeholder={t('location.select_area')} />
                   </SelectTrigger>
                   <SelectContent>
                     {areas.map(area => (
@@ -249,13 +251,13 @@ export default function LocationsSpeedDial({
             {/* 位置选择 */}
             {dialogType === 'spot' && (
               <div className="space-y-2">
-                <Label htmlFor="room">所属房间</Label>
+                <Label htmlFor="room">{t('location.belongs_to_room')}</Label>
                 <Select
                   value={selectedRoomId?.toString() || ''}
                   onValueChange={value => setSelectedRoomId(Number(value))}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="选择房间" />
+                    <SelectValue placeholder={t('location.select_room')} />
                   </SelectTrigger>
                   <SelectContent>
                     {rooms.map(room => (
@@ -275,7 +277,7 @@ export default function LocationsSpeedDial({
                 onClick={() => setDialogOpen(false)}
                 disabled={loading}
               >
-                取消
+                {t('common.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -286,7 +288,7 @@ export default function LocationsSpeedDial({
                   (dialogType === 'spot' && !selectedRoomId)
                 }
               >
-                {loading ? '添加中...' : '添加'}
+                {loading ? t('location.adding') : t('location.add')}
               </Button>
             </div>
           </form>

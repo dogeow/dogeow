@@ -23,12 +23,18 @@ export function useLanguageTransition(): UseLanguageTransitionReturn {
   const switchLanguage = useCallback(
     async (languageCode: string) => {
       console.log('switchLanguage called with:', languageCode, 'current:', currentLanguage)
+
+      // 如果语言相同，不执行切换
+      if (languageCode === currentLanguage) {
+        return
+      }
+
       setIsTransitioning(true)
       setTransitionProgress(0)
 
       try {
         // 设置新语言
-        setLanguage(languageCode)
+        await setLanguage(languageCode)
 
         // 模拟过渡进度
         const progressInterval = setInterval(() => {
@@ -77,15 +83,20 @@ export function useLanguageTransitionWithDuration(duration: number = 300) {
 
   const switchLanguage = useCallback(
     async (languageCode: string) => {
+      // 如果语言相同，不执行切换
+      if (languageCode === currentLanguage) {
+        return
+      }
+
       setIsTransitioning(true)
-      setLanguage(languageCode)
+      await setLanguage(languageCode)
 
       // 使用定时器确保过渡状态能正确重置
       setTimeout(() => {
         setIsTransitioning(false)
       }, duration)
     },
-    [setLanguage, duration]
+    [setLanguage, duration, currentLanguage]
   )
 
   return {

@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="55" failures="1" errors="0" time="0.089944874">
+    <testsuite name="hooks/__tests__/useLanguageTransition.test.ts" timestamp="2025-07-30T23:43:32.344Z" hostname="shanmudeMacBook-Pro.local" tests="10" failures="1" errors="0" skipped="0" time="0.038637791">
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransition &gt; should initialize with default values" time="0.012289875">
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransition &gt; should handle language switching" time="0.004458041">
+            <system-out>
+switchLanguage called with: en current: zh-CN
+
+            </system-out>
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransition &gt; should not switch if language is the same" time="0.018018792">
+            <system-out>
+switchLanguage called with: zh-CN current: zh-CN
+
+switchLanguage called with: zh-CN current: zh-CN
+
+switchLanguage called with: zh-CN current: zh-CN
+
+            </system-out>
+            <failure message="expected &quot;spy&quot; to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      &quot;zh-CN&quot;,
+    ]
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m" type="AssertionError">
+AssertionError: expected &quot;spy&quot; to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      &quot;zh-CN&quot;,
+    ]
+
+
+Number of calls: 1
+
+ ❯ hooks/__tests__/useLanguageTransition.test.ts:52:33
+            </failure>
+            <failure message="expected &quot;spy&quot; to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      &quot;zh-CN&quot;,
+    ]
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m" type="AssertionError">
+AssertionError: expected &quot;spy&quot; to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      &quot;zh-CN&quot;,
+    ]
+
+
+Number of calls: 1
+
+ ❯ hooks/__tests__/useLanguageTransition.test.ts:52:33
+            </failure>
+            <failure message="expected &quot;spy&quot; to not be called at all, but actually been called 1 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      &quot;zh-CN&quot;,
+    ]
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m" type="AssertionError">
+AssertionError: expected &quot;spy&quot; to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      &quot;zh-CN&quot;,
+    ]
+
+
+Number of calls: 1
+
+ ❯ hooks/__tests__/useLanguageTransition.test.ts:52:33
+            </failure>
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransition &gt; should handle transition progress" time="0">
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransition &gt; should complete transition after progress reaches 100" time="0">
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransition &gt; should handle transition errors" time="0">
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransitionWithDuration &gt; should initialize with default duration" time="0">
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransitionWithDuration &gt; should use custom duration" time="0">
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransitionWithDuration &gt; should handle language switching with custom duration" time="0">
+        </testcase>
+        <testcase classname="hooks/__tests__/useLanguageTransition.test.ts" name="useLanguageTransitionWithDuration &gt; should not switch if language is the same" time="0">
+        </testcase>
+    </testsuite>
+    <testsuite name="hooks/__tests__/useTranslation.test.ts" timestamp="2025-07-30T23:43:32.348Z" hostname="shanmudeMacBook-Pro.local" tests="13" failures="0" errors="0" skipped="0" time="0.027885083">
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslation &gt; should initialize language on mount" time="0.010275625">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslation &gt; should return translation function and language info" time="0.001329208">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslation &gt; should call translation function correctly" time="0.00134375">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslation &gt; should call translation function with fallback" time="0.000810708">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslation &gt; should call setLanguage when language is changed" time="0.000939875">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslation &gt; should provide currentLanguageInfo" time="0.000813375">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslation &gt; should provide availableLanguages" time="0.000877041">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useT &gt; should initialize language on mount" time="0.000650417">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useT &gt; should return translation function" time="0.000822709">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useT &gt; should handle fallback in translation function" time="0.001949375">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslationWithLanguage &gt; should initialize language on mount" time="0.002081458">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslationWithLanguage &gt; should return translation function that accepts language parameter" time="0.001703625">
+        </testcase>
+        <testcase classname="hooks/__tests__/useTranslation.test.ts" name="useTranslationWithLanguage &gt; should handle fallback with explicit language" time="0.001951208">
+        </testcase>
+    </testsuite>
+    <testsuite name="stores/__tests__/languageStore.manual.test.js" timestamp="2025-07-30T23:43:32.350Z" hostname="shanmudeMacBook-Pro.local" tests="1" failures="0" errors="0" skipped="0" time="0.002714333">
+        <testcase classname="stores/__tests__/languageStore.manual.test.js" name="Manual Language Store Tests &gt; should pass manual tests" time="0.001598333">
+        </testcase>
+    </testsuite>
+    <testsuite name="stores/__tests__/languageStore.test.ts" timestamp="2025-07-30T23:43:32.350Z" hostname="shanmudeMacBook-Pro.local" tests="7" failures="0" errors="0" skipped="0" time="0.020707667">
+        <testcase classname="stores/__tests__/languageStore.test.ts" name="languageStore &gt; should initialize with default language" time="0.014601333">
+        </testcase>
+        <testcase classname="stores/__tests__/languageStore.test.ts" name="languageStore &gt; should set language correctly" time="0.0013475">
+        </testcase>
+        <testcase classname="stores/__tests__/languageStore.test.ts" name="languageStore &gt; should normalize invalid language codes" time="0.001140958">
+        </testcase>
+        <testcase classname="stores/__tests__/languageStore.test.ts" name="languageStore &gt; should initialize language from browser detection" time="0.00111425">
+        </testcase>
+        <testcase classname="stores/__tests__/languageStore.test.ts" name="languageStore &gt; should provide translation function" time="0.001146833">
+        </testcase>
+        <testcase classname="stores/__tests__/languageStore.test.ts" name="getCurrentLanguageInfo &gt; should return correct language info" time="0.000109167">
+        </testcase>
+        <testcase classname="stores/__tests__/languageStore.test.ts" name="getCurrentLanguageInfo &gt; should return default language info for invalid code" time="0.000115167">
+        </testcase>
+    </testsuite>
+    <testsuite name="components/provider/__tests__/LanguageProvider.test.tsx" timestamp="2025-07-30T23:43:32.352Z" hostname="shanmudeMacBook-Pro.local" tests="2" failures="0" errors="0" skipped="0" time="0">
+        <testcase classname="components/provider/__tests__/LanguageProvider.test.tsx" name="LanguageProvider &gt; should update html lang attribute when language changes" time="0">
+        </testcase>
+        <testcase classname="components/provider/__tests__/LanguageProvider.test.tsx" name="LanguageProvider &gt; should render children correctly" time="0">
+        </testcase>
+    </testsuite>
+    <testsuite name="components/ui/__tests__/language-selector.test.tsx" timestamp="2025-07-30T23:43:32.352Z" hostname="shanmudeMacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0">
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="LanguageSelector &gt; Dropdown variant &gt; should render dropdown trigger with current language" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="LanguageSelector &gt; Dropdown variant &gt; should show dropdown menu when clicked" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="LanguageSelector &gt; Dropdown variant &gt; should call setLanguage when language option is clicked" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="LanguageSelector &gt; Button variant &gt; should render all language buttons" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="LanguageSelector &gt; Button variant &gt; should highlight current language button" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="LanguageSelector &gt; Button variant &gt; should call setLanguage when language button is clicked" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="LanguageSelector &gt; Customization options &gt; should hide text when showText is false" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="LanguageSelector &gt; Customization options &gt; should apply custom className" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="CompactLanguageSelector &gt; should render current language code" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="CompactLanguageSelector &gt; should show dropdown with language options" time="0">
+        </testcase>
+        <testcase classname="components/ui/__tests__/language-selector.test.tsx" name="CompactLanguageSelector &gt; should call setLanguage when compact option is clicked" time="0">
+        </testcase>
+    </testsuite>
+    <testsuite name="app/chat/components/__tests__/MentionHighlight.test.tsx" timestamp="2025-07-30T23:43:32.354Z" hostname="shanmudeMacBook-Pro.local" tests="11" failures="0" errors="0" skipped="0" time="0">
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="MentionHighlight &gt; renders plain text without mentions" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="MentionHighlight &gt; highlights @username mentions" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="MentionHighlight &gt; highlights quoted mentions" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="MentionHighlight &gt; highlights current user mentions differently" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="MentionHighlight &gt; calls onMentionClick when mention is clicked" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="extractMentions &gt; extracts simple mentions" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="extractMentions &gt; extracts quoted mentions" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="extractMentions &gt; returns empty array for text without mentions" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="containsMention &gt; returns true when text contains mention" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="containsMention &gt; returns false when text does not contain mention" time="0">
+        </testcase>
+        <testcase classname="app/chat/components/__tests__/MentionHighlight.test.tsx" name="containsMention &gt; is case insensitive" time="0">
+        </testcase>
+    </testsuite>
+</testsuites>

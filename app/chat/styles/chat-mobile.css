@@ -1,0 +1,46 @@
+/* 聊天移动端样式优化 */
+@media (max-width: 768px) {
+  /* 移动端头部高度调整，避免被状态栏遮挡 */
+  .chat-header-mobile {
+    padding-top: env(safe-area-inset-top, 0);
+    min-height: calc(env(safe-area-inset-top, 0px) + 70px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: hsl(var(--background));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .chat-messages-mobile {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    height: calc(
+      100dvh - env(safe-area-inset-top, 0px) - 180px - env(safe-area-inset-bottom, 0px) - 2rem
+    );
+    overflow-y: auto;
+  }
+
+  .chat-input-mobile {
+    margin-left: 0.75rem;
+    margin-right: 0.75rem;
+    padding-left: 2.5rem !important;
+  }
+
+  .chat-input-area-mobile {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 2.5rem);
+    position: sticky;
+    bottom: 0;
+    background-color: hsl(var(--background));
+    border-top: 1px solid hsl(var(--border));
+    z-index: 10;
+    min-height: calc(env(safe-area-inset-bottom, 0.75rem) + 120px);
+  }
+
+  .chat-button-mobile {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+  }
+}

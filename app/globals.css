@@ -50,6 +50,22 @@
   [data-radix-popover-content] {
     max-height: min(250px, 35vh) !important;
   }
+
+  /* 确保移动端页面高度正确 */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* 移动端安全区域支持 */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }
 
 .dark {

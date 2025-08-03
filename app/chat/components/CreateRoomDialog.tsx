@@ -8,7 +8,6 @@ import { Loader2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -16,7 +15,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,19 +24,20 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import useChatStore from '@/app/chat/chatStore'
+import { useTranslation } from '@/hooks/useTranslation'
 import type { CreateRoomData } from '../types'
 
 const createRoomSchema = z.object({
   name: z
     .string()
-    .min(1, 'Room name is required')
-    .min(3, 'Room name must be at least 3 characters')
-    .max(50, 'Room name must be less than 50 characters')
+    .min(1, '房间名称是必需的')
+    .min(3, '房间名称至少需要3个字符')
+    .max(50, '房间名称不能超过50个字符')
     .regex(
-      /^[a-zA-Z0-9\s\-_]+$/,
-      'Room name can only contain letters, numbers, spaces, hyphens, and underscores'
+      /^[\u4e00-\u9fa5a-zA-Z0-9\s\-_]+$/,
+      '房间名称只能包含中文、字母、数字、空格、连字符和下划线'
     ),
-  description: z.string().max(200, 'Description must be less than 200 characters').optional(),
+  description: z.string().max(200, '描述不能超过200个字符').optional(),
 })
 
 type CreateRoomFormData = z.infer<typeof createRoomSchema>
@@ -49,6 +48,7 @@ interface CreateRoomDialogProps {
 }
 
 export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) {
+  const { t } = useTranslation()
   const { createRoom, setCurrentRoom, joinRoom } = useChatStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -99,11 +99,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Create New Chat Room</DialogTitle>
-          <DialogDescription>
-            Create a new chat room for your team or community. Choose a descriptive name and add an
-            optional description.
-          </DialogDescription>
+          <DialogTitle>{t('chat.create_new_room', '创建新聊天房间')}</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -113,17 +109,14 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Room Name</FormLabel>
+                  <FormLabel>{t('chat.room_name', '房间名称')}</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="e.g., General Discussion"
+                      placeholder={t('chat.room_name_placeholder', '例如：一般讨论')}
                       disabled={isSubmitting}
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    A unique name for your chat room (3-50 characters)
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -134,18 +127,15 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>{t('chat.description_optional', '描述（可选）')}</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Describe what this room is for..."
+                      placeholder={t('chat.description_placeholder', '描述这个房间的用途...')}
                       className="min-h-[80px]"
                       disabled={isSubmitting}
                       {...field}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Help others understand the purpose of this room (max 200 characters)
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -158,11 +148,11 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
                 onClick={() => handleOpenChange(false)}
                 disabled={isSubmitting}
               >
-                Cancel
+                {t('common.cancel', '取消')}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-                Create Room
+                {t('chat.create_room', '创建房间')}
               </Button>
             </DialogFooter>
           </form>

@@ -1,14 +1,17 @@
 'use client'
 
-import React, { useState, useEffect, useCallback, useMemo, useRef, RefObject } from 'react'
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import { ChatRoom } from '../types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/helpers'
-import useChatStore from '@/app/chat/chatStore'
-import chatCache from '@/lib/cache/chat-cache'
-import type { ChatRoom } from '../types'
+import { chatCache } from '@/lib/cache/chat-cache'
+import { useTranslation } from '@/hooks/useTranslation'
+import { Search, Users, MessageSquare, Clock, Star, StarOff } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { UsersIcon } from 'lucide-react'
-import Image from 'next/image'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useChatStore } from '../chatStore'
 
 interface LazyRoomListProps {
   onRoomSelect: (room: ChatRoom) => void
@@ -23,122 +26,100 @@ interface RoomItemProps {
   isVisible: boolean
 }
 
-// Individual room item component with lazy loading
 function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const { favoriteRooms, toggleFavorite } = useChatStore()
 
-  // Only render content when visible (intersection observer optimization)
-  if (!isVisible) {
-    return (
-      <div className="h-16 w-full">
-        <Skeleton className="h-full w-full" />
-      </div>
-    )
-  }
+  const isFavorite = favoriteRooms.has(room.id)
 
   const handleImageLoad = () => setImageLoaded(true)
   const handleImageError = () => setImageError(true)
 
-  // Generate room avatar from name
-  const roomInitials = room.name
-    .split(' ')
-    .map(word => word[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    toggleFavorite(room.id)
+  }
+
+  if (!isVisible) {
+    return <Skeleton className="h-16 w-full" />
+  }
 
   return (
     <div
       className={cn(
-        'hover:bg-muted/50 flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors',
-        isSelected && 'bg-primary/10 border-primary border'
+        'hover:bg-muted flex cursor-pointer items-center space-x-3 rounded-lg p-3 transition-colors',
+        isSelected && 'bg-muted'
       )}
       onClick={onClick}
     >
-      {/* Room Avatar */}
-      <div className="relative flex-shrink-0">
-        {room.avatar && !imageError ? (
-          <div className="relative h-10 w-10">
-            <Image
-              src={room.avatar}
-              alt={room.name}
-              className={cn(
-                'h-full w-full rounded-full object-cover transition-opacity',
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              )}
-              onLoad={handleImageLoad}
-              onError={handleImageError}
-              width={40}
-              height={40}
-            />
-            {!imageLoaded && <Skeleton className="absolute inset-0 h-full w-full rounded-full" />}
-          </div>
-        ) : (
-          <div className="bg-primary text-primary-foreground flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium">
-            {roomInitials}
-          </div>
-        )}
-
-        {/* Online indicator */}
-        {(room.online_count ?? 0) > 0 && (
-          <Badge variant="secondary" className="ml-auto">
-            <UsersIcon className="mr-1 h-3 w-3" />
+      {/* Room avatar */}
+      <div className="relative">
+        <Avatar className="h-10 w-10">
+          <AvatarImage
+            src={room.avatar_url}
+            alt={room.name}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            style={{ display: imageLoaded && !imageError ? 'block' : 'none' }}
+          />
+          <AvatarFallback className="text-xs">{room.name.charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
+        {room.online_count > 0 && (
+          <Badge
+            variant="secondary"
+            className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
+          >
             {room.online_count}
           </Badge>
         )}
       </div>
 
-      {/* Room Info */}
+      {/* Room info */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
           <h3 className="truncate text-sm font-medium">{room.name}</h3>
-          <span className="text-muted-foreground text-xs">{room.online_count} online</span>
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleFavoriteClick}>
+            {isFavorite ? (
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+            ) : (
+              <StarOff className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-
-        {room.description && (
-          <p className="text-muted-foreground truncate text-xs">{room.description}</p>
-        )}
-
-        <div className="text-muted-foreground mt-1 flex items-center gap-2 text-xs">
-          <span>{room.message_count || 0} messages</span>
+        <div className="text-muted-foreground flex items-center space-x-2 text-xs">
+          <MessageSquare className="h-3 w-3" />
+          <span>{room.message_count || 0}</span>
           {room.last_activity && (
-            <span>• Last active {new Date(room.last_activity).toLocaleDateString()}</span>
+            <>
+              <Clock className="h-3 w-3" />
+              <span>
+                {new Date(room.last_activity).toLocaleTimeString([], {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </>
           )}
         </div>
       </div>
-
-      {/* Unread indicator */}
-      {room.unread_count && room.unread_count > 0 && (
-        <div className="bg-primary text-primary-foreground flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium">
-          {room.unread_count > 99 ? '99+' : room.unread_count}
-        </div>
-      )}
     </div>
   )
 }
 
-// Intersection Observer hook for lazy loading
 function useIntersectionObserver(
   elementRef: React.RefObject<Element>,
   options: IntersectionObserverInit = {}
 ): boolean {
-  const [isVisible, setIsVisible] = useState(false)
+  const [isIntersecting, setIsIntersecting] = useState(false)
 
   useEffect(() => {
     const element = elementRef.current
     if (!element) return
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting)
-      },
-      {
-        threshold: 0.1,
-        rootMargin: '50px',
-        ...options,
-      }
-    )
+    const observer = new IntersectionObserver(([entry]) => {
+      setIsIntersecting(entry.isIntersecting)
+    }, options)
 
     observer.observe(element)
 
@@ -147,63 +128,41 @@ function useIntersectionObserver(
     }
   }, [elementRef, options])
 
-  return isVisible
+  return isIntersecting
 }
 
-// Lazy room item wrapper with intersection observer
 function LazyRoomItem({ room, isSelected, onClick }: Omit<RoomItemProps, 'isVisible'>) {
-  const ref = useRef<HTMLDivElement>(null)
-  const isVisible = useIntersectionObserver(ref as RefObject<HTMLDivElement>, { threshold: 0.1 })
+  const elementRef = useRef<HTMLDivElement>(null)
+  const isVisible = useIntersectionObserver(elementRef)
 
   return (
-    <div ref={ref}>
+    <div ref={elementRef}>
       <RoomItem room={room} isSelected={isSelected} onClick={onClick} isVisible={isVisible} />
     </div>
   )
 }
 
-// Loading skeleton for room list
 function RoomListSkeleton({ count = 5 }: { count?: number }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 p-2">
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-3">
-          <Skeleton className="h-10 w-10 rounded-full" />
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-3 w-12" />
-            </div>
-            <Skeleton className="h-3 w-32" />
-            <Skeleton className="h-3 w-20" />
-          </div>
-        </div>
+        <Skeleton key={i} className="h-16 w-full" />
       ))}
     </div>
   )
 }
 
-// Empty state component
 function EmptyRoomList() {
+  const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
-      <div className="text-muted-foreground mb-4">
-        <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.5}
-            d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"
-          />
-        </svg>
-      </div>
-      <h3 className="mb-2 text-lg font-medium">No chat rooms</h3>
-      <p className="text-muted-foreground text-sm">Create a room to start chatting!</p>
+      <Users className="text-muted-foreground h-12 w-12" />
+      <h3 className="mt-4 text-lg font-semibold">{t('chat.no_rooms_available')}</h3>
+      <p className="text-muted-foreground mt-2 text-sm">{t('chat.select_room_to_see_users')}</p>
     </div>
   )
 }
 
-// Search/filter component
 function RoomSearch({
   value,
   onChange,
@@ -213,48 +172,22 @@ function RoomSearch({
   onChange: (value: string) => void
   placeholder?: string
 }) {
+  const { t } = useTranslation()
   return (
     <div className="relative">
-      <svg
-        className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-        />
-      </svg>
-      <input
-        type="text"
+      <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+      <Input
+        placeholder={t('chat.search_rooms', placeholder)}
         value={value}
         onChange={e => onChange(e.target.value)}
-        placeholder={placeholder}
-        className="border-input bg-background placeholder:text-muted-foreground focus:border-primary focus:ring-primary w-full rounded-lg border px-10 py-2 text-sm focus:ring-1 focus:outline-none"
+        className="pl-9"
       />
-      {value && (
-        <button
-          onClick={() => onChange('')}
-          className="text-muted-foreground hover:text-foreground absolute top-1/2 right-3 -translate-y-1/2"
-        >
-          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      )}
     </div>
   )
 }
 
 export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRoomListProps) {
+  const { t } = useTranslation()
   const { rooms, isLoading, loadRooms } = useChatStore()
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'activity' | 'members'>('activity')
@@ -340,15 +273,15 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
         <RoomSearch value={searchQuery} onChange={setSearchQuery} />
 
         <div className="flex items-center gap-2">
-          <span className="text-muted-foreground text-sm">Sort by:</span>
+          <span className="text-muted-foreground text-sm">{t('chat.sort_by', 'Sort by:')}</span>
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value as typeof sortBy)}
             className="border-input bg-background focus:border-primary rounded border px-2 py-1 text-sm focus:outline-none"
           >
-            <option value="activity">Recent Activity</option>
-            <option value="name">Name</option>
-            <option value="members">Members</option>
+            <option value="activity">{t('chat.recent_activity', 'Recent Activity')}</option>
+            <option value="name">{t('chat.name', 'Name')}</option>
+            <option value="members">{t('chat.members', 'Members')}</option>
           </select>
         </div>
       </div>
@@ -359,7 +292,10 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
           searchQuery ? (
             <div className="p-8 text-center">
               <p className="text-muted-foreground">
-                No rooms found matching &quot;{searchQuery}&quot;
+                {t('chat.no_rooms_found_matching', 'No rooms found matching "{query}"').replace(
+                  '{query}',
+                  searchQuery
+                )}
               </p>
             </div>
           ) : (
@@ -382,8 +318,15 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
       {/* Room count */}
       <div className="border-t p-2 text-center">
         <span className="text-muted-foreground text-xs">
-          {filteredAndSortedRooms.length} room{filteredAndSortedRooms.length !== 1 ? 's' : ''}
-          {searchQuery && ` (filtered from ${rooms.length})`}
+          {t('chat.room_count', '{count} room{plural}', {
+            count: filteredAndSortedRooms.length,
+            plural: filteredAndSortedRooms.length !== 1 ? 's' : '',
+          })}
+          {searchQuery &&
+            ` ${t('chat.filtered_from', '(filtered from {total})').replace(
+              '{total}',
+              rooms.length.toString()
+            )}`}
         </span>
       </div>
     </div>

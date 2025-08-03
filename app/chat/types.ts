@@ -26,6 +26,12 @@ export interface ChatMessage {
     name: string
     email: string
   }
+  reactions?: Array<{
+    emoji: string
+    label: string
+    count: number
+    userReacted: boolean
+  }>
 }
 
 export interface OnlineUser {

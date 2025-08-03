@@ -497,13 +497,11 @@ export function MessageInput({
     }
   }, [])
 
-  const remainingChars = MAX_MESSAGE_LENGTH - message.length
-  const isNearLimit = remainingChars < 100
   const canSend =
     (message.trim().length > 0 || uploadedFiles.length > 0) && !isSending && isConnected
 
   return (
-    <div className={`bg-background border-t p-4 ${className}`}>
+    <div className={`bg-background border-t p-3 pb-6 sm:p-4 ${className}`}>
       {/* Reply indicator */}
       {replyingTo && (
         <div className="bg-muted/50 mb-3 flex items-center justify-between rounded-md p-2">
@@ -578,7 +576,7 @@ export function MessageInput({
                 : t('chat.type_message', 'Type a message...')
             }
             disabled={isSending || !isConnected}
-            className="max-h-[120px] min-h-[40px] resize-none"
+            className="chat-input-mobile max-h-[120px] min-h-[40px] resize-none text-sm"
             rows={1}
           />
 
@@ -618,13 +616,10 @@ export function MessageInput({
                 <span className="text-muted-foreground">{t('chat.typing', 'Typing...')}</span>
               )}
             </div>
-            <div className={`${isNearLimit ? 'text-warning' : 'text-muted-foreground'}`}>
-              {remainingChars} {t('chat.characters_remaining', 'characters remaining')}
-            </div>
           </div>
         </div>
 
-        {/* Action buttons */}
+        {/* Action buttons - 优化移动端按钮大小 */}
         <div className="flex gap-1">
           {/* File upload button */}
           <Button
@@ -632,7 +627,7 @@ export function MessageInput({
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isSending || !isConnected}
-            className="h-10 w-10 p-0"
+            className="chat-button-mobile h-10 w-10 p-0 sm:h-10 sm:w-10"
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -644,7 +639,7 @@ export function MessageInput({
                 variant="ghost"
                 size="sm"
                 disabled={isSending || !isConnected}
-                className="h-10 w-10 p-0"
+                className="chat-button-mobile h-10 w-10 p-0 sm:h-10 sm:w-10"
               >
                 <Smile className="h-4 w-4" />
               </Button>
@@ -665,7 +660,12 @@ export function MessageInput({
           </Popover>
 
           {/* Send button */}
-          <Button onClick={handleSendMessage} disabled={!canSend} size="sm" className="h-10 px-3">
+          <Button
+            onClick={handleSendMessage}
+            disabled={!canSend}
+            size="sm"
+            className="chat-button-mobile h-10 px-3"
+          >
             {isSending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
@@ -685,8 +685,8 @@ export function MessageInput({
         className="hidden"
       />
 
-      {/* Keyboard shortcuts hint */}
-      <div className="text-muted-foreground mt-2 text-xs">
+      {/* Keyboard shortcuts hint - 仅在桌面端显示 */}
+      <div className="text-muted-foreground mt-2 hidden text-xs lg:block">
         Press <kbd className="bg-muted rounded px-1">Enter</kbd> to send,
         <kbd className="bg-muted ml-1 rounded px-1">Shift+Enter</kbd> for new line
         {replyingTo && (

@@ -3,182 +3,99 @@
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { format, isToday, isYesterday } from 'date-fns'
 
-import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/helpers'
 import useChatStore from '@/app/chat/chatStore'
 import type { ChatMessage } from '../types'
-import { MessageInteractions, MessageSearch, MessageThread } from './MessageInteractions'
+import { MessageInteractions } from './MessageInteractions'
 import { MentionHighlight, useMentionDetection } from './MentionHighlight'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface MessageListProps {
   roomId: number
   className?: string
   onReply?: (message: ChatMessage) => void
+  searchQuery?: string
 }
 
 interface MessageGroupProps {
   messages: ChatMessage[]
-  user: ChatMessage['user']
-  timestamp: string
-}
-
-// Simple Avatar component
-function Avatar({ name, className }: { name: string; className?: string }) {
-  const initials = name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-
-  return (
-    <div
-      className={cn(
-        'bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium',
-        className
-      )}
-    >
-      {initials}
-    </div>
-  )
-}
-
-// Format timestamp for display
-function formatMessageTime(timestamp: string): string {
-  const date = new Date(timestamp)
-
-  if (isToday(date)) {
-    return format(date, 'HH:mm')
-  } else if (isYesterday(date)) {
-    return `Yesterday ${format(date, 'HH:mm')}`
-  } else {
-    return format(date, 'MMM d, HH:mm')
-  }
-}
-
-// Message content component with mention highlighting
-function MessageContent({
-  message,
-  isSelected,
-  onSelect,
-  onReply,
-  onReact,
-  onMentionClick,
-}: {
-  message: ChatMessage
-  isSelected: boolean
-  onSelect: () => void
+  user: { id: number; name: string; email: string }
+  timestamp: Date
   onReply?: (message: ChatMessage) => void
   onReact?: (messageId: number, emoji: string) => void
-  onMentionClick: (username: string) => void
-}) {
+}
+
+interface MessageItemProps {
+  message: ChatMessage
+  onReply?: (message: ChatMessage) => void
+  onReact?: (messageId: number, emoji: string) => void
+}
+
+function MessageItem({ message, onReply, onReact }: MessageItemProps) {
   const mentionInfo = useMentionDetection(message.message)
 
   return (
     <div
-      data-message-id={message.id}
       className={cn(
-        'text-sm leading-relaxed',
-        isSelected && 'bg-primary/10 -mx-2 rounded px-2 py-1',
-        mentionInfo.hasCurrentUserMention && 'bg-primary/5 border-l-primary -ml-2 border-l-2 pl-2'
+        'group/message relative rounded-lg p-3 transition-colors',
+        mentionInfo.hasCurrentUserMention
+          ? 'bg-yellow-50 dark:bg-yellow-950/20'
+          : 'hover:bg-muted/50'
       )}
-      onClick={onSelect}
     >
-      {message.message_type === 'system' ? (
-        <span className="text-muted-foreground italic">{message.message}</span>
-      ) : (
-        <div className="space-y-1">
-          <div className="flex items-start gap-2">
-            <MentionHighlight
-              text={message.message}
-              onMentionClick={onMentionClick}
-              className="flex-1"
-            />
-          </div>
-          <MessageInteractions message={message} onReply={onReply} onReact={onReact} />
-          {/* Mock thread data - in real app this would come from message relationships */}
-          <MessageThread
-            replies={[]} // Would be populated with actual replies
-          />
-        </div>
-      )}
+      {/* Message content */}
+      <div className="prose prose-sm max-w-none">
+        <MentionHighlight text={message.message} />
+      </div>
+
+      {/* Message interactions */}
+      <MessageInteractions message={message} onReply={onReply} onReact={onReact} />
     </div>
   )
 }
 
-// Message group component for consecutive messages from same user
-function MessageGroup({
-  messages,
-  user,
-  timestamp,
-  onReply,
-  onReact,
-}: MessageGroupProps & {
-  onReply?: (message: ChatMessage) => void
-  onReact?: (messageId: number, emoji: string) => void
-}) {
-  const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null)
+function MessageGroup({ messages, user, timestamp, onReply, onReact }: MessageGroupProps) {
+  const { t } = useTranslation()
 
-  const handleMentionClick = (username: string) => {
-    // In a real app, this could open a user profile or start a DM
-    console.log('Clicked mention:', username)
+  const formatTimestamp = (date: Date) => {
+    if (isToday(date)) {
+      return format(date, 'HH:mm')
+    } else if (isYesterday(date)) {
+      return t('chat.yesterday', 'Yesterday')
+    } else {
+      return format(date, 'MMM d')
+    }
   }
 
-  // console.log('MessageGroup: messages', messages)
-
   return (
-    <div className="group hover:bg-muted/50 flex gap-3 px-4 py-2">
-      <Avatar name={user.name} className="mt-1 flex-shrink-0" />
-      <div className="flex-1 space-y-1">
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm font-medium">{user.name}</span>
-          <span className="text-muted-foreground text-xs">{formatMessageTime(timestamp)}</span>
+    <div className="group relative">
+      {/* User info and timestamp */}
+      <div className="mb-2 flex items-center gap-2">
+        <div className="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium">
+          {user.name.charAt(0).toUpperCase()}
         </div>
-        <div className="space-y-2">
-          {messages.map(message => (
-            <MessageContent
-              key={message.id}
-              message={message}
-              isSelected={selectedMessageId === message.id}
-              onSelect={() => setSelectedMessageId(message.id)}
-              onReply={onReply}
-              onReact={onReact}
-              onMentionClick={handleMentionClick}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Loading skeleton for messages
-function MessageSkeleton() {
-  return (
-    <div className="flex gap-3 px-4 py-2">
-      <Skeleton className="h-8 w-8 flex-shrink-0 rounded-full" />
-      <div className="flex-1 space-y-2">
         <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-3 w-12" />
+          <span className="font-medium">{user.name}</span>
+          <span className="text-muted-foreground text-xs">{formatTimestamp(timestamp)}</span>
         </div>
-        <Skeleton className="h-4 w-full max-w-md" />
+      </div>
+
+      {/* Messages */}
+      <div className="space-y-1">
+        {messages.map(message => (
+          <MessageItem key={message.id} message={message} onReply={onReply} onReact={onReact} />
+        ))}
       </div>
     </div>
   )
 }
 
-// Empty state component
 function EmptyState() {
+  const { t } = useTranslation()
   return (
-    <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-      <div className="text-muted-foreground mb-2">
-        <svg
-          className="mx-auto mb-4 h-12 w-12"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+    <div className="flex flex-col items-center justify-center p-8 text-center">
+      <div className="text-muted-foreground mb-4">
+        <svg className="mx-auto h-12 w-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -187,13 +104,16 @@ function EmptyState() {
           />
         </svg>
       </div>
-      <h3 className="mb-1 text-lg font-medium">No messages yet</h3>
-      <p className="text-muted-foreground text-sm">Be the first to start the conversation!</p>
+      <h3 className="mb-2 text-lg font-medium">{t('chat.no_messages', 'No messages yet')}</h3>
+      <p className="text-muted-foreground text-sm">
+        {t('chat.be_first_to_start', 'Be the first to start the conversation!')}
+      </p>
     </div>
   )
 }
 
-export function MessageList({ roomId, className, onReply }: MessageListProps) {
+export function MessageList({ roomId, className, onReply, searchQuery }: MessageListProps) {
+  const { t } = useTranslation()
   const roomKey = roomId.toString()
 
   // 使用具体的选择器来确保正确订阅消息变化
@@ -213,10 +133,23 @@ export function MessageList({ roomId, className, onReply }: MessageListProps) {
     return messages
   })
 
+  // 过滤消息基于搜索查询
+  const filteredMessages = useMemo(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      return roomMessages
+    }
+
+    const query = searchQuery.toLowerCase().trim()
+    return roomMessages.filter(
+      message =>
+        message.message.toLowerCase().includes(query) ||
+        message.user.name.toLowerCase().includes(query)
+    )
+  }, [roomMessages, searchQuery])
+
   const scrollAreaRef = useRef<HTMLDivElement>(null)
 
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
-  const [, setHighlightedMessageId] = useState<number | null>(null)
   const previousMessageCountRef = useRef(0)
 
   // Handle message reactions
@@ -226,128 +159,94 @@ export function MessageList({ roomId, className, onReply }: MessageListProps) {
     // TODO: Implement actual reaction functionality
   }, [])
 
-  // Handle message search selection
-  const handleMessageSelect = useCallback((messageId: number) => {
-    setHighlightedMessageId(messageId)
+  // Group messages by user and time
+  const groupedMessages = useMemo(() => {
+    if (filteredMessages.length === 0) return []
 
-    // Scroll to the message
-    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`)
-    if (messageElement) {
-      messageElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const groups: Array<{
+      type: 'messages'
+      messages: ChatMessage[]
+      user: { id: number; name: string; email: string }
+      timestamp: Date
+    }> = []
 
-      // Clear highlight after a few seconds
-      setTimeout(() => setHighlightedMessageId(null), 3000)
-    }
-  }, [])
+    let currentGroup: (typeof groups)[0] | null = null
 
-  // 移除useMemo，直接使用从store订阅的roomMessages
-  // const roomMessages = useMemo(() => messages[roomKey] || [], [messages, roomKey])
-  // const pagination = messagesPagination[roomKey]
-  // const hasMoreMessages = pagination?.has_more || false
+    filteredMessages.forEach(message => {
+      const messageDate = new Date(message.created_at)
+      const timeDiff = currentGroup
+        ? Math.abs(messageDate.getTime() - currentGroup.timestamp.getTime())
+        : Infinity
+
+      // Start new group if:
+      // 1. Different user
+      // 2. More than 5 minutes apart
+      // 3. First message
+      if (!currentGroup || currentGroup.user.id !== message.user.id || timeDiff > 5 * 60 * 1000) {
+        currentGroup = {
+          type: 'messages',
+          messages: [message],
+          user: message.user,
+          timestamp: messageDate,
+        }
+        groups.push(currentGroup)
+      } else {
+        currentGroup.messages.push(message)
+      }
+    })
+
+    return groups
+  }, [filteredMessages])
 
   // Debug: Log message data
-  // console.log('MessageList: Room messages for', roomId, ':', {
-  //   roomKey,
-  //   messageCount: roomMessages.length,
-  //   messages: roomMessages,
-  //   pagination,
-  //   isLoading
-  // })
-
-  // Debug: Log message changes
   useEffect(() => {
     console.log('🔥 MessageList: Messages changed for room', roomId, ':', {
-      count: roomMessages.length,
-      messages: roomMessages.map(m => ({
+      count: filteredMessages.length,
+      messages: filteredMessages.map(m => ({
         id: m.id,
         message: m.message.substring(0, 50),
         user: m.user.name,
       })),
     })
-  }, [roomMessages, roomId])
+  }, [filteredMessages, roomId])
 
   // Debug: Log when messages object reference changes
   useEffect(() => {
-    console.log('🔥 MessageList: messages object changed:', {
-      roomKey,
-      hasRoomMessages: !!messages[roomKey],
-      roomMessageCount: messages[roomKey]?.length || 0,
-      allRoomKeys: Object.keys(messages),
-    })
-  }, [messages, roomKey])
+    console.log('🔥 MessageList: Messages object reference changed for room', roomId)
+  }, [messages, roomId])
 
-  // Debug: Log messages state changes
-  useEffect(() => {
-    console.log('MessageList: messages state changed:', {
-      roomId,
-      roomKey,
-      allMessages: messages,
-      roomMessages: roomMessages,
-      roomMessagesLength: roomMessages.length,
-    })
-  }, [messages, roomId, roomKey, roomMessages])
-
-  // Debug: Force re-render check
-  useEffect(() => {
-    console.log('MessageList: Component re-rendered, roomMessages count:', roomMessages.length)
-  })
-
-  // Load initial messages when room changes
+  // Load messages on mount
   useEffect(() => {
     if (roomId) {
-      // console.log('MessageList: Loading messages for room:', roomId)
-      // console.log('MessageList: loadMessages function:', loadMessages)
-      loadMessages(roomId)
-        .then(() => {
-          console.log('MessageList: loadMessages completed for room:', roomId)
-        })
-        .catch(error => {
-          console.error('MessageList: loadMessages failed for room:', roomId, error)
-        })
-      setShouldScrollToBottom(true)
+      console.log('🔥 MessageList: Loading messages for room', roomId)
+      loadMessages(roomId).catch(error => {
+        console.error('Failed to load messages:', error)
+      })
     }
-  }, [roomId, loadMessages]) // 添加loadMessages依赖
+  }, [roomId, loadMessages])
 
   // Auto-scroll to bottom for new messages
   useEffect(() => {
-    if (shouldScrollToBottom && roomMessages.length > previousMessageCountRef.current) {
+    if (shouldScrollToBottom && scrollAreaRef.current) {
       const scrollArea = scrollAreaRef.current
-      if (scrollArea) {
-        const viewport = scrollArea.querySelector('[data-slot="scroll-area-viewport"]')
-        if (viewport) {
-          viewport.scrollTop = viewport.scrollHeight
-        }
-      }
-      setShouldScrollToBottom(false)
+      scrollArea.scrollTop = scrollArea.scrollHeight
     }
-    previousMessageCountRef.current = roomMessages.length
-  }, [roomMessages.length, shouldScrollToBottom])
+  }, [filteredMessages, shouldScrollToBottom])
 
-  // Group messages by user and time
-  const groupedMessages = useMemo(() => {
-    return roomMessages.map(msg => ({
-      type: 'messages',
-      messages: [msg],
-      user: msg.user,
-      timestamp: msg.created_at,
-    }))
-  }, [roomMessages])
+  // Track message count changes
+  useEffect(() => {
+    const currentCount = filteredMessages.length
+    const previousCount = previousMessageCountRef.current
 
-  // Show loading state for initial load
-  if (isLoading && roomMessages.length === 0) {
-    return (
-      <div className={cn('flex h-full flex-col', className)}>
-        <div className="flex-1 space-y-4 p-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <MessageSkeleton key={i} />
-          ))}
-        </div>
-      </div>
-    )
-  }
+    if (currentCount > previousCount) {
+      // New messages added, scroll to bottom
+      setShouldScrollToBottom(true)
+    }
 
-  // Show empty state
-  if (!isLoading && roomMessages.length === 0) {
+    previousMessageCountRef.current = currentCount
+  }, [filteredMessages.length])
+
+  if (filteredMessages.length === 0 && !isLoading) {
     return (
       <div className={cn('flex h-full flex-col', className)}>
         <EmptyState />
@@ -357,25 +256,20 @@ export function MessageList({ roomId, className, onReply }: MessageListProps) {
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
-      {/* Search functionality */}
-      <div className="border-b p-2">
-        <MessageSearch messages={roomMessages} onMessageSelect={handleMessageSelect} />
-      </div>
-
       <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
-        <div>
+        <div className="p-2">
           {/* Load more indicator */}
           {isLoading && (
             <div className="flex justify-center py-4">
               <div className="text-muted-foreground flex items-center gap-2 text-sm">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Loading more messages...
+                {t('chat.loading_messages', 'Loading more messages...')}
               </div>
             </div>
           )}
 
           {/* Messages */}
-          <div className="space-y-0">
+          <div className="space-y-4">
             {(() => {
               console.log('🔥 MessageList: Rendering messages:', {
                 roomId,

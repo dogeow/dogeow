@@ -13,6 +13,7 @@
     "isolatedModules": true, // 启用模块隔离
     "jsx": "preserve", // 保留 JSX 语法
     "incremental": true, // 增量编译
+    "types": ["vitest/globals"], // 添加 Vitest 全局类型支持
     "plugins": [
       {
         "name": "next"
@@ -25,7 +26,7 @@
   "include": [
     "next-env.d.ts",
     "types/global.d.ts",
-    "types/jest.d.ts",
+    "types/vitest.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"

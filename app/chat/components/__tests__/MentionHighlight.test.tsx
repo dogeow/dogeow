@@ -1,8 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react'
+import { vi } from 'vitest'
 import { MentionHighlight, extractMentions, containsMention } from '../MentionHighlight'
 
 // Mock the auth store
-jest.mock('@/stores/authStore', () => ({
+vi.mock('@/stores/authStore', () => ({
   __esModule: true,
   default: () => ({
     user: { name: 'testuser' },
@@ -50,7 +51,7 @@ describe('MentionHighlight', () => {
   })
 
   it('calls onMentionClick when mention is clicked', () => {
-    const mockOnClick = jest.fn()
+    const mockOnClick = vi.fn()
     render(<MentionHighlight text="Hello @john" onMentionClick={mockOnClick} />)
 
     const mentionButton = screen.getByText('@john')

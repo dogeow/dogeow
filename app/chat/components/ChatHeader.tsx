@@ -132,12 +132,6 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                   <Info className="h-3 w-3" />
                 </Button>
               )}
-              <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                <Users className="h-3 w-3" />
-                <span>
-                  {onlineCount} {t('chat.online', 'online')}
-                </span>
-              </div>
               <div className="flex items-center gap-1 text-xs">
                 <div
                   className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
@@ -154,8 +148,8 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
 
         {/* Right side - Actions */}
         <div className="flex items-center gap-2">
-          {/* Online Users Count (Mobile) */}
-          <div className="flex items-center gap-1 md:hidden">
+          {/* Online Users Count - Moved to outside */}
+          <div className="flex items-center gap-1">
             <Users className="text-muted-foreground h-4 w-4" />
             <Badge variant="secondary" className="text-xs">
               {onlineCount}

@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -325,62 +325,53 @@ export default function OnlineUsers({
     return sorted
   }, [roomUsers, searchQuery, sortBy, filterBy])
 
-  const onlineCount = roomUsers.filter(user => user.is_online).length
-  const totalCount = roomUsers.length
-
   return (
     <Card className={`h-full ${className}`}>
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center justify-between text-base">
-          <div className="flex items-center space-x-2">
-            <Users className="h-4 w-4" />
-            <span>{t('chat.online_users_title', 'Online Users')}</span>
-          </div>
-          <Badge variant="secondary" className="text-xs">
-            {onlineCount}/{totalCount}
-          </Badge>
-        </CardTitle>
+      <CardContent className="p-0">
+        <div className="p-4 pb-3">
+          {/* Search and Filter Controls */}
+          <div className="space-y-2">
+            <div className="relative">
+              <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
+              <Input
+                placeholder={t('chat.search_users', 'Search users...')}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+            </div>
 
-        {/* Search and Filter Controls */}
-        <div className="space-y-2">
-          <div className="relative">
-            <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
-            <Input
-              placeholder={t('chat.search_users', 'Search users...')}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="pl-8"
-            />
-          </div>
+            <div className="flex space-x-2">
+              <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="name">{t('chat.sort_by_name', 'Sort by Name')}</SelectItem>
+                  <SelectItem value="joined">
+                    {t('chat.sort_by_joined', 'Sort by Joined')}
+                  </SelectItem>
+                  <SelectItem value="status">
+                    {t('chat.sort_by_status', 'Sort by Status')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
 
-          <div className="flex space-x-2">
-            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-              <SelectTrigger className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">{t('chat.sort_by_name', 'Sort by Name')}</SelectItem>
-                <SelectItem value="joined">{t('chat.sort_by_joined', 'Sort by Joined')}</SelectItem>
-                <SelectItem value="status">{t('chat.sort_by_status', 'Sort by Status')}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
-              <SelectTrigger className="flex-1">
-                <Filter className="mr-2 h-4 w-4" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('chat.all_users', 'All Users')}</SelectItem>
-                <SelectItem value="online">{t('chat.online_only', 'Online Only')}</SelectItem>
-                <SelectItem value="moderators">{t('chat.moderators', 'Moderators')}</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
+                <SelectTrigger className="flex-1">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('chat.all_users', 'All Users')}</SelectItem>
+                  <SelectItem value="online">{t('chat.online_only', 'Online Only')}</SelectItem>
+                  <SelectItem value="moderators">{t('chat.moderators', 'Moderators')}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
-      </CardHeader>
 
-      <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-16rem)]">
           <div className="space-y-1 p-4 pt-0">
             {filteredAndSortedUsers.length === 0 ? (
@@ -439,7 +430,7 @@ export default function OnlineUsers({
                     {/* Status badge and actions */}
                     <div className="flex items-center space-x-2">
                       <Badge variant={user.is_online ? 'default' : 'secondary'} className="text-xs">
-                        {user.is_online ? 'Online' : 'Away'}
+                        {user.is_online ? t('status.online') : t('status.away')}
                       </Badge>
 
                       {/* Quick actions dropdown */}
@@ -452,20 +443,20 @@ export default function OnlineUsers({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => onDirectMessage?.(user.id)}>
                             <MessageCircle className="mr-2 h-4 w-4" />
-                            Direct Message
+                            {t('chat.direct_message')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onMentionUser?.(user.name)}>
                             <AtSign className="mr-2 h-4 w-4" />
-                            Mention User
+                            {t('chat.mention_user')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => onBlockUser?.(user.id)}>
                             <UserX className="mr-2 h-4 w-4" />
-                            Block User
+                            {t('chat.block_user')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => onReportUser?.(user.id)}>
                             <Flag className="mr-2 h-4 w-4" />
-                            Report User
+                            {t('chat.report_user')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

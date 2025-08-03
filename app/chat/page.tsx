@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { MenuIcon, UsersIcon, MessageSquareIcon } from 'lucide-react'
+import { MenuIcon, UsersIcon, MessageSquareIcon, Search } from 'lucide-react'
 import { ChatRoomList, MessageList, MessageInput, OnlineUsers, ChatHeader } from './components'
 import ConnectionStatusIndicator from './components/ConnectionStatusIndicator'
 import ChatErrorBoundary, { useChatErrorHandler } from './components/ChatErrorBoundary'
@@ -14,7 +14,10 @@ import type { ChatMessage } from './types'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { Input } from '@/components/ui/input'
 import { useTranslation } from '@/hooks/useTranslation'
+import { Badge } from '@/components/ui/badge'
+import './styles/chat-mobile.css'
 
 function ChatPageContent() {
   const router = useRouter()
@@ -28,6 +31,7 @@ function ChatPageContent() {
     retryLastAction,
     clearError,
     error: storeError,
+    onlineUsers,
   } = useChatStore()
 
   // 保证 loadRooms 引用稳定
@@ -35,6 +39,7 @@ function ChatPageContent() {
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
   const [isRoomListOpen, setIsRoomListOpen] = useState(false)
   const [isUsersListOpen, setIsUsersListOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const hasLoadedInitialDataRef = useRef(false)
 
   // 错误处理
@@ -256,7 +261,7 @@ function ChatPageContent() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="bg-background flex h-screen flex-col">
+    <div className="bg-background safe-area-top safe-area-bottom flex h-screen flex-col">
       {/* Error Banner */}
       {currentError && currentError.type !== 'authentication' && currentError.type !== 'server' && (
         <div className="border-b">
@@ -270,81 +275,105 @@ function ChatPageContent() {
         </div>
       )}
 
-      {/* Mobile Header */}
-      <div className="flex items-center justify-between border-b p-4 lg:hidden">
-        <div className="flex items-center gap-3">
-          <Sheet open={isRoomListOpen} onOpenChange={setIsRoomListOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <MenuIcon className="h-5 w-5" />
-                <span className="sr-only">{t('chat.open_room_list', 'Open room list')}</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-80 p-0">
-              <SheetHeader className="border-b p-4">
-                <SheetTitle className="flex items-center gap-2">
-                  <MessageSquareIcon className="h-5 w-5" />
-                  {t('chat.chat_rooms', 'Chat Rooms')}
-                </SheetTitle>
-              </SheetHeader>
-              <div className="flex-1 overflow-hidden">
-                <ChatRoomList onRoomSelect={() => setIsRoomListOpen(false)} />
-              </div>
-            </SheetContent>
-          </Sheet>
+      {/* Mobile Header - 优化布局，添加安全区域支持 */}
+      <div className="chat-header-mobile bg-background flex flex-col border-b lg:hidden">
+        {/* 主头部 */}
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-2">
+            <Sheet open={isRoomListOpen} onOpenChange={setIsRoomListOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="chat-button-mobile h-9 w-9">
+                  <MenuIcon className="h-4 w-4" />
+                  <span className="sr-only">{t('chat.open_room_list', 'Open room list')}</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80 p-0">
+                <SheetHeader className="border-b p-4">
+                  <SheetTitle className="flex items-center gap-2">
+                    <MessageSquareIcon className="h-5 w-5" />
+                    {t('chat.chat_rooms', 'Chat Rooms')}
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 overflow-hidden">
+                  <ChatRoomList onRoomSelect={() => setIsRoomListOpen(false)} showHeader={false} />
+                </div>
+              </SheetContent>
+            </Sheet>
 
-          <div className="flex-1">
-            {currentRoom ? (
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold">{currentRoom.name}</h1>
-                {currentRoom.description && (
-                  <span className="text-muted-foreground text-sm">• {currentRoom.description}</span>
-                )}
-              </div>
-            ) : (
-              <h1 className="text-lg font-semibold">{t('nav.chat', 'Chat')}</h1>
+            <div className="min-w-0 flex-1">
+              {currentRoom ? (
+                <div className="flex items-center gap-2">
+                  <h1 className="truncate text-base font-semibold">{currentRoom.name}</h1>
+                  {/* 在线人数显示 */}
+                  <div className="flex items-center gap-1">
+                    <UsersIcon className="text-muted-foreground h-3 w-3" />
+                    <Badge variant="secondary" className="text-xs">
+                      {onlineUsers[currentRoom.id.toString()]?.length || 0}
+                    </Badge>
+                  </div>
+                </div>
+              ) : (
+                <h1 className="text-base font-semibold">{t('nav.chat', 'Chat')}</h1>
+              )}
+            </div>
+          </div>
+
+          {/* 右侧按钮组 */}
+          <div className="flex items-center gap-1">
+            {/* 连接状态指示器 */}
+            <ConnectionStatusIndicator
+              connectionInfo={connectionInfo}
+              offlineState={offlineState}
+              onReconnect={reconnect}
+              onRetryMessages={retryFailedMessages}
+              onClearQueue={clearOfflineQueue}
+              className="relative"
+            />
+
+            {/* 用户列表按钮 */}
+            {currentRoom && (
+              <Sheet open={isUsersListOpen} onOpenChange={setIsUsersListOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="chat-button-mobile h-9 w-9">
+                    <UsersIcon className="h-4 w-4" />
+                    <span className="sr-only">{t('chat.open_users_list', 'Open users list')}</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-80 p-0">
+                  <SheetHeader className="border-b p-4">
+                    <SheetTitle className="flex items-center gap-2">
+                      <UsersIcon className="h-5 w-5" />
+                      {t('chat.online_users_title', 'Online Users')}
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="flex-1 overflow-hidden">
+                    <OnlineUsers
+                      roomId={currentRoom.id}
+                      onMentionUser={() => setIsUsersListOpen(false)}
+                      onDirectMessage={() => setIsUsersListOpen(false)}
+                      onBlockUser={() => {}}
+                      onReportUser={() => {}}
+                    />
+                  </div>
+                </SheetContent>
+              </Sheet>
             )}
           </div>
         </div>
 
-        {/* Connection Status - Mobile */}
-        <div className="flex items-center gap-2">
-          <ConnectionStatusIndicator
-            connectionInfo={connectionInfo}
-            offlineState={offlineState}
-            onReconnect={reconnect}
-            onRetryMessages={retryFailedMessages}
-            onClearQueue={clearOfflineQueue}
-            className="relative"
-          />
-        </div>
-
+        {/* 搜索栏 - 仅在移动端显示 */}
         {currentRoom && (
-          <Sheet open={isUsersListOpen} onOpenChange={setIsUsersListOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <UsersIcon className="h-5 w-5" />
-                <span className="sr-only">{t('chat.open_users_list', 'Open users list')}</span>
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-80 p-0">
-              <SheetHeader className="border-b p-4">
-                <SheetTitle className="flex items-center gap-2">
-                  <UsersIcon className="h-5 w-5" />
-                  {t('chat.online_users_title', 'Online Users')}
-                </SheetTitle>
-              </SheetHeader>
-              <div className="flex-1 overflow-hidden">
-                <OnlineUsers
-                  roomId={currentRoom.id}
-                  onMentionUser={() => setIsUsersListOpen(false)}
-                  onDirectMessage={() => setIsUsersListOpen(false)}
-                  onBlockUser={() => {}}
-                  onReportUser={() => {}}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
+          <div className="px-4 pb-4">
+            <div className="relative">
+              <Search className="text-muted-foreground absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2" />
+              <Input
+                placeholder={t('chat.search_messages', 'Search Messages')}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="chat-input-mobile h-9 pl-10 text-sm"
+              />
+            </div>
+          </div>
         )}
       </div>
 
@@ -373,7 +402,7 @@ function ChatPageContent() {
           </div>
           {/* Room List Content */}
           <div className="flex-1 overflow-hidden">
-            <ChatRoomList />
+            <ChatRoomList showHeader={false} />
           </div>
         </div>
 
@@ -381,22 +410,30 @@ function ChatPageContent() {
         <div className="flex flex-1 flex-col">
           {currentRoom ? (
             <>
-              {/* Chat Header */}
-              <ChatHeader room={currentRoom} showBackButton={false} />
+              {/* Chat Header - 桌面端 */}
+              <div className="hidden lg:block">
+                <ChatHeader room={currentRoom} showBackButton={false} />
+              </div>
 
-              {/* Messages */}
-              <div className="flex-1 overflow-hidden">
-                <MessageList roomId={currentRoom.id} onReply={handleReply} />
+              {/* Messages - 优化移动端高度 */}
+              <div className="chat-messages-mobile min-h-0 flex-1 overflow-hidden">
+                <MessageList
+                  roomId={currentRoom.id}
+                  onReply={handleReply}
+                  searchQuery={searchQuery}
+                />
               </div>
 
               {/* Message Input */}
-              <MessageInput
-                roomId={currentRoom.id}
-                replyingTo={replyingTo}
-                onCancelReply={() => setReplyingTo(null)}
-                sendMessage={sendMessage}
-                isConnected={connectionInfo.status === 'connected'}
-              />
+              <div className="chat-input-area-mobile">
+                <MessageInput
+                  roomId={currentRoom.id}
+                  replyingTo={replyingTo}
+                  onCancelReply={() => setReplyingTo(null)}
+                  sendMessage={sendMessage}
+                  isConnected={connectionInfo.status === 'connected'}
+                />
+              </div>
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center">
@@ -453,9 +490,9 @@ export default function ChatPage() {
 // 聊天页面骨架屏
 function ChatPageSkeleton() {
   return (
-    <div className="bg-background flex h-screen flex-col">
+    <div className="bg-background safe-area-top safe-area-bottom flex h-screen flex-col">
       {/* Mobile Header Skeleton */}
-      <div className="flex items-center justify-between border-b p-4 lg:hidden">
+      <div className="chat-header-mobile flex items-center justify-between border-b p-4 lg:hidden">
         <div className="flex items-center gap-3">
           <Skeleton className="h-9 w-9" />
           <div className="flex-1">

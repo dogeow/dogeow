@@ -1,4 +1,6 @@
-export const useAuthStore = jest.fn(() => ({
+import { vi } from 'vitest'
+
+export const useAuthStore = vi.fn(() => ({
   user: {
     id: 1,
     name: 'testuser',
@@ -6,9 +8,9 @@ export const useAuthStore = jest.fn(() => ({
   },
   isAuthenticated: true,
   token: 'mock-token',
-  login: jest.fn(),
-  logout: jest.fn(),
-  setUser: jest.fn(),
+  login: vi.fn(),
+  logout: vi.fn(),
+  setUser: vi.fn(),
 }))
 
 export default useAuthStore

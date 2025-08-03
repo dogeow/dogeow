@@ -1,19 +1,16 @@
-/**
- * @jest-environment jsdom
- */
-
 import { renderHook, act } from '@testing-library/react'
+import { vi } from 'vitest'
 import { useTranslation, useT, useTranslationWithLanguage } from '../useTranslation'
 
 // Mock the language store
-const mockSetLanguage = jest.fn()
-const mockInitializeLanguage = jest.fn()
-const mockT = jest.fn(
+const mockSetLanguage = vi.fn()
+const mockInitializeLanguage = vi.fn()
+const mockT = vi.fn(
   (key: string, fallback?: string) => `translated:${key}${fallback ? `:${fallback}` : ''}`
 )
 
-jest.mock('@/stores/languageStore', () => ({
-  useLanguageStore: jest.fn(() => ({
+vi.mock('@/stores/languageStore', () => ({
+  useLanguageStore: vi.fn(() => ({
     currentLanguage: 'zh-CN',
     availableLanguages: [
       { code: 'zh-CN', name: 'Chinese (Simplified)', nativeName: '简体中文', isDefault: true },
@@ -25,7 +22,7 @@ jest.mock('@/stores/languageStore', () => ({
     t: mockT,
     initializeLanguage: mockInitializeLanguage,
   })),
-  getCurrentLanguageInfo: jest.fn(lang => ({
+  getCurrentLanguageInfo: vi.fn(lang => ({
     code: lang,
     name: lang === 'zh-CN' ? 'Chinese (Simplified)' : 'English',
     nativeName: lang === 'zh-CN' ? '简体中文' : 'English',
@@ -34,8 +31,8 @@ jest.mock('@/stores/languageStore', () => ({
 }))
 
 // Mock the i18n utilities
-jest.mock('@/lib/i18n', () => ({
-  getTranslation: jest.fn(
+vi.mock('@/lib/i18n', () => ({
+  getTranslation: vi.fn(
     (key: string, language: string, fallback?: string) =>
       `${language}:${key}${fallback ? `:${fallback}` : ''}`
   ),
@@ -43,7 +40,7 @@ jest.mock('@/lib/i18n', () => ({
 
 describe('useTranslation', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should initialize language on mount', () => {
@@ -110,7 +107,7 @@ describe('useTranslation', () => {
 
 describe('useT', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should initialize language on mount', () => {
@@ -140,7 +137,7 @@ describe('useT', () => {
 
 describe('useTranslationWithLanguage', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   it('should initialize language on mount', () => {

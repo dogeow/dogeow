@@ -385,7 +385,7 @@ export function VirtualizedMessageList({
       </div>
 
       {/* Virtualized message list */}
-      <div className="flex-1">
+      <div className="flex-1 px-4">
         <VirtualScroll
           items={virtualItems}
           itemHeight={item => item.height || 80} // Default to 80 if height is not set

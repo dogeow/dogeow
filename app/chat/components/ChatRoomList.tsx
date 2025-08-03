@@ -35,9 +35,10 @@ import type { ChatRoom } from '../types'
 
 interface ChatRoomListProps {
   onRoomSelect?: () => void
+  showHeader?: boolean
 }
 
-export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
+export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListProps = {}) {
   const { t } = useTranslation()
   const { rooms, currentRoom, isLoading, error, setCurrentRoom, joinRoom, getRoomUnreadCount } =
     useChatStore()
@@ -188,23 +189,33 @@ export function ChatRoomList({ onRoomSelect }: ChatRoomListProps = {}) {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="space-y-3 border-b p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{t('chat.chat_rooms', 'Chat Rooms')}</h2>
-          <Button size="sm" onClick={handleCreateRoom} disabled={isLoading}>
-            <Plus className="h-4 w-4" />
-            {t('chat.create_room', 'Create')}
-          </Button>
-        </div>
+        {showHeader && (
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">{t('chat.chat_rooms', 'Chat Rooms')}</h2>
+            <Button size="sm" onClick={handleCreateRoom}>
+              <Plus className="h-4 w-4" />
+              {t('chat.create_room', 'Create')}
+            </Button>
+          </div>
+        )}
 
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-          <Input
-            placeholder={t('chat.search_rooms', 'Search rooms...')}
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
+        {/* Search Bar and Create Button */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+            <Input
+              placeholder={t('chat.search_rooms', 'Search rooms...')}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="h-9 pl-9"
+            />
+          </div>
+          {!showHeader && (
+            <Button size="sm" onClick={handleCreateRoom} className="h-9">
+              <Plus className="mr-1 h-4 w-4" />
+              {t('chat.create_room', '创建房间')}
+            </Button>
+          )}
         </div>
 
         {/* Filter Buttons */}

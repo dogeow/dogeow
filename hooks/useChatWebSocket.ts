@@ -83,6 +83,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     listen: (event: string, callback: (data: unknown) => void) => void
     bind?: (event: string, callback: () => void) => void
   } | null>(null)
+  const isComponentMountedRef = useRef(true)
   const connectionMonitorUnsubscribeRef = useRef<(() => void) | null>(null)
   const offlineManagerUnsubscribeRef = useRef<(() => void) | null>(null)
   const offlineManagerRef = useRef<OfflineManager | null>(null)
@@ -157,23 +158,42 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
 
   // 自动连接
   useEffect(() => {
-    if (autoConnect) connect()
+    if (autoConnect) {
+      const authManager = getAuthManager()
+      const token = authManager.getToken()
+      if (token) {
+        const echoInstance = createEchoInstance()
+        setEcho(echoInstance)
+      }
+    }
   }, [autoConnect])
 
   // 组件卸载清理
   useEffect(() => {
     let shouldCleanup = true
     return () => {
+      isComponentMountedRef.current = false
       setTimeout(() => {
         if (shouldCleanup && (echo || connectionInfo.status === 'connected')) {
-          disconnect()
+          // 直接清理，避免循环依赖
+          try {
+            if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
+              channelRef.current.stopListening()
+            }
+          } catch (error) {
+            console.error('WebSocket: Error during cleanup:', error)
+          }
+          channelRef.current = null
+          currentRoomRef.current = null
+          setEcho(null)
+          destroyEchoInstance()
         }
       }, 50)
       setTimeout(() => {
         shouldCleanup = false
       }, 100)
     }
-  }, [])
+  }, [echo, connectionInfo.status])
 
   const connect = useCallback(async (): Promise<boolean> => {
     try {
@@ -198,7 +218,19 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
   }, [authTokenRefreshCallback, onError])
 
   const disconnect = useCallback(() => {
-    channelRef.current?.stopListening()
+    if (!isComponentMountedRef.current) {
+      console.log('WebSocket: Component unmounted, skipping disconnect')
+      return
+    }
+
+    try {
+      if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
+        console.log('WebSocket: Disconnecting and stopping listening')
+        channelRef.current.stopListening()
+      }
+    } catch (error) {
+      console.error('WebSocket: Error during disconnect:', error)
+    }
     channelRef.current = null
     currentRoomRef.current = null
     setEcho(null)
@@ -207,6 +239,11 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
 
   const joinRoom = useCallback(
     async (roomId: string, echoInstance?: Echo<'reverb'>) => {
+      if (!isComponentMountedRef.current) {
+        console.log('WebSocket: Component unmounted, skipping joinRoom')
+        return
+      }
+
       let echoToUse = echoInstance || echo
       if (!echoToUse) {
         const { getEchoInstance } = await import('@/lib/websocket/echo')
@@ -218,14 +255,37 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         }
       }
       if (channelRef.current && currentRoomRef.current !== roomId) {
-        channelRef.current.stopListening()
+        try {
+          if (typeof channelRef.current.stopListening === 'function') {
+            console.log('WebSocket: Stopping listening for room', currentRoomRef.current)
+            channelRef.current.stopListening()
+          } else {
+            console.warn('WebSocket: stopListening method not available on channel')
+          }
+        } catch (error) {
+          console.error('WebSocket: Error stopping listening:', error)
+        }
       }
       currentRoomRef.current = roomId
       if (!echoToUse) return
-      channelRef.current = echoToUse.channel(`chat.room.${roomId}`) as unknown as {
-        stopListening: (event?: string, callback?: () => void) => void
-        listen: (event: string, callback: (data: unknown) => void) => void
-        bind?: (event: string, callback: () => void) => void
+
+      try {
+        const channel = echoToUse.channel(`chat.room.${roomId}`)
+        console.log('WebSocket: Created channel for room', roomId, 'channel:', channel)
+
+        if (!channel) {
+          console.error('WebSocket: Failed to create channel for room', roomId)
+          return
+        }
+
+        channelRef.current = channel as unknown as {
+          stopListening: (event?: string, callback?: () => void) => void
+          listen: (event: string, callback: (data: unknown) => void) => void
+          bind?: (event: string, callback: () => void) => void
+        }
+      } catch (error) {
+        console.error('WebSocket: Error creating channel for room', roomId, ':', error)
+        return
       }
 
       // 消息事件监听

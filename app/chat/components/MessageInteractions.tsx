@@ -202,11 +202,8 @@ export function MessageInteractions({
 }: MessageInteractionsProps) {
   const [showReactions, setShowReactions] = useState(false)
 
-  // Mock reactions data - in real app this would come from the message data
-  const reactions: EmojiReaction[] = [
-    { emoji: '👍', label: 'Like', count: 2, userReacted: false },
-    { emoji: '❤️', label: 'Love', count: 1, userReacted: true },
-  ]
+  // Get reactions from message data - if no reactions exist, show empty array
+  const reactions: EmojiReaction[] = message.reactions || []
 
   const handleCopyMessage = async () => {
     try {
