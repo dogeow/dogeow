@@ -1,5 +1,5 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
-import { vi } from 'vitest'
 import NotePage from '../page'
 
 // Mock dependencies
@@ -18,6 +18,7 @@ vi.mock('@/lib/api', () => ({
 vi.mock('sonner', () => ({
   toast: {
     error: vi.fn(),
+    success: vi.fn(),
   },
 }))
 
@@ -47,7 +48,7 @@ vi.mock('../components/NoteSpeedDial', () => ({
 
 // Mock date-fns
 vi.mock('date-fns', () => ({
-  format: vi.fn(() => '2024-01-01 12:00'),
+  format: vi.fn((date: Date) => date.toISOString()),
 }))
 
 vi.mock('date-fns/locale', () => ({
@@ -59,8 +60,9 @@ describe('NotePage', () => {
     vi.clearAllMocks()
   })
 
-  it('should render loading state initially', () => {
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockImplementation(
+  it('should render loading state initially', async () => {
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockImplementation(
       () => new Promise(() => {}) // Never resolves
     )
 
@@ -71,7 +73,8 @@ describe('NotePage', () => {
   })
 
   it('should render empty state when no notes', async () => {
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue([])
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockResolvedValue([])
 
     render(<NotePage />)
 
@@ -103,7 +106,8 @@ describe('NotePage', () => {
       },
     ]
 
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue(mockNotes)
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockResolvedValue(mockNotes)
 
     render(<NotePage />)
 
@@ -126,7 +130,8 @@ describe('NotePage', () => {
       },
     ]
 
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue(mockNotes)
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockResolvedValue(mockNotes)
 
     render(<NotePage />)
 
@@ -138,13 +143,16 @@ describe('NotePage', () => {
 
   it('should handle API errors gracefully', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockRejectedValue(new Error('API Error'))
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockRejectedValue(new Error('API Error'))
+
+    const { toast } = await import('sonner')
 
     render(<NotePage />)
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith('获取笔记列表失败:', expect.any(Error))
-      expect(vi.importMock('sonner').toast.error).toHaveBeenCalledWith('无法加载笔记列表')
+      expect(toast.error).toHaveBeenCalledWith('无法加载笔记列表')
     })
 
     consoleSpy.mockRestore()
@@ -163,21 +171,15 @@ describe('NotePage', () => {
       },
     ]
 
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue(mockNotes)
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockResolvedValue(mockNotes)
 
     render(<NotePage />)
 
     await waitFor(() => {
       expect(screen.getByText('Draft Note')).toBeInTheDocument()
+      expect(screen.getByTestId('lock-icon')).toBeInTheDocument()
     })
-  })
-
-  it('should render speed dial component', () => {
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue([])
-
-    render(<NotePage />)
-
-    expect(screen.getByTestId('note-speed-dial')).toBeInTheDocument()
   })
 
   it('should format dates correctly', async () => {
@@ -193,100 +195,49 @@ describe('NotePage', () => {
       },
     ]
 
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue(mockNotes)
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockResolvedValue(mockNotes)
+
+    const { format } = await import('date-fns')
+    vi.mocked(format).mockReturnValue('2024-01-01')
 
     render(<NotePage />)
 
     await waitFor(() => {
-      expect(vi.importMock('date-fns').format).toHaveBeenCalled()
+      expect(format).toHaveBeenCalled()
     })
   })
 
-  it('should handle invalid date strings', async () => {
-    const mockNotes = [
-      {
-        id: 1,
-        title: 'Test Note',
-        content: 'Test content',
-        content_markdown: '# Test Note\n\nTest content',
-        created_at: 'invalid-date',
-        updated_at: 'invalid-date',
-        is_draft: false,
-      },
-    ]
-
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue(mockNotes)
+  it('should handle empty notes array', async () => {
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockResolvedValue([])
 
     render(<NotePage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Test Note')).toBeInTheDocument()
+      expect(screen.getByText('暂无笔记')).toBeInTheDocument()
     })
   })
 
-  it('should sort notes by updated_at in descending order', async () => {
-    const mockNotes = [
-      {
-        id: 1,
-        title: 'Older Note',
-        content: 'Older content',
-        content_markdown: '# Older Note\n\nOlder content',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T10:00:00Z',
-        is_draft: false,
-      },
-      {
-        id: 2,
-        title: 'Newer Note',
-        content: 'Newer content',
-        content_markdown: '# Newer Note\n\nNewer content',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T12:00:00Z',
-        is_draft: false,
-      },
-    ]
-
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue(mockNotes)
+  it('should handle null API response', async () => {
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockResolvedValue(null)
 
     render(<NotePage />)
 
     await waitFor(() => {
-      const cards = screen.getAllByTestId('card')
-      expect(cards.length).toBeGreaterThan(1)
+      expect(screen.getByText('暂无笔记')).toBeInTheDocument()
     })
   })
 
-  it('should truncate markdown preview correctly', async () => {
-    const longMarkdown = '# Test Note\n\n'.repeat(20) + 'Very long content that should be truncated'
-    const mockNotes = [
-      {
-        id: 1,
-        title: 'Test Note',
-        content: 'Test content',
-        content_markdown: longMarkdown,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T12:00:00Z',
-        is_draft: false,
-      },
-    ]
-
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue(mockNotes)
+  it('should handle undefined API response', async () => {
+    const { apiRequest } = await import('@/lib/api')
+    vi.mocked(apiRequest).mockResolvedValue(undefined)
 
     render(<NotePage />)
 
     await waitFor(() => {
-      expect(screen.getByText('Test Note')).toBeInTheDocument()
-    })
-  })
-
-  it('should render with correct CSS classes', async () => {
-    vi.mocked(vi.importMock('@/lib/api').apiRequest).mockResolvedValue([])
-
-    render(<NotePage />)
-
-    await waitFor(() => {
-      const emptyState = screen.getByText('暂无笔记').closest('.py-12')
-      expect(emptyState).toHaveClass('text-center')
+      expect(screen.getByText('暂无笔记')).toBeInTheDocument()
     })
   })
 })

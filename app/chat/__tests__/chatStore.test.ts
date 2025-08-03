@@ -51,11 +51,14 @@ describe('ChatStore', () => {
         id: 1,
         name: 'Test Room',
         description: 'Test Description',
-        is_private: false,
+        created_by: 1,
+        is_active: true,
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
-        user_count: 5,
-        last_message_at: '2024-01-01T00:00:00Z',
+        online_count: 5,
+        message_count: 10,
+        last_activity: '2024-01-01T00:00:00Z',
+        unread_count: 0,
       }
 
       act(() => {
@@ -71,21 +74,27 @@ describe('ChatStore', () => {
           id: 1,
           name: 'Room 1',
           description: 'Description 1',
-          is_private: false,
+          created_by: 1,
+          is_active: true,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
-          user_count: 3,
-          last_message_at: '2024-01-01T00:00:00Z',
+          online_count: 3,
+          message_count: 5,
+          last_activity: '2024-01-01T00:00:00Z',
+          unread_count: 0,
         },
         {
           id: 2,
           name: 'Room 2',
           description: 'Description 2',
-          is_private: true,
+          created_by: 2,
+          is_active: true,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
-          user_count: 2,
-          last_message_at: '2024-01-01T00:00:00Z',
+          online_count: 2,
+          message_count: 3,
+          last_activity: '2024-01-01T00:00:00Z',
+          unread_count: 0,
         },
       ]
 
@@ -103,14 +112,14 @@ describe('ChatStore', () => {
         id: 1,
         room_id: 1,
         user_id: 1,
-        content: 'Test message',
+        message: 'Test message',
         message_type: 'text',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         user: {
           id: 1,
           name: 'Test User',
-          avatar: 'test-avatar.jpg',
+          email: 'test@example.com',
         },
       }
 
@@ -127,14 +136,14 @@ describe('ChatStore', () => {
         id: 1,
         room_id: 1,
         user_id: 1,
-        content: 'Test message',
+        message: 'Test message',
         message_type: 'text',
         created_at: '2024-01-01T00:00:00Z',
         updated_at: '2024-01-01T00:00:00Z',
         user: {
           id: 1,
           name: 'Test User',
-          avatar: 'test-avatar.jpg',
+          email: 'test@example.com',
         },
       }
 
@@ -159,16 +168,16 @@ describe('ChatStore', () => {
         {
           id: 1,
           name: 'User 1',
-          avatar: 'avatar1.jpg',
+          email: 'user1@example.com',
+          joined_at: '2024-01-01T00:00:00Z',
           is_online: true,
-          last_seen_at: '2024-01-01T00:00:00Z',
         },
         {
           id: 2,
           name: 'User 2',
-          avatar: 'avatar2.jpg',
+          email: 'user2@example.com',
+          joined_at: '2024-01-01T00:00:00Z',
           is_online: true,
-          last_seen_at: '2024-01-01T00:00:00Z',
         },
       ]
 
@@ -184,9 +193,9 @@ describe('ChatStore', () => {
       const mockUser: OnlineUser = {
         id: 1,
         name: 'Test User',
-        avatar: 'test-avatar.jpg',
+        email: 'test@example.com',
+        joined_at: '2024-01-01T00:00:00Z',
         is_online: true,
-        last_seen_at: '2024-01-01T00:00:00Z',
       }
 
       act(() => {
@@ -202,16 +211,16 @@ describe('ChatStore', () => {
         {
           id: 1,
           name: 'User 1',
-          avatar: 'avatar1.jpg',
+          email: 'user1@example.com',
+          joined_at: '2024-01-01T00:00:00Z',
           is_online: true,
-          last_seen_at: '2024-01-01T00:00:00Z',
         },
         {
           id: 2,
           name: 'User 2',
-          avatar: 'avatar2.jpg',
+          email: 'user2@example.com',
+          joined_at: '2024-01-01T00:00:00Z',
           is_online: true,
-          last_seen_at: '2024-01-01T00:00:00Z',
         },
       ]
 
@@ -303,6 +312,9 @@ describe('ChatStore', () => {
         type: 'network' as const,
         message: 'Network error',
         code: 500,
+        timestamp: new Date(),
+        retryable: true,
+        userFriendly: true,
       }
 
       act(() => {
@@ -318,6 +330,9 @@ describe('ChatStore', () => {
         type: 'network' as const,
         message: 'Network error',
         code: 500,
+        timestamp: new Date(),
+        retryable: true,
+        userFriendly: true,
       }
 
       // Set error first

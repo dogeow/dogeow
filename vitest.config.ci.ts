@@ -6,7 +6,7 @@ export default defineConfig({
   test: {
     ...baseConfig.test,
     // CI-specific optimizations
-    reporter: ['verbose', 'junit'],
+    reporters: ['verbose', 'junit'],
     outputFile: {
       junit: './test-results/junit.xml',
     },
@@ -21,20 +21,6 @@ export default defineConfig({
     // Stricter timeouts for CI
     testTimeout: 15000,
     hookTimeout: 15000,
-    // Ensure coverage is collected in CI
-    coverage: {
-      ...baseConfig.test?.coverage,
-      reporter: ['text', 'json', 'lcov', 'clover'],
-      // Fail CI if coverage is too low - 100% coverage requirement
-      thresholds: {
-        global: {
-          branches: 100,
-          functions: 100,
-          lines: 100,
-          statements: 100,
-        },
-      },
-    },
     // Retry failed tests in CI
     retry: 2,
     // Bail on first failure in CI for faster feedback

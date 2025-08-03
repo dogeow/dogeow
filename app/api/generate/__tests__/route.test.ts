@@ -13,7 +13,31 @@ describe('Generate API Route', () => {
   const createMockRequest = (body: Record<string, unknown>): NextRequest => {
     return {
       json: vi.fn().mockResolvedValue(body),
-    } as NextRequest
+      cookies: {} as Record<string, string>,
+      nextUrl: {} as URL,
+      page: {} as Record<string, unknown>,
+      ua: {} as Record<string, unknown>,
+      headers: {} as Headers,
+      method: 'POST',
+      body: null,
+      bodyUsed: false,
+      arrayBuffer: vi.fn(),
+      blob: vi.fn(),
+      clone: vi.fn(),
+      formData: vi.fn(),
+      text: vi.fn(),
+      signal: {} as AbortSignal,
+      cache: 'default',
+      credentials: 'same-origin',
+      destination: 'document',
+      integrity: '',
+      keepalive: false,
+      mode: 'cors',
+      redirect: 'follow',
+      referrer: '',
+      referrerPolicy: 'no-referrer',
+      url: 'http://localhost:3000/api/generate',
+    } as unknown as NextRequest
   }
 
   it('should handle invalid option', async () => {
@@ -79,7 +103,21 @@ describe('Generate API Route', () => {
           releaseLock: vi.fn(),
         })),
       },
-    } as Response
+      headers: new Headers(),
+      redirected: false,
+      status: 200,
+      statusText: 'OK',
+      type: 'default',
+      url: '',
+      clone: vi.fn(),
+      arrayBuffer: vi.fn(),
+      blob: vi.fn(),
+      formData: vi.fn(),
+      json: vi.fn(),
+      text: vi.fn(),
+      bodyUsed: false,
+      bytes: vi.fn().mockResolvedValue(new Uint8Array()),
+    } as unknown as Response
 
     vi.mocked(fetch).mockResolvedValue(mockResponse)
 
@@ -111,7 +149,21 @@ describe('Generate API Route', () => {
           releaseLock: vi.fn(),
         })),
       },
-    } as Response
+      headers: new Headers(),
+      redirected: false,
+      status: 200,
+      statusText: 'OK',
+      type: 'default',
+      url: '',
+      clone: vi.fn(),
+      arrayBuffer: vi.fn(),
+      blob: vi.fn(),
+      formData: vi.fn(),
+      json: vi.fn(),
+      text: vi.fn(),
+      bodyUsed: false,
+      bytes: vi.fn().mockResolvedValue(new Uint8Array()),
+    } as unknown as Response
 
     vi.mocked(fetch).mockResolvedValue(mockResponse)
 
@@ -143,7 +195,21 @@ describe('Generate API Route', () => {
           releaseLock: vi.fn(),
         })),
       },
-    } as Response
+      headers: new Headers(),
+      redirected: false,
+      status: 200,
+      statusText: 'OK',
+      type: 'default',
+      url: '',
+      clone: vi.fn(),
+      arrayBuffer: vi.fn(),
+      blob: vi.fn(),
+      formData: vi.fn(),
+      json: vi.fn(),
+      text: vi.fn(),
+      bodyUsed: false,
+      bytes: vi.fn().mockResolvedValue(new Uint8Array()),
+    } as unknown as Response
 
     vi.mocked(fetch).mockResolvedValue(mockResponse)
 

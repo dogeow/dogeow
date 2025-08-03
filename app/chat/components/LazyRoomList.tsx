@@ -4,10 +4,9 @@ import { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { ChatRoom } from '../types'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/helpers'
-import { chatCache } from '@/lib/cache/chat-cache'
+import chatCache from '@/lib/cache/chat-cache'
 import { useTranslation } from '@/hooks/useTranslation'
-import { Search, Users, MessageSquare, Clock, Star, StarOff } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Search, Users, MessageSquare, Clock } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -29,17 +28,9 @@ interface RoomItemProps {
 function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
-  const { favoriteRooms, toggleFavorite } = useChatStore()
-
-  const isFavorite = favoriteRooms.has(room.id)
 
   const handleImageLoad = () => setImageLoaded(true)
   const handleImageError = () => setImageError(true)
-
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    toggleFavorite(room.id)
-  }
 
   if (!isVisible) {
     return <Skeleton className="h-16 w-full" />
@@ -57,7 +48,7 @@ function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
       <div className="relative">
         <Avatar className="h-10 w-10">
           <AvatarImage
-            src={room.avatar_url}
+            src={room.avatar}
             alt={room.name}
             onLoad={handleImageLoad}
             onError={handleImageError}
@@ -65,7 +56,7 @@ function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
           />
           <AvatarFallback className="text-xs">{room.name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
-        {room.online_count > 0 && (
+        {room.online_count && room.online_count > 0 && (
           <Badge
             variant="secondary"
             className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
@@ -79,13 +70,6 @@ function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
           <h3 className="truncate text-sm font-medium">{room.name}</h3>
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={handleFavoriteClick}>
-            {isFavorite ? (
-              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            ) : (
-              <StarOff className="h-4 w-4" />
-            )}
-          </Button>
         </div>
         <div className="text-muted-foreground flex items-center space-x-2 text-xs">
           <MessageSquare className="h-3 w-3" />
@@ -108,7 +92,7 @@ function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
 }
 
 function useIntersectionObserver(
-  elementRef: React.RefObject<Element>,
+  elementRef: React.RefObject<Element | null>,
   options: IntersectionObserverInit = {}
 ): boolean {
   const [isIntersecting, setIsIntersecting] = useState(false)
@@ -318,15 +302,11 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
       {/* Room count */}
       <div className="border-t p-2 text-center">
         <span className="text-muted-foreground text-xs">
-          {t('chat.room_count', '{count} room{plural}', {
-            count: filteredAndSortedRooms.length,
-            plural: filteredAndSortedRooms.length !== 1 ? 's' : '',
-          })}
-          {searchQuery &&
-            ` ${t('chat.filtered_from', '(filtered from {total})').replace(
-              '{total}',
-              rooms.length.toString()
-            )}`}
+          {t(
+            'chat.room_count',
+            `${filteredAndSortedRooms.length} room${filteredAndSortedRooms.length !== 1 ? 's' : ''}`
+          )}
+          {searchQuery && ` ${t('chat.filtered_from', `(filtered from ${rooms.length})`)}`}
         </span>
       </div>
     </div>

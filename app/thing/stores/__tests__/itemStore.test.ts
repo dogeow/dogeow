@@ -4,10 +4,8 @@ import { useItemStore } from '../itemStore'
 
 // Mock dependencies
 vi.mock('@/lib/api', () => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  delete: vi.fn(),
+  apiRequest: vi.fn(),
+  API_URL: 'http://localhost:3000/api',
 }))
 
 vi.mock('@/components/ui/use-toast', () => ({
@@ -17,6 +15,10 @@ vi.mock('@/components/ui/use-toast', () => ({
 describe('ItemStore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Reset store to initial state
+    act(() => {
+      useItemStore.getState().clearError()
+    })
   })
 
   describe('Initial State', () => {
@@ -26,382 +28,250 @@ describe('ItemStore', () => {
       expect(state.items).toEqual([])
       expect(state.loading).toBe(false)
       expect(state.error).toBeNull()
-      expect(state.selectedItem).toBeNull()
       expect(state.filters).toEqual({
-        category: null,
-        location: null,
         search: '',
+        category_id: undefined,
+        tag_id: undefined,
+        area_id: undefined,
+        room_id: undefined,
+        spot_id: undefined,
+        is_public: undefined,
+        purchase_date: undefined,
+        expiry_date: undefined,
+        page: undefined,
+        itemsOnly: undefined,
+        include_null_purchase_date: undefined,
+        include_null_expiry_date: undefined,
+        exclude_null_purchase_date: undefined,
+        exclude_null_expiry_date: undefined,
+        tags: undefined,
       })
     })
   })
 
   describe('Item Management', () => {
-    it('should add item correctly', () => {
-      const mockItem = {
-        id: 1,
-        name: 'Test Item',
-        description: 'Test Description',
-        category_id: 1,
-        location_id: 1,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      }
-
-      act(() => {
-        useItemStore.getState().addItem(mockItem)
-      })
-
-      const state = useItemStore.getState()
-      expect(state.items).toContain(mockItem)
-    })
-
-    it('should update item correctly', () => {
-      const mockItem = {
-        id: 1,
-        name: 'Original Name',
-        description: 'Original Description',
-        category_id: 1,
-        location_id: 1,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      }
-
-      const updatedItem = {
-        ...mockItem,
-        name: 'Updated Name',
-        description: 'Updated Description',
-      }
-
-      // Add item first
-      act(() => {
-        useItemStore.getState().addItem(mockItem)
-      })
-
-      // Update item
-      act(() => {
-        useItemStore.getState().updateItem(updatedItem)
-      })
-
-      const state = useItemStore.getState()
-      expect(state.items).toContain(updatedItem)
-      expect(state.items).not.toContain(mockItem)
-    })
-
-    it('should remove item correctly', () => {
-      const mockItem = {
-        id: 1,
-        name: 'Test Item',
-        description: 'Test Description',
-        category_id: 1,
-        location_id: 1,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      }
-
-      // Add item first
-      act(() => {
-        useItemStore.getState().addItem(mockItem)
-      })
-
-      // Remove item
-      act(() => {
-        useItemStore.getState().removeItem(1)
-      })
-
-      const state = useItemStore.getState()
-      expect(state.items).not.toContain(mockItem)
-    })
-
-    it('should set items correctly', () => {
+    it('should fetch items correctly', async () => {
       const mockItems = [
         {
           id: 1,
-          name: 'Item 1',
-          description: 'Description 1',
+          name: 'Test Item',
+          description: 'Test Description',
           category_id: 1,
           location_id: 1,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
         },
+      ]
+
+      const mockMeta = {
+        current_page: 1,
+        last_page: 1,
+        per_page: 10,
+        total: 1,
+      }
+
+      const { apiRequest } = await import('@/lib/api')
+      vi.mocked(apiRequest).mockResolvedValue({
+        data: mockItems,
+        meta: mockMeta,
+      })
+
+      const result = await useItemStore.getState().fetchItems()
+
+      expect(result).toEqual({
+        data: mockItems,
+        meta: mockMeta,
+      })
+      expect(useItemStore.getState().items).toEqual(mockItems)
+    })
+
+    it('should create item correctly', async () => {
+      const mockItem = {
+        id: 1,
+        name: 'Test Item',
+        description: 'Test Description',
+        category_id: 1,
+        location_id: 1,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      }
+
+      const { apiRequest } = await import('@/lib/api')
+      vi.mocked(apiRequest).mockResolvedValue(mockItem)
+
+      const result = await useItemStore.getState().createItem({
+        name: 'Test Item',
+        description: 'Test Description',
+        quantity: 1,
+        status: 'active',
+        purchase_date: null,
+        expiry_date: null,
+        purchase_price: null,
+        category_id: '1',
+        area_id: '1',
+        room_id: '1',
+        spot_id: '1',
+        is_public: true,
+        thumbnail_url: null,
+        image_paths: [],
+      })
+
+      expect(result).toEqual(mockItem)
+    })
+
+    it('should update item correctly', async () => {
+      const mockItem = {
+        id: 1,
+        name: 'Updated Item',
+        description: 'Updated Description',
+        category_id: 1,
+        location_id: 1,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      }
+
+      const { apiRequest } = await import('@/lib/api')
+      vi.mocked(apiRequest).mockResolvedValue(mockItem)
+
+      const result = await useItemStore.getState().updateItem(1, {
+        name: 'Updated Item',
+        description: 'Updated Description',
+        quantity: 1,
+        status: 'active',
+        purchase_date: null,
+        expiry_date: null,
+        purchase_price: null,
+        category_id: '1',
+        area_id: '1',
+        room_id: '1',
+        spot_id: '1',
+        is_public: true,
+      })
+
+      expect(result).toEqual(mockItem)
+    })
+
+    it('should delete item correctly', async () => {
+      const { apiRequest } = await import('@/lib/api')
+      vi.mocked(apiRequest).mockResolvedValue(undefined)
+
+      await useItemStore.getState().deleteItem(1)
+
+      expect(apiRequest).toHaveBeenCalledWith('/items/1', {
+        method: 'DELETE',
+      })
+    })
+
+    it('should get item by id correctly', async () => {
+      const mockItem = {
+        id: 1,
+        name: 'Test Item',
+        description: 'Test Description',
+        category_id: 1,
+        location_id: 1,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      }
+
+      const { apiRequest } = await import('@/lib/api')
+      vi.mocked(apiRequest).mockResolvedValue(mockItem)
+
+      const result = await useItemStore.getState().getItem(1)
+
+      expect(result).toEqual(mockItem)
+    })
+  })
+
+  describe('Category Management', () => {
+    it('should fetch categories correctly', async () => {
+      const mockCategories = [
         {
-          id: 2,
-          name: 'Item 2',
-          description: 'Description 2',
-          category_id: 2,
-          location_id: 2,
+          id: 1,
+          name: 'Test Category',
+          parent_id: null,
           created_at: '2024-01-01T00:00:00Z',
           updated_at: '2024-01-01T00:00:00Z',
         },
       ]
 
-      act(() => {
-        useItemStore.getState().setItems(mockItems)
+      const { apiRequest } = await import('@/lib/api')
+      vi.mocked(apiRequest).mockResolvedValue(mockCategories)
+
+      const result = await useItemStore.getState().fetchCategories()
+
+      expect(result).toEqual(mockCategories)
+      expect(useItemStore.getState().categories).toEqual(mockCategories)
+    })
+
+    it('should create category correctly', async () => {
+      const mockCategory = {
+        id: 1,
+        name: 'Test Category',
+        parent_id: null,
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+      }
+
+      const { apiRequest } = await import('@/lib/api')
+      vi.mocked(apiRequest).mockResolvedValue(mockCategory)
+
+      const result = await useItemStore.getState().createCategory({
+        name: 'Test Category',
+        parent_id: null,
       })
 
-      const state = useItemStore.getState()
-      expect(state.items).toEqual(mockItems)
+      expect(result).toEqual(mockCategory)
     })
   })
 
-  describe('Selection Management', () => {
-    it('should select item correctly', () => {
-      const mockItem = {
-        id: 1,
-        name: 'Test Item',
-        description: 'Test Description',
-        category_id: 1,
-        location_id: 1,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      }
+  describe('Tag Management', () => {
+    it('should fetch tags correctly', async () => {
+      const mockTags = [
+        {
+          id: 1,
+          name: 'Test Tag',
+          color: '#ff0000',
+          created_at: '2024-01-01T00:00:00Z',
+          updated_at: '2024-01-01T00:00:00Z',
+        },
+      ]
 
-      act(() => {
-        useItemStore.getState().selectItem(mockItem)
-      })
+      const { apiRequest } = await import('@/lib/api')
+      vi.mocked(apiRequest).mockResolvedValue(mockTags)
 
-      const state = useItemStore.getState()
-      expect(state.selectedItem).toEqual(mockItem)
-    })
+      const result = await useItemStore.getState().fetchTags()
 
-    it('should clear selection correctly', () => {
-      const mockItem = {
-        id: 1,
-        name: 'Test Item',
-        description: 'Test Description',
-        category_id: 1,
-        location_id: 1,
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-      }
-
-      // Select item first
-      act(() => {
-        useItemStore.getState().selectItem(mockItem)
-      })
-
-      // Clear selection
-      act(() => {
-        useItemStore.getState().clearSelection()
-      })
-
-      const state = useItemStore.getState()
-      expect(state.selectedItem).toBeNull()
+      expect(result).toEqual(mockTags)
+      expect(useItemStore.getState().tags).toEqual(mockTags)
     })
   })
 
   describe('Filter Management', () => {
-    it('should set category filter correctly', () => {
+    it('should save filters correctly', () => {
+      const filters = {
+        search: 'test',
+        category_id: 1,
+        tag_id: 2,
+      }
+
       act(() => {
-        useItemStore.getState().setCategoryFilter(1)
+        useItemStore.getState().saveFilters(filters)
       })
 
       const state = useItemStore.getState()
-      expect(state.filters.category).toBe(1)
-    })
-
-    it('should set location filter correctly', () => {
-      act(() => {
-        useItemStore.getState().setLocationFilter(2)
-      })
-
-      const state = useItemStore.getState()
-      expect(state.filters.location).toBe(2)
-    })
-
-    it('should set search filter correctly', () => {
-      act(() => {
-        useItemStore.getState().setSearchFilter('test search')
-      })
-
-      const state = useItemStore.getState()
-      expect(state.filters.search).toBe('test search')
-    })
-
-    it('should clear filters correctly', () => {
-      // Set filters first
-      act(() => {
-        useItemStore.getState().setCategoryFilter(1)
-        useItemStore.getState().setLocationFilter(2)
-        useItemStore.getState().setSearchFilter('test')
-      })
-
-      // Clear filters
-      act(() => {
-        useItemStore.getState().clearFilters()
-      })
-
-      const state = useItemStore.getState()
-      expect(state.filters.category).toBeNull()
-      expect(state.filters.location).toBeNull()
-      expect(state.filters.search).toBe('')
+      expect(state.filters.search).toBe('test')
+      expect(state.filters.category_id).toBe(1)
+      expect(state.filters.tag_id).toBe(2)
     })
   })
 
-  describe('Loading States', () => {
-    it('should set loading state correctly', () => {
-      act(() => {
-        useItemStore.getState().setLoading(true)
-      })
-
-      expect(useItemStore.getState().loading).toBe(true)
-    })
-
-    it('should set error state correctly', () => {
-      const mockError = new Error('Test error')
-
-      act(() => {
-        useItemStore.getState().setError(mockError)
-      })
-
-      expect(useItemStore.getState().error).toEqual(mockError)
-    })
-
+  describe('Error Handling', () => {
     it('should clear error correctly', () => {
-      const mockError = new Error('Test error')
-
-      // Set error first
-      act(() => {
-        useItemStore.getState().setError(mockError)
-      })
-
-      // Clear error
       act(() => {
         useItemStore.getState().clearError()
       })
 
       expect(useItemStore.getState().error).toBeNull()
-    })
-  })
-
-  describe('Filtered Items', () => {
-    it('should filter items by category', () => {
-      const mockItems = [
-        {
-          id: 1,
-          name: 'Item 1',
-          description: 'Description 1',
-          category_id: 1,
-          location_id: 1,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z',
-        },
-        {
-          id: 2,
-          name: 'Item 2',
-          description: 'Description 2',
-          category_id: 2,
-          location_id: 1,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z',
-        },
-      ]
-
-      // Set items
-      act(() => {
-        useItemStore.getState().setItems(mockItems)
-      })
-
-      // Set category filter
-      act(() => {
-        useItemStore.getState().setCategoryFilter(1)
-      })
-
-      const state = useItemStore.getState()
-      const filteredItems = state.getFilteredItems()
-      expect(filteredItems).toHaveLength(1)
-      expect(filteredItems[0].category_id).toBe(1)
-    })
-
-    it('should filter items by search term', () => {
-      const mockItems = [
-        {
-          id: 1,
-          name: 'Apple',
-          description: 'Red apple',
-          category_id: 1,
-          location_id: 1,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z',
-        },
-        {
-          id: 2,
-          name: 'Banana',
-          description: 'Yellow banana',
-          category_id: 1,
-          location_id: 1,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z',
-        },
-      ]
-
-      // Set items
-      act(() => {
-        useItemStore.getState().setItems(mockItems)
-      })
-
-      // Set search filter
-      act(() => {
-        useItemStore.getState().setSearchFilter('apple')
-      })
-
-      const state = useItemStore.getState()
-      const filteredItems = state.getFilteredItems()
-      expect(filteredItems).toHaveLength(1)
-      expect(filteredItems[0].name).toBe('Apple')
-    })
-  })
-
-  describe('Utility Methods', () => {
-    it('should get item by id', () => {
-      const mockItems = [
-        {
-          id: 1,
-          name: 'Item 1',
-          description: 'Description 1',
-          category_id: 1,
-          location_id: 1,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z',
-        },
-        {
-          id: 2,
-          name: 'Item 2',
-          description: 'Description 2',
-          category_id: 2,
-          location_id: 2,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z',
-        },
-      ]
-
-      act(() => {
-        useItemStore.getState().setItems(mockItems)
-      })
-
-      const state = useItemStore.getState()
-      const item = state.getItemById(1)
-      expect(item).toEqual(mockItems[0])
-    })
-
-    it('should return null for non-existent item', () => {
-      const state = useItemStore.getState()
-      const item = state.getItemById(999)
-      expect(item).toBeNull()
-    })
-
-    it('should get items count', () => {
-      const mockItems = [
-        { id: 1, name: 'Item 1' },
-        { id: 2, name: 'Item 2' },
-        { id: 3, name: 'Item 3' },
-      ]
-
-      act(() => {
-        useItemStore.getState().setItems(mockItems)
-      })
-
-      const state = useItemStore.getState()
-      expect(state.getItemsCount()).toBe(3)
     })
   })
 })

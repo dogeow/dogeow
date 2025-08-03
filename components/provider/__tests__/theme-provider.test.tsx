@@ -49,7 +49,7 @@ describe('ThemeProvider', () => {
 
   it('should pass props to NextThemesProvider', () => {
     const testProps = {
-      attribute: 'class',
+      attribute: 'class' as const,
       defaultTheme: 'dark',
       enableSystem: true,
       disableTransitionOnChange: false,
@@ -102,7 +102,7 @@ describe('ThemeProvider', () => {
 
   it('should pass all props correctly', () => {
     const complexProps = {
-      attribute: 'data-theme',
+      attribute: 'data-theme' as const,
       defaultTheme: 'system',
       enableSystem: false,
       disableTransitionOnChange: true,
@@ -132,7 +132,7 @@ describe('ThemeProvider', () => {
 
   it('should handle undefined props', () => {
     const propsWithUndefined = {
-      attribute: 'class',
+      attribute: 'class' as const,
       defaultTheme: undefined,
       enableSystem: true,
     }
