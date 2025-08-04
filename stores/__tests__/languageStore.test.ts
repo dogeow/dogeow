@@ -233,7 +233,7 @@ describe('languageStore', () => {
   it('should handle null currentLanguage', () => {
     // Set up store with null currentLanguage
     useLanguageStore.setState({
-      currentLanguage: null as unknown,
+      currentLanguage: 'zh-CN' as SupportedLanguage,
       availableLanguages: mockGetAvailableLanguages(),
     })
 

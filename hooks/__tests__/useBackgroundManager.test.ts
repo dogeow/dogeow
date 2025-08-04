@@ -40,7 +40,7 @@ describe('useBackgroundManager', () => {
   })
 
   it('should clear background when backgroundImage is null', () => {
-    mockBackgroundStore.backgroundImage = null as unknown
+    mockBackgroundStore.backgroundImage = null as unknown as string
     renderHook(() => useBackgroundManager())
 
     expect(document.body.style.backgroundImage).toBe('')

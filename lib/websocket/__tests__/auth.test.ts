@@ -31,7 +31,7 @@ describe('WebSocket Auth Manager', () => {
         length: 0,
         key: vi.fn(),
       },
-    } as Storage
+    } as unknown as Window & typeof globalThis
 
     // Mock localStorage
     originalLocalStorage = global.localStorage
@@ -85,7 +85,7 @@ describe('WebSocket Auth Manager', () => {
     describe('getToken', () => {
       it('should return null when window is not available', () => {
         const originalWindow = global.window
-        global.window = undefined as typeof window | undefined
+        global.window = undefined as unknown as Window & typeof globalThis
 
         const token = manager.getToken()
         expect(token).toBeNull()
@@ -138,7 +138,7 @@ describe('WebSocket Auth Manager', () => {
     describe('setToken', () => {
       it('should do nothing when window is not available', () => {
         const originalWindow = global.window
-        global.window = undefined as typeof window | undefined
+        global.window = undefined as unknown as Window & typeof globalThis
 
         expect(() => manager.setToken('test-token')).not.toThrow()
 
@@ -177,7 +177,7 @@ describe('WebSocket Auth Manager', () => {
     describe('removeToken', () => {
       it('should do nothing when window is not available', () => {
         const originalWindow = global.window
-        global.window = undefined as typeof window | undefined
+        global.window = undefined as unknown as Window & typeof globalThis
 
         expect(() => manager.removeToken()).not.toThrow()
 

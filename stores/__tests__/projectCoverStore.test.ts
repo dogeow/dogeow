@@ -124,14 +124,14 @@ describe('projectCoverStore', () => {
     const { result } = renderHook(() => useProjectCoverStore())
 
     // Simulate conditional setting based on some external state
-    const userPreference = 'hide'
+    const userPreference: string = 'hide'
 
     act(() => {
       result.current.setShowProjectCovers(userPreference === 'show')
     })
     expect(result.current.showProjectCovers).toBe(false)
 
-    const anotherUserPreference = 'show'
+    const anotherUserPreference: string = 'show'
 
     act(() => {
       result.current.setShowProjectCovers(anotherUserPreference === 'show')

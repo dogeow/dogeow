@@ -27,17 +27,31 @@ describe('dev-tools', () => {
       groupEnd: vi.spyOn(console, 'groupEnd').mockImplementation(() => {}),
       warn: vi.spyOn(console, 'warn').mockImplementation(() => {}),
     }
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: 'development',
+      writable: true,
+      configurable: true,
+    })
+    Object.values(consoleSpy).forEach(spy => spy.mockClear())
   })
 
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalNodeEnv,
+      writable: true,
+      configurable: true,
+    })
     Object.values(consoleSpy).forEach(spy => spy.mockRestore())
     vi.clearAllMocks()
   })
 
   describe('validateAllTranslations', () => {
     it('should skip validation in production', () => {
-      process.env.NODE_ENV = 'production'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true,
+      })
 
       const result = validateAllTranslations()
 
@@ -50,7 +64,11 @@ describe('dev-tools', () => {
     })
 
     it('should validate all translations in development with valid results', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const mockKeys = ['nav.home', 'nav.about', 'common.save']
       const mockValidation = {
         isValid: true,
@@ -72,7 +90,11 @@ describe('dev-tools', () => {
     })
 
     it('should report missing translations in development', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const mockKeys = ['nav.home', 'nav.about']
       const mockValidation = {
         isValid: false,
@@ -100,7 +122,11 @@ describe('dev-tools', () => {
 
   describe('checkTranslationKeys', () => {
     it('should skip check in production and return all keys as existing', () => {
-      process.env.NODE_ENV = 'production'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true,
+      })
       const keys = ['nav.home', 'nav.about']
 
       const result = checkTranslationKeys(keys)
@@ -113,7 +139,11 @@ describe('dev-tools', () => {
     })
 
     it('should check translation keys in development with all existing', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const keys = ['nav.home', 'nav.about']
 
       vi.mocked(hasTranslationKey).mockReturnValue(true)
@@ -131,7 +161,11 @@ describe('dev-tools', () => {
     })
 
     it('should report missing keys in development', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const keys = ['nav.home', 'nav.missing', 'nav.about']
 
       vi.mocked(hasTranslationKey)
@@ -153,7 +187,11 @@ describe('dev-tools', () => {
     })
 
     it('should handle multiple missing keys', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const keys = ['nav.missing1', 'nav.missing2']
 
       vi.mocked(hasTranslationKey).mockReturnValue(false)
@@ -172,7 +210,11 @@ describe('dev-tools', () => {
 
   describe('logTranslationStats', () => {
     it('should skip logging in production', () => {
-      process.env.NODE_ENV = 'production'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true,
+      })
 
       logTranslationStats()
 
@@ -181,7 +223,11 @@ describe('dev-tools', () => {
     })
 
     it('should log translation statistics in development', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const mockKeys = [
         'nav.home',
         'nav.about',
@@ -206,7 +252,11 @@ describe('dev-tools', () => {
     })
 
     it('should handle keys without namespaces', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const mockKeys = ['standalone', 'nav.home', 'another']
 
       vi.mocked(getAllTranslationKeys).mockReturnValue(mockKeys)
@@ -220,7 +270,11 @@ describe('dev-tools', () => {
     })
 
     it('should sort namespaces by count in descending order', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const mockKeys = ['a.1', 'b.1', 'b.2', 'b.3', 'c.1', 'c.2']
 
       vi.mocked(getAllTranslationKeys).mockReturnValue(mockKeys)
@@ -229,7 +283,9 @@ describe('dev-tools', () => {
 
       // Should be sorted: b (3), c (2), a (1)
       const logCalls = consoleSpy.log.mock.calls
-      const namespaceCalls = logCalls.filter(call => call[0] && call[0].includes(' keys'))
+      const namespaceCalls = logCalls.filter(
+        call => call[0] && (call[0] as string).includes(' keys')
+      )
 
       // Debug what's actually being logged
       console.log(
@@ -238,14 +294,14 @@ describe('dev-tools', () => {
       )
       console.log(
         'Namespace calls:',
-        namespaceCalls.map(call => call[0])
+        namespaceCalls.map(call => call[0] as string)
       )
 
       expect(namespaceCalls.length).toBeGreaterThanOrEqual(3)
       // Find the specific namespace calls we expect
-      const bCall = namespaceCalls.find(call => call[0].includes('b: 3 keys'))
-      const cCall = namespaceCalls.find(call => call[0].includes('c: 2 keys'))
-      const aCall = namespaceCalls.find(call => call[0].includes('a: 1 keys'))
+      const bCall = namespaceCalls.find(call => (call[0] as string).includes('b: 3 keys'))
+      const cCall = namespaceCalls.find(call => (call[0] as string).includes('c: 2 keys'))
+      const aCall = namespaceCalls.find(call => (call[0] as string).includes('a: 1 keys'))
 
       expect(bCall).toBeDefined()
       expect(cCall).toBeDefined()

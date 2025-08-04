@@ -59,7 +59,11 @@ describe('i18n utils', () => {
   })
 
   afterEach(() => {
-    process.env.NODE_ENV = originalNodeEnv
+    Object.defineProperty(process.env, 'NODE_ENV', {
+      value: originalNodeEnv,
+      writable: true,
+      configurable: true,
+    })
     consoleSpy.mockRestore()
     vi.clearAllMocks()
   })
@@ -172,7 +176,11 @@ describe('i18n utils', () => {
     })
 
     it('should fallback to zh-CN when key missing in current language', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
 
       expect(getTranslation('common.cancel', 'en')).toBe('取消')
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -181,14 +189,22 @@ describe('i18n utils', () => {
     })
 
     it('should fallback to en when key missing in current language and zh-CN', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
 
       // Mock a scenario where key exists in en but not in zh-CN or current language
       expect(getTranslation('nav.about', 'ja')).toBe('について') // Exists in ja
     })
 
     it('should use provided fallback when key not found anywhere', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
 
       const result = getTranslation('missing.key', 'en', 'Default Text')
       expect(result).toBe('Default Text')
@@ -198,7 +214,11 @@ describe('i18n utils', () => {
     })
 
     it('should return key itself as last resort', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
 
       const result = getTranslation('completely.missing.key', 'en')
       expect(result).toBe('completely.missing.key')
@@ -208,12 +228,16 @@ describe('i18n utils', () => {
     })
 
     it('should handle invalid keys gracefully', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
 
       expect(getTranslation('', 'en')).toBe('')
-      expect(getTranslation(null as unknown, 'en')).toBe('')
-      expect(getTranslation(undefined as unknown, 'en')).toBe('')
-      expect(getTranslation(123 as unknown, 'en')).toBe('')
+      expect(getTranslation(null as unknown as string, 'en')).toBe('')
+      expect(getTranslation(undefined as unknown as string, 'en')).toBe('')
+      expect(getTranslation(123 as unknown as string, 'en')).toBe('')
 
       expect(consoleSpy).toHaveBeenCalledWith('Invalid translation key provided: ')
       expect(consoleSpy).toHaveBeenCalledWith('Invalid translation key provided: null')
@@ -227,7 +251,11 @@ describe('i18n utils', () => {
     })
 
     it('should not log warnings in production', () => {
-      process.env.NODE_ENV = 'production'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true,
+      })
 
       getTranslation('missing.key', 'en')
       getTranslation('', 'en')
@@ -343,7 +371,11 @@ describe('i18n utils', () => {
 
   describe('validateTranslations', () => {
     it('should return valid in production', () => {
-      process.env.NODE_ENV = 'production'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'production',
+        writable: true,
+        configurable: true,
+      })
 
       const result = validateTranslations(['nav.home', 'missing.key'])
       expect(result).toEqual({
@@ -353,7 +385,11 @@ describe('i18n utils', () => {
     })
 
     it('should validate translations in development', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
       const groupSpy = vi.spyOn(console, 'group').mockImplementation(() => {})
       const groupEndSpy = vi.spyOn(console, 'groupEnd').mockImplementation(() => {})
 
@@ -374,7 +410,11 @@ describe('i18n utils', () => {
     })
 
     it('should report valid when all translations exist', () => {
-      process.env.NODE_ENV = 'development'
+      Object.defineProperty(process.env, 'NODE_ENV', {
+        value: 'development',
+        writable: true,
+        configurable: true,
+      })
 
       const result = validateTranslations(['nav.about']) // This exists in all languages
 

@@ -25,11 +25,18 @@ describe('authStore', () => {
   const mockAuthManager = {
     setToken: vi.fn(),
     removeToken: vi.fn(),
-  }
+    getToken: vi.fn(),
+    refreshToken: vi.fn(),
+    initializeConnection: vi.fn(),
+    destroy: vi.fn(),
+    setRefreshCallback: vi.fn(),
+    handleStorageChange: vi.fn(),
+    reconnectWithNewToken: vi.fn(),
+  } as unknown as ReturnType<typeof getAuthManager>
   const mockGetAuthManager = vi.mocked(getAuthManager)
 
   const mockUser: User = {
-    id: '1',
+    id: 1,
     email: 'test@example.com',
     name: 'Test User',
   }
@@ -37,7 +44,6 @@ describe('authStore', () => {
   const mockAuthResponse: AuthResponse = {
     user: mockUser,
     token: 'test-token-123',
-    message: 'Login successful',
   }
 
   beforeEach(() => {

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import { Input } from '../input'
+import React from 'react'
 
 describe('Input', () => {
   describe('rendering', () => {
@@ -219,7 +220,7 @@ describe('Input', () => {
     })
 
     it('should handle null value', () => {
-      render(<Input value={null as string | null} data-testid="input" />)
+      render(<Input value={undefined} data-testid="input" />)
 
       const input = screen.getByTestId('input')
       expect(input).toHaveValue('')
