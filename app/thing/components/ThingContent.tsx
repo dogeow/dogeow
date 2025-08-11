@@ -192,7 +192,9 @@ export default function ThingContent({
   )
 
   // 条件渲染内容
-  if (loading) return renderLoading()
+  // 先处理错误，避免被加载骨架覆盖
   if (error) return renderError()
+  // 首次进入时（meta 为空且 items 为空）也显示骨架，避免闪现空态
+  if (loading || (!meta && items.length === 0)) return renderLoading()
   return items.length === 0 ? renderEmpty() : renderItems()
 }
