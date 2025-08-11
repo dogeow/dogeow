@@ -4,24 +4,22 @@ import { Avatar, AvatarImage, AvatarFallback } from '../avatar'
 
 // Mock Next.js Image component
 vi.mock('next/image', () => ({
+  __esModule: true,
   default: ({
     src,
-    alt,
     className,
     onLoad,
     onError,
     ...props
   }: {
     src?: string
-    alt?: string
     className?: string
     onLoad?: () => void
     onError?: () => void
     [key: string]: unknown
   }) => (
-    <img
+    <div
       src={src}
-      alt={alt}
       className={className}
       onLoad={onLoad}
       onError={onError}

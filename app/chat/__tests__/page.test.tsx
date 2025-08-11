@@ -53,8 +53,8 @@ vi.mock('@/components/ui/avatar', () => ({
       {children}
     </div>
   ),
-  AvatarImage: ({ ...props }: React.ComponentProps<'img'>) => (
-    <img data-testid="avatar-image" alt="avatar" {...props} />
+  AvatarImage: ({ ...props }: React.ComponentProps<'div'>) => (
+    <div data-testid="avatar-image" aria-label="avatar" {...props} />
   ),
   AvatarFallback: ({ children, ...props }: React.ComponentProps<'div'>) => (
     <div data-testid="avatar-fallback" {...props}>

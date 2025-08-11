@@ -4,21 +4,18 @@ import { TileCard } from '../TileCard'
 
 // Mock dependencies
 vi.mock('next/image', () => ({
+  __esModule: true,
   default: ({
     src,
-    alt,
     onError,
     onLoad,
     ...props
   }: {
     src: string
-    alt: string
     onError?: () => void
     onLoad?: () => void
     [key: string]: unknown
-  }) => (
-    <img src={src} alt={alt} onError={onError} onLoad={onLoad} data-testid="image" {...props} />
-  ),
+  }) => <div src={src} onError={onError} onLoad={onLoad} data-testid="image" {...props} />,
 }))
 
 vi.mock('@/hooks/useTranslation', () => ({

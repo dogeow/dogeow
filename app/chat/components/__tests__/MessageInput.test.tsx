@@ -26,8 +26,9 @@ vi.mock('use-debounce', () => ({
 }))
 
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: React.ComponentProps<'img'>) => (
-    <img src={src} alt={alt} {...props} />
+  __esModule: true,
+  default: ({ ...props }: React.ComponentProps<'div'>) => (
+    <div data-testid="next-image" {...props} />
   ),
 }))
 
