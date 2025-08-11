@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -96,13 +96,19 @@ const ImageGallery = ({
   return (
     <div className="space-y-3">
       <div className="bg-muted relative aspect-square overflow-hidden rounded-lg shadow-sm">
-        <Image
-          src={images[activeIndex].url || ''}
-          alt={itemName}
-          fill
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
+        {(() => {
+          const safeIndex = Math.min(Math.max(activeIndex, 0), images.length - 1)
+          const url = images[safeIndex]?.url || ''
+          return (
+            <Image
+              src={url}
+              alt={itemName}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            />
+          )
+        })()}
       </div>
 
       {images.length > 1 && (
@@ -259,17 +265,26 @@ export default function ItemDetail() {
   const params = useParams()
   const router = useRouter()
   const { deleteItem } = useItemStore()
-  const { data: item, error, isLoading: loading } = useItem(Number(params.id))
+  const itemId = useMemo(() => {
+    const raw = (params as Record<string, string | string[] | undefined>)?.id
+    const idString = Array.isArray(raw) ? raw[0] : raw
+    const parsed = Number.parseInt(idString ?? '', 10)
+    return Number.isFinite(parsed) ? parsed : NaN
+  }, [params])
+
+  const { data: item, error, isLoading: loading } = useItem(itemId)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
 
-  const handleEdit = () => {
-    router.push(`/thing/${params.id}/edit`)
-  }
+  const handleEdit = useCallback(() => {
+    if (!Number.isFinite(itemId)) return
+    router.push(`/thing/${itemId}/edit`)
+  }, [router, itemId])
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     try {
-      await deleteItem(Number(params.id))
+      if (!Number.isFinite(itemId)) throw new Error('无效的物品编号')
+      await deleteItem(itemId)
       toast.success('物品已成功删除')
       router.push('/thing')
     } catch (err) {
@@ -277,9 +292,20 @@ export default function ItemDetail() {
     } finally {
       setDeleteDialogOpen(false)
     }
-  }
+  }, [deleteItem, itemId, router])
 
-  const handleBack = () => router.push('/thing')
+  const handleBack = useCallback(() => router.push('/thing'), [router])
+
+  // Keep active image index within bounds whenever images change
+  useEffect(() => {
+    const length = item?.images?.length ?? 0
+    if (length === 0) {
+      if (activeImageIndex !== 0) setActiveImageIndex(0)
+      return
+    }
+    if (activeImageIndex > length - 1) setActiveImageIndex(0)
+    if (activeImageIndex < 0) setActiveImageIndex(0)
+  }, [item?.images, activeImageIndex])
 
   if (loading) return <LoadingState />
   if (error || (!loading && !item)) return <ErrorState error={error} onBack={handleBack} />

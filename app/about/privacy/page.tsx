@@ -7,9 +7,10 @@ export default function PrivacyPage() {
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold">网站说明</h2>
           <ul className="mb-4 list-disc pl-6">
-            <li>本网站是一些业余时间写的小功能、小应用，作为学习使用。</li>
-            <li>本网站只做学习、测试技术使用，并非跟其他网站一样可以正常日常使用。</li>
-            <li>本网站也欢迎您也来参与测试、体验，但注意保护您自己的隐私，具体参见以下说明。</li>
+            <li>
+              本网站是业余时间写的一些小功能、小应用，仅作为学习使用，并非跟其他网站一样可以正常日常使用。
+            </li>
+            <li>本网站也欢迎您来参与体验、测试，但您注意保护自己的隐私，具体参见以下说明。</li>
           </ul>
         </section>
 

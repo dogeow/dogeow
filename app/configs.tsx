@@ -223,7 +223,7 @@ export const configs = {
       name: 'I WiSH - 明日への扉~5 years brew version~',
       path: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3',
     },
-    { name: '和楽器バンド - 東風破.mp3', path: '/musics/和楽器バンド - 東風破.mp3' },
+    { name: '和楽器バンド - 東风破.mp3', path: '/musics/和乐器バンド - 東风破.mp3' },
   ],
 
   // 系统提供的背景图列表
