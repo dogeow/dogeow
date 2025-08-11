@@ -5,28 +5,17 @@ import { Avatar, AvatarImage, AvatarFallback } from '../avatar'
 // Mock Next.js Image component
 vi.mock('next/image', () => ({
   __esModule: true,
-  default: ({
-    src,
-    className,
-    onLoad,
-    onError,
-    ...props
-  }: {
-    src?: string
-    className?: string
-    onLoad?: () => void
-    onError?: () => void
-    [key: string]: unknown
-  }) => (
-    <div
-      src={src}
-      className={className}
-      onLoad={onLoad}
-      onError={onError}
-      data-testid="avatar-image"
-      {...props}
-    />
-  ),
+  default: (
+    props: React.ComponentProps<'div'> & {
+      src?: string
+      alt?: string
+      width?: number | string
+      height?: number | string
+      sizes?: string
+      onError?: () => void
+      onLoad?: () => void
+    }
+  ) => <div data-testid="avatar-image" {...props} />,
 }))
 
 describe('Avatar', () => {

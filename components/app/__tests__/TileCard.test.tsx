@@ -5,17 +5,17 @@ import { TileCard } from '../TileCard'
 // Mock dependencies
 vi.mock('next/image', () => ({
   __esModule: true,
-  default: ({
-    src,
-    onError,
-    onLoad,
-    ...props
-  }: {
-    src: string
-    onError?: () => void
-    onLoad?: () => void
-    [key: string]: unknown
-  }) => <div src={src} onError={onError} onLoad={onLoad} data-testid="image" {...props} />,
+  default: (
+    props: React.ComponentProps<'div'> & {
+      src?: string
+      alt?: string
+      width?: number | string
+      height?: number | string
+      sizes?: string
+      onError?: () => void
+      onLoad?: () => void
+    }
+  ) => <div data-testid="image" {...props} />,
 }))
 
 vi.mock('@/hooks/useTranslation', () => ({
