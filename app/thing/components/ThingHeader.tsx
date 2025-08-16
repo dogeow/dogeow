@@ -56,15 +56,19 @@ export default function ThingHeader({
     }
   }, [filters.category_id, categories])
 
-  // 同步filters到本地状态（只同步标签）
+  // 同步filters到本地状态（同步标签）
   useEffect(() => {
     if (filters.tags) {
       const tagsArray = Array.isArray(filters.tags)
         ? filters.tags.map(t => String(t))
-        : String(filters.tags).split(',')
+        : String(filters.tags)
+            .split(',')
+            .filter(tag => tag.trim() !== '')
       setSelectedTags(tagsArray)
+    } else {
+      setSelectedTags([])
     }
-  }, [filters])
+  }, [filters.tags])
 
   // 处理点击外部关闭菜单
   useEffect(() => {

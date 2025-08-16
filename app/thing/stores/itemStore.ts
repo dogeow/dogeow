@@ -163,7 +163,29 @@ export const useItemStore = create<ItemState>((set, get) => ({
     set({ loading: true, error: null })
 
     try {
-      const finalParams = Object.keys(params).length === 0 ? state.filters : params
+      // 如果没有传入参数，尝试从持久化 store 获取筛选条件
+      let finalParams = params
+      if (Object.keys(params).length === 0) {
+        // 尝试从 localStorage 获取持久化的筛选条件
+        try {
+          const persistedFilters = localStorage.getItem('thing-filters-persistence')
+          if (persistedFilters) {
+            const parsed = JSON.parse(persistedFilters)
+            if (parsed.state && parsed.state.savedFilters) {
+              finalParams = parsed.state.savedFilters
+              console.log('使用持久化的筛选条件:', finalParams)
+            }
+          }
+        } catch (error) {
+          console.warn('读取持久化筛选条件失败:', error)
+        }
+
+        // 如果持久化筛选条件为空，使用 store 中的筛选条件
+        if (Object.keys(finalParams).length === 0) {
+          finalParams = state.filters
+        }
+      }
+
       const backendParams = filterBackendParams(finalParams)
       const queryParams = buildQueryParams(backendParams)
 
@@ -180,10 +202,23 @@ export const useItemStore = create<ItemState>((set, get) => ({
 
       const data = await apiRequest<{ data: Item[]; meta: PaginationMeta }>(url)
 
+      console.log('ItemStore: API 响应数据:', {
+        itemsCount: data.data?.length || 0,
+        meta: data.meta,
+        hasData: !!data.data,
+        hasMeta: !!data.meta,
+      })
+
       set({
         items: data.data || [],
         loading: false,
         meta: data.meta || null,
+      })
+
+      console.log('ItemStore: 状态已更新:', {
+        items: (data.data || []).length,
+        loading: false,
+        meta: data.meta ? { current_page: data.meta.current_page, total: data.meta.total } : null,
       })
 
       return data

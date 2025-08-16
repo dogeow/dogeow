@@ -50,6 +50,7 @@ export default function Thing() {
         setSearchTerm(searchFromURL)
         handleSearch(searchFromURL)
       } else {
+        // 使用持久化的筛选条件进行初始加载
         fetchItems()
       }
     }

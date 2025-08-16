@@ -6,6 +6,7 @@ import { AppGrid } from '../AppGrid'
 import { SearchBar } from '../SearchBar'
 import Logo from '@/public/80.png'
 import { useTranslation } from '@/hooks/useTranslation'
+import { useFilterPersistenceStore } from '@/app/thing/stores/filterPersistenceStore'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
@@ -33,6 +34,15 @@ export function AppsView({
   toggleDisplayMode,
 }: AppsViewProps) {
   const { t } = useTranslation()
+  const { clearFilters } = useFilterPersistenceStore()
+
+  // 处理 Logo 点击，清除筛选条件并跳转到首页
+  const handleLogoClick = () => {
+    // 清除物品管理页面的筛选条件
+    clearFilters()
+    // 跳转到首页
+    router.push('/')
+  }
 
   return (
     <div className="flex h-full items-center justify-between">
@@ -42,7 +52,7 @@ export function AppsView({
           src={Logo}
           alt="apps"
           className="h-10 w-10 cursor-pointer"
-          onClick={() => router.push('/')}
+          onClick={handleLogoClick}
         />
       </div>
 

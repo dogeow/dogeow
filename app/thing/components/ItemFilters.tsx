@@ -20,6 +20,7 @@ import { cn } from '@/lib/helpers'
 import { CalendarIcon } from 'lucide-react'
 import type { Area, Room, Spot } from '@/app/thing/types'
 import { useItemStore } from '@/app/thing/stores/itemStore'
+import { useFilterPersistenceStore } from '@/app/thing/stores/filterPersistenceStore'
 import { TagSelector, Tag } from '@/components/ui/tag-selector'
 import CategoryTreeSelect, { CategorySelection } from './CategoryTreeSelect'
 
@@ -64,12 +65,12 @@ function useDebounce<T>(value: T, delay: number = 500): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value)
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const handler = setTimeout(() => {
       setDebouncedValue(value)
     }, delay)
 
     return () => {
-      clearTimeout(timer)
+      clearTimeout(handler)
     }
   }, [value, delay])
 
@@ -93,18 +94,15 @@ const initialFilters: FilterState = {
   room_id: 'all',
   spot_id: 'all',
   is_public: null,
-  include_null_purchase_date: true,
-  include_null_expiry_date: true,
+  include_null_purchase_date: false,
+  include_null_expiry_date: false,
 }
 
-// 在组件外部添加调试函数
+// 调试函数
 function debugFilterState(label: string, filters: FilterState) {
-  console.log(`[调试] ${label}:`, {
-    hasActiveFilters: Object.keys(filters).some(
-      key => filters[key as keyof FilterState] !== initialFilters[key as keyof FilterState]
-    ),
-    fieldsWithValues: Object.keys(filters).filter(
-      key => filters[key as keyof FilterState] !== initialFilters[key as keyof FilterState]
+  console.log(label, {
+    initialFilters: Object.fromEntries(
+      Object.keys(initialFilters).map(key => [key, initialFilters[key as keyof FilterState]])
     ),
     filters,
   })
@@ -119,7 +117,8 @@ export default function ItemFilters({
 }: ItemFiltersProps) {
   console.log('[ItemFilters] 组件被渲染')
 
-  const { filters: savedFilters, categories } = useItemStore()
+  const { categories } = useItemStore()
+  const { savedFilters } = useFilterPersistenceStore()
   // SWR hooks for _categories, areas, rooms, spots, tags are removed.
   // These are now passed as props.
   const [activeTab, setActiveTab] = useState('basic')

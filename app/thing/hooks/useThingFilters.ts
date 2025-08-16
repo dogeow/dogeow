@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { FilterParams } from '@/app/thing/types'
+import { useFilterPersistenceStore } from '@/app/thing/stores/filterPersistenceStore'
 
 interface UseThingFiltersReturn {
   filters: FilterParams
@@ -11,17 +12,38 @@ interface UseThingFiltersReturn {
 }
 
 export function useThingFilters(): UseThingFiltersReturn {
-  const [filters, setFilters] = useState<FilterParams>({})
+  const {
+    savedFilters,
+    saveFilters,
+    clearFilters: clearPersistedFilters,
+  } = useFilterPersistenceStore()
+  const [filters, setFilters] = useState<FilterParams>(savedFilters)
   const [currentPage, setCurrentPage] = useState(1)
 
-  const updateFilters = useCallback((newFilters: Record<string, unknown>) => {
-    setFilters(prev => ({ ...prev, ...newFilters }))
-  }, [])
+  // 当持久化的筛选条件变化时，更新本地状态
+  useEffect(() => {
+    console.log('useThingFilters: 持久化筛选条件更新:', savedFilters)
+    setFilters(savedFilters)
+  }, [savedFilters])
+
+  const updateFilters = useCallback(
+    (newFilters: Record<string, unknown>) => {
+      console.log('useThingFilters: 更新筛选条件:', newFilters)
+      const updatedFilters = { ...filters, ...newFilters }
+      setFilters(updatedFilters)
+      // 保存到持久化 store
+      saveFilters(updatedFilters)
+    },
+    [filters, saveFilters]
+  )
 
   const clearFilters = useCallback(() => {
+    console.log('useThingFilters: 清除筛选条件')
     setFilters({})
     setCurrentPage(1)
-  }, [])
+    // 清除持久化的筛选条件
+    clearPersistedFilters()
+  }, [clearPersistedFilters])
 
   const hasActiveFilters = useCallback(() => {
     const activeFilters = Object.entries(filters).filter(([key, value]) => {

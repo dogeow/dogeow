@@ -55,6 +55,18 @@ export default function ThingContent({
 }: ThingContentProps) {
   const totalPages = meta?.last_page || 1
 
+  // 添加调试日志
+  console.log('ThingContent 状态:', {
+    items: items.length,
+    loading,
+    error,
+    meta: meta
+      ? { current_page: meta.current_page, total: meta.total, last_page: meta.last_page }
+      : null,
+    hasActiveFilters,
+    searchTerm,
+  })
+
   // 渲染加载状态
   const renderLoading = () => (
     <div className="space-y-3">
@@ -193,8 +205,30 @@ export default function ThingContent({
 
   // 条件渲染内容
   // 先处理错误，避免被加载骨架覆盖
-  if (error) return renderError()
-  // 首次进入时（meta 为空且 items 为空）也显示骨架，避免闪现空态
-  if (loading || (!meta && items.length === 0)) return renderLoading()
-  return items.length === 0 ? renderEmpty() : renderItems()
+  if (error) {
+    console.log('ThingContent: 显示错误状态')
+    return renderError()
+  }
+
+  // 只有在真正加载中时才显示骨架屏
+  if (loading) {
+    console.log('ThingContent: 显示加载状态')
+    return renderLoading()
+  }
+
+  // 如果有 meta 数据但 items 为空，说明加载完成但没有数据，显示空状态
+  if (meta && items.length === 0) {
+    console.log('ThingContent: 显示空状态 (有 meta 但无 items)')
+    return renderEmpty()
+  }
+
+  // 如果既没有 meta 也没有 items，且不在加载中，可能是首次进入，显示空状态
+  if (!meta && items.length === 0) {
+    console.log('ThingContent: 显示空状态 (无 meta 无 items)')
+    return renderEmpty()
+  }
+
+  // 有数据时显示物品列表
+  console.log('ThingContent: 显示物品列表')
+  return renderItems()
 }
