@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { X, Pencil } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -25,6 +25,19 @@ export default function NoteCategories() {
   const [alertOpen, setAlertOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
   const [editingName, setEditingName] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // 加载分类数据
   const { data: categories, error } = useSWR<Category[]>('/notes/categories', get)
@@ -125,7 +138,7 @@ export default function NoteCategories() {
                     value={editingName}
                     onChange={e => setEditingName(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    autoFocus
+                    autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
                     className="h-6 border-none bg-transparent p-0 text-sm focus-visible:ring-0"
                     style={{ width: `${Math.max(editingName.length * 8, 60)}px` }}
                   />

@@ -42,7 +42,7 @@ export function Combobox({
   const [searchQuery, setSearchQuery] = React.useState('')
 
   // 检测是否为移动设备
-  const [, setIsMobile] = React.useState(false)
+  const [isMobile, setIsMobile] = React.useState(false)
 
   React.useEffect(() => {
     const checkMobile = () => {
@@ -123,6 +123,7 @@ export function Combobox({
               onChange={e => setSearchQuery(e.target.value)}
               className="h-8"
               autoComplete="off"
+              autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
             />
           </div>
 

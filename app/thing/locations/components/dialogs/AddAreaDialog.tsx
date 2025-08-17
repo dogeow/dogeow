@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -26,6 +26,19 @@ export default function AddAreaDialog({
   loading,
 }: AddAreaDialogProps) {
   const [areaName, setAreaName] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,7 +64,7 @@ export default function AddAreaDialog({
                 placeholder="输入区域名称"
                 value={areaName}
                 onChange={e => setAreaName(e.target.value)}
-                autoFocus
+                autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
               />
             </div>
           </div>

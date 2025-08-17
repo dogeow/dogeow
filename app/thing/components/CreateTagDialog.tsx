@@ -49,6 +49,19 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
   const [loading, setLoading] = useState(false)
   const [name, setName] = useState(initialName)
   const [color, setColor] = useState(DEFAULT_COLOR)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // 当initialName变化时更新name状态
   useEffect(() => {
@@ -135,7 +148,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
               placeholder="输入标签名称"
               disabled={loading}
               maxLength={50}
-              autoFocus
+              autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
             />
           </div>
 

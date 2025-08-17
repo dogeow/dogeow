@@ -4,7 +4,7 @@ import { cn } from '@/lib/helpers'
 import { Popover, PopoverTrigger } from '@radix-ui/react-popover'
 import { Check, Trash } from 'lucide-react'
 import { useEditor } from 'novel'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function isValidUrl(url: string) {
   try {
@@ -32,11 +32,27 @@ interface LinkSelectorProps {
 export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const { editor } = useEditor()
+  const [isMobile, setIsMobile] = useState(false)
 
-  // Autofocus on input by default
+  // 检测是否为移动设备
   useEffect(() => {
-    inputRef.current?.focus()
-  })
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Autofocus on input by default (仅在非移动端)
+  useEffect(() => {
+    if (!isMobile) {
+      inputRef.current?.focus()
+    }
+  }, [isMobile])
+
   if (!editor) return null
 
   return (

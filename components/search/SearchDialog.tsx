@@ -547,7 +547,7 @@ export function SearchDialog({
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className={`h-10 pl-10 ${searchTerm ? 'pr-10' : 'pr-3'}`}
-                autoFocus
+                autoFocus={!keyboardOpen} // 移动端键盘打开时不自动focus
               />
               {searchTerm && (
                 <Button

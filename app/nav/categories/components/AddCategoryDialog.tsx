@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -29,7 +29,20 @@ export default function AddCategoryDialog({
   const [categoryName, setCategoryName] = useState('')
   const [categoryDescription, setCategoryDescription] = useState('')
   const [loading, setLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
   const { createCategory } = useNavStore()
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -75,7 +88,7 @@ export default function AddCategoryDialog({
                 placeholder="输入分类名称"
                 value={categoryName}
                 onChange={e => setCategoryName(e.target.value)}
-                autoFocus
+                autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
               />
             </div>
             <div className="grid gap-2">

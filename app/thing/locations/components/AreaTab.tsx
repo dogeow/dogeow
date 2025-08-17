@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Pencil, Trash2, X, Check } from 'lucide-react'
@@ -17,6 +17,19 @@ interface AreaTabProps {
 export default function AreaTab({ areas, onUpdateArea, onDeleteArea }: AreaTabProps) {
   const [editingInlineAreaId, setEditingInlineAreaId] = useState<number | null>(null)
   const [editingAreaName, setEditingAreaName] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleUpdateArea = async (areaId: number, newName: string) => {
     if (!newName.trim()) return
@@ -42,7 +55,7 @@ export default function AreaTab({ areas, onUpdateArea, onDeleteArea }: AreaTabPr
         value={editingAreaName}
         onChange={e => setEditingAreaName(e.target.value)}
         className="h-8"
-        autoFocus
+        autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
         onKeyDown={e => {
           if (e.key === 'Enter') {
             handleUpdateArea(area.id, editingAreaName)

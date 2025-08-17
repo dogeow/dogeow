@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -38,6 +38,19 @@ export default function AddCategoryDialog({
   const [categoryType, setCategoryType] = useState<'parent' | 'child'>('parent')
   const [selectedParentId, setSelectedParentId] = useState<string>('')
   const [loading, setLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const { categories, createCategory } = useItemStore()
 
@@ -188,7 +201,7 @@ export default function AddCategoryDialog({
                 value={categoryName}
                 onChange={e => setCategoryName(e.target.value)}
                 disabled={loading}
-                autoFocus
+                autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
                 maxLength={VALIDATION.CATEGORY_NAME_MAX_LENGTH}
               />
             </div>

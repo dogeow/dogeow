@@ -15,6 +15,19 @@ const QuantityEditor: React.FC<QuantityEditorProps> = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [tempQuantity, setTempQuantity] = useState(quantity.toString())
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // 当外部 quantity 变化时更新 tempQuantity（但只在非编辑状态下）
   useEffect(() => {
@@ -66,7 +79,7 @@ const QuantityEditor: React.FC<QuantityEditorProps> = ({
         onKeyDown={handleKeyDown}
         onBlur={handleSave}
         className={`h-8 w-16 text-center text-sm ${className}`}
-        autoFocus
+        autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
       />
     )
   }

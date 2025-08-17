@@ -6,7 +6,7 @@ import { useCompletion } from 'ai/react'
 import { ArrowUp } from 'lucide-react'
 import { useEditor } from 'novel'
 import { addAIHighlight } from 'novel'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Markdown from 'react-markdown'
 import { toast } from 'sonner'
 import { Button } from '../ui/button'
@@ -28,6 +28,19 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
   const [originalSelection, setOriginalSelection] = useState<{ from: number; to: number } | null>(
     null
   )
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const { completion, complete, isLoading } = useCompletion({
     // id: "novel",
@@ -74,7 +87,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
             <CommandInput
               value={inputValue}
               onValueChange={setInputValue}
-              autoFocus
+              autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
               placeholder={
                 hasCompletion ? 'Tell AI what to do next' : 'Ask AI to edit or generate...'
               }

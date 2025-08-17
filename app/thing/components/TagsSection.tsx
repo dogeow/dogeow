@@ -26,8 +26,21 @@ const TagsSection: React.FC<TagsSectionProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [newTagName, setNewTagName] = useState('')
+  const [isMobile, setIsMobile] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLDivElement>(null)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -115,7 +128,7 @@ const TagsSection: React.FC<TagsSectionProps> = ({
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="h-8 text-sm"
-                        autoFocus
+                        autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
                       />
                     </div>
                     <div className="max-h-[300px] overflow-y-auto p-1">

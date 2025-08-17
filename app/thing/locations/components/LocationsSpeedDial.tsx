@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Plus, Home, DoorOpen, MapPin, X } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -43,6 +43,19 @@ export default function LocationsSpeedDial({
   const [newName, setNewName] = useState('')
   const [selectedAreaId, setSelectedAreaId] = useState<number | null>(null)
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // 根据主题模式获取弹出按钮的样式
   const getPopupButtonStyle = () => {
@@ -222,7 +235,7 @@ export default function LocationsSpeedDial({
                 placeholder={getPlaceholder()}
                 disabled={loading}
                 maxLength={50}
-                autoFocus
+                autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
               />
             </div>
 

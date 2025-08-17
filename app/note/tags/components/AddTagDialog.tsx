@@ -27,6 +27,19 @@ export default function AddTagDialog({ open, onOpenChange }: AddTagDialogProps) 
   const [tagName, setTagName] = useState('')
   const [tagColor, setTagColor] = useState('#3b82f6') // 默认蓝色
   const [loading, setLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  // 检测是否为移动设备
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   // 当对话框打开时，生成随机颜色
   useEffect(() => {
@@ -91,7 +104,7 @@ export default function AddTagDialog({ open, onOpenChange }: AddTagDialogProps) 
                 placeholder="输入标签名称"
                 value={tagName}
                 onChange={e => setTagName(e.target.value)}
-                autoFocus
+                autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
               />
             </div>
             <div className="grid gap-2">
