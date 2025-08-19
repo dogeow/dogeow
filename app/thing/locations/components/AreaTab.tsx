@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Pencil, Trash2, X, Check } from 'lucide-react'
+import { Pencil, Trash2, X, Check, Star } from 'lucide-react'
 import { Area } from '../hooks/useLocationManagement'
 
 interface AreaTabProps {
@@ -12,9 +12,15 @@ interface AreaTabProps {
   onAddArea: (name: string) => Promise<boolean | undefined>
   onUpdateArea: (areaId: number, newName: string) => Promise<boolean | undefined>
   onDeleteArea: (areaId: number) => void
+  onSetDefaultArea: (areaId: number) => Promise<boolean | undefined>
 }
 
-export default function AreaTab({ areas, onUpdateArea, onDeleteArea }: AreaTabProps) {
+export default function AreaTab({
+  areas,
+  onUpdateArea,
+  onDeleteArea,
+  onSetDefaultArea,
+}: AreaTabProps) {
   const [editingInlineAreaId, setEditingInlineAreaId] = useState<number | null>(null)
   const [editingAreaName, setEditingAreaName] = useState('')
   const [isMobile, setIsMobile] = useState(false)
@@ -85,6 +91,17 @@ export default function AreaTab({ areas, onUpdateArea, onDeleteArea }: AreaTabPr
 
   const renderViewActions = (area: Area) => (
     <>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => onSetDefaultArea(area.id)}
+        className={
+          area.is_default ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'
+        }
+        title={area.is_default ? '当前默认区域' : '设为默认区域'}
+      >
+        <Star className={`h-4 w-4 ${area.is_default ? 'fill-current' : ''}`} />
+      </Button>
       <Button variant="ghost" size="icon" onClick={() => startEditing(area)}>
         <Pencil className="h-4 w-4" />
       </Button>

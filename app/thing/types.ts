@@ -83,6 +83,7 @@ export interface Area {
   id: number
   name: string
   user_id?: number
+  is_default?: boolean
   created_at?: string
   updated_at?: string
 }

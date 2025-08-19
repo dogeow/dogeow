@@ -44,6 +44,14 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
       setLoading(true)
       const data = await apiRequest<Area[]>('/areas')
       setAreas(data)
+
+      // 如果没有选择区域，自动选择默认区域
+      if (!selectedAreaId && !selectedLocation) {
+        const defaultArea = data.find(area => area.is_default)
+        if (defaultArea) {
+          handleAreaSelect(defaultArea.id.toString())
+        }
+      }
     } catch (error) {
       console.error('加载区域失败:', error)
       toast.error('加载区域失败')

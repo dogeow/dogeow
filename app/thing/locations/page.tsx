@@ -24,6 +24,7 @@ export default function Locations() {
     selectedLocation,
     handleAddArea,
     handleUpdateArea,
+    handleSetDefaultArea,
     handleAddRoom,
     handleUpdateRoom,
     handleAddSpot,
@@ -61,6 +62,7 @@ export default function Locations() {
         onAddArea={handleAddArea}
         onUpdateArea={handleUpdateArea}
         onDeleteArea={areaId => confirmDelete(areaId, 'area')}
+        onSetDefaultArea={handleSetDefaultArea}
       />
     ),
     room: (

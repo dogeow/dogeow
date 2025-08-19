@@ -15,7 +15,7 @@ import { getLocationTypeText } from '../constants'
 
 // 定义类型
 export type LocationType = 'area' | 'room' | 'spot'
-export type Area = { id: number; name: string }
+export type Area = { id: number; name: string; is_default?: boolean }
 export type Room = {
   id: number
   name: string
@@ -103,6 +103,16 @@ export const useLocationManagement = () => {
       () => updateArea(areaId)({ name: newName }),
       '区域更新成功',
       '更新区域失败',
+      refreshAreas
+    )
+  }
+
+  // 设置默认区域
+  const handleSetDefaultArea = async (areaId: number) => {
+    return handleOperation(
+      () => post(`/areas/${areaId}/set-default`),
+      '默认区域设置成功',
+      '设置默认区域失败',
       refreshAreas
     )
   }
@@ -214,6 +224,7 @@ export const useLocationManagement = () => {
     // 操作方法
     handleAddArea,
     handleUpdateArea,
+    handleSetDefaultArea,
     handleAddRoom,
     handleUpdateRoom,
     handleAddSpot,
