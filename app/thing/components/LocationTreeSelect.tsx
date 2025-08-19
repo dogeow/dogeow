@@ -129,8 +129,8 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
         filteredAreas: filterType === 'room' ? [] : areas,
         filteredRooms: rooms,
         filteredSpots: filterType === 'area' ? [] : spots,
-        visibleAreaIds: Array.from(expandedAreas),
-        visibleRoomIds: Array.from(expandedRooms),
+        visibleAreaIds: isExpanded ? areas.map(area => area.id) : Array.from(expandedAreas),
+        visibleRoomIds: isExpanded ? rooms.map(room => room.id) : Array.from(expandedRooms),
       }
     }
 
@@ -212,7 +212,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
       visibleAreaIds: Array.from(visibleAreaIds),
       visibleRoomIds: Array.from(visibleRoomIds),
     }
-  }, [areas, rooms, spots, searchTerm, filterType, expandedAreas, expandedRooms])
+  }, [areas, rooms, spots, searchTerm, filterType, expandedAreas, expandedRooms, isExpanded])
 
   // 优化展开/折叠处理
   const toggleArea = useCallback((e: React.MouseEvent, areaId: number) => {

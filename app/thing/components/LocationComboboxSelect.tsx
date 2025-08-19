@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { Label } from '@/components/ui/label'
 import { Combobox } from '@/components/ui/combobox'
 import { cn } from '@/lib/helpers'
@@ -38,8 +38,26 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
   const [selectedRoomId, setSelectedRoomId] = useState<string>('')
   const [selectedSpotId, setSelectedSpotId] = useState<string>('')
 
+  // 处理区域选择
+  const handleAreaSelect = useCallback(
+    (areaId: string) => {
+      setSelectedAreaId(areaId)
+      setSelectedRoomId('')
+      setSelectedSpotId('')
+
+      if (areaId) {
+        const area = areas.find(a => a.id.toString() === areaId)
+        if (area) {
+          onSelect('area', area.id, area.name)
+          loadRooms(areaId)
+        }
+      }
+    },
+    [areas, onSelect, loadRooms]
+  )
+
   // 加载区域数据
-  const loadAreas = async () => {
+  const loadAreas = useCallback(async () => {
     try {
       setLoading(true)
       const data = await apiRequest<Area[]>('/areas')
@@ -58,10 +76,10 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
     } finally {
       setLoading(false)
     }
-  }
+  }, [selectedAreaId, selectedLocation, handleAreaSelect])
 
   // 加载房间数据
-  const loadRooms = async (areaId: string) => {
+  const loadRooms = useCallback(async (areaId: string) => {
     if (!areaId) {
       setRooms([])
       return
@@ -74,10 +92,10 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
       console.error('加载房间失败:', error)
       toast.error('加载房间失败')
     }
-  }
+  }, [])
 
   // 加载位置数据
-  const loadSpots = async (roomId: string) => {
+  const loadSpots = useCallback(async (roomId: string) => {
     if (!roomId) {
       setSpots([])
       return
@@ -90,7 +108,7 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
       console.error('加载位置失败:', error)
       toast.error('加载位置失败')
     }
-  }
+  }, [])
 
   // 区域选项
   const areaOptions = useMemo(
@@ -130,49 +148,40 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
     ]
   }, [selectedRoomId, spots])
 
-  // 处理区域选择
-  const handleAreaSelect = (areaId: string) => {
-    setSelectedAreaId(areaId)
-    setSelectedRoomId('')
-    setSelectedSpotId('')
-
-    if (areaId) {
-      const area = areas.find(a => a.id.toString() === areaId)
-      if (area) {
-        onSelect('area', area.id, area.name)
-        loadRooms(areaId)
-      }
-    }
-  }
-
   // 处理房间选择
-  const handleRoomSelect = (roomId: string) => {
-    setSelectedRoomId(roomId)
-    setSelectedSpotId('')
+  const handleRoomSelect = useCallback(
+    (roomId: string) => {
+      setSelectedRoomId(roomId)
+      setSelectedSpotId('')
 
-    if (roomId) {
-      const room = rooms.find(r => r.id.toString() === roomId)
-      const area = areas.find(a => a.id.toString() === selectedAreaId)
-      if (room && area) {
-        onSelect('room', room.id, `${area.name} > ${room.name}`)
-        loadSpots(roomId)
+      if (roomId) {
+        const room = rooms.find(r => r.id.toString() === roomId)
+        const area = areas.find(a => a.id.toString() === selectedAreaId)
+        if (room && area) {
+          onSelect('room', room.id, `${area.name} > ${room.name}`)
+          loadSpots(roomId)
+        }
       }
-    }
-  }
+    },
+    [rooms, areas, selectedAreaId, onSelect, loadSpots]
+  )
 
   // 处理位置选择
-  const handleSpotSelect = (spotId: string) => {
-    setSelectedSpotId(spotId)
+  const handleSpotSelect = useCallback(
+    (spotId: string) => {
+      setSelectedSpotId(spotId)
 
-    if (spotId) {
-      const spot = spots.find(s => s.id.toString() === spotId)
-      const room = rooms.find(r => r.id.toString() === selectedRoomId)
-      const area = areas.find(a => a.id.toString() === selectedAreaId)
-      if (spot && room && area) {
-        onSelect('spot', spot.id, `${area.name} > ${room.name} > ${spot.name}`)
+      if (spotId) {
+        const spot = spots.find(s => s.id.toString() === spotId)
+        const room = rooms.find(r => r.id.toString() === selectedRoomId)
+        const area = areas.find(a => a.id.toString() === selectedAreaId)
+        if (spot && room && area) {
+          onSelect('spot', spot.id, `${area.name} > ${room.name} > ${spot.name}`)
+        }
       }
-    }
-  }
+    },
+    [spots, rooms, areas, selectedRoomId, selectedAreaId, onSelect]
+  )
 
   // 处理创建区域
   const handleCreateArea = async (areaName: string) => {
@@ -297,7 +306,7 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
   // 初始化加载区域数据
   useEffect(() => {
     loadAreas()
-  }, []) // 只在组件挂载时执行一次
+  }, [loadAreas]) // 只在组件挂载时执行一次
 
   // 当区域改变时加载房间
   useEffect(() => {
@@ -306,7 +315,7 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
     } else {
       setRooms([])
     }
-  }, [selectedAreaId])
+  }, [selectedAreaId, loadRooms])
 
   // 当房间改变时加载位置
   useEffect(() => {
@@ -315,7 +324,7 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
     } else {
       setSpots([])
     }
-  }, [selectedRoomId])
+  }, [selectedRoomId, loadSpots])
 
   return (
     <div className={cn('space-y-3', className)}>
