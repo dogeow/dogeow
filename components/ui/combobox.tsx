@@ -40,6 +40,7 @@ export function Combobox({
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
+  const [showInput, setShowInput] = React.useState(false)
 
   // 过滤选项
   const filteredOptions = React.useMemo(() => {
@@ -77,6 +78,13 @@ export function Combobox({
   // 处理弹出层开关
   const handleOpen = React.useCallback((isOpen: boolean) => {
     setOpen(isOpen)
+    if (isOpen) {
+      // 延迟显示输入框，避免自动聚焦
+      setTimeout(() => setShowInput(true), 100)
+    } else {
+      setShowInput(false)
+      setSearchQuery('')
+    }
   }, [])
 
   return (
@@ -102,16 +110,22 @@ export function Combobox({
       >
         <div className="flex flex-col">
           {/* 搜索输入框 */}
-          <div className="border-b p-2">
-            <Input
-              placeholder={searchText}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="h-8"
-              autoComplete="off"
-              autoFocus={false} // 不自动focus，避免弹出键盘，用户需要搜索时可以手动点击输入框
-            />
-          </div>
+          {showInput && (
+            <div className="border-b p-2">
+              <Input
+                placeholder={searchText}
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                className="h-8"
+                autoComplete="off"
+                autoFocus={false} // 不自动focus，避免弹出键盘，用户需要搜索时可以手动点击输入框
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                inputMode="text"
+              />
+            </div>
+          )}
 
           {/* 选项列表 */}
           <ScrollArea>

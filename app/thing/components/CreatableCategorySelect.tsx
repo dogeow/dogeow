@@ -33,6 +33,7 @@ export default function CreatableCategorySelect({
   const [inputValue, setInputValue] = useState('')
   const [open, setOpen] = useState(false)
   const [, setCreating] = useState(false)
+  const [showInput, setShowInput] = useState(false)
 
   // 过滤后的分类
   const filtered = useMemo(() => {
@@ -86,7 +87,17 @@ export default function CreatableCategorySelect({
         type="button"
         variant="outline"
         className="flex w-full items-center justify-between"
-        onClick={() => setOpen(v => !v)}
+        onClick={() => {
+          const newOpen = !open
+          setOpen(newOpen)
+          if (newOpen) {
+            // 延迟显示输入框，避免自动聚焦
+            setTimeout(() => setShowInput(true), 100)
+          } else {
+            setShowInput(false)
+            setInputValue('')
+          }
+        }}
       >
         <span>{selectedLabel}</span>
         <span className="text-muted-foreground ml-2">▼</span>
@@ -94,12 +105,18 @@ export default function CreatableCategorySelect({
       {open && (
         <div className="bg-popover border-border absolute z-50 mt-1 w-full rounded-md border shadow-lg">
           <Command>
-            <CommandInput
-              placeholder="输入或选择分类"
-              value={inputValue}
-              onValueChange={setInputValue}
-              autoFocus={false} // 不自动focus，避免弹出键盘，用户需要搜索时可以手动点击输入框
-            />
+            {showInput && (
+              <CommandInput
+                placeholder="输入或选择分类"
+                value={inputValue}
+                onValueChange={setInputValue}
+                autoFocus={false} // 不自动focus，避免弹出键盘，用户需要搜索时可以手动点击输入框
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                inputMode="text"
+              />
+            )}
             <CommandList>
               {allowNoneOption && (
                 <CommandItem
