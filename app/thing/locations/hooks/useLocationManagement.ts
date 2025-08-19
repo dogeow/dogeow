@@ -110,7 +110,7 @@ export const useLocationManagement = () => {
   // 设置默认区域
   const handleSetDefaultArea = async (areaId: number) => {
     return handleOperation(
-      () => post(`/areas/${areaId}/set-default`),
+      () => post(`/areas/${areaId}/set-default`, {}),
       '默认区域设置成功',
       '设置默认区域失败',
       refreshAreas
