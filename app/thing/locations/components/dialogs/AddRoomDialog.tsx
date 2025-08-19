@@ -53,7 +53,7 @@ export default function AddRoomDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>添加房间</DialogTitle>
           <DialogDescription>为区域添加一个新房间，如卧室、厨房等。</DialogDescription>

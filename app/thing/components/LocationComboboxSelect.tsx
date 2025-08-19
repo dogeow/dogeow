@@ -38,6 +38,22 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
   const [selectedRoomId, setSelectedRoomId] = useState<string>('')
   const [selectedSpotId, setSelectedSpotId] = useState<string>('')
 
+  // 加载房间数据
+  const loadRooms = useCallback(async (areaId: string) => {
+    if (!areaId) {
+      setRooms([])
+      return
+    }
+
+    try {
+      const data = await apiRequest<Room[]>(`/areas/${areaId}/rooms`)
+      setRooms(data)
+    } catch (error) {
+      console.error('加载房间失败:', error)
+      toast.error('加载房间失败')
+    }
+  }, [])
+
   // 处理区域选择
   const handleAreaSelect = useCallback(
     (areaId: string) => {
@@ -77,22 +93,6 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
       setLoading(false)
     }
   }, [selectedAreaId, selectedLocation, handleAreaSelect])
-
-  // 加载房间数据
-  const loadRooms = useCallback(async (areaId: string) => {
-    if (!areaId) {
-      setRooms([])
-      return
-    }
-
-    try {
-      const data = await apiRequest<Room[]>(`/areas/${areaId}/rooms`)
-      setRooms(data)
-    } catch (error) {
-      console.error('加载房间失败:', error)
-      toast.error('加载房间失败')
-    }
-  }, [])
 
   // 加载位置数据
   const loadSpots = useCallback(async (roomId: string) => {

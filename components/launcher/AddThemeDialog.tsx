@@ -60,7 +60,7 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
         </motion.div>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>添加自定义主题</DialogTitle>
         </DialogHeader>

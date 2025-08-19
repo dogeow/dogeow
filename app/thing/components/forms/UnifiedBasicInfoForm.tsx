@@ -497,7 +497,7 @@ export default function UnifiedBasicInfoForm({
 
       {/* 数量设置对话框 */}
       <Dialog open={quantityDialogOpen} onOpenChange={setQuantityDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>设置数量</DialogTitle>
             <DialogDescription>设置物品的数量</DialogDescription>

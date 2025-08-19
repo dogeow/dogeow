@@ -97,7 +97,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t('chat.create_new_room', '创建新聊天房间')}</DialogTitle>
         </DialogHeader>

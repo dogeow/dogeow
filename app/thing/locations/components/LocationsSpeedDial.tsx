@@ -221,7 +221,7 @@ export default function LocationsSpeedDial({
 
       {/* 添加对话框 */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>{getDialogTitle()}</DialogTitle>
           </DialogHeader>

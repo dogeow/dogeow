@@ -51,7 +51,7 @@ export default function AddAreaDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>添加区域</DialogTitle>
           <DialogDescription>创建一个新的区域，如家、办公室等。</DialogDescription>

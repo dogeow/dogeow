@@ -90,7 +90,7 @@ export default function AddTagDialog({ open, onOpenChange }: AddTagDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>添加新标签</DialogTitle>
           <DialogDescription>创建一个新的标签，标签可用于分类和搜索笔记。</DialogDescription>

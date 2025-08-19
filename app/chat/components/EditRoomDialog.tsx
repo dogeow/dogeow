@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button'
 import { put } from '@/lib/api'
 import useChatStore from '@/app/chat/chatStore'
 import type { ChatRoom } from '../types'
+import { useTranslation } from '@/hooks/useTranslation'
 
 const editRoomSchema = z.object({
   name: z
@@ -51,6 +52,7 @@ interface EditRoomDialogProps {
 }
 
 export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps) {
+  const { t } = useTranslation()
   const { loadRooms } = useChatStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -103,11 +105,11 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle>Edit Chat Room</DialogTitle>
+          <DialogTitle>{t('chat.edit_room', '编辑聊天房间')}</DialogTitle>
           <DialogDescription>
-            Update the room name and description. Changes will be visible to all members.
+            {t('chat.edit_room_description', '更新房间名称和描述。更改将显示给所有成员。')}
           </DialogDescription>
         </DialogHeader>
 
@@ -127,7 +129,7 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
                     />
                   </FormControl>
                   <FormDescription>
-                    A unique name for your chat room (3-50 characters)
+                    {t('chat.room_name_description', '一个独特的聊天房间名称（3-50个字符）')}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -149,7 +151,10 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
                     />
                   </FormControl>
                   <FormDescription>
-                    Help others understand the purpose of this room (max 200 characters)
+                    {t(
+                      'chat.room_description_description',
+                      '帮助其他人理解这个房间的用途（最多200个字符）'
+                    )}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>

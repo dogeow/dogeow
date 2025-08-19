@@ -53,7 +53,7 @@ export default function AddSpotDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>添加具体位置</DialogTitle>
           <DialogDescription>为房间添加一个新位置，如书柜、抽屉等。</DialogDescription>

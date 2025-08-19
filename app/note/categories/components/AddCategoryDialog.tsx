@@ -66,7 +66,7 @@ export default function AddCategoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>添加分类</DialogTitle>
           <DialogDescription>创建一个新的笔记分类，以便更好地组织您的笔记。</DialogDescription>
