@@ -41,20 +41,6 @@ export function Combobox({
   const [open, setOpen] = React.useState(false)
   const [searchQuery, setSearchQuery] = React.useState('')
 
-  // 检测是否为移动设备
-  const [isMobile, setIsMobile] = React.useState(false)
-
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-
   // 过滤选项
   const filteredOptions = React.useMemo(() => {
     if (!searchQuery) return options
@@ -123,7 +109,7 @@ export function Combobox({
               onChange={e => setSearchQuery(e.target.value)}
               className="h-8"
               autoComplete="off"
-              autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
+              autoFocus={false} // 不自动focus，避免弹出键盘，用户需要搜索时可以手动点击输入框
             />
           </div>
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import {
   Command,
   CommandInput,
@@ -33,19 +33,6 @@ export default function CreatableCategorySelect({
   const [inputValue, setInputValue] = useState('')
   const [open, setOpen] = useState(false)
   const [, setCreating] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
-
-  // 检测是否为移动设备
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
-    }
-
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
-
-    return () => window.removeEventListener('resize', checkMobile)
-  }, [])
 
   // 过滤后的分类
   const filtered = useMemo(() => {
@@ -111,7 +98,7 @@ export default function CreatableCategorySelect({
               placeholder="输入或选择分类"
               value={inputValue}
               onValueChange={setInputValue}
-              autoFocus={!isMobile} // 移动端不自动focus，避免弹出键盘
+              autoFocus={false} // 不自动focus，避免弹出键盘，用户需要搜索时可以手动点击输入框
             />
             <CommandList>
               {allowNoneOption && (
