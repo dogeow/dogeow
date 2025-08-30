@@ -47,8 +47,17 @@ export const useAudioManager = () => {
       setAvailableTracks(musicData)
 
       const currentTrackValue = useMusicStore.getState().currentTrack
-      if ((!currentTrackValue || currentTrackValue === '') && musicData.length > 0) {
-        setCurrentTrack(musicData[0].path)
+      if (musicData.length > 0) {
+        // 如果当前曲目为空，或者当前曲目不在新的列表中，则设置第一个曲目
+        if (!currentTrackValue || currentTrackValue === '') {
+          setCurrentTrack(musicData[0].path)
+        } else {
+          // 检查当前曲目是否仍然有效
+          const isValidTrack = musicData.some(track => track.path === currentTrackValue)
+          if (!isValidTrack) {
+            setCurrentTrack(musicData[0].path)
+          }
+        }
       }
     } catch (error) {
       console.error('加载音频列表失败:', error)

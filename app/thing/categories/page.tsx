@@ -375,7 +375,7 @@ export default function Categories() {
                             </div>
                           ) : (
                             <div
-                              className="text-muted-foreground hover:text-foreground flex-1 cursor-pointer font-medium transition-colors hover:underline"
+                              className="text-foreground hover:text-primary flex-1 cursor-pointer font-medium transition-colors hover:underline"
                               onClick={() => startEdit(child.id, child.name)}
                             >
                               {child.name}

@@ -35,27 +35,54 @@ export function AudioController({
 }: AudioControllerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const { currentTrack, setCurrentTrack, availableTracks } = useMusicStore()
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
   // 构建音频URL
   const buildAudioUrl = useCallback(
     (track: string) => {
+      console.log('buildAudioUrl: 开始构建URL', { track, apiUrl })
+
       if (track.startsWith('http://') || track.startsWith('https://')) {
+        console.log('buildAudioUrl: 返回完整URL', track)
         return track
       }
+
+      // 从路径中提取文件名
       const trackPath = track.startsWith('/') ? track.slice(1) : track
+      const filename = trackPath.split('/').pop() // 获取文件名部分
       const baseUrl = apiUrl?.endsWith('/') ? apiUrl : apiUrl + '/'
-      return baseUrl + trackPath
+      const finalUrl = baseUrl + 'musics/' + filename
+
+      console.log('buildAudioUrl: URL构建详情', {
+        track,
+        trackPath,
+        filename,
+        baseUrl,
+        finalUrl,
+      })
+
+      return finalUrl
     },
     [apiUrl]
   )
 
   // 设置音频源
   const setupMediaSource = useCallback(() => {
-    if (!audioRef.current || !currentTrack) return
+    if (!audioRef.current || !currentTrack) {
+      console.log('setupMediaSource: 缺少audioRef或currentTrack', {
+        hasAudioRef: !!audioRef.current,
+        currentTrack,
+      })
+      return
+    }
 
     try {
       const audioUrl = buildAudioUrl(currentTrack)
+      console.log('setupMediaSource: 构建音频URL', {
+        currentTrack,
+        audioUrl,
+        apiUrl,
+      })
 
       audioRef.current.pause()
       audioRef.current.currentTime = 0
@@ -64,11 +91,13 @@ export function AudioController({
 
       setAudioError(null)
       setIsTrackChanging(true)
+      console.log('setupMediaSource: 音频源设置成功')
     } catch (err) {
+      console.error('setupMediaSource: 设置音频源失败', err)
       setAudioError(`设置音频源失败: ${err}`)
       toast.error('音频源设置失败', { description: String(err) })
     }
-  }, [currentTrack, buildAudioUrl, setAudioError, setIsTrackChanging])
+  }, [currentTrack, buildAudioUrl, setAudioError, setIsTrackChanging, apiUrl])
 
   // 处理播放错误
   const handlePlayError = useCallback(
