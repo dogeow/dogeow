@@ -196,6 +196,13 @@ export function AudioController({
   const togglePlay = useCallback(() => {
     if (!audioRef.current || !currentTrack) return
 
+    // 检查播放列表是否为空 - 添加安全检查
+    if (!availableTracks || availableTracks.length === 0) {
+      setAudioError('播放列表为空，没有可播放的音乐')
+      toast.error('播放列表为空', { description: '请先添加音乐文件到播放列表' })
+      return
+    }
+
     if (!audioRef.current.src) {
       setupMediaSource()
     }
@@ -207,12 +214,25 @@ export function AudioController({
       audioRef.current.play().catch(err => setAudioError(`播放失败: ${err.message}`))
       setIsPlaying(true)
     }
-  }, [currentTrack, isPlaying, setupMediaSource, setIsPlaying, setAudioError])
+  }, [
+    currentTrack,
+    isPlaying,
+    setupMediaSource,
+    setIsPlaying,
+    setAudioError,
+    availableTracks.length,
+  ])
 
   // 切换曲目
   const switchTrack = useCallback(
     (direction: 'next' | 'prev') => {
-      if (!currentTrack || !availableTracks.length) return
+      if (!currentTrack || !availableTracks.length) {
+        if (availableTracks.length === 0) {
+          setAudioError('播放列表为空，没有可播放的音乐')
+          toast.error('播放列表为空', { description: '请先添加音乐文件到播放列表' })
+        }
+        return
+      }
 
       audioRef.current?.pause()
 

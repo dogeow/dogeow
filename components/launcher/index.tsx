@@ -38,6 +38,12 @@ export function AppLauncher() {
       if (mode === 'music') {
         audioManager.fetchAvailableTracks()
 
+        // 检查播放列表状态 - 添加安全检查
+        if (!audioManager.availableTracks || audioManager.availableTracks.length === 0) {
+          // 播放列表为空，不需要设置音频源
+          return
+        }
+
         if (audioManager.currentTrack && !audioManager.audioRef.current?.src) {
           audioManager.setupMediaSource()
         }

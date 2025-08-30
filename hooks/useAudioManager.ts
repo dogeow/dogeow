@@ -46,6 +46,14 @@ export const useAudioManager = () => {
       const musicData = await apiRequest<MusicTrack[]>('/musics')
       setAvailableTracks(musicData)
 
+      // 检查播放列表是否为空
+      if (musicData.length === 0) {
+        setAudioError('播放列表为空，没有可播放的音乐')
+        setCurrentTrack('')
+        setIsPlaying(false)
+        return
+      }
+
       const currentTrackValue = useMusicStore.getState().currentTrack
       if (musicData.length > 0) {
         // 如果当前曲目为空，或者当前曲目不在新的列表中，则设置第一个曲目
@@ -61,8 +69,9 @@ export const useAudioManager = () => {
       }
     } catch (error) {
       console.error('加载音频列表失败:', error)
+      setAudioError('加载音乐列表失败，请稍后重试')
     }
-  }, [setAvailableTracks, setCurrentTrack])
+  }, [setAvailableTracks, setCurrentTrack, setAudioError, setIsPlaying])
 
   // 切换静音状态
   const toggleMute = useCallback(() => setIsMuted(!isMuted), [isMuted])
@@ -70,6 +79,11 @@ export const useAudioManager = () => {
   // 获取当前音频文件名称
   const getCurrentTrackName = useCallback(() => {
     if (!currentTrack) return '没有选择音乐'
+
+    // 检查播放列表是否为空 - 添加安全检查
+    if (!availableTracks || availableTracks.length === 0) {
+      return '播放列表为空'
+    }
 
     const trackInfo = availableTracks.find(
       track => track.path === currentTrack || currentTrack.includes(track.path)

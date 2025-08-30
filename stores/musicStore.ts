@@ -22,7 +22,7 @@ interface MusicState {
 export const useMusicStore = create<MusicState>()(
   persist(
     set => ({
-      currentTrack: '/musics/I WiSH - 明日への扉~5 years brew version~.mp3',
+      currentTrack: '', // 移除硬编码的曲目路径
       volume: 0.5,
       availableTracks: [],
       isPlaying: false,

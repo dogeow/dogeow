@@ -145,7 +145,11 @@ export const MusicPlayer = React.memo(
             formatTime={formatTime}
           />
 
-          {audioError && <div className="truncate text-xs text-red-500">{audioError}</div>}
+          {audioError && (
+            <div className="truncate rounded bg-amber-50 px-2 py-1 text-xs text-amber-600">
+              {audioError.includes('播放列表为空') ? '🎵 暂无音乐' : audioError}
+            </div>
+          )}
 
           <div className="ml-2 flex shrink-0 items-center gap-1">
             <PlayerControlButton
