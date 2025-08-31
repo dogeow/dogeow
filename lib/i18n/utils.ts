@@ -11,8 +11,11 @@ const DEFAULT_LANGUAGE: SupportedLanguage = 'zh-CN'
 const FALLBACK_ORDER: SupportedLanguage[] = ['zh-CN', 'en']
 
 /**
- * Detects the user's preferred language from browser settings
- * @returns Detected language code or default language
+ * Enhanced language detection with multiple strategies
+ * 1. Browser language preferences
+ * 2. Geolocation-based language suggestion
+ * 3. User's previous language choice
+ * 4. System language detection
  */
 export function detectBrowserLanguage(): SupportedLanguage {
   if (typeof window === 'undefined') {
@@ -20,28 +23,160 @@ export function detectBrowserLanguage(): SupportedLanguage {
   }
 
   try {
-    // Get browser languages in order of preference
+    // Strategy 1: Check for stored language preference first
+    const storedLanguage = localStorage.getItem('dogeow-language-preference')
+    if (storedLanguage && isSupportedLanguage(storedLanguage)) {
+      return storedLanguage
+    }
+
+    // Strategy 2: Get browser languages in order of preference
     const browserLanguages = navigator.languages || [navigator.language]
 
+    // Enhanced language matching with fuzzy logic
     for (const browserLang of browserLanguages) {
       // Direct match (e.g., 'zh-CN')
       if (isSupportedLanguage(browserLang)) {
         return browserLang
       }
 
-      // Language code match (e.g., 'zh' -> 'zh-CN')
+      // Language code match with region preference (e.g., 'zh' -> 'zh-CN' over 'zh-TW')
       const langCode = browserLang.split('-')[0]
-      const matchedLang = SUPPORTED_LANGUAGES.find(lang => lang.code.startsWith(langCode))
+      const region = browserLang.split('-')[1]
 
-      if (matchedLang) {
-        return matchedLang.code
+      // Find all matching languages
+      const matchingLangs = SUPPORTED_LANGUAGES.filter(lang => lang.code.startsWith(langCode))
+
+      if (matchingLangs.length > 0) {
+        // If we have region info, prefer exact region match
+        if (region) {
+          const exactMatch = matchingLangs.find(
+            lang => lang.code.toLowerCase() === browserLang.toLowerCase()
+          )
+          if (exactMatch) return exactMatch.code
+        }
+
+        // Otherwise, return the first matching language (usually the most common)
+        return matchingLangs[0].code
       }
+    }
+
+    // Strategy 3: Geolocation-based language suggestion
+    const geoLanguage = detectLanguageByGeolocation()
+    if (geoLanguage) {
+      return geoLanguage
+    }
+
+    // Strategy 4: System language detection
+    const systemLanguage = detectSystemLanguage()
+    if (systemLanguage) {
+      return systemLanguage
     }
   } catch (error) {
     console.warn('Failed to detect browser language:', error)
   }
 
   return DEFAULT_LANGUAGE
+}
+
+/**
+ * Detect language based on user's geolocation
+ * Uses IP geolocation to suggest appropriate language
+ */
+function detectLanguageByGeolocation(): SupportedLanguage | null {
+  try {
+    // Check if we have stored geolocation data
+    const geoData = localStorage.getItem('dogeow-geo-language')
+    if (geoData) {
+      const parsed = JSON.parse(geoData)
+      const now = Date.now()
+      // Cache geolocation data for 24 hours
+      if (now - parsed.timestamp < 24 * 60 * 60 * 1000) {
+        return parsed.language
+      }
+    }
+
+    // Try to detect from navigator properties
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+    if (timezone) {
+      const geoLanguage = getLanguageFromTimezone(timezone)
+      if (geoLanguage) {
+        // Cache the result
+        localStorage.setItem(
+          'dogeow-geo-language',
+          JSON.stringify({
+            language: geoLanguage,
+            timestamp: Date.now(),
+          })
+        )
+        return geoLanguage
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to detect language by geolocation:', error)
+  }
+
+  return null
+}
+
+/**
+ * Get language suggestion from timezone
+ */
+function getLanguageFromTimezone(timezone: string): SupportedLanguage | null {
+  const timezoneMap: Record<string, SupportedLanguage> = {
+    'Asia/Shanghai': 'zh-CN',
+    'Asia/Hong_Kong': 'zh-CN',
+    'Asia/Taipei': 'zh-TW',
+    'Asia/Tokyo': 'ja',
+    'America/New_York': 'en',
+    'America/Los_Angeles': 'en',
+    'Europe/London': 'en',
+    'Europe/Paris': 'en',
+    'Europe/Berlin': 'en',
+  }
+
+  return timezoneMap[timezone] || null
+}
+
+/**
+ * Detect system language from various sources
+ */
+function detectSystemLanguage(): SupportedLanguage | null {
+  try {
+    // Check navigator.userLanguage (IE)
+    if (navigator.userLanguage) {
+      const lang = normalizeLanguageCode(navigator.userLanguage)
+      if (isSupportedLanguage(lang)) {
+        return lang
+      }
+    }
+
+    // Check navigator.systemLanguage (IE)
+    if (navigator.systemLanguage) {
+      const lang = normalizeLanguageCode(navigator.systemLanguage)
+      if (isSupportedLanguage(lang)) {
+        return lang
+      }
+    }
+
+    // Check for common language patterns in user agent
+    const userAgent = navigator.userAgent.toLowerCase()
+    if (userAgent.includes('zh-cn') || userAgent.includes('zh_cn')) {
+      return 'zh-CN'
+    }
+    if (userAgent.includes('zh-tw') || userAgent.includes('zh_tw')) {
+      return 'zh-TW'
+    }
+    if (userAgent.includes('ja') || userAgent.includes('japanese')) {
+      return 'ja'
+    }
+    if (userAgent.includes('en')) {
+      return 'en'
+    }
+  } catch (error) {
+    console.warn('Failed to detect system language:', error)
+  }
+
+  return null
 }
 
 /**

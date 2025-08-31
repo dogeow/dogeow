@@ -40,10 +40,7 @@ export function AudioController({
   // 构建音频URL
   const buildAudioUrl = useCallback(
     (track: string) => {
-      console.log('buildAudioUrl: 开始构建URL', { track, apiUrl })
-
       if (track.startsWith('http://') || track.startsWith('https://')) {
-        console.log('buildAudioUrl: 返回完整URL', track)
         return track
       }
 
@@ -52,14 +49,6 @@ export function AudioController({
       const filename = trackPath.split('/').pop() // 获取文件名部分
       const baseUrl = apiUrl?.endsWith('/') ? apiUrl : apiUrl + '/'
       const finalUrl = baseUrl + 'musics/' + filename
-
-      console.log('buildAudioUrl: URL构建详情', {
-        track,
-        trackPath,
-        filename,
-        baseUrl,
-        finalUrl,
-      })
 
       return finalUrl
     },
@@ -78,11 +67,6 @@ export function AudioController({
 
     try {
       const audioUrl = buildAudioUrl(currentTrack)
-      console.log('setupMediaSource: 构建音频URL', {
-        currentTrack,
-        audioUrl,
-        apiUrl,
-      })
 
       audioRef.current.pause()
       audioRef.current.currentTime = 0
@@ -91,13 +75,12 @@ export function AudioController({
 
       setAudioError(null)
       setIsTrackChanging(true)
-      console.log('setupMediaSource: 音频源设置成功')
     } catch (err) {
       console.error('setupMediaSource: 设置音频源失败', err)
       setAudioError(`设置音频源失败: ${err}`)
       toast.error('音频源设置失败', { description: String(err) })
     }
-  }, [currentTrack, buildAudioUrl, setAudioError, setIsTrackChanging, apiUrl])
+  }, [currentTrack, buildAudioUrl, setAudioError, setIsTrackChanging])
 
   // 处理播放错误
   const handlePlayError = useCallback(

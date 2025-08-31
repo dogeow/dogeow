@@ -12,6 +12,8 @@ import ProtectedRoute from '@/components/ProtectedRoute'
 import { LanguageProvider } from '@/components/provider/LanguageProvider'
 import { PWAInstallPrompt } from '@/components/app/PWAInstallPrompt'
 import { PWARegister } from '@/components/app/PWARegister'
+import { LanguageDetectionPrompt } from '@/components/ui/language-detection-prompt'
+import '@/lib/i18n/log-control' // 引入日志控制模块
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -119,6 +121,7 @@ export default function RootLayout({
               <Toaster />
               <PWAInstallPrompt />
               <PWARegister />
+              <LanguageDetectionPrompt />
             </LanguageProvider>
           </ThemeProvider>
         </SWRProvider>

@@ -1,17 +1,21 @@
 'use client'
 
 import * as React from 'react'
-import { ChevronDownIcon } from 'lucide-react'
+import { ChevronDownIcon, Globe, RefreshCw, CheckCircle } from 'lucide-react'
 import { cn } from '@/lib/helpers'
 import { useTranslation } from '@/hooks/useTranslation'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { useLanguageTransition } from '@/hooks/useLanguageTransition'
+import { useLanguageStore } from '@/stores/languageStore'
+import { Badge } from '@/components/ui/badge'
 
 interface LanguageSelectorProps {
   className?: string
@@ -19,25 +23,19 @@ interface LanguageSelectorProps {
   size?: 'sm' | 'default' | 'lg'
   showText?: boolean
   showFlag?: boolean
+  showDetectionInfo?: boolean
 }
 
 // 国旗图标组件
 const FlagIcon = ({ languageCode }: { languageCode: string }) => {
-  const getFlagEmoji = (code: string) => {
-    const flagMap: Record<string, string> = {
-      'zh-CN': '🇨🇳',
-      'zh-TW': '🇭🇰',
-      en: '🇺🇸',
-      ja: '🇯🇵',
-    }
-    return flagMap[code] || '🌐'
+  const flagMap: Record<string, string> = {
+    'zh-CN': '🇨🇳',
+    'zh-TW': '🇭🇰',
+    en: '🇺🇸',
+    ja: '🇯🇵',
   }
 
-  return (
-    <span className="text-base leading-none" role="img" aria-label={`${languageCode} flag`}>
-      {getFlagEmoji(languageCode)}
-    </span>
-  )
+  return <span className="text-lg">{flagMap[languageCode] || '🌐'}</span>
 }
 
 /**
@@ -50,14 +48,43 @@ export function LanguageSelector({
   size = 'default',
   showText = true,
   showFlag = true,
+  showDetectionInfo = true,
   ...props
 }: LanguageSelectorProps) {
   const { currentLanguage, currentLanguageInfo, availableLanguages } = useTranslation()
   const { isTransitioning, switchLanguage } = useLanguageTransition()
+  const { detectedLanguage, isAutoDetected } = useLanguageStore()
 
   const handleLanguageChange = async (languageCode: string) => {
+    console.log('[LanguageSelector] User requested language change:', {
+      from: currentLanguage,
+      to: languageCode,
+    })
+
     await switchLanguage(languageCode)
+
+    console.log('[LanguageSelector] Language change completed:', {
+      newLanguage: languageCode,
+      success: true,
+    })
   }
+
+  const handleResetToDetected = async () => {
+    if (detectedLanguage) {
+      console.log('[LanguageSelector] User requested reset to detected language:', detectedLanguage)
+
+      await switchLanguage(detectedLanguage)
+
+      console.log('[LanguageSelector] Reset to detected language completed:', {
+        detectedLanguage,
+        success: true,
+      })
+    } else {
+      console.log('[LanguageSelector] No detected language available for reset')
+    }
+  }
+
+  const showDetectionBadge = detectedLanguage && detectedLanguage !== currentLanguage
 
   if (variant === 'button') {
     return (
@@ -70,15 +97,38 @@ export function LanguageSelector({
             onClick={() => handleLanguageChange(language.code)}
             disabled={isTransitioning}
             className={cn(
-              'transition-all duration-200',
+              'relative transition-all duration-200',
               currentLanguage === language.code && 'ring-primary/20 ring-2',
               isTransitioning && 'cursor-not-allowed opacity-70'
             )}
           >
             {showFlag && <FlagIcon languageCode={language.code} />}
             {showText && <span>{language.nativeName}</span>}
+
+            {/* Show detection badge for detected language */}
+            {showDetectionInfo && detectedLanguage === language.code && (
+              <Badge variant="secondary" className="absolute -top-1 -right-1 ml-1 h-4 px-1 text-xs">
+                <Globe className="mr-1 h-2 w-2" />
+                检测
+              </Badge>
+            )}
           </Button>
         ))}
+
+        {/* Reset to detected language button */}
+        {showDetectionInfo && showDetectionBadge && (
+          <Button
+            variant="outline"
+            size={size}
+            onClick={handleResetToDetected}
+            disabled={isTransitioning}
+            className="border-dashed transition-all duration-200"
+            title="切换到检测到的语言"
+          >
+            <RefreshCw className="mr-1 h-4 w-4" />
+            <span className="text-xs">自动检测</span>
+          </Button>
+        )}
       </div>
     )
   }
@@ -91,7 +141,7 @@ export function LanguageSelector({
           size={size}
           disabled={isTransitioning}
           className={cn(
-            'justify-between transition-all duration-200 hover:scale-105',
+            'relative justify-between transition-all duration-200 hover:scale-105',
             'focus-visible:ring-primary/20 focus-visible:ring-2',
             isTransitioning && 'cursor-not-allowed opacity-70',
             className
@@ -102,16 +152,71 @@ export function LanguageSelector({
             {showFlag && <FlagIcon languageCode={currentLanguage} />}
             {showText && <span className="font-medium">{currentLanguageInfo.nativeName}</span>}
           </div>
-          <ChevronDownIcon className="size-4 opacity-50 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+
+          {/* Detection indicator */}
+          {showDetectionInfo && isAutoDetected && (
+            <Badge variant="secondary" className="absolute -top-1 -right-1 ml-1 h-4 px-1 text-xs">
+              <Globe className="h-2 w-2" />
+            </Badge>
+          )}
+
+          <ChevronDownIcon className="ml-2 size-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
         className={cn(
-          'animate-in fade-in-0 zoom-in-95 min-w-[180px]',
+          'animate-in fade-in-0 zoom-in-95 min-w-[220px]',
           'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95'
         )}
       >
+        {/* Detection info section */}
+        {showDetectionInfo && detectedLanguage && (
+          <>
+            <DropdownMenuLabel className="text-muted-foreground px-2 py-1 text-xs">
+              <div className="flex items-center gap-2">
+                <Globe className="h-3 w-3" />
+                检测到的语言
+              </div>
+            </DropdownMenuLabel>
+
+            <DropdownMenuItem
+              onClick={handleResetToDetected}
+              className={cn(
+                'flex cursor-pointer items-center justify-between transition-all duration-150',
+                'hover:bg-accent/50 focus:bg-accent/50',
+                detectedLanguage === currentLanguage && 'bg-accent/30 font-medium'
+              )}
+            >
+              <div className="flex items-center gap-2">
+                {showFlag && <FlagIcon languageCode={detectedLanguage} />}
+                <div className="flex flex-col">
+                  <span className="font-medium">
+                    {availableLanguages.find(lang => lang.code === detectedLanguage)?.nativeName}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {availableLanguages.find(lang => lang.code === detectedLanguage)?.name}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-1">
+                {detectedLanguage === currentLanguage ? (
+                  <CheckCircle className="h-4 w-4 text-green-500" />
+                ) : (
+                  <RefreshCw className="text-muted-foreground h-3 w-3" />
+                )}
+              </div>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+          </>
+        )}
+
+        {/* All available languages */}
+        <DropdownMenuLabel className="text-muted-foreground px-2 py-1 text-xs">
+          所有语言
+        </DropdownMenuLabel>
+
         {availableLanguages.map(language => (
           <DropdownMenuItem
             key={language.code}
