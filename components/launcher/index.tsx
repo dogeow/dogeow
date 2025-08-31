@@ -23,6 +23,7 @@ export function AppLauncher() {
 
   const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
+  const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>('none')
 
   // 使用自定义 hooks
   const audioManager = useAudioManager()
@@ -52,7 +53,22 @@ export function AppLauncher() {
     [audioManager]
   )
 
-  const switchToNextTrack = useCallback(() => audioManager.switchTrack('next'), [audioManager])
+  const switchToNextTrack = useCallback(() => {
+    // 根据循环模式决定播放行为
+    if (repeatMode === 'one') {
+      // 单曲循环：重新播放当前歌曲
+      if (audioManager.audioRef.current) {
+        audioManager.audioRef.current.currentTime = 0
+        audioManager.audioRef.current.play().catch(console.error)
+      }
+    } else if (repeatMode === 'all') {
+      // 列表循环：播放下一首，如果到末尾则重新开始
+      audioManager.switchTrack('next')
+    } else {
+      // 不循环：播放下一首，如果到末尾则停止
+      audioManager.switchTrack('next')
+    }
+  }, [audioManager, repeatMode])
   const switchToPrevTrack = useCallback(() => audioManager.switchTrack('prev'), [audioManager])
 
   // 重置搜索结果
@@ -75,7 +91,7 @@ export function AppLauncher() {
           isMuted: audioManager.isMuted,
           availableTracks: audioManager.availableTracks || [],
           currentTrack: audioManager.currentTrack || '',
-          repeatMode: 'none' as const, // 默认不循环
+          repeatMode: repeatMode, // 使用状态而不是硬编码
           toggleMute: audioManager.toggleMute,
           switchToPrevTrack,
           switchToNextTrack,
@@ -95,7 +111,18 @@ export function AppLauncher() {
           },
           onRepeat: () => {
             // 循环模式切换功能
-            console.log('循环模式切换')
+            setRepeatMode(prevMode => {
+              switch (prevMode) {
+                case 'none':
+                  return 'all'
+                case 'all':
+                  return 'one'
+                case 'one':
+                  return 'none'
+                default:
+                  return 'none'
+              }
+            })
           },
         },
       },
@@ -122,6 +149,7 @@ export function AppLauncher() {
       customBackgrounds,
       switchToPrevTrack,
       switchToNextTrack,
+      repeatMode,
     ]
   )
 
