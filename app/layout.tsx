@@ -10,6 +10,8 @@ import './note/styles/prism.css'
 import { SWRProvider } from '@/components/provider/SWRProvider'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { LanguageProvider } from '@/components/provider/LanguageProvider'
+import { PWAInstallPrompt } from '@/components/app/PWAInstallPrompt'
+import { PWARegister } from '@/components/app/PWARegister'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -29,10 +31,60 @@ export const viewport: Viewport = {
 }
 
 export const metadata: Metadata = {
-  title: 'Doge先锋',
-  description: '学习、生活、工作于一体',
+  title: 'DogeOW - 学习、生活、工作于一体',
+  description: 'DogeOW是一个集学习、生活、工作于一体的综合性平台，支持PWA安装和离线使用',
+  keywords: ['学习', '生活', '工作', 'PWA', '离线应用'],
+  authors: [{ name: 'DogeOW Team' }],
+  creator: 'DogeOW',
+  publisher: 'DogeOW',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://dogeow.com'),
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'DogeOW - 学习、生活、工作于一体',
+    description: 'DogeOW是一个集学习、生活、工作于一体的综合性平台',
+    url: 'https://dogeow.com',
+    siteName: 'DogeOW',
+    images: [
+      {
+        url: '/480.png',
+        width: 480,
+        height: 480,
+        alt: 'DogeOW Logo',
+      },
+    ],
+    locale: 'zh_CN',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'DogeOW - 学习、生活、工作于一体',
+    description: 'DogeOW是一个集学习、生活、工作于一体的综合性平台',
+    images: ['/480.png'],
+  },
   icons: {
-    apple: '/480.png',
+    icon: [
+      { url: '/favicon.ico', sizes: '64x64 32x32 24x24 16x16', type: 'image/x-icon' },
+      { url: '/80.png', sizes: '80x80', type: 'image/png' },
+      { url: '/480.png', sizes: '480x480', type: 'image/png' },
+    ],
+    apple: [{ url: '/480.png', sizes: '480x480', type: 'image/png' }],
+    shortcut: '/favicon.ico',
+  },
+  manifest: '/manifest.json',
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'DogeOW',
+    'msapplication-TileColor': '#000000',
+    'theme-color': '#000000',
   },
 }
 
@@ -65,6 +117,8 @@ export default function RootLayout({
                 </div>
               </div>
               <Toaster />
+              <PWAInstallPrompt />
+              <PWARegister />
             </LanguageProvider>
           </ThemeProvider>
         </SWRProvider>
