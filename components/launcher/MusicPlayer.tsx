@@ -105,7 +105,10 @@ const TrackInfo = memo(
 
     // 鼠标事件
     const handleMouseDown = (e: React.MouseEvent) => handleDragStart(e.clientX)
-    const handleMouseMove = (e: MouseEvent) => handleDragMove(e.clientX)
+    const handleMouseMove = useCallback(
+      (e: MouseEvent) => handleDragMove(e.clientX),
+      [handleDragMove]
+    )
     const handleMouseUp = handleDragEnd
 
     // 触摸事件
