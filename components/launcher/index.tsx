@@ -73,6 +73,9 @@ export function AppLauncher() {
           duration: audioManager.duration,
           volume: audioManager.volume,
           isMuted: audioManager.isMuted,
+          availableTracks: audioManager.availableTracks || [],
+          currentTrack: audioManager.currentTrack || '',
+          repeatMode: 'none' as const, // 默认不循环
           toggleMute: audioManager.toggleMute,
           switchToPrevTrack,
           switchToNextTrack,
@@ -81,6 +84,19 @@ export function AppLauncher() {
           getCurrentTrackName: audioManager.getCurrentTrackName,
           formatTime: audioManager.formatTime,
           toggleDisplayMode,
+          onTrackSelect: (trackPath: string) => audioManager.setCurrentTrack?.(trackPath),
+          onShuffle: () => {
+            // 随机播放功能
+            if (audioManager.availableTracks && audioManager.availableTracks.length > 0) {
+              const randomIndex = Math.floor(Math.random() * audioManager.availableTracks.length)
+              const randomTrack = audioManager.availableTracks[randomIndex]
+              audioManager.setCurrentTrack?.(randomTrack.path)
+            }
+          },
+          onRepeat: () => {
+            // 循环模式切换功能
+            console.log('循环模式切换')
+          },
         },
       },
       settings: {

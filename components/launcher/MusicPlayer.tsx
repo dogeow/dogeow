@@ -1,11 +1,12 @@
 'use client'
 
-import React from 'react'
-import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward } from 'lucide-react'
+import React, { useState } from 'react'
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { BackButton } from '@/components/ui/back-button'
 import { MusicPlayerProps, PlayerControlButtonProps } from './types'
+import { PlaylistDialog } from './PlaylistDialog'
 
 // 定义图标尺寸常量
 const ICON_SIZE = 'h-4 w-4'
@@ -121,6 +122,9 @@ export const MusicPlayer = React.memo(
     currentTime,
     duration,
     isMuted,
+    availableTracks,
+    currentTrack,
+    repeatMode,
     toggleMute,
     switchToPrevTrack,
     switchToNextTrack,
@@ -129,7 +133,11 @@ export const MusicPlayer = React.memo(
     getCurrentTrackName,
     formatTime,
     toggleDisplayMode,
+    onTrackSelect,
+    onShuffle,
+    onRepeat,
   }: MusicPlayerProps) => {
+    const [playlistOpen, setPlaylistOpen] = useState(false)
     return (
       <>
         <div className="flex w-full items-center justify-between">
@@ -179,6 +187,12 @@ export const MusicPlayer = React.memo(
               title="下一首"
               icon={<SkipForward className={ICON_SIZE} />}
             />
+
+            <PlayerControlButton
+              onClick={() => setPlaylistOpen(true)}
+              title="播放列表"
+              icon={<List className={ICON_SIZE} />}
+            />
           </div>
         </div>
 
@@ -186,6 +200,20 @@ export const MusicPlayer = React.memo(
           currentTime={currentTime}
           duration={duration}
           handleProgressChange={handleProgressChange}
+        />
+
+        {/* 播放列表弹窗 */}
+        <PlaylistDialog
+          open={playlistOpen}
+          onOpenChange={setPlaylistOpen}
+          availableTracks={availableTracks}
+          currentTrack={currentTrack}
+          isPlaying={isPlaying}
+          onTrackSelect={onTrackSelect}
+          onTogglePlay={togglePlay}
+          onShuffle={onShuffle}
+          onRepeat={onRepeat}
+          repeatMode={repeatMode}
         />
       </>
     )

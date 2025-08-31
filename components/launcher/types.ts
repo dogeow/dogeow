@@ -1,3 +1,5 @@
+import { MusicTrack } from '@/stores/musicStore'
+
 export type DisplayMode = 'music' | 'apps' | 'settings'
 
 // 播放控制按钮组件
@@ -17,6 +19,9 @@ export interface MusicPlayerProps {
   duration: number
   volume: number
   isMuted: boolean
+  availableTracks: MusicTrack[]
+  currentTrack: string
+  repeatMode: 'none' | 'all' | 'one'
   toggleMute: () => void
   switchToPrevTrack: () => void
   switchToNextTrack: () => void
@@ -25,6 +30,9 @@ export interface MusicPlayerProps {
   getCurrentTrackName: () => string | undefined
   formatTime: (time: number) => string
   toggleDisplayMode: (mode: DisplayMode) => void
+  onTrackSelect: (trackPath: string) => void
+  onShuffle: () => void
+  onRepeat: () => void
 }
 
 export interface SearchBarProps {

@@ -137,6 +137,7 @@ export const useAudioManager = () => {
     currentTime,
     audioError,
     currentTrack,
+    availableTracks,
     readyToPlay,
     setReadyToPlay,
     // 方法
@@ -144,6 +145,7 @@ export const useAudioManager = () => {
     getCurrentTrackName,
     formatTime,
     fetchAvailableTracks,
+    setCurrentTrack,
     // 音频控制器
     ...audioController,
   }
