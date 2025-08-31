@@ -214,14 +214,7 @@ export function AudioController({
       audioRef.current.play().catch(err => setAudioError(`播放失败: ${err.message}`))
       setIsPlaying(true)
     }
-  }, [
-    currentTrack,
-    isPlaying,
-    setupMediaSource,
-    setIsPlaying,
-    setAudioError,
-    availableTracks.length,
-  ])
+  }, [currentTrack, isPlaying, setupMediaSource, setIsPlaying, setAudioError, availableTracks])
 
   // 切换曲目
   const switchTrack = useCallback(
