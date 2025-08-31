@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { Play, Pause, Music, Shuffle, Repeat, Repeat1 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { MusicTrack } from '@/stores/musicStore'
+import { MusicTrack, RepeatMode } from '@/stores/musicStore'
 import { cn } from '@/lib/helpers'
 
 interface PlaylistDialogProps {
@@ -17,38 +17,45 @@ interface PlaylistDialogProps {
   onTogglePlay: () => void
   onShuffle: () => void
   onRepeat: () => void
-  repeatMode: 'none' | 'all' | 'one'
+  repeatMode: RepeatMode
+  shuffleMode: 'off' | 'on'
 }
 
-// 播放模式按钮组件（避免三元嵌套写法）
+// 播放模式按钮组件（简化逻辑）
 function RepeatModeButton(props: {
-  repeatMode: 'none' | 'all' | 'one'
+  repeatMode: RepeatMode
+  shuffleMode: 'off' | 'on'
   onShuffle: () => void
   onRepeat: () => void
 }) {
-  const { repeatMode, onShuffle, onRepeat } = props
+  const { repeatMode, shuffleMode, onShuffle, onRepeat } = props
 
-  // 切换播放模式
+  // 切换播放模式 - 简化逻辑
   const handleClick = useCallback(() => {
-    if (repeatMode === 'none') {
+    if (shuffleMode === 'on') {
+      // 当前是随机播放模式，点击关闭随机播放并开启循环
       onShuffle()
-      onRepeat()
     } else {
+      // 当前是循环模式或无模式，点击切换循环模式
       onRepeat()
     }
-  }, [repeatMode, onShuffle, onRepeat])
+  }, [shuffleMode, onShuffle, onRepeat])
 
   let icon = null
   let label = ''
-  if (repeatMode === 'one') {
+
+  if (shuffleMode === 'on') {
+    icon = <Shuffle className="mr-2 h-4 w-4" />
+    label = '随机播放'
+  } else if (repeatMode === 'one') {
     icon = <Repeat1 className="mr-2 h-4 w-4" />
     label = '单曲循环'
   } else if (repeatMode === 'all') {
     icon = <Repeat className="mr-2 h-4 w-4" />
     label = '列表循环'
   } else {
-    icon = <Shuffle className="mr-2 h-4 w-4" />
-    label = '随机播放'
+    icon = <Repeat className="mr-2 h-4 w-4" />
+    label = '不循环'
   }
 
   return (
@@ -77,6 +84,7 @@ export function PlaylistDialog({
   onShuffle,
   onRepeat,
   repeatMode,
+  shuffleMode,
 }: PlaylistDialogProps) {
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -148,7 +156,12 @@ export function PlaylistDialog({
 
         {/* 控制按钮 */}
         <div className="mb-4 flex flex-shrink-0 items-center gap-2">
-          <RepeatModeButton repeatMode={repeatMode} onShuffle={onShuffle} onRepeat={onRepeat} />
+          <RepeatModeButton
+            repeatMode={repeatMode}
+            shuffleMode={shuffleMode}
+            onShuffle={onShuffle}
+            onRepeat={onRepeat}
+          />
         </div>
 
         {/* 搜索框 */}

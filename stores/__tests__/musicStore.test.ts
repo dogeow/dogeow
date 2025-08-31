@@ -7,19 +7,16 @@ describe('musicStore', () => {
       path: '/musics/track1.mp3',
       name: 'Track 1',
       duration: 180,
-      isHls: false,
     },
     {
       path: '/musics/track2.mp3',
       name: 'Track 2',
       duration: 240,
-      isHls: false,
     },
     {
       path: '/musics/stream.m3u8',
       name: 'HLS Stream',
       duration: 0,
-      isHls: true,
     },
   ]
 

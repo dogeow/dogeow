@@ -1,4 +1,4 @@
-import { MusicTrack } from '@/stores/musicStore'
+import { MusicTrack, RepeatMode } from '@/stores/musicStore'
 
 export type DisplayMode = 'music' | 'apps' | 'settings'
 
@@ -6,7 +6,7 @@ export type DisplayMode = 'music' | 'apps' | 'settings'
 export interface PlayerControlButtonProps {
   onClick: () => void
   disabled?: boolean
-  title?: string
+  title: string
   icon: React.ReactNode
   className?: string
 }
@@ -21,7 +21,8 @@ export interface MusicPlayerProps {
   isMuted: boolean
   availableTracks: MusicTrack[]
   currentTrack: string
-  repeatMode: 'none' | 'all' | 'one'
+  repeatMode: RepeatMode
+  shuffleMode: 'off' | 'on'
   toggleMute: () => void
   switchToPrevTrack: () => void
   switchToNextTrack: () => void

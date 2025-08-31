@@ -17,6 +17,8 @@ interface AudioControllerProps {
   userInteracted: boolean
   isTrackChanging: boolean
   setIsTrackChanging: (changing: boolean) => void
+  shuffleMode: 'off' | 'on'
+  repeatMode: 'none' | 'all' | 'one'
 }
 
 export function AudioController({
@@ -32,9 +34,11 @@ export function AudioController({
   userInteracted,
   isTrackChanging,
   setIsTrackChanging,
+  shuffleMode,
+  repeatMode,
 }: AudioControllerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
-  const { currentTrack, setCurrentTrack, availableTracks } = useMusicStore()
+  const { currentTrack, availableTracks, setCurrentTrack } = useMusicStore()
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
 
   // 构建音频URL
@@ -199,13 +203,13 @@ export function AudioController({
     }
   }, [currentTrack, isPlaying, setupMediaSource, setIsPlaying, setAudioError, availableTracks])
 
-  // 切换曲目
+  // 切换曲目 - 基于播放模式
   const switchTrack = useCallback(
     (direction: 'next' | 'prev') => {
       if (!currentTrack || !availableTracks.length) {
         if (availableTracks.length === 0) {
           setAudioError('播放列表为空，没有可播放的音乐')
-          toast.error('播放列表为空', { description: '请先添加音乐文件到播放列表' })
+          // 移除toast调用，避免依赖问题
         }
         return
       }
@@ -213,21 +217,61 @@ export function AudioController({
       audioRef.current?.pause()
 
       const currentIndex = availableTracks.findIndex(track => track.path === currentTrack)
-      const nextIndex =
-        currentIndex === -1
-          ? direction === 'next'
-            ? 0
-            : availableTracks.length - 1
-          : direction === 'next'
-            ? (currentIndex + 1) % availableTracks.length
-            : (currentIndex - 1 + availableTracks.length) % availableTracks.length
+      let nextIndex = -1
+
+      if (shuffleMode === 'on') {
+        // 随机播放模式
+        if (direction === 'next') {
+          // 随机选择下一首，避免重复当前歌曲
+          let randomIndex
+          do {
+            randomIndex = Math.floor(Math.random() * availableTracks.length)
+          } while (randomIndex === currentIndex && availableTracks.length > 1)
+          nextIndex = randomIndex
+        } else {
+          // 随机选择上一首，避免重复当前歌曲
+          let randomIndex
+          do {
+            randomIndex = Math.floor(Math.random() * availableTracks.length)
+          } while (randomIndex === currentIndex && availableTracks.length > 1)
+          nextIndex = randomIndex
+        }
+      } else {
+        // 顺序播放模式
+        if (direction === 'next') {
+          nextIndex = (currentIndex + 1) % availableTracks.length
+        } else {
+          nextIndex = (currentIndex - 1 + availableTracks.length) % availableTracks.length
+        }
+      }
+
+      // 根据循环模式决定是否继续播放
+      if (
+        repeatMode === 'none' &&
+        direction === 'next' &&
+        currentIndex === availableTracks.length - 1
+      ) {
+        // 不循环模式且到达末尾，停止播放
+        setIsPlaying(false)
+        setAudioError('播放列表已播放完毕')
+        return
+      }
 
       setCurrentTrack(availableTracks[nextIndex].path)
       setAudioError(null)
       setIsPlaying(true)
       setupMediaSource()
     },
-    [currentTrack, availableTracks, setCurrentTrack, setAudioError, setIsPlaying, setupMediaSource]
+    [
+      currentTrack,
+      availableTracks,
+      repeatMode,
+      shuffleMode,
+      setCurrentTrack,
+      setAudioError,
+      setIsPlaying,
+      setupMediaSource,
+    ]
   )
 
   // 处理进度条

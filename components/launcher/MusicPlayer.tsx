@@ -204,6 +204,7 @@ export const MusicPlayer = memo(
     availableTracks,
     currentTrack,
     repeatMode,
+    shuffleMode,
     toggleMute,
     switchToPrevTrack,
     switchToNextTrack,
@@ -290,6 +291,7 @@ export const MusicPlayer = memo(
           onShuffle={onShuffle}
           onRepeat={onRepeat}
           repeatMode={repeatMode}
+          shuffleMode={shuffleMode}
         />
       </>
     )

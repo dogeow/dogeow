@@ -13,6 +13,7 @@ import { useBackgroundManager } from '@/hooks/useBackgroundManager'
 import { AppsView } from './views/AppsView'
 import { SearchResultView } from './views/SearchResultView'
 import { ViewWrapper } from './views/ViewWrapper'
+import { useMusicStore } from '@/stores/musicStore'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
@@ -23,7 +24,9 @@ export function AppLauncher() {
 
   const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
-  const [repeatMode, setRepeatMode] = useState<'none' | 'all' | 'one'>('none')
+
+  // 使用音乐存储中的播放模式状态
+  const { repeatMode, shuffleMode, toggleRepeatMode, toggleShuffleMode } = useMusicStore()
 
   // 使用自定义 hooks
   const audioManager = useAudioManager()
@@ -91,7 +94,8 @@ export function AppLauncher() {
           isMuted: audioManager.isMuted,
           availableTracks: audioManager.availableTracks || [],
           currentTrack: audioManager.currentTrack || '',
-          repeatMode: repeatMode, // 使用状态而不是硬编码
+          repeatMode: repeatMode,
+          shuffleMode: shuffleMode,
           toggleMute: audioManager.toggleMute,
           switchToPrevTrack,
           switchToNextTrack,
@@ -102,27 +106,12 @@ export function AppLauncher() {
           toggleDisplayMode,
           onTrackSelect: (trackPath: string) => audioManager.setCurrentTrack?.(trackPath),
           onShuffle: () => {
-            // 随机播放功能
-            if (audioManager.availableTracks && audioManager.availableTracks.length > 0) {
-              const randomIndex = Math.floor(Math.random() * audioManager.availableTracks.length)
-              const randomTrack = audioManager.availableTracks[randomIndex]
-              audioManager.setCurrentTrack?.(randomTrack.path)
-            }
+            // 切换随机播放模式 - 只改变状态，下次生效
+            toggleShuffleMode()
           },
           onRepeat: () => {
-            // 循环模式切换功能
-            setRepeatMode(prevMode => {
-              switch (prevMode) {
-                case 'none':
-                  return 'all'
-                case 'all':
-                  return 'one'
-                case 'one':
-                  return 'none'
-                default:
-                  return 'none'
-              }
-            })
+            // 切换循环模式 - 只改变状态，下次生效
+            toggleRepeatMode()
           },
         },
       },
@@ -150,6 +139,9 @@ export function AppLauncher() {
       switchToPrevTrack,
       switchToNextTrack,
       repeatMode,
+      shuffleMode,
+      toggleRepeatMode,
+      toggleShuffleMode,
     ]
   )
 
