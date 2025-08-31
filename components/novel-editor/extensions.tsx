@@ -64,7 +64,7 @@ const updatedImage = UpdatedImage.configure({
 
 const taskList = TaskList.configure({
   HTMLAttributes: {
-    class: cx('not-prose pl-2 '),
+    class: cx('pl-2'),
   },
 })
 const taskItem = TaskItem.configure({
@@ -136,7 +136,7 @@ const youtube = Youtube.configure({
 
 const twitter = Twitter.configure({
   HTMLAttributes: {
-    class: cx('not-prose'),
+    class: cx(''),
   },
   inline: false,
 })

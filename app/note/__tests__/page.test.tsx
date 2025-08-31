@@ -22,10 +22,8 @@ vi.mock('sonner', () => ({
   },
 }))
 
-vi.mock('react-markdown', () => ({
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="markdown">{children}</div>
-  ),
+vi.mock('@/components/novel-editor/markdown-preview', () => ({
+  default: ({ content }: { content: string }) => <div data-testid="markdown">{content}</div>,
 }))
 
 vi.mock('@/components/ui/card', () => ({

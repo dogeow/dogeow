@@ -1,0 +1,47 @@
+/* Note 组件专用样式 */
+.note-content {
+  padding: 1.5rem;
+}
+
+.note-content .prose {
+  max-width: none;
+}
+
+.note-content .prose > * + * {
+  margin-top: 1.5rem;
+}
+
+.note-content .prose p {
+  margin-bottom: 1rem;
+}
+
+.note-content .prose h1,
+.note-content .prose h2,
+.note-content .prose h3,
+.note-content .prose h4,
+.note-content .prose h5,
+.note-content .prose h6 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.note-content .prose ul,
+.note-content .prose ol {
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.note-content .prose li {
+  margin-bottom: 0.5rem;
+}
+
+.note-content .prose blockquote {
+  margin: 1.5rem 0;
+  padding: 1rem 1.5rem;
+}
+
+.note-content .prose pre {
+  margin: 1.5rem 0;
+  padding: 1rem;
+}

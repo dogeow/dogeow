@@ -1,9 +1,10 @@
 'use client'
+
+import './novel-editor.css'
 import { EditorContent, EditorRoot, type JSONContent } from 'novel'
 import { useEffect, useState } from 'react'
 import hljs from 'highlight.js'
 
-// 导入必要的扩展，避免冲突
 import {
   StarterKit,
   TaskItem,
@@ -24,53 +25,69 @@ const readonlyExtensions = [
     codeBlock: false,
     bulletList: {
       HTMLAttributes: {
-        class: cx('list-disc list-outside leading-3 -mt-2'),
+        class: cx('list-disc list-outside leading-relaxed space-y-1'),
       },
     },
     orderedList: {
       HTMLAttributes: {
-        class: cx('list-decimal list-outside leading-3 -mt-2'),
+        class: cx('list-decimal list-outside leading-relaxed space-y-1'),
       },
     },
     listItem: {
       HTMLAttributes: {
-        class: cx('leading-normal -mb-2'),
+        class: cx('leading-relaxed'),
       },
     },
     blockquote: {
       HTMLAttributes: {
-        class: cx('border-l-4 border-primary px-2'),
+        class: cx('border-l-4 border-primary/20 pl-6 py-2 my-6 italic text-muted-foreground'),
       },
     },
     code: {
       HTMLAttributes: {
-        class: cx('rounded-md bg-muted px-1.5 py-1 font-mono font-medium'),
+        class: cx(
+          'rounded-md bg-muted px-1.5 py-0.5 font-mono text-sm font-medium text-foreground'
+        ),
         spellcheck: 'false',
       },
     },
-    horizontalRule: false,
+    horizontalRule: {
+      HTMLAttributes: {
+        class: cx('my-8 border-t border-border'),
+      },
+    },
     dropcursor: {
       color: '#DBEAFE',
       width: 4,
     },
     gapcursor: false,
+    paragraph: {
+      HTMLAttributes: {
+        class: cx('leading-relaxed mb-4'),
+      },
+    },
+    heading: {
+      HTMLAttributes: {
+        class: cx('font-bold tracking-tight'),
+      },
+    },
   }),
   TiptapLink.configure({
     HTMLAttributes: {
       class: cx(
-        'text-muted-foreground underline underline-offset-[3px] hover:text-primary transition-colors cursor-pointer'
+        'text-primary underline underline-offset-[3px] hover:text-primary/80 transition-colors cursor-pointer'
       ),
     },
   }),
   TiptapImage.configure({
     allowBase64: true,
     HTMLAttributes: {
-      class: cx('rounded-lg border border-muted'),
+      class: cx('rounded-lg border border-border my-6'),
     },
   }),
   TaskList.configure({
     HTMLAttributes: {
-      class: cx('not-prose pl-2 '),
+      class: cx('pl-2 space-y-2'),
     },
   }),
   TaskItem.configure({
@@ -81,9 +98,7 @@ const readonlyExtensions = [
   }),
   CodeBlock.configure({
     HTMLAttributes: {
-      class: cx(
-        'rounded-md bg-muted text-muted-foreground border font-mono font-medium px-4 py-3 -mx-4 my-2'
-      ),
+      class: cx('rounded-lg bg-muted border font-mono text-sm p-4 my-6 overflow-x-auto'),
     },
   }),
   Mathematics.configure({
@@ -147,17 +162,17 @@ const ReadonlyEditor = ({ content, className }: ReadonlyEditorProps) => {
   if (!initialContent) return null
 
   return (
-    <div className={`relative w-full ${className || ''}`}>
+    <div className={`note-content relative w-full ${className || ''}`}>
       <EditorRoot>
         <EditorContent
           initialContent={initialContent}
           extensions={readonlyExtensions}
-          className="prose prose-lg dark:prose-invert prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl max-w-full font-sans focus:outline-none"
+          className="prose prose-neutral dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-h1:text-3xl prose-h1:mb-6 prose-h1:mt-8 prose-h2:text-2xl prose-h2:mb-4 prose-h2:mt-6 prose-h3:text-xl prose-h3:mb-3 prose-h3:mt-5 prose-p:leading-relaxed prose-p:text-foreground prose-p:mb-4 prose-strong:font-semibold prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto prose-blockquote:border-l-4 prose-blockquote:border-primary/20 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:my-6 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-ul:space-y-1 prose-ol:space-y-1 prose-li:leading-relaxed prose-hr:my-8 prose-hr:border-t prose-hr:border-border prose-a:text-primary prose-a:underline prose-a:underline-offset-[3px] hover:prose-a:text-primary/80 prose-img:rounded-lg prose-img:border prose-img:border-border prose-img:my-6 max-w-none font-sans focus:outline-none"
           editable={false}
           editorProps={{
             attributes: {
               class:
-                'prose prose-lg dark:prose-invert prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl font-sans focus:outline-none max-w-full',
+                'prose prose-neutral dark:prose-invert max-w-none font-sans focus:outline-none',
             },
           }}
         />

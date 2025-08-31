@@ -1,12 +1,12 @@
 'use client'
 
+import './note-styles.css'
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { apiRequest } from '@/lib/api'
 import { Calendar, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
-import ReactMarkdown from 'react-markdown'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { zhCN } from 'date-fns/locale'
 import NoteSpeedDial from './components/NoteSpeedDial'
@@ -58,12 +58,15 @@ export default function NotePage() {
     }
   }
 
-  // 获取Markdown摘要
-  const getMarkdownPreview = (markdown: string, maxLength = 150) => {
-    if (!markdown) return ''
+  // 获取内容摘要
+  const getContentPreview = (content: string, maxLength = 150) => {
+    if (!content) return ''
 
-    // 移除Markdown语法字符
-    const plainText = markdown.replace(/[#*`>-]/g, '').trim()
+    // 移除HTML标签和特殊字符，获取纯文本
+    const plainText = content
+      .replace(/<[^>]*>/g, '')
+      .replace(/[#*`>-]/g, '')
+      .trim()
     return plainText.length > maxLength ? plainText.substring(0, maxLength) + '...' : plainText
   }
 
@@ -113,7 +116,7 @@ export default function NotePage() {
         <CardContent className="py-2">
           <div className="text-muted-foreground prose prose-sm max-w-none text-sm">
             {note.content_markdown ? (
-              <ReactMarkdown>{getMarkdownPreview(note.content_markdown)}</ReactMarkdown>
+              <span>{getContentPreview(note.content_markdown)}</span>
             ) : (
               <span className="italic">(无内容)</span>
             )}

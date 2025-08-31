@@ -1,7 +1,7 @@
 import React from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import ReactMarkdown from 'react-markdown'
+import MarkdownPreview from '@/components/novel-editor/markdown-preview'
 import Logo from '@/public/80.png'
 
 interface SearchResultViewProps {
@@ -25,7 +25,7 @@ export function SearchResultView({ searchText, onReset }: SearchResultViewProps)
 
       <div className="flex-1 overflow-auto px-4 py-1">
         <div className="prose prose-sm dark:prose-invert prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-li:my-0 max-w-none">
-          <ReactMarkdown>{searchText}</ReactMarkdown>
+          <MarkdownPreview content={searchText} />
         </div>
       </div>
 

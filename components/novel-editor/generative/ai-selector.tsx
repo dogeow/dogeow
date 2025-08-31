@@ -7,7 +7,7 @@ import { ArrowUp } from 'lucide-react'
 import { useEditor } from 'novel'
 import { addAIHighlight } from 'novel'
 import { useState, useEffect } from 'react'
-import Markdown from 'react-markdown'
+import MarkdownPreview from '../markdown-preview'
 import { toast } from 'sonner'
 import { Button } from '../ui/button'
 import CrazySpinner from '../ui/icons/crazy-spinner'
@@ -66,7 +66,7 @@ export function AISelector({ onOpenChange }: AISelectorProps) {
         <div className="flex max-h-[400px]">
           <ScrollArea>
             <div className="prose prose-sm p-2 px-4">
-              <Markdown>{completion}</Markdown>
+              <MarkdownPreview content={completion} />
             </div>
           </ScrollArea>
         </div>

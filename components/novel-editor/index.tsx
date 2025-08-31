@@ -1,5 +1,7 @@
 'use client'
 
+import './novel-editor.css'
+
 // 空的编辑器内容
 const emptyEditorContent = {
   type: 'doc',
@@ -222,7 +224,7 @@ const TailwindAdvancedEditor = () => {
 
   return (
     <div className="relative w-full max-w-screen-lg">
-      <div className="absolute top-5 right-5 z-10 mb-5 flex gap-2">
+      <div className="flex justify-end gap-2">
         <div className="bg-accent text-muted-foreground rounded-lg px-2 py-1 text-sm">
           {saveStatus}
         </div>
@@ -377,3 +379,5 @@ const TailwindAdvancedEditor = () => {
 }
 
 export default TailwindAdvancedEditor
+export { default as MarkdownPreview } from './markdown-preview'
+export { default as ReadonlyEditor } from './readonly'

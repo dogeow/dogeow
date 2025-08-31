@@ -9,7 +9,6 @@ import { Edit, Trash2, ArrowLeft, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import ReadonlyEditor from '@/components/novel-editor/readonly'
-import ReactMarkdown from 'react-markdown'
 
 export default function NoteDetail() {
   const router = useRouter()
@@ -44,7 +43,7 @@ export default function NoteDetail() {
   if (!note) return <div>加载中...</div>
 
   return (
-    <div className="mx-auto mt-8 max-w-4xl">
+    <div className="mx-auto mt-8 max-w-4xl px-4 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
@@ -65,7 +64,7 @@ export default function NoteDetail() {
       <div className="mb-4 text-center text-xs text-gray-500">
         更新于 {formatDate(note.updated_at)}
       </div>
-      <div className="max-w-none">
+      <div className="note-content max-w-none">
         {note.content ? (
           (() => {
             try {
@@ -85,7 +84,7 @@ export default function NoteDetail() {
 
               if (isEmpty) {
                 return (
-                  <div className="prose max-w-none">
+                  <div className="prose max-w-none py-8">
                     <span className="text-gray-500 italic">(无内容)</span>
                   </div>
                 )
@@ -97,31 +96,23 @@ export default function NoteDetail() {
               } catch (renderError) {
                 console.error('ReadonlyEditor render failed:', renderError)
                 return (
-                  <div className="prose max-w-none">
+                  <div className="prose max-w-none py-8">
                     <span className="text-gray-500 italic">(内容渲染失败)</span>
                   </div>
                 )
               }
             } catch (error) {
               console.error('Failed to parse note content:', error)
-              // 如果JSON解析失败，尝试显示原始内容或markdown内容
-              if (note.content_markdown) {
-                return (
-                  <div className="prose max-w-none">
-                    <ReactMarkdown>{note.content_markdown}</ReactMarkdown>
-                  </div>
-                )
-              } else {
-                return (
-                  <div className="prose max-w-none">
-                    <pre className="whitespace-pre-wrap">{note.content}</pre>
-                  </div>
-                )
-              }
+              // 如果JSON解析失败，显示原始内容
+              return (
+                <div className="prose max-w-none py-8">
+                  <pre className="whitespace-pre-wrap">{note.content}</pre>
+                </div>
+              )
             }
           })()
         ) : (
-          <div className="prose max-w-none">
+          <div className="prose max-w-none py-8">
             <span className="italic">(无内容)</span>
           </div>
         )}
