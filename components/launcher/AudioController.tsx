@@ -17,8 +17,7 @@ interface AudioControllerProps {
   userInteracted: boolean
   isTrackChanging: boolean
   setIsTrackChanging: (changing: boolean) => void
-  shuffleMode: 'off' | 'on'
-  repeatMode: 'none' | 'all' | 'one'
+  playMode: 'none' | 'all' | 'one' | 'shuffle'
 }
 
 export function AudioController({
@@ -34,8 +33,7 @@ export function AudioController({
   userInteracted,
   isTrackChanging,
   setIsTrackChanging,
-  shuffleMode,
-  repeatMode,
+  playMode,
 }: AudioControllerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const { currentTrack, availableTracks, setCurrentTrack } = useMusicStore()
@@ -219,7 +217,7 @@ export function AudioController({
       const currentIndex = availableTracks.findIndex(track => track.path === currentTrack)
       let nextIndex = -1
 
-      if (shuffleMode === 'on') {
+      if (playMode === 'shuffle') {
         // 随机播放模式
         if (direction === 'next') {
           // 随机选择下一首，避免重复当前歌曲
@@ -247,7 +245,7 @@ export function AudioController({
 
       // 根据循环模式决定是否继续播放
       if (
-        repeatMode === 'none' &&
+        playMode === 'none' &&
         direction === 'next' &&
         currentIndex === availableTracks.length - 1
       ) {
@@ -265,8 +263,7 @@ export function AudioController({
     [
       currentTrack,
       availableTracks,
-      repeatMode,
-      shuffleMode,
+      playMode,
       setCurrentTrack,
       setAudioError,
       setIsPlaying,

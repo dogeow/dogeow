@@ -8,8 +8,7 @@ export const useAudioManager = () => {
     currentTrack,
     volume: musicVolume,
     isPlaying: storeIsPlaying,
-    repeatMode,
-    shuffleMode,
+    playMode,
     setCurrentTrack,
     setAvailableTracks,
     setIsPlaying: setStoreIsPlaying,
@@ -40,8 +39,7 @@ export const useAudioManager = () => {
     userInteracted,
     isTrackChanging,
     setIsTrackChanging,
-    shuffleMode,
-    repeatMode,
+    playMode,
   })
 
   // 加载音频列表

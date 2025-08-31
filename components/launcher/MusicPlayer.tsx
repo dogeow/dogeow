@@ -203,8 +203,7 @@ export const MusicPlayer = memo(
     isMuted,
     availableTracks,
     currentTrack,
-    repeatMode,
-    shuffleMode,
+    playMode,
     toggleMute,
     switchToPrevTrack,
     switchToNextTrack,
@@ -214,8 +213,7 @@ export const MusicPlayer = memo(
     formatTime,
     toggleDisplayMode,
     onTrackSelect,
-    onShuffle,
-    onRepeat,
+    onTogglePlayMode,
   }: MusicPlayerProps) => {
     const [playlistOpen, setPlaylistOpen] = useState(false)
 
@@ -288,10 +286,8 @@ export const MusicPlayer = memo(
           isPlaying={isPlaying}
           onTrackSelect={onTrackSelect}
           onTogglePlay={togglePlay}
-          onShuffle={onShuffle}
-          onRepeat={onRepeat}
-          repeatMode={repeatMode}
-          shuffleMode={shuffleMode}
+          onTogglePlayMode={onTogglePlayMode}
+          playMode={playMode}
         />
       </>
     )

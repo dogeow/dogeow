@@ -1,4 +1,4 @@
-import { MusicTrack, RepeatMode } from '@/stores/musicStore'
+import { MusicTrack, PlayMode } from '@/stores/musicStore'
 
 export type DisplayMode = 'music' | 'apps' | 'settings'
 
@@ -21,8 +21,7 @@ export interface MusicPlayerProps {
   isMuted: boolean
   availableTracks: MusicTrack[]
   currentTrack: string
-  repeatMode: RepeatMode
-  shuffleMode: 'off' | 'on'
+  playMode: PlayMode
   toggleMute: () => void
   switchToPrevTrack: () => void
   switchToNextTrack: () => void
@@ -32,8 +31,7 @@ export interface MusicPlayerProps {
   formatTime: (time: number) => string
   toggleDisplayMode: (mode: DisplayMode) => void
   onTrackSelect: (trackPath: string) => void
-  onShuffle: () => void
-  onRepeat: () => void
+  onTogglePlayMode: () => void
 }
 
 export interface SearchBarProps {

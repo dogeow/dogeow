@@ -26,7 +26,7 @@ export function AppLauncher() {
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
 
   // 使用音乐存储中的播放模式状态
-  const { repeatMode, shuffleMode, toggleRepeatMode, toggleShuffleMode } = useMusicStore()
+  const { playMode, togglePlayMode } = useMusicStore()
 
   // 使用自定义 hooks
   const audioManager = useAudioManager()
@@ -57,21 +57,21 @@ export function AppLauncher() {
   )
 
   const switchToNextTrack = useCallback(() => {
-    // 根据循环模式决定播放行为
-    if (repeatMode === 'one') {
+    // 根据播放模式决定播放行为
+    if (playMode === 'one') {
       // 单曲循环：重新播放当前歌曲
       if (audioManager.audioRef.current) {
         audioManager.audioRef.current.currentTime = 0
         audioManager.audioRef.current.play().catch(console.error)
       }
-    } else if (repeatMode === 'all') {
+    } else if (playMode === 'all') {
       // 列表循环：播放下一首，如果到末尾则重新开始
       audioManager.switchTrack('next')
     } else {
       // 不循环：播放下一首，如果到末尾则停止
       audioManager.switchTrack('next')
     }
-  }, [audioManager, repeatMode])
+  }, [audioManager, playMode])
   const switchToPrevTrack = useCallback(() => audioManager.switchTrack('prev'), [audioManager])
 
   // 重置搜索结果
@@ -94,8 +94,7 @@ export function AppLauncher() {
           isMuted: audioManager.isMuted,
           availableTracks: audioManager.availableTracks || [],
           currentTrack: audioManager.currentTrack || '',
-          repeatMode: repeatMode,
-          shuffleMode: shuffleMode,
+          playMode: playMode,
           toggleMute: audioManager.toggleMute,
           switchToPrevTrack,
           switchToNextTrack,
@@ -105,13 +104,9 @@ export function AppLauncher() {
           formatTime: audioManager.formatTime,
           toggleDisplayMode,
           onTrackSelect: (trackPath: string) => audioManager.setCurrentTrack?.(trackPath),
-          onShuffle: () => {
-            // 切换随机播放模式 - 只改变状态，下次生效
-            toggleShuffleMode()
-          },
-          onRepeat: () => {
-            // 切换循环模式 - 只改变状态，下次生效
-            toggleRepeatMode()
+          onTogglePlayMode: () => {
+            // 切换播放模式 - 只改变状态，下次生效
+            togglePlayMode()
           },
         },
       },
@@ -138,10 +133,8 @@ export function AppLauncher() {
       customBackgrounds,
       switchToPrevTrack,
       switchToNextTrack,
-      repeatMode,
-      shuffleMode,
-      toggleRepeatMode,
-      toggleShuffleMode,
+      playMode,
+      togglePlayMode,
     ]
   )
 
