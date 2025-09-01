@@ -8,45 +8,30 @@ export const normalizeTokens = (tokens: unknown[]): { types: string[]; content: 
   const processToken = (token: unknown, types: string[] = []): void => {
     if (typeof token === 'string') {
       const lines = token.split('\n')
-
-      if (lines.length > 1) {
-        for (let i = 0; i < lines.length; i++) {
-          if (i !== 0) {
-            normalizedTokens[currentLine] = normalizedTokens[currentLine] || []
-          }
-
-          if (lines[i] !== '') {
-            normalizedTokens[currentLine].push({
-              types,
-              content: lines[i],
-            })
-          }
-
-          if (i !== lines.length - 1) {
-            currentLine++
-          }
+      lines.forEach((line, i) => {
+        if (i !== 0) {
+          currentLine++
+          normalizedTokens[currentLine] = normalizedTokens[currentLine] || []
         }
-      } else if (token !== '') {
-        normalizedTokens[currentLine].push({
-          types,
-          content: token,
-        })
-      }
+        if (line !== '') {
+          normalizedTokens[currentLine].push({
+            types,
+            content: line,
+          })
+        }
+      })
     } else if (token && typeof token === 'object' && 'content' in token) {
-      const tokenObj = token as { content: unknown; type?: string }
-      if (typeof tokenObj.content === 'string') {
-        processToken(tokenObj.content, [...types, tokenObj.type || ''])
-      } else if (Array.isArray(tokenObj.content)) {
-        for (const subToken of tokenObj.content) {
-          processToken(subToken, [...types, tokenObj.type || ''])
-        }
+      const { content, type } = token as { content: unknown; type?: string }
+      const newTypes = type ? [...types, type] : types
+      if (typeof content === 'string') {
+        processToken(content, newTypes)
+      } else if (Array.isArray(content)) {
+        content.forEach(subToken => processToken(subToken, newTypes))
       }
     }
   }
 
-  for (const token of tokens) {
-    processToken(token)
-  }
+  tokens.forEach(token => processToken(token))
 
   return normalizedTokens
 }
@@ -54,21 +39,17 @@ export const normalizeTokens = (tokens: unknown[]): { types: string[]; content: 
 // 计算装饰范围
 export const getTokensForCodeBlock = (node: unknown): unknown[] => {
   if (!Text.isText(node)) return []
-
-  const ranges: unknown[] = []
-
-  return ranges
+  // 目前未实现，预留接口
+  return []
 }
 
 // 合并多个Map
-export const mergeMaps = <K, V>(...maps: Map<K, V>[]) => {
+export const mergeMaps = <K, V>(...maps: Map<K, V>[]): Map<K, V> => {
   const map = new Map<K, V>()
-
-  for (const m of maps) {
-    for (const [key, value] of m.entries()) {
+  maps.forEach(m => {
+    m.forEach((value, key) => {
       map.set(key, value)
-    }
-  }
-
+    })
+  })
   return map
 }

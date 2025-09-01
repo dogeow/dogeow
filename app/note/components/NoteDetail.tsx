@@ -9,6 +9,74 @@ import { Edit, Trash2, ArrowLeft, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import ReadonlyEditor from '@/components/novel-editor/readonly'
+import React from 'react'
+
+/**
+ * 判断编辑器内容是否为空
+ */
+function isEditorContentEmpty(parsedContent: {
+  content?: Array<{ type: string; content?: Array<{ text: string }> }>
+}): boolean {
+  if (!parsedContent?.content || parsedContent.content.length === 0) {
+    return true
+  }
+  if (parsedContent.content.length === 1) {
+    const firstBlock = parsedContent.content[0]
+    if (firstBlock.type === 'paragraph') {
+      if (!firstBlock.content || firstBlock.content.length === 0) {
+        return true
+      }
+      if (firstBlock.content.length === 1 && firstBlock.content[0].text === '') {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+/**
+ * 渲染笔记内容
+ */
+function renderNoteContent(content: string) {
+  try {
+    const parsedContent = JSON.parse(content)
+    if (isEditorContentEmpty(parsedContent)) {
+      return (
+        <div className="prose max-w-none py-8">
+          <span className="text-gray-500 italic">(无内容)</span>
+        </div>
+      )
+    }
+    try {
+      return <ReadonlyEditor content={parsedContent} />
+    } catch (renderError) {
+      console.error('ReadonlyEditor render failed:', renderError)
+      return (
+        <div className="prose max-w-none py-8">
+          <span className="text-gray-500 italic">(内容渲染失败)</span>
+        </div>
+      )
+    }
+  } catch (error) {
+    console.error('Failed to parse note content:', error)
+    return (
+      <div className="prose max-w-none py-8">
+        <pre className="whitespace-pre-wrap">{content}</pre>
+      </div>
+    )
+  }
+}
+
+/**
+ * 格式化时间
+ */
+function formatDate(dateString: string) {
+  try {
+    return format(new Date(dateString), 'yyyy年MM月dd日 HH:mm', { locale: zhCN })
+  } catch {
+    return dateString
+  }
+}
 
 export default function NoteDetail() {
   const router = useRouter()
@@ -28,15 +96,6 @@ export default function NoteDetail() {
     await del(`/notes/${id}`)
     toast.success('笔记已删除')
     router.push('/note')
-  }
-
-  // 格式化时间
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), 'yyyy年MM月dd日 HH:mm', { locale: zhCN })
-    } catch {
-      return dateString
-    }
   }
 
   if (error) return <div>加载失败</div>
@@ -66,51 +125,7 @@ export default function NoteDetail() {
       </div>
       <div className="max-w-none">
         {note.content ? (
-          (() => {
-            try {
-              const parsedContent = JSON.parse(note.content)
-
-              // 检查是否是空的编辑器内容
-              const isEmpty =
-                !parsedContent ||
-                !parsedContent.content ||
-                parsedContent.content.length === 0 ||
-                (parsedContent.content.length === 1 &&
-                  parsedContent.content[0].type === 'paragraph' &&
-                  (!parsedContent.content[0].content ||
-                    parsedContent.content[0].content.length === 0 ||
-                    (parsedContent.content[0].content.length === 1 &&
-                      parsedContent.content[0].content[0].text === '')))
-
-              if (isEmpty) {
-                return (
-                  <div className="prose max-w-none py-8">
-                    <span className="text-gray-500 italic">(无内容)</span>
-                  </div>
-                )
-              }
-
-              // 尝试渲染内容，如果失败则显示备用内容
-              try {
-                return <ReadonlyEditor content={parsedContent} />
-              } catch (renderError) {
-                console.error('ReadonlyEditor render failed:', renderError)
-                return (
-                  <div className="prose max-w-none py-8">
-                    <span className="text-gray-500 italic">(内容渲染失败)</span>
-                  </div>
-                )
-              }
-            } catch (error) {
-              console.error('Failed to parse note content:', error)
-              // 如果JSON解析失败，显示原始内容
-              return (
-                <div className="prose max-w-none py-8">
-                  <pre className="whitespace-pre-wrap">{note.content}</pre>
-                </div>
-              )
-            }
-          })()
+          renderNoteContent(note.content)
         ) : (
           <div className="prose max-w-none py-8">
             <span className="italic">(无内容)</span>
