@@ -162,7 +162,7 @@ const ReadonlyEditor = ({ content, className }: ReadonlyEditorProps) => {
   if (!initialContent) return null
 
   return (
-    <div className={`note-content relative w-full ${className || ''}`}>
+    <div className={`relative w-full px-4 ${className || ''}`}>
       <EditorRoot>
         <EditorContent
           initialContent={initialContent}

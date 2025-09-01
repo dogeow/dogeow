@@ -43,7 +43,7 @@ export default function NoteDetail() {
   if (!note) return <div>加载中...</div>
 
   return (
-    <div className="mx-auto mt-8 max-w-4xl px-4 sm:px-6 lg:px-8">
+    <div className="mx-auto mt-4 max-w-4xl">
       <div className="mb-6 flex items-center justify-between">
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
@@ -64,7 +64,7 @@ export default function NoteDetail() {
       <div className="mb-4 text-center text-xs text-gray-500">
         更新于 {formatDate(note.updated_at)}
       </div>
-      <div className="note-content max-w-none">
+      <div className="max-w-none">
         {note.content ? (
           (() => {
             try {

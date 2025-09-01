@@ -43,30 +43,6 @@
   --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* 移动端键盘弹出时的样式优化 */
-@media (max-width: 768px) {
-  /* 使用 vh 单位来处理移动端键盘问题 */
-  [data-radix-popover-content] {
-    max-height: min(250px, 35vh) !important;
-  }
-
-  /* 确保移动端页面高度正确 */
-  html,
-  body {
-    height: 100%;
-    overflow: hidden;
-  }
-
-  /* 移动端安全区域支持 */
-  .safe-area-top {
-    padding-top: env(safe-area-inset-top, 0);
-  }
-
-  .safe-area-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0);
-  }
-}
-
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -149,7 +125,7 @@
   }
 }
 
-/* Sonner Toast Styles */
+/* start Sonner Toast Styles */
 .sonner-toast {
   --normal-bg: hsl(var(--background));
   --normal-border: hsl(var(--border));
@@ -161,8 +137,9 @@
   --error-border: hsl(var(--destructive));
   --error-text: hsl(var(--destructive-foreground));
 }
+/* end Sonner Toast Styles */
 
-/* 隐藏滚动条但保留滚动功能 */
+/* start 隐藏滚动条但保留滚动功能 */
 .scrollbar-none {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
@@ -171,22 +148,28 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none; /* Chrome, Safari and Opera */
 }
+/* end 隐藏滚动条但保留滚动功能 */
 
-/* 瓦片网格布局样式 */
-.tile-grid {
-  display: grid;
-  gap: 0.75rem;
-}
-
-@media (min-width: 640px) {
-  .tile-grid {
-    gap: 1rem;
+/* 移动端键盘弹出时的样式优化 */
+@media (max-width: 768px) {
+  /* 使用 vh 单位来处理移动端键盘问题 */
+  [data-radix-popover-content] {
+    max-height: min(250px, 35vh) !important;
   }
-}
 
-/* 确保网格项目正确显示 */
-.tile-grid > div {
-  min-height: 8rem;
-  display: flex;
-  align-items: stretch;
+  /* 确保移动端页面高度正确 */
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* 移动端安全区域支持 */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
 }

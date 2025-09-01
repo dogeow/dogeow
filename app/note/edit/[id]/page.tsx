@@ -29,13 +29,13 @@ export default function EditNotePage() {
   const [clientReady, setClientReady] = useState(false)
   const [title, setTitle] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [isPrivate, setIsPrivate] = useState(false) // 隐私状态
 
   // 添加按钮交互状态
-  const [draftButtonHovered, setDraftButtonHovered] = useState(false)
+  const [privacyButtonHovered, setPrivacyButtonHovered] = useState(false)
   const [saveButtonHovered, setSaveButtonHovered] = useState(false)
-  const [draftButtonPressed, setDraftButtonPressed] = useState(false)
+  const [privacyButtonPressed, setPrivacyButtonPressed] = useState(false)
   const [saveButtonPressed, setSaveButtonPressed] = useState(false)
-  const [draftSaved, setDraftSaved] = useState(false) // 草稿保存状态
 
   useEffect(() => {
     // 标记客户端组件已加载
@@ -47,6 +47,7 @@ export default function EditNotePage() {
         const data = await apiRequest<Note>(`/notes/${noteId}`)
         setNote(data)
         setTitle(data.title)
+        setIsPrivate(data.is_draft) // 设置初始隐私状态
 
         // 将笔记内容加载到 Novel 编辑器
         if (data.content) {
@@ -101,44 +102,69 @@ export default function EditNotePage() {
     }
   }
 
+  // 切换隐私状态
+  const handleTogglePrivacy = useCallback(async () => {
+    if (!title.trim()) {
+      toast.error('请输入笔记标题')
+      return
+    }
+
+    const { content, markdown } = getCurrentContent()
+    const newPrivacyStatus = !isPrivate
+
+    try {
+      setIsSaving(true)
+
+      const data = {
+        title: title.trim(),
+        content,
+        content_markdown: markdown,
+        is_draft: newPrivacyStatus, // 私密状态对应 is_draft
+      }
+
+      const noteId = Array.isArray(id) ? id[0] : id
+      await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
+
+      setIsPrivate(newPrivacyStatus)
+      toast.success(newPrivacyStatus ? '已私密' : '已公开')
+    } catch (error) {
+      console.error('切换隐私状态错误:', error)
+      toast.error('操作失败')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [title, id, isPrivate])
+
   // 保存笔记
-  const handleSave = useCallback(
-    async (asDraft = false) => {
-      if (!title.trim()) {
-        toast.error('请输入笔记标题')
-        return
+  const handleSave = useCallback(async () => {
+    if (!title.trim()) {
+      toast.error('请输入笔记标题')
+      return
+    }
+
+    const { content, markdown } = getCurrentContent()
+
+    try {
+      setIsSaving(true)
+
+      const data = {
+        title: title.trim(),
+        content,
+        content_markdown: markdown,
+        is_draft: isPrivate, // 保持当前隐私状态
       }
 
-      const { content, markdown } = getCurrentContent()
+      const noteId = Array.isArray(id) ? id[0] : id
+      await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
 
-      try {
-        setIsSaving(true)
-
-        const data = {
-          title: title.trim(),
-          content,
-          content_markdown: markdown,
-          is_draft: asDraft,
-        }
-
-        const noteId = Array.isArray(id) ? id[0] : id
-        await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
-
-        toast.success(asDraft ? '已解锁' : '笔记已更新')
-
-        // 如果是草稿，设置草稿保存状态
-        if (asDraft) {
-          setDraftSaved(true)
-        }
-      } catch (error) {
-        console.error('保存笔记错误:', error)
-        toast.error('保存失败')
-      } finally {
-        setIsSaving(false)
-      }
-    },
-    [title, id]
-  )
+      toast.success('笔记已更新')
+    } catch (error) {
+      console.error('保存笔记错误:', error)
+      toast.error('保存失败')
+    } finally {
+      setIsSaving(false)
+    }
+  }, [title, id, isPrivate])
 
   // 添加快捷键支持
   useEffect(() => {
@@ -147,21 +173,21 @@ export default function EditNotePage() {
       if ((e.ctrlKey || e.metaKey) && e.key === 's') {
         e.preventDefault()
         if (title.trim() && !isSaving) {
-          handleSave(false)
+          handleSave()
         }
       }
-      // Ctrl+Shift+S 或 Cmd+Shift+S 保存草稿
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
+      // Ctrl+Shift+P 或 Cmd+Shift+P 切换隐私状态
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'P') {
         e.preventDefault()
         if (title.trim() && !isSaving) {
-          handleSave(true)
+          handleTogglePrivacy()
         }
       }
     }
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [title, isSaving, handleSave])
+  }, [title, isSaving, handleSave, handleTogglePrivacy])
 
   if (loading) {
     return (
@@ -207,32 +233,32 @@ export default function EditNotePage() {
               className="flex-1 text-lg font-medium"
             />
             <Button
-              onClick={() => handleSave(true)}
-              onMouseEnter={() => setDraftButtonHovered(true)}
-              onMouseLeave={() => setDraftButtonHovered(false)}
-              onMouseDown={() => setDraftButtonPressed(true)}
-              onMouseUp={() => setDraftButtonPressed(false)}
+              onClick={handleTogglePrivacy}
+              onMouseEnter={() => setPrivacyButtonHovered(true)}
+              onMouseLeave={() => setPrivacyButtonHovered(false)}
+              onMouseDown={() => setPrivacyButtonPressed(true)}
+              onMouseUp={() => setPrivacyButtonPressed(false)}
               variant="ghost"
               size="icon"
               disabled={isSaving || !title.trim()}
               className="text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              title="上锁保存 (Ctrl+Shift+S)"
+              title={`${isPrivate ? '切换为公开' : '切换为私密'} (Ctrl+Shift+P)`}
               style={{
-                transform: `translateY(${draftButtonHovered ? '-2px' : '0'}) scale(${draftButtonPressed ? '0.95' : '1'})`,
+                transform: `translateY(${privacyButtonHovered ? '-2px' : '0'}) scale(${privacyButtonPressed ? '0.95' : '1'})`,
                 transition: 'all 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
-                boxShadow: draftButtonHovered ? '0 4px 8px rgba(0,0,0,0.1)' : 'none',
+                boxShadow: privacyButtonHovered ? '0 4px 8px rgba(0,0,0,0.1)' : 'none',
               }}
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
-              ) : draftSaved ? (
-                <Unlock className="h-4 w-4" />
-              ) : (
+              ) : isPrivate ? (
                 <Lock className="h-4 w-4" />
+              ) : (
+                <Unlock className="h-4 w-4" />
               )}
             </Button>
             <Button
-              onClick={() => handleSave(false)}
+              onClick={handleSave}
               onMouseEnter={() => setSaveButtonHovered(true)}
               onMouseLeave={() => setSaveButtonHovered(false)}
               onMouseDown={() => setSaveButtonPressed(true)}
