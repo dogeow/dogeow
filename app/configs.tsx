@@ -182,18 +182,26 @@ export const configs = {
 
 // 通用的多语言配置转换函数
 interface TranslatableItem {
-  [key: string]: string | number | boolean | React.ReactNode | undefined
+  id?: string
   nameKey?: string
   descriptionKey?: string
   name?: string
   description?: string
+  url?: string
+  icon?: string | React.ReactNode
+  color?: string
+  primary?: string
+  href?: string
+  needLogin?: boolean
+  hideOnMobile?: boolean
+  [key: string]: string | number | boolean | React.ReactNode | undefined
 }
 
 const mapWithTranslation = (
   arr: TranslatableItem[],
   t: (key: string, fallback?: string) => string,
   fields: string[] = ['nameKey']
-) =>
+): TranslatableItem[] =>
   arr.map(item => {
     const result = { ...item }
     fields.forEach(field => {

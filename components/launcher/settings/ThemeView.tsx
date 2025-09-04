@@ -36,14 +36,20 @@ export function ThemeView({
       <SettingsDivider />
 
       {/* 预设主题色 */}
-      {translatedConfigs.themeColors.map(theme => (
-        <ThemeButton
-          key={theme.id}
-          theme={theme}
-          isSelected={currentTheme === theme.id}
-          onSelect={onSetTheme}
-        />
-      ))}
+      {translatedConfigs.themeColors
+        .filter(theme => theme.id && theme.name && theme.color)
+        .map(theme => (
+          <ThemeButton
+            key={theme.id!}
+            theme={{
+              id: theme.id!,
+              name: theme.name!,
+              color: theme.color!,
+            }}
+            isSelected={currentTheme === theme.id}
+            onSelect={onSetTheme}
+          />
+        ))}
 
       {/* 用户自定义主题 */}
       {customThemes.map(theme => (

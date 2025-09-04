@@ -34,14 +34,20 @@ export function BackgroundView({
       <SettingsDivider />
 
       {/* 系统背景图片选项 */}
-      {translatedConfigs.systemBackgrounds.map(bg => (
-        <BackgroundButton
-          key={bg.id}
-          background={bg}
-          isSelected={backgroundImage === bg.url}
-          onSelect={onSetBackground}
-        />
-      ))}
+      {translatedConfigs.systemBackgrounds
+        .filter(bg => bg.id && bg.name && bg.url)
+        .map(bg => (
+          <BackgroundButton
+            key={bg.id!}
+            background={{
+              id: bg.id!,
+              name: bg.name!,
+              url: bg.url!,
+            }}
+            isSelected={backgroundImage === bg.url}
+            onSelect={onSetBackground}
+          />
+        ))}
 
       {/* 用户自定义背景 */}
       {customBackgrounds.map(bg => (
