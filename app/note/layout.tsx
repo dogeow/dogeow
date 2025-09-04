@@ -2,6 +2,7 @@
 
 import NoteNavigation from './components/NoteNavigation'
 import ProtectedRoute from '@/components/ProtectedRoute'
+import 'prismjs/themes/prism.css'
 import './styles/prism.css'
 
 export default function NoteLayout({ children }: { children: React.ReactNode }) {

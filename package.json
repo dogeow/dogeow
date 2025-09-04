@@ -24,7 +24,6 @@
     "test:perf": "node scripts/test-performance.js",
     "test:check-coverage": "node scripts/check-coverage-v8.js",
     "test:generate": "node scripts/generate-test.js",
-    "test:template": "node scripts/generate-test-templates.js",
     "test:validate": "npm run test:coverage && npm run test:check-coverage",
     "test:monitor": "node scripts/coverage-monitor.js",
     "test:full": "npm run test:coverage && npm run test:monitor"

@@ -5,15 +5,13 @@ import { Toaster } from '@/components/ui/sonner'
 import { AppLauncher } from '@/components/launcher'
 import { BackgroundWrapper } from '@/components/provider/BackgroundWrapper'
 import './globals.css'
-import 'prismjs/themes/prism.css'
-import './note/styles/prism.css'
 import { SWRProvider } from '@/components/provider/SWRProvider'
 import ProtectedRoute from '@/components/ProtectedRoute'
 import { LanguageProvider } from '@/components/provider/LanguageProvider'
 import { PWAInstallPrompt } from '@/components/app/PWAInstallPrompt'
 import { PWARegister } from '@/components/app/PWARegister'
 import { LanguageDetectionPrompt } from '@/components/ui/language-detection-prompt'
-import '@/lib/i18n/log-control' // 引入日志控制模块
+import '@/lib/i18n/log-control'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -36,7 +34,7 @@ export const metadata: Metadata = {
   title: 'DogeOW - 学习、生活、工作于一体',
   description: 'DogeOW是一个集学习、生活、工作于一体的综合性平台，支持PWA安装和离线使用',
   keywords: ['学习', '生活', '工作', 'PWA', '离线应用'],
-  authors: [{ name: 'DogeOW Team' }],
+  authors: [{ name: 'DogeOW' }],
   creator: 'DogeOW',
   publisher: 'DogeOW',
   formatDetection: {
