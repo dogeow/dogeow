@@ -34,7 +34,6 @@ function ChatPageContent() {
     onlineUsers,
   } = useChatStore()
 
-  // 保证 loadRooms 引用稳定
   const loadRooms = useCallback(() => useChatStore.getState().loadRooms(), [])
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
   const [isRoomListOpen, setIsRoomListOpen] = useState(false)
@@ -64,14 +63,14 @@ function ChatPageContent() {
   const handleMessage = useCallback(
     (data: unknown) => {
       const messageData = data as { type: string; message?: ChatMessage; [key: string]: unknown }
-      console.log('🔥 ChatPage: handleMessage called with:', messageData)
-      console.log('🔥 ChatPage: Current room:', currentRoom)
+      console.log('🔥 ChatPage: handleMessage 被调用，参数为：', messageData)
+      console.log('🔥 ChatPage: 当前房间：', currentRoom)
 
       if (messageData.type === 'message' && messageData.message) {
         // 直接使用消息中的 room_id，而不依赖 currentRoom 状态
         const roomId = messageData.message.room_id
-        console.log('🔥 ChatPage: Adding message to room:', roomId, messageData.message)
-        console.log('🔥 ChatPage: Message details:', {
+        console.log('🔥 ChatPage: 正在向房间添加消息：', roomId, messageData.message)
+        console.log('🔥 ChatPage: 消息详情：', {
           id: messageData.message.id,
           room_id: messageData.message.room_id,
           message: messageData.message.message,
@@ -80,29 +79,29 @@ function ChatPageContent() {
 
         // 检查store状态
         const beforeMessages = useChatStore.getState().messages
-        console.log('🔥 ChatPage: Store before addMessage:', {
-          allRoomKeys: Object.keys(beforeMessages),
-          targetRoomMessages: beforeMessages[roomId.toString()]?.length || 0,
+        console.log('🔥 ChatPage: 添加消息前的store状态：', {
+          所有房间keys: Object.keys(beforeMessages),
+          目标房间消息数: beforeMessages[roomId.toString()]?.length || 0,
         })
 
         addMessage(roomId, messageData.message)
 
         // 检查store状态
         const afterMessages = useChatStore.getState().messages
-        console.log('🔥 ChatPage: Store after addMessage:', {
-          allRoomKeys: Object.keys(afterMessages),
-          targetRoomMessages: afterMessages[roomId.toString()]?.length || 0,
+        console.log('🔥 ChatPage: 添加消息后的store状态：', {
+          所有房间keys: Object.keys(afterMessages),
+          目标房间消息数: afterMessages[roomId.toString()]?.length || 0,
         })
 
-        console.log('🔥 ChatPage: Message added successfully')
+        console.log('🔥 ChatPage: 消息添加成功')
       } else if (
         (messageData.type === 'user_joined' || messageData.type === 'user_left') &&
         currentRoom
       ) {
-        console.log('ChatPage: User event, reloading online users')
+        console.log('ChatPage: 用户事件，正在重新加载在线用户')
         loadOnlineUsers(currentRoom.id).catch(() => {})
       } else {
-        console.warn('❌ ChatPage: Message not processed:', {
+        console.warn('❌ ChatPage: 消息未被处理：', {
           type: messageData.type,
           hasCurrentRoom: !!currentRoom,
           hasMessage: !!messageData.message,
@@ -176,44 +175,44 @@ function ChatPageContent() {
 
   // 房间切换时加载在线用户并加入 WebSocket 房间
   useEffect(() => {
-    console.log('🔥 ChatPage: Room/connection effect triggered:', {
-      currentRoom: currentRoom?.id,
-      isAuthenticated,
-      connectionStatus: connectionInfo.status,
-      wsJoinRoomFunction: !!wsJoinRoom,
+    console.log('🔥 ChatPage: 房间/连接副作用触发：', {
+      当前房间: currentRoom?.id,
+      是否已认证: isAuthenticated,
+      连接状态: connectionInfo.status,
+      wsJoinRoom函数是否存在: !!wsJoinRoom,
     })
 
     if (currentRoom && isAuthenticated && connectionInfo.status === 'connected') {
-      console.log('🔥 ChatPage: Loading online users and joining WebSocket room:', currentRoom.id)
-      console.log('🔥 ChatPage: Connection status:', connectionInfo.status)
-      console.log('🔥 ChatPage: Is authenticated:', isAuthenticated)
+      console.log('🔥 ChatPage: 加载在线用户并加入WebSocket房间：', currentRoom.id)
+      console.log('🔥 ChatPage: 连接状态：', connectionInfo.status)
+      console.log('🔥 ChatPage: 已认证：', isAuthenticated)
       loadOnlineUsers(currentRoom.id).catch(handleError)
       wsJoinRoom(currentRoom.id.toString())
-      console.log('🔥 ChatPage: WebSocket joinRoom called for room:', currentRoom.id)
+      console.log('🔥 ChatPage: WebSocket joinRoom已调用，房间：', currentRoom.id)
 
       // 添加一个简单的测试来验证WebSocket连接
       setTimeout(() => {
-        console.log('🔥 ChatPage: Testing WebSocket connection after 2 seconds')
-        console.log('🔥 ChatPage: Connection info:', connectionInfo)
-        console.log('🔥 ChatPage: Current room:', currentRoom?.id)
+        console.log('🔥 ChatPage: 2秒后测试WebSocket连接')
+        console.log('🔥 ChatPage: 连接信息：', connectionInfo)
+        console.log('🔥 ChatPage: 当前房间：', currentRoom?.id)
 
         // 强制测试房间加入
-        console.log('🔥 ChatPage: Force testing wsJoinRoom for room 31')
+        console.log('🔥 ChatPage: 强制测试wsJoinRoom，房间31')
         wsJoinRoom('31')
-        console.log('🔥 ChatPage: Force wsJoinRoom called')
+        console.log('🔥 ChatPage: 强制调用wsJoinRoom')
       }, 2000)
     } else {
-      console.log('🔥 ChatPage: Not joining room because:', {
-        hasCurrentRoom: !!currentRoom,
-        isAuthenticated,
-        connectionStatus: connectionInfo.status,
+      console.log('🔥 ChatPage: 未加入房间，原因：', {
+        是否有当前房间: !!currentRoom,
+        是否已认证: isAuthenticated,
+        连接状态: connectionInfo.status,
       })
 
       // 即使没有当前房间，也强制加入房间31进行测试
       if (isAuthenticated && connectionInfo.status === 'connected') {
-        console.log('🔥 ChatPage: Force joining room 31 for testing (no current room)')
+        console.log('🔥 ChatPage: 强制加入房间31进行测试（无当前房间）')
         wsJoinRoom('31')
-        console.log('🔥 ChatPage: Force wsJoinRoom(31) called')
+        console.log('🔥 ChatPage: 强制调用wsJoinRoom(31)')
       }
     }
   }, [
