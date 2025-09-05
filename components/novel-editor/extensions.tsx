@@ -29,9 +29,9 @@ import { MarkdownCopyExtension } from './extensions/markdown-copy'
 import { cx } from 'class-variance-authority'
 import { common, createLowlight } from 'lowlight'
 
-//TODO I am using cx here to get tailwind autocomplete working, idk if someone else can write a regex to just capture the class key in objects
+// TODO 我在这里用 cx 是为了让 tailwind 自动补全生效，如果有人能写个正则只捕获对象里的 class key 也可以
 const aiHighlight = AIHighlight
-//You can overwrite the placeholder with your own configuration
+// 你可以用自己的配置覆盖 placeholder
 const placeholder = Placeholder
 const tiptapLink = TiptapLink.configure({
   HTMLAttributes: {
@@ -117,8 +117,8 @@ const starterKit = StarterKit.configure({
 })
 
 const codeBlockLowlight = CodeBlockLowlight.configure({
-  // configure lowlight: common /  all / use highlightJS in case there is a need to specify certain language grammars only
-  // common: covers 37 language grammars which should be good enough in most cases
+  // 配置 lowlight：common / all / 也可以用 highlightJS，如果只需要指定某些语言语法
+  // common：包含 37 种常用语言语法，大多数场景够用
   lowlight: createLowlight(common),
   HTMLAttributes: {
     class: cx(

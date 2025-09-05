@@ -11,28 +11,52 @@ import type { ChatMessage } from '../types'
 import { MessageInteractions, MessageSearch } from './MessageInteractions'
 import { MentionHighlight, useMentionDetection } from './MentionHighlight'
 
+// 常量定义
+const DEFAULT_CONTAINER_HEIGHT = 600
+const DEFAULT_MESSAGE_HEIGHT = 80
+const SYSTEM_MESSAGE_HEIGHT = 60
+const DATE_SEPARATOR_HEIGHT = 40
+const LOADING_ITEM_HEIGHT = 60
+const SEARCH_BAR_HEIGHT = 60
+const SCROLL_DELAY = 100
+const HIGHLIGHT_DURATION = 3000
+const LOADING_SKELETON_COUNT = 5
+
 interface VirtualizedMessageListProps {
+  /** 房间ID */
   roomId: number
+  /** 自定义CSS类名 */
   className?: string
+  /** 回复消息的回调函数 */
   onReply?: (message: ChatMessage) => void
+  /** 容器高度，默认为600px */
   containerHeight?: number
 }
 
 interface MessageItem {
+  /** 项目唯一标识符 */
   id: string | number
+  /** 项目类型 */
   type: 'message' | 'date-separator' | 'loading'
+  /** 项目数据 */
   data: ChatMessage | string
+  /** 项目高度，用于虚拟滚动 */
   height?: number
 }
 
-// Simple Avatar component
-function Avatar({ name, className }: { name: string; className?: string }) {
-  const initials = name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+/**
+ * 简单的头像组件
+ * 根据用户名生成首字母缩写
+ */
+const Avatar = React.memo(({ name, className }: { name: string; className?: string }) => {
+  const initials = useMemo(() => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }, [name])
 
   return (
     <div
@@ -44,23 +68,30 @@ function Avatar({ name, className }: { name: string; className?: string }) {
       {initials}
     </div>
   )
-}
+})
+Avatar.displayName = 'Avatar'
 
-// Format timestamp for display
+/**
+ * 格式化消息时间戳显示
+ * 根据时间显示不同的格式：今天显示时间，昨天显示"昨天+时间"，其他显示日期+时间
+ */
 function formatMessageTime(timestamp: string): string {
   const date = new Date(timestamp)
 
   if (isToday(date)) {
     return format(date, 'HH:mm')
   } else if (isYesterday(date)) {
-    return `Yesterday ${format(date, 'HH:mm')}`
+    return `昨天 ${format(date, 'HH:mm')}`
   } else {
     return format(date, 'MMM d, HH:mm')
   }
 }
 
-// Date separator component
-function DateSeparator({ date }: { date: string }) {
+/**
+ * 日期分隔符组件
+ * 用于在消息列表中分隔不同日期的消息
+ */
+const DateSeparator = React.memo(({ date }: { date: string }) => {
   return (
     <div className="flex items-center justify-center py-4">
       <div className="bg-muted text-muted-foreground rounded-full px-3 py-1 text-xs font-medium">
@@ -68,9 +99,13 @@ function DateSeparator({ date }: { date: string }) {
       </div>
     </div>
   )
-}
+})
+DateSeparator.displayName = 'DateSeparator'
 
-// Message content component with mention highlighting
+/**
+ * 消息内容组件，支持提及高亮
+ * 处理系统消息和普通消息的不同显示方式
+ */
 function MessageContent({
   message,
   isSelected,
@@ -116,7 +151,10 @@ function MessageContent({
   )
 }
 
-// Single message component
+/**
+ * 单个消息组件
+ * 包含用户头像、用户名、时间戳和消息内容
+ */
 function MessageItem({
   message,
   onReply,
@@ -131,7 +169,7 @@ function MessageItem({
   const [selectedMessageId, setSelectedMessageId] = useState<number | null>(null)
 
   const handleMentionClick = (username: string) => {
-    console.log('Clicked mention:', username)
+    console.log('点击提及:', username)
   }
 
   return (
@@ -157,8 +195,11 @@ function MessageItem({
   )
 }
 
-// Loading skeleton
-function LoadingItem({ style }: { style: React.CSSProperties }) {
+/**
+ * 加载骨架屏组件
+ * 在消息加载时显示占位符
+ */
+const LoadingItem = React.memo(({ style }: { style: React.CSSProperties }) => {
   return (
     <div className="flex gap-3 px-4 py-2" style={style}>
       <Skeleton className="h-8 w-8 flex-shrink-0 rounded-full" />
@@ -171,10 +212,14 @@ function LoadingItem({ style }: { style: React.CSSProperties }) {
       </div>
     </div>
   )
-}
+})
+LoadingItem.displayName = 'LoadingItem'
 
-// Empty state component
-function EmptyState() {
+/**
+ * 空状态组件
+ * 当没有消息时显示的占位内容
+ */
+const EmptyState = React.memo(() => {
   return (
     <div className="flex h-full flex-col items-center justify-center p-8 text-center">
       <div className="text-muted-foreground mb-2">
@@ -192,71 +237,89 @@ function EmptyState() {
           />
         </svg>
       </div>
-      <h3 className="mb-1 text-lg font-medium">No messages yet</h3>
-      <p className="text-muted-foreground text-sm">Be the first to start the conversation!</p>
+      <h3 className="mb-1 text-lg font-medium">暂无消息</h3>
+      <p className="text-muted-foreground text-sm">成为第一个开始对话的人吧！</p>
     </div>
   )
-}
+})
+EmptyState.displayName = 'EmptyState'
 
+/**
+ * 虚拟化消息列表组件
+ * 使用虚拟滚动技术优化大量消息的渲染性能
+ * 支持消息搜索、分页加载、提及高亮等功能
+ */
 export function VirtualizedMessageList({
   roomId,
   className,
   onReply,
-  containerHeight = 600,
+  containerHeight = DEFAULT_CONTAINER_HEIGHT,
 }: VirtualizedMessageListProps) {
   const { messages, messagesPagination, isLoading, loadMessages, loadMoreMessages } = useChatStore()
   const previousMessageCountRef = useRef(0)
 
+  // 获取当前房间的消息和分页信息
   const roomKey = roomId.toString()
   const roomMessages = useMemo(() => messages[roomKey] || [], [messages, roomKey])
   const pagination = messagesPagination[roomKey]
   const hasMoreMessages = pagination?.has_more || false
 
-  // Virtual scroll hook
+  // 虚拟滚动钩子，用于优化大量消息的渲染性能
   const { scrollToIndex, scrollToBottom, scrollToItem, scrollToEnd } = useVirtualScroll({
     items: roomMessages,
     containerHeight,
-    itemHeight: 80, // Average message height
+    itemHeight: DEFAULT_MESSAGE_HEIGHT, // 平均消息高度
   })
 
-  // Handle message reactions
+  // 处理消息反应
   const handleReact = useCallback((messageId: number, emoji: string) => {
-    console.log('React to message', messageId, 'with', emoji)
+    try {
+      console.log('对消息', messageId, '添加反应:', emoji)
+      // TODO: 实现实际的反应功能
+    } catch (error) {
+      console.error('添加消息反应失败:', error)
+    }
   }, [])
 
-  // Handle message search selection
+  // 处理消息搜索选择
   const handleMessageSelect = useCallback(
     (messageId: number) => {
-      // Find message index and scroll to it
-      const messageIndex = roomMessages.findIndex(msg => msg.id === messageId)
-      if (messageIndex !== -1) {
-        scrollToItem(messageIndex)
-      }
+      try {
+        // 查找消息索引并滚动到该位置
+        const messageIndex = roomMessages.findIndex(msg => msg.id === messageId)
+        if (messageIndex !== -1) {
+          scrollToItem(messageIndex)
+        } else {
+          console.warn('未找到消息ID:', messageId)
+        }
 
-      // Clear highlight after a few seconds
-      setTimeout(() => {
-        // This part of the logic was removed as per the edit hint
-      }, 3000)
+        // 几秒后清除高亮
+        setTimeout(() => {
+          // 此部分逻辑已根据编辑提示移除
+        }, HIGHLIGHT_DURATION)
+      } catch (error) {
+        console.error('滚动到消息失败:', error)
+      }
     },
     [roomMessages, scrollToItem]
   )
 
-  // Load initial messages when room changes
+  // 当房间变化时加载初始消息
   useEffect(() => {
     if (roomId) {
       loadMessages(roomId)
         .then(() => {
-          console.log('VirtualizedMessageList: loadMessages completed for room:', roomId)
-          // Scroll to bottom for initial load
-          setTimeout(() => scrollToEnd(), 100)
+          console.log('VirtualizedMessageList: 房间', roomId, '的消息加载完成')
+          // 初始加载时滚动到底部
+          setTimeout(() => scrollToEnd(), SCROLL_DELAY)
         })
         .catch(error => {
-          console.error('VirtualizedMessageList: loadMessages failed for room:', roomId, error)
+          console.error('VirtualizedMessageList: 房间', roomId, '的消息加载失败:', error)
         })
     }
   }, [roomId, loadMessages, scrollToEnd])
 
-  // Auto-scroll to bottom for new messages
+  // 新消息时自动滚动到底部
   useEffect(() => {
     if (roomMessages.length > previousMessageCountRef.current) {
       scrollToEnd()
@@ -264,7 +327,7 @@ export function VirtualizedMessageList({
     previousMessageCountRef.current = roomMessages.length
   }, [roomMessages.length, scrollToEnd])
 
-  // Convert messages to virtual scroll items
+  // 将消息转换为虚拟滚动项目
   const virtualItems = useMemo((): MessageItem[] => {
     const items: MessageItem[] = []
     let currentDate = ''
@@ -272,53 +335,57 @@ export function VirtualizedMessageList({
     roomMessages.forEach(message => {
       const messageDate = format(new Date(message.created_at), 'yyyy-MM-dd')
 
-      // Add date separator if date changed
+      // 如果日期改变，添加日期分隔符
       if (messageDate !== currentDate) {
         currentDate = messageDate
         const dateLabel = isToday(new Date(messageDate))
-          ? 'Today'
+          ? '今天'
           : isYesterday(new Date(messageDate))
-            ? 'Yesterday'
+            ? '昨天'
             : format(new Date(messageDate), 'MMMM d, yyyy')
 
         items.push({
           id: `date-${messageDate}`,
           type: 'date-separator',
           data: dateLabel,
-          height: 40,
+          height: DATE_SEPARATOR_HEIGHT,
         })
       }
 
-      // Add message
+      // 添加消息
       items.push({
         id: message.id,
         type: 'message',
         data: message,
-        height: message.message_type === 'system' ? 60 : 80,
+        height: message.message_type === 'system' ? SYSTEM_MESSAGE_HEIGHT : DEFAULT_MESSAGE_HEIGHT,
       })
     })
 
-    // Add loading item if loading more
+    // 如果正在加载更多消息，添加加载项
     if (isLoading && hasMoreMessages) {
       items.unshift({
         id: 'loading',
         type: 'loading',
-        data: '', // No specific data for loading, just a placeholder
-        height: 60,
+        data: '', // 加载项没有特定数据，只是占位符
+        height: LOADING_ITEM_HEIGHT,
       })
     }
 
     return items
   }, [roomMessages, isLoading, hasMoreMessages])
 
-  // Handle load more
+  // 处理加载更多消息
   const handleLoadMore = useCallback(() => {
-    if (hasMoreMessages && !isLoading && pagination?.next_cursor) {
-      loadMoreMessages(roomId)
+    try {
+      if (hasMoreMessages && !isLoading && pagination?.next_cursor) {
+        loadMoreMessages(roomId)
+      }
+    } catch (error) {
+      console.error('加载更多消息失败:', error)
     }
   }, [hasMoreMessages, isLoading, pagination?.next_cursor, loadMoreMessages, roomId])
 
-  // Render virtual item
+  // 渲染虚拟项目
   const renderItem = useCallback(
     (item: MessageItem, _index: number, style: React.CSSProperties) => {
       switch (item.type) {
@@ -346,12 +413,12 @@ export function VirtualizedMessageList({
     [onReply, handleReact]
   )
 
-  // Show loading state for initial load
+  // 显示初始加载状态
   if (isLoading && roomMessages.length === 0) {
     return (
       <div className={cn('flex h-full flex-col', className)}>
         <div className="flex-1 space-y-4 p-4">
-          {Array.from({ length: 5 }).map((_, i) => (
+          {Array.from({ length: LOADING_SKELETON_COUNT }).map((_, i) => (
             <div key={i} className="flex gap-3 px-4 py-2">
               <Skeleton className="h-8 w-8 flex-shrink-0 rounded-full" />
               <div className="flex-1 space-y-2">
@@ -368,7 +435,7 @@ export function VirtualizedMessageList({
     )
   }
 
-  // Show empty state
+  // 显示空状态
   if (!isLoading && roomMessages.length === 0) {
     return (
       <div className={cn('flex h-full flex-col', className)}>
@@ -379,17 +446,17 @@ export function VirtualizedMessageList({
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
-      {/* Search functionality */}
+      {/* 搜索功能 */}
       <div className="border-b p-2">
         <MessageSearch messages={roomMessages} onMessageSelect={handleMessageSelect} />
       </div>
 
-      {/* Virtualized message list */}
+      {/* 虚拟化消息列表 */}
       <div className="flex-1 px-4">
         <VirtualScroll
           items={virtualItems}
-          itemHeight={item => item.height || 80} // Default to 80 if height is not set
-          containerHeight={containerHeight - 60} // Account for search bar
+          itemHeight={item => item.height || DEFAULT_MESSAGE_HEIGHT} // 如果未设置高度，默认为80
+          containerHeight={containerHeight - SEARCH_BAR_HEIGHT} // 考虑搜索栏的高度
           renderItem={renderItem}
           onLoadMore={handleLoadMore}
           hasMore={hasMoreMessages}
@@ -402,3 +469,5 @@ export function VirtualizedMessageList({
     </div>
   )
 }
+
+VirtualizedMessageList.displayName = 'VirtualizedMessageList'

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Send, Loader2, Smile, Paperclip, X } from 'lucide-react'
@@ -37,12 +37,16 @@ interface UploadedFile {
   type: 'image' | 'file'
 }
 
+// Constants
 const MAX_MESSAGE_LENGTH = 1000
-const TYPING_TIMEOUT = 3000 // 3 seconds
+const TYPING_TIMEOUT = 3000 // 3秒
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const MAX_MENTION_SUGGESTIONS = 5
+const MAX_TEXTAREA_HEIGHT = 120 // 最大高度约5行
+const DEBOUNCE_DELAY = 1000
 
-// Common emojis for the emoji picker
+// 表情选择器的常用表情
 const COMMON_EMOJIS = [
   '😀',
   '😃',
@@ -114,7 +118,51 @@ const COMMON_EMOJIS = [
   '💜',
   '🖤',
   '🤍',
-]
+] as const
+
+// Utility functions
+const validateFileSize = (file: File): boolean => {
+  return file.size <= MAX_FILE_SIZE
+}
+
+const isImageFile = (file: File): boolean => {
+  return ALLOWED_IMAGE_TYPES.includes(file.type)
+}
+
+const createFilePreview = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      const result = e.target?.result
+      if (typeof result === 'string') {
+        resolve(result)
+      } else {
+        reject(new Error('Failed to read file as data URL'))
+      }
+    }
+    reader.onerror = () => reject(new Error('File reading failed'))
+    reader.readAsDataURL(file)
+  })
+}
+
+const getDraftKey = (roomId: number): string => `chat-draft-${roomId}`
+
+const truncateMessage = (message: string, maxLength: number = 50): string => {
+  return message.length > maxLength ? `${message.slice(0, maxLength)}...` : message
+}
+
+const sanitizeFileName = (fileName: string): string => {
+  // 移除潜在的危险字符
+  return fileName.replace(/[^\w\s.-]/g, '').trim()
+}
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
 
 export function MessageInput({
   roomId,
@@ -142,50 +190,57 @@ export function MessageInput({
 
   const { currentRoom, onlineUsers } = useChatStore()
 
-  // Debounce message for auto-save
-  const [debouncedMessage] = useDebounce(message, 1000)
+  // 防抖消息用于自动保存
+  const [debouncedMessage] = useDebounce(message, DEBOUNCE_DELAY)
 
-  // Get online users for mentions
-  const roomUsers = onlineUsers[roomId.toString()] || []
+  // 获取在线用户用于@提及 - 使用 useMemo 优化性能
+  const roomUsers = useMemo(() => {
+    return onlineUsers[roomId.toString()] || []
+  }, [onlineUsers, roomId])
 
-  // Filter users for mention suggestions
-  const mentionSuggestions: MentionSuggestion[] = roomUsers
-    .filter(
-      user =>
-        user.name.toLowerCase().includes(mentionQuery.toLowerCase()) ||
-        user.email.toLowerCase().includes(mentionQuery.toLowerCase())
-    )
-    .slice(0, 5) // Limit to 5 suggestions
+  // 过滤用户用于@提及建议 - 使用 useMemo 优化性能
+  const mentionSuggestions: MentionSuggestion[] = useMemo(() => {
+    if (!mentionQuery.trim()) return []
 
-  // Auto-resize textarea
+    const query = mentionQuery.toLowerCase()
+    return roomUsers
+      .filter(
+        user => user.name.toLowerCase().includes(query) || user.email.toLowerCase().includes(query)
+      )
+      .slice(0, MAX_MENTION_SUGGESTIONS)
+  }, [roomUsers, mentionQuery])
+
+  // 自动调整文本框高度 - 优化性能
   const adjustTextareaHeight = useCallback(() => {
     const textarea = textareaRef.current
     if (textarea) {
       textarea.style.height = 'auto'
-      textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px` // Max height of ~5 lines
+      textarea.style.height = `${Math.min(textarea.scrollHeight, MAX_TEXTAREA_HEIGHT)}px`
     }
   }, [])
 
-  // Handle message input change
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value
-    const cursorPosition = e.target.selectionStart
-
-    // Enforce character limit
-    if (value.length <= MAX_MESSAGE_LENGTH) {
-      setMessage(value)
-      adjustTextareaHeight()
-
-      // Handle typing indicators
-      handleTypingIndicator()
-
-      // Check for mention trigger
-      checkForMentions(value, cursorPosition)
+  // 处理输入指示器 - 优化性能
+  const handleTypingIndicator = useCallback(() => {
+    if (!isTyping) {
+      setIsTyping(true)
+      // TODO: 通过WebSocket发送输入开始事件
+      // 这将在后端添加输入指示器时实现
     }
-  }
 
-  // Check for @ mentions
-  const checkForMentions = (text: string, cursorPos: number) => {
+    // 清除现有超时
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current)
+    }
+
+    // 设置新超时以停止输入指示器
+    typingTimeoutRef.current = setTimeout(() => {
+      setIsTyping(false)
+      // TODO: 通过WebSocket发送输入停止事件
+    }, TYPING_TIMEOUT)
+  }, [isTyping])
+
+  // 检查@提及 - 使用 useCallback 优化性能
+  const checkForMentions = useCallback((text: string, cursorPos: number) => {
     const beforeCursor = text.slice(0, cursorPos)
     const mentionMatch = beforeCursor.match(/@(\w*)$/)
 
@@ -198,143 +253,215 @@ export function MessageInput({
       setShowMentions(false)
       setMentionQuery('')
     }
-  }
+  }, [])
 
-  // Insert mention into message
-  const insertMention = (user: MentionSuggestion) => {
-    const beforeMention = message.slice(0, mentionPosition)
-    const afterMention = message.slice(mentionPosition + mentionQuery.length + 1) // +1 for @
-    const newMessage = `${beforeMention}@${user.name} ${afterMention}`
+  // 处理消息输入变化 - 使用 useCallback 优化性能
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const value = e.target.value
+      const cursorPosition = e.target.selectionStart
 
-    setMessage(newMessage)
-    setShowMentions(false)
-    setMentionQuery('')
+      // 强制字符限制
+      if (value.length <= MAX_MESSAGE_LENGTH) {
+        setMessage(value)
+        adjustTextareaHeight()
 
-    // Focus back on textarea
-    setTimeout(() => {
-      textareaRef.current?.focus()
-      const newCursorPos = beforeMention.length + user.name.length + 2 // +2 for @ and space
-      textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos)
-    }, 0)
-  }
+        // 处理输入指示器
+        handleTypingIndicator()
 
-  // Handle file upload
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
+        // 检查@提及触发
+        checkForMentions(value, cursorPosition)
+      }
+    },
+    [adjustTextareaHeight, handleTypingIndicator, checkForMentions]
+  )
 
-    files.forEach(file => {
-      // Check file size
-      if (file.size > MAX_FILE_SIZE) {
+  // 将提及插入消息 - 使用 useCallback 优化性能
+  const insertMention = useCallback(
+    (user: MentionSuggestion) => {
+      const beforeMention = message.slice(0, mentionPosition)
+      const afterMention = message.slice(mentionPosition + mentionQuery.length + 1) // +1 表示@符号
+      const newMessage = `${beforeMention}@${user.name} ${afterMention}`
+
+      setMessage(newMessage)
+      setShowMentions(false)
+      setMentionQuery('')
+
+      // 重新聚焦到文本框
+      setTimeout(() => {
+        textareaRef.current?.focus()
+        const newCursorPos = beforeMention.length + user.name.length + 2 // +2 表示@和空格
+        textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos)
+      }, 0)
+    },
+    [message, mentionPosition, mentionQuery]
+  )
+
+  // 处理文件上传 - 优化错误处理和性能
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || [])
+      if (files.length === 0) return
+
+      // 检查文件数量限制
+      const maxFiles = 5
+      if (files.length > maxFiles) {
         toast.error(
-          t('chat.file_too_large', 'File {name} is too large. Maximum size is 5MB.').replace(
-            '{name}',
-            file.name
+          t('chat.too_many_files', 'Too many files. Maximum {count} files allowed.').replace(
+            '{count}',
+            maxFiles.toString()
           )
         )
         return
       }
 
-      // Check if it's an image
-      const isImage = ALLOWED_IMAGE_TYPES.includes(file.type)
+      const newFiles: UploadedFile[] = []
+      const errors: string[] = []
 
-      if (isImage) {
-        const reader = new FileReader()
-        reader.onload = e => {
-          const preview = e.target?.result as string
-          setUploadedFiles(prev => [
-            ...prev,
-            {
+      for (const file of files) {
+        // 检查文件大小
+        if (!validateFileSize(file)) {
+          errors.push(
+            t('chat.file_too_large', 'File {name} is too large. Maximum size is {size}.')
+              .replace('{name}', sanitizeFileName(file.name))
+              .replace('{size}', formatFileSize(MAX_FILE_SIZE))
+          )
+          continue
+        }
+
+        // 检查文件名
+        const sanitizedName = sanitizeFileName(file.name)
+        if (!sanitizedName) {
+          errors.push(
+            t('chat.invalid_filename', 'Invalid filename: {name}').replace('{name}', file.name)
+          )
+          continue
+        }
+
+        try {
+          if (isImageFile(file)) {
+            const preview = await createFilePreview(file)
+            newFiles.push({
               file,
               preview,
               type: 'image',
-            },
-          ])
+            })
+          } else {
+            newFiles.push({
+              file,
+              preview: '',
+              type: 'file',
+            })
+          }
+        } catch (error) {
+          console.error('Error processing file:', file.name, error)
+          errors.push(
+            t('chat.file_processing_error', 'Error processing file {name}').replace(
+              '{name}',
+              sanitizeFileName(file.name)
+            )
+          )
         }
-        reader.readAsDataURL(file)
-      } else {
-        // For non-image files, use a generic icon
-        setUploadedFiles(prev => [
-          ...prev,
-          {
-            file,
-            preview: '',
-            type: 'file',
-          },
-        ])
       }
-    })
 
-    // Clear the input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
+      // 显示错误信息
+      if (errors.length > 0) {
+        errors.forEach(error => toast.error(error))
+      }
 
-  // Remove uploaded file
-  const removeFile = (index: number) => {
+      // 添加成功处理的文件
+      if (newFiles.length > 0) {
+        setUploadedFiles(prev => {
+          const totalFiles = prev.length + newFiles.length
+          if (totalFiles > maxFiles) {
+            toast.error(
+              t(
+                'chat.file_limit_reached',
+                'File limit reached. Maximum {count} files allowed.'
+              ).replace('{count}', maxFiles.toString())
+            )
+            return prev
+          }
+          return [...prev, ...newFiles]
+        })
+      }
+
+      // 清空输入
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    },
+    [t]
+  )
+
+  // 移除已上传文件 - 使用 useCallback 优化性能
+  const removeFile = useCallback((index: number) => {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index))
-  }
+  }, [])
 
-  // Insert emoji
-  const insertEmoji = (emoji: string) => {
-    const textarea = textareaRef.current
-    if (!textarea) return
+  // 插入表情 - 使用 useCallback 优化性能
+  const insertEmoji = useCallback(
+    (emoji: string) => {
+      const textarea = textareaRef.current
+      if (!textarea) return
 
-    const start = textarea.selectionStart
-    const end = textarea.selectionEnd
-    const newMessage = message.slice(0, start) + emoji + message.slice(end)
+      const start = textarea.selectionStart
+      const end = textarea.selectionEnd
+      const newMessage = message.slice(0, start) + emoji + message.slice(end)
 
-    setMessage(newMessage)
-    setIsEmojiPickerOpen(false)
+      setMessage(newMessage)
+      setIsEmojiPickerOpen(false)
 
-    // Focus back and set cursor position
-    setTimeout(() => {
-      textarea.focus()
-      const newCursorPos = start + emoji.length
-      textarea.setSelectionRange(newCursorPos, newCursorPos)
-    }, 0)
-  }
+      // 重新聚焦并设置光标位置
+      setTimeout(() => {
+        textarea.focus()
+        const newCursorPos = start + emoji.length
+        textarea.setSelectionRange(newCursorPos, newCursorPos)
+      }, 0)
+    },
+    [message]
+  )
 
-  // Handle typing indicators
-  const handleTypingIndicator = useCallback(() => {
-    if (!isTyping) {
-      setIsTyping(true)
-      // TODO: Send typing start event via WebSocket
-      // This would be implemented when typing indicators are added to the backend
+  // 发送前验证消息 - 使用 useCallback 优化性能
+  const validateMessage = useCallback(
+    (msg: string): string | null => {
+      const trimmed = msg.trim()
+
+      if (!trimmed) {
+        return t('chat.message_cannot_be_empty', 'Message cannot be empty')
+      }
+
+      if (trimmed.length > MAX_MESSAGE_LENGTH) {
+        return t('chat.message_too_long', 'Message cannot exceed {count} characters').replace(
+          '{count}',
+          MAX_MESSAGE_LENGTH.toString()
+        )
+      }
+
+      // 检查是否只包含空白字符
+      if (!trimmed.replace(/\s/g, '')) {
+        return t('chat.message_only_whitespace', 'Message cannot contain only whitespace')
+      }
+
+      return null
+    },
+    [t]
+  )
+
+  // 发送消息时清除草稿 - 使用 useCallback 优化性能
+  const clearDraft = useCallback(() => {
+    const draftKey = getDraftKey(roomId)
+    localStorage.removeItem(draftKey)
+  }, [roomId])
+
+  // 发送消息 - 使用 useCallback 优化性能
+  const handleSendMessage = useCallback(async () => {
+    // 防止重复发送
+    if (isSending) {
+      console.warn('Message sending already in progress')
+      return
     }
 
-    // Clear existing timeout
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current)
-    }
-
-    // Set new timeout to stop typing indicator
-    typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false)
-      // TODO: Send typing stop event via WebSocket
-    }, TYPING_TIMEOUT)
-  }, [isTyping])
-
-  // Validate message before sending
-  const validateMessage = (msg: string): string | null => {
-    const trimmed = msg.trim()
-
-    if (!trimmed) {
-      return t('chat.message_cannot_be_empty', 'Message cannot be empty')
-    }
-
-    if (trimmed.length > MAX_MESSAGE_LENGTH) {
-      return t('chat.message_too_long', 'Message cannot exceed {count} characters').replace(
-        '{count}',
-        MAX_MESSAGE_LENGTH.toString()
-      )
-    }
-
-    return null
-  }
-
-  // Send message
-  const handleSendMessage = async () => {
     const validationError = validateMessage(message)
     if (validationError) {
       toast.error(validationError)
@@ -356,17 +483,17 @@ export function MessageInput({
     try {
       let messageToSend = message.trim()
 
-      // Add reply prefix if replying to a message
+      // 如果回复消息则添加回复前缀
       if (replyingTo) {
         messageToSend = `@${replyingTo.user.name} ${messageToSend}`
       }
 
-      // TODO: Handle file uploads
-      // For now, we'll just send the text message
-      // File upload would require backend API changes to handle multipart/form-data
+      // TODO: 处理文件上传
+      // 目前我们只发送文本消息
+      // 文件上传需要后端API更改以处理multipart/form-data
       if (uploadedFiles.length > 0) {
         toast.info(t('chat.file_upload_coming_soon', 'File upload feature coming soon!'))
-        // In a real implementation, you would upload files first, then include file URLs in the message
+        // 在实际实现中，您需要先上传文件，然后在消息中包含文件URL
       }
 
       console.log('🔥 发送消息调试信息:', {
@@ -385,147 +512,195 @@ export function MessageInput({
         adjustTextareaHeight()
         clearDraft()
 
-        // Clear reply state
+        // 清除回复状态
         if (onCancelReply) {
           onCancelReply()
         }
 
-        // Focus back on input
-        textareaRef.current?.focus()
+        // 重新聚焦到输入框
+        setTimeout(() => {
+          textareaRef.current?.focus()
+        }, 100)
       } else {
         toast.error(t('chat.failed_to_send', 'Failed to send message'))
       }
     } catch (error) {
       console.error('🔥 发送消息错误:', error)
-      toast.error(t('chat.failed_to_send', 'Failed to send message'))
+
+      // 根据错误类型提供更具体的错误信息
+      let errorMessage = t('chat.failed_to_send', 'Failed to send message')
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = t('chat.network_error', 'Network error. Please check your connection.')
+        } else if (error.message.includes('timeout')) {
+          errorMessage = t('chat.timeout_error', 'Request timeout. Please try again.')
+        }
+      }
+
+      toast.error(errorMessage)
     } finally {
       setIsSending(false)
       setIsTyping(false)
 
-      // Clear typing timeout
+      // 清除输入超时
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
       }
     }
-  }
+  }, [
+    message,
+    validateMessage,
+    isSending,
+    isConnected,
+    currentRoom,
+    replyingTo,
+    uploadedFiles,
+    t,
+    sendMessage,
+    roomId,
+    adjustTextareaHeight,
+    clearDraft,
+    onCancelReply,
+  ])
 
-  // Handle keyboard shortcuts
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Handle mention navigation
-    if (showMentions && mentionSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
-        e.preventDefault()
-        setSelectedMentionIndex(prev => (prev < mentionSuggestions.length - 1 ? prev + 1 : 0))
-        return
+  // 处理键盘快捷键 - 使用 useCallback 优化性能
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      // 处理@提及导航
+      if (showMentions && mentionSuggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setSelectedMentionIndex(prev => (prev < mentionSuggestions.length - 1 ? prev + 1 : 0))
+          return
+        }
+
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setSelectedMentionIndex(prev => (prev > 0 ? prev - 1 : mentionSuggestions.length - 1))
+          return
+        }
+
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault()
+          insertMention(mentionSuggestions[selectedMentionIndex])
+          return
+        }
+
+        if (e.key === 'Escape') {
+          e.preventDefault()
+          setShowMentions(false)
+          return
+        }
       }
 
-      if (e.key === 'ArrowUp') {
+      // 按Enter发送消息（不按Shift）
+      if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
-        setSelectedMentionIndex(prev => (prev > 0 ? prev - 1 : mentionSuggestions.length - 1))
-        return
+        handleSendMessage()
       }
 
-      if (e.key === 'Enter' || e.key === 'Tab') {
+      // 按Escape取消回复
+      if (e.key === 'Escape' && replyingTo && onCancelReply) {
         e.preventDefault()
-        insertMention(mentionSuggestions[selectedMentionIndex])
-        return
+        onCancelReply()
       }
+    },
+    [
+      showMentions,
+      mentionSuggestions,
+      selectedMentionIndex,
+      insertMention,
+      handleSendMessage,
+      replyingTo,
+      onCancelReply,
+    ]
+  )
 
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        setShowMentions(false)
-        return
-      }
-    }
-
-    // Send message on Enter (without Shift)
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-
-    // Cancel reply on Escape
-    if (e.key === 'Escape' && replyingTo && onCancelReply) {
-      e.preventDefault()
-      onCancelReply()
-    }
-  }
-
-  // Auto-save draft
+  // 自动保存草稿 - 优化性能
   useEffect(() => {
     if (debouncedMessage && currentRoom) {
-      const draftKey = `chat-draft-${roomId}`
+      const draftKey = getDraftKey(roomId)
       localStorage.setItem(draftKey, debouncedMessage)
     }
   }, [debouncedMessage, roomId, currentRoom])
 
-  // Load draft on mount
+  // 挂载时加载草稿 - 优化性能
   useEffect(() => {
-    if (currentRoom) {
-      const draftKey = `chat-draft-${roomId}`
+    if (currentRoom && !message) {
+      const draftKey = getDraftKey(roomId)
       const savedDraft = localStorage.getItem(draftKey)
-      if (savedDraft && !message) {
+      if (savedDraft) {
         setMessage(savedDraft)
       }
     }
   }, [currentRoom, roomId, message])
 
-  // Clear draft when message is sent
-  const clearDraft = () => {
-    const draftKey = `chat-draft-${roomId}`
-    localStorage.removeItem(draftKey)
-  }
-
-  // Auto-focus on mount and when replying
+  // 挂载时和回复时自动聚焦 - 添加错误处理
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus()
+    try {
+      if (textareaRef.current) {
+        textareaRef.current.focus()
+      }
+    } catch (error) {
+      console.warn('Failed to focus textarea:', error)
     }
   }, [replyingTo])
 
-  // Adjust height on message change
+  // 消息变化时调整高度
   useEffect(() => {
     adjustTextareaHeight()
   }, [message, adjustTextareaHeight])
 
-  // Cleanup typing timeout on unmount
+  // 卸载时清理输入超时和草稿 - 添加错误处理
   useEffect(() => {
     return () => {
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current)
+      try {
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current)
+        }
+        // 清理草稿（可选，根据需求决定）
+        // clearDraft()
+      } catch (error) {
+        console.warn('Error during cleanup:', error)
       }
     }
   }, [])
 
-  const canSend =
-    (message.trim().length > 0 || uploadedFiles.length > 0) && !isSending && isConnected
+  // 计算是否可以发送 - 使用 useMemo 优化性能
+  const canSend = useMemo(() => {
+    return (message.trim().length > 0 || uploadedFiles.length > 0) && !isSending && isConnected
+  }, [message, uploadedFiles.length, isSending, isConnected])
 
   return (
-    <div className={`bg-background border-t p-3 pb-6 sm:p-4 ${className}`}>
-      {/* Reply indicator */}
+    <div className={`bg-background safe-area-inset-bottom border-t p-3 pb-6 sm:p-4 ${className}`}>
+      {/* 回复指示器 */}
       {replyingTo && (
-        <div className="bg-muted/50 mb-3 flex items-center justify-between rounded-md p-2">
-          <div className="flex-1 text-sm">
+        <div className="bg-muted/50 mb-3 flex items-center justify-between rounded-md p-2 sm:p-3">
+          <div className="min-w-0 flex-1 text-sm">
             <span className="text-muted-foreground">Replying to </span>
             <span className="font-medium">{replyingTo.user.name}</span>
             <span className="text-muted-foreground">: </span>
-            <span className="text-muted-foreground">
-              {replyingTo.message.length > 50
-                ? `${replyingTo.message.slice(0, 50)}...`
-                : replyingTo.message}
+            <span className="text-muted-foreground block truncate">
+              {truncateMessage(replyingTo.message)}
             </span>
           </div>
-          <Button variant="ghost" size="sm" onClick={onCancelReply} className="h-6 w-6 p-0">
-            ✕
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancelReply}
+            className="ml-2 h-6 w-6 flex-shrink-0 p-0"
+            aria-label={t('chat.cancel_reply', 'Cancel reply')}
+          >
+            <X className="h-3 w-3" />
           </Button>
         </div>
       )}
 
-      {/* Uploaded files preview */}
+      {/* 已上传文件预览 */}
       {uploadedFiles.length > 0 && (
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mb-3 flex max-h-32 flex-wrap gap-2 overflow-y-auto">
           {uploadedFiles.map((file, index) => (
-            <div key={index} className="relative">
+            <div key={index} className="relative flex-shrink-0">
               {file.type === 'image' ? (
                 <div className="relative">
                   <Image
@@ -533,28 +708,30 @@ export function MessageInput({
                     alt={file.file.name}
                     width={80}
                     height={80}
-                    className="h-20 w-20 rounded-md object-cover"
+                    className="h-16 w-16 rounded-md object-cover sm:h-20 sm:w-20"
                   />
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => removeFile(index)}
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 sm:h-6 sm:w-6"
+                    aria-label={t('chat.remove_file', 'Remove file')}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2 w-2 sm:h-3 sm:w-3" />
                   </Button>
                 </div>
               ) : (
-                <div className="bg-muted flex h-20 w-20 flex-col items-center justify-center rounded-md">
-                  <Paperclip className="h-6 w-6" />
+                <div className="bg-muted flex h-16 w-16 flex-col items-center justify-center rounded-md sm:h-20 sm:w-20">
+                  <Paperclip className="h-4 w-4 sm:h-6 sm:w-6" />
                   <span className="w-full truncate px-1 text-center text-xs">{file.file.name}</span>
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => removeFile(index)}
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                    className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 sm:h-6 sm:w-6"
+                    aria-label={t('chat.remove_file', 'Remove file')}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2 w-2 sm:h-3 sm:w-3" />
                   </Button>
                 </div>
               )}
@@ -563,8 +740,8 @@ export function MessageInput({
         </div>
       )}
 
-      <div className="relative flex gap-2">
-        <div className="relative flex-1">
+      <div className="relative flex gap-1 sm:gap-2">
+        <div className="relative min-w-0 flex-1">
           <Textarea
             ref={textareaRef}
             value={message}
@@ -576,23 +753,32 @@ export function MessageInput({
                 : t('chat.type_message', 'Type a message...')
             }
             disabled={isSending || !isConnected}
-            className="chat-input-mobile max-h-[120px] min-h-[40px] resize-none text-sm"
+            className="chat-input-mobile max-h-[120px] min-h-[40px] resize-none pr-2 text-sm sm:pr-3"
             rows={1}
+            aria-label={t('chat.message_input', 'Message input')}
+            aria-describedby="message-help-text"
+            aria-invalid={message.length > MAX_MESSAGE_LENGTH}
+            maxLength={MAX_MESSAGE_LENGTH}
           />
 
-          {/* Mention suggestions */}
+          {/* @提及建议 */}
           {showMentions && mentionSuggestions.length > 0 && (
             <div
               ref={mentionListRef}
               className="bg-background absolute bottom-full left-0 z-50 mb-1 w-full max-w-xs rounded-md border shadow-lg"
+              role="listbox"
+              aria-label={t('chat.mention_suggestions', 'Mention suggestions')}
             >
               {mentionSuggestions.map((user, index) => (
                 <button
                   key={user.id}
                   onClick={() => insertMention(user)}
-                  className={`hover:bg-muted flex w-full items-center gap-2 px-3 py-2 text-left ${
+                  className={`hover:bg-muted focus:ring-primary flex w-full items-center gap-2 px-3 py-2 text-left focus:ring-2 focus:outline-none ${
                     index === selectedMentionIndex ? 'bg-muted' : ''
                   }`}
+                  role="option"
+                  aria-selected={index === selectedMentionIndex}
+                  aria-label={`${t('chat.mention_user', 'Mention')} ${user.name}`}
                 >
                   <div className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs">
                     {user.name.charAt(0).toUpperCase()}
@@ -606,51 +792,75 @@ export function MessageInput({
             </div>
           )}
 
-          {/* Character count */}
+          {/* 字符计数和状态信息 */}
           <div className="mt-1 flex justify-between text-xs">
-            <div className="text-muted-foreground">
+            <div className="text-muted-foreground" id="message-help-text">
               {!isConnected && (
-                <span className="text-destructive">{t('chat.disconnected', 'Disconnected')}</span>
+                <span className="text-destructive" role="status" aria-live="polite">
+                  {t('chat.disconnected', 'Disconnected')}
+                </span>
               )}
               {isTyping && isConnected && (
-                <span className="text-muted-foreground">{t('chat.typing', 'Typing...')}</span>
+                <span className="text-muted-foreground" role="status" aria-live="polite">
+                  {t('chat.typing', 'Typing...')}
+                </span>
               )}
+              {message.length > MAX_MESSAGE_LENGTH * 0.9 && (
+                <span className="text-warning">
+                  {t('chat.character_count', '{count}/{max} characters')
+                    .replace('{count}', message.length.toString())
+                    .replace('{max}', MAX_MESSAGE_LENGTH.toString())}
+                </span>
+              )}
+            </div>
+            <div className="text-muted-foreground">
+              {message.length}/{MAX_MESSAGE_LENGTH}
             </div>
           </div>
         </div>
 
-        {/* Action buttons - 优化移动端按钮大小 */}
-        <div className="flex gap-1">
-          {/* File upload button */}
+        {/* 操作按钮 - 优化移动端按钮大小 */}
+        <div className="flex flex-shrink-0 gap-1">
+          {/* 文件上传按钮 */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isSending || !isConnected}
-            className="chat-button-mobile h-10 w-10 p-0 sm:h-10 sm:w-10"
+            className="h-9 w-9 touch-manipulation p-0 sm:h-10 sm:w-10"
+            aria-label={t('chat.upload_file', 'Upload file')}
+            title={t('chat.upload_file', 'Upload file')}
           >
-            <Paperclip className="h-4 w-4" />
+            <Paperclip className="h-3 w-3 sm:h-4 sm:w-4" />
           </Button>
 
-          {/* Emoji picker */}
+          {/* 表情选择器 */}
           <Popover open={isEmojiPickerOpen} onOpenChange={setIsEmojiPickerOpen}>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
                 disabled={isSending || !isConnected}
-                className="chat-button-mobile h-10 w-10 p-0 sm:h-10 sm:w-10"
+                className="h-9 w-9 touch-manipulation p-0 sm:h-10 sm:w-10"
+                aria-label={t('chat.select_emoji', 'Select emoji')}
+                title={t('chat.select_emoji', 'Select emoji')}
               >
-                <Smile className="h-4 w-4" />
+                <Smile className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-2">
+            <PopoverContent
+              className="w-80 p-2 sm:w-96"
+              role="dialog"
+              aria-label={t('chat.emoji_picker', 'Emoji picker')}
+            >
               <div className="grid max-h-48 grid-cols-8 gap-1 overflow-y-auto">
                 {COMMON_EMOJIS.map((emoji, index) => (
                   <button
                     key={index}
                     onClick={() => insertEmoji(emoji)}
-                    className="hover:bg-muted rounded p-2 text-lg"
+                    className="hover:bg-muted focus:ring-primary touch-manipulation rounded p-2 text-lg focus:ring-2 focus:outline-none"
+                    aria-label={`${t('chat.insert_emoji', 'Insert emoji')}: ${emoji}`}
+                    title={emoji}
                   >
                     {emoji}
                   </button>
@@ -659,23 +869,29 @@ export function MessageInput({
             </PopoverContent>
           </Popover>
 
-          {/* Send button */}
+          {/* 发送按钮 */}
           <Button
             onClick={handleSendMessage}
             disabled={!canSend}
             size="sm"
-            className="chat-button-mobile h-10 px-3"
+            className="h-9 touch-manipulation px-2 sm:h-10 sm:px-3"
+            aria-label={
+              isSending ? t('chat.sending', 'Sending...') : t('chat.send_message', 'Send message')
+            }
+            title={
+              isSending ? t('chat.sending', 'Sending...') : t('chat.send_message', 'Send message')
+            }
           >
             {isSending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin sm:h-4 sm:w-4" aria-hidden="true" />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className="h-3 w-3 sm:h-4 sm:w-4" aria-hidden="true" />
             )}
           </Button>
         </div>
       </div>
 
-      {/* Hidden file input */}
+      {/* 隐藏的文件输入 */}
       <input
         ref={fileInputRef}
         type="file"
@@ -683,9 +899,10 @@ export function MessageInput({
         accept="image/*,.pdf,.doc,.docx,.txt"
         onChange={handleFileUpload}
         className="hidden"
+        aria-label={t('chat.file_input', 'File input')}
       />
 
-      {/* Keyboard shortcuts hint - 仅在桌面端显示 */}
+      {/* 键盘快捷键提示 - 仅在桌面端显示 */}
       <div className="text-muted-foreground mt-2 hidden text-xs lg:block">
         Press <kbd className="bg-muted rounded px-1">Enter</kbd> to send,
         <kbd className="bg-muted ml-1 rounded px-1">Shift+Enter</kbd> for new line
@@ -700,6 +917,11 @@ export function MessageInput({
             <kbd className="bg-muted ml-1 rounded px-1">Tab</kbd> to select
           </>
         )}
+      </div>
+
+      {/* 移动端提示 */}
+      <div className="text-muted-foreground mt-1 text-xs lg:hidden">
+        {t('chat.mobile_tip', 'Tap to send, hold for new line')}
       </div>
     </div>
   )

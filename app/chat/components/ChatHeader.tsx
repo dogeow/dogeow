@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   ArrowLeft,
   Settings,
@@ -32,14 +32,14 @@ import {
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-
 import { Separator } from '@/components/ui/separator'
+
 import useChatStore from '@/app/chat/chatStore'
 import NotificationService from '@/lib/services/notificationService'
-
 import type { ChatRoom } from '../types'
 import { useTranslation } from '@/hooks/useTranslation'
 
+// 聊天头部组件属性接口
 interface ChatHeaderProps {
   room: ChatRoom
   onBack?: () => void
@@ -47,6 +47,7 @@ interface ChatHeaderProps {
 }
 
 export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderProps) {
+  // 从聊天状态管理获取数据
   const {
     onlineUsers,
     connectionStatus,
@@ -58,65 +59,76 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
   } = useChatStore()
   const { t } = useTranslation()
 
+  // 对话框状态管理
   const [isRoomInfoOpen, setIsRoomInfoOpen] = useState(false)
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false)
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
 
-  const roomOnlineUsers = onlineUsers[room.id.toString()] || []
+  // 获取当前房间的在线用户信息
+  const roomOnlineUsers = useMemo(
+    () => onlineUsers[room.id.toString()] || [],
+    [onlineUsers, room.id]
+  )
   const onlineCount = roomOnlineUsers.length
 
-  const notificationService = NotificationService.getInstance()
+  // 获取通知服务实例
+  const notificationService = useMemo(() => NotificationService.getInstance(), [])
 
-  const handleRequestPermission = async () => {
+  // 请求浏览器通知权限
+  const handleRequestPermission = useCallback(async () => {
     setIsRequestingPermission(true)
     try {
       await requestBrowserNotificationPermission()
     } catch (error) {
-      console.error('Failed to request notification permission:', error)
+      console.error('请求通知权限失败:', error)
     } finally {
       setIsRequestingPermission(false)
     }
-  }
+  }, [requestBrowserNotificationPermission])
 
-  const handleTestNotification = () => {
+  // 测试通知功能
+  const handleTestNotification = useCallback(() => {
     notificationService.showNotification({
-      title: 'Test Notification',
-      body: 'This is a test notification from the chat system.',
+      title: '测试通知',
+      body: '这是来自聊天系统的测试通知。',
       tag: 'test-notification',
     })
-  }
+  }, [notificationService])
 
-  const handleTestSound = (soundName: string) => {
-    notificationService.playSound(soundName)
-  }
+  // 测试声音效果
+  const handleTestSound = useCallback(
+    (soundName: string) => {
+      notificationService.playSound(soundName)
+    },
+    [notificationService]
+  )
 
-  const getPermissionStatus = () => {
+  // 获取权限状态信息
+  const permissionStatus = useMemo(() => {
     switch (browserNotificationPermission) {
       case 'granted':
-        return { text: 'Granted', color: 'text-green-600' }
+        return { text: '已授权', color: 'text-green-600' }
       case 'denied':
-        return { text: 'Denied', color: 'text-red-600' }
+        return { text: '已拒绝', color: 'text-red-600' }
       default:
-        return { text: 'Not requested', color: 'text-yellow-600' }
+        return { text: '未请求', color: 'text-yellow-600' }
     }
-  }
-
-  const permissionStatus = getPermissionStatus()
+  }, [browserNotificationPermission])
 
   return (
     <>
       <div className="bg-background flex items-center justify-between border-b p-4">
-        {/* Left side - Navigation and Room Info */}
+        {/* 左侧 - 导航和房间信息 */}
         <div className="flex items-center gap-3">
           {showBackButton && (
             <Button variant="ghost" size="icon" onClick={onBack}>
               <ArrowLeft className="h-4 w-4" />
-              <span className="sr-only">{t('chat.go_back', 'Go back')}</span>
+              <span className="sr-only">{t('chat.go_back', '返回')}</span>
             </Button>
           )}
         </div>
 
-        {/* Center - Room Details */}
+        {/* 中间 - 房间详情 */}
         <div className="hidden md:flex md:flex-1 md:justify-center">
           <div className="text-center">
             <div className="flex items-center justify-center gap-3">
@@ -138,17 +150,17 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                 />
                 <span className="text-muted-foreground">
                   {connectionStatus === 'connected'
-                    ? t('chat.connected', 'Connected')
-                    : t('chat.disconnected', 'Disconnected')}
+                    ? t('chat.connected', '已连接')
+                    : t('chat.disconnected', '已断开')}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Right side - Actions */}
+        {/* 右侧 - 操作按钮 */}
         <div className="flex items-center gap-2">
-          {/* Online Users Count - Moved to outside */}
+          {/* 在线用户数量 */}
           <div className="flex items-center gap-1">
             <Users className="text-muted-foreground h-4 w-4" />
             <Badge variant="secondary" className="text-xs">
@@ -156,42 +168,42 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
             </Badge>
           </div>
 
-          {/* Connection Status (Mobile) */}
+          {/* 连接状态指示器（移动端） */}
           <div
             className={`h-2 w-2 rounded-full md:hidden ${
               isConnected ? 'bg-green-500' : 'bg-red-500'
             }`}
           />
 
-          {/* Settings Dropdown */}
+          {/* 设置下拉菜单 */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Settings className="h-4 w-4" />
-                <span className="sr-only">{t('settings.title', 'Settings')}</span>
+                <span className="sr-only">{t('settings.title', '设置')}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>{t('page.chat_settings', 'Chat Settings')}</DropdownMenuLabel>
+              <DropdownMenuLabel>{t('page.chat_settings', '聊天设置')}</DropdownMenuLabel>
               <DropdownMenuSeparator />
 
-              {/* Notification Settings */}
+              {/* 通知设置 */}
               <DropdownMenuItem onClick={() => setIsNotificationSettingsOpen(true)}>
                 <Bell className="mr-2 h-4 w-4" />
-                {t('chat.notification_settings', 'Notification Settings')}
+                {t('chat.notification_settings', '通知设置')}
               </DropdownMenuItem>
 
-              {/* Room Info */}
+              {/* 房间信息 */}
               <DropdownMenuItem onClick={() => setIsRoomInfoOpen(true)}>
                 <Info className="mr-2 h-4 w-4" />
-                {t('chat.room_info', 'Room Info')}
+                {t('chat.room_info', '房间信息')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
 
-      {/* Room Info Dialog */}
+      {/* 房间信息对话框 */}
       <Dialog open={isRoomInfoOpen} onOpenChange={setIsRoomInfoOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -207,7 +219,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
               <div className="text-center">
                 <div className="text-2xl font-bold">{onlineCount}</div>
                 <div className="text-muted-foreground text-sm">
-                  {t('chat.room_info.online_users', 'Online Users')}
+                  {t('chat.room_info.online_users', '在线用户')}
                 </div>
               </div>
               <div className="text-center">
@@ -215,7 +227,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                   {new Date(room.created_at).toLocaleDateString()}
                 </div>
                 <div className="text-muted-foreground text-sm">
-                  {t('chat.room_info.created', 'Created')}
+                  {t('chat.room_info.created', '创建时间')}
                 </div>
               </div>
             </div>
@@ -223,9 +235,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
             <Separator />
 
             <div>
-              <h4 className="mb-2 font-medium">
-                {t('chat.room_info.online_users', 'Online Users')}
-              </h4>
+              <h4 className="mb-2 font-medium">{t('chat.room_info.online_users', '在线用户')}</h4>
               <div className="max-h-32 overflow-y-auto">
                 {roomOnlineUsers.length > 0 ? (
                   <div className="space-y-1">
@@ -238,7 +248,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-sm">
-                    {t('chat.room_info.no_users_online', 'No users currently online')}
+                    {t('chat.room_info.no_users_online', '当前没有用户在线')}
                   </p>
                 )}
               </div>
@@ -247,23 +257,23 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
         </DialogContent>
       </Dialog>
 
-      {/* Notification Settings Dialog */}
+      {/* 通知设置对话框 */}
       <Dialog open={isNotificationSettingsOpen} onOpenChange={setIsNotificationSettingsOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Bell className="h-5 w-5" />
-              {t('chat.notification_settings', 'Notification Settings')}
+              {t('chat.notification_settings', '通知设置')}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* Browser Permission Status */}
+            {/* 浏览器权限状态 */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Browser Permissions</CardTitle>
+                <CardTitle className="text-sm">浏览器权限</CardTitle>
                 <CardDescription>
-                  Status: <span className={permissionStatus.color}>{permissionStatus.text}</span>
+                  状态: <span className={permissionStatus.color}>{permissionStatus.text}</span>
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -274,7 +284,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                     size="sm"
                     className="w-full"
                   >
-                    {isRequestingPermission ? 'Requesting...' : 'Request Permission'}
+                    {isRequestingPermission ? '请求中...' : '请求权限'}
                   </Button>
                 )}
 
@@ -286,31 +296,31 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                       size="sm"
                       className="w-full"
                     >
-                      Test Notification
+                      测试通知
                     </Button>
                   </div>
                 )}
 
                 {browserNotificationPermission === 'denied' && (
                   <p className="text-muted-foreground text-xs">
-                    Notifications are blocked. Please enable them in your browser settings.
+                    通知已被阻止。请在浏览器设置中启用通知。
                   </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Notification Preferences */}
+            {/* 通知偏好设置 */}
             <Card>
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm">Notification Preferences</CardTitle>
+                <CardTitle className="text-sm">通知偏好设置</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Browser Notifications */}
+                {/* 浏览器通知 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Bell className="h-4 w-4" />
                     <Label htmlFor="browser-notifications" className="text-sm">
-                      Browser Notifications
+                      浏览器通知
                     </Label>
                   </div>
                   <Switch
@@ -323,12 +333,12 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                   />
                 </div>
 
-                {/* Sound Notifications */}
+                {/* 声音通知 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Volume2 className="h-4 w-4" />
                     <Label htmlFor="sound-notifications" className="text-sm">
-                      Sound Effects
+                      声音效果
                     </Label>
                   </div>
                   <Switch
@@ -340,12 +350,12 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                   />
                 </div>
 
-                {/* Room Notifications */}
+                {/* 房间通知 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" />
                     <Label htmlFor="room-notifications" className="text-sm">
-                      New Messages
+                      新消息
                     </Label>
                   </div>
                   <Switch
@@ -357,12 +367,12 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
                   />
                 </div>
 
-                {/* Mention Notifications */}
+                {/* 提及通知 */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <AtSign className="h-4 w-4" />
                     <Label htmlFor="mention-notifications" className="text-sm">
-                      Mentions
+                      提及
                     </Label>
                   </div>
                   <Switch
@@ -376,25 +386,25 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
               </CardContent>
             </Card>
 
-            {/* Sound Test */}
+            {/* 声音测试 */}
             {notificationSettings.soundNotifications && (
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm">Test Sounds</CardTitle>
+                  <CardTitle className="text-sm">测试声音</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-2">
                     <Button onClick={() => handleTestSound('message')} variant="outline" size="sm">
-                      Message
+                      消息
                     </Button>
                     <Button onClick={() => handleTestSound('mention')} variant="outline" size="sm">
-                      Mention
+                      提及
                     </Button>
                     <Button onClick={() => handleTestSound('join')} variant="outline" size="sm">
-                      Join
+                      加入
                     </Button>
                     <Button onClick={() => handleTestSound('leave')} variant="outline" size="sm">
-                      Leave
+                      离开
                     </Button>
                   </div>
                 </CardContent>
