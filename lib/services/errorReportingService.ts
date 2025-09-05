@@ -30,10 +30,10 @@ class ErrorReportingService {
     enabled: process.env.NODE_ENV === 'production',
     endpoint: process.env.NEXT_PUBLIC_ERROR_REPORTING_ENDPOINT,
     maxReports: 100,
-    reportingInterval: 30000, // 30 seconds
+    reportingInterval: 30000, // 30秒
     includeStackTrace: true,
     includeBrowserInfo: true,
-    includeUserInfo: false, // Privacy consideration
+    includeUserInfo: false, // 隐私考虑
   }
 
   private reportQueue: ErrorReport[] = []
@@ -76,12 +76,12 @@ class ErrorReportingService {
       sessionId: this.sessionId,
     }
 
-    // Add user ID if available and allowed
+    // 如果允许并且有userId，则添加用户ID
     if (this.config.includeUserInfo && additionalContext?.userId) {
       context.userId = String(additionalContext.userId)
     }
 
-    // Add room ID if available
+    // 如果有roomId，则添加房间ID
     if (additionalContext?.roomId) {
       context.roomId = String(additionalContext.roomId)
     }
@@ -100,12 +100,12 @@ class ErrorReportingService {
   private addToQueue(report: ErrorReport): void {
     this.reportQueue.push(report)
 
-    // Maintain queue size
+    // 保持队列大小不超过最大限制
     if (this.reportQueue.length > this.config.maxReports) {
       this.reportQueue = this.reportQueue.slice(-this.config.maxReports)
     }
 
-    // Log locally for development
+    // 开发环境下本地打印日志
     if (process.env.NODE_ENV === 'development') {
       console.group('🚨 Error Report')
       console.error('Error:', report.error)
@@ -126,13 +126,13 @@ class ErrorReportingService {
       this.sendReports()
     }, this.config.reportingInterval)
 
-    // Send reports when page is about to unload
+    // 页面即将卸载时发送错误报告
     if (typeof window !== 'undefined') {
       window.addEventListener('beforeunload', () => {
         this.sendReports(true)
       })
 
-      // Send reports when page becomes hidden (mobile/tab switching)
+      // 页面变为隐藏时（如切换标签/移动端）发送错误报告
       document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
           this.sendReports()
@@ -161,10 +161,10 @@ class ErrorReportingService {
       }
 
       if (isBeforeUnload && 'sendBeacon' in navigator) {
-        // Use sendBeacon for reliable delivery during page unload
+        // 页面卸载时使用sendBeacon保证数据可靠发送
         navigator.sendBeacon(this.config.endpoint, JSON.stringify(payload))
       } else {
-        // Use fetch for normal reporting
+        // 正常上报时使用fetch
         await fetch(this.config.endpoint, {
           method: 'POST',
           headers: {
@@ -174,15 +174,15 @@ class ErrorReportingService {
         })
       }
 
-      console.log(`Sent ${reportsToSend.length} error reports`)
+      console.log(`已发送${reportsToSend.length}条错误报告`)
     } catch (error) {
-      // If sending fails, put reports back in queue (up to limit)
+      // 发送失败时，将报告重新放回队列（最多保留一半）
       this.reportQueue = [
         ...reportsToSend.slice(-this.config.maxReports / 2),
         ...this.reportQueue,
       ].slice(-this.config.maxReports)
 
-      console.warn('Failed to send error reports:', error)
+      console.warn('发送错误报告失败:', error)
     }
   }
 
@@ -218,7 +218,7 @@ class ErrorReportingService {
       this.reportingTimer = null
     }
 
-    // Send any remaining reports
+    // 停止时发送剩余的错误报告
     if (this.reportQueue.length > 0) {
       this.sendReports()
     }
@@ -230,12 +230,12 @@ class ErrorReportingService {
   }
 }
 
-// Singleton instance
+// 单例实例
 const errorReportingService = new ErrorReportingService()
 
 export default errorReportingService
 
-// Convenience functions
+// 便捷函数
 export const reportChatError = (error: ChatApiError, context?: Record<string, unknown>): void => {
   errorReportingService.reportError(error, context)
 }

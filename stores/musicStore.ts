@@ -7,7 +7,7 @@ export interface MusicTrack {
   duration: number
 }
 
-// 播放模式类型 - 合并了循环和随机播放
+// 播放模式类型
 export type PlayMode = 'none' | 'all' | 'one' | 'shuffle'
 
 interface MusicState {
@@ -27,7 +27,7 @@ interface MusicState {
 export const useMusicStore = create<MusicState>()(
   persist(
     set => ({
-      currentTrack: '', // 移除硬编码的曲目路径
+      currentTrack: '',
       volume: 0.5,
       availableTracks: [],
       isPlaying: false,

@@ -1,6 +1,6 @@
 /**
- * Main internationalization module
- * Provides the core i18n functionality for the application
+ * 主国际化模块
+ * 为应用程序提供核心的 i18n 功能
  */
 
 export {
@@ -24,14 +24,14 @@ export {
   hasTranslationKey,
 } from './utils'
 
-// Re-export for convenience
+// 便于使用的再导出
 import { detectBrowserLanguage, createTranslationFunction, normalizeLanguageCode } from './utils'
 import { type SupportedLanguage } from './translations'
 
 /**
- * Initialize i18n system with automatic language detection
- * @param preferredLanguage Optional preferred language override
- * @returns Object with detected language and translation function
+ * 初始化 i18n 系统并自动检测语言
+ * @param preferredLanguage 可选的首选语言覆盖
+ * @returns 返回检测到的语言和翻译函数对象
  */
 export function initializeI18n(preferredLanguage?: string) {
   let detectedLanguage: SupportedLanguage
@@ -50,11 +50,11 @@ export function initializeI18n(preferredLanguage?: string) {
   }
 }
 
-// Export dev tools (only available in development)
+// 导出开发工具（仅在开发环境可用）
 export { validateAllTranslations, checkTranslationKeys, logTranslationStats } from './dev-tools'
 
 /**
- * Default export for easy importing
+ * 默认导出，便于导入
  */
 const i18n = {
   initializeI18n,

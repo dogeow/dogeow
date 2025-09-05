@@ -11,7 +11,7 @@ class WebSocketAuthManager {
   private refreshCallback: (() => Promise<string | null>) | null = null
 
   constructor() {
-    // Listen for storage changes to sync tokens across tabs
+    // 监听 storage 事件，实现多标签页 token 同步
     if (typeof window !== 'undefined') {
       window.addEventListener('storage', this.handleStorageChange.bind(this))
     }
@@ -23,22 +23,22 @@ class WebSocketAuthManager {
         const authData = JSON.parse(event.newValue || '{}')
         const token = authData.state?.token
         if (token) {
-          // Token changed in another tab, reconnect with new token
+          // 其他标签页的 token 发生变化，使用新 token 重新连接
           this.reconnectWithNewToken(token)
         }
       } catch (error) {
-        console.warn('Failed to parse auth storage data:', error)
+        console.warn('解析 auth storage 数据失败:', error)
       }
     }
   }
 
   private reconnectWithNewToken(token: string | null) {
     if (token) {
-      // Destroy current connection and create new one with updated token
+      // 销毁当前连接，并用新 token 创建新连接
       destroyEchoInstance()
       createEchoInstance()
     } else {
-      // Token removed, disconnect
+      // token 被移除，断开连接
       destroyEchoInstance()
     }
   }
@@ -47,14 +47,14 @@ class WebSocketAuthManager {
     if (typeof window === 'undefined') return null
 
     try {
-      // Try to get token from Zustand store first
+      // 优先从 Zustand store 获取 token
       const authStorage = localStorage.getItem('auth-storage')
       if (authStorage) {
         const authData = JSON.parse(authStorage)
         return authData.state?.token || null
       }
     } catch (error) {
-      console.warn('Failed to get token from auth storage:', error)
+      console.warn('从 auth storage 获取 token 失败:', error)
     }
 
     return null
@@ -63,7 +63,7 @@ class WebSocketAuthManager {
   public setToken(token: string): void {
     if (typeof window === 'undefined') return
 
-    // Update Zustand store
+    // 更新 Zustand store
     try {
       const authStorage = localStorage.getItem('auth-storage')
       if (authStorage) {
@@ -72,17 +72,17 @@ class WebSocketAuthManager {
         localStorage.setItem('auth-storage', JSON.stringify(authData))
       }
     } catch (error) {
-      console.warn('Failed to update auth storage:', error)
+      console.warn('更新 auth storage 失败:', error)
     }
 
-    // Reconnect with new token
+    // 用新 token 重新连接
     this.reconnectWithNewToken(token)
   }
 
   public removeToken(): void {
     if (typeof window === 'undefined') return
 
-    // Remove token from Zustand store
+    // 从 Zustand store 移除 token
     try {
       const authStorage = localStorage.getItem('auth-storage')
       if (authStorage) {
@@ -91,10 +91,10 @@ class WebSocketAuthManager {
         localStorage.setItem('auth-storage', JSON.stringify(authData))
       }
     } catch (error) {
-      console.warn('Failed to remove token from auth storage:', error)
+      console.warn('从 auth storage 移除 token 失败:', error)
     }
 
-    // Disconnect when token is removed
+    // token 被移除时断开连接
     destroyEchoInstance()
   }
 
@@ -104,7 +104,7 @@ class WebSocketAuthManager {
 
   public async refreshToken(): Promise<string | null> {
     if (!this.refreshCallback) {
-      console.warn('No refresh callback set for WebSocket auth')
+      console.warn('WebSocket 认证未设置刷新回调')
       return null
     }
 
@@ -115,7 +115,7 @@ class WebSocketAuthManager {
         return newToken
       }
     } catch (error) {
-      console.error('Failed to refresh WebSocket auth token:', error)
+      console.error('WebSocket 认证 token 刷新失败:', error)
     }
 
     return null
@@ -123,26 +123,26 @@ class WebSocketAuthManager {
 
   public async initializeConnection(): Promise<boolean> {
     const token = this.getToken()
-    console.log('WebSocket Auth: Token check:', token ? 'Token found' : 'No token')
+    console.log('WebSocket 认证: Token 检查:', token ? '已找到 Token' : '未找到 Token')
 
     if (!token) {
-      console.warn('No auth token available for WebSocket connection')
+      console.warn('WebSocket 连接缺少认证 token')
       return false
     }
 
     try {
-      console.log('WebSocket Auth: Creating Echo instance with token')
+      console.log('WebSocket 认证: 使用 token 创建 Echo 实例')
       const instance = createEchoInstance()
 
       if (instance) {
-        console.log('WebSocket Auth: Echo instance created successfully')
+        console.log('WebSocket 认证: Echo 实例创建成功')
         return true
       } else {
-        console.error('WebSocket Auth: Failed to create Echo instance')
+        console.error('WebSocket 认证: Echo 实例创建失败')
         return false
       }
     } catch (error) {
-      console.error('WebSocket Auth: Error creating Echo instance:', error)
+      console.error('WebSocket 认证: 创建 Echo 实例出错:', error)
       return false
     }
   }
@@ -155,7 +155,7 @@ class WebSocketAuthManager {
   }
 }
 
-// Singleton instance
+// 单例实例
 let authManager: WebSocketAuthManager | null = null
 
 export const getAuthManager = (): WebSocketAuthManager => {
@@ -174,28 +174,28 @@ export const destroyAuthManager = (): void => {
 
 export const refreshEchoAuth = async () => {
   try {
-    console.log('WebSocket Auth: Refreshing Echo authentication')
+    console.log('WebSocket 认证: 正在刷新 Echo 认证')
 
-    // Destroy current instance
+    // 销毁当前实例
     destroyEchoInstance()
 
-    // Create new instance with updated token
+    // 用新 token 创建新实例
     try {
-      console.log('WebSocket Auth: Retrying with refreshed token')
+      console.log('WebSocket 认证: 使用刷新后的 token 重试')
       const retryInstance = createEchoInstance()
 
       if (retryInstance) {
-        console.log('WebSocket Auth: Retry successful')
+        console.log('WebSocket 认证: 重试成功')
         return retryInstance
       }
     } catch (retryError) {
-      console.error('WebSocket Auth: Retry failed:', retryError)
+      console.error('WebSocket 认证: 重试失败:', retryError)
     }
 
-    console.log('WebSocket Auth: Echo authentication refreshed successfully')
+    console.log('WebSocket 认证: Echo 认证刷新成功')
     return true
   } catch (error) {
-    console.error('WebSocket Auth: Failed to refresh Echo authentication:', error)
+    console.error('WebSocket 认证: 刷新 Echo 认证失败:', error)
     return false
   }
 }

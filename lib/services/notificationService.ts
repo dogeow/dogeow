@@ -1,6 +1,6 @@
 /**
- * Notification Service
- * Handles browser notifications, sound effects, and notification permissions
+ * 通知服务
+ * 处理浏览器通知、音效和通知权限
  */
 
 export interface NotificationOptions {
@@ -38,7 +38,7 @@ class NotificationService {
   private async initialize() {
     if (this.isInitialized) return
 
-    // Initialize audio context for sound effects
+    // 初始化音频上下文用于音效
     if (typeof window !== 'undefined' && 'AudioContext' in window) {
       try {
         this.audioContext = new AudioContext()
@@ -52,7 +52,7 @@ class NotificationService {
   }
 
   /**
-   * Request browser notification permission
+   * 请求浏览器通知权限
    */
   public async requestPermission(): Promise<NotificationPermission> {
     if (!('Notification' in window)) {
@@ -78,21 +78,21 @@ class NotificationService {
   }
 
   /**
-   * Check if browser notifications are supported and permitted
+   * 检查浏览器是否支持并允许通知
    */
   public isNotificationSupported(): boolean {
     return 'Notification' in window && Notification.permission === 'granted'
   }
 
   /**
-   * Show browser notification
+   * 显示浏览器通知
    */
   public showNotification(options: NotificationOptions): Notification | null {
     if (!this.isNotificationSupported()) {
       return null
     }
 
-    // Don't show notification if tab is active (unless explicitly required)
+    // 如果标签页处于激活状态则不显示通知（除非明确要求）
     if (!document.hidden && !options.requireInteraction) {
       return null
     }
@@ -108,21 +108,21 @@ class NotificationService {
         data: options.data,
       })
 
-      // Auto-close notification after 5 seconds unless it requires interaction
+      // 如果不需要交互，5秒后自动关闭通知
       if (!options.requireInteraction) {
         setTimeout(() => {
           notification.close()
         }, 5000)
       }
 
-      // Handle notification click
+      // 处理通知点击事件
       notification.onclick = () => {
         window.focus()
         notification.close()
 
-        // If there's custom data, handle it
+        // 如果有自定义数据，进行处理
         if (options.data && typeof options.data === 'object' && 'roomId' in options.data) {
-          // This could trigger navigation to the specific room
+          // 这里可以触发跳转到指定房间
           window.dispatchEvent(
             new CustomEvent('notification-click', {
               detail: options.data,
@@ -139,7 +139,7 @@ class NotificationService {
   }
 
   /**
-   * Preload sound effects
+   * 预加载音效
    */
   private async preloadSounds() {
     if (!this.audioContext) return
@@ -166,7 +166,7 @@ class NotificationService {
   }
 
   /**
-   * Play sound effect
+   * 播放音效
    */
   public playSound(soundName: string, options: SoundOptions = {}): void {
     if (!this.audioContext || !this.soundCache.has(soundName)) {
@@ -192,7 +192,7 @@ class NotificationService {
   }
 
   /**
-   * Create notification for new message
+   * 创建新消息通知
    */
   public notifyNewMessage(
     roomName: string,
@@ -201,7 +201,7 @@ class NotificationService {
     roomId: number,
     playSound = true
   ): void {
-    // Show browser notification
+    // 显示浏览器通知
     this.showNotification({
       title: `New message in ${roomName}`,
       body: `${senderName}: ${message}`,
@@ -209,14 +209,14 @@ class NotificationService {
       data: { roomId, type: 'message' },
     })
 
-    // Play sound effect
+    // 播放音效
     if (playSound) {
       this.playSound('message')
     }
   }
 
   /**
-   * Create notification for mention
+   * 创建@提及通知
    */
   public notifyMention(
     roomName: string,
@@ -226,7 +226,7 @@ class NotificationService {
     messageId: number,
     playSound = true
   ): void {
-    // Show browser notification with higher priority
+    // 显示高优先级浏览器通知
     this.showNotification({
       title: `${senderName} mentioned you in ${roomName}`,
       body: message,
@@ -235,14 +235,14 @@ class NotificationService {
       data: { roomId, messageId, type: 'mention' },
     })
 
-    // Play mention sound effect
+    // 播放@提及音效
     if (playSound) {
       this.playSound('mention')
     }
   }
 
   /**
-   * Create notification for user joining
+   * 创建用户加入通知
    */
   public notifyUserJoined(
     roomName: string,
@@ -250,22 +250,22 @@ class NotificationService {
     roomId: number,
     playSound = true
   ): void {
-    // Show browser notification
+    // 显示浏览器通知
     this.showNotification({
       title: `${userName} joined ${roomName}`,
       tag: `join-${roomId}-${Date.now()}`,
-      silent: true, // Less intrusive for join notifications
+      silent: true, // 加入通知较为安静
       data: { roomId, type: 'user-joined' },
     })
 
-    // Play join sound effect
+    // 播放加入音效
     if (playSound) {
       this.playSound('join', { volume: 0.3 })
     }
   }
 
   /**
-   * Create notification for user leaving
+   * 创建用户离开通知
    */
   public notifyUserLeft(
     roomName: string,
@@ -273,39 +273,39 @@ class NotificationService {
     roomId: number,
     playSound = true
   ): void {
-    // Show browser notification
+    // 显示浏览器通知
     this.showNotification({
       title: `${userName} left ${roomName}`,
       tag: `leave-${roomId}-${Date.now()}`,
-      silent: true, // Less intrusive for leave notifications
+      silent: true, // 离开通知较为安静
       data: { roomId, type: 'user-left' },
     })
 
-    // Play leave sound effect
+    // 播放离开音效
     if (playSound) {
       this.playSound('leave', { volume: 0.3 })
     }
   }
 
   /**
-   * Clear all notifications with a specific tag pattern
+   * 清除所有指定标签模式的通知
    */
   public clearNotifications(tagPattern?: string): void {
-    // Unfortunately, there's no direct way to clear notifications by tag
-    // This is a limitation of the Notifications API
-    // We can only close notifications we have references to
+    // 很遗憾，无法通过标签直接清除通知
+    // 这是 Notifications API 的限制
+    // 只能关闭我们有引用的通知
     console.log(`Clearing notifications with pattern: ${tagPattern}`)
   }
 
   /**
-   * Check if document is hidden (tab is inactive)
+   * 检查文档是否隐藏（标签页是否处于非激活状态）
    */
   public isTabInactive(): boolean {
     return typeof document !== 'undefined' && document.hidden
   }
 
   /**
-   * Add visibility change listener
+   * 添加可见性变化监听器
    */
   public onVisibilityChange(callback: (isHidden: boolean) => void): () => void {
     if (typeof document === 'undefined') {

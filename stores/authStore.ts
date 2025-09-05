@@ -32,10 +32,10 @@ const useAuthStore = create<AuthState>()(
       setUser: user => set({ user, isAuthenticated: !!user }),
 
       setToken: async token => {
-        // const currentToken = get().token
+        // setToken时同步token和认证状态
         set({ token, isAuthenticated: !!token })
 
-        // Always sync token with WebSocket auth manager
+        // 始终与WebSocket认证管理器同步token
         if (typeof window !== 'undefined') {
           try {
             const { getAuthManager } = await import('@/lib/websocket/auth')
@@ -46,7 +46,7 @@ const useAuthStore = create<AuthState>()(
               authManager.removeToken()
             }
           } catch (error) {
-            console.warn('Failed to sync token with WebSocket auth manager:', error)
+            console.warn('与WebSocket认证管理器同步token失败:', error)
           }
         }
       },
@@ -99,7 +99,7 @@ const useAuthStore = create<AuthState>()(
             const authManager = getAuthManager()
             authManager.removeToken()
           } catch (error) {
-            console.warn('Failed to sync logout with WebSocket auth manager:', error)
+            console.warn('与WebSocket认证管理器同步登出失败:', error)
           }
         }
       },

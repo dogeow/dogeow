@@ -58,12 +58,12 @@ class WebSocketConnectionMonitor {
   }
 
   private setupEventListeners() {
-    // This will be called when Echo instance is created
+    // 当 Echo 实例被创建时会调用此方法
   }
 
   public initializeWithEcho(echo: Echo<'reverb'>) {
     if (echo && echo.connector && echo.connector.pusher) {
-      // Pusher connection events
+      // Pusher 连接事件
       echo.connector.pusher.connection.bind('connected', () => {
         this.updateStatus('connected')
         this.lastConnected = new Date()
@@ -105,7 +105,7 @@ class WebSocketConnectionMonitor {
         }
       })
 
-      // Additional error events
+      // 额外的错误事件
       echo.connector.pusher.connection.bind('failed', (error: unknown) => {
         const connectionError = this.errorHandler.handleError(error, 'WebSocket connection failed')
         this.updateStatus('error')
@@ -129,7 +129,7 @@ class WebSocketConnectionMonitor {
 
     this.clearReconnectTimeout()
 
-    // Exponential backoff: 1s, 2s, 4s, 8s, 16s
+    // 指数退避：1秒、2秒、4秒、8秒、16秒
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 16000)
 
     this.reconnectTimeout = setTimeout(() => {
@@ -175,10 +175,10 @@ class WebSocketConnectionMonitor {
   public subscribe(listener: (monitor: ConnectionMonitor) => void): () => void {
     this.listeners.push(listener)
 
-    // Immediately notify with current status
+    // 立即通知当前状态
     this.notifyListeners()
 
-    // Return unsubscribe function
+    // 返回取消订阅函数
     return () => {
       const index = this.listeners.indexOf(listener)
       if (index > -1) {
@@ -219,7 +219,7 @@ class WebSocketConnectionMonitor {
   }
 }
 
-// Singleton instance
+// 单例实例
 let connectionMonitor: WebSocketConnectionMonitor | null = null
 
 export const getConnectionMonitor = (): WebSocketConnectionMonitor => {

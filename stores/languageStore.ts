@@ -51,7 +51,7 @@ export const useLanguageStore = create<LanguageState>()(
       }
 
       return {
-        currentLanguage: 'en', // Default fallback, will be overridden by initialization
+        currentLanguage: 'en', // 默认回退语言，初始化后会被覆盖
         availableLanguages: getAvailableLanguages(),
         detectedLanguage: null,
         detectionResult: null,
@@ -64,7 +64,7 @@ export const useLanguageStore = create<LanguageState>()(
           const translationFunction = createTranslationFunction(normalizedLanguage)
 
           if (shouldLog()) {
-            console.log('[LanguageStore] Setting language:', {
+            console.log('[LanguageStore] 设置语言:', {
               requested: language,
               normalized: normalizedLanguage,
               rememberPreference,
@@ -72,7 +72,7 @@ export const useLanguageStore = create<LanguageState>()(
             })
           }
 
-          // Remember user preference if requested
+          // 如需记住用户偏好则保存
           if (rememberPreference) {
             get().setLanguagePreference(normalizedLanguage)
           }
@@ -84,26 +84,26 @@ export const useLanguageStore = create<LanguageState>()(
           })
 
           if (shouldLog()) {
-            console.log('[LanguageStore] Language set successfully:', {
+            console.log('[LanguageStore] 语言设置成功:', {
               newLanguage: normalizedLanguage,
               isAutoDetected: false,
             })
           }
         },
 
-        t: createTranslationFunction('zh-CN'), // Default translation function
+        t: createTranslationFunction('zh-CN'), // 默认翻译函数
 
         initializeLanguage: async () => {
           const state = get()
           if (shouldLog()) {
-            console.log('[LanguageStore] Initializing language...')
+            console.log('[LanguageStore] 初始化语言...')
           }
 
-          // If we already have a stored language preference, use it
+          // 如果已有存储的语言偏好，则直接使用
           const storedPreference = state.getLanguagePreference()
           if (storedPreference && storedPreference !== 'en') {
             if (shouldLog()) {
-              console.log('[LanguageStore] ✅ Using stored preference:', storedPreference)
+              console.log('[LanguageStore] ✅ 使用存储的偏好:', storedPreference)
             }
             const translationFunction = createTranslationFunction(storedPreference)
             set({
@@ -116,15 +116,15 @@ export const useLanguageStore = create<LanguageState>()(
           }
 
           if (shouldLog()) {
-            console.log('[LanguageStore] No stored preference, performing detection...')
+            console.log('[LanguageStore] 没有存储的偏好，开始检测...')
           }
-          // Otherwise, perform advanced language detection
+          // 否则执行高级语言检测
           await state.refreshDetection()
         },
 
         refreshDetection: async () => {
           if (shouldLog()) {
-            console.log('[LanguageStore] Starting language detection...')
+            console.log('[LanguageStore] 开始语言检测...')
           }
           set({ isDetecting: true })
 
@@ -135,7 +135,7 @@ export const useLanguageStore = create<LanguageState>()(
             const now = Date.now()
 
             if (shouldLog()) {
-              console.log('[LanguageStore] Detection completed:', {
+              console.log('[LanguageStore] 检测完成:', {
                 detectedLanguage,
                 method: detectionResult.method,
                 confidence: detectionResult.confidence,
@@ -153,7 +153,7 @@ export const useLanguageStore = create<LanguageState>()(
               isDetecting: false,
             })
 
-            // Store the detected language for future reference
+            // 存储检测到的语言以便下次使用
             if (typeof window !== 'undefined') {
               localStorage.setItem(
                 'dogeow-detected-language',
@@ -165,15 +165,15 @@ export const useLanguageStore = create<LanguageState>()(
                 })
               )
               if (shouldLog()) {
-                console.log('[LanguageStore] Stored detection result in localStorage')
+                console.log('[LanguageStore] 检测结果已存储到localStorage')
               }
             }
           } catch (error) {
-            console.error('[LanguageStore] Language detection failed:', error)
+            console.error('[LanguageStore] 语言检测失败:', error)
 
-            // Fallback to basic detection
+            // 回退到基础检测
             if (shouldLog()) {
-              console.log('[LanguageStore] Falling back to basic detection...')
+              console.log('[LanguageStore] 回退到基础检测...')
             }
             const fallbackLanguage = detectBrowserLanguage()
             const translationFunction = createTranslationFunction(fallbackLanguage)
@@ -189,7 +189,7 @@ export const useLanguageStore = create<LanguageState>()(
             })
 
             if (shouldLog()) {
-              console.log('[LanguageStore] Fallback detection completed:', {
+              console.log('[LanguageStore] 回退检测完成:', {
                 fallbackLanguage,
                 timestamp: new Date(now).toISOString(),
               })
@@ -201,13 +201,13 @@ export const useLanguageStore = create<LanguageState>()(
           const state = get()
           if (state.detectedLanguage) {
             if (shouldLog()) {
-              console.log('[LanguageStore] Resetting to detected language:', state.detectedLanguage)
+              console.log('[LanguageStore] 重置为检测到的语言:', state.detectedLanguage)
             }
             state.setLanguage(state.detectedLanguage, false)
             set({ isAutoDetected: true })
           } else {
             if (shouldLog()) {
-              console.log('[LanguageStore] No detected language to reset to')
+              console.log('[LanguageStore] 没有可重置的检测语言')
             }
           }
         },
@@ -219,17 +219,17 @@ export const useLanguageStore = create<LanguageState>()(
             const stored = localStorage.getItem('dogeow-language-preference')
             if (stored && isSupportedLanguage(stored)) {
               if (shouldLog()) {
-                console.log('[LanguageStore] Retrieved stored preference:', stored)
+                console.log('[LanguageStore] 获取到存储的偏好:', stored)
               }
               return stored
             }
             if (stored) {
               if (shouldLog()) {
-                console.log('[LanguageStore] Stored preference not supported:', stored)
+                console.log('[LanguageStore] 存储的偏好不被支持:', stored)
               }
             }
           } catch (error) {
-            console.warn('[LanguageStore] Failed to get language preference:', error)
+            console.warn('[LanguageStore] 获取语言偏好失败:', error)
           }
 
           return 'zh-CN'
@@ -240,11 +240,11 @@ export const useLanguageStore = create<LanguageState>()(
 
           try {
             if (shouldLog()) {
-              console.log('[LanguageStore] Setting language preference:', language)
+              console.log('[LanguageStore] 设置语言偏好:', language)
             }
             localStorage.setItem('dogeow-language-preference', language)
           } catch (error) {
-            console.warn('[LanguageStore] Failed to set language preference:', error)
+            console.warn('[LanguageStore] 设置语言偏好失败:', error)
           }
         },
 
@@ -254,7 +254,7 @@ export const useLanguageStore = create<LanguageState>()(
             // 只在开发环境下输出日志，避免生产环境过多日志
             if (process.env.NODE_ENV === 'development') {
               if (shouldLog()) {
-                console.log('[LanguageStore] No detection stats available')
+                console.log('[LanguageStore] 没有可用的检测统计信息')
               }
             }
             return { confidence: 0, method: 'none', timestamp: null }
@@ -270,7 +270,7 @@ export const useLanguageStore = create<LanguageState>()(
           const now = Date.now()
           if (process.env.NODE_ENV === 'development' && now - lastLogTime > LOG_THROTTLE_MS) {
             if (shouldLog()) {
-              console.log('[LanguageStore] Detection stats:', stats)
+              console.log('[LanguageStore] 检测统计信息:', stats)
             }
             lastLogTime = now
           }
@@ -281,7 +281,7 @@ export const useLanguageStore = create<LanguageState>()(
     },
     {
       name: 'language-storage',
-      // Only persist the current language and detection info, not the translation function
+      // 只持久化当前语言和检测信息，不持久化翻译函数
       partialize: state => ({
         currentLanguage: state.currentLanguage,
         detectedLanguage: state.detectedLanguage,
@@ -293,13 +293,13 @@ export const useLanguageStore = create<LanguageState>()(
   )
 )
 
-// Helper function to get current language info
+// 获取当前语言信息的辅助函数
 export const getCurrentLanguageInfo = (currentLanguage: SupportedLanguage) => {
   const availableLanguages = getAvailableLanguages()
   return availableLanguages.find(lang => lang.code === currentLanguage) || availableLanguages[0]
 }
 
-// Helper function to check if language detection is stale (older than 7 days)
+// 检查语言检测是否过期（超过7天）的辅助函数
 export const isLanguageDetectionStale = (lastDetectionTime: number | null) => {
   if (!lastDetectionTime) return true
 
@@ -307,15 +307,15 @@ export const isLanguageDetectionStale = (lastDetectionTime: number | null) => {
   return Date.now() - lastDetectionTime > sevenDays
 }
 
-// Helper function to check if we should re-detect language
+// 判断是否需要重新检测语言的辅助函数
 export const shouldRedetectLanguage = (
   lastDetectionTime: number | null,
   isAutoDetected: boolean
 ) => {
-  // Always re-detect if never detected before
+  // 如果从未检测过则始终重新检测
   if (!lastDetectionTime) return true
 
-  // Re-detect if detection is stale and was auto-detected
+  // 如果检测已过期且是自动检测的，则重新检测
   if (isLanguageDetectionStale(lastDetectionTime) && isAutoDetected) {
     return true
   }

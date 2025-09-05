@@ -20,9 +20,9 @@ export interface UseTranslationReturn {
 }
 
 /**
- * Hook for accessing translation functionality
- * Automatically initializes language detection on first use
- * Provides comprehensive translation features with fallback support
+ * 用于访问翻译功能的 Hook
+ * 首次使用时自动初始化语言检测
+ * 提供带有兜底支持的全面翻译功能
  */
 export function useTranslation(): UseTranslationReturn {
   const {
@@ -41,7 +41,7 @@ export function useTranslation(): UseTranslationReturn {
 
   const [isLanguageLoaded, setIsLanguageLoaded] = useState(false)
 
-  // Initialize language detection on mount - 使用 useCallback 避免重复调用
+  // 组件挂载时初始化语言检测 - 使用 useCallback 避免重复调用
   const initLanguage = useCallback(async () => {
     if (isLanguageLoaded) return
 
@@ -49,8 +49,8 @@ export function useTranslation(): UseTranslationReturn {
       await initializeLanguage()
       setIsLanguageLoaded(true)
     } catch (error) {
-      console.error('Failed to initialize language:', error)
-      setIsLanguageLoaded(true) // Set to true even on error to prevent infinite loading
+      console.error('初始化语言失败:', error)
+      setIsLanguageLoaded(true) // 即使出错也设置为 true，防止无限加载
     }
   }, [initializeLanguage, isLanguageLoaded])
 
@@ -62,16 +62,16 @@ export function useTranslation(): UseTranslationReturn {
     return getCurrentLanguageInfo(currentLanguage)
   }, [currentLanguage])
 
-  // Enhanced translation function with additional features
+  // 增强版翻译函数，带有额外功能
   const enhancedT = useCallback(
     (key: string, fallback?: string): string => {
-      // Use the store's translation function which already has fallback logic
+      // 使用 store 的翻译函数，已包含兜底逻辑
       return t(key, fallback)
     },
     [t]
   )
 
-  // Memoize detection stats to avoid unnecessary recalculations
+  // 检测状态数据做缓存，避免不必要的重新计算
   const detectionStats = useMemo(() => {
     return getDetectionStats()
   }, [getDetectionStats])
@@ -93,19 +93,19 @@ export function useTranslation(): UseTranslationReturn {
 }
 
 /**
- * Lightweight hook that only returns the translation function
- * Use this when you only need translations and don't need language switching
+ * 仅返回翻译函数的轻量级 Hook
+ * 只需要翻译功能且不需要切换语言时使用
  */
 export function useT() {
   const { t, initializeLanguage } = useLanguageStore()
 
-  // Ensure language is initialized
+  // 确保语言已初始化
   useEffect(() => {
     const initLanguage = async () => {
       try {
         await initializeLanguage()
       } catch (error) {
-        console.error('Failed to initialize language:', error)
+        console.error('初始化语言失败:', error)
       }
     }
 
@@ -116,19 +116,19 @@ export function useT() {
 }
 
 /**
- * Hook for getting translation with explicit language parameter
- * Useful for getting translations in different languages without changing global state
+ * 获取指定语言翻译的 Hook
+ * 用于无需更改全局状态时获取不同语言的翻译
  */
 export function useTranslationWithLanguage() {
   const { initializeLanguage } = useLanguageStore()
 
-  // Ensure language is initialized
+  // 确保语言已初始化
   useEffect(() => {
     const initLanguage = async () => {
       try {
         await initializeLanguage()
       } catch (error) {
-        console.error('Failed to initialize language:', error)
+        console.error('初始化语言失败:', error)
       }
     }
 
@@ -141,7 +141,7 @@ export function useTranslationWithLanguage() {
 }
 
 /**
- * Hook for language detection status and controls
+ * 语言检测状态与控制的 Hook
  */
 export function useLanguageDetection() {
   const {
@@ -153,7 +153,7 @@ export function useLanguageDetection() {
     resetToDetected,
   } = useLanguageStore()
 
-  // Memoize detection stats to avoid unnecessary recalculations
+  // 检测状态数据做缓存，避免不必要的重新计算
   const detectionStats = useMemo(() => {
     return getDetectionStats()
   }, [getDetectionStats])

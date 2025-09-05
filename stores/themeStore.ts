@@ -67,7 +67,7 @@ export const getCurrentThemeColor = (
   if (presetTheme) {
     return {
       id: presetTheme.id,
-      name: presetTheme.nameKey, // Use nameKey as fallback for name
+      name: presetTheme.nameKey,
       primary: presetTheme.primary,
       color: presetTheme.color,
     }

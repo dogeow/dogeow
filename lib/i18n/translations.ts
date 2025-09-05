@@ -1,8 +1,3 @@
-/**
- * Translation data for multi-language support
- * Supports: Chinese Simplified, Chinese Traditional, English, Japanese
- */
-
 import { zh_CN, zh_TW, en, ja } from './langs'
 
 export interface Translations {
