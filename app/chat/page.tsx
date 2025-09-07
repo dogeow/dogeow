@@ -186,34 +186,24 @@ function ChatPageContent() {
       console.log('🔥 ChatPage: 加载在线用户并加入WebSocket房间：', currentRoom.id)
       console.log('🔥 ChatPage: 连接状态：', connectionInfo.status)
       console.log('🔥 ChatPage: 已认证：', isAuthenticated)
+
+      // 加载在线用户
       loadOnlineUsers(currentRoom.id).catch(handleError)
-      wsJoinRoom(currentRoom.id.toString())
-      console.log('🔥 ChatPage: WebSocket joinRoom已调用，房间：', currentRoom.id)
 
-      // 添加一个简单的测试来验证WebSocket连接
-      setTimeout(() => {
-        console.log('🔥 ChatPage: 2秒后测试WebSocket连接')
-        console.log('🔥 ChatPage: 连接信息：', connectionInfo)
-        console.log('🔥 ChatPage: 当前房间：', currentRoom?.id)
-
-        // 强制测试房间加入
-        console.log('🔥 ChatPage: 强制测试wsJoinRoom，房间31')
-        wsJoinRoom('31')
-        console.log('🔥 ChatPage: 强制调用wsJoinRoom')
-      }, 2000)
+      // 加入WebSocket房间
+      try {
+        wsJoinRoom(currentRoom.id.toString())
+        console.log('🔥 ChatPage: WebSocket joinRoom已调用，房间：', currentRoom.id)
+      } catch (error) {
+        console.error('🔥 ChatPage: WebSocket joinRoom失败：', error)
+        handleError(error as Error)
+      }
     } else {
       console.log('🔥 ChatPage: 未加入房间，原因：', {
         是否有当前房间: !!currentRoom,
         是否已认证: isAuthenticated,
         连接状态: connectionInfo.status,
       })
-
-      // 即使没有当前房间，也强制加入房间31进行测试
-      if (isAuthenticated && connectionInfo.status === 'connected') {
-        console.log('🔥 ChatPage: 强制加入房间31进行测试（无当前房间）')
-        wsJoinRoom('31')
-        console.log('🔥 ChatPage: 强制调用wsJoinRoom(31)')
-      }
     }
   }, [
     currentRoom,
@@ -222,7 +212,6 @@ function ChatPageContent() {
     loadOnlineUsers,
     wsJoinRoom,
     handleError,
-    connectionInfo,
   ])
 
   // 处理消息回复

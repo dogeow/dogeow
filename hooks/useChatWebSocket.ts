@@ -130,7 +130,14 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
   // 连接状态监控
   useEffect(() => {
     const monitor = getConnectionMonitor()
+
+    // 初始化连接监控器与Echo实例
+    if (echo) {
+      monitor.initializeWithEcho(echo)
+    }
+
     connectionMonitorUnsubscribeRef.current = monitor.subscribe(info => {
+      console.log('WebSocket: Connection status updated:', info.status)
       setConnectionInfo(prevInfo =>
         prevInfo.status !== info.status ||
         prevInfo.reconnectAttempts !== info.reconnectAttempts ||
@@ -154,7 +161,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     return () => {
       connectionMonitorUnsubscribeRef.current?.()
     }
-  }, [onConnect, onDisconnect, onError])
+  }, [onConnect, onDisconnect, onError, echo])
 
   // 自动连接
   useEffect(() => {
@@ -196,17 +203,53 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
   }, [echo, connectionInfo.status])
 
   const connect = useCallback(async (): Promise<boolean> => {
+    if (!isComponentMountedRef.current) {
+      console.log('WebSocket: Component unmounted, skipping connect')
+      return false
+    }
+
     try {
+      console.log('WebSocket: Starting connection process')
       const authManager = getAuthManager()
       let token = authManager.getToken()
       if (!token && authTokenRefreshCallback) {
+        console.log('WebSocket: Refreshing auth token')
         token = await authTokenRefreshCallback()
       }
-      if (!token) return false
+      if (!token) {
+        console.error('WebSocket: No auth token available')
+        onError?.({
+          type: 'connection',
+          message: 'No authentication token available',
+          timestamp: new Date(),
+          retryable: false,
+        })
+        return false
+      }
+
+      console.log('WebSocket: Creating Echo instance')
       const echoInstance = createEchoInstance()
+      if (!echoInstance) {
+        console.error('WebSocket: Failed to create Echo instance')
+        onError?.({
+          type: 'connection',
+          message: 'Failed to create WebSocket connection',
+          timestamp: new Date(),
+          retryable: true,
+        })
+        return false
+      }
+
+      console.log('WebSocket: Echo instance created successfully')
       setEcho(echoInstance)
+
+      // 初始化连接监控器
+      const monitor = getConnectionMonitor()
+      monitor.initializeWithEcho(echoInstance)
+
       return true
     } catch (error) {
+      console.error('WebSocket: Connection failed:', error)
       onError?.({
         type: 'connection',
         message: error instanceof Error ? error.message : 'Failed to connect to WebSocket',
@@ -243,6 +286,8 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         console.log('WebSocket: Component unmounted, skipping joinRoom')
         return
       }
+
+      console.log('WebSocket: Attempting to join room:', roomId)
 
       let echoToUse = echoInstance || echo
       if (!echoToUse) {
