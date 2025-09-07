@@ -247,6 +247,9 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       const monitor = getConnectionMonitor()
       monitor.initializeWithEcho(echoInstance)
 
+      // 立即返回true，让连接状态通过事件监听器异步更新
+      // 这样可以避免阻塞，让UI能够响应连接状态变化
+      console.log('WebSocket: Echo instance ready, connection will be established asynchronously')
       return true
     } catch (error) {
       console.error('WebSocket: Connection failed:', error)
