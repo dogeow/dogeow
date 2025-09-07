@@ -190,14 +190,18 @@ function ChatPageContent() {
       // 加载在线用户
       loadOnlineUsers(currentRoom.id).catch(handleError)
 
-      // 加入WebSocket房间
-      try {
-        wsJoinRoom(currentRoom.id.toString())
-        console.log('🔥 ChatPage: WebSocket joinRoom已调用，房间：', currentRoom.id)
-      } catch (error) {
-        console.error('🔥 ChatPage: WebSocket joinRoom失败：', error)
-        handleError(error as Error)
-      }
+      // 延迟一点时间确保连接完全建立，然后加入WebSocket房间
+      const timer = setTimeout(() => {
+        try {
+          wsJoinRoom(currentRoom.id.toString())
+          console.log('🔥 ChatPage: WebSocket joinRoom已调用，房间：', currentRoom.id)
+        } catch (error) {
+          console.error('🔥 ChatPage: WebSocket joinRoom失败：', error)
+          handleError(error as Error)
+        }
+      }, 500)
+
+      return () => clearTimeout(timer)
     } else if (currentRoom && isAuthenticated && connectionInfo.status === 'connecting') {
       console.log('🔥 ChatPage: 连接中，等待连接建立后加入房间：', currentRoom.id)
     } else {
@@ -215,26 +219,6 @@ function ChatPageContent() {
     wsJoinRoom,
     handleError,
   ])
-
-  // 额外的useEffect来处理连接状态变化时的房间加入
-  useEffect(() => {
-    if (currentRoom && isAuthenticated && connectionInfo.status === 'connected') {
-      console.log('🔥 ChatPage: 连接状态变为connected，尝试加入房间：', currentRoom.id)
-
-      // 延迟一点时间确保连接完全建立
-      const timer = setTimeout(() => {
-        try {
-          wsJoinRoom(currentRoom.id.toString())
-          console.log('🔥 ChatPage: 延迟加入WebSocket房间成功：', currentRoom.id)
-        } catch (error) {
-          console.error('🔥 ChatPage: 延迟加入WebSocket房间失败：', error)
-          handleError(error as Error)
-        }
-      }, 500)
-
-      return () => clearTimeout(timer)
-    }
-  }, [connectionInfo.status, currentRoom, isAuthenticated, wsJoinRoom, handleError])
 
   // 处理消息回复
   const handleReply = (message: ChatMessage) => setReplyingTo(message)

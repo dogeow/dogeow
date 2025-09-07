@@ -175,32 +175,24 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     }
   }, [autoConnect])
 
-  // 组件卸载清理
+  // 组件卸载清理 - 只在组件真正卸载时清理，不依赖状态变化
   useEffect(() => {
-    let shouldCleanup = true
     return () => {
       isComponentMountedRef.current = false
-      setTimeout(() => {
-        if (shouldCleanup && (echo || connectionInfo.status === 'connected')) {
-          // 直接清理，避免循环依赖
-          try {
-            if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
-              channelRef.current.stopListening()
-            }
-          } catch (error) {
-            console.error('WebSocket: Error during cleanup:', error)
-          }
-          channelRef.current = null
-          currentRoomRef.current = null
-          setEcho(null)
-          destroyEchoInstance()
+      // 立即清理，不延迟
+      try {
+        if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
+          channelRef.current.stopListening()
         }
-      }, 50)
-      setTimeout(() => {
-        shouldCleanup = false
-      }, 100)
+      } catch (error) {
+        console.error('WebSocket: Error during cleanup:', error)
+      }
+      channelRef.current = null
+      currentRoomRef.current = null
+      setEcho(null)
+      destroyEchoInstance()
     }
-  }, [echo, connectionInfo.status])
+  }, []) // 移除依赖项，只在组件卸载时执行
 
   const connect = useCallback(async (): Promise<boolean> => {
     if (!isComponentMountedRef.current) {
