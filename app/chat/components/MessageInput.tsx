@@ -28,7 +28,7 @@ interface MessageInputProps {
   className?: string
   sendMessage: (roomId: string, message: string) => Promise<boolean>
   isConnected: boolean
-  scrollContainerRef?: React.RefObject<HTMLElement>
+  scrollContainerRef?: React.RefObject<HTMLElement | null>
 }
 
 interface MentionSuggestion {
