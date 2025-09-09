@@ -283,6 +283,12 @@ export default function OnlineUsers({
 
   // Filter and sort users
   const filteredAndSortedUsers = useMemo(() => {
+    // Ensure roomUsers is an array
+    if (!Array.isArray(roomUsers)) {
+      console.warn('OnlineUsers: roomUsers is not an array:', roomUsers)
+      return []
+    }
+
     let filtered = roomUsers
 
     // Apply search filter

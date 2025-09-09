@@ -165,7 +165,11 @@ const useChatStore = create<ChatState>()(
         }
       },
 
-      setRooms: rooms => set({ rooms }),
+      setRooms: rooms => {
+        // Ensure rooms is always an array
+        const safeRooms = Array.isArray(rooms) ? rooms : []
+        set({ rooms: safeRooms })
+      },
 
       loadRooms: (() => {
         let loading = false
@@ -187,7 +191,9 @@ const useChatStore = create<ChatState>()(
 
           try {
             const rooms = await apiGet<ChatRoom[]>('/chat/rooms')
-            set({ rooms, isLoading: false })
+            // Ensure rooms is an array before setting
+            const safeRooms = Array.isArray(rooms) ? rooms : []
+            set({ rooms: safeRooms, isLoading: false })
           } catch (error) {
             const chatError = handleChatApiError(error, 'Failed to load chat rooms', {
               showToast: true,

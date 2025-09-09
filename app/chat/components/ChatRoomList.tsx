@@ -83,6 +83,12 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
 
   // Filter and search rooms
   const filteredRooms = useMemo(() => {
+    // Ensure rooms is an array
+    if (!Array.isArray(rooms)) {
+      console.warn('ChatRoomList: rooms is not an array:', rooms)
+      return []
+    }
+
     let filtered = rooms
 
     // Apply search filter

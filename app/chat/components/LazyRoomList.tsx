@@ -200,6 +200,12 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
 
   // Filter and sort rooms
   const filteredAndSortedRooms = useMemo(() => {
+    // Ensure rooms is an array
+    if (!Array.isArray(rooms)) {
+      console.warn('LazyRoomList: rooms is not an array:', rooms)
+      return []
+    }
+
     let filtered = rooms
 
     // Apply search filter
