@@ -173,7 +173,7 @@ function MessageItem({
   }
 
   return (
-    <div className="group hover:bg-muted/50 flex gap-3 px-4 py-2" style={style}>
+    <div className="group hover:bg-muted/50 flex gap-3 px-4 py-2 md:pr-12" style={style}>
       <Avatar name={message.user.name} className="mt-1 flex-shrink-0" />
       <div className="flex-1 space-y-1">
         <div className="flex items-baseline gap-2">

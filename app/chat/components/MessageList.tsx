@@ -38,6 +38,7 @@ function MessageItem({ message, onReply, onReact }: MessageItemProps) {
     <div
       className={cn(
         'group/message relative rounded-lg p-3 transition-colors',
+        'md:pr-12', // Add right padding for desktop menu
         mentionInfo.hasCurrentUserMention
           ? 'bg-yellow-50 dark:bg-yellow-950/20'
           : 'hover:bg-muted/50'

@@ -1,18 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import {
-  Copy,
-  MoreHorizontal,
-  Reply,
-  Smile,
-  Search,
-  Heart,
-  ThumbsUp,
-  Laugh,
-  Angry,
-  Frown,
-} from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Copy, MoreVertical, Reply, Search, Heart, ThumbsUp, Laugh } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +18,6 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/helpers'
 import type { ChatMessage } from '../types'
 
@@ -51,15 +39,6 @@ interface EmojiReaction {
   count: number
   userReacted: boolean
 }
-
-// Common emoji reactions
-const EMOJI_REACTIONS = [
-  { emoji: '👍', label: 'Like', icon: ThumbsUp },
-  { emoji: '❤️', label: 'Love', icon: Heart },
-  { emoji: '😂', label: 'Laugh', icon: Laugh },
-  { emoji: '😢', label: 'Sad', icon: Frown },
-  { emoji: '😠', label: 'Angry', icon: Angry },
-]
 
 // Message reactions component
 function MessageReactions({
@@ -88,31 +67,6 @@ function MessageReactions({
           <span>{reaction.emoji}</span>
           <span>{reaction.count}</span>
         </button>
-      ))}
-    </div>
-  )
-}
-
-// Emoji picker component
-function EmojiPicker({ onEmojiSelect }: { onEmojiSelect: (emoji: string) => void }) {
-  return (
-    <div className="grid grid-cols-5 gap-2 p-2">
-      {EMOJI_REACTIONS.map(({ emoji, label, icon: Icon }) => (
-        <TooltipProvider key={emoji}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => onEmojiSelect(emoji)}
-                className="hover:bg-muted flex items-center justify-center rounded p-2 transition-colors"
-              >
-                <Icon className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{label}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
       ))}
     </div>
   )
@@ -200,7 +154,9 @@ export function MessageInteractions({
   onReact,
   className,
 }: MessageInteractionsProps) {
-  const [showReactions, setShowReactions] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const messageRef = useRef<HTMLDivElement>(null)
 
   // Get reactions from message data - if no reactions exist, show empty array
   const reactions: EmojiReaction[] = message.reactions || []
@@ -216,67 +172,170 @@ export function MessageInteractions({
 
   const handleReact = (emoji: string) => {
     onReact?.(message.id, emoji)
-    setShowReactions(false)
   }
 
+  // Long press handlers for mobile
+  const handleTouchStart = () => {
+    if (window.innerWidth > 768) return // Only on mobile
+
+    longPressTimer.current = setTimeout(() => {
+      setShowMobileMenu(true)
+      // Add haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50)
+      }
+    }, 500) // 500ms long press
+  }
+
+  const handleTouchEnd = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  const handleTouchMove = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimer.current) {
+        clearTimeout(longPressTimer.current)
+      }
+    }
+  }, [])
+
   return (
-    <div className={cn('space-y-2', className)}>
+    <div
+      ref={messageRef}
+      className={cn('relative', className)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchMove={handleTouchMove}
+    >
       {/* Message reactions */}
       <MessageReactions reactions={reactions} onReact={handleReact} />
 
-      {/* Interaction buttons - shown on hover */}
-      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        {/* React button */}
-        <DropdownMenu open={showReactions} onOpenChange={setShowReactions}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <Smile className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-auto p-0">
-            <EmojiPicker onEmojiSelect={handleReact} />
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {/* Reply button */}
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => onReply?.(message)}
-              >
-                <Reply className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Reply</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        {/* More options */}
+      {/* Desktop: Right-side vertical menu - shown on hover */}
+      <div className="absolute top-0 -right-8 hidden opacity-0 transition-opacity group-hover:opacity-100 md:block">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
+            <Button variant="ghost" size="sm" className="hover:bg-muted/80 h-6 w-6 p-0">
+              <MoreVertical className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleCopyMessage}>
-              <Copy className="mr-2 h-4 w-4" />
-              Copy Message
+          <DropdownMenuContent align="end" side="left" className="w-48">
+            <DropdownMenuItem onClick={() => onReact?.(message.id, '👍')}>
+              <ThumbsUp className="mr-2 h-4 w-4" />
+              点赞
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onReact?.(message.id, '❤️')}>
+              <Heart className="mr-2 h-4 w-4" />
+              爱心
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onReact?.(message.id, '😂')}>
+              <Laugh className="mr-2 h-4 w-4" />
+              大笑
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => onReply?.(message)}>
               <Reply className="mr-2 h-4 w-4" />
-              Reply
+              回复
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleCopyMessage}>
+              <Copy className="mr-2 h-4 w-4" />
+              复制消息
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {/* Mobile: Long press menu overlay */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 md:hidden">
+          <div className="bg-background mx-4 w-full max-w-sm rounded-lg p-4 shadow-lg">
+            <div className="mb-4 text-center">
+              <p className="text-muted-foreground text-sm">选择操作</p>
+            </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onReact?.(message.id, '👍')
+                  setShowMobileMenu(false)
+                }}
+                className="flex items-center gap-2"
+              >
+                <ThumbsUp className="h-4 w-4" />
+                点赞
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onReact?.(message.id, '❤️')
+                  setShowMobileMenu(false)
+                }}
+                className="flex items-center gap-2"
+              >
+                <Heart className="h-4 w-4" />
+                爱心
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onReact?.(message.id, '😂')
+                  setShowMobileMenu(false)
+                }}
+                className="flex items-center gap-2"
+              >
+                <Laugh className="h-4 w-4" />
+                大笑
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  onReply?.(message)
+                  setShowMobileMenu(false)
+                }}
+                className="flex items-center gap-2"
+              >
+                <Reply className="h-4 w-4" />
+                回复
+              </Button>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyMessage}
+                className="flex flex-1 items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                复制
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowMobileMenu(false)}
+                className="flex-1"
+              >
+                取消
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
