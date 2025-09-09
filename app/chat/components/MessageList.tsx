@@ -151,12 +151,37 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
 
   const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
   const previousMessageCountRef = useRef(0)
+  const isUserScrollingRef = useRef(false)
+  const lastScrollTopRef = useRef(0)
 
   // Handle message reactions
   const handleReact = useCallback((messageId: number, emoji: string) => {
     // In a real app, this would send a reaction to the server
     console.log('React to message', messageId, 'with', emoji)
     // TODO: Implement actual reaction functionality
+  }, [])
+
+  // Handle scroll events to detect user scrolling
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const scrollArea = e.currentTarget
+    const currentScrollTop = scrollArea.scrollTop
+    const scrollHeight = scrollArea.scrollHeight
+    const clientHeight = scrollArea.clientHeight
+
+    // 检测用户是否手动滚动（向上滚动查看历史消息）
+    const isNearBottom = currentScrollTop + clientHeight >= scrollHeight - 50
+
+    if (currentScrollTop < lastScrollTopRef.current) {
+      // 用户向上滚动
+      isUserScrollingRef.current = true
+      setShouldScrollToBottom(false)
+    } else if (isNearBottom) {
+      // 用户滚动到底部附近
+      isUserScrollingRef.current = false
+      setShouldScrollToBottom(true)
+    }
+
+    lastScrollTopRef.current = currentScrollTop
   }, [])
 
   // Group messages by user and time
@@ -229,7 +254,11 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
   useEffect(() => {
     if (shouldScrollToBottom && scrollAreaRef.current) {
       const scrollArea = scrollAreaRef.current
-      scrollArea.scrollTop = scrollArea.scrollHeight
+      // 使用 requestAnimationFrame 确保 DOM 更新完成后再滚动
+      requestAnimationFrame(() => {
+        scrollArea.scrollTop = scrollArea.scrollHeight
+        console.log('🔥 MessageList: 滚动到底部，scrollHeight:', scrollArea.scrollHeight)
+      })
     }
   }, [filteredMessages, shouldScrollToBottom])
 
@@ -240,7 +269,26 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
 
     if (currentCount > previousCount) {
       // New messages added, scroll to bottom
-      setShouldScrollToBottom(true)
+      console.log('🔥 MessageList: 检测到新消息，消息数量从', previousCount, '增加到', currentCount)
+      console.log('🔥 MessageList: 用户是否在手动滚动:', isUserScrollingRef.current)
+
+      // 只有在用户没有手动滚动时才自动滚动到底部
+      if (!isUserScrollingRef.current) {
+        setShouldScrollToBottom(true)
+
+        // 立即滚动到底部，不等待状态更新
+        if (scrollAreaRef.current) {
+          requestAnimationFrame(() => {
+            const scrollArea = scrollAreaRef.current
+            if (scrollArea) {
+              scrollArea.scrollTop = scrollArea.scrollHeight
+              console.log('🔥 MessageList: 立即滚动到底部，scrollHeight:', scrollArea.scrollHeight)
+            }
+          })
+        }
+      } else {
+        console.log('🔥 MessageList: 用户正在查看历史消息，不自动滚动')
+      }
     }
 
     previousMessageCountRef.current = currentCount
@@ -256,7 +304,11 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
-      <div style={{ maxHeight: '80vh', overflowY: 'auto' }}>
+      <div
+        ref={scrollAreaRef}
+        onScroll={handleScroll}
+        style={{ maxHeight: '80vh', overflowY: 'auto' }}
+      >
         <div className="p-2">
           {/* Load more indicator */}
           {isLoading && (
