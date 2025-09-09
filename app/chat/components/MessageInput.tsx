@@ -11,6 +11,11 @@ import { toast } from '@/components/ui/use-toast'
 import { useDebounce } from 'use-debounce'
 import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
+import {
+  UnreadMessageIndicator,
+  useUnreadMessages,
+  useScrollPosition,
+} from './UnreadMessageIndicator'
 
 interface MessageInputProps {
   roomId: number
@@ -23,6 +28,7 @@ interface MessageInputProps {
   className?: string
   sendMessage: (roomId: string, message: string) => Promise<boolean>
   isConnected: boolean
+  scrollContainerRef?: React.RefObject<HTMLElement>
 }
 
 interface MentionSuggestion {
@@ -171,6 +177,7 @@ export function MessageInput({
   className = '',
   sendMessage,
   isConnected,
+  scrollContainerRef,
 }: MessageInputProps) {
   const { t } = useTranslation()
   const [message, setMessage] = useState('')
@@ -188,10 +195,16 @@ export function MessageInput({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const mentionListRef = useRef<HTMLDivElement>(null)
 
-  const { currentRoom, onlineUsers, muteUntil, muteReason, checkMuteStatus } = useChatStore()
+  const { currentRoom, onlineUsers, muteUntil, muteReason, checkMuteStatus, messages } =
+    useChatStore()
 
   // 防抖消息用于自动保存
   const [debouncedMessage] = useDebounce(message, DEBOUNCE_DELAY)
+
+  // 未读消息逻辑
+  const roomMessages = messages[roomId.toString()] || []
+  const { isAtBottom } = useScrollPosition(scrollContainerRef || { current: null })
+  const unreadCount = useUnreadMessages(roomMessages, isAtBottom)
 
   // 获取在线用户用于@提及 - 使用 useMemo 优化性能
   const roomUsers = useMemo(() => {
@@ -454,6 +467,16 @@ export function MessageInput({
     localStorage.removeItem(draftKey)
   }, [roomId])
 
+  // 滚动到底部
+  const scrollToBottom = useCallback(() => {
+    if (scrollContainerRef?.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      })
+    }
+  }, [scrollContainerRef])
+
   // 发送消息 - 使用 useCallback 优化性能
   const handleSendMessage = useCallback(async () => {
     // 检查用户是否被静音
@@ -693,7 +716,9 @@ export function MessageInput({
   }, [message, uploadedFiles.length, isSending, isConnected, checkMuteStatus])
 
   return (
-    <div className={`bg-background safe-area-inset-bottom border-t p-3 pb-6 sm:p-4 ${className}`}>
+    <div
+      className={`bg-background safe-area-inset-bottom relative border-t p-3 pb-6 sm:p-4 ${className}`}
+    >
       {/* 静音状态提示 */}
       {checkMuteStatus() && (
         <div className="mb-3 rounded border border-yellow-400 bg-yellow-100 px-4 py-3 text-yellow-700">
@@ -837,8 +862,8 @@ export function MessageInput({
             </div>
           )}
 
-          {/* 字符计数和状态信息 */}
-          <div className="mt-1 flex justify-between text-xs">
+          {/* 状态信息 */}
+          <div className="mt-1 text-xs">
             <div className="text-muted-foreground" id="message-help-text">
               {!isConnected && (
                 <span className="text-destructive" role="status" aria-live="polite">
@@ -850,16 +875,6 @@ export function MessageInput({
                   {t('chat.typing', 'Typing...')}
                 </span>
               )}
-              {message.length > MAX_MESSAGE_LENGTH * 0.9 && (
-                <span className="text-warning">
-                  {t('chat.character_count', '{count}/{max} characters')
-                    .replace('{count}', message.length.toString())
-                    .replace('{max}', MAX_MESSAGE_LENGTH.toString())}
-                </span>
-              )}
-            </div>
-            <div className="text-muted-foreground">
-              {message.length}/{MAX_MESSAGE_LENGTH}
             </div>
           </div>
         </div>
@@ -964,10 +979,12 @@ export function MessageInput({
         )}
       </div>
 
-      {/* 移动端提示 */}
-      <div className="text-muted-foreground mt-1 text-xs lg:hidden">
-        {t('chat.mobile_tip', 'Tap to send, hold for new line')}
-      </div>
+      {/* 未读消息指示器 - 显示在发送按钮上方 */}
+      <UnreadMessageIndicator
+        unreadCount={unreadCount}
+        onScrollToBottom={scrollToBottom}
+        className="absolute -top-12 right-0"
+      />
     </div>
   )
 }

@@ -8,11 +8,6 @@ import useChatStore from '@/app/chat/chatStore'
 import type { ChatMessage } from '../types'
 import { MessageInteractions } from './MessageInteractions'
 import { MentionHighlight, useMentionDetection } from './MentionHighlight'
-import {
-  UnreadMessageIndicator,
-  useUnreadMessages,
-  useScrollPosition,
-} from './UnreadMessageIndicator'
 import { useTranslation } from '@/hooks/useTranslation'
 
 interface MessageListProps {
@@ -160,25 +155,11 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
   const isUserScrollingRef = useRef(false)
   const lastScrollTopRef = useRef(0)
 
-  // 使用滚动位置检测和未读消息计数
-  const { isAtBottom } = useScrollPosition(scrollAreaRef)
-  const unreadCount = useUnreadMessages(filteredMessages, isAtBottom)
-
   // Handle message reactions
   const handleReact = useCallback((messageId: number, emoji: string) => {
     // In a real app, this would send a reaction to the server
     console.log('React to message', messageId, 'with', emoji)
     // TODO: Implement actual reaction functionality
-  }, [])
-
-  // 滚动到底部
-  const scrollToBottom = useCallback(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
-        behavior: 'smooth',
-      })
-    }
   }, [])
 
   // Handle scroll events to detect user scrolling
@@ -323,7 +304,7 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
   }
 
   return (
-    <div className={cn('relative flex h-full flex-col', className)}>
+    <div className={cn('flex h-full flex-col', className)}>
       <div
         ref={scrollAreaRef}
         onScroll={handleScroll}
@@ -373,9 +354,6 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
           </div>
         </div>
       </div>
-
-      {/* 未读消息指示器 */}
-      <UnreadMessageIndicator unreadCount={unreadCount} onScrollToBottom={scrollToBottom} />
     </div>
   )
 }

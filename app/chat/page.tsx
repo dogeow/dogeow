@@ -42,6 +42,9 @@ function ChatPageContent() {
   const [searchQuery, setSearchQuery] = useState('')
   const hasLoadedInitialDataRef = useRef(false)
 
+  // 滚动容器引用，用于未读消息指示器
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
   // 错误处理
   const {
     error: componentError,
@@ -440,7 +443,10 @@ function ChatPageContent() {
               </div>
 
               {/* Messages - 优化移动端高度 */}
-              <div className="chat-messages-mobile min-h-0 flex-1 overflow-hidden">
+              <div
+                ref={scrollContainerRef}
+                className="chat-messages-mobile min-h-0 flex-1 overflow-hidden"
+              >
                 <MessageList
                   roomId={currentRoom.id}
                   onReply={handleReply}
@@ -456,6 +462,7 @@ function ChatPageContent() {
                   onCancelReply={() => setReplyingTo(null)}
                   sendMessage={sendMessage}
                   isConnected={connectionInfo.status === 'connected'}
+                  scrollContainerRef={scrollContainerRef}
                 />
               </div>
             </>
