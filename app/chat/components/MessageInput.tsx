@@ -188,7 +188,7 @@ export function MessageInput({
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const mentionListRef = useRef<HTMLDivElement>(null)
 
-  const { currentRoom, onlineUsers } = useChatStore()
+  const { currentRoom, onlineUsers, muteUntil, muteReason, checkMuteStatus } = useChatStore()
 
   // 防抖消息用于自动保存
   const [debouncedMessage] = useDebounce(message, DEBOUNCE_DELAY)
@@ -456,6 +456,17 @@ export function MessageInput({
 
   // 发送消息 - 使用 useCallback 优化性能
   const handleSendMessage = useCallback(async () => {
+    // 检查用户是否被静音
+    const isCurrentlyMuted = checkMuteStatus()
+    if (isCurrentlyMuted) {
+      const muteMessage = muteUntil
+        ? `您在此房间被静音直到 ${new Date(muteUntil).toLocaleString()}`
+        : '您在此房间被静音'
+
+      toast.error(muteMessage)
+      return
+    }
+
     // 防止重复发送
     if (isSending) {
       console.warn('Message sending already in progress')
@@ -561,6 +572,8 @@ export function MessageInput({
     adjustTextareaHeight,
     clearDraft,
     onCancelReply,
+    checkMuteStatus,
+    muteUntil,
   ])
 
   // 处理键盘快捷键 - 使用 useCallback 优化性能
@@ -668,11 +681,43 @@ export function MessageInput({
 
   // 计算是否可以发送 - 使用 useMemo 优化性能
   const canSend = useMemo(() => {
-    return (message.trim().length > 0 || uploadedFiles.length > 0) && !isSending && isConnected
-  }, [message, uploadedFiles.length, isSending, isConnected])
+    // 检查静音状态
+    const isCurrentlyMuted = checkMuteStatus()
+
+    return (
+      (message.trim().length > 0 || uploadedFiles.length > 0) &&
+      !isSending &&
+      isConnected &&
+      !isCurrentlyMuted
+    )
+  }, [message, uploadedFiles.length, isSending, isConnected, checkMuteStatus])
 
   return (
     <div className={`bg-background safe-area-inset-bottom border-t p-3 pb-6 sm:p-4 ${className}`}>
+      {/* 静音状态提示 */}
+      {checkMuteStatus() && (
+        <div className="mb-3 rounded border border-yellow-400 bg-yellow-100 px-4 py-3 text-yellow-700">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium">您在此房间被静音</p>
+              {muteUntil && (
+                <p className="mt-1 text-sm">静音时间：{new Date(muteUntil).toLocaleString()}</p>
+              )}
+              {muteReason && <p className="mt-1 text-sm">原因：{muteReason}</p>}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 回复指示器 */}
       {replyingTo && (
         <div className="bg-muted/50 mb-3 flex items-center justify-between rounded-md p-2 sm:p-3">

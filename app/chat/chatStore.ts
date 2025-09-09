@@ -41,6 +41,11 @@ interface ChatState {
   error: ChatApiError | null
   lastError: ChatApiError | null
 
+  // Mute state
+  isUserMuted: boolean
+  muteUntil: string | null
+  muteReason: string | null
+
   // Notification state
   notifications: Record<string, RoomNotification>
   mentions: MentionInfo[]
@@ -90,6 +95,10 @@ interface ChatState {
   clearError: () => void
   retryLastAction: () => Promise<void>
 
+  // Mute operations
+  updateMuteStatus: (isMuted: boolean, until?: string, reason?: string) => void
+  checkMuteStatus: () => boolean
+
   // Utility actions
   setLoading: (loading: boolean) => void
   reset: () => void
@@ -106,6 +115,9 @@ const initialState = {
   connectionStatus: 'disconnected' as const,
   error: null,
   lastError: null,
+  isUserMuted: false,
+  muteUntil: null,
+  muteReason: null,
 
   // Notification state
   notifications: {},
@@ -776,6 +788,41 @@ const useChatStore = create<ChatState>()(
         // This would need to be implemented based on the specific action that failed
         // For now, we'll just clear the error
         set({ error: null })
+      },
+
+      // Mute operations
+      updateMuteStatus: (isMuted, until, reason) => {
+        set({
+          isUserMuted: isMuted,
+          muteUntil: until || null,
+          muteReason: reason || null,
+        })
+      },
+
+      checkMuteStatus: () => {
+        const { isUserMuted, muteUntil } = get()
+
+        if (!isUserMuted) {
+          return false
+        }
+
+        // If there's a mute expiration time, check if it's still valid
+        if (muteUntil) {
+          const muteUntilDate = new Date(muteUntil)
+          const now = new Date()
+
+          if (muteUntilDate <= now) {
+            // Automatically unmute if the time has passed
+            set({
+              isUserMuted: false,
+              muteUntil: null,
+              muteReason: null,
+            })
+            return false
+          }
+        }
+
+        return true
       },
 
       // Utility actions

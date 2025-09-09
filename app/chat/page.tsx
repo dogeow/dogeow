@@ -32,6 +32,7 @@ function ChatPageContent() {
     clearError,
     error: storeError,
     onlineUsers,
+    updateMuteStatus,
   } = useChatStore()
 
   const loadRooms = useCallback(() => useChatStore.getState().loadRooms(), [])
@@ -65,6 +66,35 @@ function ChatPageContent() {
       const messageData = data as { type: string; message?: ChatMessage; [key: string]: unknown }
       console.log('🔥 ChatPage: handleMessage 被调用，参数为：', messageData)
       console.log('🔥 ChatPage: 当前房间：', currentRoom)
+
+      // 处理静音状态更新
+      if (messageData.type === 'user_muted') {
+        const muteData = messageData as {
+          type: string
+          user_id: number
+          room_id: number
+          muted_until?: string
+          reason?: string
+        }
+        // 检查是否是当前用户被静音
+        if (muteData.user_id === useAuthStore.getState().user?.id) {
+          updateMuteStatus(true, muteData.muted_until, muteData.reason)
+        }
+        return
+      }
+
+      if (messageData.type === 'user_unmuted') {
+        const unmuteData = messageData as {
+          type: string
+          user_id: number
+          room_id: number
+        }
+        // 检查是否是当前用户被取消静音
+        if (unmuteData.user_id === useAuthStore.getState().user?.id) {
+          updateMuteStatus(false)
+        }
+        return
+      }
 
       if (messageData.type === 'message' && messageData.message) {
         // 直接使用消息中的 room_id，而不依赖 currentRoom 状态
@@ -110,7 +140,7 @@ function ChatPageContent() {
         })
       }
     },
-    [currentRoom, addMessage, loadOnlineUsers]
+    [currentRoom, addMessage, loadOnlineUsers, updateMuteStatus]
   )
 
   // 其他 WebSocket 事件（如离线、在线、消息队列等）可根据需要精简
