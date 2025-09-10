@@ -135,13 +135,13 @@ function UserProfilePopover({
     return date.toLocaleDateString()
   }
 
-  // Check if user is a moderator (simplified - would need proper role checking)
+  // 检查用户是否为版主（简化版 - 实际应有更完善的角色判断）
   const isModerator = (user: OnlineUser) => {
-    // For demo purposes, assume users with certain email domains are moderators
+    // 演示用：假设特定邮箱域名的用户为版主
     return user.email.includes('admin') || user.email.includes('mod')
   }
 
-  // Check if user is an admin (simplified - would need proper role checking)
+  // 检查用户是否为管理员（简化版 - 实际应有更完善的角色判断）
   const isAdmin = (user: OnlineUser) => {
     return user.email.includes('admin')
   }
@@ -157,7 +157,7 @@ function UserProfilePopover({
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent className="w-80" align="start">
         <div className="space-y-4">
-          {/* User Header */}
+          {/* 用户头部信息 */}
           <div className="flex items-center space-x-3">
             <UserAvatar user={user} size="lg" />
             <div className="flex-1">
@@ -180,7 +180,7 @@ function UserProfilePopover({
 
           <Separator />
 
-          {/* User Details */}
+          {/* 用户详细信息 */}
           <div className="space-y-3">
             <div className="flex items-center space-x-2 text-sm">
               <Calendar className="text-muted-foreground h-4 w-4" />
@@ -201,7 +201,7 @@ function UserProfilePopover({
 
           <Separator />
 
-          {/* Action Buttons */}
+          {/* 操作按钮 */}
           <div className="space-y-2">
             <div className="flex space-x-2">
               <Button
@@ -224,7 +224,7 @@ function UserProfilePopover({
               </Button>
             </div>
 
-            {/* Additional Actions */}
+            {/* 其他操作 */}
             <div className="flex space-x-2">
               <Button
                 variant="outline"
@@ -270,20 +270,20 @@ export default function OnlineUsers({
     return onlineUsers[roomId.toString()] || []
   }, [onlineUsers, roomId])
 
-  // Check if user is a moderator (simplified - would need proper role checking)
+  // 检查用户是否为版主（简化版 - 实际应有更完善的角色判断）
   const isModerator = (user: OnlineUser) => {
-    // For demo purposes, assume users with certain email domains are moderators
+    // 演示用：假设特定邮箱域名的用户为版主
     return user.email.includes('admin') || user.email.includes('mod')
   }
 
-  // Check if user is an admin (simplified - would need proper role checking)
+  // 检查用户是否为管理员（简化版 - 实际应有更完善的角色判断）
   const isAdmin = (user: OnlineUser) => {
     return user.email.includes('admin')
   }
 
-  // Filter and sort users
+  // 过滤和排序用户
   const filteredAndSortedUsers = useMemo(() => {
-    // Ensure roomUsers is an array
+    // 确保 roomUsers 是数组
     if (!Array.isArray(roomUsers)) {
       console.warn('OnlineUsers: roomUsers is not an array:', roomUsers)
       return []
@@ -291,7 +291,7 @@ export default function OnlineUsers({
 
     let filtered = roomUsers
 
-    // Apply search filter
+    // 应用搜索过滤
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
@@ -299,7 +299,7 @@ export default function OnlineUsers({
       )
     }
 
-    // Apply status filter
+    // 应用状态过滤
     switch (filterBy) {
       case 'online':
         filtered = filtered.filter(user => user.is_online)
@@ -307,10 +307,10 @@ export default function OnlineUsers({
       case 'moderators':
         filtered = filtered.filter(user => isModerator(user))
         break
-      // 'all' shows everyone
+      // 'all' 显示所有用户
     }
 
-    // Apply sorting
+    // 应用排序
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'name':
@@ -318,7 +318,7 @@ export default function OnlineUsers({
         case 'joined':
           return new Date(b.joined_at).getTime() - new Date(a.joined_at).getTime()
         case 'status':
-          // Online users first, then by name
+          // 在线用户优先，然后按名字排序
           if (a.is_online === b.is_online) {
             return a.name.localeCompare(b.name)
           }
@@ -335,7 +335,7 @@ export default function OnlineUsers({
     <Card className={`h-full ${className}`}>
       <CardContent className="p-0">
         <div className="p-4 pb-3">
-          {/* Search and Filter Controls */}
+          {/* 搜索和筛选控件 */}
           <div className="space-y-2">
             <div className="relative">
               <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
@@ -402,7 +402,7 @@ export default function OnlineUsers({
                   <div className="hover:bg-muted flex cursor-pointer items-center space-x-3 rounded-lg p-2 transition-colors">
                     <div className="relative">
                       <UserAvatar user={user} size="sm" />
-                      {/* Online status indicator */}
+                      {/* 在线状态指示器 */}
                       <div className="absolute -right-0.5 -bottom-0.5">
                         <Circle
                           className={`border-background h-3 w-3 rounded-full border-2 ${
@@ -433,13 +433,13 @@ export default function OnlineUsers({
                       </div>
                     </div>
 
-                    {/* Status badge and actions */}
+                    {/* 状态徽章和操作 */}
                     <div className="flex items-center space-x-2">
                       <Badge variant={user.is_online ? 'default' : 'secondary'} className="text-xs">
                         {user.is_online ? t('status.online') : t('status.away')}
                       </Badge>
 
-                      {/* Quick actions dropdown */}
+                      {/* 快捷操作下拉菜单 */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-6 w-6 p-0">

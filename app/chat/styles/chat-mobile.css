@@ -21,12 +21,6 @@
     overflow-y: auto;
   }
 
-  .chat-input-mobile {
-    margin-left: 0.75rem;
-    margin-right: 0.75rem;
-    padding-left: 2.5rem !important;
-  }
-
   .chat-input-area-mobile {
     padding-left: 0.75rem;
     padding-right: 0.75rem;

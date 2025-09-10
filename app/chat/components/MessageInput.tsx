@@ -717,7 +717,7 @@ export function MessageInput({
 
   return (
     <div
-      className={`bg-background safe-area-inset-bottom relative border-t p-3 pb-6 sm:p-4 ${className}`}
+      className={`bg-background safe-area-inset-bottom relative border-t p-3 sm:p-4 ${className}`}
     >
       {/* 静音状态提示 */}
       {checkMuteStatus() && (
@@ -810,7 +810,7 @@ export function MessageInput({
         </div>
       )}
 
-      <div className="relative flex gap-1 sm:gap-2">
+      <div className="relative flex gap-3 sm:gap-4">
         <div className="relative min-w-0 flex-1">
           <Textarea
             ref={textareaRef}
@@ -823,7 +823,7 @@ export function MessageInput({
                 : t('chat.type_message', 'Type a message...')
             }
             disabled={isSending || !isConnected}
-            className="chat-input-mobile max-h-[120px] min-h-[40px] resize-none pr-2 text-sm sm:pr-3"
+            className="max-h-[120px] min-h-[40px] resize-none text-sm"
             rows={1}
             aria-label={t('chat.message_input', 'Message input')}
             aria-describedby="message-help-text"
@@ -880,7 +880,7 @@ export function MessageInput({
         </div>
 
         {/* 操作按钮 - 优化移动端按钮大小 */}
-        <div className="flex flex-shrink-0 gap-1">
+        <div className="flex flex-shrink-0 gap-2 sm:gap-3">
           {/* 文件上传按钮 */}
           <Button
             variant="ghost"
