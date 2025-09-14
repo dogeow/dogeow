@@ -346,7 +346,7 @@ function ChatPageContent() {
   if (!isAuthenticated) return null
 
   return (
-    <div className="bg-background safe-area-top safe-area-bottom flex h-screen flex-col">
+    <div className="bg-background safe-area-top safe-area-bottom flex h-full flex-col">
       {/* Error Banner */}
       {currentError && currentError.type !== 'authentication' && currentError.type !== 'server' && (
         <div className="border-b">
@@ -499,10 +499,7 @@ function ChatPageContent() {
               </div>
 
               {/* Messages - 优化移动端高度 */}
-              <div
-                ref={scrollContainerRef}
-                className="chat-messages-mobile min-h-0 flex-1 overflow-hidden"
-              >
+              <div ref={scrollContainerRef} className="chat-messages-mobile min-h-0 flex-1">
                 <MessageList
                   roomId={currentRoom.id}
                   onReply={handleReply}
@@ -577,7 +574,7 @@ export default function ChatPage() {
 // 聊天页面骨架屏
 function ChatPageSkeleton() {
   return (
-    <div className="bg-background safe-area-top safe-area-bottom flex h-screen flex-col">
+    <div className="bg-background safe-area-top safe-area-bottom flex h-full flex-col">
       {/* Mobile Header Skeleton */}
       <div className="chat-header-mobile flex items-center justify-between border-b p-4 lg:hidden">
         <div className="flex items-center gap-3">

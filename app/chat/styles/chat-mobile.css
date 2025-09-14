@@ -1,9 +1,16 @@
 /* 聊天移动端样式优化 */
 @media (max-width: 768px) {
+  /* 定义头部高度变量 */
+  :root {
+    --chat-header-height: 70px;
+    --chat-search-height: 52px;
+    --chat-total-header-height: calc(var(--chat-header-height) + var(--chat-search-height));
+  }
+
   /* 移动端头部高度调整，避免被状态栏遮挡 */
   .chat-header-mobile {
     padding-top: env(safe-area-inset-top, 0);
-    min-height: calc(env(safe-area-inset-top, 0px) + 70px);
+    min-height: calc(env(safe-area-inset-top, 0px) + var(--chat-header-height));
     position: sticky;
     top: 0;
     z-index: 10;
@@ -11,14 +18,15 @@
     border-bottom: 1px solid hsl(var(--border));
   }
 
+  /* 使用 flex 布局而不是固定高度，让容器自适应 */
   .chat-messages-mobile {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
     padding-top: 0.5rem;
-    height: calc(
-      100dvh - env(safe-area-inset-top, 0px) - 180px - env(safe-area-inset-bottom, 0px) - 2rem
-    );
+    /* 确保容器能够正确滚动 */
     overflow-y: auto;
+    /* 确保内容不会超出容器 */
+    max-height: 100%;
   }
 
   .chat-input-area-mobile {

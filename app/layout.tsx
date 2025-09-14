@@ -109,7 +109,7 @@ export default function RootLayout({
                   <AppLauncher />
                 </div>
               </div>
-              <div id="main-container" className="flex-1 overflow-x-hidden">
+              <div id="main-container" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
                 <div className="mx-auto h-full w-full max-w-7xl p-0">
                   <BackgroundWrapper>
                     <ProtectedRoute>{children}</ProtectedRoute>

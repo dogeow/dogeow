@@ -861,22 +861,6 @@ export function MessageInput({
               ))}
             </div>
           )}
-
-          {/* 状态信息 */}
-          <div className="mt-1 text-xs">
-            <div className="text-muted-foreground" id="message-help-text">
-              {!isConnected && (
-                <span className="text-destructive" role="status" aria-live="polite">
-                  {t('chat.disconnected', 'Disconnected')}
-                </span>
-              )}
-              {isTyping && isConnected && (
-                <span className="text-muted-foreground" role="status" aria-live="polite">
-                  {t('chat.typing', 'Typing...')}
-                </span>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* 操作按钮 - 优化移动端按钮大小 */}
@@ -961,23 +945,6 @@ export function MessageInput({
         className="hidden"
         aria-label={t('chat.file_input', 'File input')}
       />
-
-      {/* 键盘快捷键提示 - 仅在桌面端显示 */}
-      <div className="text-muted-foreground mt-2 hidden text-xs lg:block">
-        Press <kbd className="bg-muted rounded px-1">Enter</kbd> to send,
-        <kbd className="bg-muted ml-1 rounded px-1">Shift+Enter</kbd> for new line
-        {replyingTo && (
-          <>
-            , <kbd className="bg-muted rounded px-1">Esc</kbd> to cancel reply
-          </>
-        )}
-        {showMentions && (
-          <>
-            , <kbd className="bg-muted rounded px-1">↑↓</kbd> to navigate mentions,
-            <kbd className="bg-muted ml-1 rounded px-1">Tab</kbd> to select
-          </>
-        )}
-      </div>
 
       {/* 未读消息指示器 - 显示在发送按钮上方 */}
       <UnreadMessageIndicator

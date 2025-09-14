@@ -323,19 +323,15 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
 
   if (filteredMessages.length === 0 && !isLoading) {
     return (
-      <div className={cn('flex h-full flex-col', className)}>
+      <div className={cn('flex flex-col', className)}>
         <EmptyState />
       </div>
     )
   }
 
   return (
-    <div className={cn('flex h-full flex-col', className)}>
-      <div
-        ref={scrollAreaRef}
-        onScroll={handleScroll}
-        style={{ maxHeight: '80vh', overflowY: 'auto' }}
-      >
+    <div className={cn('flex flex-col', className)}>
+      <div ref={scrollAreaRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
         <div className="p-2">
           {/* Load more indicator */}
           {isLoading && (
