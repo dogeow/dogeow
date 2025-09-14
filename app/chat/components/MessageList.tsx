@@ -9,6 +9,7 @@ import type { ChatMessage } from '../types'
 import { MessageInteractions } from './MessageInteractions'
 import { MentionHighlight, useMentionDetection } from './MentionHighlight'
 import { useTranslation } from '@/hooks/useTranslation'
+import ChatErrorBoundary from './ChatErrorBoundary'
 
 interface MessageListProps {
   roomId: number
@@ -113,26 +114,38 @@ function EmptyState() {
   )
 }
 
-export function MessageList({ roomId, className, onReply, searchQuery }: MessageListProps) {
+function MessageListContent({ roomId, className, onReply, searchQuery }: MessageListProps) {
   const { t } = useTranslation()
   const roomKey = roomId.toString()
 
   // 使用具体的选择器来确保正确订阅消息变化
-  const messages = useChatStore(state => state.messages)
   const isLoading = useChatStore(state => state.isLoading)
   const loadMessages = useChatStore(state => state.loadMessages)
 
+  // 稳定loadMessages函数引用
+  const stableLoadMessages = useCallback(
+    (roomId: number) => {
+      return loadMessages(roomId)
+    },
+    [loadMessages]
+  )
+
   // 直接订阅当前房间的消息，确保组件重新渲染
-  const roomMessages = useChatStore(state => {
-    const messages = state.messages[roomKey] || []
-    console.log(
-      '🔥 MessageList: Store selector called for room',
-      roomKey,
-      '- Messages count:',
-      messages.length
+  const roomMessages = useChatStore(
+    useCallback(
+      state => {
+        const messages = state.messages[roomKey] || []
+        console.log(
+          '🔥 MessageList: Store selector called for room',
+          roomKey,
+          '- Messages count:',
+          messages.length
+        )
+        return messages
+      },
+      [roomKey]
     )
-    return messages
-  })
+  )
 
   // 过滤消息基于搜索查询
   const filteredMessages = useMemo(() => {
@@ -154,6 +167,7 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
   const previousMessageCountRef = useRef(0)
   const isUserScrollingRef = useRef(false)
   const lastScrollTopRef = useRef(0)
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Handle message reactions
   const handleReact = useCallback((messageId: number, emoji: string) => {
@@ -224,44 +238,58 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
     return groups
   }, [filteredMessages])
 
-  // Debug: Log message data
+  // Debug: Log message data (only in development and with throttling)
   useEffect(() => {
-    console.log('🔥 MessageList: Messages changed for room', roomId, ':', {
-      count: filteredMessages.length,
-      messages: filteredMessages.map(m => ({
-        id: m.id,
-        message: m.message.substring(0, 50),
-        user: m.user.name,
-      })),
-    })
-  }, [filteredMessages, roomId])
-
-  // Debug: Log when messages object reference changes
-  useEffect(() => {
-    console.log('🔥 MessageList: Messages object reference changed for room', roomId)
-  }, [messages, roomId])
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔥 MessageList: Messages changed for room', roomId, ':', {
+        count: filteredMessages.length,
+        messages: filteredMessages.map(m => ({
+          id: m.id,
+          message: m.message.substring(0, 50),
+          user: m.user.name,
+        })),
+      })
+    }
+  }, [filteredMessages, roomId]) // 恢复完整依赖，但使用useMemo优化filteredMessages
 
   // Load messages on mount
   useEffect(() => {
     if (roomId) {
       console.log('🔥 MessageList: Loading messages for room', roomId)
-      loadMessages(roomId).catch(error => {
+      stableLoadMessages(roomId).catch(error => {
         console.error('Failed to load messages:', error)
       })
     }
-  }, [roomId, loadMessages])
+  }, [roomId, stableLoadMessages])
 
-  // Auto-scroll to bottom for new messages
+  // Auto-scroll to bottom for new messages with debouncing
   useEffect(() => {
     if (shouldScrollToBottom && scrollAreaRef.current) {
-      const scrollArea = scrollAreaRef.current
-      // 使用 requestAnimationFrame 确保 DOM 更新完成后再滚动
-      requestAnimationFrame(() => {
-        scrollArea.scrollTop = scrollArea.scrollHeight
-        console.log('🔥 MessageList: 滚动到底部，scrollHeight:', scrollArea.scrollHeight)
-      })
+      // 清除之前的定时器
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+
+      // 使用防抖来避免频繁滚动
+      scrollTimeoutRef.current = setTimeout(() => {
+        const scrollArea = scrollAreaRef.current
+        if (scrollArea) {
+          // 使用 requestAnimationFrame 确保 DOM 更新完成后再滚动
+          requestAnimationFrame(() => {
+            scrollArea.scrollTop = scrollArea.scrollHeight
+            console.log('🔥 MessageList: 滚动到底部，scrollHeight:', scrollArea.scrollHeight)
+          })
+        }
+      }, 50) // 50ms 防抖延迟
     }
-  }, [filteredMessages, shouldScrollToBottom])
+
+    // 清理函数
+    return () => {
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current)
+      }
+    }
+  }, [filteredMessages.length, shouldScrollToBottom]) // 只依赖长度和滚动状态
 
   // Track message count changes
   useEffect(() => {
@@ -323,33 +351,37 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
 
           {/* Messages */}
           <div className="space-y-4">
-            {(() => {
-              console.log('🔥 MessageList: Rendering messages:', {
-                roomId,
-                roomKey,
-                roomMessagesCount: roomMessages.length,
-                groupedMessagesCount: groupedMessages.length,
-                isLoading,
-              })
-              return groupedMessages.map((group, index) => {
-                if (group.type === 'messages' && group.messages && group.user) {
-                  return (
-                    <MessageGroup
-                      key={`group-${index}`}
-                      messages={group.messages}
-                      user={group.user}
-                      timestamp={group.timestamp!}
-                      onReply={onReply}
-                      onReact={handleReact}
-                    />
-                  )
-                }
-                return null
-              })
-            })()}
+            {groupedMessages.map((group, index) => {
+              if (group.type === 'messages' && group.messages && group.user) {
+                return (
+                  <MessageGroup
+                    key={`group-${index}`}
+                    messages={group.messages}
+                    user={group.user}
+                    timestamp={group.timestamp!}
+                    onReply={onReply}
+                    onReact={handleReact}
+                  />
+                )
+              }
+              return null
+            })}
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+export function MessageList({ roomId, className, onReply, searchQuery }: MessageListProps) {
+  return (
+    <ChatErrorBoundary>
+      <MessageListContent
+        roomId={roomId}
+        className={className}
+        onReply={onReply}
+        searchQuery={searchQuery}
+      />
+    </ChatErrorBoundary>
   )
 }

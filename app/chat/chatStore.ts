@@ -369,15 +369,17 @@ const useChatStore = create<ChatState>()(
           }
         })
 
-        // 验证更新后的状态
-        setTimeout(() => {
-          const updatedState = get()
-          console.log('🔥 ChatStore: Final state after update:', {
-            roomKey,
-            finalCount: updatedState.messages[roomKey]?.length || 0,
-            allRoomKeys: Object.keys(updatedState.messages),
-          })
-        }, 100)
+        // 验证更新后的状态（仅在开发环境）
+        if (process.env.NODE_ENV === 'development') {
+          setTimeout(() => {
+            const updatedState = get()
+            console.log('🔥 ChatStore: Final state after update:', {
+              roomKey,
+              finalCount: updatedState.messages[roomKey]?.length || 0,
+              allRoomKeys: Object.keys(updatedState.messages),
+            })
+          }, 100)
+        }
 
         // Handle notifications for new messages
         const isCurrentRoom = state.currentRoom?.id === roomId
