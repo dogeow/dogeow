@@ -104,6 +104,7 @@ interface ChatState {
   // Utility actions
   setLoading: (loading: boolean) => void
   reset: () => void
+  clearAllOnlineUsers: () => void
 }
 
 const initialState = {
@@ -166,6 +167,32 @@ const useChatStore = create<ChatState>()(
           )
           set({ mentions: updatedMentions })
         }
+
+        // 清理其他房间的在线用户数据，因为用户只能在一个房间
+        set(state => {
+          const newOnlineUsers = { ...state.onlineUsers }
+          const currentRoomId = room?.id
+
+          // 只保留当前房间的在线用户数据，清除其他房间的数据
+          if (currentRoomId) {
+            const cleanedOnlineUsers: Record<string, OnlineUser[]> = {}
+            cleanedOnlineUsers[currentRoomId.toString()] =
+              newOnlineUsers[currentRoomId.toString()] || []
+
+            console.log('🔥 ChatStore: 清理其他房间的在线用户数据，只保留房间', currentRoomId)
+            return {
+              ...state,
+              onlineUsers: cleanedOnlineUsers,
+            }
+          } else {
+            // 如果没有当前房间，清空所有在线用户数据
+            console.log('🔥 ChatStore: 没有当前房间，清空所有在线用户数据')
+            return {
+              ...state,
+              onlineUsers: {},
+            }
+          }
+        })
 
         // Update room focus tracking for better notification management
         if (typeof document !== 'undefined') {
@@ -878,6 +905,11 @@ const useChatStore = create<ChatState>()(
 
       // Utility actions
       setLoading: loading => set({ isLoading: loading }),
+
+      clearAllOnlineUsers: () => {
+        console.log('🔥 ChatStore: 清空所有在线用户数据')
+        set({ onlineUsers: {} })
+      },
 
       reset: () => set(initialState),
     }),

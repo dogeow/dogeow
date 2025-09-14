@@ -34,6 +34,7 @@ function ChatPageContent() {
     onlineUsers,
     updateMuteStatus,
     updateRoomOnlineCount,
+    clearAllOnlineUsers,
   } = useChatStore()
 
   const loadRooms = useCallback(() => useChatStore.getState().loadRooms(), [])
@@ -56,14 +57,16 @@ function ChatPageContent() {
 
   // WebSocket 相关回调
   const handleConnect = useCallback(() => setConnectionStatus('connected'), [setConnectionStatus])
-  const handleDisconnect = useCallback(
-    () => setConnectionStatus('disconnected'),
-    [setConnectionStatus]
-  )
-  const handleWebSocketError = useCallback(() => {
+  const handleDisconnect = useCallback(() => {
+    console.log('🔥 ChatPage: WebSocket断开连接，清理在线用户数据')
     setConnectionStatus('disconnected')
-    // 可以考虑上报 error
-  }, [setConnectionStatus])
+    clearAllOnlineUsers() // 断开连接时清空所有在线用户数据
+  }, [setConnectionStatus, clearAllOnlineUsers])
+  const handleWebSocketError = useCallback(() => {
+    console.log('🔥 ChatPage: WebSocket连接错误，清理在线用户数据')
+    setConnectionStatus('disconnected')
+    clearAllOnlineUsers() // 连接错误时也清空在线用户数据
+  }, [setConnectionStatus, clearAllOnlineUsers])
 
   const handleMessage = useCallback(
     (data: unknown) => {
@@ -176,7 +179,7 @@ function ChatPageContent() {
         })
       }
     },
-    [currentRoom, addMessage, loadOnlineUsers, updateMuteStatus]
+    [currentRoom, addMessage, loadOnlineUsers, updateMuteStatus, updateRoomOnlineCount]
   )
 
   // 其他 WebSocket 事件（如离线、在线、消息队列等）可根据需要精简
@@ -242,6 +245,9 @@ function ChatPageContent() {
       hasLoadedInitialDataRef.current = true
       console.log('🔥 ChatPage: Initializing chat - loading rooms and connecting WebSocket')
 
+      // 初始化时清理所有在线用户数据，确保显示正确
+      clearAllOnlineUsers()
+
       // 并行加载房间和连接WebSocket
       Promise.all([
         loadRooms().catch(error => {
@@ -256,7 +262,7 @@ function ChatPageContent() {
         console.log('🔥 ChatPage: Initialization completed')
       })
     }
-  }, [isAuthenticated, authLoading, connect, loadRooms, handleError])
+  }, [isAuthenticated, authLoading, connect, loadRooms, handleError, clearAllOnlineUsers])
 
   // 房间切换时加载在线用户并加入 WebSocket 房间
   useEffect(() => {
