@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { type ConnectionMonitor, type ConnectionStatus } from '@/lib/websocket/connection-monitor'
 import { type OfflineState } from '@/lib/websocket/offline-manager'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface ConnectionStatusIndicatorProps {
   connectionInfo: ConnectionMonitor
@@ -56,25 +57,26 @@ const getStatusIcon = (status: ConnectionStatus, isRetrying: boolean) => {
 const getStatusText = (
   status: ConnectionStatus,
   isRetrying: boolean,
-  reconnectAttempts: number
+  reconnectAttempts: number,
+  t: (key: string, fallback?: string) => string
 ): string => {
   if (isRetrying) {
-    return `Retrying... (${reconnectAttempts})`
+    return t('chat.retrying', `Retrying... (${reconnectAttempts})`)
   }
 
   switch (status) {
     case 'connected':
-      return 'Connected'
+      return t('chat.connected', 'Connected')
     case 'connecting':
-      return 'Connecting...'
+      return t('chat.connecting', 'Connecting...')
     case 'reconnecting':
-      return `Reconnecting... (${reconnectAttempts})`
+      return t('chat.reconnecting', `Reconnecting... (${reconnectAttempts})`)
     case 'disconnected':
-      return 'Disconnected'
+      return t('chat.disconnected', 'Disconnected')
     case 'error':
-      return 'Connection Error'
+      return t('chat.connection_error', 'Connection Error')
     default:
-      return 'Unknown'
+      return t('chat.unknown', 'Unknown')
   }
 }
 
@@ -102,6 +104,7 @@ export default function ConnectionStatusIndicator({
   className = '',
 }: ConnectionStatusIndicatorProps) {
   const [showDetails, setShowDetails] = useState(false)
+  const { t } = useTranslation()
 
   // Memoize computed values to prevent unnecessary re-renders
   const statusColor = useMemo(() => getStatusColor(connectionInfo.status), [connectionInfo.status])
@@ -114,9 +117,10 @@ export default function ConnectionStatusIndicator({
       getStatusText(
         connectionInfo.status,
         connectionInfo.isRetrying,
-        connectionInfo.reconnectAttempts
+        connectionInfo.reconnectAttempts,
+        t
       ),
-    [connectionInfo.status, connectionInfo.isRetrying, connectionInfo.reconnectAttempts]
+    [connectionInfo.status, connectionInfo.isRetrying, connectionInfo.reconnectAttempts, t]
   )
 
   const hasQueuedMessages = useMemo(() => offlineState.queueSize > 0, [offlineState.queueSize])
@@ -156,7 +160,7 @@ export default function ConnectionStatusIndicator({
         {offlineState.isOffline && (
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
             <WifiOff className="mr-1 h-3 w-3" />
-            Offline
+            {t('chat.offline', 'Offline')}
           </Badge>
         )}
 
@@ -166,11 +170,13 @@ export default function ConnectionStatusIndicator({
             <TooltipTrigger asChild>
               <Badge variant="outline" className="border-blue-200 bg-blue-50 text-blue-700">
                 <Clock className="mr-1 h-3 w-3" />
-                {offlineState.queueSize} queued
+                {offlineState.queueSize} {t('chat.queued', 'queued')}
               </Badge>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{offlineState.queueSize} messages waiting to be sent</p>
+              <p>
+                {offlineState.queueSize} {t('chat.messages_waiting', 'messages waiting to be sent')}
+              </p>
             </TooltipContent>
           </Tooltip>
         )}
@@ -187,7 +193,7 @@ export default function ConnectionStatusIndicator({
             {connectionInfo.isRetrying ? (
               <RefreshCw className="h-3 w-3 animate-spin" />
             ) : (
-              'Reconnect'
+              t('chat.reconnect', 'Reconnect')
             )}
           </Button>
         )}
@@ -195,7 +201,7 @@ export default function ConnectionStatusIndicator({
         {hasQueuedMessages && (
           <div className="flex gap-1">
             <Button size="sm" variant="outline" onClick={onRetryMessages} className="h-7 text-xs">
-              Retry
+              {t('chat.retry', 'Retry')}
             </Button>
             <Button
               size="sm"
@@ -203,7 +209,7 @@ export default function ConnectionStatusIndicator({
               onClick={onClearQueue}
               className="h-7 text-xs text-red-600 hover:text-red-700"
             >
-              Clear
+              {t('chat.clear', 'Clear')}
             </Button>
           </div>
         )}

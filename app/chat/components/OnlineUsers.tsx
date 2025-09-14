@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -332,65 +331,62 @@ export default function OnlineUsers({
   }, [roomUsers, searchQuery, sortBy, filterBy])
 
   return (
-    <Card className={`h-full ${className}`}>
-      <CardContent className="p-0">
-        <div className="p-4 pb-3">
-          {/* 搜索和筛选控件 */}
-          <div className="space-y-2">
-            <div className="relative">
-              <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
-              <Input
-                placeholder={t('chat.search_users', 'Search users...')}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="pl-8"
-              />
-            </div>
+    <div className={`flex h-full flex-col ${className}`}>
+      {/* 搜索和筛选控件 */}
+      <div className="bg-muted/20 border-b p-3">
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
+            <Input
+              placeholder={t('chat.search_users', 'Search users...')}
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="h-8 pl-8 text-sm"
+            />
+          </div>
 
-            <div className="flex space-x-2">
-              <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
-                <SelectTrigger className="flex-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="name">{t('chat.sort_by_name', 'Sort by Name')}</SelectItem>
-                  <SelectItem value="joined">
-                    {t('chat.sort_by_joined', 'Sort by Joined')}
-                  </SelectItem>
-                  <SelectItem value="status">
-                    {t('chat.sort_by_status', 'Sort by Status')}
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex space-x-2">
+            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+              <SelectTrigger className="h-8 flex-1 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="name">{t('chat.sort_by_name', 'Sort by Name')}</SelectItem>
+                <SelectItem value="joined">{t('chat.sort_by_joined', 'Sort by Joined')}</SelectItem>
+                <SelectItem value="status">{t('chat.sort_by_status', 'Sort by Status')}</SelectItem>
+              </SelectContent>
+            </Select>
 
-              <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
-                <SelectTrigger className="flex-1">
-                  <Filter className="mr-2 h-4 w-4" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t('chat.all_users', 'All Users')}</SelectItem>
-                  <SelectItem value="online">{t('chat.online_only', 'Online Only')}</SelectItem>
-                  <SelectItem value="moderators">{t('chat.moderators', 'Moderators')}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
+              <SelectTrigger className="h-8 flex-1 text-sm">
+                <Filter className="mr-2 h-3 w-3" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('chat.all_users', 'All Users')}</SelectItem>
+                <SelectItem value="online">{t('chat.online_only', 'Online Only')}</SelectItem>
+                <SelectItem value="moderators">{t('chat.moderators', 'Moderators')}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
+      </div>
 
-        <ScrollArea className="h-[calc(100vh-16rem)]">
-          <div className="space-y-1 p-4 pt-0">
-            {filteredAndSortedUsers.length === 0 ? (
-              <div className="py-8 text-center">
-                <Users className="text-muted-foreground mx-auto h-8 w-8" />
-                <p className="text-muted-foreground mt-2 text-sm">
-                  {searchQuery.trim()
-                    ? t('chat.no_users_found', 'No users found')
-                    : t('chat.no_users_online', 'No users online')}
-                </p>
-              </div>
-            ) : (
-              filteredAndSortedUsers.map(user => (
+      {/* 用户列表 */}
+      <ScrollArea className="flex-1">
+        <div className="p-2">
+          {filteredAndSortedUsers.length === 0 ? (
+            <div className="py-8 text-center">
+              <Users className="text-muted-foreground mx-auto h-8 w-8" />
+              <p className="text-muted-foreground mt-2 text-sm">
+                {searchQuery.trim()
+                  ? t('chat.no_users_found', 'No users found')
+                  : t('chat.no_users_online', 'No users online')}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {filteredAndSortedUsers.map(user => (
                 <UserProfilePopover
                   key={user.id}
                   user={user}
@@ -399,13 +395,13 @@ export default function OnlineUsers({
                   onBlockUser={onBlockUser}
                   onReportUser={onReportUser}
                 >
-                  <div className="hover:bg-muted flex cursor-pointer items-center space-x-3 rounded-lg p-2 transition-colors">
+                  <div className="hover:bg-muted/30 group flex cursor-pointer items-center space-x-3 rounded-lg p-2 transition-colors">
                     <div className="relative">
                       <UserAvatar user={user} size="sm" />
                       {/* 在线状态指示器 */}
                       <div className="absolute -right-0.5 -bottom-0.5">
                         <Circle
-                          className={`border-background h-3 w-3 rounded-full border-2 ${
+                          className={`border-background h-2.5 w-2.5 rounded-full border-2 ${
                             user.is_online
                               ? 'fill-green-500 text-green-500'
                               : 'fill-gray-400 text-gray-400'
@@ -434,15 +430,22 @@ export default function OnlineUsers({
                     </div>
 
                     {/* 状态徽章和操作 */}
-                    <div className="flex items-center space-x-2">
-                      <Badge variant={user.is_online ? 'default' : 'secondary'} className="text-xs">
+                    <div className="flex items-center space-x-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Badge
+                        variant={user.is_online ? 'default' : 'secondary'}
+                        className="px-1.5 py-0.5 text-xs"
+                      >
                         {user.is_online ? t('status.online') : t('status.away')}
                       </Badge>
 
                       {/* 快捷操作下拉菜单 */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="hover:bg-muted/50 h-6 w-6 p-0"
+                          >
                             <MoreVertical className="h-3 w-3" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -469,11 +472,11 @@ export default function OnlineUsers({
                     </div>
                   </div>
                 </UserProfilePopover>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </CardContent>
-    </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   )
 }

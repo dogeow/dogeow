@@ -472,9 +472,7 @@ function ChatPageContent() {
                 <MessageSquareIcon className="h-5 w-5" />
                 {t('chat.chat_rooms', 'Chat Rooms')}
               </h2>
-            </div>
-            {/* Connection Status - Desktop */}
-            <div className="mt-3">
+              {/* Connection Status - Desktop - 放在同一行 */}
               <ConnectionStatusIndicator
                 connectionInfo={connectionInfo}
                 offlineState={offlineState}
