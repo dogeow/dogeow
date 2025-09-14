@@ -199,10 +199,29 @@ function ChatPageContent() {
 
   // 首次加载房间和连接 WebSocket
   useEffect(() => {
+    console.log('🔥 ChatPage: Initialization effect triggered:', {
+      isAuthenticated,
+      authLoading,
+      hasLoadedInitialData: hasLoadedInitialDataRef.current,
+    })
+
     if (isAuthenticated && !authLoading && !hasLoadedInitialDataRef.current) {
       hasLoadedInitialDataRef.current = true
-      loadRooms().catch(handleError)
-      connect().catch(handleError)
+      console.log('🔥 ChatPage: Initializing chat - loading rooms and connecting WebSocket')
+
+      // 并行加载房间和连接WebSocket
+      Promise.all([
+        loadRooms().catch(error => {
+          console.error('🔥 ChatPage: Failed to load rooms:', error)
+          handleError(error)
+        }),
+        connect().catch(error => {
+          console.error('🔥 ChatPage: Failed to connect WebSocket:', error)
+          handleError(error)
+        }),
+      ]).then(() => {
+        console.log('🔥 ChatPage: Initialization completed')
+      })
     }
   }, [isAuthenticated, authLoading, connect, loadRooms, handleError])
 

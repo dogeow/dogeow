@@ -333,10 +333,6 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
               })
               return groupedMessages.map((group, index) => {
                 if (group.type === 'messages' && group.messages && group.user) {
-                  console.log('🔥 MessageList: Rendering group', index, ':', {
-                    messageCount: group.messages.length,
-                    firstMessage: group.messages[0]?.message.substring(0, 50),
-                  })
                   return (
                     <MessageGroup
                       key={`group-${index}`}

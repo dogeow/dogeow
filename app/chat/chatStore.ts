@@ -139,11 +139,22 @@ const useChatStore = create<ChatState>()(
 
       // Room operations
       setCurrentRoom: room => {
-        // const prevRoom = get().currentRoom
+        console.log('🔥 ChatStore: Setting current room:', room)
+
         set({ currentRoom: room })
 
-        // Clear notifications when entering a room
+        // 确保当前房间在房间列表中
         if (room) {
+          const { rooms } = get()
+          const roomExists = rooms.find(r => r.id === room.id)
+          if (!roomExists) {
+            console.log('🔥 ChatStore: Adding current room to rooms list:', room)
+            set(state => ({
+              rooms: [...state.rooms, room],
+            }))
+          }
+
+          // Clear notifications when entering a room
           get().clearRoomNotifications(room.id)
 
           // Mark all mentions in this room as read
@@ -190,11 +201,30 @@ const useChatStore = create<ChatState>()(
           set({ isLoading: true, error: null })
 
           try {
+            console.log('🔥 ChatStore: Loading rooms from API...')
+            console.log('🔥 ChatStore: Current auth state:', {
+              isAuthenticated: useAuthStore.getState().isAuthenticated,
+              hasToken: !!useAuthStore.getState().token,
+            })
             const rooms = await apiGet<ChatRoom[]>('/chat/rooms')
+            console.log('🔥 ChatStore: API returned rooms:', rooms)
+
             // Ensure rooms is an array before setting
             const safeRooms = Array.isArray(rooms) ? rooms : []
+            console.log('🔥 ChatStore: Setting rooms:', safeRooms.length, 'rooms')
+
             set({ rooms: safeRooms, isLoading: false })
+
+            // 如果当前房间不在房间列表中，但存在，则添加到列表中
+            const currentRoom = get().currentRoom
+            if (currentRoom && !safeRooms.find(room => room.id === currentRoom.id)) {
+              console.log('🔥 ChatStore: Current room not in list, adding it:', currentRoom)
+              set(state => ({
+                rooms: [...state.rooms, currentRoom],
+              }))
+            }
           } catch (error) {
+            console.error('🔥 ChatStore: Failed to load rooms:', error)
             const chatError = handleChatApiError(error, 'Failed to load chat rooms', {
               showToast: true,
               retryable: true,
@@ -863,6 +893,18 @@ const useChatStore = create<ChatState>()(
             state.browserNotificationPermission = Notification.permission
           } else {
             state.browserNotificationPermission = 'denied'
+          }
+
+          // 状态恢复后检查并修复状态不一致问题
+          if (state.currentRoom && state.rooms.length === 0) {
+            console.log(
+              '🔥 ChatStore: Detected state inconsistency - currentRoom exists but no rooms list'
+            )
+            console.log('🔥 ChatStore: Current room:', state.currentRoom)
+
+            // 将当前房间添加到房间列表中
+            state.rooms = [state.currentRoom]
+            console.log('🔥 ChatStore: Fixed state - added current room to rooms list')
           }
 
           // Note: Visibility change listener is now handled in useNotifications hook

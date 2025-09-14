@@ -83,6 +83,14 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
 
   // Filter and search rooms
   const filteredRooms = useMemo(() => {
+    console.log('🔥 ChatRoomList: Filtering rooms:', {
+      rooms: rooms,
+      roomsLength: rooms?.length,
+      isArray: Array.isArray(rooms),
+      searchQuery,
+      filterType,
+    })
+
     // Ensure rooms is an array
     if (!Array.isArray(rooms)) {
       console.warn('ChatRoomList: rooms is not an array:', rooms)
@@ -133,8 +141,13 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
     if (currentRoom?.id === room.id) return
 
     try {
-      await joinRoom(room.id)
+      console.log('🔥 ChatRoomList: Selecting room:', room)
+
+      // 先设置当前房间，确保UI立即响应
       setCurrentRoom(room)
+
+      // 然后加入房间
+      await joinRoom(room.id)
 
       // Add to recent rooms
       const newRecent = [room.id, ...recentRooms.filter(id => id !== room.id)].slice(0, 10)
@@ -145,6 +158,8 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
       onRoomSelect?.()
     } catch (error) {
       console.error('Failed to join room:', error)
+      // 如果加入房间失败，清除当前房间选择
+      setCurrentRoom(null)
     }
   }
 
@@ -257,6 +272,16 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
 
       {/* Room List */}
       <div className="flex-1 overflow-y-auto">
+        {(() => {
+          console.log('🔥 ChatRoomList: Rendering decision:', {
+            isLoading,
+            roomsLength: rooms.length,
+            filteredRoomsLength: filteredRooms.length,
+            showSkeleton: isLoading && rooms.length === 0,
+            showEmpty: filteredRooms.length === 0,
+          })
+          return null
+        })()}
         {isLoading && rooms.length === 0 ? (
           <div className="space-y-3 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
@@ -279,6 +304,19 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
                 ? t('chat.try_different_search', 'Try a different search term')
                 : t('chat.create_to_get_started', 'Create one to get started')}
             </p>
+            {!searchQuery.trim() && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3"
+                onClick={() => {
+                  console.log('🔥 ChatRoomList: Manual refresh triggered')
+                  loadRooms()
+                }}
+              >
+                {t('chat.refresh_rooms', 'Refresh Rooms')}
+              </Button>
+            )}
           </div>
         ) : (
           <div className="space-y-1 p-2">
