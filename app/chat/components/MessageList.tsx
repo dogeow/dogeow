@@ -130,22 +130,20 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
     [loadMessages]
   )
 
-  // 直接订阅当前房间的消息，确保组件重新渲染
-  const roomMessages = useChatStore(
-    useCallback(
-      state => {
-        const messages = state.messages[roomKey] || []
-        console.log(
-          '🔥 MessageList: Store selector called for room',
-          roomKey,
-          '- Messages count:',
-          messages.length
-        )
-        return messages
-      },
-      [roomKey]
+  // 直接订阅整个 messages 对象，然后在组件内部过滤
+  const messages = useChatStore(state => state.messages)
+
+  // 使用 useMemo 来获取当前房间的消息，避免无限循环
+  const roomMessages = useMemo(() => {
+    const roomMessages = messages[roomKey] || []
+    console.log(
+      '🔥 MessageList: Getting messages for room',
+      roomKey,
+      '- Messages count:',
+      roomMessages.length
     )
-  )
+    return roomMessages
+  }, [messages, roomKey])
 
   // 过滤消息基于搜索查询
   const filteredMessages = useMemo(() => {
