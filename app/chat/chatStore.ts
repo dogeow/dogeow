@@ -4,6 +4,7 @@ import type { ChatRoom, ChatMessage, OnlineUser, CreateRoomData, MessagePaginati
 import { get as apiGet, post as apiPost } from '@/lib/api'
 import { handleChatApiError, type ChatApiError } from '@/lib/api/chat-error-handler'
 import chatCache from '@/lib/cache/chat-cache'
+import useAuthStore from '@/stores/authStore'
 
 interface NotificationSettings {
   browserNotifications: boolean
