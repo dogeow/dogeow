@@ -33,6 +33,7 @@ function ChatPageContent() {
     error: storeError,
     onlineUsers,
     updateMuteStatus,
+    updateRoomOnlineCount,
   } = useChatStore()
 
   const loadRooms = useCallback(() => useChatStore.getState().loadRooms(), [])
@@ -96,6 +97,38 @@ function ChatPageContent() {
         if (unmuteData.user_id === useAuthStore.getState().user?.id) {
           updateMuteStatus(false)
         }
+        return
+      }
+
+      // 处理用户加入房间事件
+      if (messageData.type === 'user.joined.room') {
+        const joinData = messageData as {
+          type: string
+          room_id: number
+          user_id: number
+          user_name: string
+          online_count: number
+          action: string
+          timestamp: string
+        }
+        console.log('🔥 ChatPage: User joined room:', joinData)
+        updateRoomOnlineCount(joinData.room_id, joinData.online_count)
+        return
+      }
+
+      // 处理用户离开房间事件
+      if (messageData.type === 'user.left.room') {
+        const leaveData = messageData as {
+          type: string
+          room_id: number
+          user_id: number
+          user_name: string
+          online_count: number
+          action: string
+          timestamp: string
+        }
+        console.log('🔥 ChatPage: User left room:', leaveData)
+        updateRoomOnlineCount(leaveData.room_id, leaveData.online_count)
         return
       }
 

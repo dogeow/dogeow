@@ -73,6 +73,7 @@ interface ChatState {
   addOnlineUser: (roomId: number, user: OnlineUser) => void
   removeOnlineUser: (roomId: number, userId: number) => void
   loadOnlineUsers: (roomId: number) => Promise<void>
+  updateRoomOnlineCount: (roomId: number, onlineCount: number) => void
 
   // Connection management
   setConnectionStatus: (status: 'connecting' | 'connected' | 'disconnected') => void
@@ -207,7 +208,8 @@ const useChatStore = create<ChatState>()(
               isAuthenticated: useAuthStore.getState().isAuthenticated,
               hasToken: !!useAuthStore.getState().token,
             })
-            const rooms = await apiGet<ChatRoom[]>('/chat/rooms')
+            const response = await apiGet<{ rooms: ChatRoom[] }>('/chat/rooms')
+            const rooms = response.rooms || []
             console.log('🔥 ChatStore: API returned rooms:', rooms)
 
             // Ensure rooms is an array before setting
@@ -245,7 +247,8 @@ const useChatStore = create<ChatState>()(
       createRoom: async roomData => {
         set({ isLoading: true, error: null })
         try {
-          const newRoom = await apiPost<ChatRoom>('/chat/rooms', roomData)
+          const response = await apiPost<{ room: ChatRoom }>('/chat/rooms', roomData)
+          const newRoom = response.room
           set(state => ({
             rooms: [...state.rooms, newRoom],
             isLoading: false,
@@ -630,6 +633,15 @@ const useChatStore = create<ChatState>()(
           })
           set({ error: chatError })
         }
+      },
+
+      updateRoomOnlineCount: (roomId, onlineCount) => {
+        console.log('🔥 ChatStore: Updating room online count:', { roomId, onlineCount })
+        set(state => ({
+          rooms: state.rooms.map(room =>
+            room.id === roomId ? { ...room, online_count: onlineCount } : room
+          ),
+        }))
       },
 
       // Connection management
