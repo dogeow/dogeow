@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
-import { Folder, Plus, Settings, Lock } from 'lucide-react'
+import { Plus, Settings, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useNavStore } from '@/app/nav/stores/navStore'
@@ -164,10 +164,6 @@ function NavContent() {
       {renderCategorySidebar()}
       <div className="mx-2 flex flex-1 flex-col gap-2">
         <div className="flex items-center">
-          <div className="mt-2 flex items-center gap-1">
-            <Folder className="h-6 w-6" />
-            <h1 className="text-2xl font-bold">{t('page.navigation', '导航')}</h1>
-          </div>
           <div className="ml-auto flex items-center gap-2">
             <Button
               onClick={handleManageCategories}
@@ -185,9 +181,13 @@ function NavContent() {
               onClick={handleAddNav}
               size="sm"
               variant="default"
-              className="relative flex items-center gap-1 bg-green-500 hover:bg-green-600"
+              className="relative flex items-center gap-1"
               disabled={!isAuthenticated}
-              style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
+              style={{
+                backgroundColor: themeColor.color,
+                color: '#fff',
+                opacity: !isAuthenticated ? 0.6 : 1,
+              }}
             >
               <Plus className="h-4 w-4" />
               {!isAuthenticated && <Lock className="h-3 w-3 text-white" />}
@@ -205,8 +205,7 @@ function NavContent() {
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-xl font-semibold text-gray-700">没有找到匹配的导航</p>
-            <p className="mt-2 text-gray-500">请尝试其他搜索词</p>
+            <p className="text-xl font-semibold text-gray-700">没有找到任何导航</p>
           </div>
         )}
       </div>
