@@ -40,6 +40,7 @@ import GenerativeMenuSwitch from './generative/generative-menu-switch'
 import { uploadFn } from './image-upload'
 import { TextButtons } from './selectors/text-buttons'
 import { slashCommand, suggestionItems } from './slash-command'
+import { countWords, extractTextFromJSON } from '@/lib/helpers/wordCount'
 
 import hljs from 'highlight.js'
 
@@ -76,7 +77,10 @@ const TailwindAdvancedEditor = () => {
     const scrollTop = editor.view.dom.scrollTop
 
     const json = editor.getJSON()
-    setCharsCount(editor.storage.characterCount.words())
+    // 使用自定义的字数统计函数
+    const text = extractTextFromJSON(json)
+    const wordCount = countWords(text)
+    setCharsCount(wordCount)
     window.localStorage.setItem('html-content', highlightCodeblocks(editor.getHTML()))
     window.localStorage.setItem('novel-content', JSON.stringify(json))
     window.localStorage.setItem('markdown', editor.storage.markdown.getMarkdown())
