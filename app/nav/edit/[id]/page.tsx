@@ -12,7 +12,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -271,11 +270,10 @@ export default function EditNavPage() {
                 name="icon"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>图标地址</FormLabel>
+                    <FormLabel>图标地址 (网站图标的URL地址，留空则使用默认图标)</FormLabel>
                     <FormControl>
                       <Input placeholder="https://example.com/favicon.ico (选填)" {...field} />
                     </FormControl>
-                    <FormDescription>网站图标的URL地址，留空则使用默认图标</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -306,11 +304,8 @@ export default function EditNavPage() {
                 control={form.control}
                 name="is_new_window"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">新窗口打开</FormLabel>
-                      <FormDescription>点击链接时在新窗口中打开网站</FormDescription>
-                    </div>
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <FormLabel className="text-base">新窗口打开</FormLabel>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
@@ -323,11 +318,8 @@ export default function EditNavPage() {
                 control={form.control}
                 name="is_visible"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">显示</FormLabel>
-                      <FormDescription>控制该导航项是否在导航页面显示</FormDescription>
-                    </div>
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <FormLabel className="text-base">显示</FormLabel>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
@@ -341,11 +333,10 @@ export default function EditNavPage() {
                 name="sort_order"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>排序</FormLabel>
+                    <FormLabel>排序 (数字越小，排序越靠前)</FormLabel>
                     <FormControl>
                       <Input type="number" min="0" step="1" {...field} />
                     </FormControl>
-                    <FormDescription>数字越小排序越靠前，相同则按添加时间排序</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

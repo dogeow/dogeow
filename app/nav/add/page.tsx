@@ -13,7 +13,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -216,7 +215,7 @@ export default function AddNavItem() {
                           alt="网站图标"
                           width={32}
                           height={32}
-                          className="h-8 w-8 rounded border bg-white"
+                          className="h-8 w-8 border bg-white"
                           style={{ minWidth: 32, minHeight: 32 }}
                         />
                       )}
@@ -286,11 +285,8 @@ export default function AddNavItem() {
                 control={form.control}
                 name="is_new_window"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">新窗口打开</FormLabel>
-                      <FormDescription>点击链接时在新窗口中打开网站</FormDescription>
-                    </div>
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <FormLabel className="text-base">新窗口打开</FormLabel>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
@@ -303,11 +299,8 @@ export default function AddNavItem() {
                 control={form.control}
                 name="is_visible"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">显示</FormLabel>
-                      <FormDescription>控制该导航项是否在导航页面显示</FormDescription>
-                    </div>
+                  <FormItem className="flex flex-row items-center justify-between">
+                    <FormLabel className="text-base">显示</FormLabel>
                     <FormControl>
                       <Switch checked={field.value} onCheckedChange={field.onChange} />
                     </FormControl>
@@ -321,11 +314,10 @@ export default function AddNavItem() {
                 name="sort_order"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>排序</FormLabel>
+                    <FormLabel>排序 (数字越小，排序越靠前)</FormLabel>
                     <FormControl>
                       <Input type="number" min="0" {...field} />
                     </FormControl>
-                    <FormDescription>数字越小，排序越靠前</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
