@@ -1,7 +1,7 @@
 export default function TermsPage() {
   return (
     <div className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-6 text-3xl font-bold">用户协议</h1>
+      <h1 className="mb-6 text-center text-3xl font-bold">用户协议</h1>
 
       <div className="prose prose-gray max-w-none">
         <section className="mb-8">
