@@ -305,16 +305,17 @@ function ChatPageContent() {
       ]).then(() => {
         console.log('🔥 ChatPage: Initialization completed')
 
-        // 如果连接失败，尝试备用连接
+        // 如果连接失败，尝试备用连接（但不修改状态，避免无限循环）
         setTimeout(() => {
-          if (connectionInfo.status !== 'connected') {
+          const currentStatus = useChatStore.getState().connectionStatus
+          if (currentStatus !== 'connected') {
             console.log('🔥 ChatPage: 连接失败，尝试备用连接')
             // 直接创建Echo实例作为备用方案
             import('@/lib/websocket/echo').then(({ createEchoInstance }) => {
               const echo = createEchoInstance()
               if (echo) {
                 console.log('🔥 ChatPage: 备用连接成功')
-                setConnectionStatus('connected')
+                // 不直接修改状态，让WebSocket hook自动管理连接状态
               }
             })
           }
@@ -328,7 +329,6 @@ function ChatPageContent() {
     loadRooms,
     handleError,
     clearAllOnlineUsers,
-    connectionInfo.status,
     setConnectionStatus,
   ])
 
@@ -385,12 +385,8 @@ function ChatPageContent() {
         }
       } else {
         console.log('🔥 ChatPage: 连接未建立，状态：', connectionInfo.status)
-        // 如果连接状态为disconnected，尝试强制同步状态
-        console.log('🔥 ChatPage: 连接状态为disconnected，尝试强制同步...')
-        setTimeout(() => {
-          setConnectionStatus('connected')
-          console.log('🔥 ChatPage: 强制同步连接状态为connected')
-        }, 1000)
+        // 如果连接状态为disconnected，记录日志但不强制修改状态
+        console.log('🔥 ChatPage: 连接状态为disconnected，等待WebSocket自动重连...')
       }
     } else {
       console.log('🔥 ChatPage: 未加入房间，原因：', {
@@ -399,15 +395,7 @@ function ChatPageContent() {
         连接状态: connectionInfo.status,
       })
     }
-  }, [
-    currentRoom,
-    isAuthenticated,
-    connectionInfo.status,
-    loadOnlineUsers,
-    wsJoinRoom,
-    handleError,
-    setConnectionStatus,
-  ])
+  }, [currentRoom, isAuthenticated, loadOnlineUsers, wsJoinRoom, handleError])
 
   // 处理消息回复
   const handleReply = (message: ChatMessage) => setReplyingTo(message)

@@ -715,25 +715,8 @@ export function MessageInput({
     )
   }, [message, uploadedFiles.length, isSending, isConnected, checkMuteStatus])
 
-  // 备用连接机制
-  useEffect(() => {
-    if (!isConnected) {
-      const timer = setTimeout(async () => {
-        try {
-          const { createEchoInstance } = await import('@/lib/websocket/echo')
-          const echo = createEchoInstance()
-          if (echo) {
-            // 刷新页面以更新连接状态
-            window.location.reload()
-          }
-        } catch (error) {
-          console.error('备用连接失败:', error)
-        }
-      }, 3000)
-
-      return () => clearTimeout(timer)
-    }
-  }, [isConnected])
+  // 移除自动页面刷新机制，改为更温和的错误处理
+  // 连接状态由WebSocket hook自动管理，不需要强制刷新页面
 
   return (
     <div
