@@ -141,24 +141,29 @@ export function createEchoInstance(): Echo<'reverb'> | null {
         console.log('Echo: 已发起连接')
 
         // 添加连接状态监听
-        if (echo.connector && echo.connector.pusher) {
-          echo.connector.pusher.connection.bind('connected', () => {
+        if (echo.connector && 'pusher' in echo.connector && echo.connector.pusher) {
+          const pusherConnector = echo.connector as {
+            pusher: {
+              connection: { bind: (event: string, callback: (error?: unknown) => void) => void }
+            }
+          }
+          pusherConnector.pusher.connection.bind('connected', () => {
             console.log('🔥 Echo: 连接成功！')
           })
 
-          echo.connector.pusher.connection.bind('connecting', () => {
+          pusherConnector.pusher.connection.bind('connecting', () => {
             console.log('🔥 Echo: 正在连接...')
           })
 
-          echo.connector.pusher.connection.bind('disconnected', () => {
+          pusherConnector.pusher.connection.bind('disconnected', () => {
             console.log('🔥 Echo: 连接断开')
           })
 
-          echo.connector.pusher.connection.bind('error', (error: unknown) => {
+          pusherConnector.pusher.connection.bind('error', (error: unknown) => {
             console.error('🔥 Echo: 连接错误:', error)
           })
 
-          echo.connector.pusher.connection.bind('unavailable', (error: unknown) => {
+          pusherConnector.pusher.connection.bind('unavailable', (error: unknown) => {
             console.error('🔥 Echo: 连接不可用:', error)
           })
         }

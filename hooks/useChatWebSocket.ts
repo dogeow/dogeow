@@ -386,8 +386,13 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
           ...channel,
           stopListening: (event?: string, callback?: () => void) => {
             try {
-              channel.stopListening(event, callback)
-              presenceChannel.stopListening(event, callback)
+              if (event) {
+                channel.stopListening(event, callback)
+                presenceChannel.stopListening(event, callback)
+              } else {
+                channel.stopListening('*')
+                presenceChannel.stopListening('*')
+              }
             } catch (error) {
               console.error('WebSocket: Error stopping channels:', error)
             }

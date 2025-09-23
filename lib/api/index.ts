@@ -225,18 +225,21 @@ export function validateAndNormalizeError(error: unknown): Error {
   // 保留原始错误信息作为额外属性
   if (status !== undefined) {
     ;(normalizedError as Error & { status?: number }).status = status
-  } else if (errorObj.status) {
+  } else if (errorObj.status && typeof errorObj.status === 'number') {
     ;(normalizedError as Error & { status?: number }).status = errorObj.status
   }
 
   if (code !== undefined) {
-    ;(normalizedError as Error & { code?: string }).code = code
-  } else if (errorObj.code) {
-    ;(normalizedError as Error & { code?: string }).code = errorObj.code
+    ;(normalizedError as Error & { code?: string | number }).code = code
+  } else if (
+    errorObj.code &&
+    (typeof errorObj.code === 'string' || typeof errorObj.code === 'number')
+  ) {
+    ;(normalizedError as Error & { code?: string | number }).code = errorObj.code
   }
 
   // 保留其他有用的属性
-  if (errorObj.name) {
+  if (errorObj.name && typeof errorObj.name === 'string') {
     ;(normalizedError as Error & { name?: string }).name = errorObj.name
   }
 

@@ -212,63 +212,6 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
     [apiCall, onError]
   )
 
-  // Join a room
-  const joinRoom = useCallback(
-    async (roomId: string): Promise<boolean> => {
-      try {
-        setIsLoading(true)
-        setError(null)
-
-        // 检查是否已经在目标房间中
-        if (currentRoom?.id.toString() === roomId) {
-          console.log('Already in target room, skipping join')
-          return true
-        }
-
-        // 只有在有当前房间且不是目标房间时才离开
-        if (currentRoom && currentRoom.id.toString() !== roomId) {
-          console.log('Leaving current room before joining new one:', currentRoom.id)
-          await leaveRoom()
-        }
-
-        // Join new room via API
-        await apiCall(`/chat/rooms/${roomId}/join`, { method: 'POST' })
-
-        // Find room in list
-        const room = rooms.find(r => r.id.toString() === roomId)
-        if (!room) {
-          throw new Error('Room not found')
-        }
-
-        setCurrentRoom(room)
-        setMessages([])
-        setOnlineUsers([])
-        setCurrentPage(1)
-        setHasMoreMessages(true)
-        isInitialLoad.current = true
-
-        // Connect WebSocket to room
-        const connected = await connect(roomId)
-        if (!connected) {
-          throw new Error('Failed to connect to WebSocket')
-        }
-
-        // Load initial data
-        await Promise.all([loadMessages(roomId, 1), loadOnlineUsers()])
-
-        return true
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to join room'
-        setError(errorMessage)
-        if (onError) onError(errorMessage)
-        return false
-      } finally {
-        setIsLoading(false)
-      }
-    },
-    [currentRoom, rooms, connect, onError, apiCall, leaveRoom, loadMessages, loadOnlineUsers]
-  )
-
   // Leave current room
   const leaveRoom = useCallback(async () => {
     if (!currentRoom) return
@@ -331,6 +274,75 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
     [apiCall, messagesPerPage, onError]
   )
 
+  // Load online users
+  const loadOnlineUsers = useCallback(async () => {
+    if (!currentRoom) return
+
+    try {
+      const data = await apiCall(`/chat/rooms/${currentRoom.id}/users`)
+      setOnlineUsers(data.users || data)
+    } catch (err) {
+      console.error('Error loading online users:', err)
+    }
+  }, [currentRoom, apiCall])
+
+  // Join a room
+  const joinRoom = useCallback(
+    async (roomId: string): Promise<boolean> => {
+      try {
+        setIsLoading(true)
+        setError(null)
+
+        // 检查是否已经在目标房间中
+        if (currentRoom?.id.toString() === roomId) {
+          console.log('Already in target room, skipping join')
+          return true
+        }
+
+        // 只有在有当前房间且不是目标房间时才离开
+        if (currentRoom && currentRoom.id.toString() !== roomId) {
+          console.log('Leaving current room before joining new one:', currentRoom.id)
+          await leaveRoom()
+        }
+
+        // Join new room via API
+        await apiCall(`/chat/rooms/${roomId}/join`, { method: 'POST' })
+
+        // Find room in list
+        const room = rooms.find(r => r.id.toString() === roomId)
+        if (!room) {
+          throw new Error('Room not found')
+        }
+
+        setCurrentRoom(room)
+        setMessages([])
+        setOnlineUsers([])
+        setCurrentPage(1)
+        setHasMoreMessages(true)
+        isInitialLoad.current = true
+
+        // Connect WebSocket to room
+        const connected = await connect(roomId)
+        if (!connected) {
+          throw new Error('Failed to connect to WebSocket')
+        }
+
+        // Load initial data
+        await Promise.all([loadMessages(roomId, 1), loadOnlineUsers()])
+
+        return true
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to join room'
+        setError(errorMessage)
+        if (onError) onError(errorMessage)
+        return false
+      } finally {
+        setIsLoading(false)
+      }
+    },
+    [currentRoom, rooms, connect, onError, apiCall, leaveRoom, loadMessages, loadOnlineUsers]
+  )
+
   // Load more messages (pagination)
   const loadMoreMessages = useCallback(async () => {
     if (!currentRoom || !hasMoreMessages || isLoadingMoreMessages) return
@@ -347,18 +359,6 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
     },
     [currentRoom, wsSendMessage]
   )
-
-  // Load online users
-  const loadOnlineUsers = useCallback(async () => {
-    if (!currentRoom) return
-
-    try {
-      const data = await apiCall(`/chat/rooms/${currentRoom.id}/users`)
-      setOnlineUsers(data.users || data)
-    } catch (err) {
-      console.error('Error loading online users:', err)
-    }
-  }, [currentRoom, apiCall])
 
   // Auto-load rooms on mount
   useEffect(() => {
