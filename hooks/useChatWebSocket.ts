@@ -29,6 +29,19 @@ export interface UseChatWebSocketReturn {
   clearOfflineQueue: () => void
 }
 
+export interface User {
+  id: number
+  name: string
+  email?: string
+  [key: string]: unknown
+}
+
+export interface UserPresenceEvent {
+  users?: User[]
+  user?: User
+  action: 'here' | 'joining' | 'leaving'
+}
+
 export interface UseChatWebSocketOptions {
   autoConnect?: boolean
   onConnect?: () => void
@@ -41,6 +54,8 @@ export interface UseChatWebSocketOptions {
   onMessageSent?: (message: QueuedMessage) => void
   onMessageFailed?: (message: QueuedMessage, error: unknown) => void
   onMessageSentSuccess?: (messageData: unknown) => void
+  onUserJoined?: (event: UserPresenceEvent) => void
+  onUserLeft?: (event: UserPresenceEvent) => void
   authTokenRefreshCallback?: () => Promise<string | null>
 }
 
@@ -57,6 +72,8 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     onMessageSent,
     onMessageFailed,
     onMessageSentSuccess,
+    onUserJoined,
+    onUserLeft,
     authTokenRefreshCallback,
   } = options
 
@@ -233,11 +250,14 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       }
 
       console.log('WebSocket: Echo instance created successfully')
-      setEcho(echoInstance)
 
-      // 初始化连接监控器
+      // 先初始化连接监控器，再设置Echo实例
       const monitor = getConnectionMonitor()
       monitor.initializeWithEcho(echoInstance)
+      console.log('WebSocket: Connection monitor initialized')
+
+      setEcho(echoInstance)
+      console.log('WebSocket: Echo instance set in state')
 
       // 立即返回true，让连接状态通过事件监听器异步更新
       // 这样可以避免阻塞，让UI能够响应连接状态变化
@@ -255,10 +275,36 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     }
   }, [authTokenRefreshCallback, onError])
 
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
     if (!isComponentMountedRef.current) {
       console.log('WebSocket: Component unmounted, skipping disconnect')
       return
+    }
+
+    // 如果有当前房间，先主动离开房间
+    if (currentRoomRef.current) {
+      try {
+        console.log('WebSocket: Leaving room before disconnect:', currentRoomRef.current)
+        // 调用 API 离开房间
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/chat/rooms/${currentRoomRef.current}/leave`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${getAuthManager().getToken()}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        )
+
+        if (response.ok) {
+          console.log('WebSocket: Successfully left room via API')
+        } else {
+          console.warn('WebSocket: Failed to leave room via API:', response.status)
+        }
+      } catch (error) {
+        console.error('WebSocket: Error leaving room via API:', error)
+      }
     }
 
     try {
@@ -310,6 +356,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       if (!echoToUse) return
 
       try {
+        // 创建普通频道用于消息
         const channel = echoToUse.channel(`chat.room.${roomId}`)
         console.log('WebSocket: Created channel for room', roomId, 'channel:', channel)
 
@@ -318,7 +365,34 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
           return
         }
 
-        channelRef.current = channel as unknown as {
+        // 创建 Presence Channel 用于用户状态跟踪
+        const presenceChannel = echoToUse
+          .join(`chat.room.${roomId}.presence`)
+          .here((users: User[]) => {
+            console.log('WebSocket: Users currently in room:', users)
+            if (onUserJoined) onUserJoined({ users, action: 'here' })
+          })
+          .joining((user: User) => {
+            console.log('WebSocket: User joining:', user)
+            if (onUserJoined) onUserJoined({ user, action: 'joining' })
+          })
+          .leaving((user: User) => {
+            console.log('WebSocket: User leaving:', user)
+            if (onUserLeft) onUserLeft({ user, action: 'leaving' })
+          })
+
+        // 合并两个频道到一个对象中
+        channelRef.current = {
+          ...channel,
+          stopListening: (event?: string, callback?: () => void) => {
+            try {
+              channel.stopListening(event, callback)
+              presenceChannel.stopListening(event, callback)
+            } catch (error) {
+              console.error('WebSocket: Error stopping channels:', error)
+            }
+          },
+        } as unknown as {
           stopListening: (event?: string, callback?: () => void) => void
           listen: (event: string, callback: (data: unknown) => void) => void
           bind?: (event: string, callback: () => void) => void
@@ -357,7 +431,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         channelRef.current.bind('pusher:subscription_error', () => {})
       }
     },
-    [echo, onMessage]
+    [echo, onMessage, onUserJoined, onUserLeft]
   )
 
   const sendMessage = useCallback(

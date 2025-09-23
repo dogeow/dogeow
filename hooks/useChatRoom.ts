@@ -219,8 +219,15 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         setIsLoading(true)
         setError(null)
 
-        // Leave current room first
-        if (currentRoom) {
+        // 检查是否已经在目标房间中
+        if (currentRoom?.id.toString() === roomId) {
+          console.log('Already in target room, skipping join')
+          return true
+        }
+
+        // 只有在有当前房间且不是目标房间时才离开
+        if (currentRoom && currentRoom.id.toString() !== roomId) {
+          console.log('Leaving current room before joining new one:', currentRoom.id)
           await leaveRoom()
         }
 
@@ -259,7 +266,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         setIsLoading(false)
       }
     },
-    [currentRoom, rooms, connect, onError]
+    [currentRoom, rooms, connect, onError, apiCall, leaveRoom, loadMessages, loadOnlineUsers]
   )
 
   // Leave current room
@@ -358,7 +365,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
     if (autoLoadRooms) {
       loadRooms()
     }
-  }, [autoLoadRooms]) // Remove loadRooms from dependencies to avoid infinite loop
+  }, [autoLoadRooms, loadRooms]) // Include loadRooms in dependencies
 
   // Cleanup on unmount - safe cleanup without state updates
   useEffect(() => {
@@ -366,7 +373,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
       // Only call disconnect, avoid state updates during cleanup
       disconnect()
     }
-  }, [])
+  }, [disconnect])
 
   return {
     // Room management

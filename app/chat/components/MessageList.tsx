@@ -255,7 +255,19 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
     if (roomId) {
       console.log('🔥 MessageList: Loading messages for room', roomId)
       stableLoadMessages(roomId).catch(error => {
-        console.error('Failed to load messages:', error)
+        // 安全地处理错误，避免直接输出复杂对象
+        if (error instanceof Error) {
+          console.error('Failed to load messages:', error.message)
+        } else if (error && typeof error === 'object') {
+          console.error('Failed to load messages:', {
+            type: typeof error,
+            message: error.message || 'Unknown error',
+            status: error.status || 'No status',
+            code: error.code || 'No code',
+          })
+        } else {
+          console.error('Failed to load messages:', String(error))
+        }
       })
     }
   }, [roomId, stableLoadMessages])

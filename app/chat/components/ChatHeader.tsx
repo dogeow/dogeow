@@ -11,6 +11,7 @@ import {
   Volume2,
   MessageSquare,
   AtSign,
+  MenuIcon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -44,9 +45,19 @@ interface ChatHeaderProps {
   room: ChatRoom
   onBack?: () => void
   showBackButton?: boolean
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
+  onOpenRoomList?: () => void
+  onOpenUsersList?: () => void
 }
 
-export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderProps) {
+export function ChatHeader({
+  room,
+  onBack,
+  showBackButton = false,
+  onOpenRoomList,
+  onOpenUsersList,
+}: ChatHeaderProps) {
   // 从聊天状态管理获取数据
   const {
     onlineUsers,
@@ -117,7 +128,8 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
 
   return (
     <>
-      <div className="bg-background flex items-center justify-between border-b p-4">
+      {/* 桌面端头部 */}
+      <div className="bg-background hidden items-center justify-between border-b p-4 md:flex">
         {/* 左侧 - 导航和房间信息 */}
         <div className="flex items-center gap-3">
           {showBackButton && (
@@ -129,7 +141,7 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
         </div>
 
         {/* 中间 - 房间详情 */}
-        <div className="hidden md:flex md:flex-1 md:justify-center">
+        <div className="flex flex-1 justify-center">
           <div className="text-center">
             <div className="flex items-center justify-center gap-3">
               <Hash className="text-muted-foreground h-4 w-4" />
@@ -168,11 +180,130 @@ export function ChatHeader({ room, onBack, showBackButton = false }: ChatHeaderP
             </Badge>
           </div>
 
-          {/* 连接状态指示器（移动端） */}
+          {/* 设置下拉菜单 */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Settings className="h-4 w-4" />
+                <span className="sr-only">{t('settings.title', '设置')}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>{t('page.chat_settings', '聊天设置')}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+
+              {/* 通知设置 */}
+              <DropdownMenuItem onClick={() => setIsNotificationSettingsOpen(true)}>
+                <Bell className="mr-2 h-4 w-4" />
+                {t('chat.notification_settings', '通知设置')}
+              </DropdownMenuItem>
+
+              {/* 房间信息 */}
+              <DropdownMenuItem onClick={() => setIsRoomInfoOpen(true)}>
+                <Info className="mr-2 h-4 w-4" />
+                {t('chat.room_info', '房间信息')}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* 移动端头部 - 合并导航和房间信息 */}
+      <div className="bg-background flex items-center justify-between border-b p-4 md:hidden">
+        {/* 左侧 - 导航和房间信息 */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          {/* 菜单按钮 */}
+          {onOpenRoomList && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                console.log('Menu button clicked')
+                onOpenRoomList()
+              }}
+              className="shrink-0"
+            >
+              <MenuIcon className="h-4 w-4" />
+              <span className="sr-only">{t('chat.open_room_list', 'Open room list')}</span>
+            </Button>
+          )}
+
+          {/* 返回按钮 */}
+          {showBackButton && (
+            <Button variant="ghost" size="icon" onClick={onBack} className="shrink-0">
+              <ArrowLeft className="h-4 w-4" />
+              <span className="sr-only">{t('chat.go_back', '返回')}</span>
+            </Button>
+          )}
+
+          {/* 房间信息 */}
+          <div className="flex min-w-0 items-center gap-1">
+            <Hash className="text-muted-foreground h-4 w-4 shrink-0" />
+            <h1 className="truncate font-semibold">{room.name}</h1>
+            {room.description && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 shrink-0"
+                onClick={() => setIsRoomInfoOpen(true)}
+              >
+                <Info className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* 右侧 - 操作按钮 */}
+        <div className="flex shrink-0 items-center gap-1">
+          {/* 合并的用户列表按钮 - 包含在线用户数量和状态 */}
+          {onOpenUsersList && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                console.log('Users list button clicked')
+                onOpenUsersList()
+              }}
+              className="relative"
+            >
+              <Users className="h-4 w-4" />
+              {/* 在线用户数量徽章 */}
+              <Badge
+                variant="secondary"
+                className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center p-0 text-xs"
+              >
+                {onlineCount}
+              </Badge>
+              <span className="sr-only">{t('chat.open_users_list', 'Open users list')}</span>
+            </Button>
+          )}
+
+          {/* 连接状态指示器 */}
           <div
-            className={`h-2 w-2 rounded-full md:hidden ${
-              isConnected ? 'bg-green-500' : 'bg-red-500'
+            className={`h-2 w-2 rounded-full ${
+              isConnected
+                ? 'bg-green-500'
+                : connectionStatus === 'connecting'
+                  ? 'animate-pulse bg-yellow-500'
+                  : 'bg-red-500'
             }`}
+            title={
+              isConnected
+                ? `已连接 (${connectionStatus})`
+                : connectionStatus === 'connecting'
+                  ? `连接中... (${connectionStatus})`
+                  : `连接断开 (${connectionStatus})`
+            }
+            onClick={() => {
+              // 开发环境下点击显示详细状态
+              if (process.env.NODE_ENV === 'development') {
+                console.log('🔍 连接状态详情:', {
+                  isConnected,
+                  connectionStatus,
+                  timestamp: new Date().toLocaleTimeString(),
+                })
+              }
+            }}
           />
 
           {/* 设置下拉菜单 */}

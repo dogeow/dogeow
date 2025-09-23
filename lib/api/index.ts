@@ -151,6 +151,99 @@ const createTimeoutController = (isFormData: boolean) => {
 }
 
 /**
+ * 验证和标准化错误对象
+ */
+export function validateAndNormalizeError(error: unknown): Error {
+  // 如果已经是 Error 实例，直接返回
+  if (error instanceof Error) {
+    return error
+  }
+
+  // 处理 null 或 undefined
+  if (error === null || error === undefined) {
+    return new Error('未知错误：错误对象为空')
+  }
+
+  // 处理非对象类型
+  if (typeof error !== 'object') {
+    return new Error(`API请求失败: ${String(error)}`)
+  }
+
+  // 处理对象类型的错误
+  const errorObj = error as Record<string, unknown>
+
+  // 尝试提取错误消息
+  let message = 'API请求失败'
+  let status: number | undefined
+  let code: string | number | undefined
+
+  // 检查常见的错误属性
+  if (typeof errorObj.message === 'string' && errorObj.message.trim()) {
+    message = errorObj.message
+  } else if (typeof errorObj.error === 'string' && errorObj.error.trim()) {
+    message = errorObj.error
+  } else if (typeof errorObj.detail === 'string' && errorObj.detail.trim()) {
+    message = errorObj.detail
+  } else if (typeof errorObj.reason === 'string' && errorObj.reason.trim()) {
+    message = errorObj.reason
+  } else if (errorObj.status && typeof errorObj.status === 'number') {
+    status = errorObj.status
+    message = `API请求失败 (状态码: ${status})`
+  } else if (
+    errorObj.code &&
+    (typeof errorObj.code === 'string' || typeof errorObj.code === 'number')
+  ) {
+    code = errorObj.code
+    message = `API请求失败 (错误代码: ${code})`
+  } else if (errorObj.name && typeof errorObj.name === 'string') {
+    // 处理类似 DOMException 的对象
+    if (errorObj.name === 'AbortError') {
+      message = '请求被取消'
+    } else if (errorObj.name === 'NetworkError') {
+      message = '网络连接失败'
+    } else if (errorObj.name === 'TimeoutError') {
+      message = '请求超时'
+    } else {
+      message = `API请求失败 (${errorObj.name})`
+    }
+  } else {
+    // 尝试序列化对象获取更多信息
+    try {
+      const serialized = JSON.stringify(errorObj, null, 2)
+      if (serialized !== '{}' && serialized.length < 500) {
+        message = `API请求失败: ${serialized}`
+      } else {
+        message = `API请求失败: ${Object.prototype.toString.call(errorObj)}`
+      }
+    } catch {
+      message = `API请求失败: ${Object.prototype.toString.call(errorObj)}`
+    }
+  }
+
+  const normalizedError = new Error(message)
+
+  // 保留原始错误信息作为额外属性
+  if (status !== undefined) {
+    ;(normalizedError as Error & { status?: number }).status = status
+  } else if (errorObj.status) {
+    ;(normalizedError as Error & { status?: number }).status = errorObj.status
+  }
+
+  if (code !== undefined) {
+    ;(normalizedError as Error & { code?: string }).code = code
+  } else if (errorObj.code) {
+    ;(normalizedError as Error & { code?: string }).code = errorObj.code
+  }
+
+  // 保留其他有用的属性
+  if (errorObj.name) {
+    ;(normalizedError as Error & { name?: string }).name = errorObj.name
+  }
+
+  return normalizedError
+}
+
+/**
  * 通用API请求函数
  */
 export async function apiRequest<T>(
@@ -200,19 +293,20 @@ export async function apiRequest<T>(
 
     return await handleResponse<T>(response)
   } catch (error) {
-    // 添加错误调试信息
-    if (process.env.NODE_ENV === 'development') {
-      console.group('API Request Error Debug')
-      console.error('Error type:', typeof error)
-      console.error('Error value:', error)
+    // 标准化错误对象
+    const normalizedError = validateAndNormalizeError(error)
+
+    // 添加错误调试信息（仅在开发环境且错误不是标准Error实例时）
+    if (process.env.NODE_ENV === 'development' && !(error instanceof Error)) {
+      console.group('API Request Error Debug - Non-standard Error')
+      console.error('Endpoint:', endpoint)
+      console.error('Method:', method)
+      console.error('Original error type:', typeof error)
+      console.error('Original error value:', error)
+      console.error('Normalized error:', normalizedError)
       console.error('Error instanceof Error:', error instanceof Error)
       console.error('Error instanceof ApiRequestError:', error instanceof ApiRequestError)
       console.error('Error instanceof DOMException:', error instanceof DOMException)
-      if (error instanceof Error) {
-        console.error('Error name:', error.name)
-        console.error('Error message:', error.message)
-        console.error('Error stack:', error.stack)
-      }
       console.groupEnd()
     }
 
@@ -234,18 +328,28 @@ export async function apiRequest<T>(
       throw error
     }
 
-    // 确保所有错误都是Error实例
-    if (!(error instanceof Error)) {
-      const genericError = new Error(`API请求失败: ${String(error)}`)
-      if (handleError) handleApiError(genericError)
-      throw genericError
+    // 处理标准化的错误，检查是否有特定的错误类型
+    if (normalizedError.name === 'AbortError' || normalizedError.message.includes('请求被取消')) {
+      const timeoutError = new Error('请求超时，请重试')
+      if (handleError) handleApiError(timeoutError)
+      throw timeoutError
     }
 
+    if (
+      normalizedError.message.includes('网络连接失败') ||
+      normalizedError.message.includes('NetworkError')
+    ) {
+      const networkError = new Error('网络连接失败，请检查网络')
+      if (handleError) handleApiError(networkError)
+      throw networkError
+    }
+
+    // 使用标准化的错误
     if (handleError) {
-      handleApiError(error)
+      handleApiError(normalizedError)
     }
 
-    throw error
+    throw normalizedError
   }
 }
 

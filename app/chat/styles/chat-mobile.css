@@ -1,13 +1,14 @@
-/* 聊天移动端样式优化 */
+/* 聊天样式优化 - 移动端和桌面端 */
 @media (max-width: 768px) {
   /* 定义头部高度变量 */
   :root {
-    --chat-header-height: 70px;
-    --chat-search-height: 52px;
+    --chat-header-height: 60px;
+    --chat-search-height: 60px;
     --chat-total-header-height: calc(var(--chat-header-height) + var(--chat-search-height));
+    --chat-input-height: 100px; /* 输入框区域高度 */
   }
 
-  /* 移动端头部高度调整，避免被状态栏遮挡 */
+  /* 移动端导航栏样式 */
   .chat-header-mobile {
     padding-top: env(safe-area-inset-top, 0);
     min-height: calc(env(safe-area-inset-top, 0px) + var(--chat-header-height));
@@ -18,31 +19,91 @@
     border-bottom: 1px solid hsl(var(--border));
   }
 
-  /* 使用 flex 布局而不是固定高度，让容器自适应 */
+  /* 消息输入区域样式 */
+  .chat-input-area-mobile {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.75rem;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 0.75rem);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: hsl(var(--background));
+    border-top: 1px solid hsl(var(--border));
+    z-index: 100;
+    min-height: auto;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+    /* 确保输入框有足够的高度 */
+    min-height: var(--chat-input-height);
+  }
+
+  /* 按钮样式 */
+  .chat-button-mobile {
+    margin-left: 0.25rem;
+    margin-right: 0.25rem;
+  }
+
+  /* 确保聊天头部不会与内容重叠 */
+  .chat-header-container {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background-color: hsl(var(--background));
+    border-bottom: 1px solid hsl(var(--border));
+  }
+
+  /* 确保消息区域有正确的顶部间距和底部间距 */
   .chat-messages-mobile {
     padding-left: 0.75rem;
     padding-right: 0.75rem;
     padding-top: 0.5rem;
+    padding-bottom: var(--chat-input-height); /* 为固定的输入框留出空间 */
     /* 确保容器能够正确滚动 */
     overflow-y: auto;
     /* 确保内容不会超出容器 */
-    max-height: 100%;
+    max-height: calc(
+      100vh - var(--chat-total-header-height) - var(--chat-input-height)
+    ); /* 减去头部和输入框高度 */
+    /* 添加顶部间距，避免与头部重叠 */
+    margin-top: 0;
+    /* 确保内容区域在头部下方 */
+    position: relative;
+    z-index: 1;
+    /* 确保滚动区域正确计算高度 */
+    box-sizing: border-box;
+    /* 确保flex布局正确工作 */
+    flex: 1;
+    min-height: 0;
   }
+}
 
+/* 桌面端样式优化 */
+@media (min-width: 769px) {
+  /* 消息输入区域样式 - 桌面端 */
   .chat-input-area-mobile {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 2.5rem);
     position: sticky;
     bottom: 0;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 1rem;
     background-color: hsl(var(--background));
     border-top: 1px solid hsl(var(--border));
-    z-index: 10;
-    min-height: calc(env(safe-area-inset-bottom, 0.75rem) + 120px);
+    z-index: 100;
+    min-height: auto;
   }
 
-  .chat-button-mobile {
-    margin-left: 0.25rem;
-    margin-right: 0.25rem;
+  /* 消息区域样式 - 桌面端 */
+  .chat-messages-mobile {
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-top: 0.75rem;
+    padding-bottom: 1rem;
+    overflow-y: auto;
+    max-height: 100%;
+    margin-top: 0;
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
   }
 }

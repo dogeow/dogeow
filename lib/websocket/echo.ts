@@ -35,6 +35,18 @@ export function createEchoInstance(): Echo<'reverb'> | null {
 
   console.log('Echo: 正在创建新的 Echo 实例')
 
+  // 获取认证token
+  let authToken = ''
+  try {
+    const authStorage = localStorage.getItem('auth-storage')
+    if (authStorage) {
+      const authData = JSON.parse(authStorage)
+      authToken = authData.state?.token || ''
+    }
+  } catch (error) {
+    console.warn('Echo: 获取认证token失败:', error)
+  }
+
   // 智能端口配置：当使用 HTTPS 且端口是标准端口时，不设置端口号
   const scheme = process.env.NEXT_PUBLIC_REVERB_SCHEME || 'https'
   const isHttps = scheme === 'https'
@@ -56,7 +68,7 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     authEndpoint: `${process.env.NEXT_PUBLIC_API_URL}/broadcasting/auth`,
     auth: {
       headers: {
-        Authorization: '',
+        Authorization: authToken ? `Bearer ${authToken}` : '',
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
@@ -66,6 +78,12 @@ export function createEchoInstance(): Echo<'reverb'> | null {
   console.log('Echo: 配置参数:', {
     ...config,
     auth: { headers: '[HIDDEN]' },
+  })
+
+  console.log('Echo: 认证token状态:', {
+    hasToken: !!authToken,
+    tokenLength: authToken.length,
+    tokenPrefix: authToken.substring(0, 10) + '...',
   })
 
   // 添加环境变量调试信息
@@ -121,6 +139,29 @@ export function createEchoInstance(): Echo<'reverb'> | null {
       if (echo && typeof echo.connect === 'function') {
         echo.connect()
         console.log('Echo: 已发起连接')
+
+        // 添加连接状态监听
+        if (echo.connector && echo.connector.pusher) {
+          echo.connector.pusher.connection.bind('connected', () => {
+            console.log('🔥 Echo: 连接成功！')
+          })
+
+          echo.connector.pusher.connection.bind('connecting', () => {
+            console.log('🔥 Echo: 正在连接...')
+          })
+
+          echo.connector.pusher.connection.bind('disconnected', () => {
+            console.log('🔥 Echo: 连接断开')
+          })
+
+          echo.connector.pusher.connection.bind('error', (error: unknown) => {
+            console.error('🔥 Echo: 连接错误:', error)
+          })
+
+          echo.connector.pusher.connection.bind('unavailable', (error: unknown) => {
+            console.error('🔥 Echo: 连接不可用:', error)
+          })
+        }
       }
     } catch (connectError) {
       console.warn('Echo: 发起连接失败:', connectError)

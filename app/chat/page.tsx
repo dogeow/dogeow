@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { MenuIcon, UsersIcon, MessageSquareIcon, Search } from 'lucide-react'
+import { UsersIcon, MessageSquareIcon } from 'lucide-react'
 import { ChatRoomList, MessageList, MessageInput, OnlineUsers, ChatHeader } from './components'
 import ConnectionStatusIndicator from './components/ConnectionStatusIndicator'
 import ChatErrorBoundary, { useChatErrorHandler } from './components/ChatErrorBoundary'
@@ -11,12 +11,9 @@ import useChatStore from '@/app/chat/chatStore'
 import useAuthStore from '@/stores/authStore'
 import { useChatWebSocket } from '@/hooks/useChatWebSocket'
 import type { ChatMessage } from './types'
-import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { Input } from '@/components/ui/input'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { useTranslation } from '@/hooks/useTranslation'
-import { Badge } from '@/components/ui/badge'
 import './styles/chat-mobile.css'
 
 function ChatPageContent() {
@@ -31,7 +28,6 @@ function ChatPageContent() {
     retryLastAction,
     clearError,
     error: storeError,
-    onlineUsers,
     updateMuteStatus,
     updateRoomOnlineCount,
     clearAllOnlineUsers,
@@ -41,7 +37,6 @@ function ChatPageContent() {
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null)
   const [isRoomListOpen, setIsRoomListOpen] = useState(false)
   const [isUsersListOpen, setIsUsersListOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const hasLoadedInitialDataRef = useRef(false)
 
   // 滚动容器引用，用于未读消息指示器
@@ -57,9 +52,14 @@ function ChatPageContent() {
 
   // WebSocket 相关回调
   const handleConnect = useCallback(() => setConnectionStatus('connected'), [setConnectionStatus])
-  const handleDisconnect = useCallback(() => {
+  const handleDisconnect = useCallback(async () => {
     console.log('🔥 ChatPage: WebSocket断开连接，清理在线用户数据')
     setConnectionStatus('disconnected')
+
+    // 注意：WebSocket断开连接时不主动调用leaveRoom API
+    // 因为用户可能只是网络暂时断开，而不是真正想离开房间
+    // leaveRoom API 应该只在用户主动切换房间或页面卸载时调用
+
     clearAllOnlineUsers() // 断开连接时清空所有在线用户数据
   }, [setConnectionStatus, clearAllOnlineUsers])
   const handleWebSocketError = useCallback(() => {
@@ -132,6 +132,50 @@ function ChatPageContent() {
         }
         console.log('🔥 ChatPage: User left room:', leaveData)
         updateRoomOnlineCount(leaveData.room_id, leaveData.online_count)
+        return
+      }
+
+      // 处理 Presence Channel 事件
+      if (messageData.action === 'here') {
+        const presenceData = messageData as unknown as {
+          action: string
+          users: Array<{
+            id: number
+            name: string
+            email: string
+            avatar?: string
+          }>
+        }
+        console.log('🔥 ChatPage: Users currently in room (Presence):', presenceData.users)
+        // 可以在这里更新在线用户列表
+        return
+      }
+
+      if (messageData.action === 'joining') {
+        const joiningData = messageData as unknown as {
+          action: string
+          user: {
+            id: number
+            name: string
+            email: string
+            avatar?: string
+          }
+        }
+        console.log('🔥 ChatPage: User joining (Presence):', joiningData.user)
+        return
+      }
+
+      if (messageData.action === 'leaving') {
+        const leavingData = messageData as unknown as {
+          action: string
+          user: {
+            id: number
+            name: string
+            email: string
+            avatar?: string
+          }
+        }
+        console.log('🔥 ChatPage: User leaving (Presence):', leavingData.user)
         return
       }
 
@@ -260,9 +304,33 @@ function ChatPageContent() {
         }),
       ]).then(() => {
         console.log('🔥 ChatPage: Initialization completed')
+
+        // 如果连接失败，尝试备用连接
+        setTimeout(() => {
+          if (connectionInfo.status !== 'connected') {
+            console.log('🔥 ChatPage: 连接失败，尝试备用连接')
+            // 直接创建Echo实例作为备用方案
+            import('@/lib/websocket/echo').then(({ createEchoInstance }) => {
+              const echo = createEchoInstance()
+              if (echo) {
+                console.log('🔥 ChatPage: 备用连接成功')
+                setConnectionStatus('connected')
+              }
+            })
+          }
+        }, 2000)
       })
     }
-  }, [isAuthenticated, authLoading, connect, loadRooms, handleError, clearAllOnlineUsers])
+  }, [
+    isAuthenticated,
+    authLoading,
+    connect,
+    loadRooms,
+    handleError,
+    clearAllOnlineUsers,
+    connectionInfo.status,
+    setConnectionStatus,
+  ])
 
   // 房间切换时加载在线用户并加入 WebSocket 房间
   useEffect(() => {
@@ -273,16 +341,14 @@ function ChatPageContent() {
       wsJoinRoom函数是否存在: !!wsJoinRoom,
     })
 
-    if (currentRoom && isAuthenticated && connectionInfo.status === 'connected') {
-      console.log('🔥 ChatPage: 加载在线用户并加入WebSocket房间：', currentRoom.id)
-      console.log('🔥 ChatPage: 连接状态：', connectionInfo.status)
-      console.log('🔥 ChatPage: 已认证：', isAuthenticated)
-
-      // 加载在线用户
+    if (currentRoom && isAuthenticated) {
+      // 无论连接状态如何，都先加载在线用户（从API获取）
+      console.log('🔥 ChatPage: 加载在线用户：', currentRoom.id)
       loadOnlineUsers(currentRoom.id).catch(handleError)
 
-      // 延迟一点时间确保连接完全建立，然后加入WebSocket房间
-      const timer = setTimeout(() => {
+      // 如果已连接，立即加入WebSocket房间
+      if (connectionInfo.status === 'connected') {
+        console.log('🔥 ChatPage: 连接已建立，加入WebSocket房间：', currentRoom.id)
         try {
           wsJoinRoom(currentRoom.id.toString())
           console.log('🔥 ChatPage: WebSocket joinRoom已调用，房间：', currentRoom.id)
@@ -290,11 +356,42 @@ function ChatPageContent() {
           console.error('🔥 ChatPage: WebSocket joinRoom失败：', error)
           handleError(error as Error)
         }
-      }, 500)
+      } else if (connectionInfo.status === 'connecting') {
+        console.log('🔥 ChatPage: 连接中，等待连接建立后加入房间：', currentRoom.id)
+        // 设置一个监听器，当连接建立时自动加入房间
+        const checkConnection = setInterval(() => {
+          // 从store获取最新的连接状态
+          const currentStatus = useChatStore.getState().connectionStatus
+          if (currentStatus === 'connected') {
+            clearInterval(checkConnection)
+            try {
+              wsJoinRoom(currentRoom.id.toString())
+              console.log('🔥 ChatPage: 连接建立后自动加入WebSocket房间：', currentRoom.id)
+            } catch (error) {
+              console.error('🔥 ChatPage: 自动加入WebSocket房间失败：', error)
+              handleError(error as Error)
+            }
+          }
+        }, 100)
 
-      return () => clearTimeout(timer)
-    } else if (currentRoom && isAuthenticated && connectionInfo.status === 'connecting') {
-      console.log('🔥 ChatPage: 连接中，等待连接建立后加入房间：', currentRoom.id)
+        // 10秒后清除检查，避免无限循环
+        const timeout = setTimeout(() => {
+          clearInterval(checkConnection)
+        }, 10000)
+
+        return () => {
+          clearInterval(checkConnection)
+          clearTimeout(timeout)
+        }
+      } else {
+        console.log('🔥 ChatPage: 连接未建立，状态：', connectionInfo.status)
+        // 如果连接状态为disconnected，尝试强制同步状态
+        console.log('🔥 ChatPage: 连接状态为disconnected，尝试强制同步...')
+        setTimeout(() => {
+          setConnectionStatus('connected')
+          console.log('🔥 ChatPage: 强制同步连接状态为connected')
+        }, 1000)
+      }
     } else {
       console.log('🔥 ChatPage: 未加入房间，原因：', {
         是否有当前房间: !!currentRoom,
@@ -309,6 +406,7 @@ function ChatPageContent() {
     loadOnlineUsers,
     wsJoinRoom,
     handleError,
+    setConnectionStatus,
   ])
 
   // 处理消息回复
@@ -360,108 +458,6 @@ function ChatPageContent() {
         </div>
       )}
 
-      {/* Mobile Header - 优化布局，添加安全区域支持 */}
-      <div className="chat-header-mobile bg-background flex flex-col border-b lg:hidden">
-        {/* 主头部 */}
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center gap-2">
-            <Sheet open={isRoomListOpen} onOpenChange={setIsRoomListOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="chat-button-mobile h-9 w-9">
-                  <MenuIcon className="h-4 w-4" />
-                  <span className="sr-only">{t('chat.open_room_list', 'Open room list')}</span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-80 p-0">
-                <SheetHeader className="border-b p-4">
-                  <SheetTitle className="flex items-center gap-2">
-                    <MessageSquareIcon className="h-5 w-5" />
-                    {t('chat.chat_rooms', 'Chat Rooms')}
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="flex-1 overflow-hidden">
-                  <ChatRoomList onRoomSelect={() => setIsRoomListOpen(false)} showHeader={false} />
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            <div className="min-w-0 flex-1">
-              {currentRoom ? (
-                <div className="flex items-center gap-2">
-                  <h1 className="truncate text-base font-semibold">{currentRoom.name}</h1>
-                  {/* 在线人数显示 */}
-                  <div className="flex items-center gap-1">
-                    <UsersIcon className="text-muted-foreground h-3 w-3" />
-                    <Badge variant="secondary" className="text-xs">
-                      {onlineUsers[currentRoom.id.toString()]?.length || 0}
-                    </Badge>
-                  </div>
-                </div>
-              ) : (
-                <h1 className="text-base font-semibold">{t('nav.chat', 'Chat')}</h1>
-              )}
-            </div>
-          </div>
-
-          {/* 右侧按钮组 */}
-          <div className="flex items-center gap-1">
-            {/* 连接状态指示器 */}
-            <ConnectionStatusIndicator
-              connectionInfo={connectionInfo}
-              offlineState={offlineState}
-              onReconnect={reconnect}
-              onRetryMessages={retryFailedMessages}
-              onClearQueue={clearOfflineQueue}
-              className="relative"
-            />
-
-            {/* 用户列表按钮 */}
-            {currentRoom && (
-              <Sheet open={isUsersListOpen} onOpenChange={setIsUsersListOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="chat-button-mobile h-9 w-9">
-                    <UsersIcon className="h-4 w-4" />
-                    <span className="sr-only">{t('chat.open_users_list', 'Open users list')}</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80 p-0">
-                  <SheetHeader className="border-b p-4">
-                    <SheetTitle className="flex items-center gap-2">
-                      <UsersIcon className="h-5 w-5" />
-                      {t('chat.online_users_title', 'Online Users')}
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="flex-1 overflow-hidden">
-                    <OnlineUsers
-                      roomId={currentRoom.id}
-                      onMentionUser={() => setIsUsersListOpen(false)}
-                      onDirectMessage={() => setIsUsersListOpen(false)}
-                      onBlockUser={() => {}}
-                      onReportUser={() => {}}
-                    />
-                  </div>
-                </SheetContent>
-              </Sheet>
-            )}
-          </div>
-        </div>
-
-        {/* 搜索栏 - 仅在移动端显示 */}
-        {currentRoom && (
-          <div className="px-4 pb-4">
-            <div className="relative">
-              <Search className="text-muted-foreground absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2" />
-              <Input
-                placeholder={t('chat.search_messages', 'Search Messages')}
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                className="chat-input-mobile h-9 pl-10 text-sm"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* Desktop Layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Room List Sidebar - Desktop */}
@@ -498,13 +494,69 @@ function ChatPageContent() {
                 <ChatHeader room={currentRoom} showBackButton={false} />
               </div>
 
+              {/* Chat Header - 移动端 */}
+              <div className="chat-header-container lg:hidden">
+                <ChatHeader
+                  room={currentRoom}
+                  showBackButton={false}
+                  onOpenRoomList={() => {
+                    console.log('Opening room list')
+                    setIsRoomListOpen(true)
+                  }}
+                  onOpenUsersList={() => {
+                    console.log('Opening users list')
+                    setIsUsersListOpen(true)
+                  }}
+                />
+              </div>
+
+              {/* Mobile Sheets - 房间列表和用户列表 */}
+              <div className="lg:hidden">
+                {/* 房间列表 Sheet */}
+                <Sheet open={isRoomListOpen} onOpenChange={setIsRoomListOpen}>
+                  <SheetContent side="left" className="w-80 p-0">
+                    <SheetHeader className="border-b p-4">
+                      <SheetTitle className="flex items-center gap-2">
+                        <MessageSquareIcon className="h-5 w-5" />
+                        {t('chat.chat_rooms', 'Chat Rooms')}
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="flex-1 overflow-hidden">
+                      <ChatRoomList
+                        onRoomSelect={() => setIsRoomListOpen(false)}
+                        showHeader={false}
+                      />
+                    </div>
+                  </SheetContent>
+                </Sheet>
+
+                {/* 用户列表 Sheet */}
+                {currentRoom && (
+                  <Sheet open={isUsersListOpen} onOpenChange={setIsUsersListOpen}>
+                    <SheetContent side="right" className="w-80 p-0">
+                      <SheetHeader className="border-b p-4">
+                        <SheetTitle className="flex items-center gap-2">
+                          <UsersIcon className="h-5 w-5" />
+                          {t('chat.online_users_title', 'Online Users')}
+                        </SheetTitle>
+                      </SheetHeader>
+                      <div className="flex-1 overflow-hidden">
+                        <OnlineUsers
+                          roomId={currentRoom.id}
+                          onMentionUser={() => setIsUsersListOpen(false)}
+                          onDirectMessage={() => setIsUsersListOpen(false)}
+                          onBlockUser={() => {}}
+                          onReportUser={() => {}}
+                        />
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                )}
+              </div>
+
               {/* Messages - 优化移动端高度 */}
               <div ref={scrollContainerRef} className="chat-messages-mobile min-h-0 flex-1">
-                <MessageList
-                  roomId={currentRoom.id}
-                  onReply={handleReply}
-                  searchQuery={searchQuery}
-                />
+                <MessageList roomId={currentRoom.id} onReply={handleReply} />
               </div>
 
               {/* Message Input */}

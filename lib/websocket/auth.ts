@@ -63,6 +63,8 @@ class WebSocketAuthManager {
   public setToken(token: string): void {
     if (typeof window === 'undefined') return
 
+    console.log('WebSocket 认证: 设置新token，长度:', token.length)
+
     // 更新 Zustand store
     try {
       const authStorage = localStorage.getItem('auth-storage')
@@ -70,6 +72,7 @@ class WebSocketAuthManager {
         const authData = JSON.parse(authStorage)
         authData.state = { ...authData.state, token }
         localStorage.setItem('auth-storage', JSON.stringify(authData))
+        console.log('WebSocket 认证: 已更新localStorage中的token')
       }
     } catch (error) {
       console.warn('更新 auth storage 失败:', error)

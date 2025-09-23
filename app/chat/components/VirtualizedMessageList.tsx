@@ -314,7 +314,19 @@ export function VirtualizedMessageList({
           setTimeout(() => scrollToEnd(), SCROLL_DELAY)
         })
         .catch(error => {
-          console.error('VirtualizedMessageList: 房间', roomId, '的消息加载失败:', error)
+          // 安全地处理错误，避免直接输出复杂对象
+          if (error instanceof Error) {
+            console.error('VirtualizedMessageList: 房间', roomId, '的消息加载失败:', error.message)
+          } else if (error && typeof error === 'object') {
+            console.error('VirtualizedMessageList: 房间', roomId, '的消息加载失败:', {
+              type: typeof error,
+              message: error.message || 'Unknown error',
+              status: error.status || 'No status',
+              code: error.code || 'No code',
+            })
+          } else {
+            console.error('VirtualizedMessageList: 房间', roomId, '的消息加载失败:', String(error))
+          }
         })
     }
   }, [roomId, loadMessages, scrollToEnd])

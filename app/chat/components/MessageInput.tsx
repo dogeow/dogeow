@@ -715,6 +715,26 @@ export function MessageInput({
     )
   }, [message, uploadedFiles.length, isSending, isConnected, checkMuteStatus])
 
+  // 备用连接机制
+  useEffect(() => {
+    if (!isConnected) {
+      const timer = setTimeout(async () => {
+        try {
+          const { createEchoInstance } = await import('@/lib/websocket/echo')
+          const echo = createEchoInstance()
+          if (echo) {
+            // 刷新页面以更新连接状态
+            window.location.reload()
+          }
+        } catch (error) {
+          console.error('备用连接失败:', error)
+        }
+      }, 3000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [isConnected])
+
   return (
     <div
       className={`bg-background safe-area-inset-bottom relative border-t p-3 sm:p-4 ${className}`}

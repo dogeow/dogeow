@@ -40,11 +40,18 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   selectedCategory,
   className,
 }) => {
-  const { categories, createCategory } = useItemStore()
+  const { categories, createCategory, fetchCategories } = useItemStore()
 
   // 当前选择的主分类和子分类
   const [selectedParentId, setSelectedParentId] = useState<string>('')
   const [selectedChildId, setSelectedChildId] = useState<string>('')
+
+  // 初始化分类数据
+  useEffect(() => {
+    if (categories.length === 0) {
+      fetchCategories()
+    }
+  }, [categories.length, fetchCategories])
 
   // 将扁平的分类数据转换为树形结构
   const categoryTree = useMemo(() => {

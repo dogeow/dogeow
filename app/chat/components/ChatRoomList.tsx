@@ -146,7 +146,7 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
       // 先设置当前房间，确保UI立即响应
       setCurrentRoom(room)
 
-      // 然后加入房间
+      // 然后调用 joinRoom API
       await joinRoom(room.id)
 
       // Add to recent rooms

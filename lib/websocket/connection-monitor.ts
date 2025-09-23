@@ -62,9 +62,12 @@ class WebSocketConnectionMonitor {
   }
 
   public initializeWithEcho(echo: Echo<'reverb'>) {
+    console.log('🔥 ConnectionMonitor: 开始初始化，Echo实例:', !!echo)
     if (echo && echo.connector && echo.connector.pusher) {
+      console.log('🔥 ConnectionMonitor: Echo实例有效，开始绑定事件')
       // Pusher 连接事件
       echo.connector.pusher.connection.bind('connected', () => {
+        console.log('🔥 ConnectionMonitor: 连接成功事件触发')
         this.updateStatus('connected')
         this.lastConnected = new Date()
         this.reconnectAttempts = 0
@@ -72,13 +75,16 @@ class WebSocketConnectionMonitor {
         this.isRetrying = false
         this.errorHandler.resetRetryCount()
         this.clearReconnectTimeout()
+        console.log('🔥 ConnectionMonitor: 状态已更新为connected')
       })
 
       echo.connector.pusher.connection.bind('connecting', () => {
+        console.log('🔥 ConnectionMonitor: 正在连接事件触发')
         this.updateStatus('connecting')
       })
 
       echo.connector.pusher.connection.bind('disconnected', () => {
+        console.log('🔥 ConnectionMonitor: 连接断开事件触发')
         this.updateStatus('disconnected')
         // 暂时禁用自动重连以避免循环
         // this.scheduleReconnect()
