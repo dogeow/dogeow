@@ -9,7 +9,7 @@ import type { ChatRoom } from '../types'
 interface MobileSheetsProps {
   isRoomListOpen: boolean
   isUsersListOpen: boolean
-  currentRoom?: ChatRoom
+  currentRoom?: ChatRoom | null
   onRoomListOpenChange: (open: boolean) => void
   onUsersListOpenChange: (open: boolean) => void
   onMentionUser?: () => void

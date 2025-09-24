@@ -2,11 +2,11 @@
 
 import { useCallback, useMemo } from 'react'
 import ErrorFallback from './ErrorFallback'
-import type { ChatError } from './ChatErrorBoundary'
+import type { ChatApiError } from '@/lib/api/chat-error-handler'
 
 interface ChatErrorHandlerProps {
-  storeError?: ChatError
-  componentError?: ChatError
+  storeError?: ChatApiError | null
+  componentError?: ChatApiError | null
   retryLastAction: () => void
   clearError: () => void
   clearComponentError: () => void

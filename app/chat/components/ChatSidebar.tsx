@@ -4,13 +4,14 @@ import { UsersIcon, MessageSquareIcon } from 'lucide-react'
 import { ChatRoomList, OnlineUsers } from './'
 import ConnectionStatusIndicator from './ConnectionStatusIndicator'
 import { useTranslation } from '@/hooks/useTranslation'
-import type { ConnectionInfo, OfflineState } from '@/hooks/useChatWebSocket'
-import type { ChatRoom } from './types'
+import type { ConnectionMonitor } from '@/lib/websocket'
+import type { OfflineState } from '@/lib/websocket/offline-manager'
+import type { ChatRoom } from '../types'
 
 interface ChatSidebarProps {
   type: 'rooms' | 'users'
-  currentRoom?: ChatRoom
-  connectionInfo: ConnectionInfo
+  currentRoom?: ChatRoom | null
+  connectionInfo: ConnectionMonitor
   offlineState: OfflineState
   onReconnect: () => void
   onRetryMessages: () => void
