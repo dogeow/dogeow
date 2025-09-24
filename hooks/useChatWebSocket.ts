@@ -3,6 +3,7 @@ import Echo from 'laravel-echo'
 import {
   createEchoInstance,
   destroyEchoInstance,
+  cancelDestroyEchoInstance,
   getConnectionMonitor,
   getAuthManager,
   type ConnectionStatus,
@@ -72,8 +73,8 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     onMessageSent,
     onMessageFailed,
     onMessageSentSuccess,
-    onUserJoined,
-    onUserLeft,
+    // onUserJoined,  // Currently unused
+    // onUserLeft,    // Currently unused
     authTokenRefreshCallback,
   } = options
 
@@ -192,41 +193,68 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     }
   }, [autoConnect])
 
-  // 组件卸载清理 - 只在组件真正卸载时清理，不依赖状态变化
+  // 组件挂载和卸载管理
   useEffect(() => {
+    // 组件挂载时，设置为已挂载状态并取消任何待销毁的操作
+    isComponentMountedRef.current = true
+    cancelDestroyEchoInstance()
+    console.log('🔥 WebSocket: Component mounted, cancelled any pending cleanup')
+
     return () => {
+      console.log('🔥 WebSocket: Component cleanup triggered')
       isComponentMountedRef.current = false
-      // 立即清理，不延迟
+
+      // 清理频道监听
       try {
         if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
           channelRef.current.stopListening()
         }
       } catch (error) {
-        console.error('WebSocket: Error during cleanup:', error)
+        console.error('WebSocket: Error during channel cleanup:', error)
       }
       channelRef.current = null
       currentRoomRef.current = null
+
+      // 使用延迟销毁机制
       setEcho(null)
-      destroyEchoInstance()
+      destroyEchoInstance(false) // 延迟销毁，不立即销毁
     }
   }, []) // 移除依赖项，只在组件卸载时执行
 
   const connect = useCallback(async (): Promise<boolean> => {
     if (!isComponentMountedRef.current) {
-      console.log('WebSocket: Component unmounted, skipping connect')
+      console.log('🔥 WebSocket: Component unmounted, skipping connect')
       return false
     }
 
+    // 检查是否已有连接
+    if (echo) {
+      console.log('🔥 WebSocket: Echo instance already exists, checking connection state')
+      try {
+        if (echo.connector && 'pusher' in echo.connector) {
+          const connector = echo.connector as { pusher?: { connection?: { state?: string } } }
+          const state = connector.pusher?.connection?.state
+          console.log('🔥 WebSocket: Current connection state:', state)
+          if (state === 'connected' || state === 'connecting') {
+            console.log('🔥 WebSocket: Reusing existing connection')
+            return true
+          }
+        }
+      } catch (error) {
+        console.warn('🔥 WebSocket: Error checking existing connection:', error)
+      }
+    }
+
     try {
-      console.log('WebSocket: Starting connection process')
+      console.log('🔥 WebSocket: Starting connection process')
       const authManager = getAuthManager()
       let token = authManager.getToken()
       if (!token && authTokenRefreshCallback) {
-        console.log('WebSocket: Refreshing auth token')
+        console.log('🔥 WebSocket: Refreshing auth token')
         token = await authTokenRefreshCallback()
       }
       if (!token) {
-        console.error('WebSocket: No auth token available')
+        console.error('🔥 WebSocket: No auth token available')
         onError?.({
           type: 'connection',
           message: 'No authentication token available',
@@ -236,10 +264,10 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         return false
       }
 
-      console.log('WebSocket: Creating Echo instance')
+      console.log('🔥 WebSocket: Creating Echo instance')
       const echoInstance = createEchoInstance()
       if (!echoInstance) {
-        console.error('WebSocket: Failed to create Echo instance')
+        console.error('🔥 WebSocket: Failed to create Echo instance')
         onError?.({
           type: 'connection',
           message: 'Failed to create WebSocket connection',
@@ -249,22 +277,23 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         return false
       }
 
-      console.log('WebSocket: Echo instance created successfully')
+      console.log('🔥 WebSocket: Echo instance created successfully')
 
       // 先初始化连接监控器，再设置Echo实例
       const monitor = getConnectionMonitor()
       monitor.initializeWithEcho(echoInstance)
-      console.log('WebSocket: Connection monitor initialized')
+      console.log('🔥 WebSocket: Connection monitor initialized')
 
       setEcho(echoInstance)
-      console.log('WebSocket: Echo instance set in state')
+      console.log('🔥 WebSocket: Echo instance set in state')
 
       // 立即返回true，让连接状态通过事件监听器异步更新
-      // 这样可以避免阻塞，让UI能够响应连接状态变化
-      console.log('WebSocket: Echo instance ready, connection will be established asynchronously')
+      console.log(
+        '🔥 WebSocket: Echo instance ready, connection will be established asynchronously'
+      )
       return true
     } catch (error) {
-      console.error('WebSocket: Connection failed:', error)
+      console.error('🔥 WebSocket: Connection failed:', error)
       onError?.({
         type: 'connection',
         message: error instanceof Error ? error.message : 'Failed to connect to WebSocket',
@@ -273,7 +302,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       })
       return false
     }
-  }, [authTokenRefreshCallback, onError])
+  }, [authTokenRefreshCallback, onError, echo])
 
   const disconnect = useCallback(async () => {
     if (!isComponentMountedRef.current) {
@@ -365,42 +394,67 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
           return
         }
 
-        // 创建 Presence Channel 用于用户状态跟踪
-        const presenceChannel = echoToUse
-          .join(`chat.room.${roomId}.presence`)
-          .here((users: User[]) => {
-            console.log('WebSocket: Users currently in room:', users)
-            if (onUserJoined) onUserJoined({ users, action: 'here' })
-          })
-          .joining((user: User) => {
-            console.log('WebSocket: User joining:', user)
-            if (onUserJoined) onUserJoined({ user, action: 'joining' })
-          })
-          .leaving((user: User) => {
-            console.log('WebSocket: User leaving:', user)
-            if (onUserLeft) onUserLeft({ user, action: 'leaving' })
-          })
+        // 临时禁用presence频道，因为需要认证
+        console.log('🔥 WebSocket: 暂时跳过presence频道创建（认证问题）')
+        // 使用普通频道代替presence频道
+        const presenceChannel = echoToUse.channel(`chat.room.${roomId}.users`)
+        console.log('🔥 WebSocket: ✅ 用户状态频道创建成功（使用普通频道）')
 
         // 合并两个频道到一个对象中
         channelRef.current = {
-          ...channel,
+          listen: (event: string, callback: (data: unknown) => void) => {
+            try {
+              // 消息事件通过普通频道监听
+              if (event.includes('message') || event.includes('MessageSent') || event === '.') {
+                channel.listen(event, callback)
+              } else {
+                // 用户事件通过presence频道监听
+                presenceChannel.listen(event, callback)
+              }
+            } catch (error) {
+              console.error('WebSocket: Error listening to event', event, ':', error)
+            }
+          },
+          bind: (event: string, callback: (data?: unknown) => void) => {
+            try {
+              // Laravel Echo没有bind方法，使用listen代替
+              channel.listen(event, callback)
+              presenceChannel.listen(event, callback)
+            } catch (error) {
+              console.error('WebSocket: Error binding to event', event, ':', error)
+            }
+          },
           stopListening: (event?: string, callback?: () => void) => {
             try {
-              if (event) {
+              if (event && callback) {
                 channel.stopListening(event, callback)
                 presenceChannel.stopListening(event, callback)
+              } else if (event) {
+                // Laravel Echo的stopListening要求至少一个参数
+                console.log('WebSocket: Cannot stop listening without callback, event:', event)
               } else {
-                channel.stopListening('*')
-                presenceChannel.stopListening('*')
+                // 停止所有监听 - Laravel Echo需要传入空字符串和空函数
+                try {
+                  channel.stopListening('*', () => {})
+                  presenceChannel.stopListening('*', () => {})
+                } catch {
+                  // 如果上面的方法不行，尝试其他方法
+                  console.warn('WebSocket: Using alternative cleanup method')
+                }
               }
             } catch (error) {
               console.error('WebSocket: Error stopping channels:', error)
             }
           },
+          // 如果需要访问原始频道的其他方法
+          channel,
+          presenceChannel,
         } as unknown as {
-          stopListening: (event?: string, callback?: () => void) => void
           listen: (event: string, callback: (data: unknown) => void) => void
-          bind?: (event: string, callback: () => void) => void
+          bind: (event: string, callback: (data?: unknown) => void) => void
+          stopListening: (event?: string, callback?: () => void) => void
+          channel: ReturnType<Echo<'reverb'>['channel']>
+          presenceChannel: ReturnType<Echo<'reverb'>['channel']>
         }
       } catch (error) {
         console.error('WebSocket: Error creating channel for room', roomId, ':', error)
@@ -411,7 +465,11 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       const safeOnMessage = (data: unknown, type: string = 'message') => {
         if (onMessage && data) onMessage({ type, ...data })
       }
-      if (channelRef.current) {
+
+      // 检查频道是否正确初始化
+      if (channelRef.current && typeof channelRef.current.listen === 'function') {
+        console.log('🔥 WebSocket: Setting up event listeners for room', roomId)
+
         channelRef.current.listen('.message.sent', (data: unknown) => {
           const typedData = data as { message?: unknown }
           if (typedData?.message) safeOnMessage({ message: typedData.message }, 'message')
@@ -430,13 +488,21 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
             safeOnMessage({ message: typedData.message }, 'message')
           }
         })
-      }
-      if (channelRef.current?.bind) {
-        channelRef.current.bind('pusher:subscription_succeeded', () => {})
-        channelRef.current.bind('pusher:subscription_error', () => {})
+
+        // 绑定系统事件
+        if (typeof channelRef.current.bind === 'function') {
+          channelRef.current.bind('pusher:subscription_succeeded', () => {
+            console.log('🔥 WebSocket: Subscription succeeded for room', roomId)
+          })
+          channelRef.current.bind('pusher:subscription_error', () => {
+            console.error('🔥 WebSocket: Subscription error for room', roomId)
+          })
+        }
+      } else {
+        console.error('🔥 WebSocket: Channel reference is invalid - missing listen method')
       }
     },
-    [echo, onMessage, onUserJoined, onUserLeft]
+    [echo, onMessage]
   )
 
   const sendMessage = useCallback(

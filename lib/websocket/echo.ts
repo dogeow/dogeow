@@ -26,9 +26,35 @@ export function createEchoInstance(): Echo<'reverb'> | null {
   const now = Date.now()
 
   // 防止短时间内重复创建（React strict mode 保护）
-  if (isCreating || (echoInstance && now - lastCreatedAt < 1000)) {
-    console.log('Echo: 跳过创建 - 正在创建或刚刚创建过')
+  if (isCreating) {
+    console.log('Echo: 跳过创建 - 正在创建中')
     return echoInstance!
+  }
+
+  // 检查现有实例是否可用
+  if (echoInstance && now - lastCreatedAt < 10000) {
+    console.log('Echo: 跳过创建 - 已有可用实例', {
+      hasExistingInstance: !!echoInstance,
+      timeSinceLastCreation: now - lastCreatedAt,
+      instanceType: typeof echoInstance,
+    })
+
+    // 检查连接状态
+    try {
+      if (echoInstance.connector && 'pusher' in echoInstance.connector) {
+        const connector = echoInstance.connector as { pusher?: { connection?: { state?: string } } }
+        const state = connector.pusher?.connection?.state
+        console.log('Echo: 现有实例连接状态:', state)
+        if (state === 'connected' || state === 'connecting') {
+          console.log('Echo: 复用现有连接实例')
+          return echoInstance
+        }
+      }
+    } catch (error) {
+      console.warn('Echo: 检查现有实例状态失败:', error)
+    }
+
+    return echoInstance
   }
 
   isCreating = true
@@ -84,7 +110,10 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     hasToken: !!authToken,
     tokenLength: authToken.length,
     tokenPrefix: authToken.substring(0, 10) + '...',
+    authHeader: config.auth?.headers?.Authorization ? 'Present' : 'Missing',
   })
+
+  // 认证端点诊断完成，无需继续测试
 
   // 添加环境变量调试信息
   console.log('Echo: 环境变量:', {
@@ -95,9 +124,24 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   })
 
-  // 先销毁已有实例
+  // 检查是否需要销毁已有实例
   if (echoInstance) {
-    console.log('Echo: 销毁已有实例')
+    console.log('Echo: 发现已有实例，检查是否需要重新创建')
+    // 如果已有实例且连接正常，直接返回
+    try {
+      if (echoInstance.connector && 'pusher' in echoInstance.connector) {
+        const connector = echoInstance.connector as { pusher?: { connection?: { state?: string } } }
+        if (connector.pusher?.connection?.state === 'connected') {
+          console.log('Echo: 已有实例连接正常，复用现有实例')
+          isCreating = false
+          return echoInstance
+        }
+      }
+    } catch (error) {
+      console.warn('Echo: 检查现有连接状态失败:', error)
+    }
+
+    console.log('Echo: 销毁已有实例并重新创建')
     destroyEchoInstance()
   }
 
@@ -184,16 +228,59 @@ export function createEchoInstance(): Echo<'reverb'> | null {
   }
 }
 
-export function destroyEchoInstance(): void {
-  if (echoInstance) {
-    console.log('Echo: 正在销毁 Echo 实例')
-    try {
-      echoInstance.disconnect()
-    } catch (error) {
-      console.warn('Echo: 断开连接时出错:', error)
+// 延迟销毁计时器
+let destroyTimer: NodeJS.Timeout | null = null
+
+export function destroyEchoInstance(immediate = false): void {
+  if (!echoInstance) {
+    console.log('Echo: 无实例需要销毁')
+    return
+  }
+
+  // 如果不是立即销毁，使用延迟机制
+  if (!immediate) {
+    console.log('Echo: 延迟销毁 Echo 实例 (500ms)')
+
+    // 清除之前的定时器
+    if (destroyTimer) {
+      clearTimeout(destroyTimer)
     }
-    echoInstance = null
-    ;(window as { Echo?: unknown }).Echo = undefined
+
+    destroyTimer = setTimeout(() => {
+      if (echoInstance) {
+        console.log('Echo: 执行延迟销毁')
+        performDestroy()
+      } else {
+        console.log('Echo: 实例已被清理，跳过销毁')
+      }
+      destroyTimer = null
+    }, 500)
+    return
+  }
+
+  // 立即销毁
+  performDestroy()
+}
+
+function performDestroy(): void {
+  if (!echoInstance) return
+
+  console.log('Echo: 正在销毁 Echo 实例')
+  try {
+    echoInstance.disconnect()
+  } catch (error) {
+    console.warn('Echo: 断开连接时出错:', error)
+  }
+  echoInstance = null
+  ;(window as { Echo?: unknown }).Echo = undefined
+}
+
+// 取消延迟销毁
+export function cancelDestroyEchoInstance(): void {
+  if (destroyTimer) {
+    console.log('Echo: 取消延迟销毁')
+    clearTimeout(destroyTimer)
+    destroyTimer = null
   }
 }
 

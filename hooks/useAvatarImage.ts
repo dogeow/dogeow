@@ -12,9 +12,6 @@ export function useAvatarImage({ seed, fallbackInitials }: UseAvatarImageProps) 
   // Generate avatar URL
   const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(seed)}`
 
-  // Debug logging
-  console.log('Avatar URL generated:', avatarUrl)
-
   // Alternative avatar services as fallbacks
   const fallbackUrls = [
     `https://ui-avatars.com/api/?name=${encodeURIComponent(fallbackInitials)}&background=random&color=fff&size=128`,

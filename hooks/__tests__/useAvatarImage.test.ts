@@ -199,15 +199,6 @@ describe('useAvatarImage', () => {
     )
   })
 
-  it('should log avatar URL generation', () => {
-    renderHook(() => useAvatarImage(defaultProps))
-
-    expect(console.log).toHaveBeenCalledWith(
-      'Avatar URL generated:',
-      'https://api.dicebear.com/7.x/avataaars/svg?seed=test-user'
-    )
-  })
-
   it('should handle empty seed', () => {
     const { result } = renderHook(() =>
       useAvatarImage({

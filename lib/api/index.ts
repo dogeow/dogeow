@@ -279,6 +279,15 @@ export async function apiRequest<T>(
   }
 
   try {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🚀 Making API request:', {
+        url,
+        method,
+        headers: { ...headers, Authorization: headers.Authorization ? '[HIDDEN]' : undefined },
+        hasData: !!data,
+      })
+    }
+
     const { controller, timeoutId, timeoutDuration } = createTimeoutController(isFormData)
     requestOptions.signal = controller.signal
 
@@ -293,6 +302,15 @@ export async function apiRequest<T>(
     const response = (await Promise.race([fetch(url, requestOptions), timeoutPromise])) as Response
 
     clearTimeout(timeoutId)
+
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📥 API response:', {
+        url,
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type'),
+      })
+    }
 
     return await handleResponse<T>(response)
   } catch (error) {
@@ -358,8 +376,13 @@ export async function apiRequest<T>(
 
 // HTTP方法包装器
 export const get = <T>(endpoint: string): Promise<T> => {
-  if (process.env.NODE_ENV !== 'production') {
-    console.log('[SWR GET]', endpoint)
+  if (process.env.NODE_ENV === 'development') {
+    console.log('🔗 API GET Request:', {
+      endpoint,
+      fullUrl: `${API_URL}/api/${endpoint.startsWith('/') ? endpoint.substring(1) : endpoint}`,
+      hasToken: !!useAuthStore.getState().token,
+      tokenPrefix: useAuthStore.getState().token?.substring(0, 10) + '...',
+    })
   }
   return apiRequest<T>(endpoint, 'GET')
 }

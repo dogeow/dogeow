@@ -1,5 +1,10 @@
 // Main WebSocket utilities export
-export { createEchoInstance, getEchoInstance, destroyEchoInstance } from './echo'
+export {
+  createEchoInstance,
+  getEchoInstance,
+  destroyEchoInstance,
+  cancelDestroyEchoInstance,
+} from './echo'
 
 export {
   getConnectionMonitor,

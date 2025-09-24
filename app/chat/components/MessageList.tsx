@@ -136,12 +136,7 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
   // 使用 useMemo 来获取当前房间的消息，避免无限循环
   const roomMessages = useMemo(() => {
     const roomMessages = messages[roomKey] || []
-    console.log(
-      '🔥 MessageList: Getting messages for room',
-      roomKey,
-      '- Messages count:',
-      roomMessages.length
-    )
+
     return roomMessages
   }, [messages, roomKey])
 
@@ -253,7 +248,6 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
   // Load messages on mount
   useEffect(() => {
     if (roomId) {
-      console.log('🔥 MessageList: Loading messages for room', roomId)
       stableLoadMessages(roomId).catch(error => {
         // 安全地处理错误，避免直接输出复杂对象
         if (error instanceof Error) {

@@ -83,14 +83,6 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
 
   // Filter and search rooms
   const filteredRooms = useMemo(() => {
-    console.log('🔥 ChatRoomList: Filtering rooms:', {
-      rooms: rooms,
-      roomsLength: rooms?.length,
-      isArray: Array.isArray(rooms),
-      searchQuery,
-      filterType,
-    })
-
     // Ensure rooms is an array
     if (!Array.isArray(rooms)) {
       console.warn('ChatRoomList: rooms is not an array:', rooms)
@@ -276,16 +268,6 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
 
       {/* Room List */}
       <div className="flex-1 overflow-y-auto">
-        {(() => {
-          console.log('🔥 ChatRoomList: Rendering decision:', {
-            isLoading,
-            roomsLength: rooms.length,
-            filteredRoomsLength: filteredRooms.length,
-            showSkeleton: isLoading && rooms.length === 0,
-            showEmpty: filteredRooms.length === 0,
-          })
-          return null
-        })()}
         {isLoading && rooms.length === 0 ? (
           <div className="space-y-3 p-4">
             {Array.from({ length: 5 }).map((_, i) => (
