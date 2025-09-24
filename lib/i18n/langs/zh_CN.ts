@@ -371,6 +371,17 @@ export const zh_CN = {
   'chat.no_messages': '暂无消息',
   'chat.be_first_to_start': '成为第一个开始对话的人！',
 
+  // Chat UI - Message Input
+  'chat.create_new_room': '创建新聊天房间',
+  'chat.message_input': '消息输入',
+  'chat.upload_file': '上传文件',
+  'chat.select_emoji': '选择表情',
+  'chat.emoji_picker': '表情选择器',
+  'chat.insert_emoji': '插入表情',
+  'chat.send_message': '发送消息',
+  'chat.sending': '发送中...',
+  'chat.file_input': '文件输入',
+
   // Chat Preferences Dialog
   'chat.preferences.title': '聊天偏好设置',
   'chat.preferences.description': '自定义您的聊天体验和通知设置',

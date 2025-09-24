@@ -364,6 +364,17 @@ export const zh_TW = {
   'chat.file_upload_coming_soon': '檔案上傳功能即將推出！',
   'chat.failed_to_send': '發送訊息失敗',
 
+  // Chat UI - Message Input
+  'chat.create_new_room': '創建新聊天房間',
+  'chat.message_input': '訊息輸入',
+  'chat.upload_file': '上傳檔案',
+  'chat.select_emoji': '選擇表情',
+  'chat.emoji_picker': '表情選擇器',
+  'chat.insert_emoji': '插入表情',
+  'chat.send_message': '發送訊息',
+  'chat.sending': '發送中...',
+  'chat.file_input': '檔案輸入',
+
   // Chat Preferences Dialog
   'chat.preferences.title': '聊天偏好設定',
   'chat.preferences.description': '自定義您的聊天體驗和通知設定',

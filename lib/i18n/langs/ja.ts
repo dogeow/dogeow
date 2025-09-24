@@ -300,6 +300,18 @@ export const ja = {
   'chat.no_room_selected': 'ルームが選択されていません',
   'chat.file_upload_coming_soon': 'ファイルアップロード機能が近日公開予定です！',
   'chat.failed_to_send': 'メッセージの送信に失敗しました',
+
+  // Chat UI - Message Input
+  'chat.create_new_room': '新しいチャットルームを作成',
+  'chat.message_input': 'メッセージ入力',
+  'chat.upload_file': 'ファイルをアップロード',
+  'chat.select_emoji': '絵文字を選択',
+  'chat.emoji_picker': '絵文字ピッカー',
+  'chat.insert_emoji': '絵文字を挿入',
+  'chat.send_message': 'メッセージを送信',
+  'chat.sending': '送信中...',
+  'chat.file_input': 'ファイル入力',
+
   'chat.restart': '再起動',
   'chat.shutdown': 'シャットダウン',
   'chat.boot': '起動',

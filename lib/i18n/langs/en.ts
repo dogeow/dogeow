@@ -376,6 +376,17 @@ export const en = {
   'chat.file_upload_coming_soon': 'File upload feature coming soon!',
   'chat.failed_to_send': 'Failed to send message',
 
+  // Chat UI - Message Input
+  'chat.create_new_room': 'Create New Chat Room',
+  'chat.message_input': 'Message input',
+  'chat.upload_file': 'Upload file',
+  'chat.select_emoji': 'Select emoji',
+  'chat.emoji_picker': 'Emoji picker',
+  'chat.insert_emoji': 'Insert emoji',
+  'chat.send_message': 'Send message',
+  'chat.sending': 'Sending...',
+  'chat.file_input': 'File input',
+
   // Chat Preferences Dialog
   'chat.preferences.title': 'Chat Preferences',
   'chat.preferences.description': 'Customize your chat experience and notification settings',

@@ -138,7 +138,11 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
   }, [rooms, searchQuery, filterType, favoriteRooms, recentRooms, getRoomUnreadCount])
 
   const handleRoomSelect = async (room: ChatRoom) => {
-    if (currentRoom?.id === room.id) return
+    if (currentRoom?.id === room.id) {
+      // 如果点击的是当前房间，也要关闭侧边栏
+      onRoomSelect?.()
+      return
+    }
 
     try {
       console.log('🔥 ChatRoomList: Selecting room:', room)
@@ -153,13 +157,13 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
       const newRecent = [room.id, ...recentRooms.filter(id => id !== room.id)].slice(0, 10)
       setRecentRooms(newRecent)
       localStorage.setItem('chat-recent-rooms', JSON.stringify(newRecent))
-
-      // Call the callback for mobile sheet closing
-      onRoomSelect?.()
     } catch (error) {
       console.error('Failed to join room:', error)
       // 如果加入房间失败，清除当前房间选择
       setCurrentRoom(null)
+    } finally {
+      // 无论成功还是失败，都要关闭侧边栏（移动端）
+      onRoomSelect?.()
     }
   }
 
