@@ -23,3 +23,10 @@ export {
   ServerErrorFallback,
 } from './ErrorFallback'
 export { default as ChatErrorBoundary, useChatErrorHandler } from './ChatErrorBoundary'
+
+// 新增的组件
+export { default as ChatSidebar } from './ChatSidebar'
+export { default as MobileSheets } from './MobileSheets'
+export { default as ChatErrorHandler } from './ChatErrorHandler'
+export { default as ChatWelcome } from './ChatWelcome'
+export { ChatPageSkeleton, RoomListSkeleton } from './ChatSkeleton'

@@ -78,3 +78,47 @@ export interface ChatRoomState {
 
 // Type alias for backward compatibility
 export type Message = ChatMessage
+
+// WebSocket 消息处理相关类型
+export interface MessageData {
+  type: string
+  message?: ChatMessage
+  user_id?: number
+  room_id?: number
+  user_name?: string
+  online_count?: number
+  action?: string
+  timestamp?: string
+  muted_until?: string
+  reason?: string
+  [key: string]: unknown
+}
+
+export interface MuteData extends MessageData {
+  user_id: number
+  room_id: number
+  muted_until?: string
+  reason?: string
+}
+
+export interface RoomUserEventData extends MessageData {
+  room_id: number
+  user_id: number
+  user_name: string
+  online_count: number
+  action: string
+  timestamp: string
+}
+
+export interface PresenceUser {
+  id: number
+  name: string
+  email: string
+  avatar?: string
+}
+
+export interface PresenceData {
+  action: string
+  users: PresenceUser[]
+  user?: PresenceUser
+}
