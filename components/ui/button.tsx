@@ -1,7 +1,7 @@
 import * as React from 'react'
 import { Slot } from '@radix-ui/react-slot'
 import { cva, type VariantProps } from 'class-variance-authority'
-
+import { LoadingSpinner } from './loading-spinner'
 import { cn } from '@/lib/helpers'
 
 const buttonVariants = cva(
@@ -32,24 +32,36 @@ const buttonVariants = cva(
   }
 )
 
+interface ButtonProps extends React.ComponentProps<'button'>, VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+  loading?: boolean
+  loadingText?: string
+}
+
 function Button({
   className,
   variant,
   size,
   asChild = false,
+  loading = false,
+  loadingText,
+  children,
+  disabled,
   ...props
-}: React.ComponentProps<'button'> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
+}: ButtonProps) {
   const Comp = asChild ? Slot : 'button'
+  const isDisabled = disabled || loading
 
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={isDisabled}
       {...props}
-    />
+    >
+      {loading && <LoadingSpinner size="sm" className="mr-2" aria-label="加载中" />}
+      {loading && loadingText ? loadingText : children}
+    </Comp>
   )
 }
 

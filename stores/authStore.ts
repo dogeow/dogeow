@@ -3,19 +3,41 @@ import { persist, createJSONStorage } from 'zustand/middleware'
 import type { User, AuthResponse } from '../app'
 import { post } from '@/lib/api'
 
+// 常量定义
+const AUTH_TOKEN_KEY = 'auth-token'
+const STORAGE_KEY = 'auth-storage'
+
 interface AuthState {
-  user: User | null
-  token: string | null
-  loading: boolean
-  isAuthenticated: boolean
+  readonly user: User | null
+  readonly token: string | null
+  readonly loading: boolean
+  readonly isAuthenticated: boolean
 
   // 操作方法
   setLoading: (loading: boolean) => void
   login: (email: string, password: string) => Promise<AuthResponse>
-  logout: () => void
+  logout: () => Promise<void>
   setUser: (user: User | null) => void
-  setToken: (token: string | null) => void
+  setToken: (token: string | null) => Promise<void>
   getToken: () => string | null
+}
+
+// WebSocket 认证管理器同步
+const syncWithWebSocketAuth = async (token: string | null): Promise<void> => {
+  if (typeof window === 'undefined') return
+
+  try {
+    const { getAuthManager } = await import('@/lib/websocket/auth')
+    const authManager = getAuthManager()
+
+    if (token) {
+      authManager.setToken(token)
+    } else {
+      authManager.removeToken()
+    }
+  } catch (error) {
+    console.warn('与WebSocket认证管理器同步失败:', error)
+  }
 }
 
 // 创建持久化的认证存储
@@ -31,37 +53,20 @@ const useAuthStore = create<AuthState>()(
 
       setUser: user => set({ user, isAuthenticated: !!user }),
 
-      setToken: async token => {
-        // setToken时同步token和认证状态
+      setToken: async (token: string | null) => {
         set({ token, isAuthenticated: !!token })
-
-        // 始终与WebSocket认证管理器同步token
-        if (typeof window !== 'undefined') {
-          try {
-            const { getAuthManager } = await import('@/lib/websocket/auth')
-            const authManager = getAuthManager()
-            if (token) {
-              authManager.setToken(token)
-            } else {
-              authManager.removeToken()
-            }
-          } catch (error) {
-            console.warn('与WebSocket认证管理器同步token失败:', error)
-          }
-        }
+        await syncWithWebSocketAuth(token)
       },
 
-      // 获取token的方法
       getToken: () => get().token,
 
-      login: async (email, password) => {
+      login: async (email: string, password: string) => {
         set({ loading: true })
 
         try {
-          // 注意：这里我们使用完整URL而不是相对路径，因为登录接口可能需要特殊处理
           const data = await post<AuthResponse>('/login', { email, password })
 
-          // 存储用户信息和token
+          // 更新状态
           set({
             user: data.user,
             token: data.token,
@@ -69,8 +74,13 @@ const useAuthStore = create<AuthState>()(
             isAuthenticated: true,
           })
 
-          // 同时存储到localStorage作为备份
-          localStorage.setItem('auth-token', data.token)
+          // 备份到 localStorage
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(AUTH_TOKEN_KEY, data.token)
+          }
+
+          // 同步到 WebSocket
+          await syncWithWebSocketAuth(data.token)
 
           return data
         } catch (error) {
@@ -80,40 +90,30 @@ const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        // 可以选择调用后端的登出接口
-        // 如果需要的话，可以在这里添加 API 调用
-
+        // 清除状态
         set({
           user: null,
           token: null,
           isAuthenticated: false,
         })
 
-        // 清除localStorage中的备份token
-        localStorage.removeItem('auth-token')
-
-        // 同步到WebSocket认证管理器
+        // 清除 localStorage
         if (typeof window !== 'undefined') {
-          try {
-            const { getAuthManager } = await import('@/lib/websocket/auth')
-            const authManager = getAuthManager()
-            authManager.removeToken()
-          } catch (error) {
-            console.warn('与WebSocket认证管理器同步登出失败:', error)
-          }
+          localStorage.removeItem(AUTH_TOKEN_KEY)
         }
+
+        // 同步到 WebSocket
+        await syncWithWebSocketAuth(null)
       },
     }),
     {
-      name: 'auth-storage', // localStorage 的键名
-      storage: createJSONStorage(() => localStorage), // 默认，可以不写
-      // 指定需要持久化的状态字段
+      name: STORAGE_KEY,
+      storage: createJSONStorage(() => localStorage),
       partialize: state => ({
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
-      // 在从存储中恢复状态后，设置loading为false
       onRehydrateStorage: () => state => {
         if (state) {
           state.loading = false
@@ -123,24 +123,27 @@ const useAuthStore = create<AuthState>()(
   )
 )
 
-// 初始化时检查localStorage中是否有token，并获取用户信息
-const initializeAuth = async () => {
+// 初始化认证状态
+const initializeAuth = async (): Promise<void> => {
+  if (typeof window === 'undefined') return
+
   const { setToken, setLoading } = useAuthStore.getState()
 
   try {
-    const token = localStorage.getItem('auth-token')
+    const token = localStorage.getItem(AUTH_TOKEN_KEY)
     if (token) {
-      setToken(token)
+      await setToken(token)
     }
+  } catch (error) {
+    console.warn('初始化认证状态失败:', error)
   } finally {
-    // 无论是否找到token，都要设置loading为false，表示初始化完成
     setLoading(false)
   }
 }
 
-// 在应用启动时初始化认证状态
+// 延迟初始化避免阻塞
 if (typeof window !== 'undefined') {
-  initializeAuth()
+  setTimeout(initializeAuth, 0)
 }
 
 export default useAuthStore

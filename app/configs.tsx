@@ -14,15 +14,20 @@ const LOGO_TEXT = `
 ╔╦╗┌─┐┌─┐┌─┐╔═╗╦ ╦
  ║║│ ││ ┬├┤ ║ ║║║║
 ═╩╝└─┘└─┘└─┘╚═╝╚╩╝
-`
+` as const
 
-// 仅在客户端输出控制台Logo和开发环境提示
-if (typeof window !== 'undefined') {
+// 开发环境控制台输出
+const initializeConsoleOutput = () => {
+  if (typeof window === 'undefined') return
+
   console.log(`%c${LOGO_TEXT}`, 'color: yellow')
   if (process.env.NODE_ENV === 'development') {
     console.log('🎯 本地开发环境')
   }
 }
+
+// 延迟执行避免阻塞
+setTimeout(initializeConsoleOutput, 0)
 
 const TILES = [
   {
@@ -138,26 +143,27 @@ const GAMES = [
 ]
 
 // 统一的模块数据生成函数
-const createModule = (id: string, nameKey: string, descriptionKey: string, url: string) => ({
-  id,
-  nameKey,
-  descriptionKey,
-  url,
-})
+const createModule = (id: string, nameKey: string, descriptionKey: string, url: string) =>
+  ({
+    id,
+    nameKey,
+    descriptionKey,
+    url,
+  }) as const
 
 // 统一的主题色配置
 const THEME_COLORS = [
   { id: 'overwatch', nameKey: 'theme.overwatch', primary: 'hsl(35 97% 55%)', color: '#fc9d1c' },
   { id: 'minecraft', nameKey: 'theme.minecraft', primary: 'hsl(101 50% 43%)', color: '#5d9c32' },
   { id: 'zelda', nameKey: 'theme.zelda', primary: 'hsl(41 38% 56%)', color: '#b99f65' },
-]
+] as const
 
 // 背景图配置
 const SYSTEM_BACKGROUNDS = [
   { id: 'none', nameKey: 'background.none', url: '' },
   { id: 'bg1', nameKey: 'background.bg1', url: 'wallhaven-72rd8e_2560x1440-1.webp' },
   { id: 'bg3', nameKey: 'background.bg3', url: 'F_RIhiObMAA-c8N.jpeg' },
-]
+] as const
 
 // 主配置对象
 export const configs = {
@@ -182,41 +188,48 @@ export const configs = {
 
 // 通用的多语言配置转换函数
 interface TranslatableItem {
-  id?: string
-  nameKey?: string
-  descriptionKey?: string
-  name?: string
-  description?: string
-  url?: string
-  icon?: string | React.ReactNode
-  color?: string
-  primary?: string
-  href?: string
-  needLogin?: boolean
-  hideOnMobile?: boolean
-  [key: string]: string | number | boolean | React.ReactNode | undefined
+  readonly id?: string
+  readonly nameKey?: string
+  readonly descriptionKey?: string
+  readonly name?: string
+  readonly description?: string
+  readonly url?: string
+  readonly icon?: string | React.ReactNode
+  readonly color?: string
+  readonly primary?: string
+  readonly href?: string
+  readonly needLogin?: boolean
+  readonly hideOnMobile?: boolean
+  readonly [key: string]: string | number | boolean | React.ReactNode | undefined
 }
 
+// 优化翻译映射函数，减少重复计算
 const mapWithTranslation = (
-  arr: TranslatableItem[],
+  arr: readonly TranslatableItem[],
   t: (key: string, fallback?: string) => string,
-  fields: string[] = ['nameKey']
-): TranslatableItem[] =>
-  arr.map(item => {
+  fields: readonly string[] = ['nameKey']
+): TranslatableItem[] => {
+  return arr.map(item => {
     const result = { ...item }
-    fields.forEach(field => {
-      if (item[field] && typeof item[field] === 'string') {
-        // 兼容 tiles 里有 name 字段的情况
-        const fallback = typeof item.name === 'string' ? item.name : String(item[field])
-        result[field.replace('Key', '')] = t(item[field] as string, fallback)
+
+    // 处理主要字段
+    for (const field of fields) {
+      const fieldValue = item[field]
+      if (fieldValue && typeof fieldValue === 'string') {
+        const fallback = typeof item.name === 'string' ? item.name : fieldValue
+        const translatedField = field.replace('Key', '')
+        result[translatedField] = t(fieldValue, fallback)
       }
-    })
-    // 处理 descriptionKey
+    }
+
+    // 处理描述字段
     if (item.descriptionKey) {
       result.description = t(item.descriptionKey, item.descriptionKey)
     }
+
     return result
   })
+}
 
 // 获取多语言配置
 export const getTranslatedConfigs = (t: (key: string, fallback?: string) => string) => ({

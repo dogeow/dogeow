@@ -1,8 +1,38 @@
-import { memo, useState, useCallback, KeyboardEvent } from 'react'
+import { memo, useState, useCallback, KeyboardEvent, useMemo } from 'react'
 import Image from 'next/image'
 import { Lock } from 'lucide-react'
 import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
+import { PERFORMANCE, ANIMATIONS } from '@/lib/constants'
+
+// 常量定义
+const TILE_CLASSES = {
+  BASE: [
+    'tile-card',
+    'w-full h-full min-h-[8rem]',
+    'relative flex flex-col items-start justify-end',
+    'p-3 sm:p-4 rounded-lg overflow-hidden',
+    `transition-all duration-${ANIMATIONS.TRANSITION_DURATION} ease-in-out`,
+    `hover:scale-${ANIMATIONS.HOVER_SCALE.toString().replace('0.', '')} active:scale-${ANIMATIONS.ACTIVE_SCALE.toString().replace('0.', '')} cursor-pointer`,
+    'shadow-sm hover:shadow-md',
+    'will-change-transform',
+  ].join(' '),
+  GRADIENT_OVERLAY: 'absolute inset-0 z-[2]',
+  LOCK_ICON:
+    'bg-opacity-60 absolute top-1.5 right-1.5 z-[3] flex h-5 w-5 items-center justify-center rounded-full bg-black backdrop-blur-sm sm:top-2 sm:right-2 sm:h-6 sm:w-6',
+  CONTENT: 'relative z-[2] flex items-center gap-2',
+  TITLE: 'text-lg leading-tight font-medium text-white sm:text-xl',
+} as const
+
+const IMAGE_SIZES = {
+  LARGE: '(max-width: 640px) 300px, 200px',
+  MEDIUM: '(max-width: 640px) 200px, 150px',
+  SMALL: '(max-width: 640px) 150px, 120px',
+  ICON: '(max-width: 640px) 32px, 40px',
+} as const
+
+const BLUR_DATA_URL =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k='
 
 interface TileCardProps {
   tile: Tile
@@ -14,25 +44,67 @@ interface TileCardProps {
   onClick: () => void
 }
 
+// 提取图片尺寸计算逻辑
+const getImageSizes = (gridArea: string): string => {
+  if (gridArea === 'thing') return IMAGE_SIZES.LARGE
+  if (gridArea === 'file' || gridArea === 'tool') return IMAGE_SIZES.MEDIUM
+  return IMAGE_SIZES.SMALL
+}
+
+// 提取图标组件
+const TileIcon = memo(
+  ({ tile, tileName, index }: { tile: Tile; tileName: string; index: number }) => {
+    if (!tile.icon) return null
+
+    if (typeof tile.icon === 'string' && tile.icon.length > 0) {
+      return (
+        <Image
+          src={`/images/projects/${tile.icon}`}
+          alt={tileName}
+          width={24}
+          height={24}
+          className="object-contain sm:h-6 sm:w-6"
+          sizes={IMAGE_SIZES.ICON}
+          priority={index < 4}
+          quality={PERFORMANCE.IMAGE_QUALITY}
+        />
+      )
+    }
+
+    return (
+      <div
+        className="h-5 w-5 text-white sm:h-6 sm:w-6"
+        style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))' }}
+      >
+        {tile.icon}
+      </div>
+    )
+  }
+)
+
+TileIcon.displayName = 'TileIcon'
+
 export const TileCard = memo(
   ({ tile, index, customStyles = '', showCover, needsLogin, onClick }: TileCardProps) => {
     const { t } = useTranslation()
     const [imageError, setImageError] = useState(false)
     const [imageLoaded, setImageLoaded] = useState(false)
 
-    // Get translated name, fallback to nameCn for backward compatibility
-    const tileName = t(tile.nameKey, tile.nameCn || tile.nameKey)
+    // 缓存计算结果
+    const tileName = useMemo(
+      () => t(tile.nameKey, tile.nameCn || tile.nameKey),
+      [t, tile.nameKey, tile.nameCn]
+    )
+    const coverImage = useMemo(
+      () => (showCover ? tile.cover || `${tile.name}.png` : null),
+      [showCover, tile.cover, tile.name]
+    )
+    const hasBackground = useMemo(() => !!coverImage && !imageError, [coverImage, imageError])
+    const gridArea = useMemo(() => tile.gridArea || tile.name, [tile.gridArea, tile.name])
 
-    const coverImage = showCover ? tile.cover || `${tile.name}.png` : null
-    const hasBackground = !!coverImage && !imageError
-
-    // 图片加载失败
+    // 事件处理器
     const handleImageError = useCallback(() => setImageError(true), [])
-
-    // 图片加载完成
     const handleImageLoad = useCallback(() => setImageLoaded(true), [])
-
-    // 键盘可访问
     const handleKeyDown = useCallback(
       (e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -43,51 +115,26 @@ export const TileCard = memo(
       [onClick]
     )
 
-    const baseClasses = [
-      'tile-card',
-      'w-full h-full min-h-[8rem]',
-      'relative flex flex-col items-start justify-end',
-      'p-3 sm:p-4 rounded-lg overflow-hidden',
-      'transition-all duration-200 ease-in-out',
-      'hover:scale-95 active:scale-90 cursor-pointer',
-      'shadow-sm hover:shadow-md',
-      'will-change-transform', // 优化动画性能
-      customStyles,
-    ].join(' ')
+    // 样式计算
+    const className = useMemo(() => `${TILE_CLASSES.BASE} ${customStyles}`, [customStyles])
+    const dynamicStyles = useMemo(
+      () => ({
+        backgroundColor: tile.color,
+        opacity: needsLogin ? 0.7 : 1,
+      }),
+      [tile.color, needsLogin]
+    )
 
-    const dynamicStyles = {
-      backgroundColor: tile.color,
-      opacity: needsLogin ? 0.7 : 1,
-    }
-
-    // 根据网格区域优化图片sizes属性
-    const getImageSizes = () => {
-      // 根据 grid area 名称判断大小
-      const gridArea = tile.gridArea || tile.name
-
-      let sizes = ''
-      if (gridArea === 'thing') {
-        // 占满整行的tile（物品管理）
-        sizes = '(max-width: 640px) 300px, 200px'
-      } else if (gridArea === 'file' || gridArea === 'tool') {
-        // 占2/3宽度的tile（文件、工具）
-        sizes = '(max-width: 640px) 200px, 150px'
-      } else {
-        // 占1/3宽度的tile（实验室、导航、笔记、游戏）
-        sizes = '(max-width: 640px) 150px, 120px'
-      }
-
-      return sizes
-    }
-
-    const getIconSizes = () => {
-      // 图标固定尺寸：小屏32px，大屏40px
-      return '(max-width: 640px) 32px, 40px'
-    }
+    const gradientStyle = useMemo(
+      () => ({
+        background: `linear-gradient(135deg, ${tile.color}80, ${tile.color}40)`,
+      }),
+      [tile.color]
+    )
 
     return (
       <div
-        className={baseClasses}
+        className={className}
         style={dynamicStyles}
         onClick={onClick}
         role="button"
@@ -105,61 +152,36 @@ export const TileCard = memo(
               className={`tile-image z-[1] object-cover transition-opacity duration-300 ${
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
-              sizes={getImageSizes()}
+              sizes={getImageSizes(gridArea)}
               priority={index < 4}
               onError={handleImageError}
               onLoad={handleImageLoad}
-              quality={85}
+              quality={PERFORMANCE.IMAGE_QUALITY}
               placeholder="blur"
-              blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+              blurDataURL={BLUR_DATA_URL}
             />
-            {/* 渐变遮罩 - 移除透明度变化 */}
-            <div
-              className="absolute inset-0 z-[2]"
-              style={{
-                background: `linear-gradient(135deg, ${tile.color}80, ${tile.color}40)`,
-              }}
-            />
+            {/* 渐变遮罩 */}
+            <div className={TILE_CLASSES.GRADIENT_OVERLAY} style={gradientStyle} />
           </>
         )}
 
         {/* 登录锁定图标 */}
         {needsLogin && (
-          <div className="bg-opacity-60 absolute top-1.5 right-1.5 z-[3] flex h-5 w-5 items-center justify-center rounded-full bg-black backdrop-blur-sm sm:top-2 sm:right-2 sm:h-6 sm:w-6">
+          <div className={TILE_CLASSES.LOCK_ICON}>
             <Lock className="h-2.5 w-2.5 text-white sm:h-3 sm:w-3" />
           </div>
         )}
 
         {/* 标题和图标 */}
-        <div className="relative z-[2] flex items-center gap-2">
-          {/* 图标 */}
+        <div className={TILE_CLASSES.CONTENT}>
           {tile.icon && (
             <div className="flex items-center justify-center">
-              {typeof tile.icon === 'string' && tile.icon.length > 0 ? (
-                <Image
-                  src={`/images/projects/${tile.icon}`}
-                  alt={tileName}
-                  width={24}
-                  height={24}
-                  className="object-contain sm:h-6 sm:w-6"
-                  sizes={getIconSizes()}
-                  priority={index < 4}
-                  quality={85}
-                />
-              ) : (
-                <div
-                  className="h-5 w-5 text-white sm:h-6 sm:w-6"
-                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))' }}
-                >
-                  {tile.icon}
-                </div>
-              )}
+              <TileIcon tile={tile} tileName={tileName} index={index} />
             </div>
           )}
 
-          {/* 标题 */}
           <span
-            className="text-lg leading-tight font-medium text-white sm:text-xl"
+            className={TILE_CLASSES.TITLE}
             style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}
           >
             {tileName}
