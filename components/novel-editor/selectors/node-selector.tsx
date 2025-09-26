@@ -103,8 +103,10 @@ export const NodeSelector = ({ open, onOpenChange }: NodeSelectorProps) => {
         className="hover:bg-accent gap-2 rounded-none border-none focus:ring-0"
       >
         <Button size="sm" variant="ghost" className="gap-2">
-          <span className="text-sm whitespace-nowrap">{activeItem.name}</span>
-          <ChevronDown className="h-4 w-4" />
+          <span className="flex items-center gap-2">
+            <span className="text-sm whitespace-nowrap">{activeItem.name}</span>
+            <ChevronDown className="h-4 w-4" />
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent sideOffset={5} align="start" className="w-48 p-1">

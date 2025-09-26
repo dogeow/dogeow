@@ -64,7 +64,7 @@ export default function ThingNavigation() {
               className={cn('whitespace-nowrap', isActive(item.href, item.exact) && 'font-medium')}
               asChild
             >
-              <Link href={item.href}>
+              <Link href={item.href} className="flex items-center gap-2">
                 {item.icon}
                 {item.label}
               </Link>

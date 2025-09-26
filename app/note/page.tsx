@@ -8,7 +8,7 @@ import { Calendar, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { EmptyState } from '@/components/ui/empty-state'
+import { EmptyState as UIEmptyState } from '@/components/ui/empty-state'
 import { zhCN } from 'date-fns/locale'
 import NoteSpeedDial from './components/NoteSpeedDial'
 
@@ -155,7 +155,7 @@ export default function NotePage() {
         {loading ? (
           <LoadingSkeleton />
         ) : sortedNotes.length === 0 ? (
-          <EmptyState icon="📝" title="暂无笔记" description="请添加您的第一个笔记" />
+          <UIEmptyState icon="📝" title="暂无笔记" description="请添加您的第一个笔记" />
         ) : (
           <div className="space-y-4" role="list" aria-label="笔记列表">
             {sortedNotes.map(note => (

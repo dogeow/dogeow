@@ -5,6 +5,7 @@ import Footer from '@/components/app/Footer'
 import { configs } from '@/app/configs'
 import { TileCard } from '@/components/app/TileCard'
 import { useTileManagement } from '@/hooks/useTileManagement'
+import type { Tile } from '@/app/types'
 
 // 提取网格项组件
 const GridTile = memo(
@@ -15,7 +16,7 @@ const GridTile = memo(
     needsLogin,
     onClick,
   }: {
-    tile: unknown
+    tile: Tile
     index: number
     showCover: boolean
     needsLogin: boolean

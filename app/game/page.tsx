@@ -14,15 +14,17 @@ const GAME_CARD_CLASSES = {
   TITLE: 'text-sm font-medium sm:text-base lg:text-base',
 } as const
 
-// 游戏类型定义
-interface Game {
+// 导入 TranslatableItem 类型
+import type { TranslatableItem } from '@/app/configs'
+
+// 游戏类型定义 - 使用 TranslatableItem 但确保 id 存在
+interface Game extends Omit<TranslatableItem, 'id'> {
   id: string
-  nameKey?: string
-  descriptionKey?: string
-  name?: string
-  description?: string
-  icon?: string | React.ReactNode
-  hideOnMobile?: boolean
+}
+
+// 类型守卫函数，确保游戏项有有效的 id
+const isValidGame = (item: TranslatableItem): item is Game => {
+  return typeof item.id === 'string' && item.id.length > 0
 }
 
 // 提取游戏卡片组件
@@ -32,7 +34,11 @@ const GameCard = memo(({ game }: { game: Game }) => {
   return (
     <Link href={`/game/${game.id}`} key={game.id} className={cardClassName}>
       <Card className={GAME_CARD_CLASSES.CARD}>
-        <div className={GAME_CARD_CLASSES.ICON} role="img" aria-label={game.name}>
+        <div
+          className={GAME_CARD_CLASSES.ICON}
+          role="img"
+          aria-label={typeof game.name === 'string' ? game.name : game.id}
+        >
           {game.icon}
         </div>
         <h2 className={GAME_CARD_CLASSES.TITLE}>{game.name}</h2>
@@ -45,7 +51,10 @@ GameCard.displayName = 'GameCard'
 
 export default function GamePage() {
   const { t } = useTranslation()
-  const { games } = getTranslatedConfigs(t)
+  const { games: allGames } = getTranslatedConfigs(t)
+
+  // 过滤出有效的游戏（有 id 的游戏）
+  const games = allGames.filter(isValidGame)
 
   return (
     <div className="container px-4 py-4">

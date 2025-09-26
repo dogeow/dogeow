@@ -105,16 +105,18 @@ export const ColorSelector = ({ open, onOpenChange }: ColorSelectorProps) => {
     <Popover modal={true} open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <Button size="sm" className="gap-2 rounded-none" variant="ghost">
-          <span
-            className="rounded-sm px-1"
-            style={{
-              color: activeColorItem?.color,
-              backgroundColor: activeHighlightItem?.color,
-            }}
-          >
-            A
+          <span className="flex items-center gap-2">
+            <span
+              className="rounded-sm px-1"
+              style={{
+                color: activeColorItem?.color,
+                backgroundColor: activeHighlightItem?.color,
+              }}
+            >
+              A
+            </span>
+            <ChevronDown className="h-4 w-4" />
           </span>
-          <ChevronDown className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
 

@@ -59,14 +59,16 @@ export const LinkSelector = ({ open, onOpenChange }: LinkSelectorProps) => {
     <Popover modal={true} open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <Button size="sm" variant="ghost" className="gap-2 rounded-none border-none">
-          <p className="text-base">↗</p>
-          <p
-            className={cn('underline decoration-stone-400 underline-offset-4', {
-              'text-blue-500': editor.isActive('link'),
-            })}
-          >
-            Link
-          </p>
+          <span className="flex items-center gap-2">
+            <span className="text-base">↗</span>
+            <span
+              className={cn('underline decoration-stone-400 underline-offset-4', {
+                'text-blue-500': editor.isActive('link'),
+              })}
+            >
+              Link
+            </span>
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="w-60 p-0" sideOffset={10}>

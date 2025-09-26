@@ -187,7 +187,7 @@ export const configs = {
 }
 
 // 通用的多语言配置转换函数
-interface TranslatableItem {
+export interface TranslatableItem {
   readonly id?: string
   readonly nameKey?: string
   readonly descriptionKey?: string

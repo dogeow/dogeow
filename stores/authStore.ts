@@ -116,7 +116,10 @@ const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => state => {
         if (state) {
-          state.loading = false
+          // 使用 setLoading 方法而不是直接修改 readonly 属性
+          setTimeout(() => {
+            useAuthStore.getState().setLoading(false)
+          }, 0)
         }
       },
     }
