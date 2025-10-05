@@ -11,3 +11,6 @@ export function cn(...inputs: ClassValue[]) {
 
 // 导出颜色工具函数
 export { isLightColor, generateRandomColor, hexToHSL } from './colorUtils'
+
+// 导出语言国旗工具函数
+export { getLanguageFlag, getSupportedLanguageCodes, hasLanguageFlag } from './languageFlags'

@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { useTranslation } from '@/hooks/useTranslation'
 import { useLanguageStore } from '@/stores/languageStore'
 import { cn } from '@/lib/helpers'
+import { getLanguageFlag } from '@/lib/helpers/languageFlags'
 
 interface LanguageDetectionPromptProps {
   className?: string
@@ -36,21 +37,7 @@ export function LanguageDetectionPrompt({
     [availableLanguages, currentLanguage]
   )
 
-  // 获取语言对应国旗
-  const getFlag = (code?: string) => {
-    switch (code) {
-      case 'zh-CN':
-        return '🇨🇳'
-      case 'zh-TW':
-        return '🇭🇰'
-      case 'en':
-        return '🇺🇸'
-      case 'ja':
-        return '🇯🇵'
-      default:
-        return '🌐'
-    }
-  }
+  // 使用公共的国旗获取函数
 
   // 判断是否需要显示提示
   useEffect(() => {
@@ -150,7 +137,7 @@ export function LanguageDetectionPrompt({
           {/* 检测到的语言信息 */}
           <div className="bg-muted/50 flex items-center justify-between rounded-lg p-3">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{getFlag(detectedLanguageInfo?.code)}</span>
+              <span className="text-2xl">{getLanguageFlag(detectedLanguageInfo?.code)}</span>
               <div>
                 <div className="text-sm font-medium">{detectedLanguageInfo?.nativeName}</div>
                 <div className="text-muted-foreground text-xs">{detectedLanguageInfo?.name}</div>
@@ -165,7 +152,7 @@ export function LanguageDetectionPrompt({
           {/* 当前语言信息 */}
           <div className="bg-background flex items-center justify-between rounded-lg border p-3">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">{getFlag(currentLanguageInfo?.code)}</span>
+              <span className="text-2xl">{getLanguageFlag(currentLanguageInfo?.code)}</span>
               <div>
                 <div className="text-sm font-medium">{currentLanguageInfo?.nativeName}</div>
                 <div className="text-muted-foreground text-xs">当前语言</div>

@@ -17,6 +17,7 @@ import { useLanguageTransition } from '@/hooks/useLanguageTransition'
 import { useLanguageStore } from '@/stores/languageStore'
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
+import { getLanguageFlag } from '@/lib/helpers/languageFlags'
 
 interface LanguageSelectorProps {
   className?: string
@@ -29,14 +30,7 @@ interface LanguageSelectorProps {
 
 // 国旗图标组件
 const FlagIcon = ({ languageCode }: { languageCode: string }) => {
-  const flagMap: Record<string, string> = {
-    'zh-CN': '🇨🇳',
-    'zh-TW': '🇭🇰',
-    en: '🇺🇸',
-    ja: '🇯🇵',
-  }
-
-  return <span className="text-lg">{flagMap[languageCode] || '🌐'}</span>
+  return <span className="text-lg">{getLanguageFlag(languageCode)}</span>
 }
 
 /**
@@ -52,7 +46,7 @@ export function LanguageSelector({
   showDetectionInfo = true,
   ...props
 }: LanguageSelectorProps) {
-  const { currentLanguage, currentLanguageInfo, availableLanguages } = useTranslation()
+  const { currentLanguage, currentLanguageInfo, availableLanguages, t } = useTranslation()
   const { isTransitioning, switchLanguage } = useLanguageTransition()
   const { detectedLanguage, isAutoDetected } = useLanguageStore()
 
@@ -80,11 +74,7 @@ export function LanguageSelector({
       await switchLanguage(detectedLanguage)
 
       // 显示成功提示
-      toast.success(
-        t('language.detection.switched', '已切换到检测到的语言: {language}', {
-          language: detectedLanguage,
-        })
-      )
+      toast.success(t('language.detection.switched', `已切换到检测到的语言: ${detectedLanguage}`))
 
       console.log('[LanguageSelector] Reset to detected language completed:', {
         detectedLanguage,
