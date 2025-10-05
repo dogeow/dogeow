@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { useLanguageTransition } from '@/hooks/useLanguageTransition'
 import { useLanguageStore } from '@/stores/languageStore'
 import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner'
 
 interface LanguageSelectorProps {
   className?: string
@@ -73,7 +74,17 @@ export function LanguageSelector({
     if (detectedLanguage) {
       console.log('[LanguageSelector] User requested reset to detected language:', detectedLanguage)
 
+      // 显示检测中的提示
+      toast.info(t('language.detection.detecting', '正在检测语言...'))
+
       await switchLanguage(detectedLanguage)
+
+      // 显示成功提示
+      toast.success(
+        t('language.detection.switched', '已切换到检测到的语言: {language}', {
+          language: detectedLanguage,
+        })
+      )
 
       console.log('[LanguageSelector] Reset to detected language completed:', {
         detectedLanguage,
@@ -81,6 +92,7 @@ export function LanguageSelector({
       })
     } else {
       console.log('[LanguageSelector] No detected language available for reset')
+      toast.warning(t('language.detection.refresh_failed', '语言检测刷新失败'))
     }
   }
 

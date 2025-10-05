@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { X, Globe, CheckCircle, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,10 +15,7 @@ interface LanguageDetectionPromptProps {
   showOnFirstVisit?: boolean
 }
 
-/**
- * Language detection prompt component
- * Shows detected language and offers automatic switching
- */
+// 语言检测提示组件，展示检测到的语言并提供自动切换选项
 export function LanguageDetectionPrompt({
   className,
   onDismiss,
@@ -29,66 +26,55 @@ export function LanguageDetectionPrompt({
   const [isVisible, setIsVisible] = useState(false)
   const [isDismissed, setIsDismissed] = useState(false)
 
+  // 获取语言信息
+  const detectedLanguageInfo = useMemo(
+    () => availableLanguages.find(lang => lang.code === detectedLanguage),
+    [availableLanguages, detectedLanguage]
+  )
+  const currentLanguageInfo = useMemo(
+    () => availableLanguages.find(lang => lang.code === currentLanguage),
+    [availableLanguages, currentLanguage]
+  )
+
+  // 获取语言对应国旗
+  const getFlag = (code?: string) => {
+    switch (code) {
+      case 'zh-CN':
+        return '🇨🇳'
+      case 'zh-TW':
+        return '🇭🇰'
+      case 'en':
+        return '🇺🇸'
+      case 'ja':
+        return '🇯🇵'
+      default:
+        return '🌐'
+    }
+  }
+
+  // 判断是否需要显示提示
   useEffect(() => {
     if (showOnFirstVisit && !isDismissed && detectedLanguage && lastDetectionTime) {
       const shouldShow = (): boolean => {
-        // Don't show if already dismissed
-        if (isDismissed) {
-          return false
-        }
-
-        // Don't show if no detected language
-        if (!detectedLanguage) {
-          return false
-        }
-
-        // Don't show if current language matches detected language
-        if (currentLanguage === detectedLanguage) {
-          // 只在开发环境输出日志
-          if (process.env.NODE_ENV === 'development') {
-            console.log(
-              '[LanguageDetectionPrompt] Current language matches detected language, no need for prompt'
-            )
-          }
-          return false
-        }
-
-        // Don't show if user has manually set a language preference
-        if (!isAutoDetected) {
-          return false
-        }
-
-        // Don't show if current language is English (default language)
-        if (currentLanguage === 'en') {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(
-              '[LanguageDetectionPrompt] Current language is English (default), no need for prompt'
-            )
-          }
-          return false
-        }
-
-        // Check if we've shown this before
-        const hasShownBefore = localStorage.getItem('dogeow-language-prompt-shown')
-        if (hasShownBefore) {
-          return false
-        }
-
-        // 只在开发环境输出详细日志
+        // 已经关闭过提示则不再显示
+        if (isDismissed) return false
+        // 未检测到语言不显示
+        if (!detectedLanguage) return false
+        // 用户已手动设置语言不显示
+        if (!isAutoDetected) return false
+        // 已经展示过提示不再显示
+        if (localStorage.getItem('dogeow-language-prompt-shown')) return false
+        // 仅开发环境输出详细日志
         if (process.env.NODE_ENV === 'development') {
           console.log('[LanguageDetectionPrompt] Should show prompt:', {
             detectedLanguage,
             currentLanguage,
             isAutoDetected,
-            hasShownBefore,
           })
         }
         return true
       }
-
-      if (shouldShow()) {
-        setIsVisible(true)
-      }
+      if (shouldShow()) setIsVisible(true)
     }
   }, [
     showOnFirstVisit,
@@ -99,62 +85,38 @@ export function LanguageDetectionPrompt({
     isAutoDetected,
   ])
 
+  // 切换到检测到的语言
   const handleAcceptDetection = async () => {
     if (detectedLanguage) {
-      console.log('[LanguageDetectionPrompt] User accepted detected language:', detectedLanguage)
-
-      // Switch to detected language
+      console.log('[LanguageDetectionPrompt] 用户接受了检测到的语言:', detectedLanguage)
       const { setLanguage } = useLanguageStore.getState()
       setLanguage(detectedLanguage, true)
-
-      // Mark as shown
       localStorage.setItem('dogeow-language-prompt-shown', 'true')
-      console.log('[LanguageDetectionPrompt] Marked prompt as shown')
-
-      // Hide the prompt
       setIsVisible(false)
       setIsDismissed(true)
-
-      if (onDismiss) {
-        onDismiss()
-      }
+      onDismiss?.()
     }
   }
 
+  // 关闭提示
   const handleDismiss = () => {
-    console.log('[LanguageDetectionPrompt] User dismissed the prompt')
-
+    console.log('[LanguageDetectionPrompt] 用户关闭了提示')
     setIsVisible(false)
     setIsDismissed(true)
-
-    // Mark as shown
     localStorage.setItem('dogeow-language-prompt-shown', 'true')
-    console.log('[LanguageDetectionPrompt] Marked prompt as shown (dismissed)')
-
-    if (onDismiss) {
-      onDismiss()
-    }
+    onDismiss?.()
   }
 
+  // 保持当前语言
   const handleKeepCurrent = () => {
-    console.log('[LanguageDetectionPrompt] User chose to keep current language:', currentLanguage)
-
-    // Mark as shown and keep current language
+    console.log('[LanguageDetectionPrompt] 用户选择保持当前语言:', currentLanguage)
     localStorage.setItem('dogeow-language-prompt-shown', 'true')
-    console.log('[LanguageDetectionPrompt] Marked prompt as shown (kept current)')
-
     setIsVisible(false)
     setIsDismissed(true)
-
-    if (onDismiss) {
-      onDismiss()
-    }
+    onDismiss?.()
   }
 
   if (!isVisible) return null
-
-  const detectedLanguageInfo = availableLanguages.find(lang => lang.code === detectedLanguage)
-  const currentLanguageInfo = availableLanguages.find(lang => lang.code === currentLanguage)
 
   return (
     <div
@@ -176,6 +138,7 @@ export function LanguageDetectionPrompt({
               size="sm"
               onClick={handleDismiss}
               className="hover:bg-muted h-6 w-6 p-0"
+              aria-label="关闭"
             >
               <X className="h-3 w-3" />
             </Button>
@@ -184,20 +147,10 @@ export function LanguageDetectionPrompt({
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Detected language info */}
+          {/* 检测到的语言信息 */}
           <div className="bg-muted/50 flex items-center justify-between rounded-lg p-3">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">
-                {detectedLanguageInfo?.code === 'zh-CN'
-                  ? '🇨🇳'
-                  : detectedLanguageInfo?.code === 'zh-TW'
-                    ? '🇹🇼'
-                    : detectedLanguageInfo?.code === 'en'
-                      ? '🇺🇸'
-                      : detectedLanguageInfo?.code === 'ja'
-                        ? '🇯🇵'
-                        : '🌐'}
-              </span>
+              <span className="text-2xl">{getFlag(detectedLanguageInfo?.code)}</span>
               <div>
                 <div className="text-sm font-medium">{detectedLanguageInfo?.nativeName}</div>
                 <div className="text-muted-foreground text-xs">{detectedLanguageInfo?.name}</div>
@@ -209,20 +162,10 @@ export function LanguageDetectionPrompt({
             </Badge>
           </div>
 
-          {/* Current language info */}
+          {/* 当前语言信息 */}
           <div className="bg-background flex items-center justify-between rounded-lg border p-3">
             <div className="flex items-center gap-3">
-              <span className="text-2xl">
-                {currentLanguageInfo?.code === 'zh-CN'
-                  ? '🇨🇳'
-                  : currentLanguageInfo?.code === 'zh-TW'
-                    ? '🇹🇼'
-                    : currentLanguageInfo?.code === 'en'
-                      ? '🇺🇸'
-                      : currentLanguageInfo?.code === 'ja'
-                        ? '🇯🇵'
-                        : '🌐'}
-              </span>
+              <span className="text-2xl">{getFlag(currentLanguageInfo?.code)}</span>
               <div>
                 <div className="text-sm font-medium">{currentLanguageInfo?.nativeName}</div>
                 <div className="text-muted-foreground text-xs">当前语言</div>
@@ -231,7 +174,7 @@ export function LanguageDetectionPrompt({
             <CheckCircle className="h-4 w-4 text-green-500" />
           </div>
 
-          {/* Action buttons */}
+          {/* 操作按钮 */}
           <div className="flex gap-2">
             <Button onClick={handleAcceptDetection} className="flex-1" size="sm">
               <ArrowRight className="mr-1 h-3 w-3" />

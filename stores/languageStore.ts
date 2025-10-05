@@ -167,6 +167,12 @@ export const useLanguageStore = create<LanguageState>()(
               if (shouldLog()) {
                 console.log('[LanguageStore] 检测结果已存储到localStorage')
               }
+
+              // 显示成功提示
+              const { toast } = await import('sonner')
+              toast.success(
+                translationFunction('language.detection.refresh_success', '语言检测已刷新')
+              )
             }
           } catch (error) {
             console.error('[LanguageStore] 语言检测失败:', error)
@@ -193,6 +199,14 @@ export const useLanguageStore = create<LanguageState>()(
                 fallbackLanguage,
                 timestamp: new Date(now).toISOString(),
               })
+            }
+
+            // 显示失败提示
+            if (typeof window !== 'undefined') {
+              const { toast } = await import('sonner')
+              toast.error(
+                translationFunction('language.detection.refresh_failed', '语言检测刷新失败')
+              )
             }
           }
         },

@@ -599,4 +599,17 @@ export const en = {
 
   // Loading States
   'loading.text': 'Loading...',
+
+  // Language Detection
+  'language.detection.current_matches':
+    'Current language matches detected language, no need for prompt',
+  'language.detection.current_is_default':
+    'Current language is default (English), no need for prompt',
+  'language.detection.refresh_success': 'Language detection refreshed',
+  'language.detection.refresh_failed': 'Language detection refresh failed',
+  'language.detection.detecting': 'Detecting language...',
+  'language.detection.detected': 'Detected language: {language}',
+  'language.detection.switched': 'Switched to detected language: {language}',
+  'language.detection.auto_detection': 'Auto Detection',
+  'language.detection.manual_selection': 'Manual Selection',
 }

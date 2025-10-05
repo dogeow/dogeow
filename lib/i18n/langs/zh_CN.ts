@@ -593,4 +593,15 @@ export const zh_CN = {
 
   // Loading States
   'loading.text': '加载中...',
+
+  // Language Detection
+  'language.detection.current_matches': '当前语言与检测到的语言一致，无需提示',
+  'language.detection.current_is_default': '当前语言为默认语言（英文），无需提示',
+  'language.detection.refresh_success': '语言检测已刷新',
+  'language.detection.refresh_failed': '语言检测刷新失败',
+  'language.detection.detecting': '正在检测语言...',
+  'language.detection.detected': '检测到语言: {language}',
+  'language.detection.switched': '已切换到检测到的语言: {language}',
+  'language.detection.auto_detection': '自动检测',
+  'language.detection.manual_selection': '手动选择',
 }

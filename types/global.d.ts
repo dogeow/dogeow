@@ -62,3 +62,49 @@ declare module '*.flac' {
   const content: string
   export default content
 }
+
+// Media Session API 类型定义
+declare global {
+  interface Navigator {
+    mediaSession?: MediaSession
+  }
+
+  interface MediaSession {
+    metadata?: MediaMetadata
+    playbackState: MediaSessionPlaybackState
+    setActionHandler(action: MediaSessionAction, handler: (() => void) | null): void
+  }
+
+  interface MediaImage {
+    src: string
+    sizes?: string
+    type?: string
+  }
+
+  type MediaSessionAction =
+    | 'play'
+    | 'pause'
+    | 'previoustrack'
+    | 'nexttrack'
+    | 'seekbackward'
+    | 'seekforward'
+    | 'seekto'
+    | 'stop'
+
+  type MediaSessionPlaybackState = 'none' | 'paused' | 'playing'
+
+  interface MediaMetadataInit {
+    title?: string
+    artist?: string
+    album?: string
+    artwork?: MediaImage[]
+  }
+
+  class MediaMetadata {
+    title?: string
+    artist?: string
+    album?: string
+    artwork?: MediaImage[]
+    constructor(init?: MediaMetadataInit)
+  }
+}
