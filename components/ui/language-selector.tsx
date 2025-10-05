@@ -26,6 +26,11 @@ interface LanguageSelectorProps {
   showText?: boolean
   showFlag?: boolean
   showDetectionInfo?: boolean
+  detectionInfo?: {
+    method: string
+    confidence: number
+    isDetecting: boolean
+  }
 }
 
 // 国旗图标组件
@@ -44,11 +49,25 @@ export function LanguageSelector({
   showText = true,
   showFlag = true,
   showDetectionInfo = true,
+  detectionInfo,
   ...props
 }: LanguageSelectorProps) {
   const { currentLanguage, currentLanguageInfo, availableLanguages, t } = useTranslation()
   const { isTransitioning, switchLanguage } = useLanguageTransition()
-  const { detectedLanguage, isAutoDetected } = useLanguageStore()
+  const { detectedLanguage } = useLanguageStore()
+
+  // 检测方法标签映射
+  const getMethodLabel = (method: string) => {
+    const methodMap: Record<string, string> = {
+      browser: '浏览器',
+      geolocation: '定位',
+      user_agent: 'UA',
+      stored_preference: '偏好',
+      default: '默认',
+      none: '无',
+    }
+    return methodMap[method] || method
+  }
 
   const handleLanguageChange = async (languageCode: string) => {
     console.log('[LanguageSelector] User requested language change:', {
@@ -108,10 +127,28 @@ export function LanguageSelector({
             {showText && <span>{language.nativeName}</span>}
 
             {/* Show detection badge for detected language */}
-            {showDetectionInfo && detectedLanguage === language.code && (
-              <Badge variant="secondary" className="absolute -top-1 -right-1 ml-1 h-4 px-1 text-xs">
-                <Globe className="mr-1 h-2 w-2" />
-                检测
+            {showDetectionInfo && detectedLanguage === language.code && detectionInfo && (
+              <Badge
+                variant="secondary"
+                className="absolute -top-1 -right-1 ml-1 flex h-4 items-center gap-1 px-1 text-xs"
+              >
+                {detectionInfo.isDetecting ? (
+                  <>
+                    <RefreshCw className="h-2 w-2 animate-spin" />
+                    <span>检测中</span>
+                  </>
+                ) : (
+                  <>
+                    <Globe className="h-2 w-2" />
+                    <span>{getMethodLabel(detectionInfo.method)}</span>
+                    {detectionInfo.confidence > 0 && (
+                      <>
+                        <div className="h-1 w-1 rounded-full bg-green-500" />
+                        <span>{Math.round(detectionInfo.confidence * 100)}%</span>
+                      </>
+                    )}
+                  </>
+                )}
               </Badge>
             )}
           </Button>
@@ -155,12 +192,7 @@ export function LanguageSelector({
             {showText && <span className="font-medium">{currentLanguageInfo.nativeName}</span>}
           </div>
 
-          {/* Detection indicator */}
-          {showDetectionInfo && isAutoDetected && (
-            <Badge variant="secondary" className="absolute -top-1 -right-1 ml-1 h-4 px-1 text-xs">
-              <Globe className="h-2 w-2" />
-            </Badge>
-          )}
+          {/* Detection indicator - 移除，因为现在显示在按钮上方 */}
 
           <ChevronDownIcon className="ml-2 size-4 opacity-50" />
         </Button>
