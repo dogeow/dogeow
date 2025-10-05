@@ -32,8 +32,8 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: 'DogeOW - 学习、生活、工作于一体',
-  description: 'DogeOW是一个集学习、生活、工作于一体的综合性平台，支持PWA安装和离线使用',
-  keywords: ['学习', '生活', '工作', 'PWA', '离线应用'],
+  description: 'DogeOW是一个集学习、生活、工作于一体的综合性平台',
+  keywords: ['DogeOW'],
   authors: [{ name: 'DogeOW' }],
   creator: 'DogeOW',
   publisher: 'DogeOW',
