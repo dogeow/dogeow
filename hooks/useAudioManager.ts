@@ -75,8 +75,14 @@ export const useAudioManager = () => {
     }
   }, [setAvailableTracks, setCurrentTrack, setAudioError, setIsPlaying])
 
-  // 切换静音状态
-  const toggleMute = useCallback(() => setIsMuted(!isMuted), [isMuted])
+  // 切换静音状态 - 使用AudioController的toggleMute函数
+  const toggleMute = useCallback(() => {
+    setIsMuted(!isMuted)
+    // 调用AudioController的toggleMute来确保音频元素状态同步
+    if (audioController.toggleMute) {
+      audioController.toggleMute()
+    }
+  }, [isMuted, audioController])
 
   // 获取当前音频文件名称
   const getCurrentTrackName = useCallback(() => {

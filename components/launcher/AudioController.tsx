@@ -73,6 +73,11 @@ export function AudioController({
       audioRef.current.pause()
       audioRef.current.currentTime = 0
       audioRef.current.src = audioUrl
+
+      // 设置初始音量状态
+      audioRef.current.volume = isMuted ? 0 : volume
+      audioRef.current.muted = isMuted
+
       audioRef.current.load()
 
       setAudioError(null)
@@ -82,7 +87,7 @@ export function AudioController({
       setAudioError(`设置音频源失败: ${err}`)
       toast.error('音频源设置失败', { description: String(err) })
     }
-  }, [currentTrack, buildAudioUrl, setAudioError, setIsTrackChanging])
+  }, [currentTrack, buildAudioUrl, setAudioError, setIsTrackChanging, isMuted, volume])
 
   // 处理播放错误
   const handlePlayError = useCallback(
@@ -283,10 +288,20 @@ export function AudioController({
     [setCurrentTime]
   )
 
-  // 同步音量
+  // 同步音量 - 修复手机端静音问题
   useEffect(() => {
     if (audioRef.current) {
-      audioRef.current.volume = isMuted ? 0 : volume
+      const targetVolume = isMuted ? 0 : volume
+      audioRef.current.volume = targetVolume
+
+      // 手机端额外处理：确保静音状态立即生效
+      if (isMuted) {
+        audioRef.current.muted = true
+      } else {
+        audioRef.current.muted = false
+      }
+
+      // 音量同步完成
     }
   }, [volume, isMuted])
 
@@ -303,6 +318,47 @@ export function AudioController({
     return () => audio?.removeEventListener('ended', handleAudioEnded)
   }, [setCurrentTime, switchTrack])
 
+  // 检测是否为移动设备
+  const isMobileDevice = useCallback(() => {
+    return (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0
+    )
+  }, [])
+
+  // 专门的静音切换函数 - 确保手机端兼容性
+  const toggleMute = useCallback(() => {
+    if (audioRef.current) {
+      const newMutedState = !isMuted
+      const isMobile = isMobileDevice()
+
+      // 同时设置volume和muted属性，确保在所有设备上都能正常工作
+      if (newMutedState) {
+        audioRef.current.volume = 0
+        audioRef.current.muted = true
+
+        // 手机端额外处理：暂停播放以确保静音效果
+        if (isMobile && !audioRef.current.paused) {
+          audioRef.current.pause()
+          // 记录暂停状态，稍后恢复
+          audioRef.current.dataset.wasPlaying = 'true'
+        }
+      } else {
+        audioRef.current.muted = false
+        audioRef.current.volume = volume
+
+        // 手机端额外处理：如果之前是播放状态，恢复播放
+        if (isMobile && audioRef.current.dataset.wasPlaying === 'true') {
+          audioRef.current.play().catch(console.error)
+          audioRef.current.dataset.wasPlaying = 'false'
+        }
+      }
+
+      // 静音切换完成
+    }
+  }, [isMuted, volume, isMobileDevice])
+
   return {
     audioRef,
     togglePlay,
@@ -312,5 +368,6 @@ export function AudioController({
     handleTimeUpdate,
     handleAudioError,
     setupMediaSource,
+    toggleMute,
   }
 }

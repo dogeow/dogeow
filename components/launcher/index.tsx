@@ -291,6 +291,10 @@ export function AppLauncher() {
           loop={false}
           hidden
           preload="none"
+          // 手机端特殊属性
+          playsInline={true}
+          webkit-playsinline="true"
+          controls={false}
         />
       </div>
     </>
