@@ -77,10 +77,7 @@ export function AudioController({
       audioRef.current.src = audioUrl
       // 记录当前源，用于避免非切歌情况下的重复初始化
       try {
-        // dataset 在部分环境可能未定义，这里做保护
-        // @ts-expect-error dataset 运行时可用
         if (audioRef.current.dataset) {
-          // @ts-expect-error dataset 运行时可用
           audioRef.current.dataset.trackSrc = audioUrl
         }
       } catch {
@@ -123,7 +120,6 @@ export function AudioController({
     // 优先使用我们记录的 trackSrc，避免因函数依赖变化导致误触发
     let currentMarkedSrc: string | null = null
     try {
-      // @ts-expect-error dataset 运行时可用
       currentMarkedSrc = audioRef.current.dataset?.trackSrc ?? null
     } catch {
       currentMarkedSrc = null
