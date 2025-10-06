@@ -355,7 +355,20 @@ export function AudioController({
 
         // 手机端额外处理：如果之前是播放状态，恢复播放
         if (isMobile && audioRef.current.dataset.wasPlaying === 'true') {
-          audioRef.current.play().catch(console.error)
+          // 保存当前播放时间，避免进度重置
+          const currentTime = audioRef.current.currentTime
+
+          // 恢复播放，但保持当前进度
+          audioRef.current
+            .play()
+            .then(() => {
+              // 确保进度没有被重置
+              if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 1) {
+                audioRef.current.currentTime = currentTime
+              }
+            })
+            .catch(console.error)
+
           audioRef.current.dataset.wasPlaying = 'false'
         }
       }
