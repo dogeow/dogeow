@@ -40,6 +40,7 @@ export const useAudioManager = () => {
     isTrackChanging,
     setIsTrackChanging,
     playMode,
+    setIsMuted,
   })
 
   // 加载音频列表
@@ -74,15 +75,6 @@ export const useAudioManager = () => {
       setAudioError('加载音乐列表失败，请稍后重试')
     }
   }, [setAvailableTracks, setCurrentTrack, setAudioError, setIsPlaying])
-
-  // 切换静音状态 - 使用AudioController的toggleMute函数
-  const toggleMute = useCallback(() => {
-    setIsMuted(!isMuted)
-    // 调用AudioController的toggleMute来确保音频元素状态同步
-    if (audioController.toggleMute) {
-      audioController.toggleMute()
-    }
-  }, [isMuted, audioController])
 
   // 获取当前音频文件名称
   const getCurrentTrackName = useCallback(() => {
@@ -149,12 +141,11 @@ export const useAudioManager = () => {
     readyToPlay,
     setReadyToPlay,
     // 方法
-    toggleMute,
     getCurrentTrackName,
     formatTime,
     fetchAvailableTracks,
     setCurrentTrack,
-    // 音频控制器
+    // 音频控制器（包含toggleMute）
     ...audioController,
   }
 }

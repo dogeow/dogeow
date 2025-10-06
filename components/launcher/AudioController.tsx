@@ -18,6 +18,7 @@ interface AudioControllerProps {
   isTrackChanging: boolean
   setIsTrackChanging: (changing: boolean) => void
   playMode: 'none' | 'all' | 'one' | 'shuffle'
+  setIsMuted: (isMuted: boolean) => void
 }
 
 export function AudioController({
@@ -34,6 +35,7 @@ export function AudioController({
   isTrackChanging,
   setIsTrackChanging,
   playMode,
+  setIsMuted,
 }: AudioControllerProps) {
   const audioRef = useRef<HTMLAudioElement>(null)
   const { currentTrack, availableTracks, setCurrentTrack } = useMusicStore()
@@ -333,6 +335,9 @@ export function AudioController({
       const newMutedState = !isMuted
       const isMobile = isMobileDevice()
 
+      // 更新状态
+      setIsMuted(newMutedState)
+
       // 同时设置volume和muted属性，确保在所有设备上都能正常工作
       if (newMutedState) {
         audioRef.current.volume = 0
@@ -357,7 +362,7 @@ export function AudioController({
 
       // 静音切换完成
     }
-  }, [isMuted, volume, isMobileDevice])
+  }, [isMuted, volume, isMobileDevice, setIsMuted])
 
   return {
     audioRef,
