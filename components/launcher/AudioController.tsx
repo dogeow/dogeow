@@ -75,6 +75,17 @@ export function AudioController({
       audioRef.current.pause()
       audioRef.current.currentTime = 0
       audioRef.current.src = audioUrl
+      // 记录当前源，用于避免非切歌情况下的重复初始化
+      try {
+        // dataset 在部分环境可能未定义，这里做保护
+        // @ts-expect-error dataset 运行时可用
+        if (audioRef.current.dataset) {
+          // @ts-expect-error dataset 运行时可用
+          audioRef.current.dataset.trackSrc = audioUrl
+        }
+      } catch {
+        // 忽略 dataset 写入失败
+      }
 
       // 设置初始音量状态
       audioRef.current.volume = isMuted ? 0 : volume
@@ -102,16 +113,30 @@ export function AudioController({
     [setIsPlaying, setReadyToPlay, setAudioError]
   )
 
-  // 监听currentTrack变化
+  // 监听currentTrack变化（仅在真正切歌时初始化媒体源）
   useEffect(() => {
     if (!currentTrack) return
-    if (
-      audioRef.current &&
-      (!audioRef.current.src || !audioRef.current.src.includes(currentTrack))
-    ) {
+    if (!audioRef.current) return
+
+    const desiredUrl = buildAudioUrl(currentTrack)
+
+    // 优先使用我们记录的 trackSrc，避免因函数依赖变化导致误触发
+    let currentMarkedSrc: string | null = null
+    try {
+      // @ts-expect-error dataset 运行时可用
+      currentMarkedSrc = audioRef.current.dataset?.trackSrc ?? null
+    } catch {
+      currentMarkedSrc = null
+    }
+
+    const currentElementSrc = audioRef.current.src
+    const isSameByMark = currentMarkedSrc === desiredUrl
+    const isSameByElement = !!currentElementSrc && currentElementSrc === desiredUrl
+
+    if (!isSameByMark && !isSameByElement) {
       setupMediaSource()
     }
-  }, [currentTrack, setupMediaSource])
+  }, [currentTrack, buildAudioUrl, setupMediaSource])
 
   // 处理播放/暂停
   useEffect(() => {
