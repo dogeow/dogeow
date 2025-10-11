@@ -16,6 +16,7 @@ const BOARD_SIZE = 4
 const MIN_SWIPE_DISTANCE = 30
 const MOVE_THROTTLE = 200
 const RANDOM_DIRECTION_DISPLAY_TIME = 500
+const GYRO_THRESHOLD = 25 // 陀螺仪触发移动的倾斜角度阈值
 
 // 常量配置
 const SPEED_OPTIONS: SpeedOption[] = [
@@ -102,6 +103,12 @@ const getRandomDirection = (): Direction => {
   return DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)]
 }
 
+// 检测是否为移动设备
+const isMobileDevice = (): boolean => {
+  if (typeof window === 'undefined') return false
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+}
+
 // 获取方块颜色的优化版本
 const getTileColor = (value: number): string => {
   const colorMap: Record<number, string> = {
@@ -149,10 +156,16 @@ export default function Game2048() {
   const [speed, setSpeed] = useState(500)
   const [showRandomDirection, setShowRandomDirection] = useState<Direction | null>(null)
 
+  // 陀螺仪状态
+  const [isGyroEnabled, setIsGyroEnabled] = useState(false)
+  const [isGyroSupported, setIsGyroSupported] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
   // Refs
   const autoRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const directionalRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const randomDirectionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastGyroMoveTime = useRef<number>(0)
 
   // 移动逻辑优化
   const moveLeft = useCallback((board: Board): MoveResult => {
@@ -397,6 +410,57 @@ export default function Game2048() {
     }, RANDOM_DIRECTION_DISPLAY_TIME)
   }, [gameOver, isAutoRunning, isDirectionalRunning, handleMove])
 
+  // 请求陀螺仪权限（iOS 13+需要）
+  const requestGyroPermission = useCallback(async () => {
+    if (typeof DeviceOrientationEvent === 'undefined') {
+      setIsGyroSupported(false)
+      return false
+    }
+
+    // 检查是否需要请求权限（iOS 13+）
+    if (
+      typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> })
+        .requestPermission === 'function'
+    ) {
+      try {
+        const permission = await (
+          DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }
+        ).requestPermission()
+        if (permission === 'granted') {
+          setIsGyroSupported(true)
+          return true
+        } else {
+          toast.error('陀螺仪权限被拒绝')
+          setIsGyroSupported(false)
+          return false
+        }
+      } catch (error) {
+        console.error('请求陀螺仪权限失败:', error)
+        toast.error('请求陀螺仪权限失败')
+        setIsGyroSupported(false)
+        return false
+      }
+    } else {
+      // 不需要权限的设备（大多数Android设备）
+      setIsGyroSupported(true)
+      return true
+    }
+  }, [])
+
+  // 开启/关闭陀螺仪
+  const toggleGyro = useCallback(async () => {
+    if (!isGyroEnabled) {
+      const hasPermission = await requestGyroPermission()
+      if (hasPermission) {
+        setIsGyroEnabled(true)
+        toast.success('陀螺仪已开启，倾斜设备来移动方块')
+      }
+    } else {
+      setIsGyroEnabled(false)
+      toast.success('陀螺仪已关闭')
+    }
+  }, [isGyroEnabled, requestGyroPermission])
+
   const resetGame = useCallback(() => {
     stopAutoRun()
     stopDirectionalRun()
@@ -412,6 +476,7 @@ export default function Game2048() {
     setCurrentDirection('down')
     setSpeed(500)
     setShowRandomDirection(null)
+    // 陀螺仪状态在重置游戏时保持不变
   }, [stopAutoRun, stopDirectionalRun])
 
   const undoMove = useCallback(() => {
@@ -447,8 +512,11 @@ export default function Game2048() {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [handleMove])
 
-  // 触摸事件处理
+  // 触摸事件处理（陀螺仪启用时禁用）
   useEffect(() => {
+    // 如果陀螺仪已启用，不添加触摸事件监听
+    if (isGyroEnabled) return
+
     let startX = 0
     let startY = 0
     let lastMoveTime = 0
@@ -510,7 +578,63 @@ export default function Game2048() {
       document.removeEventListener('touchmove', handleTouchMove)
       document.removeEventListener('touchend', handleTouchEnd)
     }
-  }, [handleMove])
+  }, [handleMove, isGyroEnabled])
+
+  // 陀螺仪事件处理
+  useEffect(() => {
+    if (!isGyroEnabled) return
+
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      const currentTime = Date.now()
+      if (currentTime - lastGyroMoveTime.current < MOVE_THROTTLE) return
+
+      const beta = event.beta // 前后倾斜（-180 到 180）
+      const gamma = event.gamma // 左右倾斜（-90 到 90）
+
+      if (beta === null || gamma === null) return
+
+      // 判断倾斜方向和角度
+      let direction: Direction | null = null
+
+      // 左右倾斜优先
+      if (Math.abs(gamma) > Math.abs(beta)) {
+        if (gamma > GYRO_THRESHOLD) {
+          direction = 'right'
+        } else if (gamma < -GYRO_THRESHOLD) {
+          direction = 'left'
+        }
+      } else {
+        // 前后倾斜
+        if (beta > GYRO_THRESHOLD) {
+          direction = 'down'
+        } else if (beta < -GYRO_THRESHOLD) {
+          direction = 'up'
+        }
+      }
+
+      if (direction) {
+        handleMove(direction)
+        lastGyroMoveTime.current = currentTime
+      }
+    }
+
+    window.addEventListener('deviceorientation', handleOrientation)
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation)
+    }
+  }, [isGyroEnabled, handleMove])
+
+  // 检测移动设备和初始化
+  useEffect(() => {
+    const mobile = isMobileDevice()
+    setIsMobile(mobile)
+
+    // 在移动设备上检测陀螺仪支持
+    if (mobile && typeof DeviceOrientationEvent !== 'undefined') {
+      setIsGyroSupported(true)
+    }
+  }, [])
 
   // 自动运行重启逻辑
   useEffect(() => {
@@ -742,6 +866,35 @@ export default function Game2048() {
     ]
   )
 
+  const GyroControls = useMemo(
+    () => (
+      <>
+        {isMobile && isGyroSupported && (
+          <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="font-medium text-blue-900 dark:text-blue-100">📱 陀螺仪控制</div>
+                <div className="text-xs text-blue-700 dark:text-blue-300">
+                  {isGyroEnabled ? '倾斜设备来移动方块' : '开启后可用陀螺仪控制'}
+                </div>
+              </div>
+              <Button
+                variant={isGyroEnabled ? 'default' : 'outline'}
+                size="sm"
+                onClick={toggleGyro}
+                disabled={gameOver}
+                className={isGyroEnabled ? 'bg-blue-600 hover:bg-blue-700' : ''}
+              >
+                {isGyroEnabled ? '已启用' : '启用'}
+              </Button>
+            </div>
+          </div>
+        )}
+      </>
+    ),
+    [isMobile, isGyroSupported, isGyroEnabled, gameOver, toggleGyro]
+  )
+
   return (
     <div className="container mx-auto max-w-md px-4 py-4" onContextMenu={e => e.preventDefault()}>
       <div className="mb-6 text-center">
@@ -751,6 +904,7 @@ export default function Game2048() {
             title="2048游戏规则"
             rules={[
               '滑动屏幕或使用方向键移动方块',
+              '移动设备可启用陀螺仪，倾斜设备来控制',
               '相同数字的方块会合并成更大的数字',
               '目标：合并出2048方块！',
               '可使用按钮手动控制或自动运行',
@@ -796,6 +950,7 @@ export default function Game2048() {
         </div>
       )}
 
+      {GyroControls}
       {DirectionControls}
       {AutoRunControls}
     </div>
