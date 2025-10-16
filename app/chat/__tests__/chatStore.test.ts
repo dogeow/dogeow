@@ -309,6 +309,7 @@ describe('ChatStore', () => {
   describe('Error Handling', () => {
     it('should set error correctly', () => {
       const mockError = {
+        name: 'ChatApiError',
         type: 'network' as const,
         message: 'Network error',
         code: 500,
@@ -327,6 +328,7 @@ describe('ChatStore', () => {
 
     it('should clear error correctly', () => {
       const mockError = {
+        name: 'ChatApiError',
         type: 'network' as const,
         message: 'Network error',
         code: 500,

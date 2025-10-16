@@ -275,6 +275,7 @@ export function NetworkErrorFallback({
   className?: string
 }) {
   const error: ChatApiError = {
+    name: 'ChatApiError',
     type: 'network',
     message: '无法连接到聊天服务器',
     timestamp: new Date(),
@@ -290,6 +291,7 @@ export function NetworkErrorFallback({
  */
 export function AuthErrorFallback({ className }: { className?: string }) {
   const error: ChatApiError = {
+    name: 'ChatApiError',
     type: 'authentication',
     message: '需要身份验证才能访问聊天功能',
     timestamp: new Date(),
@@ -311,6 +313,7 @@ export function ServerErrorFallback({
   className?: string
 }) {
   const error: ChatApiError = {
+    name: 'ChatApiError',
     type: 'server',
     message: '聊天服务器暂时不可用',
     timestamp: new Date(),

@@ -48,7 +48,8 @@ export const PuzzleBoard = React.memo(function PuzzleBoard({
       }}
     >
       {slots.map(slot => {
-        const placedPiece = slot.pieceId !== null ? pieces.find(p => p.id === slot.pieceId) : null
+        const placedPiece =
+          slot.pieceId !== null ? (pieces.find(p => p.id === slot.pieceId) ?? null) : null
         const isSelected = selectedPlacedPiece === slot.pieceId
         const isWronglyPlaced = placedPiece ? wronglyPlacedPieces.has(placedPiece.id) : false
 

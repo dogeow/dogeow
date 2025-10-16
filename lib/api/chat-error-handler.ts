@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { reportChatError } from '@/lib/services/errorReportingService'
 
-export interface ChatApiError {
+export interface ChatApiError extends Error {
   type: 'network' | 'authentication' | 'validation' | 'server' | 'timeout' | 'unknown'
   message: string
   code?: string | number
@@ -104,6 +104,7 @@ class ChatApiErrorHandler {
       console.warn('Chat API: Received empty error object:', debugInfo)
 
       return {
+        name: 'ChatApiError',
         type,
         message,
         code,
@@ -244,6 +245,7 @@ class ChatApiErrorHandler {
     }
 
     return {
+      name: 'ChatApiError',
       type,
       message,
       code,
