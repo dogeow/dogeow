@@ -11,13 +11,13 @@
 ## 前端
 
 - React + [Next.js](https://nextjs.org) 15
-- [shadcn](https://ui.shadcn.com/)（UI） + tailwind
+- [shadcn](https://ui.shadcn.com/)（UI） + Tailwind CSS
 - Zustand（状态管理） + Immer（辅助）
 - Zod（字段验证）
 - react-hook-form（表单填写）
 - (Lucide)[https://lucide.dev/]（图标）
 - Canvas / Three.js
-- SWR / TanStack Query
+- SWR
 - React DnD（拖放）
 - Sentry (错误跟踪)
 - Husky + lint-staged (Git钩子)
