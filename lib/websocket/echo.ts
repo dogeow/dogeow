@@ -208,7 +208,11 @@ export function createEchoInstance(): Echo<'reverb'> | null {
           })
 
           pusherConnector.pusher.connection.bind('unavailable', (error: unknown) => {
-            console.error('🔥 Echo: 连接不可用:', error)
+            // WebSocket 连接不可用，但不影响非实时功能（如 Wiki、笔记等）
+            // 只在开发环境显示详细错误
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('🔥 Echo: 连接不可用（不影响 Wiki 等 REST API 功能）:', error)
+            }
           })
         }
       }

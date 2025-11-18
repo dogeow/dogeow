@@ -119,10 +119,13 @@ export default function NotePage() {
     const fetchNotes = async () => {
       try {
         const data = await apiRequest<Note[]>('/notes')
-        setNotes(data)
+        // 确保 data 是数组，如果不是则使用空数组
+        setNotes(Array.isArray(data) ? data : [])
       } catch (error) {
         console.error('获取笔记列表失败:', error)
         toast.error('无法加载笔记列表')
+        // 发生错误时设置为空数组
+        setNotes([])
       } finally {
         setLoading(false)
       }
@@ -133,6 +136,10 @@ export default function NotePage() {
 
   // 使用 useMemo 优化排序性能
   const sortedNotes = useMemo(() => {
+    // 确保 notes 是数组，如果不是则返回空数组
+    if (!Array.isArray(notes)) {
+      return []
+    }
     return [...notes].sort((a, b) => {
       const timeA = new Date(a.updated_at).getTime()
       const timeB = new Date(b.updated_at).getTime()

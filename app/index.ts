@@ -3,6 +3,7 @@ export interface User {
   id: number
   name: string
   email: string
+  is_admin?: boolean
 }
 
 // 认证响应类型
