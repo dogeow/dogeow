@@ -17,7 +17,6 @@ export default async function WikiArticlePage({ params }: Props) {
         </Link>
       </div>
       <article className="prose prose-slate max-w-none">
-        {/* @ts-expect-error Async Server Component from next-mdx-remote/rsc */}
         <MDXRemote
           source={source}
           options={{

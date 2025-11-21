@@ -9,6 +9,7 @@ import NodeEditor from './components/NodeEditor'
 import LinkCreator from './components/LinkCreator'
 import { toast } from 'sonner'
 import { Plus, Edit, Trash2, Link as LinkIcon } from 'lucide-react'
+import type { JSONContent } from 'novel'
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
@@ -77,7 +78,7 @@ export default function WikiGraphPage() {
   const [query, setQuery] = useState<string>('')
   const [articleHtml, setArticleHtml] = useState<string>('')
   const [articleRaw, setArticleRaw] = useState<string>('')
-  const [articleJson, setArticleJson] = useState<{ type: string; content?: unknown[] } | null>(null)
+  const [articleJson, setArticleJson] = useState<JSONContent | null>(null)
   const [loadingArticle, setLoadingArticle] = useState<boolean>(false)
   const [articleError, setArticleError] = useState<string>('')
   const [dialogOpen, setDialogOpen] = useState<boolean>(false)
@@ -149,20 +150,20 @@ export default function WikiGraphPage() {
     setArticleHtml(html)
 
     let markdownOrRaw = article.content_markdown ?? ''
-    let parsedJson: { type: string; content?: unknown[] } | null = null
+    let parsedJson: JSONContent | null = null
 
     const rawContent = article.content
     if (!html && rawContent) {
       if (typeof rawContent === 'string') {
         try {
-          parsedJson = JSON.parse(rawContent)
+          parsedJson = JSON.parse(rawContent) as JSONContent
         } catch {
           if (!markdownOrRaw) {
             markdownOrRaw = rawContent
           }
         }
       } else if (typeof rawContent === 'object') {
-        parsedJson = rawContent
+        parsedJson = rawContent as JSONContent
       }
     }
 
@@ -193,6 +194,10 @@ export default function WikiGraphPage() {
       }
 
       const originalFilter = zoom.filter()
+      let originalFilterFn: ((event: Event) => boolean) | null = null
+      if (originalFilter && typeof originalFilter === 'function') {
+        originalFilterFn = originalFilter as (event: Event) => boolean
+      }
       const safeFilter = (event: Event | null) => {
         const eventType = event?.type
 
@@ -206,12 +211,12 @@ export default function WikiGraphPage() {
           return false
         }
 
-        if (!originalFilter) {
+        if (!originalFilterFn) {
           return true
         }
 
         try {
-          return originalFilter(event)
+          return originalFilterFn(event)
         } catch (error) {
           console.warn('D3 zoom filter 执行失败，已回退默认允许:', error)
           return true
@@ -219,7 +224,13 @@ export default function WikiGraphPage() {
       }
 
       zoom.filter(safeFilter)
-      cleanup = () => zoom.filter(originalFilter)
+      cleanup = () => {
+        if (originalFilterFn) {
+          zoom.filter(originalFilterFn)
+        } else {
+          zoom.filter(undefined)
+        }
+      }
       return true
     }
 
@@ -367,7 +378,7 @@ export default function WikiGraphPage() {
     })
 
     return { nodes: fNodes, links: fLinks }
-  }, [nodes, links, query, showNeighborsOnly, activeNode, neighborIds])
+  }, [nodes, links, query, showNeighborsOnly, activeNode])
 
   return (
     <div style={{ position: 'relative', height: '100%' }}>
@@ -613,38 +624,40 @@ export default function WikiGraphPage() {
           </div>
         )}
         <ForceGraph2D
-          ref={fgRef}
+          ref={fgRef as React.RefObject<ForceGraphInstance>}
           graphData={filtered}
           nodeId="id"
           nodeLabel={n => (n as NodeData).title}
           linkDirectionalArrowLength={4}
-          linkColor={(l: LinkData) => {
+          linkColor={(l: unknown) => {
+            const link = l as LinkData
             const mutedColor = 'rgba(203, 213, 225, 0.3)' // slate-200
             if (!activeNode) return mutedColor
             const s =
-              typeof l.source === 'string' || typeof l.source === 'number'
-                ? String(l.source)
-                : String((l.source as NodeData)?.id)
+              typeof link.source === 'string' || typeof link.source === 'number'
+                ? String(link.source)
+                : String((link.source as NodeData)?.id)
             const t =
-              typeof l.target === 'string' || typeof l.target === 'number'
-                ? String(l.target)
-                : String((l.target as NodeData)?.id)
+              typeof link.target === 'string' || typeof link.target === 'number'
+                ? String(link.target)
+                : String((link.target as NodeData)?.id)
             if (s === String(activeNode.id) || t === String(activeNode.id)) {
               return 'rgba(37, 99, 235, 0.95)' // vivid blue for active connections
             }
             return mutedColor
           }}
-          linkWidth={(l: LinkData) => {
+          linkWidth={(l: unknown) => {
+            const link = l as LinkData
             const mutedWidth = 0.7
             if (!activeNode) return mutedWidth
             const s =
-              typeof l.source === 'string' || typeof l.source === 'number'
-                ? String(l.source)
-                : String((l.source as NodeData)?.id)
+              typeof link.source === 'string' || typeof link.source === 'number'
+                ? String(link.source)
+                : String((link.source as NodeData)?.id)
             const t =
-              typeof l.target === 'string' || typeof l.target === 'number'
-                ? String(l.target)
-                : String((l.target as NodeData)?.id)
+              typeof link.target === 'string' || typeof link.target === 'number'
+                ? String(link.target)
+                : String((link.target as NodeData)?.id)
             if (s === String(activeNode.id) || t === String(activeNode.id)) return 3
             return mutedWidth
           }}

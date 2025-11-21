@@ -122,12 +122,6 @@ export function PlaylistDialog({
               <div className="text-muted-foreground text-xs">{formatTime(track.duration)}</div>
             )}
           </div>
-          {/* 当前播放指示器 */}
-          {isCurrentTrack && (
-            <div className="flex-shrink-0">
-              <div className="bg-primary h-2 w-2 animate-pulse rounded-full" />
-            </div>
-          )}
         </div>
       )
     },
