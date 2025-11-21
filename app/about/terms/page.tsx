@@ -6,7 +6,9 @@ export default function TermsPage() {
       <div className="prose prose-gray max-w-none">
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold">服务条款</h2>
-          <p className="mb-4">欢迎使用本网站。通过访问和使用本网站，您同意遵守以下条款和条件。</p>
+          <p className="mb-4">
+            欢迎使用本网站。注册本网站的账号时，需要阅读该《用户协议》，并同意遵守以下条款和条件才能完成注册（在注册页面勾选「我同意」的候选框）。
+          </p>
         </section>
 
         <section className="mb-8">
@@ -24,7 +26,7 @@ export default function TermsPage() {
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold">服务提供</h2>
           <p className="mb-4">
-            我们努力提供稳定可靠的服务，但不保证服务的连续性和完全无错误。我们保留随时修改或终止服务的权利。
+            我们努力提供稳定可靠的服务，但不保证服务的连续性和完全无错误。我们保留随时修改或终止服务的权利，比如：网站改版、服务器维护等。
           </p>
         </section>
 
@@ -52,11 +54,11 @@ export default function TermsPage() {
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold">协议修改</h2>
           <p className="mb-4">
-            我们可能会不时修改本协议。重要修改将在网站上公布。继续使用网站即表示您接受修改后的协议。
+            我们会不定时修改本协议。重要修改会通过信息提醒您（建设中），不重要的修改比如：标点符号或更换为近义词等不影响条款的实质内容。因为信息都带有红点高亮提醒，建议看到及时阅读，继续使用网站即表示您接受修改后的协议。
           </p>
         </section>
 
-        <p className="mt-8 text-sm text-gray-600">最后更新日期：2025年7月25日</p>
+        <p className="mt-8 text-sm text-gray-600">最后更新日期：2025年11月21日</p>
       </div>
     </div>
   )

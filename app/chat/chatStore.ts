@@ -138,8 +138,10 @@ const initialState = {
 }
 
 // 防抖和节流工具函数
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const createThrottledFunction = <T extends (...args: any[]) => any>(fn: T, delay: number): T => {
+const createThrottledFunction = <T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  delay: number
+): T => {
   let loading = false
   let lastLoadTime = 0
 

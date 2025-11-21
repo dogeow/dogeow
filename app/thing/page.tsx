@@ -56,7 +56,7 @@ export default function Thing() {
     }
 
     initializeData()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [categories.length, fetchCategories, setSearchTerm, handleSearch, fetchItems])
 
   // 处理页面变化
   const handlePageChange = useCallback(

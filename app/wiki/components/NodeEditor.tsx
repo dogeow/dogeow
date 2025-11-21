@@ -34,53 +34,56 @@ export default function NodeEditor({
   const [summary, setSummary] = useState('')
   const [isSaving, setIsSaving] = useState(false)
 
-  const resetEditorStorage = () => {
+  const resetEditorStorage = useCallback(() => {
     window.localStorage.removeItem('novel-content')
     window.localStorage.removeItem('html-content')
     window.localStorage.removeItem('markdown')
-  }
+  }, [])
 
-  const hydrateEditorStorage = async (slug?: string) => {
-    if (!slug) {
-      resetEditorStorage()
-      return
-    }
-    try {
-      const article = await getArticle(slug)
-      if (article.content) {
-        try {
-          const parsedContent = JSON.parse(article.content)
-          window.localStorage.setItem('novel-content', JSON.stringify(parsedContent))
-        } catch {
-          const defaultContent = {
-            type: 'doc',
-            content: [
-              {
-                type: 'paragraph',
-                content: [
-                  {
-                    type: 'text',
-                    text: article.content || '',
-                  },
-                ],
-              },
-            ],
+  const hydrateEditorStorage = useCallback(
+    async (slug?: string) => {
+      if (!slug) {
+        resetEditorStorage()
+        return
+      }
+      try {
+        const article = await getArticle(slug)
+        if (article.content) {
+          try {
+            const parsedContent = JSON.parse(article.content)
+            window.localStorage.setItem('novel-content', JSON.stringify(parsedContent))
+          } catch {
+            const defaultContent = {
+              type: 'doc',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    {
+                      type: 'text',
+                      text: article.content || '',
+                    },
+                  ],
+                },
+              ],
+            }
+            window.localStorage.setItem('novel-content', JSON.stringify(defaultContent))
           }
-          window.localStorage.setItem('novel-content', JSON.stringify(defaultContent))
+        } else {
+          window.localStorage.removeItem('novel-content')
         }
-      } else {
-        window.localStorage.removeItem('novel-content')
-      }
 
-      if (article.content_markdown) {
-        window.localStorage.setItem('markdown', article.content_markdown)
-      } else {
-        window.localStorage.removeItem('markdown')
+        if (article.content_markdown) {
+          window.localStorage.setItem('markdown', article.content_markdown)
+        } else {
+          window.localStorage.removeItem('markdown')
+        }
+      } catch (error) {
+        console.error('加载节点内容失败:', error)
       }
-    } catch (error) {
-      console.error('加载节点内容失败:', error)
-    }
-  }
+    },
+    [resetEditorStorage]
+  )
 
   // 初始化编辑器内容
   useEffect(() => {
@@ -116,8 +119,7 @@ export default function NodeEditor({
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, node, templateNode])
+  }, [open, node, templateNode, hydrateEditorStorage, resetEditorStorage])
 
   // 获取当前编辑器内容
   const getCurrentContent = () => {

@@ -51,7 +51,7 @@ function RepeatModeButton(props: { playMode: PlayMode; onTogglePlayMode: () => v
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleClick} className="flex-1">
+    <Button variant="outline" size="sm" onClick={handleClick}>
       {icon}
       <span className="ml-2">{label}</span>
     </Button>
@@ -90,9 +90,9 @@ export function PlaylistDialog({
       const isCurrentTrack = track.path === currentTrack
       let iconNode = null
       if (isCurrentTrack && isPlaying) {
-        iconNode = <Pause className="text-primary h-4 w-4" />
-      } else if (isCurrentTrack) {
         iconNode = <Play className="text-primary h-4 w-4" />
+      } else if (isCurrentTrack) {
+        iconNode = <Pause className="text-primary h-4 w-4" />
       } else {
         iconNode = <span className="text-muted-foreground text-xs">{index + 1}</span>
       }
@@ -144,11 +144,6 @@ export function PlaylistDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* 控制按钮 */}
-        <div className="mb-4 flex flex-shrink-0 items-center gap-2">
-          <RepeatModeButton playMode={playMode} onTogglePlayMode={onTogglePlayMode} />
-        </div>
-
         {/* 搜索框 */}
         <div className="mb-4 flex-shrink-0">
           <input
@@ -173,16 +168,17 @@ export function PlaylistDialog({
 
         {/* 底部控制栏 */}
         <div className="flex flex-shrink-0 items-center gap-2 border-t pt-4">
+          <RepeatModeButton playMode={playMode} onTogglePlayMode={onTogglePlayMode} />
           <Button onClick={onTogglePlay} disabled={availableTracks.length === 0} className="flex-1">
             {isPlaying ? (
               <>
-                <Pause className="mr-2 h-4 w-4" />
-                暂停
+                <Play className="mr-2 h-4 w-4" />
+                播放
               </>
             ) : (
               <>
-                <Play className="mr-2 h-4 w-4" />
-                播放
+                <Pause className="mr-2 h-4 w-4" />
+                暂停
               </>
             )}
           </Button>

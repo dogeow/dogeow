@@ -118,11 +118,12 @@ export default function WikiGraphPage() {
     if (!graph) return
 
     try {
-      if (typeof graph.resumeAnimation === 'function') {
-        graph.resumeAnimation()
-      }
+      // 只在必要时恢复动画，避免频繁重启
       if (typeof graph.d3ReheatSimulation === 'function') {
         graph.d3ReheatSimulation()
+      }
+      if (typeof graph.resumeAnimation === 'function') {
+        graph.resumeAnimation()
       }
     } catch (error) {
       console.warn('恢复图谱动画失败:', error)
@@ -236,7 +237,7 @@ export default function WikiGraphPage() {
   }, [])
 
   // 加载图谱数据
-  const loadGraphData = async () => {
+  const loadGraphData = useCallback(async () => {
     try {
       setLoading(true)
       const data = await getWikiGraph()
@@ -261,8 +262,12 @@ export default function WikiGraphPage() {
       setNodes(normalizedNodes)
       setLinks(normalizedLinks)
 
+      // 数据加载后让布局自然稳定，不需要立即恢复动画
       requestAnimationFrame(() => {
-        resumeGraphAnimation()
+        // 延迟一点再恢复，确保图表已经更新数据
+        setTimeout(() => {
+          resumeGraphAnimation()
+        }, 100)
       })
     } catch (error) {
       console.error('加载图谱数据失败:', error)
@@ -270,14 +275,13 @@ export default function WikiGraphPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [resumeGraphAnimation])
 
   // 初始化加载数据
   useEffect(() => {
     loadGraphData()
     setIsAdmin(isAdminSync())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loadGraphData])
 
   // 缓存邻居节点集合，避免在 nodeCanvasObject 中重复计算
   const neighborIds = useMemo(() => {
@@ -363,7 +367,7 @@ export default function WikiGraphPage() {
     })
 
     return { nodes: fNodes, links: fLinks }
-  }, [nodes, links, query, showNeighborsOnly, activeNode])
+  }, [nodes, links, query, showNeighborsOnly, activeNode, neighborIds])
 
   return (
     <div style={{ position: 'relative', height: '100%' }}>
@@ -647,7 +651,6 @@ export default function WikiGraphPage() {
           backgroundColor="#ffffff"
           onNodeHover={n => setHoverNode((n as NodeData) ?? null)}
           onNodeClick={n => {
-            resumeGraphAnimation()
             // 单击：选中节点，如果重复点击已选中的节点则取消选中
             const nd = n as NodeData
             if (String(activeNode?.id) === String(nd.id)) {
@@ -663,11 +666,12 @@ export default function WikiGraphPage() {
           }}
           onNodeDrag={() => {
             isDraggingRef.current = true
+            // 拖动时恢复动画以便节点可以移动
             resumeGraphAnimation()
           }}
           onNodeDragEnd={() => {
             isDraggingRef.current = false
-            resumeGraphAnimation()
+            // 拖动结束后不需要立即恢复动画，让布局自然稳定
           }}
           onNodeRightClick={n => {
             // 右键：管理员显示编辑菜单，否则打开文章
@@ -706,6 +710,7 @@ export default function WikiGraphPage() {
                 .finally(() => setLoadingArticle(false))
             }
           }}
+          nodeCanvasObjectMode={() => 'after'}
           nodeCanvasObject={(node, ctx, globalScale) => {
             const n = node as NodeData
             const label = n.title
@@ -750,9 +755,10 @@ export default function WikiGraphPage() {
             ctx.arc(n.x ?? 0, n.y ?? 0, 5, 0, 2 * Math.PI, false)
             ctx.fill()
           }}
-          cooldownTime={showNeighborsOnly ? 5000 : 8000}
+          cooldownTime={showNeighborsOnly ? 2000 : 3000}
           d3AlphaDecay={0.0228}
           d3VelocityDecay={0.4}
+          d3AlphaMin={0.001}
           onZoom={transform => {
             lastZoomRef.current = transform.k
             lastTransformRef.current = { x: transform.x, y: transform.y, k: transform.k }
@@ -770,17 +776,14 @@ export default function WikiGraphPage() {
           }}
           onEngineStop={() => {
             if (!fgRef.current) return
-            // 布局稳定后自动暂停，避免持续消耗性能导致卡顿
-            // 不调用 zoomToFit，避免频繁调整视图导致节点看起来越来越远
-            setTimeout(() => {
-              if (fgRef.current) {
-                try {
-                  fgRef.current.pauseAnimation()
-                } catch {
-                  // 忽略暂停失败的错误
-                }
+            // 布局稳定后立即暂停，避免持续消耗性能导致卡顿
+            try {
+              if (typeof fgRef.current.pauseAnimation === 'function') {
+                fgRef.current.pauseAnimation()
               }
-            }, 500)
+            } catch {
+              // 忽略暂停失败的错误
+            }
           }}
         />
       </div>
