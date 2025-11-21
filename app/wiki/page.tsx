@@ -628,7 +628,8 @@ export default function WikiGraphPage() {
           </div>
         )}
         <ForceGraph2D
-          ref={fgRef}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          ref={fgRef as React.RefObject<any>}
           graphData={filtered}
           nodeId="id"
           nodeLabel={n => (n as NodeData).title}
