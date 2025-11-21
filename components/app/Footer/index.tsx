@@ -9,8 +9,8 @@ export default function Footer() {
   return (
     <footer className="mt-auto flex flex-col items-center gap-2">
       <LegalLinks />
-      <PowerBy />
       <BuiltBy />
+      <PowerBy />
       <ICP />
     </footer>
   )
