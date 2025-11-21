@@ -46,7 +46,7 @@ const nodeDataToWikiNode = (node: NodeData): WikiNode => ({
   summary: node.summary,
 })
 
-type ForceGraphInstance = {
+export type ForceGraphInstance = {
   graphData: (data: { nodes: NodeData[]; links: LinkData[] }) => void
   zoom: (k?: number, transitionMs?: number) => ForceGraphInstance
   zoomToFit: (...args: unknown[]) => ForceGraphInstance
@@ -64,6 +64,10 @@ type ForceGraphInstance = {
   clientWidth?: number
   clientHeight?: number
   screen2GraphCoords: (x: number, y: number) => { x: number; y: number } | null
+  emitParticle?: (...args: unknown[]) => unknown
+  d3Force?: (...args: unknown[]) => unknown
+  getGraphBbox?: () => { x: number; y: number; width: number; height: number } | null
+  graph2ScreenCoords?: (x: number, y: number) => { x: number; y: number } | null
 }
 
 export default function WikiGraphPage() {
@@ -624,7 +628,7 @@ export default function WikiGraphPage() {
           </div>
         )}
         <ForceGraph2D
-          ref={fgRef as React.RefObject<ForceGraphInstance>}
+          ref={fgRef}
           graphData={filtered}
           nodeId="id"
           nodeLabel={n => (n as NodeData).title}
