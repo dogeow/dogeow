@@ -15,6 +15,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import ImageUploader from '../ImageUploader'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { AlertCircle } from 'lucide-react'
 import LocationComboboxSelectSimple from '../LocationComboboxSelectSimple'
 import CategoryTreeSelect, { CategorySelection } from '../CategoryTreeSelect'
 import { ItemFormData, Category, Tag, UploadedImage } from '../../types'
@@ -216,8 +218,18 @@ export default function UnifiedBasicInfoForm({
     [isCreateMode]
   )
 
-  const handleLocationSelect = (type: LocationType, id: number, fullPath?: string) => {
+  const handleLocationSelect = async (type: LocationType, id: number, fullPath?: string) => {
     if (isCreateMode) {
+      // 处理取消选择（id 为 0 或 fullPath 为空）
+      if (id === 0 || !fullPath) {
+        setInternalSelectedLocation(undefined)
+        setInternalLocationPath('')
+        setCurrentValue('area_id', '')
+        setCurrentValue('room_id', '')
+        setCurrentValue('spot_id', '')
+        return
+      }
+
       setInternalSelectedLocation({ type, id })
       setInternalLocationPath(fullPath || '')
 
@@ -236,7 +248,18 @@ export default function UnifiedBasicInfoForm({
       } else if (type === 'spot') {
         setCurrentValue('spot_id', id.toString())
 
-        const spot = spots.find(s => s.id === id)
+        let spot = spots.find(s => s.id === id)
+
+        // 如果找不到 spot（可能是刚创建的），刷新 spots 列表
+        if (!spot) {
+          const currentRoomId = getCurrentValue('room_id')
+          if (currentRoomId) {
+            const refreshedSpots = await loadSpots(String(currentRoomId))
+            // 从刷新后的数据中查找
+            spot = refreshedSpots.find(s => s.id === id)
+          }
+        }
+
         if (spot?.room_id) {
           setCurrentValue('room_id', spot.room_id.toString())
 
@@ -244,9 +267,25 @@ export default function UnifiedBasicInfoForm({
           if (room?.area_id) {
             setCurrentValue('area_id', room.area_id.toString())
           }
+        } else {
+          // 如果还是找不到，使用当前已知的 room_id 和 area_id
+          // 这通常发生在刚创建位置时，spots 列表还没有更新
+          const currentRoomId = getCurrentValue('room_id')
+          const currentAreaId = getCurrentValue('area_id')
+          if (currentRoomId) {
+            setCurrentValue('room_id', currentRoomId)
+          }
+          if (currentAreaId) {
+            setCurrentValue('area_id', currentAreaId)
+          }
         }
       }
     } else if (isEditMode && onLocationSelect) {
+      // 编辑模式下，如果 id 为 0，表示取消选择
+      if (id === 0) {
+        // 编辑模式的取消选择逻辑由父组件处理
+        return
+      }
       onLocationSelect(type, id)
     }
   }
@@ -413,7 +452,27 @@ export default function UnifiedBasicInfoForm({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="images">物品图片</Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="images">物品图片</Label>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      aria-label="查看上传说明"
+                    >
+                      <AlertCircle className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p className="text-xs">
+                      支持JPG、PNG、GIF格式，每张图片不超过20MB，最多上传10 张。点击图片可设为主图。
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <ImageUploader
               onImagesChange={setUploadedImages}
               existingImages={uploadedImages}
@@ -423,7 +482,7 @@ export default function UnifiedBasicInfoForm({
 
           <div className="space-y-2">
             <div className="mb-2 flex items-center justify-between">
-              <Label htmlFor="tags">标签</Label>
+              <h3 className="text-foreground text-lg font-bold">标签</h3>
               <Button
                 type="button"
                 variant="outline"
@@ -433,53 +492,44 @@ export default function UnifiedBasicInfoForm({
               >
                 <Plus className="mr-1 h-3.5 w-3.5" />
                 <TagIcon className="mr-1 h-3.5 w-3.5" />
-                新建标签
               </Button>
             </div>
 
             <div>
-              <div className="mb-3 flex flex-wrap gap-1">
-                {selectedTags.length > 0 ? (
-                  selectedTags.map(tagId => {
-                    const tag = tags.find(t => t.id.toString() === tagId)
-                    return tag ? (
-                      <Badge
-                        key={tag.id}
-                        style={getTagStyle(tag.color)}
-                        className="my-0.5 flex items-center px-2 py-0.5"
-                      >
-                        {tag.name}
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="ml-1 h-4 w-4 p-0 hover:bg-transparent"
-                          onClick={() => toggleTag(tagId)}
-                        >
-                          <X size={12} />
-                        </Button>
-                      </Badge>
-                    ) : null
-                  })
-                ) : (
-                  <div className="text-muted-foreground text-sm">未选择标签</div>
-                )}
-              </div>
-
-              <div className="mb-2 text-sm font-medium">可用标签：</div>
-              <div className="flex max-h-40 flex-wrap gap-1 overflow-y-auto p-1">
-                {tags.map(tag => (
-                  <Badge
-                    key={tag.id}
-                    style={getTagStyle(tag.color)}
-                    className={`my-0.5 cursor-pointer px-2 py-0.5 transition-opacity ${
-                      selectedTags.includes(tag.id.toString()) ? 'opacity-50' : ''
-                    }`}
-                    onClick={() => toggleTag(tag.id.toString())}
-                  >
-                    {tag.name}
-                  </Badge>
-                ))}
+              <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto p-2">
+                {tags.map(tag => {
+                  const isSelected = selectedTags.includes(tag.id.toString())
+                  return (
+                    <Badge
+                      key={tag.id}
+                      style={getTagStyle(tag.color)}
+                      className={`my-0.5 flex cursor-pointer items-center px-2 py-0.5 transition-all ${
+                        isSelected
+                          ? 'ring-offset-background ring-primary shadow-md ring-2 ring-offset-1'
+                          : 'ring-offset-background ring-2 ring-transparent ring-offset-1'
+                      }`}
+                      onClick={() => toggleTag(tag.id.toString())}
+                    >
+                      <span className="flex-1 whitespace-nowrap">{tag.name}</span>
+                      <span className="ml-1 flex h-4 w-4 flex-shrink-0 items-center justify-center">
+                        {isSelected && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0 hover:bg-transparent"
+                            onClick={e => {
+                              e.stopPropagation()
+                              toggleTag(tag.id.toString())
+                            }}
+                          >
+                            <X size={12} />
+                          </Button>
+                        )}
+                      </span>
+                    </Badge>
+                  )
+                })}
               </div>
             </div>
           </div>

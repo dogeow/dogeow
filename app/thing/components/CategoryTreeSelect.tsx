@@ -222,7 +222,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
     <div className={cn('space-y-3', className)}>
       {/* 主分类选择 */}
       <div className="space-y-2">
-        <Label className="text-sm font-medium">主分类</Label>
+        <Label className="text-muted-foreground text-xs font-normal">主分类</Label>
         <Combobox
           options={parentOptions}
           value={selectedParentId}
@@ -238,7 +238,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
       {/* 子分类选择 */}
       {selectedParentId && selectedParentId !== 'none' && (
         <div className="space-y-2">
-          <Label className="text-sm font-medium">子分类（可选）</Label>
+          <Label className="text-muted-foreground text-xs font-normal">子分类（可选）</Label>
           <Combobox
             options={childOptions}
             value={selectedChildId}

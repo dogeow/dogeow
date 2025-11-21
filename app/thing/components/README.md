@@ -74,15 +74,30 @@
 ## 组件使用示例
 
 ```tsx
-import BasicInfoForm from './components/BasicInfoForm'
+import UnifiedBasicInfoForm from './components/forms/UnifiedBasicInfoForm'
 import DetailsSection from './components/DetailsSection'
 import QuantityEditor from './components/QuantityEditor'
 
-// 基本信息表单
-<BasicInfoForm
+// 基本信息表单（统一版本，支持创建和编辑模式）
+// 创建模式
+<UnifiedBasicInfoForm
+  formMethods={formMethods}
+  tags={tags}
+  selectedTags={selectedTags}
+  setSelectedTags={setSelectedTags}
+  categories={categories}
+  // ... 其他 props
+/>
+
+// 编辑模式
+<UnifiedBasicInfoForm
   formData={formData}
   setFormData={setFormData}
+  tags={tags}
+  selectedTags={selectedTags}
+  setSelectedTags={setSelectedTags}
   categories={categories}
+  // ... 其他 props
 />
 
 // 详细信息表单

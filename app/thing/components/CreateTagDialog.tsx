@@ -3,12 +3,10 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { RefreshCw } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -70,16 +68,24 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
     }
   }, [initialName])
 
-  // 当对话框打开时，生成随机颜色
+  // 当对话框打开时，生成随机颜色（排除黑色和白色）
   useEffect(() => {
     if (open) {
-      setColor(generateRandomColor())
+      let newColor: string
+      do {
+        newColor = generateRandomColor()
+      } while (newColor === '#000000' || newColor === '#ffffff')
+      setColor(newColor)
     }
   }, [open])
 
-  // 刷新颜色
+  // 刷新颜色（排除黑色和白色）
   const refreshColor = () => {
-    setColor(generateRandomColor())
+    let newColor: string
+    do {
+      newColor = generateRandomColor()
+    } while (newColor === '#000000' || newColor === '#ffffff')
+    setColor(newColor)
   }
 
   const resetForm = () => {
@@ -135,12 +141,10 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>创建新标签</DialogTitle>
-          <DialogDescription>创建一个新的标签来分类你的物品</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="name">标签名称</Label>
             <Input
               id="name"
               value={name}
@@ -153,7 +157,6 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
           </div>
 
           <div className="space-y-2">
-            <Label>标签颜色</Label>
             <div className="flex flex-wrap gap-2">
               {COLOR_OPTIONS.map(option => (
                 <ColorButton key={option} colorValue={option} />
@@ -189,7 +192,7 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
             </div>
           </div>
 
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 gap-2">
             <Button
               type="button"
               variant="outline"

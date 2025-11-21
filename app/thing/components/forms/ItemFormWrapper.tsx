@@ -127,13 +127,17 @@ export default function ItemFormWrapper({
     }
   }
 
+  const renderActionButton = (): ReactNode => {
+    return null // 顶部不显示按钮，只保留底部的按钮
+  }
+
   const renderFooter = (): ReactNode => {
     if (mode === 'edit') {
       return null // 编辑模式使用自动保存，不需要提交按钮
     }
 
     return (
-      <Button type="submit" size="lg" disabled={loading}>
+      <Button type="submit" size="lg" disabled={loading} className="w-full">
         {loading ? '处理中...' : '创建物品'}
       </Button>
     )
@@ -194,6 +198,7 @@ export default function ItemFormWrapper({
           title={title}
           onBack={() => router.push('/thing')}
           footer={renderFooter()}
+          actionButton={renderActionButton()}
           autoSaving={autoSaving}
           lastSaved={lastSaved}
         >

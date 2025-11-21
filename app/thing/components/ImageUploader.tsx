@@ -180,11 +180,6 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
         accept="image/*"
         multiple
       />
-
-      <p className="text-muted-foreground text-xs">
-        支持JPG、PNG、GIF格式，每张图片不超过{maxSize}MB，最多上传{maxImages}
-        张。点击图片可设为主图。
-      </p>
     </div>
   )
 }

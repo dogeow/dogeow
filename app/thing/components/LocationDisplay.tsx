@@ -10,15 +10,26 @@ export function LocationDisplay({ spot }: LocationDisplayProps) {
     return null
   }
 
-  // Function to recursively build the location string
-  const getLocationPath = (currentSpot: Spot): string => {
-    if (currentSpot.parent_spot) {
-      return `${getLocationPath(currentSpot.parent_spot)} > ${currentSpot.name}`
-    }
-    return currentSpot.name
+  // 构建三层位置路径：区域 > 房间 > 位置
+  const pathParts: string[] = []
+
+  if (spot.room?.area?.name) {
+    pathParts.push(spot.room.area.name)
   }
 
-  const fullLocationPath = getLocationPath(spot)
+  if (spot.room?.name) {
+    pathParts.push(spot.room.name)
+  }
+
+  if (spot.name) {
+    pathParts.push(spot.name)
+  }
+
+  if (pathParts.length === 0) {
+    return null
+  }
+
+  const fullLocationPath = pathParts.join(' > ')
 
   return (
     <div className="text-muted-foreground flex items-center text-sm">

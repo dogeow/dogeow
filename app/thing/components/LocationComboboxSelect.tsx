@@ -186,7 +186,14 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
   // 处理创建区域
   const handleCreateArea = async (areaName: string) => {
     try {
-      const newArea = await apiRequest<Area>('/areas', 'POST', { name: areaName })
+      const response = await apiRequest<{ message: string; area: Area }>('/areas', 'POST', {
+        name: areaName,
+      })
+      const newArea = response.area
+
+      if (!newArea || !newArea.id) {
+        throw new Error('创建区域失败：返回数据格式错误')
+      }
 
       toast.success(`已创建区域 "${areaName}"`)
       setAreas(prev => [...prev, newArea])
@@ -206,10 +213,15 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
     }
 
     try {
-      const newRoom = await apiRequest<Room>('/rooms', 'POST', {
+      const response = await apiRequest<{ message: string; room: Room }>('/rooms', 'POST', {
         name: roomName,
         area_id: Number(selectedAreaId),
       })
+      const newRoom = response.room
+
+      if (!newRoom || !newRoom.id) {
+        throw new Error('创建房间失败：返回数据格式错误')
+      }
 
       const area = areas.find(a => a.id.toString() === selectedAreaId)
       toast.success(`已创建房间 "${roomName}"`)
@@ -233,20 +245,36 @@ const LocationComboboxSelect: React.FC<LocationComboboxSelectProps> = ({
     }
 
     try {
-      const newSpot = await apiRequest<Spot>('/spots', 'POST', {
+      const response = await apiRequest<{ message: string; spot: Spot }>('/spots', 'POST', {
         name: spotName,
         room_id: Number(selectedRoomId),
       })
+      const newSpot = response.spot
+
+      if (!newSpot || !newSpot.id) {
+        throw new Error('创建位置失败：返回数据格式错误')
+      }
 
       const room = rooms.find(r => r.id.toString() === selectedRoomId)
       const area = areas.find(a => a.id.toString() === selectedAreaId)
-      toast.success(`已创建位置 "${spotName}"`)
-      setSpots(prev => [...prev, newSpot])
-      setSelectedSpotId(newSpot.id.toString())
 
-      if (room && area) {
-        onSelect('spot', newSpot.id, `${area.name} > ${room.name} > ${newSpot.name}`)
+      if (!room || !area) {
+        throw new Error('无法找到关联的房间或区域')
       }
+
+      // 更新 spots 列表
+      setSpots(prev => [...prev, newSpot])
+
+      // 设置选中状态
+      const spotId = newSpot.id.toString()
+      setSelectedSpotId(spotId)
+
+      // 使用 setTimeout 确保状态更新后再触发选择，这样 handleSpotSelect 可以找到新位置
+      setTimeout(() => {
+        handleSpotSelect(spotId)
+      }, 0)
+
+      toast.success(`已创建位置 "${spotName}"`)
     } catch (error) {
       console.error('创建位置失败:', error)
       toast.error('创建位置失败：' + (error instanceof Error ? error.message : '未知错误'))
