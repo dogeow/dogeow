@@ -93,28 +93,26 @@ export default function ThingTags() {
               </div>
             </div>
 
-            {/* 标签网格 - 调整为一行显示两个 */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* 标签列表 - 根据文字大小自适应，超过则换行 */}
+            <div className="flex flex-wrap gap-4">
               {tags.map(tag => (
-                <div key={tag.id} className="group relative">
+                <div key={tag.id} className="group relative inline-flex">
                   <div className="rounded-lg border border-gray-200 bg-white p-2 transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
                     {/* 标签头部 - 合并为一行 */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          style={getTagStyle(tag.color)}
-                          className="h-7 px-3 text-sm font-medium"
-                        >
-                          {tag.name}
-                        </Badge>
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {tag.items_count} 个
-                        </span>
-                      </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge
+                        style={getTagStyle(tag.color)}
+                        className="h-7 px-3 text-sm font-medium whitespace-nowrap"
+                      >
+                        {tag.name}
+                      </Badge>
+                      <span className="text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100">
+                        {tag.items_count} 个
+                      </span>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 opacity-20 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                        className="h-7 w-7 flex-shrink-0 opacity-20 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                         onClick={() => openDeleteDialog(tag.id)}
                         disabled={deleting}
                         title="删除标签"
