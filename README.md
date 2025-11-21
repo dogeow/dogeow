@@ -25,7 +25,10 @@
 
 ## 编写本代码时的规范
 
-VS Code 保存时自动格式化代码（Prettier）+ 提交代码时 ESLint 检查 + 推送时 TypeScript 检查
+- 保存时自动格式化代码（Prettier）+ 提交代码时 ESLint 检查 + 推送时 TypeScript 检查
+- 不 "AnyScript"、不 「// eslint-disable-next-line @typescript-eslint/no-explicit-any」注释。
+
+> 这是目标（部分代码可能还没有改正）
 
 ## 其他后续使用
 
