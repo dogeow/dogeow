@@ -24,6 +24,10 @@
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
+  --success: 142 71% 45%; /* 绿色 */
+  --success-foreground: 0 0% 100%; /* 白色文字 */
+  --warning: 38 92% 50%; /* 橘色 */
+  --warning-foreground: 0 0% 100%; /* 白色文字 */
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   --ring: oklch(0.708 0 0);
@@ -59,6 +63,10 @@
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
+  --success: 142 76% 36%; /* 深绿色，暗色模式下更明显 */
+  --success-foreground: 0 0% 100%; /* 白色文字 */
+  --warning: 38 92% 50%; /* 橘色 */
+  --warning-foreground: 0 0% 100%; /* 白色文字 */
   --border: oklch(0.269 0 0);
   --input: oklch(0.269 0 0);
   --ring: oklch(0.439 0 0);
@@ -130,12 +138,92 @@
   --normal-bg: hsl(var(--background));
   --normal-border: hsl(var(--border));
   --normal-text: hsl(var(--foreground));
+  /* 成功提示 - 绿色，更明显 */
   --success-bg: hsl(var(--success));
   --success-border: hsl(var(--success));
   --success-text: hsl(var(--success-foreground));
+  /* 错误提示 - 红色，更明显 */
   --error-bg: hsl(var(--destructive));
   --error-border: hsl(var(--destructive));
   --error-text: hsl(var(--destructive-foreground));
+  /* 警告提示 - 橘色 */
+  --warning-bg: hsl(var(--warning));
+  --warning-border: hsl(var(--warning));
+  --warning-text: hsl(var(--warning-foreground));
+}
+
+/* 确保 toast 使用正确的背景色和文字颜色 - 使用更明显的颜色 */
+/* 使用多种选择器确保样式生效，覆盖所有可能的 toast 元素 */
+[data-sonner-toast][data-type='success'],
+.sonner-toast[data-type='success'],
+.sonner-toast.toast-success,
+.toast-success {
+  background-color: #22c55e !important; /* 绿色 - 更鲜艳 */
+  color: #ffffff !important; /* 白色文字 */
+  border-color: #22c55e !important;
+}
+
+.dark [data-sonner-toast][data-type='success'],
+.dark .sonner-toast[data-type='success'],
+.dark .sonner-toast.toast-success,
+.dark .toast-success {
+  background-color: #16a34a !important; /* 暗色模式下的深绿色 */
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+}
+
+[data-sonner-toast][data-type='error'],
+.sonner-toast[data-type='error'],
+.sonner-toast.toast-error,
+.toast-error {
+  background-color: #ef4444 !important; /* 红色 - 更鲜艳 */
+  color: #ffffff !important; /* 白色文字 */
+  border-color: #ef4444 !important;
+}
+
+.dark [data-sonner-toast][data-type='error'],
+.dark .sonner-toast[data-type='error'],
+.dark .sonner-toast.toast-error,
+.dark .toast-error {
+  background-color: #dc2626 !important; /* 暗色模式下的红色 */
+  color: #ffffff !important;
+  border-color: #dc2626 !important;
+}
+
+[data-sonner-toast][data-type='warning'],
+.sonner-toast[data-type='warning'],
+.sonner-toast.toast-warning,
+.toast-warning {
+  background-color: #f97316 !important; /* 橘色 - 更鲜艳 */
+  color: #ffffff !important; /* 白色文字 */
+  border-color: #f97316 !important;
+}
+
+.dark [data-sonner-toast][data-type='warning'],
+.dark .sonner-toast[data-type='warning'],
+.dark .sonner-toast.toast-warning,
+.dark .toast-warning {
+  background-color: #ea580c !important; /* 暗色模式下的橘色 */
+  color: #ffffff !important;
+  border-color: #ea580c !important;
+}
+
+[data-sonner-toast][data-type='info'],
+.sonner-toast[data-type='info'],
+.sonner-toast.toast-info,
+.toast-info {
+  background-color: #3b82f6 !important; /* 蓝色 */
+  color: #ffffff !important; /* 白色文字 */
+  border-color: #3b82f6 !important;
+}
+
+.dark [data-sonner-toast][data-type='info'],
+.dark .sonner-toast[data-type='info'],
+.dark .sonner-toast.toast-info,
+.dark .toast-info {
+  background-color: #2563eb !important; /* 暗色模式下的蓝色 */
+  color: #ffffff !important;
+  border-color: #2563eb !important;
 }
 /* end Sonner Toast Styles */
 
