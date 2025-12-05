@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { readArticleSourceBySlug } from '@/lib/wiki/mdx'
 
 type Props = {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export default async function WikiArticlePage({ params }: Props) {
-  const source = await readArticleSourceBySlug(params.slug)
+  const { slug } = await params
+  const source = await readArticleSourceBySlug(slug)
   return (
     <div style={{ maxWidth: 860, margin: '0 auto', padding: '24px 16px' }}>
       <div style={{ marginBottom: 16 }}>
