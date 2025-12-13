@@ -11,7 +11,7 @@
     "moduleResolution": "bundler", // bundler：现代、灵活，适合前端项目（Next.js、Vite 等）；node：传统、严格，适合纯 Node.js 后端项目
     "resolveJsonModule": true, // 启用 JSON 模块解析
     "isolatedModules": true, // 启用模块隔离
-    "jsx": "preserve", // 保留 JSX 语法
+    "jsx": "react-jsx", // 保留 JSX 语法
     "incremental": true, // 增量编译
     "types": ["vitest/globals"], // 添加 Vitest 全局类型支持
     "plugins": [
@@ -29,7 +29,8 @@
     "types/vitest.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
   ], // 包含的文件
   "exclude": ["node_modules"] // 排除 node_modules 目录
 }

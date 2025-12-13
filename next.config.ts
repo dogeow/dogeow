@@ -3,9 +3,6 @@ import type { NextConfig } from 'next'
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
   images: {
     remotePatterns: [
       {
