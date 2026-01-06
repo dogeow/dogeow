@@ -8,6 +8,8 @@ import { apiRequest } from '@/lib/api'
 import { useEditorStore } from '../store/editorStore'
 import { useGlobalNavigationGuard } from '../hooks/useGlobalNavigationGuard'
 import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
+import { useVoiceInput } from '@/hooks/useVoiceInput'
+import { VoiceInputButton } from '@/components/ui/voice-input-button'
 
 interface NoteEditorProps {
   noteId?: number
@@ -67,6 +69,34 @@ export default function NoteEditor({
       : '{"type":"doc","content":[{"type":"paragraph","content":[]}]}'
   )
   const [, setLastSavedTitle] = useState(title)
+
+  // 语音输入功能
+  const {
+    isSupported: isVoiceSupported,
+    isListening: isVoiceListening,
+    transcript: voiceTranscript,
+    startListening,
+    stopListening,
+  } = useVoiceInput({
+    onTranscript: (transcript, isFinal) => {
+      if (isFinal && transcript) {
+        // 当语音识别完成时，将文本添加到标题输入框
+        setNoteTitle(prev => (prev ? `${prev} ${transcript}` : transcript))
+      }
+    },
+    language: 'zh-CN',
+    continuous: false,
+    interimResults: true,
+  })
+
+  // 处理语音输入切换
+  const handleVoiceToggle = useCallback(() => {
+    if (isVoiceListening) {
+      stopListening()
+    } else {
+      startListening()
+    }
+  }, [isVoiceListening, stopListening, startListening])
 
   // 保存笔记内容
   const handleSave = useCallback(
@@ -189,14 +219,21 @@ export default function NoteEditor({
 
   return (
     <div className="mx-auto w-full max-w-6xl">
-      <div className="mb-4">
+      <div className="mb-4 flex gap-2">
         <Input
           id="title"
           value={noteTitle}
           onChange={e => setNoteTitle(e.target.value)}
-          className="mt-1"
+          className="mt-1 flex-1"
           placeholder="请输入笔记标题"
           disabled={isSaving}
+        />
+        <VoiceInputButton
+          isListening={isVoiceListening}
+          isSupported={isVoiceSupported}
+          onToggle={handleVoiceToggle}
+          disabled={isSaving}
+          className="mt-1"
         />
       </div>
       {/* TODO: Replace with actual editor component */}

@@ -17,6 +17,8 @@ import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDial
 import { isLightColor } from '@/lib/helpers'
 import { statusMap } from '../config/status'
 import { Item, Tag } from '@/app/thing/types'
+import { ItemRelationsDisplay } from '../components/ItemRelationsDisplay'
+import { useAuth } from '@/hooks/useAuth'
 
 // 日期格式化工具函数
 const formatDate = (date: string | null) => {
@@ -265,6 +267,7 @@ export default function ItemDetail() {
   const params = useParams()
   const router = useRouter()
   const { deleteItem } = useItemStore()
+  const { user } = useAuth()
   const itemId = useMemo(() => {
     const raw = (params as Record<string, string | string[] | undefined>)?.id
     const idString = Array.isArray(raw) ? raw[0] : raw
@@ -275,6 +278,11 @@ export default function ItemDetail() {
   const { data: item, error, isLoading: loading } = useItem(itemId)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
+
+  // 检查是否可以编辑（是否为物品所有者）
+  const canEdit = useMemo(() => {
+    return user && item && item.user?.id === user.id
+  }, [user, item])
 
   const handleEdit = useCallback(() => {
     if (!Number.isFinite(itemId)) return
@@ -337,9 +345,10 @@ export default function ItemDetail() {
 
       {/* 内容标签页 */}
       <Tabs defaultValue="basic" className="w-full">
-        <TabsList className="mb-6 grid w-full grid-cols-2">
+        <TabsList className="mb-6 grid w-full grid-cols-3">
           <TabsTrigger value="basic">基本信息</TabsTrigger>
           <TabsTrigger value="details">详细信息</TabsTrigger>
+          <TabsTrigger value="relations">关联物品</TabsTrigger>
         </TabsList>
 
         {/* 基本信息标签页 */}
@@ -403,6 +412,15 @@ export default function ItemDetail() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* 关联物品标签页 */}
+        <TabsContent value="relations">
+          <Card className="overflow-hidden">
+            <CardContent className="pt-6">
+              <ItemRelationsDisplay itemId={itemId} canEdit={canEdit} />
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 

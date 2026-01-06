@@ -381,6 +381,10 @@ export const zh_CN = {
   'chat.send_message': '发送消息',
   'chat.sending': '发送中...',
   'chat.file_input': '文件输入',
+  'chat.voice_input': '语音输入',
+  'chat.start_voice_input': '开始语音输入',
+  'chat.stop_voice_input': '停止语音输入',
+  'chat.voice_not_supported': '您的浏览器不支持语音识别',
 
   // Chat Preferences Dialog
   'chat.preferences.title': '聊天偏好设置',

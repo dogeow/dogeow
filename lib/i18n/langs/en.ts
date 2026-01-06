@@ -386,6 +386,10 @@ export const en = {
   'chat.send_message': 'Send message',
   'chat.sending': 'Sending...',
   'chat.file_input': 'File input',
+  'chat.voice_input': 'Voice input',
+  'chat.start_voice_input': 'Start voice input',
+  'chat.stop_voice_input': 'Stop voice input',
+  'chat.voice_not_supported': 'Your browser does not support voice recognition',
 
   // Chat Preferences Dialog
   'chat.preferences.title': 'Chat Preferences',

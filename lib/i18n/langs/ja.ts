@@ -311,6 +311,10 @@ export const ja = {
   'chat.send_message': 'メッセージを送信',
   'chat.sending': '送信中...',
   'chat.file_input': 'ファイル入力',
+  'chat.voice_input': '音声入力',
+  'chat.start_voice_input': '音声入力を開始',
+  'chat.stop_voice_input': '音声入力を停止',
+  'chat.voice_not_supported': 'お使いのブラウザは音声認識に対応していません',
 
   'chat.restart': '再起動',
   'chat.shutdown': 'シャットダウン',

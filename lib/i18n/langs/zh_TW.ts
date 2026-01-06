@@ -374,6 +374,10 @@ export const zh_TW = {
   'chat.send_message': '發送訊息',
   'chat.sending': '發送中...',
   'chat.file_input': '檔案輸入',
+  'chat.voice_input': '語音輸入',
+  'chat.start_voice_input': '開始語音輸入',
+  'chat.stop_voice_input': '停止語音輸入',
+  'chat.voice_not_supported': '您的瀏覽器不支援語音辨識',
 
   // Chat Preferences Dialog
   'chat.preferences.title': '聊天偏好設定',
