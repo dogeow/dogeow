@@ -9,6 +9,7 @@ import { apiRequest } from '@/lib/api'
 import ThingHeader from './components/ThingHeader'
 import ThingContent from './components/ThingContent'
 import ThingSpeedDial from './components/SpeedDial'
+import { ItemDetailModal } from './components/ItemDetailModal'
 
 // Hooks and stores
 import { useItemStore } from '@/app/thing/stores/itemStore'
@@ -24,6 +25,11 @@ export default function Thing() {
 
   // 视图模式状态
   const [viewMode, setViewMode] = useState<ViewMode>('list')
+
+  // 弹窗状态
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
+  const [modalMode, setModalMode] = useState<'view' | 'edit'>('view')
 
   // 使用自定义hooks管理复杂逻辑
   const { filters, updateFilters, clearFilters, hasActiveFilters, currentPage, setCurrentPage } =
@@ -91,20 +97,29 @@ export default function Thing() {
     fetchItems()
   }, [setSearchTerm, clearFilters, fetchItems])
 
-  // 导航处理
-  const handleItemEdit = useCallback(
-    (id: number) => {
-      router.push(`/thing/${id}/edit`)
-    },
-    [router]
-  )
+  // 导航处理 - 改为弹窗
+  const handleItemEdit = useCallback((id: number) => {
+    setSelectedItemId(id)
+    setModalMode('edit')
+    setModalOpen(true)
+  }, [])
 
-  const handleItemView = useCallback(
-    (id: number) => {
-      router.push(`/thing/${id}`)
-    },
-    [router]
-  )
+  const handleItemView = useCallback((id: number) => {
+    setSelectedItemId(id)
+    setModalMode('view')
+    setModalOpen(true)
+  }, [])
+
+  const handleModalClose = useCallback(() => {
+    setModalOpen(false)
+    setSelectedItemId(null)
+    setModalMode('view')
+  }, [])
+
+  const handleItemDeleted = useCallback(() => {
+    // 删除后刷新列表
+    fetchItems(filters)
+  }, [fetchItems, filters])
 
   return (
     <div className="container mx-auto py-2">
@@ -140,6 +155,16 @@ export default function Thing() {
       </div>
 
       <ThingSpeedDial />
+
+      {/* 物品详情弹窗 */}
+      <ItemDetailModal
+        itemId={selectedItemId}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        mode={modalMode}
+        onModeChange={setModalMode}
+        onItemDeleted={handleItemDeleted}
+      />
     </div>
   )
 }

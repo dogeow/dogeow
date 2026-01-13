@@ -11,6 +11,7 @@ interface UseAutoSaveReturn<T> {
   lastSaved: Date | null
   triggerAutoSave: () => void
   setInitialData: (data: T) => void
+  cancelAutoSave: () => void
 }
 
 export function useAutoSave<T>({
@@ -52,6 +53,13 @@ export function useAutoSave<T>({
     initialDataRef.current = data
   }, [])
 
+  const cancelAutoSave = useCallback(() => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current)
+      autoSaveTimeoutRef.current = null
+    }
+  }, [])
+
   // 清理定时器
   useEffect(() => {
     return () => {
@@ -66,5 +74,6 @@ export function useAutoSave<T>({
     lastSaved,
     triggerAutoSave,
     setInitialData,
+    cancelAutoSave,
   }
 }

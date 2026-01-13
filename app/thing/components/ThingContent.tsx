@@ -196,7 +196,7 @@ export default function ThingContent({
           ))}
         </div>
       ) : (
-        <ItemGallery items={items} />
+        <ItemGallery items={items} onItemView={onItemView} />
       )}
 
       {renderPagination()}

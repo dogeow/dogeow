@@ -1,48 +1,46 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Item } from '@/app/thing/types'
-import { ItemDetailDialog } from './ItemDetailDialog'
 import { ImageSizeControl } from './ImageSizeControl'
 import { GalleryItem } from './GalleryItem'
 
 interface ItemGalleryProps {
   items: Item[]
+  onItemView?: (id: number) => void
 }
 
-export default function ItemGallery({ items }: ItemGalleryProps) {
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null)
+export default function ItemGallery({ items, onItemView }: ItemGalleryProps) {
   const [imageSize, setImageSize] = useState(120)
   const [galleryContainerWidth, setGalleryContainerWidth] = useState(0)
-
-  const router = useRouter()
+  const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const container = document.getElementById('item-gallery-container')
-    if (container) {
-      setGalleryContainerWidth(container.offsetWidth)
-    }
-    const handleResize = () => {
-      if (container) {
+    const container = containerRef.current
+    if (!container) return
+
+    // 使用 requestAnimationFrame 避免同步 setState
+    const updateWidth = () => {
+      requestAnimationFrame(() => {
         setGalleryContainerWidth(container.offsetWidth)
-      }
+      })
     }
+
+    // 初始化宽度
+    updateWidth()
+
+    const handleResize = () => {
+      updateWidth()
+    }
+
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  const handleViewDetails = (id: number) => {
-    setSelectedItem(null)
-    router.push(`/thing/${id}`)
-  }
-
   const handleItemClick = (item: Item) => {
-    setSelectedItem(item)
-  }
-
-  const handleDialogClose = () => {
-    setSelectedItem(null)
+    if (onItemView) {
+      onItemView(item.id)
+    }
   }
 
   const handleImageSizeChange = useCallback((newSize: number) => {
@@ -53,7 +51,7 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
     galleryContainerWidth > 0 ? Math.min(520, galleryContainerWidth - 20) : 300
 
   return (
-    <div id="item-gallery-container" className="w-full">
+    <div ref={containerRef} id="item-gallery-container" className="w-full">
       <ImageSizeControl
         initialSize={120}
         maxSize={maxImageSizeForControl}
@@ -80,13 +78,6 @@ export default function ItemGallery({ items }: ItemGalleryProps) {
           ))}
         </div>
       )}
-
-      <ItemDetailDialog
-        item={selectedItem}
-        open={!!selectedItem}
-        onOpenChange={handleDialogClose}
-        onViewDetails={handleViewDetails}
-      />
     </div>
   )
 }

@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
+import Image from 'next/image'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, X, Loader2, Lock, Unlock } from 'lucide-react'
+import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
 import { get } from '@/lib/api'
 import { Badge } from '@/components/ui/badge'
 import { getTranslatedConfigs } from '@/app/configs'
@@ -28,6 +30,7 @@ interface SearchResult {
   category: string
   isPublic?: boolean
   requireAuth?: boolean // 是否需要认证才能访问
+  thumbnail_url?: string | null
 }
 
 interface SearchDialogProps {
@@ -50,7 +53,10 @@ function useKeyboardStatus() {
       /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
 
     if (!isMobile) {
-      setKeyboardOpen(false)
+      // 使用 requestAnimationFrame 避免同步 setState
+      requestAnimationFrame(() => {
+        setKeyboardOpen(false)
+      })
       return
     }
 
@@ -65,7 +71,8 @@ function useKeyboardStatus() {
       }
     }
 
-    handleResize()
+    // 使用 requestAnimationFrame 延迟初始调用
+    requestAnimationFrame(handleResize)
 
     const visualViewport = window.visualViewport
     if (visualViewport) {
@@ -97,6 +104,7 @@ export function SearchDialog({
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
   const inputRef = useRef<HTMLInputElement>(null)
   const keyboardOpen = useKeyboardStatus()
 
@@ -302,6 +310,7 @@ export function SearchDialog({
             description?: string
             is_public?: boolean
             user_id?: number
+            thumbnail_url?: string | null
             [key: string]: unknown
           }>
           user_authenticated: boolean
@@ -323,6 +332,7 @@ export function SearchDialog({
               category: 'thing',
               isPublic: item.is_public,
               requireAuth: false, // 物品搜索不需要认证（后端已处理权限）
+              thumbnail_url: item.thumbnail_url || null,
             }))
 
             allResults.push(...thingResults)
@@ -441,6 +451,10 @@ export function SearchDialog({
     return category ? `搜索${category.name}` : '搜索'
   }, [currentRoute, pathname, categories])
 
+  const handleImageError = useCallback((resultKey: string) => {
+    setImageErrors(prev => ({ ...prev, [resultKey]: true }))
+  }, [])
+
   const renderSearchResults = useCallback(() => {
     if (loading) {
       return (
@@ -465,40 +479,69 @@ export function SearchDialog({
     if (searchTerm) {
       return (
         <div className="space-y-2">
-          {filteredResults.map(result => (
-            <div
-              key={`${result.category}-${result.id}`}
-              className="bg-card hover:bg-accent/50 border-border/50 cursor-pointer space-y-2 rounded-lg border p-3"
-              onClick={() => handleResultClick(result.url)}
-            >
-              <div className="flex flex-col gap-2">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="flex-1 text-sm leading-tight font-medium">{result.title}</h3>
-                  <div className="flex items-center gap-1">
-                    <Badge variant="outline" className="flex-shrink-0 text-xs whitespace-nowrap">
-                      {categories.find(c => c.id === result.category)?.name || result.category}
-                    </Badge>
-                    {result.category === 'thing' && 'isPublic' in result && (
-                      <Badge
-                        variant={result.isPublic ? 'secondary' : 'default'}
-                        className="flex items-center gap-1 text-xs"
-                      >
-                        {result.isPublic ? (
-                          <Unlock className="h-3 w-3" />
-                        ) : (
-                          <Lock className="h-3 w-3" />
+          {filteredResults.map(result => {
+            const resultKey = `${result.category}-${result.id}`
+            const imageError = imageErrors[resultKey]
+
+            return (
+              <div
+                key={resultKey}
+                className="bg-card hover:bg-accent/50 border-border/50 cursor-pointer rounded-lg border p-3"
+                onClick={() => handleResultClick(result.url)}
+              >
+                <div className="flex gap-3">
+                  {/* 图片区域 */}
+                  {result.thumbnail_url && !imageError ? (
+                    <div className="flex-shrink-0">
+                      <Image
+                        src={result.thumbnail_url}
+                        alt={result.title}
+                        width={64}
+                        height={64}
+                        className="h-16 w-16 rounded object-cover"
+                        onError={() => handleImageError(resultKey)}
+                      />
+                    </div>
+                  ) : result.thumbnail_url && imageError ? (
+                    <div className="bg-muted flex h-16 w-16 flex-shrink-0 items-center justify-center rounded">
+                      <ImagePlaceholder className="text-muted-foreground h-6 w-6 opacity-40" />
+                    </div>
+                  ) : null}
+
+                  {/* 内容区域 */}
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="flex-1 text-sm leading-tight font-medium">{result.title}</h3>
+                      <div className="flex items-center gap-1">
+                        <Badge
+                          variant="outline"
+                          className="flex-shrink-0 text-xs whitespace-nowrap"
+                        >
+                          {categories.find(c => c.id === result.category)?.name || result.category}
+                        </Badge>
+                        {result.category === 'thing' && 'isPublic' in result && (
+                          <Badge
+                            variant={result.isPublic ? 'secondary' : 'default'}
+                            className="flex items-center gap-1 text-xs"
+                          >
+                            {result.isPublic ? (
+                              <Unlock className="h-3 w-3" />
+                            ) : (
+                              <Lock className="h-3 w-3" />
+                            )}
+                            {result.isPublic ? '公开' : '私有'}
+                          </Badge>
                         )}
-                        {result.isPublic ? '公开' : '私有'}
-                      </Badge>
-                    )}
+                      </div>
+                    </div>
+                    <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
+                      {result.content}
+                    </p>
                   </div>
                 </div>
-                <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
-                  {result.content}
-                </p>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )
     }
@@ -520,6 +563,8 @@ export function SearchDialog({
     handleResultClick,
     hasSearched,
     isAuthenticated,
+    imageErrors,
+    handleImageError,
   ])
 
   return (
