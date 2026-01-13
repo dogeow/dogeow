@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import TagsSection from '../TagsSection'
-import { Tag } from '../types'
+import { Tag } from '@/app/thing/types'
 
 // Mock CreateTagDialog
 vi.mock('../CreateTagDialog', () => ({

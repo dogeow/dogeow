@@ -165,7 +165,7 @@ describe('NoteNavigation', () => {
       mockUseEditorStore.mockReturnValue({
         isDirty: false,
         setDirty: mockSetDirty,
-        saveDraft: undefined,
+        saveDraft: mockSaveDraft,
       })
 
       render(<NoteNavigation />)

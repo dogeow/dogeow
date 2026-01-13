@@ -42,10 +42,10 @@ const mockUseSWR = vi.fn((key, fetcher) => {
         updated_at: '2024-01-01T00:00:00Z',
         is_draft: false,
       },
-      error: null,
+      error: null as Error | null | undefined,
     }
   }
-  return { data: null, error: null }
+  return { data: null, error: null as Error | null | undefined }
 })
 
 vi.mock('swr', () => ({
@@ -84,7 +84,7 @@ describe('NoteDetail', () => {
     it('should show error state when loading fails', () => {
       mockUseSWR.mockReturnValueOnce({
         data: null,
-        error: new Error('加载失败'),
+        error: new Error('加载失败') as Error | null | undefined,
       })
       render(<NoteDetail />)
       expect(screen.getByText('加载失败')).toBeInTheDocument()

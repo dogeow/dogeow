@@ -223,9 +223,9 @@ describe('utils', () => {
         ['c', 3],
         ['d', 'more'],
       ])
-      const result = mergeMaps(map1, map2)
+      const result = mergeMaps<string, number | string>(map1, map2)
       expect(result).toEqual(
-        new Map([
+        new Map<string, number | string>([
           ['a', 1],
           ['b', 'text'],
           ['c', 3],

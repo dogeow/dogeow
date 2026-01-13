@@ -418,7 +418,7 @@ export default function ItemDetail() {
         <TabsContent value="relations">
           <Card className="overflow-hidden">
             <CardContent className="pt-6">
-              <ItemRelationsDisplay itemId={itemId} canEdit={canEdit} />
+              <ItemRelationsDisplay itemId={itemId} canEdit={canEdit ?? false} />
             </CardContent>
           </Card>
         </TabsContent>

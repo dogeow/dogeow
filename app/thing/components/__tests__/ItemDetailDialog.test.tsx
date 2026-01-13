@@ -34,21 +34,29 @@ describe('ItemDetailDialog', () => {
     is_public: true,
     quantity: 5,
     notes: 'Test notes',
+    category_id: 1,
+    area_id: null,
+    room_id: null,
+    spot_id: 1,
+    purchase_price: null,
+    purchase_date: '2024-01-01',
+    expiry_date: '2024-12-31',
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
     category: { id: 1, name: 'Test Category' },
     tags: [
       { id: 1, name: 'Tag 1', color: '#3b82f6' },
       { id: 2, name: 'Tag 2', color: '#ef4444' },
     ],
-    spot: { id: 1, name: 'Test Location' },
+    spot: { id: 1, name: 'Test Location', room_id: 1 },
     primary_image: {
       id: 1,
+      path: '/path/to/image.jpg',
+      thumbnail_path: '/path/to/thumb.jpg',
       url: 'https://example.com/image.jpg',
       thumbnail_url: 'https://example.com/thumb.jpg',
-      is_primary: true,
     },
-    purchase_date: '2024-01-01',
-    expiry_date: '2024-12-31',
-  } as Item
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()

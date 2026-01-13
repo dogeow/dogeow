@@ -540,7 +540,7 @@ export function ItemDetailModal({
     const currentData: AutoSaveData = {
       formData,
       selectedTags,
-      uploadedImages: uploadedImages.map(img => ({ path: img.path, id: img.id })),
+      uploadedImages: uploadedImages,
     }
 
     // 如果是第一次设置数据，直接保存为初始数据
@@ -564,7 +564,7 @@ export function ItemDetailModal({
       const currentData: AutoSaveData = {
         formData,
         selectedTags,
-        uploadedImages: uploadedImages.map(img => ({ path: img.path, id: img.id })),
+        uploadedImages: uploadedImages,
       }
       // 只在 ref 为空时设置，避免覆盖已设置的初始数据
       if (!initialDataRef.current) {
@@ -704,7 +704,7 @@ export function ItemDetailModal({
               <DialogTitle className="sr-only">编辑物品</DialogTitle>
             </DialogHeader>
             <div className="flex-1 overflow-y-auto">
-              <LoadingState />
+              <LoadingState onBack={handleClose} />
             </div>
           </DialogContent>
         </Dialog>
@@ -801,7 +801,7 @@ export function ItemDetailModal({
             <DialogTitle className="sr-only">加载物品详情</DialogTitle>
           </DialogHeader>
           <div className="flex flex-1 items-center justify-center overflow-y-auto">
-            <LoadingState />
+            <LoadingState onBack={handleClose} />
           </div>
         </DialogContent>
       </Dialog>

@@ -65,7 +65,7 @@ describe('ItemCard', () => {
     })
 
     it('should not render description when description is not provided', () => {
-      const itemWithoutDescription = { ...mockItem, description: undefined }
+      const itemWithoutDescription = { ...mockItem, description: null }
       render(<ItemCard item={itemWithoutDescription} onView={mockOnView} onEdit={mockOnEdit} />)
 
       expect(screen.queryByText('Test description')).not.toBeInTheDocument()

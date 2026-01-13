@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import DetailsSection from '../DetailsSection'
-import { ItemFormData } from '../types'
+import { ItemFormData } from '@/app/thing/types'
 
 // Mock LocationTreeSelect
 vi.mock('../LocationTreeSelect', () => ({
@@ -28,9 +28,18 @@ vi.mock('@/components/ui/date-picker', () => ({
 
 describe('DetailsSection', () => {
   const mockFormData: ItemFormData = {
+    name: '',
+    description: '',
+    quantity: 1,
+    status: 'active',
     purchase_date: null,
     expiry_date: null,
     purchase_price: null,
+    category_id: '',
+    area_id: '',
+    room_id: '',
+    spot_id: '',
+    is_public: false,
   }
 
   const mockSetFormData = vi.fn()

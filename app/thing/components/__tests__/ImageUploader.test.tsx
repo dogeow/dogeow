@@ -34,12 +34,16 @@ describe('ImageUploader', () => {
   const mockExistingImages: UploadedImage[] = [
     {
       id: 1,
+      path: '/path/to/image1.jpg',
+      thumbnail_path: '/path/to/thumb1.jpg',
       url: 'https://example.com/image1.jpg',
       thumbnail_url: 'https://example.com/thumb1.jpg',
       is_primary: true,
     },
     {
       id: 2,
+      path: '/path/to/image2.jpg',
+      thumbnail_path: '/path/to/thumb2.jpg',
       url: 'https://example.com/image2.jpg',
       thumbnail_url: 'https://example.com/thumb2.jpg',
       is_primary: false,
