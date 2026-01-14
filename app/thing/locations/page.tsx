@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Home, DoorOpen, MapPin, FolderTree } from 'lucide-react'
+import { cn } from '@/lib/helpers'
 import AreaTab from './components/AreaTab'
 import RoomTab from './components/RoomTab'
 import SpotTab from './components/SpotTab'
@@ -34,7 +35,7 @@ export default function Locations() {
     handleLocationSelect,
   } = useLocationManagement()
 
-  // 状态
+  // 状态：统一管理所有四个选项，确保互斥
   const [activeTab, setActiveTab] = useState<LocationType | 'tree'>('tree')
 
   // 处理位置选择
@@ -43,6 +44,7 @@ export default function Locations() {
     setActiveTab(type)
   }
 
+  // 所有tab项，包括树形视图
   const tabItems = [
     { value: 'tree', icon: <FolderTree className="h-4 w-4" />, label: '树形视图' },
     { value: 'area', icon: <Home className="h-4 w-4" />, label: '区域' },
@@ -88,20 +90,40 @@ export default function Locations() {
   }
 
   return (
-    <div>
-      <Tabs
-        value={activeTab}
-        onValueChange={value => setActiveTab(value as LocationType | 'tree')}
-        className="mt-2"
-      >
-        <TabsList className="w-full">
-          {tabItems.map(tab => (
-            <TabsTrigger key={tab.value} value={tab.value} className="flex-1">
-              {tab.icon}
-              {tab.label}
+    <div className="mt-2">
+      {/* 四个按钮放在同一行，但视觉上分为两组 */}
+      <Tabs value={activeTab} onValueChange={value => setActiveTab(value as LocationType | 'tree')}>
+        {/* 使用flex布局，让树形视图独立，后面三个作为一组 */}
+        <div className="flex items-center gap-3">
+          {/* 树形视图独立按钮 - 必须放在 TabsList 内 */}
+          <TabsList className="bg-transparent p-0">
+            <TabsTrigger
+              value="tree"
+              className={cn(
+                'h-9 rounded-md border px-3',
+                activeTab === 'tree'
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-background text-foreground border-input hover:bg-accent'
+              )}
+            >
+              <FolderTree className="h-4 w-4" />
+              树形视图
             </TabsTrigger>
-          ))}
-        </TabsList>
+          </TabsList>
+
+          {/* 分隔线 */}
+          <div className="bg-border h-6 w-px" />
+
+          {/* 后面三个作为一组tabs */}
+          <TabsList className="flex-1">
+            {tabItems.slice(1).map(tab => (
+              <TabsTrigger key={tab.value} value={tab.value} className="flex-1">
+                {tab.icon}
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
 
         {Object.entries(tabContents).map(([key, content]) => (
           <TabsContent key={key} value={key} className="mt-4">

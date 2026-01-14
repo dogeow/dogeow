@@ -23,6 +23,7 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
+  Edit,
 } from 'lucide-react'
 import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 import { useCategories } from './hooks/useCategories'
@@ -60,6 +61,7 @@ export default function Categories() {
   const [creatingChildFor, setCreatingChildFor] = useState<number | null>(null)
   const [newChildName, setNewChildName] = useState('')
   const [creatingChild, setCreatingChild] = useState(false)
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null)
 
   // 将扁平的分类数据转换为树形结构
   const categoryTree = useMemo(() => {
@@ -108,13 +110,19 @@ export default function Categories() {
     const success = await updateCategory(editingId, editingValue)
     if (success) {
       cancelEdit()
+      setEditingCategoryId(null)
     }
   }, [editingId, editingValue, updateCategory, cancelEdit])
 
   // 处理取消编辑
   const handleCancelEdit = useCallback(() => {
     cancelEdit()
-  }, [cancelEdit])
+    // 如果正在创建子分类，取消编辑模式时不清除编辑状态
+    // 只有在没有正在创建子分类时才清除编辑模式
+    if (!creatingChildFor) {
+      setEditingCategoryId(null)
+    }
+  }, [cancelEdit, creatingChildFor])
 
   // 处理键盘事件
   const handleEditKeyDown = useCallback(
@@ -138,6 +146,7 @@ export default function Categories() {
     if (success) {
       setDeleteDialogOpen(false)
       setCategoryToDelete(null)
+      setEditingCategoryId(null)
     }
   }, [categoryToDelete, deleteCategory])
 
@@ -202,6 +211,12 @@ export default function Categories() {
       setCreatingChild(false)
     }
   }, [creatingChildFor, newChildName, createCategory, cancelCreateChild, refreshCategories])
+
+  // 处理取消编辑模式
+  const handleCancelEditMode = useCallback(() => {
+    setEditingCategoryId(null)
+    cancelCreateChild()
+  }, [cancelCreateChild])
 
   // 处理子分类输入的键盘事件
   const handleChildKeyDown = useCallback(
@@ -295,22 +310,24 @@ export default function Categories() {
                           </Button>
                         </div>
                       ) : (
-                        <div className="group flex flex-1 items-center justify-between">
+                        <div className="flex flex-1 items-center justify-between">
                           <div
                             className="text-foreground hover:text-primary cursor-pointer font-semibold transition-colors hover:underline"
                             onClick={() => startEdit(parent.id, parent.name)}
                           >
                             {parent.name}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="hover:bg-primary/10 hover:text-primary hover:border-primary/20 h-7 border border-transparent px-3 opacity-60 transition-all duration-200 group-hover:opacity-100"
-                            onClick={() => startCreateChild(parent.id)}
-                          >
-                            <Plus className="mr-1 h-3 w-3" />
-                            <span className="text-xs">子分类</span>
-                          </Button>
+                          {editingCategoryId === parent.id && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="hover:bg-primary/10 hover:text-primary hover:border-primary/20 h-7 border border-transparent px-3 transition-all duration-200"
+                              onClick={() => startCreateChild(parent.id)}
+                            >
+                              <Plus className="mr-1 h-3 w-3" />
+                              <span className="text-xs">子分类</span>
+                            </Button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -318,15 +335,32 @@ export default function Categories() {
                 </TableCell>
                 <TableCell className="text-center">{parent.items_count ?? 0}</TableCell>
                 <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleConfirmDelete(parent.id)}
-                    disabled={loading}
-                    className="h-8 w-8"
-                  >
-                    <Trash2 className="text-destructive h-4 w-4" />
-                  </Button>
+                  {editingCategoryId === parent.id ? (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleConfirmDelete(parent.id)}
+                      disabled={loading}
+                      className="h-8 w-8"
+                    >
+                      <Trash2 className="text-destructive h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingCategoryId(parent.id)
+                        // 如果该分类有子分类，自动展开
+                        if (parent.children && parent.children.length > 0) {
+                          setExpandedCategories(prev => new Set(prev).add(parent.id))
+                        }
+                      }}
+                      className="h-8 w-8"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
 
@@ -385,15 +419,26 @@ export default function Categories() {
                       </TableCell>
                       <TableCell className="text-center">{child.items_count ?? 0}</TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleConfirmDelete(child.id)}
-                          disabled={loading}
-                          className="h-8 w-8"
-                        >
-                          <Trash2 className="text-destructive h-4 w-4" />
-                        </Button>
+                        {editingCategoryId === parent.id ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleConfirmDelete(child.id)}
+                            disabled={loading}
+                            className="h-8 w-8"
+                          >
+                            <Trash2 className="text-destructive h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setEditingCategoryId(parent.id)}
+                            className="h-8 w-8"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
@@ -472,6 +517,7 @@ export default function Categories() {
     creatingChild,
     saveChild,
     cancelCreateChild,
+    editingCategoryId,
   ])
 
   return (
