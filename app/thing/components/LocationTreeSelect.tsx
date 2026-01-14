@@ -14,6 +14,7 @@ interface LocationTreeSelectProps {
   className?: string
   filterType?: 'area' | 'room' | null
   isExpanded?: boolean
+  onToggleExpand?: () => void
 }
 
 // 提取常量
@@ -30,6 +31,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
   className,
   filterType = null,
   isExpanded = true,
+  onToggleExpand,
 }) => {
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set())
@@ -64,13 +66,18 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
     prevIsExpandedRef.current = isExpanded
 
     if (isExpandedChanged) {
-      if (isExpanded) {
-        setExpandedAreas(new Set(areas.map(area => area.id)))
-        setExpandedRooms(new Set(rooms.map(room => room.id)))
-      } else {
-        setExpandedAreas(new Set())
-        setExpandedRooms(new Set())
-      }
+      // 使用 setTimeout 避免在 effect 中同步调用 setState
+      const timeoutId = setTimeout(() => {
+        if (isExpanded) {
+          setExpandedAreas(new Set(areas.map(area => area.id)))
+          setExpandedRooms(new Set(rooms.map(room => room.id)))
+        } else {
+          setExpandedAreas(new Set())
+          setExpandedRooms(new Set())
+        }
+      }, 0)
+
+      return () => clearTimeout(timeoutId)
     }
   }, [isExpanded, areas, rooms])
 
@@ -88,38 +95,43 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
 
     prevSelectionRef.current = selectedLocation
 
-    setExpandedAreas(prev => {
-      const newSet = new Set(prev)
-      let changed = false
+    // 使用 setTimeout 避免在 effect 中同步调用 setState
+    const timeoutId = setTimeout(() => {
+      setExpandedAreas(prev => {
+        const newSet = new Set(prev)
+        let changed = false
 
-      if (selectedLocation.type === 'room' || selectedLocation.type === 'spot') {
-        const targetRoom =
-          selectedLocation.type === 'room'
-            ? rooms.find(r => r.id === selectedLocation.id)
-            : rooms.find(r => r.id === spots.find(s => s.id === selectedLocation.id)?.room_id)
+        if (selectedLocation.type === 'room' || selectedLocation.type === 'spot') {
+          const targetRoom =
+            selectedLocation.type === 'room'
+              ? rooms.find(r => r.id === selectedLocation.id)
+              : rooms.find(r => r.id === spots.find(s => s.id === selectedLocation.id)?.room_id)
 
-        if (targetRoom?.area_id && !newSet.has(targetRoom.area_id)) {
-          newSet.add(targetRoom.area_id)
-          changed = true
+          if (targetRoom?.area_id && !newSet.has(targetRoom.area_id)) {
+            newSet.add(targetRoom.area_id)
+            changed = true
+          }
+        }
+
+        return changed ? newSet : prev
+      })
+
+      if (selectedLocation.type === 'spot') {
+        const spot = spots.find(s => s.id === selectedLocation.id)
+        if (spot?.room_id) {
+          setExpandedRooms(prev => {
+            const newSet = new Set(prev)
+            if (!newSet.has(spot.room_id)) {
+              newSet.add(spot.room_id)
+              return newSet
+            }
+            return prev
+          })
         }
       }
+    }, 0)
 
-      return changed ? newSet : prev
-    })
-
-    if (selectedLocation.type === 'spot') {
-      const spot = spots.find(s => s.id === selectedLocation.id)
-      if (spot?.room_id) {
-        setExpandedRooms(prev => {
-          const newSet = new Set(prev)
-          if (!newSet.has(spot.room_id)) {
-            newSet.add(spot.room_id)
-            return newSet
-          }
-          return prev
-        })
-      }
-    }
+    return () => clearTimeout(timeoutId)
   }, [selectedLocation, areas, rooms, spots])
 
   // 优化搜索过滤逻辑
@@ -320,6 +332,15 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
+        {onToggleExpand && (
+          <button
+            className="hover:bg-accent hover:text-accent-foreground flex h-8 w-8 items-center justify-center rounded-md transition-colors"
+            onClick={onToggleExpand}
+            title={isExpanded ? '折叠所有' : '展开所有'}
+          >
+            <FolderIcon isOpen={isExpanded} size={18} />
+          </button>
+        )}
       </div>
 
       {/* 树形结构 */}

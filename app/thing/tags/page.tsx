@@ -201,46 +201,73 @@ export default function ThingTags() {
             {/* 标签列表 - 根据文字大小自适应，超过则换行 */}
             <div className="flex flex-wrap gap-4">
               {tags.map(tag => (
-                <div key={tag.id} className="group relative inline-flex">
+                <div
+                  key={tag.id}
+                  className="group relative inline-flex flex-shrink-0"
+                  style={{ minWidth: 'fit-content' }}
+                >
                   <div className="rounded-lg border border-gray-200 bg-white p-2 transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800">
-                    {/* 标签头部 - 合并为一行 */}
-                    <div className="flex items-center justify-between gap-2">
+                    {/* 标签头部 - 使用固定布局确保宽度一致 */}
+                    <div className="flex items-center gap-2">
                       {isEditing ? (
-                        <Input
-                          value={editingTags[tag.id] ?? tag.name}
-                          onChange={e => handleTagNameChange(tag.id, e.target.value)}
-                          onBlur={() => handleTagNameBlur(tag.id)}
-                          onKeyDown={e => handleTagNameKeyDown(e, tag.id)}
-                          disabled={updating[tag.id]}
-                          className="h-7 max-w-[200px] min-w-[80px] px-2 text-sm font-medium"
-                          style={{
-                            backgroundColor: tag.color || '#3b82f6',
-                            color: isLightColor(tag.color || '#3b82f6') ? '#000' : '#fff',
-                            border: 'none',
-                          }}
-                        />
+                        <>
+                          {/* 编辑模式：使用相对定位容器，确保宽度匹配 */}
+                          <div className="relative inline-flex flex-shrink-0">
+                            {/* 隐藏的 Badge 作为宽度测量基准，使用当前编辑值或原始名称 */}
+                            <Badge
+                              style={getTagStyle(tag.color)}
+                              className="pointer-events-none invisible h-7 px-3 text-sm font-medium whitespace-nowrap select-none"
+                              aria-hidden="true"
+                            >
+                              {editingTags[tag.id] !== undefined
+                                ? editingTags[tag.id] || tag.name
+                                : tag.name}
+                            </Badge>
+                            {/* Input 绝对定位覆盖，宽度100%匹配 Badge */}
+                            <Input
+                              value={editingTags[tag.id] ?? tag.name}
+                              onChange={e => handleTagNameChange(tag.id, e.target.value)}
+                              onBlur={() => handleTagNameBlur(tag.id)}
+                              onKeyDown={e => handleTagNameKeyDown(e, tag.id)}
+                              disabled={updating[tag.id]}
+                              className="absolute inset-0 h-7 !w-full !min-w-0 px-3 text-sm font-medium whitespace-nowrap"
+                              style={{
+                                backgroundColor: tag.color || '#3b82f6',
+                                color: isLightColor(tag.color || '#3b82f6') ? '#000' : '#fff',
+                                border: 'none',
+                              }}
+                            />
+                          </div>
+                          {/* X 按钮 - 固定宽度，匹配"0个"文本宽度 */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-[36px] flex-shrink-0 opacity-20 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                            onClick={() => openDeleteDialog(tag.id)}
+                            disabled={deleting}
+                            title="删除标签"
+                            style={{ minWidth: '36px', width: '36px' }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </>
                       ) : (
-                        <Badge
-                          style={getTagStyle(tag.color)}
-                          className="h-7 px-3 text-sm font-medium whitespace-nowrap"
-                        >
-                          {tag.name}
-                        </Badge>
-                      )}
-                      <span className="text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100">
-                        {tag.items_count} 个
-                      </span>
-                      {isEditing && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 flex-shrink-0 opacity-20 transition-opacity group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                          onClick={() => openDeleteDialog(tag.id)}
-                          disabled={deleting}
-                          title="删除标签"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
+                        <>
+                          {/* 普通模式：显示标签和数量 */}
+                          <Badge
+                            style={getTagStyle(tag.color)}
+                            className="h-7 flex-shrink-0 px-3 text-sm font-medium whitespace-nowrap"
+                          >
+                            {tag.name}
+                          </Badge>
+                          {/* 数量文本 - 固定宽度，确保编辑模式下X按钮宽度一致 */}
+                          <span
+                            className="inline-block flex-shrink-0 text-center text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100"
+                            style={{ width: '36px', minWidth: '36px' }}
+                          >
+                            {tag.items_count} 个
+                          </span>
+                        </>
                       )}
                     </div>
                   </div>

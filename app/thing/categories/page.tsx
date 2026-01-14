@@ -62,6 +62,7 @@ export default function Categories() {
   const [newChildName, setNewChildName] = useState('')
   const [creatingChild, setCreatingChild] = useState(false)
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null)
+  const [isEditMode, setIsEditMode] = useState(false)
 
   // 将扁平的分类数据转换为树形结构
   const categoryTree = useMemo(() => {
@@ -216,7 +217,22 @@ export default function Categories() {
   const handleCancelEditMode = useCallback(() => {
     setEditingCategoryId(null)
     cancelCreateChild()
+    setIsEditMode(false)
   }, [cancelCreateChild])
+
+  // 切换编辑模式
+  const toggleEditMode = useCallback(() => {
+    setIsEditMode(prev => {
+      const newMode = !prev
+      if (!newMode) {
+        // 退出编辑模式时，清除所有编辑状态
+        setEditingCategoryId(null)
+        cancelCreateChild()
+        cancelEdit()
+      }
+      return newMode
+    })
+  }, [cancelCreateChild, cancelEdit])
 
   // 处理子分类输入的键盘事件
   const handleChildKeyDown = useCallback(
@@ -246,12 +262,15 @@ export default function Categories() {
         <TableHeader>
           <TableRow className="border-border/50 border-b-2">
             <TableHead className="text-foreground w-full font-semibold">分类名称</TableHead>
-            <TableHead className="text-foreground text-center font-semibold">物品数量</TableHead>
-            <TableHead className="text-foreground w-[100px] font-semibold">操作</TableHead>
+            {isEditMode ? (
+              <TableHead className="text-foreground text-center font-semibold">操作</TableHead>
+            ) : (
+              <TableHead className="text-foreground text-center font-semibold">物品数量</TableHead>
+            )}
           </TableRow>
         </TableHeader>
         <TableBody>
-          <UncategorizedRow count={uncategorizedCount} />
+          <UncategorizedRow count={uncategorizedCount} isEditMode={isEditMode} />
           {categoryTree.map(parent => (
             <React.Fragment key={parent.id}>
               {/* 父分类行 */}
@@ -312,17 +331,31 @@ export default function Categories() {
                       ) : (
                         <div className="flex flex-1 items-center justify-between">
                           <div
-                            className="text-foreground hover:text-primary cursor-pointer font-semibold transition-colors hover:underline"
-                            onClick={() => startEdit(parent.id, parent.name)}
+                            className={`font-semibold transition-colors ${
+                              isEditMode
+                                ? 'text-foreground hover:text-primary cursor-pointer hover:underline'
+                                : 'text-foreground'
+                            }`}
+                            onClick={
+                              isEditMode ? () => startEdit(parent.id, parent.name) : undefined
+                            }
                           >
                             {parent.name}
                           </div>
-                          {editingCategoryId === parent.id && (
+                          {isEditMode && (
                             <Button
                               variant="ghost"
                               size="sm"
                               className="hover:bg-primary/10 hover:text-primary hover:border-primary/20 h-7 border border-transparent px-3 transition-all duration-200"
-                              onClick={() => startCreateChild(parent.id)}
+                              onClick={() => {
+                                startCreateChild(parent.id)
+                                // 如果该分类有子分类，自动展开
+                                if (parent.children && parent.children.length > 0) {
+                                  setExpandedCategories(prev => new Set(prev).add(parent.id))
+                                } else {
+                                  setExpandedCategories(prev => new Set(prev).add(parent.id))
+                                }
+                              }}
                             >
                               <Plus className="mr-1 h-3 w-3" />
                               <span className="text-xs">子分类</span>
@@ -333,9 +366,8 @@ export default function Categories() {
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="text-center">{parent.items_count ?? 0}</TableCell>
-                <TableCell>
-                  {editingCategoryId === parent.id ? (
+                {isEditMode ? (
+                  <TableCell className="text-center">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -345,23 +377,10 @@ export default function Categories() {
                     >
                       <Trash2 className="text-destructive h-4 w-4" />
                     </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setEditingCategoryId(parent.id)
-                        // 如果该分类有子分类，自动展开
-                        if (parent.children && parent.children.length > 0) {
-                          setExpandedCategories(prev => new Set(prev).add(parent.id))
-                        }
-                      }}
-                      className="h-8 w-8"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                  )}
-                </TableCell>
+                  </TableCell>
+                ) : (
+                  <TableCell className="text-center">{parent.items_count ?? 0}</TableCell>
+                )}
               </TableRow>
 
               {/* 子分类行 */}
@@ -409,17 +428,22 @@ export default function Categories() {
                             </div>
                           ) : (
                             <div
-                              className="text-foreground hover:text-primary flex-1 cursor-pointer font-medium transition-colors hover:underline"
-                              onClick={() => startEdit(child.id, child.name)}
+                              className={`flex-1 font-medium transition-colors ${
+                                isEditMode
+                                  ? 'text-foreground hover:text-primary cursor-pointer hover:underline'
+                                  : 'text-foreground'
+                              }`}
+                              onClick={
+                                isEditMode ? () => startEdit(child.id, child.name) : undefined
+                              }
                             >
                               {child.name}
                             </div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">{child.items_count ?? 0}</TableCell>
-                      <TableCell>
-                        {editingCategoryId === parent.id ? (
+                      {isEditMode ? (
+                        <TableCell className="text-center">
                           <Button
                             variant="ghost"
                             size="icon"
@@ -429,17 +453,10 @@ export default function Categories() {
                           >
                             <Trash2 className="text-destructive h-4 w-4" />
                           </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setEditingCategoryId(parent.id)}
-                            className="h-8 w-8"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </TableCell>
+                        </TableCell>
+                      ) : (
+                        <TableCell className="text-center">{child.items_count ?? 0}</TableCell>
+                      )}
                     </TableRow>
                   ))}
 
@@ -483,8 +500,7 @@ export default function Categories() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">0</TableCell>
-                      <TableCell></TableCell>
+                      <TableCell className="text-center"></TableCell>
                     </TableRow>
                   )}
                 </>
@@ -517,7 +533,7 @@ export default function Categories() {
     creatingChild,
     saveChild,
     cancelCreateChild,
-    editingCategoryId,
+    isEditMode,
   ])
 
   return (
@@ -531,6 +547,17 @@ export default function Categories() {
                 <span className="text-muted-foreground text-sm">共 {categories.length} 个分类</span>
               </div>
               <div className="flex items-center gap-2">
+                <Button
+                  variant={isEditMode ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={toggleEditMode}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span className="text-sm font-medium">
+                    {isEditMode ? '退出编辑' : '编辑模式'}
+                  </span>
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
