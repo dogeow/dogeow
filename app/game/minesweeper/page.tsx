@@ -529,7 +529,7 @@ export default function MinesweeperGame() {
 
         {/* 控制按钮 */}
         <div className="flex flex-wrap justify-center gap-2">
-          <Button onClick={resetGame} variant="outline" size="sm">
+          <Button onClick={() => resetGame()} variant="outline" size="sm">
             重新开始
           </Button>
         </div>
