@@ -8,6 +8,7 @@ import { GameBoard } from './components/GameBoard'
 import { NextPieceDisplay } from './components/NextPieceDisplay'
 import { GameInfo } from './components/GameInfo'
 import { MobileControls } from './components/MobileControls'
+import Link from 'next/link'
 
 export default function TetrisGame() {
   const {
@@ -34,9 +35,15 @@ export default function TetrisGame() {
 
   return (
     <div className="container mx-auto max-w-7xl p-2 sm:p-4">
-      <div className="mb-4 text-center sm:mb-6">
-        <div className="mb-2 flex items-center justify-center gap-4">
-          <h1 className="text-2xl font-bold sm:text-4xl">俄罗斯方块</h1>
+      <div className="mb-4 sm:mb-6">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-muted-foreground text-sm">
+            <Link href="/game" className="hover:text-foreground transition-colors">
+              游戏中心
+            </Link>
+            <span className="mx-1">{'>'}</span>{' '}
+            <span className="text-foreground font-medium">俄罗斯方块</span>
+          </div>
           <GameRulesDialog
             title="俄罗斯方块游戏规则"
             rules={[
@@ -49,7 +56,7 @@ export default function TetrisGame() {
             ]}
           />
         </div>
-        <p className="hidden text-sm text-gray-600 sm:block sm:text-base">
+        <p className="hidden text-center text-sm text-gray-600 sm:block sm:text-base">
           使用方向键移动和旋转，空格键硬降，P键暂停
         </p>
       </div>
@@ -58,54 +65,48 @@ export default function TetrisGame() {
         {/* 游戏主体区域 - 模仿经典游戏机屏幕 */}
         <div className="flex justify-center">
           <div className="relative">
-            {/* 游戏机外壳 */}
-            <div className="rounded-2xl border-4 border-gray-400 bg-gradient-to-br from-gray-200 to-gray-300 p-6 shadow-2xl dark:border-gray-700 dark:from-gray-800 dark:to-gray-900">
-              {/* 屏幕区域 */}
-              <div className="relative overflow-hidden rounded-lg bg-black p-4 shadow-inner">
-                {/* 背光效果 - 夜晚模式绿色，白天模式无背光 */}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent to-transparent dark:from-green-400/10 dark:to-green-300/20"></div>
+            {/* 屏幕区域 - 单层容器 */}
+            <div className="relative overflow-hidden rounded-2xl bg-slate-950 p-4 shadow-xl">
+              {/* 背光效果 - 统一为冷色系 */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-100/20 to-transparent dark:from-cyan-400/12 dark:to-transparent"></div>
 
-                <div className="relative z-10 flex gap-4">
-                  {/* 主游戏区域 */}
-                  <div className="flex flex-col">
-                    <GameBoard board={gameState.board} currentPiece={gameState.currentPiece} />
-                  </div>
+              <div className="relative z-10 flex gap-4">
+                {/* 主游戏区域 */}
+                <div className="flex flex-col">
+                  <GameBoard board={gameState.board} currentPiece={gameState.currentPiece} />
+                </div>
 
-                  {/* 右侧信息区域 */}
-                  <div className="flex w-32 flex-col gap-3 sm:w-40">
-                    {/* 下一个方块 */}
-                    <NextPieceDisplay
-                      nextPiece={gameState.nextPiece}
-                      isClient={gameState.isClient}
-                    />
+                {/* 右侧信息区域 */}
+                <div className="flex w-32 flex-col gap-3 sm:w-40">
+                  {/* 下一个方块 */}
+                  <NextPieceDisplay nextPiece={gameState.nextPiece} isClient={gameState.isClient} />
 
-                    {/* 得分信息 */}
-                    <GameInfo
-                      score={gameState.score}
-                      lines={gameState.lines}
-                      level={gameState.level}
-                      bestScore={bestScore}
-                    />
+                  {/* 得分信息 */}
+                  <GameInfo
+                    score={gameState.score}
+                    lines={gameState.lines}
+                    level={gameState.level}
+                    bestScore={bestScore}
+                  />
 
-                    {/* 游戏状态 */}
-                    {(gameState.gameOver || gameState.paused) && (
-                      <div className="rounded border border-red-500/50 bg-gray-900 p-3">
-                        <div className="text-center">
-                          {gameState.gameOver && (
-                            <div>
-                              <div className="mb-2 font-mono text-xs text-red-400">GAME OVER</div>
-                              <Button onClick={resetGame} size="sm" className="text-xs">
-                                重新开始
-                              </Button>
-                            </div>
-                          )}
-                          {gameState.paused && !gameState.gameOver && (
-                            <div className="font-mono text-xs text-yellow-400">PAUSED</div>
-                          )}
-                        </div>
+                  {/* 游戏状态 */}
+                  {(gameState.gameOver || gameState.paused) && (
+                    <div className="rounded bg-slate-950/70 p-3">
+                      <div className="text-center">
+                        {gameState.gameOver && (
+                          <div>
+                            <div className="mb-2 font-mono text-xs text-rose-300">GAME OVER</div>
+                            <Button onClick={resetGame} size="sm" className="text-xs">
+                              重新开始
+                            </Button>
+                          </div>
+                        )}
+                        {gameState.paused && !gameState.gameOver && (
+                          <div className="font-mono text-xs text-amber-300">PAUSED</div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

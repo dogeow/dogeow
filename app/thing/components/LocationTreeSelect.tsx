@@ -7,6 +7,7 @@ import { useLocations } from '../services/api'
 import { cn } from '@/lib/helpers'
 import { LocationSelection, LocationTreeResponse, Room, Spot } from '../types'
 import FolderIcon from './FolderIcon'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface LocationTreeSelectProps {
   onSelect: (type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => void
@@ -33,6 +34,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
   isExpanded = true,
   onToggleExpand,
 }) => {
+  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState('')
   const [expandedAreas, setExpandedAreas] = useState<Set<number>>(new Set())
   const [expandedRooms, setExpandedRooms] = useState<Set<number>>(new Set())
@@ -260,33 +262,33 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
 
       if (type === 'area') {
         const area = areas.find(a => a.id === id)
-        return area?.name || '未知区域'
+        return area?.name || t('location.unknown_area')
       }
 
       if (type === 'room') {
         const room = rooms.find(r => r.id === id)
-        if (!room) return '未知房间'
+        if (!room) return t('location.unknown_room')
 
         const area = areas.find(a => a.id === room.area_id)
-        pathParts.push(area?.name || '未知区域', room.name)
+        pathParts.push(area?.name || t('location.unknown_area'), room.name)
         return pathParts.join(' / ')
       }
 
       // spot
       const spot = spots.find(s => s.id === id)
-      if (!spot) return '未知位置'
+      if (!spot) return t('location.unknown_spot')
 
       const room = rooms.find(r => r.id === spot.room_id)
       if (!room) {
-        pathParts.push('未知房间', spot.name)
+        pathParts.push(t('location.unknown_room'), spot.name)
       } else {
         const area = areas.find(a => a.id === room.area_id)
-        pathParts.push(area?.name || '未知区域', room.name, spot.name)
+        pathParts.push(area?.name || t('location.unknown_area'), room.name, spot.name)
       }
 
       return pathParts.join(' / ')
     },
-    [areas, rooms, spots]
+    [areas, rooms, spots, t]
   )
 
   // 优化选择处理
@@ -301,9 +303,9 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
   const getRoomAreaName = useCallback(
     (room: Room): string => {
       const area = areas.find(a => a.id === room.area_id)
-      return area?.name || '未知区域'
+      return area?.name || t('location.unknown_area')
     },
-    [areas]
+    [areas, t]
   )
 
   // 检查是否选中
@@ -326,17 +328,19 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
         <div className="relative flex-1">
           <Search className="text-muted-foreground absolute top-1/2 left-2 h-3.5 w-3.5 -translate-y-1/2 transform" />
           <Input
-            placeholder="搜索位置..."
+            placeholder={t('location.search_placeholder')}
             className="h-8 pl-7 text-sm"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
+            aria-label={t('common.search')}
           />
         </div>
         {onToggleExpand && (
           <button
             className="hover:bg-accent hover:text-accent-foreground flex h-8 w-8 items-center justify-center rounded-md transition-colors"
             onClick={onToggleExpand}
-            title={isExpanded ? '折叠所有' : '展开所有'}
+            title={isExpanded ? t('location.collapse_all') : t('location.expand_all')}
+            aria-label={isExpanded ? t('location.collapse_all') : t('location.expand_all')}
           >
             <FolderIcon isOpen={isExpanded} size={18} />
           </button>
@@ -347,7 +351,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
       <div className="h-[300px] overflow-y-auto pr-1">
         {hasNoResults ? (
           <div className="text-muted-foreground py-2 text-center text-sm">
-            {searchTerm ? '没有匹配的位置' : '没有可用的位置'}
+            {searchTerm ? t('location.no_results') : t('location.no_available')}
           </div>
         ) : (
           <>

@@ -129,7 +129,9 @@ export const useLanguageStore = create<LanguageState>()(
           set({ isDetecting: true })
 
           try {
-            const detectionResult = await languageDetectionService.detectLanguage()
+            const detectionResult = await languageDetectionService.forceRedetect({
+              ignoreStoredPreference: true,
+            })
             const detectedLanguage = detectionResult.language
             const translationFunction = createTranslationFunction(detectedLanguage)
             const now = Date.now()

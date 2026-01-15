@@ -95,9 +95,7 @@ export function NavCard({ item }: NavCardProps) {
               )}
             </a>
           </div>
-          <div className="ml-auto flex-shrink-0 pl-2">
-            {' '}
-            {/* Added pl-2 for spacing */}
+          <div className="absolute top-2 right-2">
             <NavCardActions item={item} deleteItem={deleteItem} />
           </div>
         </CardContent>

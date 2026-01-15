@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
+import Link from 'next/link'
 
 // 动态导入ThreeJS组件以避免SSR问题
 const ShootingGame = dynamic(() => import('./components/ShootingGame'), {
@@ -55,8 +56,14 @@ export default function ShootingRangePage() {
 
   return (
     <div className="flex flex-col items-center px-2 py-4">
-      <div className="mb-4 flex items-center gap-4">
-        <h1 className="text-2xl font-bold">射击游戏</h1>
+      <div className="mb-4 flex w-full max-w-md items-center justify-between">
+        <div className="text-muted-foreground text-sm">
+          <Link href="/game" className="hover:text-foreground transition-colors">
+            游戏中心
+          </Link>
+          <span className="mx-1">{'>'}</span>{' '}
+          <span className="text-foreground font-medium">射击游戏</span>
+        </div>
         <GameRulesDialog
           title="射击游戏规则"
           rules={[

@@ -9,23 +9,23 @@ interface GameInfoProps {
 
 export const GameInfo = memo<GameInfoProps>(({ score, lines, level, bestScore }) => {
   return (
-    <div className="rounded border border-gray-600 bg-gray-900 p-3 dark:border-green-500/30">
+    <div className="rounded bg-slate-950/90 p-3 shadow-sm">
       <div className="space-y-2 font-mono text-xs">
         <div className="flex justify-between">
-          <span className="text-gray-300 dark:text-green-400">SCORE</span>
-          <span className="font-bold text-white dark:text-green-300">{score.toLocaleString()}</span>
+          <span className="text-slate-300 dark:text-cyan-300">SCORE</span>
+          <span className="font-bold text-white dark:text-cyan-200">{score.toLocaleString()}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-300 dark:text-green-400">LINES</span>
-          <span className="font-bold text-white dark:text-green-300">{lines}</span>
+          <span className="text-slate-300 dark:text-emerald-300">LINES</span>
+          <span className="font-bold text-white dark:text-emerald-200">{lines}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-300 dark:text-green-400">LEVEL</span>
-          <span className="font-bold text-white dark:text-green-300">{level}</span>
+          <span className="text-slate-300 dark:text-violet-300">LEVEL</span>
+          <span className="font-bold text-white dark:text-violet-200">{level}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-gray-300 dark:text-green-400">HIGH</span>
-          <span className="font-bold text-white dark:text-green-300">
+          <span className="text-slate-300 dark:text-amber-300">HIGH</span>
+          <span className="font-bold text-white dark:text-amber-200">
             {bestScore.toLocaleString()}
           </span>
         </div>

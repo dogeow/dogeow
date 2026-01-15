@@ -154,20 +154,7 @@ export function LanguageSelector({
           </Button>
         ))}
 
-        {/* Reset to detected language button */}
-        {showDetectionInfo && showDetectionBadge && (
-          <Button
-            variant="outline"
-            size={size}
-            onClick={handleResetToDetected}
-            disabled={isTransitioning}
-            className="border-dashed transition-all duration-200"
-            title="切换到检测到的语言"
-          >
-            <RefreshCw className="mr-1 h-4 w-4" />
-            <span className="text-xs">自动检测</span>
-          </Button>
-        )}
+        {/* 移除“自动检测”按钮，避免与其他入口重复 */}
       </div>
     )
   }

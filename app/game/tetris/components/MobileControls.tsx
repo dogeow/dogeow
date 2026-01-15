@@ -76,7 +76,9 @@ export const MobileControls = memo<MobileControlsProps>(
           </Button>
           <Button
             variant="outline"
-            className={`h-12 w-full text-sm font-medium ${isSoftDropping ? 'bg-blue-100' : ''}`}
+            className={`h-12 w-full text-sm font-medium ${
+              isSoftDropping ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : ''
+            }`}
             onTouchStart={handleTouchStart(startSoftDrop)}
             onTouchEnd={handleTouchEnd(stopSoftDrop)}
             onMouseDown={startSoftDrop}

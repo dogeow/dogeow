@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { useMinesweeperStore } from './store'
 import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
+import Link from 'next/link'
 
 type CellState = 'hidden' | 'revealed' | 'flagged'
 type Cell = {
@@ -15,6 +16,7 @@ type Cell = {
 }
 
 type Difficulty = 'easy' | 'medium' | 'hard'
+type DifficultyConfig = { rows: number; cols: number; mines: number }
 
 // 根据屏幕大小动态计算难度配置
 const getDynamicDifficulties = () => {
@@ -82,13 +84,32 @@ const getDynamicDifficulties = () => {
   }
 }
 
+const createEmptyBoard = (rows: number, cols: number): Cell[][] => {
+  const newBoard: Cell[][] = []
+  for (let row = 0; row < rows; row++) {
+    newBoard[row] = []
+    for (let col = 0; col < cols; col++) {
+      newBoard[row][col] = {
+        isMine: false,
+        neighborCount: 0,
+        state: 'hidden',
+      }
+    }
+  }
+  return newBoard
+}
+
 export default function MinesweeperGame() {
   const { stats, updateStats } = useMinesweeperStore()
   const [difficulty, setDifficulty] = useState<Difficulty>('easy')
-  const [difficulties, setDifficulties] = useState(getDynamicDifficulties())
-  const [board, setBoard] = useState<Cell[][]>([])
+  const [difficulties, setDifficulties] = useState(() => getDynamicDifficulties())
+  const [board, setBoard] = useState<Cell[][]>(() => {
+    const initialDifficulties = getDynamicDifficulties()
+    const initialConfig = initialDifficulties.easy
+    return createEmptyBoard(initialConfig.rows, initialConfig.cols)
+  })
   const [gameState, setGameState] = useState<'playing' | 'won' | 'lost'>('playing')
-  const [mineCount, setMineCount] = useState(difficulties.easy.mines)
+  const [mineCount, setMineCount] = useState(() => getDynamicDifficulties().easy.mines)
   const [flagCount, setFlagCount] = useState(0)
   const [firstClick, setFirstClick] = useState(true)
   const [timer, setTimer] = useState(0)
@@ -97,20 +118,6 @@ export default function MinesweeperGame() {
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
 
   const config = difficulties[difficulty]
-
-  // 监听屏幕大小变化
-  useEffect(() => {
-    const handleResize = () => {
-      const newDifficulties = getDynamicDifficulties()
-      setDifficulties(newDifficulties)
-    }
-
-    window.addEventListener('resize', handleResize)
-    // 初始化时也调用一次
-    handleResize()
-
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   // 阻止整个页面的右键菜单
   useEffect(() => {
@@ -124,20 +131,12 @@ export default function MinesweeperGame() {
   }, [])
 
   // 初始化棋盘
-  const initializeBoard = useCallback(() => {
-    const newBoard: Cell[][] = []
-    for (let row = 0; row < config.rows; row++) {
-      newBoard[row] = []
-      for (let col = 0; col < config.cols; col++) {
-        newBoard[row][col] = {
-          isMine: false,
-          neighborCount: 0,
-          state: 'hidden',
-        }
-      }
-    }
-    return newBoard
-  }, [config])
+  const initializeBoard = useCallback(
+    (targetConfig: DifficultyConfig = config) => {
+      return createEmptyBoard(targetConfig.rows, targetConfig.cols)
+    },
+    [config]
+  )
 
   // 放置地雷
   const placeMines = useCallback(
@@ -199,15 +198,50 @@ export default function MinesweeperGame() {
   )
 
   // 重置游戏
-  const resetGame = useCallback(() => {
-    setBoard(initializeBoard())
-    setGameState('playing')
-    setMineCount(config.mines)
-    setFlagCount(0)
-    setFirstClick(true)
-    setTimer(0)
-    setGameStarted(false)
-  }, [initializeBoard, config.mines])
+  const resetGame = useCallback(
+    (targetConfig: DifficultyConfig = config) => {
+      setBoard(initializeBoard(targetConfig))
+      setGameState('playing')
+      setMineCount(targetConfig.mines)
+      setFlagCount(0)
+      setFirstClick(true)
+      setTimer(0)
+      setGameStarted(false)
+    },
+    [initializeBoard, config]
+  )
+
+  // 监听屏幕大小变化
+  useEffect(() => {
+    const handleResize = () => {
+      const newDifficulties = getDynamicDifficulties()
+      setDifficulties(newDifficulties)
+      resetGame(newDifficulties[difficulty])
+    }
+
+    window.addEventListener('resize', handleResize)
+
+    return () => window.removeEventListener('resize', handleResize)
+  }, [difficulty, resetGame])
+
+  const checkWinCondition = useCallback(
+    (nextBoard: Cell[][]) => {
+      let hiddenCount = 0
+      let flaggedCount = 0
+
+      for (let row = 0; row < config.rows; row++) {
+        for (let col = 0; col < config.cols; col++) {
+          const cell = nextBoard[row]?.[col]
+          if (!cell) continue
+          if (cell.state === 'hidden') hiddenCount++
+          if (cell.state === 'flagged') flaggedCount++
+        }
+      }
+
+      return hiddenCount + flaggedCount === config.mines
+    },
+    [config]
+  )
 
   // 揭示空白区域
   const revealEmptyArea = useCallback(
@@ -262,10 +296,16 @@ export default function MinesweeperGame() {
           setMineCount(prev => prev + 1)
         }
 
+        if (checkWinCondition(newBoard)) {
+          setGameState('won')
+          updateStats(difficulty, true, timer)
+          toast.success('恭喜！你赢了！')
+        }
+
         return newBoard
       })
     },
-    [gameState]
+    [gameState, checkWinCondition, difficulty, timer, updateStats]
   )
 
   // 点击格子
@@ -309,6 +349,12 @@ export default function MinesweeperGame() {
           newBoard[row][col].state = 'revealed'
         }
 
+        if (checkWinCondition(newBoard)) {
+          setGameState('won')
+          updateStats(difficulty, true, timer)
+          toast.success('恭喜！你赢了！')
+        }
+
         return newBoard
       })
     },
@@ -321,6 +367,8 @@ export default function MinesweeperGame() {
       config,
       difficulty,
       updateStats,
+      checkWinCondition,
+      timer,
     ]
   )
 
@@ -355,39 +403,6 @@ export default function MinesweeperGame() {
     }
   }, [longPressTimer])
 
-  // 检查胜利条件
-  useEffect(() => {
-    if (gameState === 'playing' && board.length > 0 && board[0] && board[0].length > 0) {
-      let hiddenCount = 0
-
-      for (let row = 0; row < config.rows; row++) {
-        for (let col = 0; col < config.cols; col++) {
-          const cell = board[row]?.[col]
-          if (cell && cell.state === 'hidden') {
-            hiddenCount++
-          }
-        }
-      }
-
-      // 胜利条件：所有非地雷格子都被揭示
-      if (hiddenCount + flagCount === config.mines) {
-        setGameState('won')
-        updateStats(difficulty, true, timer)
-        toast.success('恭喜！你赢了！')
-      }
-    }
-  }, [
-    board,
-    gameState,
-    flagCount,
-    config.mines,
-    config.rows,
-    config.cols,
-    difficulty,
-    timer,
-    updateStats,
-  ])
-
   // 计时器
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
@@ -402,21 +417,6 @@ export default function MinesweeperGame() {
       if (interval) clearInterval(interval)
     }
   }, [gameStarted, gameState])
-
-  // 初始化
-  useEffect(() => {
-    resetGame()
-  }, [resetGame])
-
-  // 当难度改变时重置游戏
-  useEffect(() => {
-    resetGame()
-  }, [difficulty, resetGame])
-
-  // 当难度配置改变时重置游戏
-  useEffect(() => {
-    resetGame()
-  }, [difficulties, resetGame])
 
   // 获取格子显示内容
   const getCellContent = (cell: Cell) => {
@@ -468,24 +468,27 @@ export default function MinesweeperGame() {
     <div className="container mx-auto flex min-h-screen max-w-4xl flex-col px-4 py-4">
       {/* 头部区域 */}
       <div className="flex flex-col items-center space-y-6 text-center">
-        {/* 标题 */}
-        <div className="flex flex-col items-center space-y-2">
-          <div className="flex items-center gap-4">
-            <h1 className="text-3xl font-bold">扫雷</h1>
-            <GameRulesDialog
-              title="扫雷游戏规则"
-              rules={[
-                '找出所有地雷位置而不踩雷',
-                '数字表示周围8个格子的地雷数量',
-                '左键点击揭示格子，右键标记地雷',
-                '手机端可长按标记或使用标记模式',
-                '揭示所有非地雷格子即可获胜',
-                '点到地雷就失败了',
-              ]}
-            />
+        <div className="flex w-full items-center justify-between">
+          <div className="text-muted-foreground text-sm">
+            <Link href="/game" className="hover:text-foreground transition-colors">
+              游戏中心
+            </Link>
+            <span className="mx-1">{'>'}</span>{' '}
+            <span className="text-foreground font-medium">扫雷</span>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">找出所有地雷，避免踩雷！</p>
+          <GameRulesDialog
+            title="扫雷游戏规则"
+            rules={[
+              '找出所有地雷位置而不踩雷',
+              '数字表示周围8个格子的地雷数量',
+              '左键点击揭示格子，右键标记地雷',
+              '手机端可长按标记或使用标记模式',
+              '揭示所有非地雷格子即可获胜',
+              '点到地雷就失败了',
+            ]}
+          />
         </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">找出所有地雷，避免踩雷！</p>
 
         {/* 难度选择 */}
         <div className="flex flex-wrap justify-center gap-2">
@@ -495,7 +498,9 @@ export default function MinesweeperGame() {
               variant={difficulty === key ? 'default' : 'outline'}
               size="sm"
               onClick={() => {
-                setDifficulty(key as Difficulty)
+                const nextDifficulty = key as Difficulty
+                setDifficulty(nextDifficulty)
+                resetGame(difficulties[nextDifficulty])
               }}
               className="text-xs"
             >

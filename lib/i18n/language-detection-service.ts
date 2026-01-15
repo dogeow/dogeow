@@ -32,6 +32,10 @@ export interface LanguageDetectionResult {
   timestamp: number
 }
 
+export interface LanguageDetectionOptions {
+  ignoreStoredPreference?: boolean
+}
+
 export type DetectionMethod =
   | 'browser'
   | 'geolocation'
@@ -121,8 +125,8 @@ export class LanguageDetectionService {
   /**
    * 使用多种策略检测语言
    */
-  async detectLanguage(): Promise<LanguageDetectionResult> {
-    const cacheKey = 'language-detection'
+  async detectLanguage(options: LanguageDetectionOptions = {}): Promise<LanguageDetectionResult> {
+    const cacheKey = `language-detection:${options.ignoreStoredPreference ? 'no-pref' : 'with-pref'}`
     const cached = this.cache.get(cacheKey)
 
     // 检查缓存
@@ -143,7 +147,7 @@ export class LanguageDetectionService {
     }
 
     // 开始新的检测
-    this.detectionPromise = this.performDetectionWithTimeout()
+    this.detectionPromise = this.performDetectionWithTimeout(options)
 
     try {
       const result = await this.detectionPromise
@@ -172,29 +176,37 @@ export class LanguageDetectionService {
   /**
    * 带超时的检测执行
    */
-  private async performDetectionWithTimeout(): Promise<LanguageDetectionResult> {
+  private async performDetectionWithTimeout(
+    options: LanguageDetectionOptions
+  ): Promise<LanguageDetectionResult> {
     const timeoutPromise = new Promise<LanguageDetectionResult>((_, reject) => {
       setTimeout(() => {
         reject(new Error('语言检测超时'))
       }, DETECTION_CONFIG.DETECTION_TIMEOUT)
     })
 
-    return Promise.race([this.performDetection(), timeoutPromise])
+    return Promise.race([this.performDetection(options), timeoutPromise])
   }
 
   /**
    * 使用多种策略执行语言检测
    */
-  private async performDetection(): Promise<LanguageDetectionResult> {
+  private async performDetection(
+    options: LanguageDetectionOptions
+  ): Promise<LanguageDetectionResult> {
     this.logger.log('info', '开始语言检测...')
 
     // 定义检测策略
     const strategies = [
-      {
-        name: '已存储偏好',
-        method: () => this.detectStoredPreference(),
-        threshold: CONFIDENCE_THRESHOLDS.STORED_PREFERENCE,
-      },
+      ...(!options.ignoreStoredPreference
+        ? [
+            {
+              name: '已存储偏好',
+              method: () => this.detectStoredPreference(),
+              threshold: CONFIDENCE_THRESHOLDS.STORED_PREFERENCE,
+            },
+          ]
+        : []),
       {
         name: '浏览器语言',
         method: () => this.detectBrowserLanguage(),
@@ -767,7 +779,7 @@ export class LanguageDetectionService {
   /**
    * 强制重新检测语言
    */
-  async forceRedetect(): Promise<LanguageDetectionResult> {
+  async forceRedetect(options: LanguageDetectionOptions = {}): Promise<LanguageDetectionResult> {
     this.logger.log('info', '强制重新检测语言')
     this.clearCache()
 
@@ -776,7 +788,7 @@ export class LanguageDetectionService {
       this.detectionPromise = null
     }
 
-    return this.detectLanguage()
+    return this.detectLanguage(options)
   }
 }
 

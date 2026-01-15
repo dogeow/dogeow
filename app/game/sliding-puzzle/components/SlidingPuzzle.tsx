@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
-import { Card } from '@/components/ui/card'
 
 // 内联组件 - 计时器
 function Timer({ startTime }: { startTime: Date }) {
@@ -126,11 +125,6 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
     setIsComplete(false)
   }, [size, createBoard])
 
-  // 当尺寸改变时重置游戏
-  useEffect(() => {
-    resetGame()
-  }, [resetGame])
-
   // 移动方块
   const moveTile = useCallback(
     (index: number) => {
@@ -210,7 +204,7 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
   }, [board, isComplete, size, moveTile])
 
   return (
-    <Card className="w-full p-4">
+    <div className="w-full p-4">
       <div className="mb-4 flex items-center justify-between">
         <MoveCounter moves={moves} />
         <Timer startTime={startTime} />
@@ -244,10 +238,6 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
           </div>
         ))}
       </div>
-
-      <div className="mt-4 text-center text-sm text-gray-500">
-        <p>提示：点击数字方块或使用键盘方向键移动</p>
-      </div>
-    </Card>
+    </div>
   )
 }

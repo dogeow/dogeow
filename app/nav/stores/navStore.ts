@@ -7,6 +7,8 @@ interface NavStore {
   categories: NavCategory[]
   allCategories: NavCategory[]
   items: NavItem[]
+  sampleItems: NavItem[]
+  isSampleData: boolean
   loading: boolean
   error: string | null
   searchTerm: string
@@ -16,6 +18,7 @@ interface NavStore {
   fetchCategories: (filterName?: string) => Promise<NavCategory[]>
   fetchAllCategories: () => Promise<NavCategory[]>
   fetchItems: (categoryId?: number) => Promise<NavItem[]>
+  applySampleData: () => void
 
   // 搜索
   setSearchTerm: (term: string) => void
@@ -38,6 +41,8 @@ export const useNavStore = create<NavStore>((set, get) => ({
   categories: [],
   allCategories: [],
   items: [],
+  sampleItems: [],
+  isSampleData: false,
   loading: false,
   error: null,
   searchTerm: '',
@@ -77,6 +82,11 @@ export const useNavStore = create<NavStore>((set, get) => ({
   // 获取所有导航分类（用于展示，只包含有导航项的分类）
   fetchCategories: async (filterName?: string) => {
     try {
+      if (get().isSampleData) {
+        const { categories } = get()
+        set({ loading: false, error: null })
+        return categories
+      }
       set({ loading: true, error: null })
       console.log('开始从API获取分类数据')
       const categories = (await navApi.getCategories(filterName)) || []
@@ -94,6 +104,11 @@ export const useNavStore = create<NavStore>((set, get) => ({
   // 获取所有分类（用于管理，包括空分类）
   fetchAllCategories: async () => {
     try {
+      if (get().isSampleData) {
+        const { allCategories } = get()
+        set({ loading: false, error: null })
+        return allCategories
+      }
       set({ loading: true, error: null })
       console.log('开始从API获取所有分类数据')
       const allCategories = (await navApi.getAllCategories()) || []
@@ -111,6 +126,14 @@ export const useNavStore = create<NavStore>((set, get) => ({
   // 获取导航项
   fetchItems: async (categoryId?: number) => {
     try {
+      if (get().isSampleData) {
+        const { sampleItems } = get()
+        const filtered = categoryId
+          ? sampleItems.filter(item => item.nav_category_id === categoryId)
+          : sampleItems
+        set({ items: filtered, filteredItems: filtered, loading: false, error: null })
+        return filtered
+      }
       set({ loading: true, error: null })
       const items = await navApi.getItems(categoryId)
       set({ items, loading: false })
@@ -120,6 +143,205 @@ export const useNavStore = create<NavStore>((set, get) => ({
       set({ loading: false, error: errorMessage })
       throw error
     }
+  },
+
+  // 填充示例导航与分类（仅在无数据时）
+  applySampleData: () => {
+    const { categories, items, isSampleData } = get()
+    if (isSampleData || categories.length > 0 || items.length > 0) return
+
+    const now = new Date().toISOString()
+    const sampleCategories: NavCategory[] = [
+      {
+        id: 1,
+        name: '常用',
+        icon: null,
+        description: '常用站点快捷入口',
+        sort_order: 1,
+        is_visible: true,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 2,
+        name: '开发',
+        icon: null,
+        description: '开发相关资源',
+        sort_order: 2,
+        is_visible: true,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 3,
+        name: '学习',
+        icon: null,
+        description: '学习与阅读',
+        sort_order: 3,
+        is_visible: true,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+    ]
+
+    const sampleItems: NavItem[] = [
+      {
+        id: 101,
+        nav_category_id: 1,
+        name: 'Google',
+        url: 'https://www.google.com',
+        icon: null,
+        description: '搜索引擎',
+        sort_order: 1,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 102,
+        nav_category_id: 1,
+        name: 'GitHub',
+        url: 'https://github.com',
+        icon: null,
+        description: '代码托管与协作',
+        sort_order: 2,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 103,
+        nav_category_id: 1,
+        name: 'Notion',
+        url: 'https://www.notion.so',
+        icon: null,
+        description: '笔记与知识库',
+        sort_order: 3,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 201,
+        nav_category_id: 2,
+        name: 'MDN',
+        url: 'https://developer.mozilla.org',
+        icon: null,
+        description: 'Web 文档',
+        sort_order: 1,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 202,
+        nav_category_id: 2,
+        name: 'Stack Overflow',
+        url: 'https://stackoverflow.com',
+        icon: null,
+        description: '技术问答社区',
+        sort_order: 2,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 203,
+        nav_category_id: 2,
+        name: 'Vercel',
+        url: 'https://vercel.com',
+        icon: null,
+        description: '前端部署平台',
+        sort_order: 3,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 301,
+        nav_category_id: 3,
+        name: '掘金',
+        url: 'https://juejin.cn',
+        icon: null,
+        description: '中文技术社区',
+        sort_order: 1,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 302,
+        nav_category_id: 3,
+        name: '阮一峰的网络日志',
+        url: 'https://www.ruanyifeng.com/blog/',
+        icon: null,
+        description: '技术文章与随笔',
+        sort_order: 2,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+      {
+        id: 303,
+        nav_category_id: 3,
+        name: '语雀',
+        url: 'https://www.yuque.com',
+        icon: null,
+        description: '团队知识库',
+        sort_order: 3,
+        is_visible: true,
+        is_new_window: true,
+        clicks: 0,
+        created_at: now,
+        updated_at: now,
+        deleted_at: null,
+      },
+    ]
+
+    const categoriesWithItems = sampleCategories.map(category => {
+      const categoryItems = sampleItems.filter(item => item.nav_category_id === category.id)
+      return {
+        ...category,
+        items: categoryItems,
+        items_count: categoryItems.length,
+      }
+    })
+
+    set({
+      categories: categoriesWithItems,
+      allCategories: categoriesWithItems,
+      items: sampleItems,
+      sampleItems,
+      filteredItems: sampleItems,
+      isSampleData: true,
+    })
   },
 
   // 创建分类

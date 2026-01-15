@@ -11,8 +11,10 @@ import TreeViewTab from './components/TreeViewTab'
 import DeleteConfirmDialog from './components/DeleteConfirmDialog'
 import LocationsSpeedDial from './components/LocationsSpeedDial'
 import { useLocationManagement, LocationType } from './hooks/useLocationManagement'
+import { useTranslation } from '@/hooks/useTranslation'
 
 export default function Locations() {
+  const { t } = useTranslation()
   // 使用自定义hook管理位置相关的状态和操作
   const {
     areas,
@@ -46,10 +48,10 @@ export default function Locations() {
 
   // 所有tab项，包括树形视图
   const tabItems = [
-    { value: 'tree', icon: <FolderTree className="h-4 w-4" />, label: '树形视图' },
-    { value: 'area', icon: <Home className="h-4 w-4" />, label: '区域' },
-    { value: 'room', icon: <DoorOpen className="h-4 w-4" />, label: '房间' },
-    { value: 'spot', icon: <MapPin className="h-4 w-4" />, label: '具体位置' },
+    { value: 'tree', icon: <FolderTree className="h-4 w-4" />, label: t('location.tree_view') },
+    { value: 'area', icon: <Home className="h-4 w-4" />, label: t('location.area') },
+    { value: 'room', icon: <DoorOpen className="h-4 w-4" />, label: t('location.room') },
+    { value: 'spot', icon: <MapPin className="h-4 w-4" />, label: t('location.spot') },
   ]
 
   // Tab内容配置

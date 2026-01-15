@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   Calendar,
   Tag,
@@ -50,66 +50,50 @@ const DevLogItem: React.FC<{ log: DevLogEntry; t: (key: string, fallback?: strin
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
 
+  const neutralTypeConfig = {
+    color: 'text-gray-600 dark:text-gray-400',
+    bgColor: 'bg-gray-50 dark:bg-gray-900/40',
+    borderColor: 'border-gray-200 dark:border-gray-800',
+    badgeColor:
+      'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700',
+  }
+
   const getTypeConfig = (type: string) => {
     switch (type) {
       case 'feature':
         return {
-          color: 'text-green-500 dark:text-green-400',
-          bgColor: 'bg-green-50 dark:bg-green-950/30',
-          borderColor: 'border-green-200 dark:border-green-800',
-          icon: <Zap className="h-4 w-4 text-green-600 dark:text-green-400" />,
-          badgeColor:
-            'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
+          ...neutralTypeConfig,
+          icon: <Zap className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
           label: t('devlog.type.feature', '新功能'),
         }
       case 'bugfix':
         return {
-          color: 'text-red-500 dark:text-red-400',
-          bgColor: 'bg-red-50 dark:bg-red-950/30',
-          borderColor: 'border-red-200 dark:border-red-800',
-          icon: <Bug className="h-4 w-4 text-red-600 dark:text-red-400" />,
-          badgeColor:
-            'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
+          ...neutralTypeConfig,
+          icon: <Bug className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
           label: t('devlog.type.bugfix', '修复'),
         }
       case 'update':
         return {
-          color: 'text-blue-500 dark:text-blue-400',
-          bgColor: 'bg-blue-50 dark:bg-blue-950/30',
-          borderColor: 'border-blue-200 dark:border-blue-800',
-          icon: <BookOpen className="h-4 w-4 text-blue-600 dark:text-blue-400" />,
-          badgeColor:
-            'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700',
+          ...neutralTypeConfig,
+          icon: <BookOpen className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
           label: t('devlog.type.update', '更新'),
         }
       case 'release':
         return {
-          color: 'text-purple-500 dark:text-purple-400',
-          bgColor: 'bg-purple-50 dark:bg-purple-950/30',
-          borderColor: 'border-purple-200 dark:border-purple-800',
-          icon: <GitBranch className="h-4 w-4 text-purple-600 dark:text-purple-400" />,
-          badgeColor:
-            'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700',
+          ...neutralTypeConfig,
+          icon: <GitBranch className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
           label: t('devlog.type.release', '发布'),
         }
       case 'milestone':
         return {
-          color: 'text-yellow-500 dark:text-yellow-400',
-          bgColor: 'bg-yellow-50 dark:bg-yellow-950/30',
-          borderColor: 'border-yellow-200 dark:border-yellow-800',
-          icon: <Star className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />,
-          badgeColor:
-            'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
+          ...neutralTypeConfig,
+          icon: <Star className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
           label: t('devlog.type.milestone', '里程碑'),
         }
       default:
         return {
-          color: 'text-gray-500 dark:text-gray-400',
-          bgColor: 'bg-gray-50 dark:bg-gray-950/30',
-          borderColor: 'border-gray-200 dark:border-gray-800',
+          ...neutralTypeConfig,
           icon: <BookOpen className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
-          badgeColor:
-            'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/50 dark:text-gray-300 dark:border-gray-700',
           label: t('devlog.type.update', '更新'),
         }
     }
@@ -187,46 +171,38 @@ const DevLogItem: React.FC<{ log: DevLogEntry; t: (key: string, fallback?: strin
 }
 
 const SystemStatusItem: React.FC<{ status: SystemStatus }> = ({ status }) => {
+  const neutralStatusConfig = {
+    color: 'text-gray-600 dark:text-gray-400',
+    bgColor: 'bg-gray-50 dark:bg-gray-900/40',
+    borderColor: 'border-gray-200 dark:border-gray-800',
+    badgeColor:
+      'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700',
+  }
+
   const getStatusConfig = (status: string) => {
     switch (status) {
       case 'online':
         return {
-          color: 'text-green-600 dark:text-green-400',
-          bgColor: 'bg-green-50 dark:bg-green-950/30',
-          borderColor: 'border-green-200 dark:border-green-800',
-          icon: <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />,
-          badgeColor:
-            'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/50 dark:text-green-300 dark:border-green-700',
+          ...neutralStatusConfig,
+          icon: <CheckCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
           label: '在线',
         }
       case 'warning':
         return {
-          color: 'text-yellow-600 dark:text-yellow-400',
-          bgColor: 'bg-yellow-50 dark:bg-yellow-950/30',
-          borderColor: 'border-yellow-200 dark:border-yellow-800',
-          icon: <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />,
-          badgeColor:
-            'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:border-yellow-700',
+          ...neutralStatusConfig,
+          icon: <AlertCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
           label: '警告',
         }
       case 'error':
         return {
-          color: 'text-red-600 dark:text-red-400',
-          bgColor: 'bg-red-50 dark:bg-red-950/30',
-          borderColor: 'border-red-200 dark:border-red-800',
-          icon: <XCircle className="h-4 w-4 text-red-600 dark:text-red-400" />,
-          badgeColor:
-            'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/50 dark:text-red-300 dark:border-red-700',
+          ...neutralStatusConfig,
+          icon: <XCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
           label: '错误',
         }
       default:
         return {
-          color: 'text-gray-600 dark:text-gray-400',
-          bgColor: 'bg-gray-50 dark:bg-gray-950/30',
-          borderColor: 'border-gray-200 dark:border-gray-800',
+          ...neutralStatusConfig,
           icon: <XCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
-          badgeColor:
-            'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/50 dark:text-gray-300 dark:border-gray-700',
           label: '离线',
         }
     }
@@ -323,49 +299,54 @@ const SiteLogTree: React.FC = () => {
     },
   ])
 
+  const systemBaseTime = useMemo(() => new Date(), [])
+
   // 系统状态数据
-  const [systemStatus] = useState<SystemStatus[]>([
-    {
-      name: '聊天室',
-      status: 'online',
-      lastCheck: new Date(),
-      icon: <MessageSquare className="h-5 w-5 text-green-600 dark:text-green-400" />,
-      description: 'WebSocket 实时聊天服务',
-      details: '连接数: 12 | 消息/分钟: 45',
-    },
-    {
-      name: '队列系统',
-      status: 'online',
-      lastCheck: new Date(Date.now() - 30000), // 30秒前
-      icon: <Server className="h-5 w-5 text-green-600 dark:text-green-400" />,
-      description: 'Laravel Horizon 队列处理',
-      details: '活跃队列: 3 | 待处理任务: 5',
-    },
-    {
-      name: 'Octane 服务',
-      status: 'online',
-      lastCheck: new Date(Date.now() - 60000), // 1分钟前
-      icon: <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />,
-      description: 'Laravel Octane 高性能服务',
-      details: '内存使用: 128MB | 请求/秒: 156',
-    },
-    {
-      name: '数据库',
-      status: 'warning',
-      lastCheck: new Date(Date.now() - 120000), // 2分钟前
-      icon: <Server className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />,
-      description: 'MySQL 数据库连接',
-      details: '连接池: 85% | 慢查询: 2',
-    },
-    {
-      name: '缓存服务',
-      status: 'online',
-      lastCheck: new Date(Date.now() - 45000), // 45秒前
-      icon: <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />,
-      description: 'Redis 缓存服务',
-      details: '命中率: 94% | 内存使用: 256MB',
-    },
-  ])
+  const systemStatus = useMemo<SystemStatus[]>(
+    () => [
+      {
+        name: '聊天室',
+        status: 'online',
+        lastCheck: new Date(systemBaseTime),
+        icon: <MessageSquare className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
+        description: 'WebSocket 实时聊天服务',
+        details: '连接数: 12 | 消息/分钟: 45',
+      },
+      {
+        name: '队列系统',
+        status: 'online',
+        lastCheck: new Date(systemBaseTime.getTime() - 30000), // 30秒前
+        icon: <Server className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
+        description: 'Laravel Horizon 队列处理',
+        details: '活跃队列: 3 | 待处理任务: 5',
+      },
+      {
+        name: 'Octane 服务',
+        status: 'online',
+        lastCheck: new Date(systemBaseTime.getTime() - 60000), // 1分钟前
+        icon: <Activity className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
+        description: 'Laravel Octane 高性能服务',
+        details: '内存使用: 128MB | 请求/秒: 156',
+      },
+      {
+        name: '数据库',
+        status: 'warning',
+        lastCheck: new Date(systemBaseTime.getTime() - 120000), // 2分钟前
+        icon: <Server className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
+        description: 'MySQL 数据库连接',
+        details: '连接池: 85% | 慢查询: 2',
+      },
+      {
+        name: '缓存服务',
+        status: 'online',
+        lastCheck: new Date(systemBaseTime.getTime() - 45000), // 45秒前
+        icon: <Activity className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
+        description: 'Redis 缓存服务',
+        details: '命中率: 94% | 内存使用: 256MB',
+      },
+    ],
+    [systemBaseTime]
+  )
 
   const filteredLogs = selectedType === 'all' ? logs : logs.filter(log => log.type === selectedType)
 
@@ -378,8 +359,8 @@ const SiteLogTree: React.FC = () => {
         </TabsList>
 
         <TabsContent value="logs" className="mt-6">
-          <Card className="border-0 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900">
-            <CardHeader className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
+          <Card className="border-0 bg-white shadow-lg dark:border-gray-800 dark:bg-neutral-900">
+            <CardHeader className="border-b border-gray-200 bg-neutral-50 dark:border-gray-700 dark:bg-neutral-900/60">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex-1">
                   <CardTitle className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
@@ -398,71 +379,73 @@ const SiteLogTree: React.FC = () => {
                 </span>
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
-                    variant={selectedType === 'all' ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => setSelectedType('all')}
                     className={
-                      selectedType === 'all' ? 'bg-orange-500 text-white hover:bg-orange-600' : ''
+                      selectedType === 'all'
+                        ? 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800 dark:border-gray-100 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                     }
                   >
                     {t('devlog.filter.all', '全部')}
                   </Button>
                   <Button
-                    variant={selectedType === 'feature' ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => setSelectedType('feature')}
                     className={
                       selectedType === 'feature'
-                        ? 'bg-green-500 text-white hover:bg-green-600'
-                        : 'bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/50 dark:text-green-300 dark:hover:bg-green-900/70'
+                        ? 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800 dark:border-gray-100 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                     }
                   >
                     {t('devlog.type.feature', '新功能')}
                   </Button>
                   <Button
-                    variant={selectedType === 'bugfix' ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => setSelectedType('bugfix')}
                     className={
                       selectedType === 'bugfix'
-                        ? 'bg-red-500 text-white hover:bg-red-600'
-                        : 'bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900/50 dark:text-red-300 dark:hover:bg-red-900/70'
+                        ? 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800 dark:border-gray-100 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                     }
                   >
                     {t('devlog.type.bugfix', '修复')}
                   </Button>
                   <Button
-                    variant={selectedType === 'update' ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => setSelectedType('update')}
                     className={
                       selectedType === 'update'
-                        ? 'bg-blue-500 text-white hover:bg-blue-600'
-                        : 'bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-300 dark:hover:bg-blue-900/70'
+                        ? 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800 dark:border-gray-100 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                     }
                   >
                     {t('devlog.type.update', '更新')}
                   </Button>
                   <Button
-                    variant={selectedType === 'release' ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => setSelectedType('release')}
                     className={
                       selectedType === 'release'
-                        ? 'bg-purple-500 text-white hover:bg-purple-600'
-                        : 'bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-300 dark:hover:bg-purple-900/70'
+                        ? 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800 dark:border-gray-100 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                     }
                   >
                     {t('devlog.type.release', '发布')}
                   </Button>
                   <Button
-                    variant={selectedType === 'milestone' ? 'default' : 'outline'}
+                    variant="outline"
                     size="sm"
                     onClick={() => setSelectedType('milestone')}
                     className={
                       selectedType === 'milestone'
-                        ? 'bg-yellow-500 text-white hover:bg-yellow-600'
-                        : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 dark:bg-yellow-900/50 dark:text-yellow-300 dark:hover:bg-yellow-900/70'
+                        ? 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800 dark:border-gray-100 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'
+                        : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
                     }
                   >
                     {t('devlog.type.milestone', '里程碑')}
@@ -487,8 +470,8 @@ const SiteLogTree: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="status" className="mt-6">
-          <Card className="border-0 bg-white shadow-lg dark:border-gray-800 dark:bg-gray-900">
-            <CardHeader className="border-b border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50">
+          <Card className="border-0 bg-white shadow-lg dark:border-gray-800 dark:bg-neutral-900">
+            <CardHeader className="border-b border-gray-200 bg-neutral-50 dark:border-gray-700 dark:bg-neutral-900/60">
               <CardTitle className="flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
                 <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />
                 网站状态

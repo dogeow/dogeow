@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
-import { MoreVertical, Pencil, Trash } from 'lucide-react'
+import { MoreHorizontal, Pencil, Trash } from 'lucide-react'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
 import { toast } from 'react-hot-toast'
 
@@ -47,8 +47,8 @@ export default function NavCardActions({ item, deleteItem }: NavCardActionsProps
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="sm" className="ml-auto">
-            <MoreVertical className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-7 w-7">
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">

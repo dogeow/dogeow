@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { LanguageDetectionService } from '../language-detection-service'
 
@@ -69,7 +68,7 @@ describe('LanguageDetectionService', () => {
       }
 
       // Manually set cache
-      ;(service as any).cache.set('language-detection', mockResult)
+      ;(service as any).cache.set('language-detection:with-pref', mockResult)
 
       const result = await service.detectLanguage()
       expect(result).toEqual(mockResult)
@@ -84,10 +83,33 @@ describe('LanguageDetectionService', () => {
         timestamp: Date.now() - 25 * 60 * 60 * 1000, // 25 hours ago
       }
 
-      ;(service as any).cache.set('language-detection', oldResult)
+      ;(service as any).cache.set('language-detection:with-pref', oldResult)
 
       const result = await service.detectLanguage()
       expect(result.language).toBe('en')
+      expect(result.method).toBe('browser')
+    })
+
+    it('should ignore stored preference when requested', async () => {
+      const mockLocalStorage = {
+        getItem: vi.fn().mockReturnValue('ja'),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+      }
+
+      Object.defineProperty(global, 'localStorage', {
+        value: mockLocalStorage,
+        writable: true,
+      })
+
+      Object.defineProperty(global, 'navigator', {
+        value: { ...mockNavigator, languages: ['zh-CN'], language: 'zh-CN' },
+        writable: true,
+      })
+
+      const result = await service.detectLanguage({ ignoreStoredPreference: true })
+      expect(result.language).toBe('zh-CN')
       expect(result.method).toBe('browser')
     })
   })

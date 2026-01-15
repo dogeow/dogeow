@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
   Select,
@@ -10,11 +10,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { RotateCcw, Trophy, Users, Bot, User, Loader2 } from 'lucide-react'
+import { RotateCcw, Users, Bot, User, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useGameStore } from './stores/game-store'
 import { GameStats } from './components/game-stats'
 import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
+import Link from 'next/link'
 
 const TicTacToe = () => {
   const {
@@ -40,10 +41,15 @@ const TicTacToe = () => {
           {/* 主游戏区域 */}
           <div className="lg:col-span-2">
             <Card className="mb-6">
-              <CardHeader className="text-center">
-                <CardTitle className="flex items-center justify-center gap-2 text-3xl font-bold text-gray-800 dark:text-gray-100">
-                  <Trophy className="h-8 w-8 text-yellow-500" />
-                  井字棋
+              <CardHeader>
+                <div className="flex w-full items-center justify-between">
+                  <div className="text-muted-foreground text-sm">
+                    <Link href="/game" className="hover:text-foreground transition-colors">
+                      游戏中心
+                    </Link>
+                    <span className="mx-1">{'>'}</span>{' '}
+                    <span className="text-foreground font-medium">井字棋</span>
+                  </div>
                   <GameRulesDialog
                     title="井字棋游戏规则"
                     rules={[
@@ -54,9 +60,8 @@ const TicTacToe = () => {
                       '人机对战模式下，你是 X，AI 是 O',
                       'AI 有三种难度：简单（随机）、中等（混合策略）、困难（最优策略）',
                     ]}
-                    className="ml-auto"
                   />
-                </CardTitle>
+                </div>
               </CardHeader>
               <CardContent>
                 {/* 游戏模式选择 */}

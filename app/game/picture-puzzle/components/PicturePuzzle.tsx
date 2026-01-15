@@ -389,29 +389,8 @@ export default function PicturePuzzle({ imageUrl, size, onComplete }: PicturePuz
           )}
         </div>
 
-        {/* 参考图片和统计信息 */}
+        {/* 统计信息 */}
         <div className="flex flex-col items-center space-y-4">
-          <div>
-            <h3 className="mb-3 text-sm font-medium text-gray-600">参考图片</h3>
-            <div className="relative overflow-hidden rounded-xl border-2 border-gray-200 shadow-md">
-              <Image
-                src={previewImage}
-                alt="参考图片"
-                width={192}
-                height={192}
-                className="object-cover"
-                sizes="192px"
-              />
-            </div>
-            <div className="mt-3 text-center">
-              <p className="text-xs text-gray-500">
-                难度: {size}×{size}
-              </p>
-              <p className="mt-1 text-xs text-gray-400">点击相邻方块移动</p>
-            </div>
-          </div>
-
-          {/* 统计信息 */}
           {stats.gamesPlayed > 0 && (
             <Card className="w-48 p-3">
               <h4 className="mb-2 text-sm font-medium text-gray-600">个人记录</h4>

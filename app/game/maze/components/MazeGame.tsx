@@ -208,15 +208,15 @@ export default function MazeGame() {
   return (
     <div className="relative w-full">
       {/* 游戏信息 */}
-      <div className="mb-4 flex items-center justify-between rounded-lg bg-gray-50 p-4">
+      <div className="border-border/60 bg-card mb-4 flex items-center justify-between rounded-lg border p-4">
         <div className="flex gap-6">
           <div className="text-sm">
-            <span className="text-gray-600">移动次数:</span>
-            <span className="ml-2 font-bold text-blue-600">{moves}</span>
+            <span className="text-muted-foreground">移动次数:</span>
+            <span className="text-foreground ml-2 font-semibold">{moves}</span>
           </div>
           <div className="text-sm">
-            <span className="text-gray-600">用时:</span>
-            <span className="ml-2 font-bold text-green-600">{gameTime}秒</span>
+            <span className="text-muted-foreground">用时:</span>
+            <span className="text-foreground ml-2 font-semibold">{gameTime}秒</span>
           </div>
         </div>
 
@@ -224,14 +224,14 @@ export default function MazeGame() {
           {gameStarted ? (
             <button
               onClick={resetGame}
-              className="rounded-lg bg-gray-500 px-4 py-2 text-sm text-white transition-colors hover:bg-gray-600"
+              className="bg-muted text-foreground hover:bg-muted/80 rounded-lg px-4 py-2 text-sm transition-colors"
             >
               重新开始
             </button>
           ) : (
             <button
               onClick={startGame}
-              className="rounded-lg bg-blue-500 px-4 py-2 text-sm text-white transition-colors hover:bg-blue-600"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm transition-colors"
             >
               开始游戏
             </button>
@@ -241,18 +241,6 @@ export default function MazeGame() {
 
       {/* 游戏画布 */}
       <MazeCanvas ref={canvasRef} />
-
-      {/* 控制说明 */}
-      <div className="mt-4 rounded-lg bg-blue-50 p-4">
-        <h3 className="mb-2 font-semibold text-blue-800">游戏说明</h3>
-        <div className="space-y-1 text-sm text-blue-700">
-          <p>• 点击迷宫中的任意位置，小球会自动寻路到达</p>
-          <p>• 移动过程中可以随时点击其他位置来中断并重新导航</p>
-          <p>• 使用方向键或 WASD 键控制小球移动（会中断自动移动）</p>
-          <p>• 将蓝色小球移动到右下角的红色终点即可获胜</p>
-          <p>• 绿色方块是起点，红色方块是终点</p>
-        </div>
-      </div>
 
       {gameCompleted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">

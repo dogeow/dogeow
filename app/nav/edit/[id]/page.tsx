@@ -20,8 +20,8 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
 import { Combobox } from '@/components/ui/combobox'
+import { Switch } from '@/components/ui/switch'
 
 // 定义表单数据类型
 type FormData = {
@@ -102,7 +102,7 @@ export default function EditNavPage() {
               description: currentItem.description || '',
               icon: currentItem.icon || '',
               is_visible: currentItem.is_visible,
-              is_new_window: currentItem.is_new_window,
+              is_new_window: true,
               sort_order: currentItem.sort_order,
             })
             setInitialLoading(false)
@@ -155,6 +155,7 @@ export default function EditNavPage() {
       const navItemData = {
         ...data,
         nav_category_id: Number(data.nav_category_id),
+        is_new_window: true,
       }
 
       // 提交请求
@@ -182,7 +183,7 @@ export default function EditNavPage() {
 
   if (initialLoading) {
     return (
-      <div className="container mx-auto py-2">
+      <div className="container mx-auto px-4 py-2">
         <div className="flex h-40 items-center justify-center">
           <p className="text-muted-foreground">加载中...</p>
         </div>
@@ -191,7 +192,7 @@ export default function EditNavPage() {
   }
 
   return (
-    <div className="container mx-auto py-2">
+    <div className="container mx-auto px-4 py-2">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
           <Button
@@ -295,20 +296,6 @@ export default function EditNavPage() {
                       />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* 新窗口打开 */}
-              <FormField
-                control={form.control}
-                name="is_new_window"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between">
-                    <FormLabel className="text-base">新窗口打开</FormLabel>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
                   </FormItem>
                 )}
               />

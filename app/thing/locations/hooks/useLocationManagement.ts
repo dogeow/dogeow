@@ -12,6 +12,7 @@ import {
 import { post } from '@/lib/api'
 import { LocationTreeResponse } from '@/app/thing/types'
 import { getLocationTypeText } from '../constants'
+import { useTranslation } from '@/hooks/useTranslation'
 
 // 定义类型
 export type LocationType = 'area' | 'room' | 'spot'
@@ -34,6 +35,7 @@ export type Spot = {
 }
 
 export const useLocationManagement = () => {
+  const { t } = useTranslation()
   // 获取统一的位置数据
   const { data: locationData, mutate: refreshLocations } = useLocations()
 
@@ -77,9 +79,14 @@ export const useLocationManagement = () => {
   }
 
   // 验证名称
-  const validateName = (name: string, entityType: string): boolean => {
+  const validateName = (name: string, entityType: LocationType): boolean => {
     if (!name.trim()) {
-      toast.error(`${entityType}名称不能为空`)
+      const keyMap = {
+        area: 'location.area_name_required',
+        room: 'location.room_name_required',
+        spot: 'location.spot_name_required',
+      }
+      toast.error(t(keyMap[entityType], t('location.name_required')))
       return false
     }
     return true
@@ -87,22 +94,22 @@ export const useLocationManagement = () => {
 
   // 添加区域
   const handleAddArea = async (name: string) => {
-    if (!validateName(name, '区域')) return false
+    if (!validateName(name, 'area')) return false
     return handleOperation(
       () => post<Area>('/areas', { name }),
-      '区域创建成功',
-      '创建区域失败',
+      t('location.area_created'),
+      t('location.create_failed'),
       refreshAreas
     )
   }
 
   // 更新区域
   const handleUpdateArea = async (areaId: number, newName: string) => {
-    if (!validateName(newName, '区域')) return false
+    if (!validateName(newName, 'area')) return false
     return handleOperation(
       () => updateArea(areaId)({ name: newName }),
-      '区域更新成功',
-      '更新区域失败',
+      t('location.area_updated'),
+      t('location.update_failed'),
       refreshAreas
     )
   }
@@ -111,60 +118,60 @@ export const useLocationManagement = () => {
   const handleSetDefaultArea = async (areaId: number) => {
     return handleOperation(
       () => post(`/areas/${areaId}/set-default`, {}),
-      '默认区域设置成功',
-      '设置默认区域失败',
+      t('location.default_area_set'),
+      t('location.set_default_failed'),
       refreshAreas
     )
   }
 
   // 添加房间
   const handleAddRoom = async (name: string, area_id: number) => {
-    if (!validateName(name, '房间')) return false
+    if (!validateName(name, 'room')) return false
     if (!area_id) {
-      toast.error('请选择区域')
+      toast.error(t('location.select_area_required'))
       return false
     }
     return handleOperation(
       () => post<Room>('/rooms', { name, area_id }),
-      '房间创建成功',
-      '创建房间失败',
+      t('location.room_created'),
+      t('location.create_failed'),
       refreshRooms
     )
   }
 
   // 更新房间
   const handleUpdateRoom = async (roomId: number, data: { name: string; area_id: number }) => {
-    if (!validateName(data.name, '房间')) return false
+    if (!validateName(data.name, 'room')) return false
     return handleOperation(
       () => updateRoom(roomId)(data),
-      '房间更新成功',
-      '更新房间失败',
+      t('location.room_updated'),
+      t('location.update_failed'),
       refreshRooms
     )
   }
 
   // 添加位置
   const handleAddSpot = async (name: string, room_id: number) => {
-    if (!validateName(name, '位置')) return false
+    if (!validateName(name, 'spot')) return false
     if (!room_id) {
-      toast.error('请选择房间')
+      toast.error(t('location.select_room_required'))
       return false
     }
     return handleOperation(
       () => post<Spot>('/spots', { name, room_id }),
-      '位置创建成功',
-      '创建位置失败',
+      t('location.spot_created'),
+      t('location.create_failed'),
       refreshSpots
     )
   }
 
   // 更新位置
   const handleUpdateSpot = async (spotId: number, data: { name: string; room_id: number }) => {
-    if (!validateName(data.name, '位置')) return false
+    if (!validateName(data.name, 'spot')) return false
     return handleOperation(
       () => updateSpot(spotId)(data),
-      '位置更新成功',
-      '更新位置失败',
+      t('location.spot_updated'),
+      t('location.update_failed'),
       refreshSpots
     )
   }
@@ -186,7 +193,12 @@ export const useLocationManagement = () => {
     }
 
     const { fn, refresh } = deleteOperations[itemToDelete.type]
-    const successMessage = `${getLocationTypeText(itemToDelete.type)}删除成功`
+    const successMessageMap = {
+      area: t('location.area_deleted'),
+      room: t('location.room_deleted'),
+      spot: t('location.spot_deleted'),
+    }
+    const successMessage = successMessageMap[itemToDelete.type]
 
     try {
       setLoading(true)
@@ -195,7 +207,7 @@ export const useLocationManagement = () => {
       toast.success(successMessage)
       return true
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : '删除失败')
+      toast.error(error instanceof Error ? error.message : t('location.delete_failed'))
       return false
     } finally {
       setLoading(false)

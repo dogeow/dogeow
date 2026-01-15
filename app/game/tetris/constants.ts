@@ -44,13 +44,13 @@ export const TETROMINO_SHAPES: Record<TetrominoType, number[][]> = {
 
 // 方块颜色
 export const TETROMINO_COLORS: Record<TetrominoType, string> = {
-  I: '#00f0f0',
-  O: '#f0f000',
-  T: '#a000f0',
-  S: '#00f000',
-  Z: '#f00000',
-  J: '#0000f0',
-  L: '#f0a000',
+  I: '#22d3ee',
+  O: '#facc15',
+  T: '#a78bfa',
+  S: '#34d399',
+  Z: '#fb7185',
+  J: '#60a5fa',
+  L: '#fb923c',
 }
 
 export const GAME_CONFIG: GameConfig = {

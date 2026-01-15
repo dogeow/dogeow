@@ -12,11 +12,11 @@ export const NextPieceDisplay = memo<NextPieceDisplayProps>(({ nextPiece, isClie
   }
 
   return (
-    <div className="rounded border border-gray-600 bg-gray-900 p-3 dark:border-green-500/30">
-      <div className="mb-2 text-center font-mono text-xs text-gray-300 dark:text-green-400">
+    <div className="rounded bg-slate-950/90 p-3 shadow-sm">
+      <div className="mb-2 text-center font-mono text-xs text-slate-300 dark:text-cyan-300">
         NEXT
       </div>
-      <div className="flex min-h-[50px] items-center justify-center rounded bg-gray-800 p-2">
+      <div className="flex min-h-[50px] items-center justify-center rounded bg-slate-900/70 p-2">
         <div className="flex flex-col items-center gap-0">
           {nextPiece.shape.map((row, y) => (
             <div key={y} className="flex">

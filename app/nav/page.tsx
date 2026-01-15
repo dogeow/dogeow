@@ -22,6 +22,7 @@ function NavContent() {
     loading: storeLoading,
     fetchCategories,
     fetchItems,
+    applySampleData,
     searchTerm,
     setSearchTerm,
     // filteredItems, // 暂时未使用
@@ -90,8 +91,11 @@ function NavContent() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        await fetchCategories(filterName)
-        await fetchItems()
+        const fetchedCategories = await fetchCategories(filterName)
+        const fetchedItems = await fetchItems()
+        if (!filterName && fetchedCategories.length === 0 && fetchedItems.length === 0) {
+          applySampleData()
+        }
         setInitialLoaded(true)
       } catch (error) {
         console.error('获取导航分类失败:', error)
@@ -101,7 +105,7 @@ function NavContent() {
     }
 
     fetchData()
-  }, [fetchCategories, fetchItems, filterName])
+  }, [fetchCategories, fetchItems, filterName, applySampleData])
 
   // 分类侧边栏
   const handleCategoryClick = async (catId: number | 'all') => {
@@ -114,7 +118,38 @@ function NavContent() {
   }
 
   const renderCategorySidebar = () => (
-    <aside className="flex w-20 shrink-0 flex-col gap-0 py-2">
+    <aside className="flex w-20 shrink-0 flex-col gap-0 px-2 py-2">
+      <div className="flex items-center justify-center gap-2 px-2">
+        <Button
+          onClick={handleManageCategories}
+          size="icon"
+          variant="outline"
+          className="relative h-8 w-8"
+          disabled={!isAuthenticated}
+          style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
+          aria-label={t('nav.manage_categories', '管理分类')}
+        >
+          <Settings className="h-4 w-4" />
+          {!isAuthenticated && <Lock className="text-muted-foreground ml-1 h-3 w-3" />}
+        </Button>
+        <Button
+          onClick={handleAddNav}
+          size="icon"
+          variant="default"
+          className="relative h-8 w-8"
+          disabled={!isAuthenticated}
+          style={{
+            backgroundColor: themeColor.color,
+            color: '#fff',
+            opacity: !isAuthenticated ? 0.6 : 1,
+          }}
+          aria-label={t('nav.add_nav', '添加导航')}
+        >
+          <Plus className="h-4 w-4" />
+          {!isAuthenticated && <Lock className="h-3 w-3 text-white" />}
+        </Button>
+      </div>
+      <div className="my-2 h-px w-full bg-gray-700/50" />
       <button
         className={`rounded px-2 py-1 text-left text-sm font-bold ${selectedCategory === 'all' ? '' : 'hover:bg-gray-100'}`}
         style={selectedCategory === 'all' ? { background: themeColor.color, color: '#fff' } : {}}
@@ -160,44 +195,10 @@ function NavContent() {
   }
 
   return (
-    <div className="flex p-4">
+    <div className="flex pt-2">
       {renderCategorySidebar()}
-      <div className="mx-2 flex flex-1 flex-col gap-2">
-        <div className="flex items-center">
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              onClick={handleManageCategories}
-              size="sm"
-              variant="outline"
-              className="relative flex items-center gap-1"
-              disabled={!isAuthenticated}
-              style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">{t('nav.manage_categories', '管理分类')}</span>
-              {!isAuthenticated && <Lock className="text-muted-foreground ml-1 h-3 w-3" />}
-            </Button>
-            <Button
-              onClick={handleAddNav}
-              size="sm"
-              variant="default"
-              className="relative flex items-center gap-1"
-              disabled={!isAuthenticated}
-              style={{
-                backgroundColor: themeColor.color,
-                color: '#fff',
-                opacity: !isAuthenticated ? 0.6 : 1,
-              }}
-            >
-              <Plus className="h-4 w-4" />
-              {!isAuthenticated && <Lock className="h-3 w-3 text-white" />}
-            </Button>
-          </div>
-        </div>
-
-        {loading || storeLoading ? (
-          <LoadingSkeleton />
-        ) : items.length > 0 ? (
+      <div className="flex flex-1 flex-col gap-2 border-l border-dashed border-gray-500 px-2">
+        {loading || storeLoading ? null : items.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             {items.map(item => (
               <NavCard key={item.id} item={item} />
@@ -213,37 +214,10 @@ function NavContent() {
   )
 }
 
-// 加载骨架屏组件
-const LoadingSkeleton = () => (
-  <div className="flex p-4">
-    <aside className="w-20 shrink-0">
-      <div className="space-y-2">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="bg-muted h-8 animate-pulse rounded" />
-        ))}
-      </div>
-    </aside>
-    <div className="mx-2 flex-1">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="bg-muted h-8 w-32 animate-pulse rounded" />
-        <div className="flex gap-2">
-          <div className="bg-muted h-8 w-20 animate-pulse rounded" />
-          <div className="bg-muted h-8 w-20 animate-pulse rounded" />
-        </div>
-      </div>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="bg-muted h-24 animate-pulse rounded" />
-        ))}
-      </div>
-    </div>
-  </div>
-)
-
 // 主页面组件
 export default function NavPage() {
   return (
-    <Suspense fallback={<LoadingSkeleton />}>
+    <Suspense fallback={null}>
       <NavContent />
     </Suspense>
   )

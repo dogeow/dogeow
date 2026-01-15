@@ -57,8 +57,10 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     // 清空画布
     ctx.clearRect(0, 0, canvasWidth, canvasHeight)
 
-    // 绘制背景
-    ctx.fillStyle = '#f0f8ff'
+    // 绘制背景（跟随容器背景色）
+    const container = canvas.parentElement
+    const backgroundColor = container ? getComputedStyle(container).backgroundColor : 'transparent'
+    ctx.fillStyle = backgroundColor
     ctx.fillRect(0, 0, canvasWidth, canvasHeight)
 
     // 如果迷宫还没生成，只绘制背景
@@ -170,7 +172,7 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
   }, [drawMaze])
 
   return (
-    <div className="relative h-96 w-full overflow-hidden rounded-lg border-2 border-gray-300 bg-gray-100">
+    <div className="bg-background relative h-96 w-full overflow-hidden">
       <canvas ref={setRef} className="h-full w-full cursor-pointer" style={{ display: 'block' }} />
 
       {!gameStarted && (

@@ -147,8 +147,8 @@ export default function FileExplorer({ className }: FileExplorerProps) {
         {/* 根据当前视图显示不同的组件 */}
         {viewComponent}
 
-        {/* 空状态显示 */}
-        {emptyStateComponent}
+        {/* 空状态显示（树形视图由 TreeView 处理） */}
+        {currentView !== 'tree' ? emptyStateComponent : null}
       </div>
     </div>
   )

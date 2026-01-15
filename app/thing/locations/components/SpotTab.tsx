@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Room, Spot } from '../hooks/useLocationManagement'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface SpotTabProps {
   spots: Spot[]
@@ -33,6 +34,7 @@ export default function SpotTab({
   onUpdateSpot,
   onDeleteSpot,
 }: SpotTabProps) {
+  const { t } = useTranslation()
   const [editingSpot, setEditingSpot] = useState<Spot | null>(null)
 
   const handleUpdateSpot = async () => {
@@ -52,32 +54,34 @@ export default function SpotTab({
       {editingSpot && (
         <div className="mb-6 border-b pb-6">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold">编辑位置</h3>
-            <p className="text-muted-foreground text-sm">修改位置的信息</p>
+            <h3 className="text-lg font-semibold">{t('location.edit_spot')}</h3>
+            <p className="text-muted-foreground text-sm">{t('location.edit_spot')}</p>
           </div>
           <div>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="spotName">位置名称</Label>
+                <Label htmlFor="spotName">{t('location.spot_name')}</Label>
                 <Input
                   id="spotName"
-                  placeholder="输入具体位置名称，如：书柜、抽屉"
+                  placeholder={t('location.enter_spot_name')}
                   value={editingSpot.name}
                   onChange={e => setEditingSpot({ ...editingSpot, name: e.target.value })}
                   onKeyDown={e => e.key === 'Enter' && handleUpdateSpot()}
+                  disabled={loading}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="roomSelect">所属房间</Label>
+                <Label htmlFor="roomSelect">{t('location.belongs_to_room')}</Label>
                 <Select
                   value={String(editingSpot.room_id)}
                   onValueChange={value =>
                     setEditingSpot({ ...editingSpot, room_id: parseInt(value) })
                   }
+                  disabled={loading}
                 >
                   <SelectTrigger id="roomSelect">
-                    <SelectValue placeholder="选择房间" />
+                    <SelectValue placeholder={t('location.select_room')} />
                   </SelectTrigger>
                   <SelectContent>
                     {rooms.map(room => (
@@ -91,14 +95,14 @@ export default function SpotTab({
             </div>
           </div>
           <div className="mt-4 flex justify-between">
-            <Button variant="outline" onClick={() => setEditingSpot(null)}>
-              取消
+            <Button variant="outline" onClick={() => setEditingSpot(null)} disabled={loading}>
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleUpdateSpot}
               disabled={loading || !editingSpot.room_id || !editingSpot.name.trim()}
             >
-              {loading ? '处理中...' : '更新位置'}
+              {loading ? t('location.processing') : t('location.update_spot')}
             </Button>
           </div>
         </div>
@@ -108,9 +112,7 @@ export default function SpotTab({
       <div>
         <div>
           {spots.length === 0 ? (
-            <div className="text-muted-foreground py-4 text-center">
-              暂无位置，请点击右下角的&quot;+&quot;按钮添加位置
-            </div>
+            <div className="text-muted-foreground py-4 text-center">{t('location.no_spots')}</div>
           ) : (
             <div className="space-y-2">
               {spots.map(spot => (
@@ -121,17 +123,34 @@ export default function SpotTab({
                   <div>
                     <span className="font-medium">{spot.name}</span>
                     <p className="text-muted-foreground text-xs">
-                      房间: {spot.room?.name || `未知房间 (ID: ${spot.room_id})`}
+                      {t('location.room')}:{' '}
+                      {spot.room?.name || `${t('location.unknown_room')} (ID: ${spot.room_id})`}
                     </p>
                     {spot.room?.area?.name && (
-                      <p className="text-muted-foreground text-xs">区域: {spot.room.area.name}</p>
+                      <p className="text-muted-foreground text-xs">
+                        {t('location.area')}: {spot.room.area.name}
+                      </p>
                     )}
                   </div>
                   <div className="flex space-x-2">
-                    <Button variant="ghost" size="icon" onClick={() => setEditingSpot(spot)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingSpot(spot)}
+                      disabled={loading}
+                      aria-label={t('common.edit')}
+                      title={t('common.edit')}
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onDeleteSpot(spot.id)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => onDeleteSpot(spot.id)}
+                      disabled={loading}
+                      aria-label={t('common.delete')}
+                      title={t('common.delete')}
+                    >
                       <Trash2 className="text-destructive h-4 w-4" />
                     </Button>
                   </div>

@@ -3,11 +3,11 @@
 import React, { useState, Suspense } from 'react'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
-import { Card } from '@/components/ui/card'
 // import { useRouter, useSearchParams } from "next/navigation"
 import dynamic from 'next/dynamic'
-import { Upload, Image as ImageIcon, ArrowLeft } from 'lucide-react'
+import { Upload, Image as ImageIcon } from 'lucide-react'
 import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
+import Link from 'next/link'
 
 // 动态导入拼图游戏组件
 const PicturePuzzle = dynamic(() => import('./components/PicturePuzzle'), {
@@ -49,21 +49,21 @@ const SYSTEM_IMAGES = [
   },
 ]
 
+const DEFAULT_IMAGE = SYSTEM_IMAGES[0]
+
 // 内部游戏组件
 function PicturePuzzleGame() {
   // const router = useRouter()
   // const searchParams = useSearchParams()
 
-  const [gameState, setGameState] = useState<'menu' | 'select-image' | 'playing'>('menu')
-  const [selectedImage, setSelectedImage] = useState<string>('')
+  const [selectedImage, setSelectedImage] = useState<string>(DEFAULT_IMAGE.url)
   const [difficulty, setDifficulty] = useState<3 | 4 | 5>(3)
   const [gameKey, setGameKey] = useState(0)
 
   // 开始游戏
-  const startGame = (imageUrl: string, level: 3 | 4 | 5) => {
-    setSelectedImage(imageUrl)
-    setDifficulty(level)
-    setGameState('playing')
+  const startGame = (imageUrl?: string, level?: 3 | 4 | 5) => {
+    if (imageUrl) setSelectedImage(imageUrl)
+    if (level) setDifficulty(level)
     setGameKey(prev => prev + 1)
   }
 
@@ -74,23 +74,10 @@ function PicturePuzzleGame() {
       const reader = new FileReader()
       reader.onload = e => {
         const imageUrl = e.target?.result as string
-        setSelectedImage(imageUrl)
-        setGameState('playing')
-        setGameKey(prev => prev + 1)
+        startGame(imageUrl)
       }
       reader.readAsDataURL(file)
     }
-  }
-
-  // 返回菜单
-  const backToMenu = () => {
-    setGameState('menu')
-    setSelectedImage('')
-  }
-
-  // 返回图片选择
-  const backToImageSelect = () => {
-    setGameState('select-image')
   }
 
   // 游戏完成处理
@@ -100,8 +87,14 @@ function PicturePuzzleGame() {
 
   return (
     <div className="flex min-h-screen flex-col items-center px-2 py-4">
-      <div className="mb-6 flex items-center gap-4">
-        <h1 className="text-2xl font-bold">图片拼图游戏</h1>
+      <div className="mb-4 flex w-full max-w-4xl items-center justify-between">
+        <div className="text-muted-foreground text-sm">
+          <Link href="/game" className="hover:text-foreground transition-colors">
+            游戏中心
+          </Link>
+          <span className="mx-1">{'>'}</span>{' '}
+          <span className="text-foreground font-medium">图片拼图</span>
+        </div>
         <GameRulesDialog
           title="图片拼图游戏规则"
           rules={[
@@ -115,104 +108,78 @@ function PicturePuzzleGame() {
         />
       </div>
 
-      {gameState === 'menu' && (
-        <Card className="w-full max-w-md p-6">
-          <div className="mb-6 text-center">
-            <p className="mb-6 text-gray-600">选择图片来源开始游戏</p>
-            <div className="flex flex-col gap-4">
-              <Button
-                onClick={() => setGameState('select-image')}
-                variant="default"
-                className="flex items-center gap-2"
-              >
-                <ImageIcon className="h-4 w-4" />
-                使用系统图片
-              </Button>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-                <Button variant="outline" className="flex w-full items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  上传自定义图片
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {gameState === 'select-image' && (
-        <div className="w-full max-w-4xl">
-          <Button variant="outline" onClick={backToMenu} className="mb-4 flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            返回
+      <div className="w-full max-w-4xl space-y-4">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Button
+            variant={difficulty === 3 ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => startGame(undefined, 3)}
+          >
+            3×3
           </Button>
-
-          <Card className="p-6">
-            <h2 className="mb-4 text-xl font-semibold">选择系统图片</h2>
-            <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {SYSTEM_IMAGES.map(image => (
-                <div key={image.id} className="group relative">
-                  <div className="hover:border-primary relative aspect-square overflow-hidden rounded-lg border-2 border-gray-200 transition-colors">
-                    <Image src={image.thumbnail} alt={image.name} fill className="object-cover" />
-                  </div>
-                  <div className="mt-2 text-center">
-                    <p className="font-medium">{image.name}</p>
-                    <div className="mt-2 flex justify-center gap-2">
-                      <Button size="sm" onClick={() => startGame(image.url, 3)}>
-                        简单 (3×3)
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => startGame(image.url, 4)}>
-                        中等 (4×4)
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => startGame(image.url, 5)}>
-                        困难 (5×5)
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="border-t pt-4">
-              <p className="mb-3 text-sm text-gray-500">或者上传自定义图片：</p>
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                />
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  选择文件
-                </Button>
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {gameState === 'playing' && selectedImage && (
-        <div className="w-full max-w-2xl">
-          <div className="mb-4 flex gap-2">
-            <Button
-              variant="outline"
-              onClick={backToImageSelect}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              重新选择图片
-            </Button>
-            <Button variant="outline" onClick={backToMenu}>
-              返回主菜单
+          <Button
+            variant={difficulty === 4 ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => startGame(undefined, 4)}
+          >
+            4×4
+          </Button>
+          <Button
+            variant={difficulty === 5 ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => startGame(undefined, 5)}
+          >
+            5×5
+          </Button>
+          <div className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+            <Button variant="outline" size="sm" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              上传图片
             </Button>
           </div>
+        </div>
 
+        <div className="space-y-2">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
+            <ImageIcon className="h-4 w-4" />
+            系统图片
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {SYSTEM_IMAGES.map(image => {
+              const isActive = selectedImage === image.url
+              return (
+                <button
+                  key={image.id}
+                  onClick={() => startGame(image.url)}
+                  className={`flex flex-col items-center gap-2 rounded-lg border px-2 py-2 transition-colors ${
+                    isActive
+                      ? 'border-primary bg-primary/10'
+                      : 'border-border/60 hover:border-primary'
+                  }`}
+                >
+                  <Image
+                    src={image.thumbnail}
+                    alt={image.name}
+                    width={72}
+                    height={72}
+                    className="rounded-md object-cover"
+                  />
+                  <span className="text-muted-foreground text-xs">{image.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+
+      {selectedImage && (
+        <div className="mt-4 w-full max-w-2xl">
           <div key={`game-${gameKey}`}>
             <PicturePuzzle
               imageUrl={selectedImage}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { useGame2048Store } from './store'
 import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
+import Link from 'next/link'
 
 type Board = number[][]
 type Direction = 'up' | 'down' | 'left' | 'right'
@@ -158,8 +159,10 @@ export default function Game2048() {
 
   // 陀螺仪状态
   const [isGyroEnabled, setIsGyroEnabled] = useState(false)
-  const [isGyroSupported, setIsGyroSupported] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isGyroSupported, setIsGyroSupported] = useState(
+    () => isMobileDevice() && typeof DeviceOrientationEvent !== 'undefined'
+  )
+  const [isMobile] = useState(() => isMobileDevice())
 
   // Refs
   const autoRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
@@ -256,6 +259,20 @@ export default function Game2048() {
     [moveLeft, moveRight, moveUp, moveDown]
   )
 
+  const stopAutoRun = useCallback(() => {
+    if (autoRunIntervalRef.current) {
+      clearInterval(autoRunIntervalRef.current)
+      autoRunIntervalRef.current = null
+    }
+  }, [])
+
+  const stopDirectionalRun = useCallback(() => {
+    if (directionalRunIntervalRef.current) {
+      clearInterval(directionalRunIntervalRef.current)
+      directionalRunIntervalRef.current = null
+    }
+  }, [])
+
   // 处理移动的核心逻辑
   const handleMove = useCallback(
     (direction: Direction) => {
@@ -289,6 +306,10 @@ export default function Game2048() {
 
           // 检查游戏结束
           if (isGameOver(newBoard)) {
+            stopAutoRun()
+            stopDirectionalRun()
+            setIsAutoRunning(false)
+            setIsDirectionalRunning(false)
             setGameOver(true)
             incrementGamesPlayed()
             toast.error('游戏结束！')
@@ -300,7 +321,15 @@ export default function Game2048() {
         return currentBoard
       })
     },
-    [gameOver, gameWon, incrementGamesPlayed, incrementGamesWon, moveHandlers]
+    [
+      gameOver,
+      gameWon,
+      incrementGamesPlayed,
+      incrementGamesWon,
+      moveHandlers,
+      stopAutoRun,
+      stopDirectionalRun,
+    ]
   )
 
   // 自动运行逻辑
@@ -322,20 +351,6 @@ export default function Game2048() {
     }
     directionalRunIntervalRef.current = setInterval(runDirectionalMove, speed)
   }, [handleMove, isClockwise, speed])
-
-  const stopAutoRun = useCallback(() => {
-    if (autoRunIntervalRef.current) {
-      clearInterval(autoRunIntervalRef.current)
-      autoRunIntervalRef.current = null
-    }
-  }, [])
-
-  const stopDirectionalRun = useCallback(() => {
-    if (directionalRunIntervalRef.current) {
-      clearInterval(directionalRunIntervalRef.current)
-      directionalRunIntervalRef.current = null
-    }
-  }, [])
 
   // 控制函数
   const toggleAutoRun = useCallback(() => {
@@ -625,17 +640,6 @@ export default function Game2048() {
     }
   }, [isGyroEnabled, handleMove])
 
-  // 检测移动设备和初始化
-  useEffect(() => {
-    const mobile = isMobileDevice()
-    setIsMobile(mobile)
-
-    // 在移动设备上检测陀螺仪支持
-    if (mobile && typeof DeviceOrientationEvent !== 'undefined') {
-      setIsGyroSupported(true)
-    }
-  }, [])
-
   // 自动运行重启逻辑
   useEffect(() => {
     if (isAutoRunning && autoRunIntervalRef.current === null) {
@@ -648,20 +652,6 @@ export default function Game2048() {
       startDirectionalRun()
     }
   }, [isDirectionalRunning, startDirectionalRun])
-
-  // 游戏结束时停止自动运行
-  useEffect(() => {
-    if (gameOver) {
-      if (isAutoRunning) {
-        stopAutoRun()
-        setIsAutoRunning(false)
-      }
-      if (isDirectionalRunning) {
-        stopDirectionalRun()
-        setIsDirectionalRunning(false)
-      }
-    }
-  }, [gameOver, isAutoRunning, isDirectionalRunning, stopAutoRun, stopDirectionalRun])
 
   // 更新最高分
   useEffect(() => {
@@ -897,9 +887,15 @@ export default function Game2048() {
 
   return (
     <div className="container mx-auto max-w-md px-4 py-4" onContextMenu={e => e.preventDefault()}>
-      <div className="mb-6 text-center">
-        <div className="mb-2 flex items-center justify-center gap-4">
-          <h1 className="text-3xl font-bold">2048</h1>
+      <div className="mb-6">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="text-muted-foreground text-sm">
+            <Link href="/game" className="hover:text-foreground transition-colors">
+              游戏中心
+            </Link>
+            <span className="mx-1">{'>'}</span>{' '}
+            <span className="text-foreground font-medium">2048</span>
+          </div>
           <GameRulesDialog
             title="2048游戏规则"
             rules={[
@@ -913,21 +909,24 @@ export default function Game2048() {
             ]}
           />
         </div>
-        <p className="mb-4 text-sm text-gray-600">滑动合并数字，达到2048！</p>
 
-        {GameStats}
+        <div className="text-center">
+          <p className="mb-4 text-sm text-gray-600">滑动合并数字，达到2048！</p>
 
-        <div className="mb-4 flex items-center justify-between">
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            游戏次数: {gamesPlayed} | 胜利次数: {gamesWon}
-          </div>
-          <div className="flex space-x-2">
-            <Button onClick={undoMove} variant="outline" size="sm" disabled={!canUndo}>
-              撤销
-            </Button>
-            <Button onClick={resetGame} variant="outline" size="sm">
-              重新开始
-            </Button>
+          {GameStats}
+
+          <div className="mb-4 flex items-center justify-between">
+            <div className="text-xs text-gray-500 dark:text-gray-400">
+              游戏次数: {gamesPlayed} | 胜利次数: {gamesWon}
+            </div>
+            <div className="flex space-x-2">
+              <Button onClick={undoMove} variant="outline" size="sm" disabled={!canUndo}>
+                撤销
+              </Button>
+              <Button onClick={resetGame} variant="outline" size="sm">
+                重新开始
+              </Button>
+            </div>
           </div>
         </div>
       </div>

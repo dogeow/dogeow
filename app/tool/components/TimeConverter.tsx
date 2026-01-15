@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Copy, Check, Clock, Calendar, RefreshCw } from 'lucide-react'
+import { Copy, Check, Clock, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 
 // 常量配置
@@ -68,8 +68,13 @@ const useCopyFeedback = () => {
 }
 
 const useCurrentTime = () => {
-  const [currentTimestamp, setCurrentTimestamp] = useState(0)
-  const [currentDateTime, setCurrentDateTime] = useState('')
+  const initialNow = new Date()
+  const [currentTimestamp, setCurrentTimestamp] = useState(() =>
+    Math.floor(initialNow.getTime() / 1000)
+  )
+  const [currentDateTime, setCurrentDateTime] = useState(() =>
+    format(initialNow, DEFAULT_FORMAT, { locale: zhCN })
+  )
 
   const updateCurrentTime = useCallback(() => {
     const now = new Date()
@@ -78,7 +83,6 @@ const useCurrentTime = () => {
   }, [])
 
   useEffect(() => {
-    updateCurrentTime()
     const timer = setInterval(updateCurrentTime, CURRENT_TIME_UPDATE_INTERVAL)
     return () => clearInterval(timer)
   }, [updateCurrentTime])
@@ -223,67 +227,54 @@ const TimeConverter = () => {
   }, [])
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* 当前时间显示区域 */}
-      <Card className="border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50 dark:border-blue-800 dark:from-blue-950/20 dark:to-indigo-950/20">
-        <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-blue-900 dark:text-blue-100">
-            <Clock className="h-5 w-5" />
+      <Card className="border-border/60 bg-muted/20 shadow-sm">
+        <CardHeader className="pb-0">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium">
+            <Clock className="h-4 w-4" />
             当前时间
-            <Button
-              variant="ghost"
-              size="icon"
-              className="ml-auto h-6 w-6 text-blue-600 hover:text-blue-700"
-              onClick={updateCurrentTime}
-              title="刷新当前时间"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div className="rounded-lg border border-blue-100 bg-white/60 p-4 dark:border-blue-800 dark:bg-gray-800/60">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground mb-1 text-sm">时间戳</p>
-                  <p className="font-mono text-lg font-semibold text-blue-900 dark:text-blue-100">
-                    {currentTimestamp}
-                  </p>
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-1 gap-1 md:grid-cols-2">
+            <div className="border-border/60 bg-background/70 rounded-md border px-3 py-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-muted-foreground mb-0.5 text-[11px]">时间戳</p>
+                  <p className="truncate font-mono text-sm font-semibold">{currentTimestamp}</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-blue-600 hover:bg-blue-100 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                  className="text-muted-foreground hover:bg-muted/60 hover:text-foreground h-7 w-7"
                   onClick={() => copyToClipboard(currentTimestamp.toString(), 'timestamp')}
                 >
                   {copyStates.timestamp ? (
-                    <Check className="h-4 w-4" />
+                    <Check className="h-3.5 w-3.5" />
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3.5 w-3.5" />
                   )}
                 </Button>
               </div>
             </div>
 
-            <div className="rounded-lg border border-blue-100 bg-white/60 p-4 dark:border-blue-800 dark:bg-gray-800/60">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground mb-1 text-sm">日期时间</p>
-                  <p className="font-mono text-lg font-semibold text-blue-900 dark:text-blue-100">
-                    {currentDateTime}
-                  </p>
+            <div className="border-border/60 bg-background/70 rounded-md border px-3 py-1.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-muted-foreground mb-0.5 text-[11px]">日期时间</p>
+                  <p className="truncate font-mono text-sm font-semibold">{currentDateTime}</p>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 text-blue-600 hover:bg-blue-100 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/20 dark:hover:text-blue-300"
+                  className="text-muted-foreground hover:bg-muted/60 hover:text-foreground h-7 w-7"
                   onClick={() => copyToClipboard(currentDateTime, 'dateTime')}
                 >
                   {copyStates.dateTime ? (
-                    <Check className="h-4 w-4" />
+                    <Check className="h-3.5 w-3.5" />
                   ) : (
-                    <Copy className="h-4 w-4" />
+                    <Copy className="h-3.5 w-3.5" />
                   )}
                 </Button>
               </div>
@@ -293,8 +284,8 @@ const TimeConverter = () => {
       </Card>
 
       {/* 转换工具区域 */}
-      <Tabs defaultValue="timestamp-to-date" className="space-y-6">
-        <TabsList className="grid h-12 w-full grid-cols-2">
+      <Tabs defaultValue="timestamp-to-date" className="space-y-5">
+        <TabsList className="bg-muted/40 grid h-10 w-full grid-cols-2 p-1">
           <TabsTrigger value="timestamp-to-date" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             时间戳转日期
@@ -305,12 +296,9 @@ const TimeConverter = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="timestamp-to-date" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">时间戳转日期时间</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+        <TabsContent value="timestamp-to-date" className="space-y-5">
+          <Card className="border-border/60 bg-background/80 shadow-sm">
+            <CardContent className="space-y-5 pt-5">
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="timestamp" className="text-sm font-medium">
@@ -349,8 +337,7 @@ const TimeConverter = () => {
 
                 <Button
                   onClick={convertTimestampToDateTime}
-                  className="h-11 w-full"
-                  size="lg"
+                  className="h-10 w-full"
                   disabled={!timestamp.trim()}
                 >
                   转换
@@ -365,7 +352,7 @@ const TimeConverter = () => {
                       id="datetime"
                       readOnly
                       value={dateTime}
-                      className="rounded-r-none bg-gray-50 dark:bg-gray-900"
+                      className="bg-muted/40 rounded-r-none"
                       placeholder="转换结果将显示在这里"
                     />
                     <Button
@@ -387,12 +374,9 @@ const TimeConverter = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="date-to-timestamp" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">日期时间转时间戳</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
+        <TabsContent value="date-to-timestamp" className="space-y-5">
+          <Card className="border-border/60 bg-background/80 shadow-sm">
+            <CardContent className="space-y-5 pt-5">
               <div className="grid gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="input-datetime" className="text-sm font-medium">
@@ -419,8 +403,7 @@ const TimeConverter = () => {
 
                 <Button
                   onClick={convertDateTimeToTimestamp}
-                  className="h-11 w-full"
-                  size="lg"
+                  className="h-10 w-full"
                   disabled={!inputDateTime.trim()}
                 >
                   转换
@@ -435,7 +418,7 @@ const TimeConverter = () => {
                       id="output-timestamp"
                       readOnly
                       value={outputTimestamp}
-                      className="rounded-r-none bg-gray-50 dark:bg-gray-900"
+                      className="bg-muted/40 rounded-r-none"
                       placeholder="转换结果将显示在这里"
                     />
                     <Button
