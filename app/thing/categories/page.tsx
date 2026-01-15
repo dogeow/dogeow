@@ -543,7 +543,6 @@ export default function Categories() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold">分类管理</h2>
                 <span className="text-muted-foreground text-sm">共 {categories.length} 个分类</span>
               </div>
               <div className="flex items-center gap-2">

@@ -99,7 +99,6 @@ export default function Locations() {
           <TabsList className="h-auto">
             <TabsTrigger value="tree" className="px-3">
               <FolderTree className="h-4 w-4" />
-              树形视图
             </TabsTrigger>
           </TabsList>
 
