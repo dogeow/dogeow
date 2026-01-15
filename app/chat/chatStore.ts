@@ -8,6 +8,37 @@ import { handleChatApiError, type ChatApiError } from '@/lib/api/chat-error-hand
 import chatCache from '@/lib/cache/chat-cache'
 import useAuthStore from '@/stores/authStore'
 
+// 安全的本地存储封装（兼容无痕/隐私模式）
+const createMemoryStorage = () => {
+  const store = new Map<string, string>()
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value)
+    },
+    removeItem: (key: string) => {
+      store.delete(key)
+    },
+  }
+}
+
+const memoryStorage = createMemoryStorage()
+
+const getSafeStorage = () => {
+  if (typeof window === 'undefined') return memoryStorage
+
+  try {
+    const storage = window.localStorage
+    const testKey = '__storage_test__'
+    storage.setItem(testKey, '1')
+    storage.removeItem(testKey)
+    return storage
+  } catch (error) {
+    console.warn('本地存储不可用，已降级到内存存储:', error)
+    return memoryStorage
+  }
+}
+
 interface NotificationSettings {
   browserNotifications: boolean
   soundNotifications: boolean
@@ -138,7 +169,7 @@ const initialState = {
 }
 
 // 防抖和节流工具函数
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const createThrottledFunction = <T extends (...args: any[]) => any>(fn: T, delay: number): T => {
   let loading = false
   let lastLoadTime = 0
@@ -895,7 +926,7 @@ const useChatStore = create<ChatState>()(
     }),
     {
       name: 'chat-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => getSafeStorage()),
       // 只持久化必要数据，不包括UI状态
       partialize: state => ({
         currentRoom: state.currentRoom,

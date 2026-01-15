@@ -40,6 +40,37 @@ const syncWithWebSocketAuth = async (token: string | null): Promise<void> => {
   }
 }
 
+// 安全的本地存储封装（兼容无痕/隐私模式）
+const createMemoryStorage = () => {
+  const store = new Map<string, string>()
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value)
+    },
+    removeItem: (key: string) => {
+      store.delete(key)
+    },
+  }
+}
+
+const memoryStorage = createMemoryStorage()
+
+const getSafeStorage = () => {
+  if (typeof window === 'undefined') return memoryStorage
+
+  try {
+    const storage = window.localStorage
+    const testKey = '__storage_test__'
+    storage.setItem(testKey, '1')
+    storage.removeItem(testKey)
+    return storage
+  } catch (error) {
+    console.warn('本地存储不可用，已降级到内存存储:', error)
+    return memoryStorage
+  }
+}
+
 // 创建持久化的认证存储
 const useAuthStore = create<AuthState>()(
   persist(
@@ -76,7 +107,8 @@ const useAuthStore = create<AuthState>()(
 
           // 备份到 localStorage
           if (typeof window !== 'undefined') {
-            localStorage.setItem(AUTH_TOKEN_KEY, data.token)
+            const storage = getSafeStorage()
+            storage.setItem(AUTH_TOKEN_KEY, data.token)
           }
 
           // 同步到 WebSocket
@@ -99,7 +131,8 @@ const useAuthStore = create<AuthState>()(
 
         // 清除 localStorage
         if (typeof window !== 'undefined') {
-          localStorage.removeItem(AUTH_TOKEN_KEY)
+          const storage = getSafeStorage()
+          storage.removeItem(AUTH_TOKEN_KEY)
         }
 
         // 同步到 WebSocket
@@ -108,7 +141,7 @@ const useAuthStore = create<AuthState>()(
     }),
     {
       name: STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => getSafeStorage()),
       partialize: state => ({
         user: state.user,
         token: state.token,
@@ -133,7 +166,7 @@ const initializeAuth = async (): Promise<void> => {
   const { setToken, setLoading } = useAuthStore.getState()
 
   try {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY)
+    const token = getSafeStorage().getItem(AUTH_TOKEN_KEY)
     if (token) {
       await setToken(token)
     }

@@ -33,6 +33,21 @@ import { DeleteRoomDialog } from './DeleteRoomDialog'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ChatRoom } from '../types'
 
+const getSafeStorage = () => {
+  if (typeof window === 'undefined') return null
+
+  try {
+    const storage = window.localStorage
+    const testKey = '__storage_test__'
+    storage.setItem(testKey, '1')
+    storage.removeItem(testKey)
+    return storage
+  } catch (error) {
+    console.warn('本地存储不可用，已跳过偏好读取:', error)
+    return null
+  }
+}
+
 interface ChatRoomListProps {
   onRoomSelect?: () => void
   showHeader?: boolean
@@ -61,8 +76,11 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
 
   // Load favorites and recent rooms from localStorage
   useEffect(() => {
-    const savedFavorites = localStorage.getItem('chat-favorite-rooms')
-    const savedRecent = localStorage.getItem('chat-recent-rooms')
+    const storage = getSafeStorage()
+    if (!storage) return
+
+    const savedFavorites = storage.getItem('chat-favorite-rooms')
+    const savedRecent = storage.getItem('chat-recent-rooms')
 
     if (savedFavorites) {
       try {
@@ -148,7 +166,8 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
       // Add to recent rooms
       const newRecent = [room.id, ...recentRooms.filter(id => id !== room.id)].slice(0, 10)
       setRecentRooms(newRecent)
-      localStorage.setItem('chat-recent-rooms', JSON.stringify(newRecent))
+      const storage = getSafeStorage()
+      storage?.setItem('chat-recent-rooms', JSON.stringify(newRecent))
     } catch (error) {
       console.error('Failed to join room:', error)
       // 如果加入房间失败，清除当前房间选择
@@ -170,7 +189,8 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
     }
 
     setFavoriteRooms(newFavorites)
-    localStorage.setItem('chat-favorite-rooms', JSON.stringify([...newFavorites]))
+    const storage = getSafeStorage()
+    storage?.setItem('chat-favorite-rooms', JSON.stringify([...newFavorites]))
   }
 
   const handleEditRoom = (room: ChatRoom, event: React.MouseEvent) => {

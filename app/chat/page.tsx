@@ -311,6 +311,19 @@ function ChatPageContent() {
 
           {/* Main Chat Area */}
           <div className="flex flex-1 flex-col">
+            {/* Mobile Sheets - 房间列表和用户列表（无房间时也可打开房间列表） */}
+            <MobileSheets
+              isRoomListOpen={isRoomListOpen}
+              isUsersListOpen={isUsersListOpen}
+              currentRoom={currentRoom}
+              onRoomListOpenChange={setIsRoomListOpen}
+              onUsersListOpenChange={setIsUsersListOpen}
+              onMentionUser={noop}
+              onDirectMessage={noop}
+              onBlockUser={noop}
+              onReportUser={noop}
+            />
+
             {currentRoom ? (
               <>
                 {/* Chat Header - 桌面端和移动端 */}
@@ -325,19 +338,6 @@ function ChatPageContent() {
                     onOpenUsersList={mobileHandlers.handleOpenUsersList}
                   />
                 </div>
-
-                {/* Mobile Sheets - 房间列表和用户列表 */}
-                <MobileSheets
-                  isRoomListOpen={isRoomListOpen}
-                  isUsersListOpen={isUsersListOpen}
-                  currentRoom={currentRoom}
-                  onRoomListOpenChange={setIsRoomListOpen}
-                  onUsersListOpenChange={setIsUsersListOpen}
-                  onMentionUser={noop}
-                  onDirectMessage={noop}
-                  onBlockUser={noop}
-                  onReportUser={noop}
-                />
 
                 {/* Messages - 优化移动端高度 */}
                 <div ref={scrollContainerRef} className="chat-messages-mobile min-h-0 flex-1">
@@ -357,7 +357,7 @@ function ChatPageContent() {
                 </div>
               </>
             ) : (
-              <ChatWelcome />
+              <ChatWelcome onOpenRoomList={mobileHandlers.handleOpenRoomList} />
             )}
           </div>
 

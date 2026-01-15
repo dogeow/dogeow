@@ -1,9 +1,14 @@
 'use client'
 
-import { MessageSquareIcon } from 'lucide-react'
+import { MessageSquareIcon, MenuIcon } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { useTranslation } from '@/hooks/useTranslation'
 
-export default function ChatWelcome() {
+interface ChatWelcomeProps {
+  onOpenRoomList?: () => void
+}
+
+export default function ChatWelcome({ onOpenRoomList }: ChatWelcomeProps) {
   const { t } = useTranslation()
 
   return (
@@ -14,6 +19,12 @@ export default function ChatWelcome() {
         <p className="text-muted-foreground mt-2">
           {t('chat.select_room', 'Select a room to start chatting or create a new one')}
         </p>
+        {onOpenRoomList && (
+          <Button className="mt-4" onClick={onOpenRoomList}>
+            <MenuIcon className="mr-2 h-4 w-4" />
+            {t('chat.open_room_list', 'Open room list')}
+          </Button>
+        )}
       </div>
     </div>
   )
