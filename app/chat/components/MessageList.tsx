@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import React, { useEffect, useRef, useCallback, useMemo } from 'react'
 import { format, isToday, isYesterday } from 'date-fns'
 
 import { cn } from '@/lib/helpers'
@@ -154,13 +154,9 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
     )
   }, [roomMessages, searchQuery])
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
-
-  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
   const previousMessageCountRef = useRef(0)
   const isUserScrollingRef = useRef(false)
   const lastScrollTopRef = useRef(0)
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Handle message reactions
   const handleReact = useCallback((messageId: number, emoji: string) => {
@@ -169,27 +165,9 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
     // TODO: Implement actual reaction functionality
   }, [])
 
-  // Handle scroll events to detect user scrolling
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const scrollArea = e.currentTarget
-    const currentScrollTop = scrollArea.scrollTop
-    const scrollHeight = scrollArea.scrollHeight
-    const clientHeight = scrollArea.clientHeight
-
-    // 检测用户是否手动滚动（向上滚动查看历史消息）
-    const isNearBottom = currentScrollTop + clientHeight >= scrollHeight - 50
-
-    if (currentScrollTop < lastScrollTopRef.current) {
-      // 用户向上滚动
-      isUserScrollingRef.current = true
-      setShouldScrollToBottom(false)
-    } else if (isNearBottom) {
-      // 用户滚动到底部附近
-      isUserScrollingRef.current = false
-      setShouldScrollToBottom(true)
-    }
-
-    lastScrollTopRef.current = currentScrollTop
+  // 获取滚动容器（由父组件控制）
+  const getScrollContainer = useCallback(() => {
+    return document.querySelector('.chat-messages-mobile') as HTMLDivElement | null
   }, [])
 
   // Group messages by user and time
@@ -266,39 +244,35 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
     }
   }, [roomId, stableLoadMessages])
 
-  // Auto-scroll to bottom for new messages with debouncing
+  // 监听滚动事件和新消息
   useEffect(() => {
-    if (shouldScrollToBottom && scrollAreaRef.current) {
-      // 清除之前的定时器
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current)
-      }
+    const scrollContainer = getScrollContainer()
+    if (!scrollContainer) return
 
-      // 使用防抖来避免频繁滚动
-      scrollTimeoutRef.current = setTimeout(() => {
-        const scrollArea = scrollAreaRef.current
-        if (scrollArea) {
-          // 使用 requestAnimationFrame 确保 DOM 更新完成后再滚动
-          requestAnimationFrame(() => {
-            scrollArea.scrollTop = scrollArea.scrollHeight
-            console.log('🔥 MessageList: 滚动到底部，scrollHeight:', scrollArea.scrollHeight)
-          })
-        }
-      }, 50) // 50ms 防抖延迟
-    }
-
-    // 清理函数
-    return () => {
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current)
-      }
-    }
-  }, [filteredMessages.length, shouldScrollToBottom]) // 只依赖长度和滚动状态
-
-  // Track message count changes
-  useEffect(() => {
     const currentCount = filteredMessages.length
     const previousCount = previousMessageCountRef.current
+
+    // 滚动事件处理
+    const handleScroll = () => {
+      const currentScrollTop = scrollContainer.scrollTop
+      const scrollHeight = scrollContainer.scrollHeight
+      const clientHeight = scrollContainer.clientHeight
+
+      // 检测用户是否手动滚动（向上滚动查看历史消息）
+      const isNearBottom = currentScrollTop + clientHeight >= scrollHeight - 50
+
+      if (currentScrollTop < lastScrollTopRef.current) {
+        // 用户向上滚动
+        isUserScrollingRef.current = true
+      } else if (isNearBottom) {
+        // 用户滚动到底部附近
+        isUserScrollingRef.current = false
+      }
+
+      lastScrollTopRef.current = currentScrollTop
+    }
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
 
     if (currentCount > previousCount) {
       // New messages added, scroll to bottom
@@ -307,67 +281,65 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
 
       // 只有在用户没有手动滚动时才自动滚动到底部
       if (!isUserScrollingRef.current) {
-        setShouldScrollToBottom(true)
-
         // 立即滚动到底部，不等待状态更新
-        if (scrollAreaRef.current) {
-          requestAnimationFrame(() => {
-            const scrollArea = scrollAreaRef.current
-            if (scrollArea) {
-              scrollArea.scrollTop = scrollArea.scrollHeight
-              console.log('🔥 MessageList: 立即滚动到底部，scrollHeight:', scrollArea.scrollHeight)
-            }
-          })
-        }
+        requestAnimationFrame(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollTop = scrollContainer.scrollHeight
+            console.log(
+              '🔥 MessageList: 立即滚动到底部，scrollHeight:',
+              scrollContainer.scrollHeight
+            )
+          }
+        })
       } else {
         console.log('🔥 MessageList: 用户正在查看历史消息，不自动滚动')
       }
     }
 
     previousMessageCountRef.current = currentCount
-  }, [filteredMessages.length])
+
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll)
+    }
+  }, [filteredMessages.length, getScrollContainer])
 
   if (filteredMessages.length === 0 && !isLoading) {
     return (
-      <div className={cn('flex flex-col', className)}>
+      <div className={cn('p-2', className)}>
         <EmptyState />
       </div>
     )
   }
 
   return (
-    <div className={cn('flex flex-col', className)}>
-      <div ref={scrollAreaRef} onScroll={handleScroll} className="flex-1 overflow-y-auto">
-        <div className="p-2">
-          {/* Load more indicator */}
-          {isLoading && (
-            <div className="flex justify-center py-4">
-              <div className="text-muted-foreground flex items-center gap-2 text-sm">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                {t('chat.loading_messages', 'Loading more messages...')}
-              </div>
-            </div>
-          )}
-
-          {/* Messages */}
-          <div className="space-y-4">
-            {groupedMessages.map((group, index) => {
-              if (group.type === 'messages' && group.messages && group.user) {
-                return (
-                  <MessageGroup
-                    key={`group-${index}`}
-                    messages={group.messages}
-                    user={group.user}
-                    timestamp={group.timestamp!}
-                    onReply={onReply}
-                    onReact={handleReact}
-                  />
-                )
-              }
-              return null
-            })}
+    <div className={cn('p-2', className)}>
+      {/* Load more indicator */}
+      {isLoading && (
+        <div className="flex justify-center py-4">
+          <div className="text-muted-foreground flex items-center gap-2 text-sm">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            {t('chat.loading_messages', 'Loading more messages...')}
           </div>
         </div>
+      )}
+
+      {/* Messages */}
+      <div className="space-y-4">
+        {groupedMessages.map((group, index) => {
+          if (group.type === 'messages' && group.messages && group.user) {
+            return (
+              <MessageGroup
+                key={`group-${index}`}
+                messages={group.messages}
+                user={group.user}
+                timestamp={group.timestamp!}
+                onReply={onReply}
+                onReact={handleReact}
+              />
+            )
+          }
+          return null
+        })}
       </div>
     </div>
   )

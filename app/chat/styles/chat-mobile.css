@@ -12,9 +12,7 @@
   .chat-header-mobile {
     padding-top: env(safe-area-inset-top, 0);
     min-height: calc(env(safe-area-inset-top, 0px) + var(--chat-header-height));
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    position: relative;
     background-color: hsl(var(--background));
     border-bottom: 1px solid hsl(var(--border));
   }
@@ -25,13 +23,9 @@
     padding-right: 0.75rem;
     padding-top: 0.75rem;
     padding-bottom: calc(env(safe-area-inset-bottom, 0.75rem) + 0.75rem);
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    position: relative;
     background-color: hsl(var(--background));
     border-top: 1px solid hsl(var(--border));
-    z-index: 100;
     min-height: auto;
     box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
     /* 确保输入框有足够的高度 */
@@ -46,35 +40,24 @@
 
   /* 确保聊天头部不会与内容重叠 */
   .chat-header-container {
-    position: sticky;
-    top: 0;
-    z-index: 20;
+    position: relative;
     background-color: hsl(var(--background));
     border-bottom: 1px solid hsl(var(--border));
   }
 
-  /* 确保消息区域有正确的顶部间距和底部间距 */
+  /* 消息区域 - 这一层负责滚动 */
   .chat-messages-mobile {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
-    padding-top: 0.5rem;
-    padding-bottom: var(--chat-input-height); /* 为固定的输入框留出空间 */
-    /* 确保容器能够正确滚动 */
+    /* 确保这一层可以滚动 */
     overflow-y: auto;
-    /* 确保内容不会超出容器 */
-    max-height: calc(
-      100vh - var(--chat-total-header-height) - var(--chat-input-height)
-    ); /* 减去头部和输入框高度 */
-    /* 添加顶部间距，避免与头部重叠 */
-    margin-top: 0;
-    /* 确保内容区域在头部下方 */
-    position: relative;
-    z-index: 1;
-    /* 确保滚动区域正确计算高度 */
-    box-sizing: border-box;
+    overflow-x: hidden;
     /* 确保flex布局正确工作 */
     flex: 1;
     min-height: 0;
+    /* 确保滚动区域正确计算高度 */
+    box-sizing: border-box;
+    /* 确保内容区域在头部下方 */
+    position: relative;
+    z-index: 1;
   }
 }
 
@@ -82,28 +65,27 @@
 @media (min-width: 769px) {
   /* 消息输入区域样式 - 桌面端 */
   .chat-input-area-mobile {
-    position: sticky;
-    bottom: 0;
+    position: relative;
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 1rem;
     background-color: hsl(var(--background));
     border-top: 1px solid hsl(var(--border));
-    z-index: 100;
     min-height: auto;
   }
 
   /* 消息区域样式 - 桌面端 */
   .chat-messages-mobile {
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-top: 0.75rem;
-    padding-bottom: 1rem;
+    /* 确保这一层可以滚动 */
     overflow-y: auto;
-    max-height: 100%;
-    margin-top: 0;
+    overflow-x: hidden;
+    /* 确保flex布局正确工作 */
+    flex: 1;
+    min-height: 0;
+    /* 确保滚动区域正确计算高度 */
+    box-sizing: border-box;
+    /* 确保内容区域在头部下方 */
     position: relative;
     z-index: 1;
-    box-sizing: border-box;
   }
 }

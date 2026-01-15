@@ -214,6 +214,22 @@ function ChatPageContent() {
     }
   }, [isAuthenticated, authLoading, router])
 
+  // 禁用主容器滚动，让聊天区域独立处理滚动
+  useEffect(() => {
+    const mainContainer = document.getElementById('main-container')
+    if (!mainContainer) return
+
+    const previousOverflowY = mainContainer.style.overflowY
+
+    // 禁用主容器的垂直滚动
+    mainContainer.style.overflowY = 'hidden'
+
+    return () => {
+      // 离开页面时恢复
+      mainContainer.style.overflowY = previousOverflowY
+    }
+  }, [])
+
   // 初始化聊天 - 优化错误处理
   useEffect(() => {
     if (!isAuthenticated || authLoading || hasLoadedInitialDataRef.current) return
@@ -296,8 +312,8 @@ function ChatPageContent() {
       clearComponentError={clearComponentError}
       retryAction={retryAction}
     >
-      <div className="bg-background safe-area-top safe-area-bottom flex h-full flex-col">
-        <div className="flex flex-1 overflow-hidden">
+      <div className="bg-background safe-area-top safe-area-bottom flex h-screen min-h-0 flex-col overflow-hidden">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Room List Sidebar - Desktop */}
           <ChatSidebar
             type="rooms"
@@ -310,7 +326,7 @@ function ChatPageContent() {
           />
 
           {/* Main Chat Area */}
-          <div className="flex flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col">
             {/* Mobile Sheets - 房间列表和用户列表（无房间时也可打开房间列表） */}
             <MobileSheets
               isRoomListOpen={isRoomListOpen}
@@ -327,10 +343,10 @@ function ChatPageContent() {
             {currentRoom ? (
               <>
                 {/* Chat Header - 桌面端和移动端 */}
-                <div className="hidden lg:block">
+                <div className="hidden flex-none lg:block">
                   <ChatHeader room={currentRoom} showBackButton={false} />
                 </div>
-                <div className="chat-header-container lg:hidden">
+                <div className="chat-header-container flex-none lg:hidden">
                   <ChatHeader
                     room={currentRoom}
                     showBackButton={false}
@@ -340,12 +356,15 @@ function ChatPageContent() {
                 </div>
 
                 {/* Messages - 优化移动端高度 */}
-                <div ref={scrollContainerRef} className="chat-messages-mobile min-h-0 flex-1">
+                <div
+                  ref={scrollContainerRef}
+                  className="chat-messages-mobile min-h-0 flex-1 overflow-y-auto"
+                >
                   <MessageList roomId={currentRoom.id} onReply={mobileHandlers.handleReply} />
                 </div>
 
                 {/* Message Input */}
-                <div className="chat-input-area-mobile">
+                <div className="chat-input-area-mobile flex-none">
                   <MessageInput
                     roomId={currentRoom.id}
                     replyingTo={replyingTo}

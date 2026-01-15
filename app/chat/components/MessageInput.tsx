@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { useTranslation } from '@/hooks/useTranslation'
 import useChatStore from '@/app/chat/chatStore'
@@ -38,6 +38,7 @@ export function MessageInput({
 }: MessageInputProps) {
   const { t } = useTranslation()
   const { onlineUsers, muteUntil, muteReason, checkMuteStatus, messages } = useChatStore()
+  const inputContainerRef = useRef<HTMLDivElement>(null)
 
   // 使用自定义hooks管理状态和逻辑
   const {
@@ -206,8 +207,30 @@ export function MessageInput({
     }
   }, [scrollContainerRef])
 
+  useEffect(() => {
+    const container = inputContainerRef.current
+    if (!container || typeof window === 'undefined') return
+
+    const updateHeight = () => {
+      const height = container.offsetHeight
+      document.documentElement.style.setProperty('--chat-input-height', `${height}px`)
+    }
+
+    updateHeight()
+
+    const observer = new ResizeObserver(() => {
+      updateHeight()
+    })
+    observer.observe(container)
+
+    return () => {
+      observer.disconnect()
+    }
+  }, [])
+
   return (
     <div
+      ref={inputContainerRef}
       className={`bg-background safe-area-inset-bottom relative border-t p-3 sm:p-4 ${className}`}
     >
       {/* 静音状态提示 */}
