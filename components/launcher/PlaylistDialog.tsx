@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useCallback } from 'react'
-import { Play, Pause, Music, Shuffle, Repeat, Repeat1 } from 'lucide-react'
+import { Play, Pause, Music, Shuffle, Repeat, Repeat1, Ban } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { MusicTrack, PlayMode } from '@/stores/musicStore'
@@ -45,7 +45,7 @@ function RepeatModeButton(props: { playMode: PlayMode; onTogglePlayMode: () => v
       label = '列表循环'
       break
     default:
-      icon = <Repeat className="mr-2 h-4 w-4" />
+      icon = <Ban className="mr-2 h-4 w-4" />
       label = '不循环'
       break
   }
@@ -105,13 +105,13 @@ export function PlaylistDialog({
         <div
           key={track.path}
           className={cn(
-            'hover:bg-accent flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
+            'hover:bg-accent flex cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 transition-colors',
             isCurrentTrack ? 'bg-accent/50 border-primary/20' : 'border-transparent'
           )}
           onClick={() => onTrackSelect(track.path)}
         >
           {/* 播放状态图标 - 固定宽度避免文字移位 */}
-          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center">{iconNode}</div>
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center">{iconNode}</div>
           {/* 歌曲信息 */}
           <div className="min-w-0 flex-1">
             <div
@@ -123,7 +123,7 @@ export function PlaylistDialog({
               {track.name}
             </div>
             {track.duration > 0 && (
-              <div className="text-muted-foreground text-xs">{formatTime(track.duration)}</div>
+              <div className="text-muted-foreground text-[11px]">{formatTime(track.duration)}</div>
             )}
           </div>
         </div>
@@ -134,7 +134,7 @@ export function PlaylistDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[80vh] flex-col overflow-hidden sm:max-w-md">
+      <DialogContent className="mx-3 flex max-h-[80vh] w-[calc(100%-1.5rem)] flex-col overflow-hidden sm:mx-0 sm:w-full sm:max-w-md">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Music className="h-5 w-5" />
@@ -143,18 +143,18 @@ export function PlaylistDialog({
         </DialogHeader>
 
         {/* 搜索框 */}
-        <div className="mb-4 flex-shrink-0">
+        <div className="mb-3 flex-shrink-0">
           <input
             type="text"
             placeholder="搜索歌曲..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="border-input bg-background focus:ring-ring w-full rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+            className="border-input bg-background focus:ring-ring w-full rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
           />
         </div>
 
         {/* 播放列表 */}
-        <div className="flex-1 space-y-1 overflow-y-auto">
+        <div className="flex-1 space-y-0.5 overflow-y-auto">
           {filteredTracks.length === 0 ? (
             <div className="text-muted-foreground py-8 text-center">
               {searchTerm ? '没有找到匹配的歌曲' : '播放列表为空'}

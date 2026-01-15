@@ -35,7 +35,7 @@ export function BackgroundView({
 
       {/* 系统背景图片选项 */}
       {translatedConfigs.systemBackgrounds
-        .filter(bg => bg.id && bg.name && bg.url)
+        .filter(bg => bg.id && bg.name)
         .map(bg => (
           <BackgroundButton
             key={bg.id!}

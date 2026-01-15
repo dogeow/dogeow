@@ -42,8 +42,8 @@ export default function ChatErrorHandler({
   // 错误优先级处理
   const currentError = useMemo(() => storeError || componentError, [storeError, componentError])
 
-  // 如果是认证或服务器错误，显示全屏错误页面
-  if (currentError && (currentError.type === 'authentication' || currentError.type === 'server')) {
+  // 认证错误显示全屏，其它错误不强制打断聊天界面
+  if (currentError && currentError.type === 'authentication') {
     return (
       <ErrorFallback
         error={currentError}

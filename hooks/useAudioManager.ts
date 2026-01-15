@@ -72,7 +72,7 @@ export const useAudioManager = () => {
       }
     } catch (error) {
       console.error('加载音频列表失败:', error)
-      setAudioError('加载音乐列表失败，请稍后重试')
+      setAudioError('加载音频列表失败')
     }
   }, [setAvailableTracks, setCurrentTrack, setAudioError, setIsPlaying])
 
