@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { EmptyState as UIEmptyState } from '@/components/ui/empty-state'
 import { zhCN } from 'date-fns/locale'
 import NoteSpeedDial from './components/NoteSpeedDial'
+import { normalizeNotes } from './utils/api'
 
 interface Note {
   id: number
@@ -118,9 +119,8 @@ export default function NotePage() {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const data = await apiRequest<Note[]>('/notes')
-        // 确保 data 是数组，如果不是则使用空数组
-        setNotes(Array.isArray(data) ? data : [])
+        const data = await apiRequest<Note[] | { notes: Note[] }>('/notes')
+        setNotes(normalizeNotes<Note>(data))
       } catch (error) {
         console.error('获取笔记列表失败:', error)
         toast.error('无法加载笔记列表')

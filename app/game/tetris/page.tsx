@@ -67,8 +67,8 @@ export default function TetrisGame() {
           <div className="relative">
             {/* 屏幕区域 - 单层容器 */}
             <div className="relative overflow-hidden rounded-2xl bg-slate-950 p-4 shadow-xl">
-              {/* 背光效果 - 统一为冷色系 */}
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-100/20 to-transparent dark:from-cyan-400/12 dark:to-transparent"></div>
+              {/* 背光效果 - 统一为暖色系 */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-100/20 to-transparent dark:from-amber-300/12 dark:to-transparent"></div>
 
               <div className="relative z-10 flex gap-4">
                 {/* 主游戏区域 */}
@@ -90,23 +90,29 @@ export default function TetrisGame() {
                   />
 
                   {/* 游戏状态 */}
-                  {(gameState.gameOver || gameState.paused) && (
-                    <div className="rounded bg-slate-950/70 p-3">
-                      <div className="text-center">
-                        {gameState.gameOver && (
-                          <div>
-                            <div className="mb-2 font-mono text-xs text-rose-300">GAME OVER</div>
-                            <Button onClick={resetGame} size="sm" className="text-xs">
-                              重新开始
-                            </Button>
-                          </div>
-                        )}
-                        {gameState.paused && !gameState.gameOver && (
-                          <div className="font-mono text-xs text-amber-300">PAUSED</div>
-                        )}
-                      </div>
+                  <div className="rounded bg-slate-950/70 p-3">
+                    <div className="flex items-center justify-center text-center">
+                      {gameState.gameOver ? (
+                        <div>
+                          <div className="mb-2 font-mono text-xs text-rose-300">GAME OVER</div>
+                          <Button onClick={resetGame} size="sm" className="text-xs">
+                            重新开始
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={`h-7 px-4 font-mono text-[10px] ${
+                            gameState.paused ? 'bg-amber-500/15 text-amber-200' : ''
+                          }`}
+                          onClick={togglePause}
+                        >
+                          PAUSE
+                        </Button>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -120,9 +126,6 @@ export default function TetrisGame() {
           hardDrop={hardDrop}
           startSoftDrop={startSoftDrop}
           stopSoftDrop={stopSoftDrop}
-          togglePause={togglePause}
-          gameOver={gameState.gameOver}
-          paused={gameState.paused}
           isSoftDropping={isSoftDropping}
         />
       </div>

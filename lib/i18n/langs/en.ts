@@ -74,7 +74,6 @@ export const en = {
   'game.tetris': 'Tetris',
   'game.tetris.desc': 'Classic Tetris game, eliminate blocks to get high scores',
   'game.2048': '2048',
-  'game.2048.desc': 'Number merging game, slide to merge same numbers to reach 2048',
   'game.snake': 'Snake',
   'game.snake.desc': 'Classic snake game, control snake to eat food and avoid hitting yourself',
   'game.minesweeper': 'Minesweeper',

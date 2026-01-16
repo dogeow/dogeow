@@ -7,24 +7,11 @@ interface MobileControlsProps {
   hardDrop: () => void
   startSoftDrop: () => void
   stopSoftDrop: () => void
-  togglePause: () => void
-  gameOver: boolean
-  paused: boolean
   isSoftDropping: boolean
 }
 
 export const MobileControls = memo<MobileControlsProps>(
-  ({
-    movePiece,
-    rotatePiece,
-    hardDrop,
-    startSoftDrop,
-    stopSoftDrop,
-    togglePause,
-    gameOver,
-    paused,
-    isSoftDropping,
-  }) => {
+  ({ movePiece, rotatePiece, hardDrop, startSoftDrop, stopSoftDrop, isSoftDropping }) => {
     const handleTouchStart = (callback: () => void) => (e: React.TouchEvent) => {
       e.preventDefault()
       callback()
@@ -37,19 +24,6 @@ export const MobileControls = memo<MobileControlsProps>(
 
     return (
       <div className="mx-auto w-full max-w-md lg:hidden">
-        {/* 暂停按钮 - 单独一行，小按钮 */}
-        <div className="mb-4 flex justify-center">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 px-6 text-sm font-medium"
-            onClick={togglePause}
-            disabled={gameOver}
-          >
-            {paused ? '▶️ 继续' : '⏸️ 暂停'}
-          </Button>
-        </div>
-
         {/* 旋转按钮 */}
         <div className="mb-4 flex justify-center">
           <Button
@@ -77,7 +51,7 @@ export const MobileControls = memo<MobileControlsProps>(
           <Button
             variant="outline"
             className={`h-12 w-full text-sm font-medium ${
-              isSoftDropping ? 'bg-cyan-500/15 text-cyan-700 dark:text-cyan-200' : ''
+              isSoftDropping ? 'bg-amber-500/15 text-amber-700 dark:text-amber-200' : ''
             }`}
             onTouchStart={handleTouchStart(startSoftDrop)}
             onTouchEnd={handleTouchEnd(stopSoftDrop)}

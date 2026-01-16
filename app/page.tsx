@@ -45,6 +45,7 @@ export default function Home() {
   const gridStyle = useMemo(
     () => ({
       gridTemplateAreas: configs.gridLayout.templateAreas,
+      gridTemplateColumns: `repeat(${configs.gridLayout.columns}, minmax(0, 1fr))`,
     }),
     []
   )

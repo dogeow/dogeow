@@ -31,7 +31,7 @@ export function DirectionControls({
         <Button
           variant="outline"
           size="lg"
-          className="h-12 w-12 p-0 text-xl"
+          className="h-12 w-24 p-0 text-xl"
           onClick={() => onMove('up')}
           disabled={disabled}
         >
@@ -42,7 +42,7 @@ export function DirectionControls({
           <Button
             variant="outline"
             size="lg"
-            className="h-12 w-12 p-0 text-xl"
+            className="h-12 w-24 p-0 text-xl"
             onClick={() => onMove('left')}
             disabled={disabled}
           >
@@ -62,7 +62,7 @@ export function DirectionControls({
           <Button
             variant="outline"
             size="lg"
-            className="h-12 w-12 p-0 text-xl"
+            className="h-12 w-24 p-0 text-xl"
             onClick={() => onMove('right')}
             disabled={disabled}
           >
@@ -73,7 +73,7 @@ export function DirectionControls({
         <Button
           variant="outline"
           size="lg"
-          className="h-12 w-12 p-0 text-xl"
+          className="h-12 w-24 p-0 text-xl"
           onClick={() => onMove('down')}
           disabled={disabled}
         >

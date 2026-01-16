@@ -10,6 +10,7 @@ import { useGlobalNavigationGuard } from '../hooks/useGlobalNavigationGuard'
 import { SaveOptionsDialog } from '@/components/ui/save-options-dialog'
 import { useVoiceInput } from '@/hooks/useVoiceInput'
 import { VoiceInputButton } from '@/components/ui/voice-input-button'
+import { normalizeNote } from '../utils/api'
 
 interface NoteEditorProps {
   noteId?: number
@@ -113,17 +114,21 @@ export default function NoteEditor({
         is_draft: draft,
       }
       try {
-        let result: Note
+        let result: Note | { note: Note }
         if (isEditing && noteId) {
-          result = await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
+          result = await apiRequest<Note | { note: Note }>(`/notes/${noteId}`, 'PUT', data)
         } else {
-          result = await apiRequest<Note>('/notes', 'POST', data)
+          result = await apiRequest<Note | { note: Note }>('/notes', 'POST', data)
+        }
+        const normalizedNote = normalizeNote<Note>(result)
+        if (!normalizedNote) {
+          throw new Error('保存笔记失败')
         }
         setLastSavedContent(content)
         setLastSavedTitle(noteTitle)
         toast.success(isEditing ? '笔记已更新' : '笔记已创建')
-        if (!isEditing && result.id) {
-          router.push(`/note/edit/${result.id}`)
+        if (!isEditing && normalizedNote.id) {
+          router.push(`/note/edit/${normalizedNote.id}`)
           router.refresh()
         }
         return Promise.resolve()
@@ -152,9 +157,9 @@ export default function NoteEditor({
     }
     try {
       if (isEditing && noteId) {
-        await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
+        await apiRequest<Note | { note: Note }>(`/notes/${noteId}`, 'PUT', data)
       } else {
-        await apiRequest<Note>('/notes', 'POST', data)
+        await apiRequest<Note | { note: Note }>('/notes', 'POST', data)
       }
       setDirty(false)
       setLastSavedContent(currentContent)

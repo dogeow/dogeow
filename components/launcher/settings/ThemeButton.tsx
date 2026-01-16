@@ -34,8 +34,8 @@ export function ThemeButton({
       <Button
         variant="ghost"
         className={cn(
-          'relative h-9 w-9 overflow-hidden rounded-md p-1',
-          isSelected && 'ring-primary ring-2'
+          'relative h-9 w-9 overflow-hidden rounded-md border-2 border-transparent p-1',
+          isSelected && 'border-primary'
         )}
         onClick={() => onSelect(theme.id)}
         title={theme.name}

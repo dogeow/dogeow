@@ -125,13 +125,15 @@ export default function SnakeGame() {
 
       // 检查碰撞
       if (checkCollision(head, newSnake)) {
-        setGameOver(true)
-        setGameStarted(false)
-        // 使用 setTimeout 将状态更新延迟到下一个事件循环
-        setTimeout(() => {
-          incrementGamesPlayed()
-        }, 0)
-        toast.error('游戏结束！')
+        if (!gameOverRef.current) {
+          setGameOver(true)
+          setGameStarted(false)
+          // 使用 setTimeout 将状态更新延迟到下一个事件循环
+          setTimeout(() => {
+            incrementGamesPlayed()
+          }, 0)
+          toast.error('游戏结束！')
+        }
         return currentSnake
       }
 
@@ -145,7 +147,6 @@ export default function SnakeGame() {
           addFoodEaten(1)
         }, 0)
         setFood(generateFood(newSnake))
-        toast.success('吃到食物！+10分')
       } else {
         newSnake.pop()
       }
@@ -365,9 +366,6 @@ export default function SnakeGame() {
             ]}
           />
         </div>
-        <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          控制蛇吃食物，避免撞墙和撞自己！
-        </p>
 
         <div className="mb-4 flex justify-center gap-8">
           <div className="text-center">

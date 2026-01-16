@@ -279,7 +279,7 @@ export function AudioController({
       ) {
         // 不循环模式且到达末尾，停止播放
         setIsPlaying(false)
-        setAudioError('播放列表已播放完毕')
+        setAudioError(null)
         return
       }
 

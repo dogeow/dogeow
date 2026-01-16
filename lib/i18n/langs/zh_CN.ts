@@ -70,7 +70,6 @@ export const zh_CN = {
   'game.tetris': '俄罗斯方块',
   'game.tetris.desc': '经典的俄罗斯方块游戏，消除方块获得高分',
   'game.2048': '2048',
-  'game.2048.desc': '数字合并游戏，通过滑动合并相同数字达到2048',
   'game.snake': '贪吃蛇',
   'game.snake.desc': '经典的贪吃蛇游戏，控制蛇吃食物并避免撞到自己',
   'game.minesweeper': '扫雷',
@@ -603,7 +602,6 @@ export const zh_CN = {
   'game.minesweeper.rules.mobile_hint': '手机端可长按标记或使用标记模式',
   'game.minesweeper.rules.win_condition': '揭示所有非地雷格子即可获胜',
   'game.minesweeper.rules.lose_condition': '点到地雷就失败了',
-  'game.minesweeper.description': '找出所有地雷，避免踩雷！',
 
   // Game - Tic Tac Toe
   'game.tictactoe.stats.title': '游戏统计',

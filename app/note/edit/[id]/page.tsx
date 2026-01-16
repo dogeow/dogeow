@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { Save, Loader2, Lock, Unlock } from 'lucide-react'
+import { normalizeNote } from '../../utils/api'
 
 // 使用dynamic import避免服务端渲染问题
 const TailwindAdvancedEditor = dynamic(() => import('@/components/novel-editor'), { ssr: false })
@@ -44,16 +45,21 @@ export default function EditNotePage() {
     const fetchNote = async () => {
       try {
         const noteId = Array.isArray(id) ? id[0] : id
-        const data = await apiRequest<Note>(`/notes/${noteId}`)
-        setNote(data)
-        setTitle(data.title)
-        setIsPrivate(data.is_draft) // 设置初始隐私状态
+        const data = await apiRequest<Note | { note: Note }>(`/notes/${noteId}`)
+        const normalizedNote = normalizeNote<Note>(data)
+        if (!normalizedNote) {
+          setError('无法加载笔记，请重试')
+          return
+        }
+        setNote(normalizedNote)
+        setTitle(normalizedNote.title)
+        setIsPrivate(normalizedNote.is_draft) // 设置初始隐私状态
 
         // 将笔记内容加载到 Novel 编辑器
-        if (data.content) {
+        if (normalizedNote.content) {
           try {
             // 尝试解析内容，如果是有效的JSON则使用，否则创建默认内容
-            const parsedContent = JSON.parse(data.content)
+            const parsedContent = JSON.parse(normalizedNote.content)
             window.localStorage.setItem('novel-content', JSON.stringify(parsedContent))
           } catch {
             // 如果内容不是有效的JSON，创建包含文本的默认结构
@@ -65,7 +71,7 @@ export default function EditNotePage() {
                   content: [
                     {
                       type: 'text',
-                      text: data.content || '',
+                      text: normalizedNote.content || '',
                     },
                   ],
                 },
@@ -76,8 +82,8 @@ export default function EditNotePage() {
         }
 
         // 同时设置 markdown 内容
-        if (data.content_markdown) {
-          window.localStorage.setItem('markdown', data.content_markdown)
+        if (normalizedNote.content_markdown) {
+          window.localStorage.setItem('markdown', normalizedNote.content_markdown)
         }
       } catch (err) {
         console.error('获取笔记失败', err)

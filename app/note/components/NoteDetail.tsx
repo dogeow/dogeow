@@ -10,6 +10,7 @@ import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import ReadonlyEditor from '@/components/novel-editor/readonly'
 import React from 'react'
+import { normalizeNote } from '../utils/api'
 
 /**
  * 判断编辑器内容是否为空
@@ -82,14 +83,35 @@ export default function NoteDetail() {
   const router = useRouter()
   const params = useParams()
   const id = params?.id
-  const { data: note, error } = useSWR<{
+  const { data: noteResponse, error } = useSWR<
+    | {
+        id: number
+        title: string
+        content: string
+        content_markdown?: string
+        updated_at: string
+        is_draft: boolean
+      }
+    | {
+        note: {
+          id: number
+          title: string
+          content: string
+          content_markdown?: string
+          updated_at: string
+          is_draft: boolean
+        }
+      }
+  >(id ? `/notes/${id}` : null, get)
+
+  const note = normalizeNote<{
     id: number
     title: string
     content: string
     content_markdown?: string
     updated_at: string
     is_draft: boolean
-  }>(id ? `/notes/${id}` : null, get)
+  }>(noteResponse)
 
   const handleDelete = async () => {
     if (!window.confirm('确定要删除此笔记吗？')) return

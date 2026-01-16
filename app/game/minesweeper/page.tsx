@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -114,6 +114,7 @@ export default function MinesweeperGame() {
   const [firstClick, setFirstClick] = useState(true)
   const [timer, setTimer] = useState(0)
   const [gameStarted, setGameStarted] = useState(false)
+  const lastResultRef = useRef<'won' | 'lost' | null>(null)
 
   const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null)
 
@@ -298,14 +299,12 @@ export default function MinesweeperGame() {
 
         if (checkWinCondition(newBoard)) {
           setGameState('won')
-          updateStats(difficulty, true, timer)
-          toast.success('恭喜！你赢了！')
         }
 
         return newBoard
       })
     },
-    [gameState, checkWinCondition, difficulty, timer, updateStats]
+    [gameState, checkWinCondition, difficulty, timer]
   )
 
   // 点击格子
@@ -337,8 +336,6 @@ export default function MinesweeperGame() {
             }
           }
           setGameState('lost')
-          updateStats(difficulty, false)
-          toast.error('踩到地雷了！游戏结束')
           return newBoard
         }
 
@@ -351,8 +348,6 @@ export default function MinesweeperGame() {
 
         if (checkWinCondition(newBoard)) {
           setGameState('won')
-          updateStats(difficulty, true, timer)
-          toast.success('恭喜！你赢了！')
         }
 
         return newBoard
@@ -366,7 +361,6 @@ export default function MinesweeperGame() {
       revealEmptyArea,
       config,
       difficulty,
-      updateStats,
       checkWinCondition,
       timer,
     ]
@@ -417,6 +411,25 @@ export default function MinesweeperGame() {
       if (interval) clearInterval(interval)
     }
   }, [gameStarted, gameState])
+
+  useEffect(() => {
+    if (gameState === 'playing') {
+      lastResultRef.current = null
+      return
+    }
+
+    if (lastResultRef.current === gameState) return
+
+    if (gameState === 'won') {
+      updateStats(difficulty, true, timer)
+      toast.success('恭喜！你赢了！')
+    } else {
+      updateStats(difficulty, false)
+      toast.error('踩到地雷了！游戏结束')
+    }
+
+    lastResultRef.current = gameState
+  }, [gameState, difficulty, timer, updateStats])
 
   // 获取格子显示内容
   const getCellContent = (cell: Cell) => {
@@ -488,7 +501,6 @@ export default function MinesweeperGame() {
             ]}
           />
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400">找出所有地雷，避免踩雷！</p>
 
         {/* 难度选择 */}
         <div className="flex flex-wrap justify-center gap-2">

@@ -246,20 +246,17 @@ export const MusicPlayer = memo(
             />
             <PlayerControlButton
               onClick={switchToPrevTrack}
-              disabled={!!audioError}
               title="上一首"
               icon={<SkipBack className={ICON_SIZE} />}
             />
             <PlayerControlButton
               onClick={togglePlay}
-              disabled={!!audioError}
               title={isPlaying ? '暂停' : '播放'}
               icon={isPlaying ? <Pause className={ICON_SIZE} /> : <Play className={ICON_SIZE} />}
               className={PLAY_BUTTON_SIZE}
             />
             <PlayerControlButton
               onClick={switchToNextTrack}
-              disabled={!!audioError}
               title="下一首"
               icon={<SkipForward className={ICON_SIZE} />}
             />

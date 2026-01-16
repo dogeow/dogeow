@@ -19,6 +19,13 @@ export default function MazeGame() {
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  // 进入页面自动开始游戏
+  useEffect(() => {
+    if (!gameStarted) {
+      startGame()
+    }
+  }, [gameStarted, startGame])
+
   // 将屏幕坐标转换为迷宫网格坐标
   const screenToMazeCoordinates = useCallback(
     (clientX: number, clientY: number) => {
@@ -221,21 +228,12 @@ export default function MazeGame() {
         </div>
 
         <div className="flex gap-2">
-          {gameStarted ? (
-            <button
-              onClick={resetGame}
-              className="bg-muted text-foreground hover:bg-muted/80 rounded-lg px-4 py-2 text-sm transition-colors"
-            >
-              重新开始
-            </button>
-          ) : (
-            <button
-              onClick={startGame}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm transition-colors"
-            >
-              开始游戏
-            </button>
-          )}
+          <button
+            onClick={resetGame}
+            className="bg-muted text-foreground hover:bg-muted/80 rounded-lg px-4 py-2 text-sm transition-colors"
+          >
+            重新开始
+          </button>
         </div>
       </div>
 
@@ -244,14 +242,14 @@ export default function MazeGame() {
 
       {gameCompleted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-lg bg-white p-8 text-center shadow-xl">
-            <h3 className="mb-4 text-3xl font-bold text-green-600">🎉 恭喜通关！</h3>
-            <div className="mb-6 space-y-2 text-gray-600">
+          <div className="border-border/60 bg-card text-foreground rounded-lg border p-8 text-center shadow-xl">
+            <h3 className="mb-4 text-3xl font-bold text-emerald-500">🎉 恭喜通关！</h3>
+            <div className="text-muted-foreground mb-6 space-y-2">
               <p>
-                移动次数: <span className="font-bold text-blue-600">{moves}</span>
+                移动次数: <span className="font-bold text-blue-500">{moves}</span>
               </p>
               <p>
-                用时: <span className="font-bold text-green-600">{gameTime}秒</span>
+                用时: <span className="font-bold text-emerald-500">{gameTime}秒</span>
               </p>
             </div>
             <button

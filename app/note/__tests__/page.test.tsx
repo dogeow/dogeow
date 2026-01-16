@@ -72,7 +72,7 @@ describe('NotePage', () => {
 
   it('should render empty state when no notes', async () => {
     const { apiRequest } = await import('@/lib/api')
-    vi.mocked(apiRequest).mockResolvedValue([])
+    vi.mocked(apiRequest).mockResolvedValue({ notes: [] })
 
     render(<NotePage />)
 
@@ -105,7 +105,7 @@ describe('NotePage', () => {
     ]
 
     const { apiRequest } = await import('@/lib/api')
-    vi.mocked(apiRequest).mockResolvedValue(mockNotes)
+    vi.mocked(apiRequest).mockResolvedValue({ notes: mockNotes })
 
     render(<NotePage />)
 
@@ -129,7 +129,7 @@ describe('NotePage', () => {
     ]
 
     const { apiRequest } = await import('@/lib/api')
-    vi.mocked(apiRequest).mockResolvedValue(mockNotes)
+    vi.mocked(apiRequest).mockResolvedValue({ notes: mockNotes })
 
     render(<NotePage />)
 
@@ -170,7 +170,7 @@ describe('NotePage', () => {
     ]
 
     const { apiRequest } = await import('@/lib/api')
-    vi.mocked(apiRequest).mockResolvedValue(mockNotes)
+    vi.mocked(apiRequest).mockResolvedValue({ notes: mockNotes })
 
     render(<NotePage />)
 
@@ -194,7 +194,7 @@ describe('NotePage', () => {
     ]
 
     const { apiRequest } = await import('@/lib/api')
-    vi.mocked(apiRequest).mockResolvedValue(mockNotes)
+    vi.mocked(apiRequest).mockResolvedValue({ notes: mockNotes })
 
     const { format } = await import('date-fns')
     vi.mocked(format).mockReturnValue('2024-01-01')
@@ -208,7 +208,7 @@ describe('NotePage', () => {
 
   it('should handle empty notes array', async () => {
     const { apiRequest } = await import('@/lib/api')
-    vi.mocked(apiRequest).mockResolvedValue([])
+    vi.mocked(apiRequest).mockResolvedValue({ notes: [] })
 
     render(<NotePage />)
 

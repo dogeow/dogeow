@@ -35,7 +35,7 @@ const TicTacToe = () => {
   } = useGameStore()
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 p-4 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-stone-100 p-4 dark:from-slate-950 dark:to-slate-900">
       <div className="mx-auto max-w-6xl">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {/* 主游戏区域 */}
@@ -133,7 +133,7 @@ const TicTacToe = () => {
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.8 }}
-                        className="flex items-center justify-center gap-2 text-xl text-blue-600"
+                        className="flex items-center justify-center gap-2 text-xl text-emerald-600 dark:text-emerald-400"
                       >
                         <Loader2 className="h-5 w-5 animate-spin" />
                         AI 思考中...
@@ -167,7 +167,7 @@ const TicTacToe = () => {
                         className="text-xl text-gray-700 dark:text-gray-200"
                       >
                         当前玩家:{' '}
-                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
                           {gameMode === 'ai' && currentPlayer === 'O'
                             ? 'AI (O)'
                             : `${currentPlayer}`}
@@ -185,7 +185,7 @@ const TicTacToe = () => {
                       whileHover={{ scale: cell ? 1 : 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => makeMove(index)}
-                      className={`aspect-square rounded-lg border-2 border-gray-300 bg-white text-4xl font-bold transition-all duration-200 hover:border-blue-400 hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:hover:border-blue-500 ${cell ? 'cursor-default' : 'cursor-pointer'} ${cell === 'X' ? 'text-blue-600 dark:text-blue-400' : 'text-red-600 dark:text-red-400'} ${isAiThinking && gameMode === 'ai' ? 'pointer-events-none opacity-50' : ''} `}
+                      className={`aspect-square rounded-lg border-2 border-gray-300 bg-white text-4xl font-bold transition-all duration-200 hover:border-emerald-400 hover:shadow-md dark:border-gray-600 dark:bg-gray-700 dark:hover:border-emerald-500 ${cell ? 'cursor-default' : 'cursor-pointer'} ${cell === 'X' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'} ${isAiThinking && gameMode === 'ai' ? 'pointer-events-none opacity-50' : ''} `}
                       disabled={!!cell || gameOver || isAiThinking}
                     >
                       <AnimatePresence>

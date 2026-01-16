@@ -13,7 +13,7 @@ export const NextPieceDisplay = memo<NextPieceDisplayProps>(({ nextPiece, isClie
 
   return (
     <div className="rounded bg-slate-950/90 p-3 shadow-sm">
-      <div className="mb-2 text-center font-mono text-xs text-slate-300 dark:text-cyan-300">
+      <div className="mb-2 text-center font-mono text-xs text-slate-300 dark:text-amber-300">
         NEXT
       </div>
       <div className="flex min-h-[50px] items-center justify-center rounded bg-slate-900/70 p-2">

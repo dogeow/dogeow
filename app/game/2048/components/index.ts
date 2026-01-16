@@ -3,4 +3,3 @@
  */
 export { GameBoard } from './GameBoard'
 export { DirectionControls } from './DirectionControls'
-export { AutoRunControls } from './AutoRunControls'

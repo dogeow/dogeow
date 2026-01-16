@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import { apiRequest } from '@/lib/api'
 import { Save, Loader2, Lock, Unlock } from 'lucide-react'
+import { normalizeNote } from '../utils/api'
 
 // 使用dynamic import避免服务端渲染问题
 const TailwindAdvancedEditor = dynamic(() => import('@/components/novel-editor'), { ssr: false })
@@ -79,7 +80,11 @@ export default function NewNotePage() {
         is_draft: isPrivate, // 私密状态对应 is_draft
       }
 
-      const result = await apiRequest<Note>('/notes', 'POST', data)
+      const result = await apiRequest<Note | { note: Note }>('/notes', 'POST', data)
+      const normalizedNote = normalizeNote<Note>(result)
+      if (!normalizedNote) {
+        throw new Error('创建笔记失败')
+      }
 
       toast.success('笔记已创建')
 
@@ -89,7 +94,7 @@ export default function NewNotePage() {
       window.localStorage.removeItem('markdown')
 
       // 跳转到编辑页面
-      router.push(`/note/edit/${result.id}`)
+      router.push(`/note/edit/${normalizedNote.id}`)
     } catch (error) {
       console.error('保存笔记错误:', error)
       toast.error('保存失败')

@@ -5,7 +5,7 @@ import { useMazeStore } from '../store'
 
 const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const { maze, ball, mazeSize, gameStarted } = useMazeStore()
+  const { maze, ball, mazeSize } = useMazeStore()
 
   // console.log('🎨 MazeCanvas 渲染状态:', {
   //   gameStarted,
@@ -69,8 +69,19 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
       return
     }
 
+    const rootStyles = getComputedStyle(document.documentElement)
+    const resolveThemeColor = (variable: string, fallback: string) => {
+      const value = rootStyles.getPropertyValue(variable).trim()
+      if (!value) return fallback
+      return value.includes('(') ? value : `hsl(${value})`
+    }
+
+    const wallColor = resolveThemeColor('--muted-foreground', '#666')
+    const startColor = resolveThemeColor('--success', '#4ade80')
+    const endColor = resolveThemeColor('--destructive', '#ef4444')
+
     // 绘制迷宫网格
-    ctx.strokeStyle = '#333'
+    ctx.strokeStyle = wallColor
     ctx.lineWidth = 2
 
     for (let y = 0; y < mazeSize; y++) {
@@ -111,11 +122,11 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
     }
 
     // 绘制起点标记
-    ctx.fillStyle = '#4ade80'
+    ctx.fillStyle = startColor
     ctx.fillRect(offsetX + cellSize * 0.1, offsetY + cellSize * 0.1, cellSize * 0.8, cellSize * 0.8)
 
     // 绘制终点标记
-    ctx.fillStyle = '#ef4444'
+    ctx.fillStyle = endColor
     const endX = (mazeSize - 1) * cellSize + offsetX
     const endY = (mazeSize - 1) * cellSize + offsetY
     ctx.fillRect(endX + cellSize * 0.1, endY + cellSize * 0.1, cellSize * 0.8, cellSize * 0.8)
@@ -174,15 +185,6 @@ const MazeCanvas = forwardRef<HTMLCanvasElement>((props, ref) => {
   return (
     <div className="bg-background relative h-96 w-full overflow-hidden">
       <canvas ref={setRef} className="h-full w-full cursor-pointer" style={{ display: 'block' }} />
-
-      {!gameStarted && (
-        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
-          <div className="text-center text-white">
-            <h3 className="mb-2 text-xl font-bold">🎮 点击开始游戏</h3>
-            <p className="text-sm opacity-90">将蓝色小球移动到红色终点</p>
-          </div>
-        </div>
-      )}
     </div>
   )
 })

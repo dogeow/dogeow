@@ -24,12 +24,12 @@ export function GameRulesDialog({ title, rules, className = '' }: GameRulesDialo
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="icon"
-          className={`border-gray-200 bg-white shadow-sm hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 ${className}`}
+          className={`text-primary hover:text-primary/80 p-0 hover:bg-transparent ${className}`}
           title="游戏规则"
         >
-          <HelpCircle className="text-primary h-5 w-5" />
+          <HelpCircle className="h-5 w-5" />
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">

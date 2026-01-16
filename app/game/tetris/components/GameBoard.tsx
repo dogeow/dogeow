@@ -18,9 +18,9 @@ export const GameBoard = memo<GameBoardProps>(({ board, currentPiece }) => {
             {row.map((cell, x) => (
               <div
                 key={`${y}-${x}`}
-                className="h-3 w-3 border border-slate-900/30 transition-colors duration-150 sm:h-4 sm:w-4 md:h-5 md:w-5"
+                className="h-4 w-4 border border-slate-900/30 transition-colors duration-150 sm:h-5 sm:w-5 md:h-6 md:w-6"
                 style={{
-                  backgroundColor: cell || '#0b1220',
+                  backgroundColor: cell || '#0f0f0f',
                 }}
               />
             ))}
