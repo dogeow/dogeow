@@ -68,11 +68,11 @@ export default function LinkCreator({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b p-4">
+        <Dialog.Content className="border-border bg-background text-foreground fixed top-1/2 left-1/2 z-50 w-[90vw] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg border shadow-lg">
+          <div className="border-border flex items-center justify-between border-b p-4">
             <Dialog.Title className="text-lg font-semibold">创建链接</Dialog.Title>
             <Dialog.Close asChild>
-              <button className="rounded p-1 hover:bg-gray-100">
+              <button className="hover:bg-muted rounded p-1">
                 <X className="h-5 w-5" />
               </button>
             </Dialog.Close>
@@ -85,7 +85,7 @@ export default function LinkCreator({
               <select
                 value={sourceId}
                 onChange={e => setSourceId(e.target.value ? Number(e.target.value) : '')}
-                className="w-full rounded-md border p-2"
+                className="border-border bg-background text-foreground w-full rounded-md border p-2"
                 disabled={!!sourceNodeId}
               >
                 <option value="">请选择源节点</option>
@@ -103,7 +103,7 @@ export default function LinkCreator({
               <select
                 value={targetId}
                 onChange={e => setTargetId(e.target.value ? Number(e.target.value) : '')}
-                className="w-full rounded-md border p-2"
+                className="border-border bg-background text-foreground w-full rounded-md border p-2"
               >
                 <option value="">请选择目标节点</option>
                 {nodes
@@ -124,13 +124,13 @@ export default function LinkCreator({
                 value={type}
                 onChange={e => setType(e.target.value)}
                 placeholder="例如：相关、依赖、包含"
-                className="w-full rounded-md border p-2"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground w-full rounded-md border p-2"
               />
             </div>
           </div>
 
           {/* 底部按钮 */}
-          <div className="flex justify-end gap-2 border-t p-4">
+          <div className="border-border flex justify-end gap-2 border-t p-4">
             <Dialog.Close asChild>
               <Button variant="outline" disabled={isCreating}>
                 取消

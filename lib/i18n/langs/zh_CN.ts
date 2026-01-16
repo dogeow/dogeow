@@ -9,6 +9,7 @@ export const zh_CN = {
   'nav.tool': '工具',
   'nav.nav': '导航',
   'nav.note': '笔记',
+  'nav.ai': 'AI',
   'nav.game': '游戏',
   'nav.chat': '聊天',
   'nav.about': '关于',

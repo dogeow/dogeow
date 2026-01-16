@@ -10,6 +10,7 @@ import LinkCreator from './components/LinkCreator'
 import { toast } from 'sonner'
 import { Plus, Edit, Trash2, Link as LinkIcon } from 'lucide-react'
 import type { JSONContent } from 'novel'
+import { useTheme } from 'next-themes'
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
@@ -70,7 +71,66 @@ export type ForceGraphInstance = {
   graph2ScreenCoords?: (x: number, y: number) => { x: number; y: number } | null
 }
 
+type ThemeColors = {
+  background: string
+  foreground: string
+  card: string
+  cardForeground: string
+  mutedForeground: string
+  border: string
+  primary: string
+  ring: string
+  accent: string
+}
+
+const LIGHT_FALLBACK: ThemeColors = {
+  background: '#ffffff',
+  foreground: '#111827',
+  card: '#ffffff',
+  cardForeground: '#111827',
+  mutedForeground: '#64748b',
+  border: '#e5e7eb',
+  primary: '#2563eb',
+  ring: '#60a5fa',
+  accent: '#38bdf8',
+}
+
+const DARK_FALLBACK: ThemeColors = {
+  background: '#0b0b0b',
+  foreground: '#f8fafc',
+  card: '#111827',
+  cardForeground: '#f8fafc',
+  mutedForeground: '#94a3b8',
+  border: '#1f2937',
+  primary: '#60a5fa',
+  ring: '#38bdf8',
+  accent: '#22d3ee',
+}
+
+const withAlpha = (color: string, alpha: number, fallback: string) => {
+  const trimmed = color.trim()
+  if (!trimmed) return fallback
+  const rgbMatch = trimmed.match(/rgba?\((\d+)[,\s]+(\d+)[,\s]+(\d+)/i)
+  if (rgbMatch) {
+    const [, r, g, b] = rgbMatch
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  const hexMatch = trimmed.match(/^#([0-9a-f]{3,8})$/i)
+  if (hexMatch) {
+    const hex = hexMatch[1]
+    const isShort = hex.length <= 4
+    const normalize = (value: string) =>
+      isShort ? parseInt(value + value, 16) : parseInt(value, 16)
+    const r = normalize(hex.slice(0, isShort ? 1 : 2))
+    const g = normalize(hex.slice(isShort ? 1 : 2, isShort ? 2 : 4))
+    const b = normalize(hex.slice(isShort ? 2 : 3, isShort ? 3 : 6))
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
+  }
+  return fallback
+}
+
 export default function WikiGraphPage() {
+  const { theme, systemTheme } = useTheme()
   const fgRef = useRef<ForceGraphInstance | null>(null)
   const lastZoomRef = useRef<number>(1)
   const lastTransformRef = useRef<{ x: number; y: number; k: number }>({ x: 0, y: 0, k: 1 })
@@ -97,6 +157,8 @@ export default function WikiGraphPage() {
   const [templateNode, setTemplateNode] = useState<WikiNode | null>(null)
   const [linkCreatorOpen, setLinkCreatorOpen] = useState<boolean>(false)
   const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const [isDark, setIsDark] = useState<boolean>(false)
+  const [themeColors, setThemeColors] = useState<ThemeColors>(LIGHT_FALLBACK)
 
   const restoreView = useCallback(
     (options: { zoom?: boolean; center?: boolean } = { zoom: true, center: true }) => {
@@ -298,6 +360,30 @@ export default function WikiGraphPage() {
     setIsAdmin(isAdminSync())
   }, [loadGraphData])
 
+  // 根据主题更新图谱颜色
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const resolvedTheme = theme === 'system' ? systemTheme : theme
+    const nextIsDark =
+      resolvedTheme === 'dark' || document.documentElement.classList.contains('dark')
+    setIsDark(nextIsDark)
+
+    const styles = getComputedStyle(document.documentElement)
+    const fallback = nextIsDark ? DARK_FALLBACK : LIGHT_FALLBACK
+    const getVar = (name: string) => styles.getPropertyValue(`--${name}`).trim()
+    setThemeColors({
+      background: getVar('background') || fallback.background,
+      foreground: getVar('foreground') || fallback.foreground,
+      card: getVar('card') || fallback.card,
+      cardForeground: getVar('card-foreground') || fallback.cardForeground,
+      mutedForeground: getVar('muted-foreground') || fallback.mutedForeground,
+      border: getVar('border') || fallback.border,
+      primary: getVar('primary') || fallback.primary,
+      ring: getVar('ring') || fallback.ring,
+      accent: getVar('accent') || fallback.accent,
+    })
+  }, [theme, systemTheme])
+
   // 缓存邻居节点集合，避免在 nodeCanvasObject 中重复计算
   const neighborIds = useMemo(() => {
     if (!activeNode) return new Set<string>()
@@ -384,8 +470,41 @@ export default function WikiGraphPage() {
     return { nodes: fNodes, links: fLinks }
   }, [nodes, links, query, showNeighborsOnly, activeNode])
 
+  const graphPalette = useMemo(() => {
+    const fallback = isDark ? DARK_FALLBACK : LIGHT_FALLBACK
+    const mutedLink = withAlpha(
+      themeColors.mutedForeground || fallback.mutedForeground,
+      0.35,
+      isDark ? 'rgba(148, 163, 184, 0.35)' : 'rgba(203, 213, 225, 0.3)'
+    )
+    const activeLink = withAlpha(
+      themeColors.primary || fallback.primary,
+      0.95,
+      isDark ? 'rgba(96, 165, 250, 0.95)' : 'rgba(37, 99, 235, 0.95)'
+    )
+    return {
+      background: themeColors.background || fallback.background,
+      nodeDefault: themeColors.foreground || fallback.foreground,
+      nodeActive: themeColors.primary || fallback.primary,
+      nodeNeighbor: themeColors.ring || fallback.ring,
+      nodeHover: themeColors.accent || fallback.accent,
+      labelDefault: themeColors.mutedForeground || fallback.mutedForeground,
+      labelActive: themeColors.primary || fallback.primary,
+      labelNeighbor: themeColors.ring || fallback.ring,
+      linkMuted: mutedLink,
+      linkActive: activeLink,
+    }
+  }, [isDark, themeColors])
+
   return (
-    <div style={{ position: 'relative', height: '100%' }}>
+    <div
+      style={{
+        position: 'relative',
+        height: '100%',
+        background: themeColors.background,
+        color: themeColors.foreground,
+      }}
+    >
       {loading && (
         <div
           style={{
@@ -394,10 +513,11 @@ export default function WikiGraphPage() {
             left: '50%',
             transform: 'translate(-50%, -50%)',
             zIndex: 100,
-            background: 'rgba(255, 255, 255, 0.9)',
+            background: themeColors.card,
             padding: '20px 40px',
             borderRadius: 8,
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+            boxShadow: isDark ? '0 6px 18px rgba(0,0,0,0.45)' : '0 4px 12px rgba(0,0,0,0.1)',
+            border: `1px solid ${themeColors.border}`,
           }}
         >
           加载中...
@@ -427,9 +547,11 @@ export default function WikiGraphPage() {
             placeholder="搜索节点（标题/标签/摘要）"
             style={{
               padding: '8px 10px',
-              border: '1px solid #e5e7eb',
+              border: `1px solid ${themeColors.border}`,
               borderRadius: 8,
               minWidth: 260,
+              background: themeColors.card,
+              color: themeColors.foreground,
             }}
           />
           {query && (
@@ -438,7 +560,13 @@ export default function WikiGraphPage() {
                 setQuery('')
                 setShowNeighborsOnly(false)
               }}
-              style={{ padding: '8px 10px', border: '1px solid #e5e7eb', borderRadius: 8 }}
+              style={{
+                padding: '8px 10px',
+                border: `1px solid ${themeColors.border}`,
+                borderRadius: 8,
+                background: themeColors.card,
+                color: themeColors.foreground,
+              }}
             >
               清空
             </button>
@@ -455,7 +583,7 @@ export default function WikiGraphPage() {
                 }}
                 style={{
                   padding: '8px 10px',
-                  border: '1px solid #e5e7eb',
+                  border: `1px solid ${themeColors.border}`,
                   borderRadius: 8,
                   background: '#10b981',
                   color: '#ffffff',
@@ -474,7 +602,7 @@ export default function WikiGraphPage() {
                 }}
                 style={{
                   padding: '8px 10px',
-                  border: '1px solid #e5e7eb',
+                  border: `1px solid ${themeColors.border}`,
                   borderRadius: 8,
                   background: '#8b5cf6',
                   color: '#ffffff',
@@ -510,7 +638,7 @@ export default function WikiGraphPage() {
                     }}
                     style={{
                       padding: '8px 10px',
-                      border: '1px solid #e5e7eb',
+                      border: `1px solid ${themeColors.border}`,
                       borderRadius: 8,
                       background: '#f59e0b',
                       color: '#ffffff',
@@ -544,7 +672,7 @@ export default function WikiGraphPage() {
                     }}
                     style={{
                       padding: '8px 10px',
-                      border: '1px solid #e5e7eb',
+                      border: `1px solid ${themeColors.border}`,
                       borderRadius: 8,
                       background: '#ef4444',
                       color: '#ffffff',
@@ -580,7 +708,7 @@ export default function WikiGraphPage() {
                   }}
                   style={{
                     padding: '8px 10px',
-                    border: '1px solid #e5e7eb',
+                    border: `1px solid ${themeColors.border}`,
                     borderRadius: 8,
                     background: '#2563eb',
                     color: '#ffffff',
@@ -597,10 +725,10 @@ export default function WikiGraphPage() {
                 }}
                 style={{
                   padding: '8px 10px',
-                  border: '1px solid #e5e7eb',
+                  border: `1px solid ${themeColors.border}`,
                   borderRadius: 8,
-                  background: '#ffffff',
-                  color: '#111827',
+                  background: themeColors.card,
+                  color: themeColors.foreground,
                   cursor: 'pointer',
                 }}
               >
@@ -618,7 +746,7 @@ export default function WikiGraphPage() {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               textAlign: 'center',
-              color: '#64748b',
+              color: themeColors.mutedForeground,
             }}
           >
             <div style={{ fontSize: 18, marginBottom: 8 }}>图谱为空</div>
@@ -628,7 +756,6 @@ export default function WikiGraphPage() {
           </div>
         )}
         <ForceGraph2D
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           ref={fgRef as React.RefObject<any>}
           graphData={filtered}
           nodeId="id"
@@ -636,8 +763,7 @@ export default function WikiGraphPage() {
           linkDirectionalArrowLength={4}
           linkColor={(l: unknown) => {
             const link = l as LinkData
-            const mutedColor = 'rgba(203, 213, 225, 0.3)' // slate-200
-            if (!activeNode) return mutedColor
+            if (!activeNode) return graphPalette.linkMuted
             const s =
               typeof link.source === 'string' || typeof link.source === 'number'
                 ? String(link.source)
@@ -647,9 +773,9 @@ export default function WikiGraphPage() {
                 ? String(link.target)
                 : String((link.target as NodeData)?.id)
             if (s === String(activeNode.id) || t === String(activeNode.id)) {
-              return 'rgba(37, 99, 235, 0.95)' // vivid blue for active connections
+              return graphPalette.linkActive
             }
-            return mutedColor
+            return graphPalette.linkMuted
           }}
           linkWidth={(l: unknown) => {
             const link = l as LinkData
@@ -666,7 +792,7 @@ export default function WikiGraphPage() {
             if (s === String(activeNode.id) || t === String(activeNode.id)) return 3
             return mutedWidth
           }}
-          backgroundColor="#ffffff"
+          backgroundColor={graphPalette.background}
           onNodeHover={n => setHoverNode((n as NodeData) ?? null)}
           onNodeClick={n => {
             // 单击：选中节点，如果重复点击已选中的节点则取消选中
@@ -744,13 +870,13 @@ export default function WikiGraphPage() {
             ctx.arc(n.x ?? 0, n.y ?? 0, radius, 0, 2 * Math.PI, false)
 
             if (isActive) {
-              ctx.fillStyle = '#2563eb'
+              ctx.fillStyle = graphPalette.nodeActive
             } else if (isNeighbor) {
-              ctx.fillStyle = '#60a5fa'
+              ctx.fillStyle = graphPalette.nodeNeighbor
             } else if (isHover) {
-              ctx.fillStyle = '#0ea5e9'
+              ctx.fillStyle = graphPalette.nodeHover
             } else {
-              ctx.fillStyle = '#111827'
+              ctx.fillStyle = graphPalette.nodeDefault
             }
             ctx.fill()
 
@@ -758,11 +884,11 @@ export default function WikiGraphPage() {
             ctx.textAlign = 'left'
             ctx.textBaseline = 'middle'
             if (isActive) {
-              ctx.fillStyle = '#1e40af'
+              ctx.fillStyle = graphPalette.labelActive
             } else if (isNeighbor) {
-              ctx.fillStyle = '#3b82f6'
+              ctx.fillStyle = graphPalette.labelNeighbor
             } else {
-              ctx.fillStyle = '#334155'
+              ctx.fillStyle = graphPalette.labelDefault
             }
             ctx.fillText(label, (n.x ?? 0) + 6, n.y ?? 0)
           }}
@@ -818,7 +944,7 @@ export default function WikiGraphPage() {
             style={{
               position: 'fixed',
               inset: 0,
-              background: 'rgba(0,0,0,0.3)',
+              background: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.3)',
               zIndex: 50,
             }}
           />
@@ -830,9 +956,9 @@ export default function WikiGraphPage() {
               transform: 'translate(-50%, -50%)',
               width: 'min(880px, 92vw)',
               maxHeight: '85vh',
-              background: '#ffffff',
+              background: themeColors.card,
               borderRadius: 12,
-              boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+              boxShadow: isDark ? '0 16px 50px rgba(0,0,0,0.6)' : '0 10px 40px rgba(0,0,0,0.2)',
               zIndex: 51,
               display: 'flex',
               flexDirection: 'column',
@@ -844,7 +970,7 @@ export default function WikiGraphPage() {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 padding: '14px 16px',
-                borderBottom: '1px solid #e5e7eb',
+                borderBottom: `1px solid ${themeColors.border}`,
                 gap: 8,
               }}
             >
@@ -854,7 +980,13 @@ export default function WikiGraphPage() {
               <Dialog.Close asChild>
                 <button
                   aria-label="Close"
-                  style={{ padding: '6px 8px', border: '1px solid #e5e7eb', borderRadius: 6 }}
+                  style={{
+                    padding: '6px 8px',
+                    border: `1px solid ${themeColors.border}`,
+                    borderRadius: 6,
+                    background: themeColors.card,
+                    color: themeColors.foreground,
+                  }}
                 >
                   关闭
                 </button>
@@ -877,8 +1009,9 @@ export default function WikiGraphPage() {
                       style={{
                         fontSize: 12,
                         padding: '2px 6px',
-                        border: '1px solid #e5e7eb',
+                        border: `1px solid ${themeColors.border}`,
                         borderRadius: 999,
+                        color: themeColors.mutedForeground,
                       }}
                     >
                       #{t}
@@ -887,28 +1020,32 @@ export default function WikiGraphPage() {
                 </div>
               ) : null}
               {activeNode?.summary ? (
-                <p style={{ color: '#475569' }}>{activeNode.summary}</p>
+                <p style={{ color: themeColors.mutedForeground }}>{activeNode.summary}</p>
               ) : null}
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 12 }}>
+              <div style={{ borderTop: `1px solid ${themeColors.border}`, paddingTop: 12 }}>
                 {loadingArticle ? (
-                  <div style={{ color: '#64748b' }}>加载中...</div>
+                  <div style={{ color: themeColors.mutedForeground }}>加载中...</div>
                 ) : articleError ? (
                   <div style={{ color: '#dc2626' }}>加载失败：{articleError}</div>
                 ) : articleHtml ? (
                   <div
-                    className="prose prose-slate max-w-none"
+                    className={`prose prose-slate max-w-none ${isDark ? 'prose-invert' : ''}`}
                     dangerouslySetInnerHTML={{ __html: articleHtml }}
                   />
                 ) : articleJson ? (
                   <ReadonlyEditor content={articleJson} />
                 ) : articleRaw ? (
                   <pre
-                    style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', color: '#334155' }}
+                    style={{
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
+                      color: themeColors.foreground,
+                    }}
                   >
                     {articleRaw}
                   </pre>
                 ) : (
-                  <div style={{ color: '#64748b' }}>点击节点以加载文章</div>
+                  <div style={{ color: themeColors.mutedForeground }}>点击节点以加载文章</div>
                 )}
               </div>
             </div>
@@ -980,7 +1117,7 @@ export default function WikiGraphPage() {
             }}
             style={{
               padding: '8px 10px',
-              border: '1px solid #e5e7eb',
+              border: `1px solid ${themeColors.border}`,
               borderRadius: 8,
               background: '#f59e0b',
               color: '#ffffff',
@@ -1010,7 +1147,7 @@ export default function WikiGraphPage() {
             }}
             style={{
               padding: '8px 10px',
-              border: '1px solid #e5e7eb',
+              border: `1px solid ${themeColors.border}`,
               borderRadius: 8,
               background: '#ef4444',
               color: '#ffffff',

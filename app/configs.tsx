@@ -7,6 +7,7 @@ import {
   BookOpen,
   Gamepad2,
   MessageSquare,
+  Sparkles,
 } from 'lucide-react'
 
 // 控制台Logo文本
@@ -76,6 +77,14 @@ const TILES = [
     icon: <BookOpen />,
     href: '/note',
     color: '#1976D2',
+    needLogin: true,
+  },
+  {
+    name: 'ai',
+    nameKey: 'nav.ai',
+    icon: <Sparkles />,
+    href: '/ai',
+    color: '#7C3AED',
     needLogin: true,
   },
   {
@@ -175,6 +184,7 @@ export const configs = {
       "chat file file"
       "chat tool lab"
       "nav note game"
+      "ai ai ai"
     `,
   },
   games: GAMES,

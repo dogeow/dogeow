@@ -9,6 +9,7 @@ export const ja = {
   'nav.tool': 'ツール',
   'nav.nav': 'ナビ',
   'nav.note': 'ノート',
+  'nav.ai': 'AI',
   'nav.game': 'ゲーム',
   'nav.chat': 'チャット',
   'nav.about': 'について',

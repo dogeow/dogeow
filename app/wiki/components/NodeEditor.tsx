@@ -230,13 +230,13 @@ export default function NodeEditor({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 z-50 flex max-h-[90vh] w-[90vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg bg-white shadow-lg">
-          <div className="flex items-center justify-between border-b p-4">
+        <Dialog.Content className="border-border bg-background text-foreground fixed top-1/2 left-1/2 z-50 flex max-h-[90vh] w-[90vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border shadow-lg">
+          <div className="border-border flex items-center justify-between border-b p-4">
             <Dialog.Title className="text-lg font-semibold">
               {node ? '编辑节点' : '新建节点'}
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="rounded p-1 hover:bg-gray-100">
+              <button className="hover:bg-muted rounded p-1">
                 <X className="h-5 w-5" />
               </button>
             </Dialog.Close>
@@ -250,7 +250,7 @@ export default function NodeEditor({
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 placeholder="请输入节点标题"
-                className="w-full"
+                className="bg-background text-foreground placeholder:text-muted-foreground w-full"
               />
             </div>
 
@@ -268,7 +268,7 @@ export default function NodeEditor({
                     }
                   }}
                   placeholder="输入标签后按回车"
-                  className="flex-1"
+                  className="bg-background text-foreground placeholder:text-muted-foreground flex-1"
                 />
                 <Button onClick={handleAddTag} variant="outline">
                   添加
@@ -279,10 +279,13 @@ export default function NodeEditor({
                   {tags.map(tag => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 rounded bg-blue-100 px-2 py-1 text-sm text-blue-800"
+                      className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded px-2 py-1 text-sm"
                     >
                       {tag}
-                      <button onClick={() => handleRemoveTag(tag)} className="hover:text-blue-600">
+                      <button
+                        onClick={() => handleRemoveTag(tag)}
+                        className="hover:text-primary/80"
+                      >
                         <X className="h-3 w-3" />
                       </button>
                     </span>
@@ -298,7 +301,7 @@ export default function NodeEditor({
                 value={summary}
                 onChange={e => setSummary(e.target.value)}
                 placeholder="请输入节点摘要"
-                className="min-h-[80px] w-full resize-y rounded-md border p-2"
+                className="border-border bg-background text-foreground placeholder:text-muted-foreground min-h-[80px] w-full resize-y rounded-md border p-2"
               />
             </div>
 
@@ -310,7 +313,7 @@ export default function NodeEditor({
           </div>
 
           {/* 底部按钮 */}
-          <div className="flex justify-end gap-2 border-t p-4">
+          <div className="border-border flex justify-end gap-2 border-t p-4">
             <Dialog.Close asChild>
               <Button variant="outline" disabled={isSaving}>
                 取消
