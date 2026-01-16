@@ -32,24 +32,27 @@ interface MessageItemProps {
   onReact?: (messageId: number, emoji: string) => void
 }
 
-function MessageItem({ message, onReply, onReact }: MessageItemProps) {
+const MessageItem = React.memo(function MessageItem({
+  message,
+  onReply,
+  onReact,
+}: MessageItemProps) {
   const mentionInfo = useMentionDetection(message.message)
-  const isImageUrl = useMemo(() => {
-    const trimmed = message.message.trim()
-    return /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(trimmed)
-  }, [message.message])
+  const isImageUrl = useMemo(
+    () => /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(message.message.trim()),
+    [message.message]
+  )
 
   return (
     <div
       className={cn(
         'group/message relative rounded-lg p-3 transition-colors',
-        'md:pr-12', // Add right padding for desktop menu
+        'md:pr-12',
         mentionInfo.hasCurrentUserMention
           ? 'bg-yellow-50 dark:bg-yellow-950/20'
           : 'hover:bg-muted/50'
       )}
     >
-      {/* Message content */}
       <div className="prose prose-sm max-w-none">
         {isImageUrl ? (
           <img
@@ -62,29 +65,30 @@ function MessageItem({ message, onReply, onReact }: MessageItemProps) {
           <MentionHighlight text={message.message} />
         )}
       </div>
-
-      {/* Message interactions */}
       <MessageInteractions message={message} onReply={onReply} onReact={onReact} />
     </div>
   )
-}
+})
 
-function MessageGroup({ messages, user, timestamp, onReply, onReact }: MessageGroupProps) {
+const MessageGroup = React.memo(function MessageGroup({
+  messages,
+  user,
+  timestamp,
+  onReply,
+  onReact,
+}: MessageGroupProps) {
   const { t } = useTranslation()
-
-  const formatTimestamp = (date: Date) => {
-    if (isToday(date)) {
-      return format(date, 'HH:mm')
-    } else if (isYesterday(date)) {
-      return t('chat.yesterday', 'Yesterday')
-    } else {
+  const formatTimestamp = useCallback(
+    (date: Date) => {
+      if (isToday(date)) return format(date, 'HH:mm')
+      if (isYesterday(date)) return t('chat.yesterday', 'Yesterday')
       return format(date, 'MMM d')
-    }
-  }
+    },
+    [t]
+  )
 
   return (
     <div className="group relative">
-      {/* User info and timestamp */}
       <div className="mb-2 flex items-center gap-2">
         <div className="bg-primary text-primary-foreground flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium">
           {user.name.charAt(0).toUpperCase()}
@@ -94,8 +98,6 @@ function MessageGroup({ messages, user, timestamp, onReply, onReact }: MessageGr
           <span className="text-muted-foreground text-xs">{formatTimestamp(timestamp)}</span>
         </div>
       </div>
-
-      {/* Messages */}
       <div className="space-y-1">
         {messages.map(message => (
           <MessageItem key={message.id} message={message} onReply={onReply} onReact={onReact} />
@@ -103,7 +105,7 @@ function MessageGroup({ messages, user, timestamp, onReply, onReact }: MessageGr
       </div>
     </div>
   )
-}
+})
 
 function EmptyState() {
   const { t } = useTranslation()
@@ -129,103 +131,70 @@ function EmptyState() {
 
 function MessageListContent({ roomId, className, onReply, searchQuery }: MessageListProps) {
   const { t } = useTranslation()
-  const roomKey = roomId.toString()
-
-  // 使用具体的选择器来确保正确订阅消息变化
+  const roomKey = useMemo(() => roomId.toString(), [roomId])
   const isLoading = useChatStore(state => state.isLoading)
   const loadMessages = useChatStore(state => state.loadMessages)
-
-  // 稳定loadMessages函数引用
-  const stableLoadMessages = useCallback(
-    (roomId: number) => {
-      return loadMessages(roomId)
-    },
-    [loadMessages]
-  )
-
-  // 直接订阅整个 messages 对象，然后在组件内部过滤
   const messages = useChatStore(state => state.messages)
+  const messagesForRoom = useMemo(() => messages[roomKey] || [], [messages, roomKey])
 
-  // 使用 useMemo 来获取当前房间的消息，避免无限循环
-  const roomMessages = useMemo(() => {
-    const roomMessages = messages[roomKey] || []
-
-    return roomMessages
-  }, [messages, roomKey])
-
-  // 过滤消息基于搜索查询
   const filteredMessages = useMemo(() => {
-    if (!searchQuery || searchQuery.trim() === '') {
-      return roomMessages
-    }
-
+    if (!searchQuery || !searchQuery.trim()) return messagesForRoom
     const query = searchQuery.toLowerCase().trim()
-    return roomMessages.filter(
-      message =>
-        message.message.toLowerCase().includes(query) ||
-        message.user.name.toLowerCase().includes(query)
+    return messagesForRoom.filter(
+      m => m.message.toLowerCase().includes(query) || m.user.name.toLowerCase().includes(query)
     )
-  }, [roomMessages, searchQuery])
+  }, [searchQuery, messagesForRoom])
 
   const previousMessageCountRef = useRef(0)
   const isUserScrollingRef = useRef(false)
   const lastScrollTopRef = useRef(0)
 
-  // Handle message reactions
+  const stableLoadMessages = useCallback((id: number) => loadMessages(id), [loadMessages])
+
   const handleReact = useCallback((messageId: number, emoji: string) => {
-    // In a real app, this would send a reaction to the server
-    console.log('React to message', messageId, 'with', emoji)
     // TODO: Implement actual reaction functionality
+    if (process.env.NODE_ENV === 'development') {
+      // 可以根据需要打开调试日志
+      console.log('React to message', messageId, 'with', emoji)
+    }
   }, [])
 
-  // 获取滚动容器（由父组件控制）
-  const getScrollContainer = useCallback(() => {
-    return document.querySelector('.chat-messages-mobile') as HTMLDivElement | null
-  }, [])
+  const getScrollContainer = useCallback(
+    () => document.querySelector('.chat-messages-mobile') as HTMLDivElement | null,
+    []
+  )
 
-  // Group messages by user and time
+  // 分组，优化分组逻辑与类型推断
   const groupedMessages = useMemo(() => {
-    if (filteredMessages.length === 0) return []
-
-    const groups: Array<{
-      type: 'messages'
+    if (!filteredMessages.length) return []
+    const groups: {
       messages: ChatMessage[]
       user: { id: number; name: string; email: string }
       timestamp: Date
-    }> = []
+    }[] = []
 
-    let currentGroup: (typeof groups)[0] | null = null
+    let curGroup: (typeof groups)[number] | null = null
+    for (const m of filteredMessages) {
+      const curDate = new Date(m.created_at)
+      const isNewGroup =
+        !curGroup ||
+        curGroup.user.id !== m.user.id ||
+        Math.abs(curDate.getTime() - curGroup.timestamp.getTime()) > 5 * 60 * 1000
 
-    filteredMessages.forEach(message => {
-      const messageDate = new Date(message.created_at)
-      const timeDiff = currentGroup
-        ? Math.abs(messageDate.getTime() - currentGroup.timestamp.getTime())
-        : Infinity
-
-      // Start new group if:
-      // 1. Different user
-      // 2. More than 5 minutes apart
-      // 3. First message
-      if (!currentGroup || currentGroup.user.id !== message.user.id || timeDiff > 5 * 60 * 1000) {
-        currentGroup = {
-          type: 'messages',
-          messages: [message],
-          user: message.user,
-          timestamp: messageDate,
-        }
-        groups.push(currentGroup)
-      } else {
-        currentGroup.messages.push(message)
+      if (isNewGroup) {
+        curGroup = { messages: [m], user: m.user, timestamp: curDate }
+        groups.push(curGroup)
+      } else if (curGroup) {
+        curGroup.messages.push(m)
       }
-    })
-
+    }
     return groups
   }, [filteredMessages])
 
-  // Debug: Log message data (only in development and with throttling)
+  // Debug log
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('🔥 MessageList: Messages changed for room', roomId, ':', {
+      console.log('🔥 MessageList: Messages changed for room', roomId, {
         count: filteredMessages.length,
         messages: filteredMessages.map(m => ({
           id: m.id,
@@ -234,86 +203,60 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
         })),
       })
     }
-  }, [filteredMessages, roomId]) // 恢复完整依赖，但使用useMemo优化filteredMessages
+  }, [filteredMessages, roomId])
 
-  // Load messages on mount
   useEffect(() => {
     if (roomId) {
       stableLoadMessages(roomId).catch(error => {
-        // 安全地处理错误，避免直接输出复杂对象
-        if (error instanceof Error) {
-          console.error('Failed to load messages:', error.message)
-        } else if (error && typeof error === 'object') {
-          console.error('Failed to load messages:', {
+        let errMsg: string
+        if (error instanceof Error) errMsg = error.message
+        else if (error && typeof error === 'object')
+          errMsg = JSON.stringify({
             type: typeof error,
-            message: error.message || 'Unknown error',
-            status: error.status || 'No status',
-            code: error.code || 'No code',
+            message: (error as any).message || 'Unknown error',
+            status: (error as any).status || 'No status',
+            code: (error as any).code || 'No code',
           })
-        } else {
-          console.error('Failed to load messages:', String(error))
-        }
+        else errMsg = String(error)
+        console.error('Failed to load messages:', errMsg)
       })
     }
   }, [roomId, stableLoadMessages])
 
-  // 监听滚动事件和新消息
   useEffect(() => {
     const scrollContainer = getScrollContainer()
     if (!scrollContainer) return
 
-    const currentCount = filteredMessages.length
-    const previousCount = previousMessageCountRef.current
-
-    // 滚动事件处理
     const handleScroll = () => {
-      const currentScrollTop = scrollContainer.scrollTop
-      const scrollHeight = scrollContainer.scrollHeight
-      const clientHeight = scrollContainer.clientHeight
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer
+      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 50
 
-      // 检测用户是否手动滚动（向上滚动查看历史消息）
-      const isNearBottom = currentScrollTop + clientHeight >= scrollHeight - 50
-
-      if (currentScrollTop < lastScrollTopRef.current) {
-        // 用户向上滚动
+      if (scrollTop < lastScrollTopRef.current) {
         isUserScrollingRef.current = true
       } else if (isNearBottom) {
-        // 用户滚动到底部附近
         isUserScrollingRef.current = false
       }
-
-      lastScrollTopRef.current = currentScrollTop
+      lastScrollTopRef.current = scrollTop
     }
 
     scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
 
-    if (currentCount > previousCount) {
-      // New messages added, scroll to bottom
-      console.log('🔥 MessageList: 检测到新消息，消息数量从', previousCount, '增加到', currentCount)
-      console.log('🔥 MessageList: 用户是否在手动滚动:', isUserScrollingRef.current)
+    const currentCount = filteredMessages.length
+    const prevCount = previousMessageCountRef.current
 
-      // 只有在用户没有手动滚动时才自动滚动到底部
-      if (!isUserScrollingRef.current) {
-        // 立即滚动到底部，不等待状态更新
-        requestAnimationFrame(() => {
-          if (scrollContainer) {
-            scrollContainer.scrollTop = scrollContainer.scrollHeight
-            console.log(
-              '🔥 MessageList: 立即滚动到底部，scrollHeight:',
-              scrollContainer.scrollHeight
-            )
+    if (currentCount > prevCount && !isUserScrollingRef.current) {
+      requestAnimationFrame(() => {
+        if (scrollContainer) {
+          scrollContainer.scrollTop = scrollContainer.scrollHeight
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔥 MessageList: auto scroll to bottom', scrollContainer.scrollHeight)
           }
-        })
-      } else {
-        console.log('🔥 MessageList: 用户正在查看历史消息，不自动滚动')
-      }
+        }
+      })
     }
 
     previousMessageCountRef.current = currentCount
-
-    return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll)
-    }
+    return () => scrollContainer.removeEventListener('scroll', handleScroll)
   }, [filteredMessages.length, getScrollContainer])
 
   if (filteredMessages.length === 0 && !isLoading) {
@@ -326,7 +269,6 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
 
   return (
     <div className={cn('p-2', className)}>
-      {/* Load more indicator */}
       {isLoading && (
         <div className="flex justify-center py-4">
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -335,24 +277,17 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
           </div>
         </div>
       )}
-
-      {/* Messages */}
       <div className="space-y-4">
-        {groupedMessages.map((group, index) => {
-          if (group.type === 'messages' && group.messages && group.user) {
-            return (
-              <MessageGroup
-                key={`group-${index}`}
-                messages={group.messages}
-                user={group.user}
-                timestamp={group.timestamp!}
-                onReply={onReply}
-                onReact={handleReact}
-              />
-            )
-          }
-          return null
-        })}
+        {groupedMessages.map((group, idx) => (
+          <MessageGroup
+            key={`group-${group.user.id}-${group.timestamp.getTime()}-${idx}`}
+            messages={group.messages}
+            user={group.user}
+            timestamp={group.timestamp}
+            onReply={onReply}
+            onReact={handleReact}
+          />
+        ))}
       </div>
     </div>
   )
