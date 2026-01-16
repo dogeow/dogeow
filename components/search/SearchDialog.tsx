@@ -572,7 +572,7 @@ export function SearchDialog({
       <DialogContent
         className={`w-full max-w-[95vw] sm:max-w-[550px] ${
           keyboardOpen
-            ? 'fixed top-auto right-2 bottom-2 left-2 h-[50vh] max-h-[50vh] translate-x-0 translate-y-0'
+            ? 'fixed top-2 right-2 left-2 h-[60svh] max-h-[60svh] translate-x-0 translate-y-0'
             : 'h-[70vh] max-h-[80vh]'
         } gap-0 p-0`}
       >

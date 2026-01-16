@@ -134,7 +134,10 @@ export function PlaylistDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="mx-3 flex max-h-[80vh] w-[calc(100%-1.5rem)] flex-col overflow-hidden sm:mx-0 sm:w-full sm:max-w-md">
+      <DialogContent
+        className="flex max-h-[80vh] w-[calc(100vw-1.5rem)] flex-col overflow-hidden sm:w-full sm:max-w-md"
+        onOpenAutoFocus={event => event.preventDefault()}
+      >
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Music className="h-5 w-5" />
@@ -154,7 +157,10 @@ export function PlaylistDialog({
         </div>
 
         {/* 播放列表 */}
-        <div className="flex-1 space-y-0.5 overflow-y-auto">
+        <div
+          className="flex-1 space-y-0.5 overflow-y-auto pr-2"
+          style={{ scrollbarGutter: 'stable' }}
+        >
           {filteredTracks.length === 0 ? (
             <div className="text-muted-foreground py-8 text-center">
               {searchTerm ? '没有找到匹配的歌曲' : '播放列表为空'}
