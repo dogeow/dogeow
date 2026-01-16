@@ -76,7 +76,7 @@ export function ChatHeader({
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
 
   // useRef做为缓存，防止notificationService重复初始化
-  const notificationServiceRef = useRef<NotificationService>()
+  const notificationServiceRef = useRef<NotificationService | null>(null)
 
   // 获取通知服务实例 - 优化：避免重复创建
   const getNotificationService = useCallback(() => {

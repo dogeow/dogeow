@@ -58,12 +58,12 @@ const RoomItem = ({ room, isSelected, onClick, isVisible }: RoomItemProps) => {
           />
           <AvatarFallback className="text-xs">{room.name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
-        {room.online_count > 0 && (
+        {(room.online_count ?? 0) > 0 && (
           <Badge
             variant="secondary"
             className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
           >
-            {room.online_count}
+            {room.online_count ?? 0}
           </Badge>
         )}
       </div>
