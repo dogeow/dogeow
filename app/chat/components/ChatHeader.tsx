@@ -80,7 +80,12 @@ export function ChatHeader({
     () => onlineUsers[room.id.toString()] || [],
     [onlineUsers, room.id]
   )
-  const onlineCount = roomOnlineUsers.length
+  const onlineCount = useMemo(() => {
+    const storeCount = roomOnlineUsers.length
+    const roomCount = room.online_count ?? 0
+    const connectedSelf = isConnected ? 1 : 0
+    return Math.max(storeCount, roomCount, connectedSelf)
+  }, [roomOnlineUsers.length, room.online_count, isConnected])
 
   // 获取通知服务实例
   const notificationService = useMemo(() => NotificationService.getInstance(), [])
@@ -193,13 +198,19 @@ export function ChatHeader({
               <DropdownMenuSeparator />
 
               {/* 通知设置 */}
-              <DropdownMenuItem onClick={() => setIsNotificationSettingsOpen(true)}>
+              <DropdownMenuItem
+                onClick={() => setIsNotificationSettingsOpen(true)}
+                className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
+              >
                 <Bell className="mr-2 h-4 w-4" />
                 {t('chat.notification_settings', '通知设置')}
               </DropdownMenuItem>
 
               {/* 房间信息 */}
-              <DropdownMenuItem onClick={() => setIsRoomInfoOpen(true)}>
+              <DropdownMenuItem
+                onClick={() => setIsRoomInfoOpen(true)}
+                className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
+              >
                 <Info className="mr-2 h-4 w-4" />
                 {t('chat.room_info', '房间信息')}
               </DropdownMenuItem>
@@ -239,7 +250,34 @@ export function ChatHeader({
           {/* 房间信息 */}
           <div className="flex min-w-0 items-center gap-1">
             <Hash className="text-muted-foreground h-4 w-4 shrink-0" />
-            <h1 className="truncate font-semibold">{room.name}</h1>
+            <div className="flex min-w-0 items-center gap-1">
+              <h1 className="truncate font-semibold">{room.name}</h1>
+              <span
+                className={`h-2 w-2 shrink-0 rounded-full ${
+                  isConnected
+                    ? 'bg-green-500'
+                    : connectionStatus === 'connecting'
+                      ? 'animate-pulse bg-yellow-500'
+                      : 'bg-red-500'
+                }`}
+                title={
+                  isConnected
+                    ? `已连接 (${connectionStatus})`
+                    : connectionStatus === 'connecting'
+                      ? `连接中... (${connectionStatus})`
+                      : `连接断开 (${connectionStatus})`
+                }
+                onClick={() => {
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('🔍 连接状态详情:', {
+                      isConnected,
+                      connectionStatus,
+                      timestamp: new Date().toLocaleTimeString(),
+                    })
+                  }
+                }}
+              />
+            </div>
             {room.description && (
               <Button
                 variant="ghost"
@@ -278,34 +316,6 @@ export function ChatHeader({
             </Button>
           )}
 
-          {/* 连接状态指示器 */}
-          <div
-            className={`h-2 w-2 rounded-full ${
-              isConnected
-                ? 'bg-green-500'
-                : connectionStatus === 'connecting'
-                  ? 'animate-pulse bg-yellow-500'
-                  : 'bg-red-500'
-            }`}
-            title={
-              isConnected
-                ? `已连接 (${connectionStatus})`
-                : connectionStatus === 'connecting'
-                  ? `连接中... (${connectionStatus})`
-                  : `连接断开 (${connectionStatus})`
-            }
-            onClick={() => {
-              // 开发环境下点击显示详细状态
-              if (process.env.NODE_ENV === 'development') {
-                console.log('🔍 连接状态详情:', {
-                  isConnected,
-                  connectionStatus,
-                  timestamp: new Date().toLocaleTimeString(),
-                })
-              }
-            }}
-          />
-
           {/* 设置下拉菜单 */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -319,13 +329,19 @@ export function ChatHeader({
               <DropdownMenuSeparator />
 
               {/* 通知设置 */}
-              <DropdownMenuItem onClick={() => setIsNotificationSettingsOpen(true)}>
+              <DropdownMenuItem
+                onClick={() => setIsNotificationSettingsOpen(true)}
+                className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
+              >
                 <Bell className="mr-2 h-4 w-4" />
                 {t('chat.notification_settings', '通知设置')}
               </DropdownMenuItem>
 
               {/* 房间信息 */}
-              <DropdownMenuItem onClick={() => setIsRoomInfoOpen(true)}>
+              <DropdownMenuItem
+                onClick={() => setIsRoomInfoOpen(true)}
+                className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
+              >
                 <Info className="mr-2 h-4 w-4" />
                 {t('chat.room_info', '房间信息')}
               </DropdownMenuItem>

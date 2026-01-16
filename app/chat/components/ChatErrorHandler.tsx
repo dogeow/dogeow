@@ -1,7 +1,5 @@
 'use client'
 
-import { useCallback, useMemo } from 'react'
-import ErrorFallback from './ErrorFallback'
 import type { ChatApiError } from '@/lib/api/chat-error-handler'
 
 interface ChatErrorHandlerProps {
@@ -14,61 +12,6 @@ interface ChatErrorHandlerProps {
   children: React.ReactNode
 }
 
-export default function ChatErrorHandler({
-  storeError,
-  componentError,
-  retryLastAction,
-  clearError,
-  clearComponentError,
-  retryAction,
-  children,
-}: ChatErrorHandlerProps) {
-  // 错误重试与清除
-  const handleRetryError = useCallback(() => {
-    if (storeError) {
-      retryAction(() => retryLastAction())
-      clearError()
-    }
-    if (componentError) {
-      clearComponentError()
-    }
-  }, [storeError, componentError, retryAction, retryLastAction, clearError, clearComponentError])
-
-  const handleClearError = useCallback(() => {
-    clearError()
-    clearComponentError()
-  }, [clearError, clearComponentError])
-
-  // 错误优先级处理
-  const currentError = useMemo(() => storeError || componentError, [storeError, componentError])
-
-  // 认证错误显示全屏，其它错误不强制打断聊天界面
-  if (currentError && currentError.type === 'authentication') {
-    return (
-      <ErrorFallback
-        error={currentError}
-        onRetry={handleRetryError}
-        onClearError={handleClearError}
-        variant="full"
-      />
-    )
-  }
-
-  return (
-    <>
-      {/* Error Banner */}
-      {currentError && currentError.type !== 'authentication' && currentError.type !== 'server' && (
-        <div className="border-b">
-          <ErrorFallback
-            error={currentError}
-            onRetry={handleRetryError}
-            onClearError={handleClearError}
-            variant="inline"
-            className="m-4"
-          />
-        </div>
-      )}
-      {children}
-    </>
-  )
+export default function ChatErrorHandler({ children }: ChatErrorHandlerProps) {
+  return <>{children}</>
 }

@@ -9,6 +9,7 @@ import {
   type ConnectionStatus,
   type ConnectionMonitor,
 } from '@/lib/websocket'
+import useChatStore from '@/app/chat/chatStore'
 import OfflineManager, {
   type OfflineState,
   type QueuedMessage,
@@ -539,18 +540,38 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
           }
         )
         if (!response.ok) {
+          const errorPayload = await response
+            .clone()
+            .json()
+            .catch(() => null)
+          const errorMessage =
+            typeof errorPayload?.message === 'string' ? errorPayload.message : response.statusText
+
           if (response.status === 403) {
+            const normalized = errorMessage.toLowerCase()
+            if (normalized.includes('mute')) {
+              const match = errorMessage.match(/until\s+([0-9:\-\s]+)/i)
+              const mutedUntil = match?.[1]?.trim()
+              useChatStore.getState().updateMuteStatus(true, mutedUntil, errorMessage || 'Muted')
+              return false
+            }
+
             const newToken = await authManager.refreshToken()
             if (newToken) return sendMessage(roomId, message)
             throw new Error('Authentication failed - token expired and refresh failed')
           }
-          throw new Error(`Failed to send message: ${response.statusText}`)
+
+          throw new Error(errorMessage || `Failed to send message: ${response.statusText}`)
         }
+
         const responseData = await response.json()
         onMessageSentSuccess?.(responseData.data)
         return true
       } catch (error) {
-        offlineManagerRef.current?.queueMessage(roomId, message)
+        const errorText = error instanceof Error ? error.message : ''
+        if (!errorText.toLowerCase().includes('mute')) {
+          offlineManagerRef.current?.queueMessage(roomId, message)
+        }
         onError?.({
           type: 'network',
           message: error instanceof Error ? error.message : 'Failed to send message',

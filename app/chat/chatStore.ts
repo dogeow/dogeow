@@ -133,6 +133,7 @@ interface ChatState {
   // 禁言操作
   updateMuteStatus: (isMuted: boolean, until?: string, reason?: string) => void
   checkMuteStatus: () => boolean
+  refreshMuteStatus: () => void
 
   // 工具方法
   setLoading: (loading: boolean) => void
@@ -901,17 +902,25 @@ const useChatStore = create<ChatState>()(
           const now = new Date()
 
           if (muteUntilDate <= now) {
-            // 如果时间已过，自动解除禁言
-            set({
-              isUserMuted: false,
-              muteUntil: null,
-              muteReason: null,
-            })
             return false
           }
         }
 
         return true
+      },
+
+      refreshMuteStatus: () => {
+        const { isUserMuted, muteUntil } = get()
+        if (!isUserMuted || !muteUntil) return
+
+        const muteUntilDate = new Date(muteUntil)
+        if (muteUntilDate <= new Date()) {
+          set({
+            isUserMuted: false,
+            muteUntil: null,
+            muteReason: null,
+          })
+        }
       },
 
       // 工具方法

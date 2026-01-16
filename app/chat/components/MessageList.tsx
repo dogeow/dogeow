@@ -34,6 +34,10 @@ interface MessageItemProps {
 
 function MessageItem({ message, onReply, onReact }: MessageItemProps) {
   const mentionInfo = useMentionDetection(message.message)
+  const isImageUrl = useMemo(() => {
+    const trimmed = message.message.trim()
+    return /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(trimmed)
+  }, [message.message])
 
   return (
     <div
@@ -47,7 +51,16 @@ function MessageItem({ message, onReply, onReact }: MessageItemProps) {
     >
       {/* Message content */}
       <div className="prose prose-sm max-w-none">
-        <MentionHighlight text={message.message} />
+        {isImageUrl ? (
+          <img
+            src={message.message.trim()}
+            alt="uploaded"
+            className="max-h-72 w-auto max-w-full rounded-lg"
+            loading="lazy"
+          />
+        ) : (
+          <MentionHighlight text={message.message} />
+        )}
       </div>
 
       {/* Message interactions */}

@@ -39,7 +39,7 @@ export function EmojiPicker({
             <button
               key={index}
               onClick={() => onSelectEmoji(emoji)}
-              className="hover:bg-muted focus:ring-primary touch-manipulation rounded p-2 text-lg focus:ring-2 focus:outline-none"
+              className="hover:bg-muted touch-manipulation rounded p-2 text-lg focus:outline-none"
               aria-label={`${t('chat.insert_emoji', 'Insert emoji')}: ${emoji}`}
               title={emoji}
             >

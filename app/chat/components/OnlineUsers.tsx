@@ -10,13 +10,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -38,7 +31,6 @@ import {
   UserX,
   Flag,
   Crown,
-  MoreVertical,
 } from 'lucide-react'
 import useChatStore from '@/app/chat/chatStore'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -199,7 +191,7 @@ function UserProfilePopover({
   return (
     <Popover>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-80" align="start">
+      <PopoverContent className="w-72 max-w-[calc(100vw-2rem)]" align="start">
         <div className="space-y-4">
           {/* 用户头部信息 */}
           <div className="flex items-center space-x-3">
@@ -321,17 +313,9 @@ const UserListItem = React.memo(function UserListItem({
       onBlockUser={onBlockUser}
       onReportUser={onReportUser}
     >
-      <div className="hover:bg-muted/30 group flex cursor-pointer items-center space-x-3 rounded-lg p-2 transition-colors">
+      <div className="bg-card hover:bg-muted/30 border-border flex cursor-pointer items-center space-x-3 rounded-xl border p-3 shadow-sm transition-colors">
         <div className="relative">
           <UserAvatar user={user} size="sm" />
-          {/* 在线状态指示器 */}
-          <div className="absolute -right-0.5 -bottom-0.5">
-            <Circle
-              className={`border-background h-2.5 w-2.5 rounded-full border-2 ${
-                user.is_online ? 'fill-green-500 text-green-500' : 'fill-gray-400 text-gray-400'
-              }`}
-            />
-          </div>
         </div>
 
         <div className="min-w-0 flex-1">
@@ -339,6 +323,7 @@ const UserListItem = React.memo(function UserListItem({
             <p className="truncate text-sm font-medium">{user.name}</p>
             {isAdmin && <Crown className="h-3 w-3 text-yellow-500" />}
             {isModerator && !isAdmin && <Shield className="h-3 w-3 text-blue-500" />}
+            {user.is_online && <Circle className="h-2 w-2 fill-green-500 text-green-500" />}
           </div>
           <div className="text-muted-foreground flex items-center space-x-1 text-xs">
             <Clock className="h-3 w-3" />
@@ -351,43 +336,7 @@ const UserListItem = React.memo(function UserListItem({
           </div>
         </div>
 
-        {/* 状态徽章和操作 */}
-        <div className="flex items-center space-x-1 opacity-0 transition-opacity group-hover:opacity-100">
-          <Badge
-            variant={user.is_online ? 'default' : 'secondary'}
-            className="px-1.5 py-0.5 text-xs"
-          >
-            {user.is_online ? t('status.online') : t('status.away')}
-          </Badge>
-
-          {/* 快捷操作下拉菜单 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="hover:bg-muted/50 h-6 w-6 p-0">
-                <MoreVertical className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleDirectMessage}>
-                <MessageCircle className="mr-2 h-4 w-4" />
-                {t('chat.direct_message')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleMentionUser}>
-                <AtSign className="mr-2 h-4 w-4" />
-                {t('chat.mention_user')}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleBlockUser}>
-                <UserX className="mr-2 h-4 w-4" />
-                {t('chat.block_user')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleReportUser}>
-                <Flag className="mr-2 h-4 w-4" />
-                {t('chat.report_user')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        {/* 预留操作区域（已移除更多菜单） */}
       </div>
     </UserProfilePopover>
   )

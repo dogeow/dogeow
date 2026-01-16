@@ -35,7 +35,7 @@ export default function MobileSheets({
     <div className="lg:hidden">
       {/* 房间列表 Sheet */}
       <Sheet open={isRoomListOpen} onOpenChange={onRoomListOpenChange}>
-        <SheetContent side="left" className="w-80 p-0">
+        <SheetContent side="left" className="w-72 p-0">
           <SheetHeader className="border-b p-4">
             <SheetTitle className="flex items-center gap-2">
               <MessageSquareIcon className="h-5 w-5" />
@@ -51,7 +51,7 @@ export default function MobileSheets({
       {/* 用户列表 Sheet */}
       {currentRoom && (
         <Sheet open={isUsersListOpen} onOpenChange={onUsersListOpenChange}>
-          <SheetContent side="right" className="w-80 p-0">
+          <SheetContent side="right" className="w-72 p-0">
             <SheetHeader className="border-b p-4">
               <SheetTitle className="flex items-center gap-2">
                 <UsersIcon className="h-5 w-5" />

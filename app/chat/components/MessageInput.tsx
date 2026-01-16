@@ -4,6 +4,8 @@
 
 import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { Textarea } from '@/components/ui/textarea'
+import { toast } from '@/components/ui/use-toast'
+import { apiRequest } from '@/lib/api'
 import { useTranslation } from '@/hooks/useTranslation'
 import useChatStore from '@/app/chat/chatStore'
 import {
@@ -25,6 +27,7 @@ import {
   MAX_MESSAGE_LENGTH,
   type MessageInputProps,
 } from './message-input'
+import { isImageFile } from './message-input/utils'
 
 export function MessageInput({
   roomId,
@@ -36,7 +39,8 @@ export function MessageInput({
   scrollContainerRef,
 }: MessageInputProps) {
   const { t } = useTranslation()
-  const { onlineUsers, muteUntil, muteReason, checkMuteStatus, messages } = useChatStore()
+  const { onlineUsers, muteUntil, muteReason, checkMuteStatus, refreshMuteStatus, messages } =
+    useChatStore()
   const inputContainerRef = useRef<HTMLDivElement>(null)
 
   // 使用自定义hooks管理状态和逻辑
@@ -90,15 +94,60 @@ export function MessageInput({
 
   // 处理文件输入变化
   const handleFileInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(e.target.files || [])
-      handleFileUpload(files)
+      if (files.length === 0) return
+
+      const imageFiles = files.filter(file => isImageFile(file))
+      const otherFiles = files.filter(file => !isImageFile(file))
+
+      if (imageFiles.length > 0) {
+        const isMuted = checkMuteStatus()
+        if (isMuted) {
+          const muteMessage = muteUntil
+            ? `您在此房间被静音直到 ${new Date(muteUntil).toLocaleString()}`
+            : '您在此房间被静音'
+          toast.error(muteMessage)
+        } else if (!isConnected) {
+          toast.error(t('chat.not_connected', 'Not connected to chat server'))
+        } else {
+          try {
+            const formData = new FormData()
+            imageFiles.forEach(file => formData.append('images[]', file))
+
+            const uploadedImages = await apiRequest<
+              Array<{ url: string; origin_url?: string; path?: string; origin_path?: string }>
+            >('upload/images', 'POST', formData)
+
+            await Promise.all(
+              uploadedImages.map(image => sendMessage(roomId.toString(), image.url))
+            )
+          } catch (error) {
+            console.error('图片上传失败:', error)
+            toast.error(t('chat.file_processing_error', 'Error processing file'))
+          }
+        }
+      }
+
+      if (otherFiles.length > 0) {
+        handleFileUpload(otherFiles)
+      }
+
       // 清空输入
       if (fileInputRef.current) {
         fileInputRef.current.value = ''
       }
     },
-    [handleFileUpload, fileInputRef]
+    [
+      handleFileUpload,
+      fileInputRef,
+      checkMuteStatus,
+      muteUntil,
+      isConnected,
+      sendMessage,
+      roomId,
+      t,
+    ]
   )
 
   // 处理消息输入变化
@@ -198,10 +247,14 @@ export function MessageInput({
     }
   }, [])
 
+  useEffect(() => {
+    refreshMuteStatus()
+  }, [refreshMuteStatus, muteUntil])
+
   return (
     <div
       ref={inputContainerRef}
-      className={`bg-background safe-area-inset-bottom relative border-t p-3 sm:p-4 ${className}`}
+      className={`bg-background safe-area-inset-bottom relative p-3 sm:p-4 ${className}`}
     >
       {/* 静音状态提示 */}
       {checkMuteStatus() && <MuteStatusAlert muteUntil={muteUntil} muteReason={muteReason} />}
