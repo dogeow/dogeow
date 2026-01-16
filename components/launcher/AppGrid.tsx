@@ -65,7 +65,7 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
           <Button
             variant="ghost"
             size="icon"
-            className={cn(buttonStyle, 'hover:bg-background/80', button.className)}
+            className={cn(buttonStyle, 'hover:bg-background/80')}
             onClick={button.onClick}
           >
             {button.icon}

@@ -91,11 +91,7 @@ const MarkdownPreview = ({ content, className }: MarkdownPreviewProps) => {
     if (content && parserEditor) {
       try {
         // 使用编辑器的 setContent 方法和 markdown 扩展来解析
-        parserEditor.commands.setContent(content, false, {
-          parseOptions: {
-            preserveWhitespace: 'full',
-          },
-        })
+        parserEditor.commands.setContent(content, false)
 
         // 获取解析后的 JSONContent
         const parsedContent = parserEditor.getJSON()
