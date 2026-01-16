@@ -110,7 +110,7 @@ export default function RootLayout({
                 </div>
               </div>
               <div id="main-container" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-                <div className="mx-auto h-full w-full max-w-7xl p-0">
+                <div className="mx-auto flex h-full w-full max-w-7xl flex-col p-0">
                   <BackgroundWrapper>
                     <ProtectedRoute>{children}</ProtectedRoute>
                   </BackgroundWrapper>

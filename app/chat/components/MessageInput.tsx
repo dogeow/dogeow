@@ -6,7 +6,6 @@ import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { Textarea } from '@/components/ui/textarea'
 import { useTranslation } from '@/hooks/useTranslation'
 import useChatStore from '@/app/chat/chatStore'
-import { useVoiceInput } from '@/hooks/useVoiceInput'
 import {
   UnreadMessageIndicator,
   useUnreadMessages,
@@ -78,35 +77,6 @@ export function MessageInput({
 
   // 使用文件上传hook
   const { uploadedFiles, handleFileUpload, removeFile } = useFileUpload()
-
-  // 使用语音输入hook
-  const {
-    isSupported: isVoiceSupported,
-    isListening: isVoiceListening,
-    transcript: voiceTranscript,
-    startListening,
-    stopListening,
-  } = useVoiceInput({
-    onTranscript: (transcript, isFinal) => {
-      if (isFinal) {
-        // 当语音识别完成时，将文本添加到消息输入框
-        const newMessage = message ? `${message} ${transcript}` : transcript
-        setMessage(newMessage)
-      }
-    },
-    language: 'zh-CN',
-    continuous: false,
-    interimResults: true,
-  })
-
-  // 处理语音输入切换
-  const handleVoiceToggle = useCallback(() => {
-    if (isVoiceListening) {
-      stopListening()
-    } else {
-      startListening()
-    }
-  }, [isVoiceListening, stopListening, startListening])
 
   // 未读消息逻辑
   const roomMessages = messages[roomId.toString()] || []
@@ -283,9 +253,6 @@ export function MessageInput({
           isEmojiPickerOpen={isEmojiPickerOpen}
           onEmojiPickerChange={setIsEmojiPickerOpen}
           onEmojiSelect={insertEmoji}
-          isVoiceListening={isVoiceListening}
-          isVoiceSupported={isVoiceSupported}
-          onVoiceToggle={handleVoiceToggle}
         />
       </div>
 

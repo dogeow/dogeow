@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Send, Loader2, Paperclip } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { EmojiPicker } from './EmojiPicker'
-import { VoiceInputButton } from '@/components/ui/voice-input-button'
 
 interface ActionButtonsExtendedProps {
   onFileUpload: () => void
@@ -15,9 +14,6 @@ interface ActionButtonsExtendedProps {
   isEmojiPickerOpen: boolean
   onEmojiPickerChange: (open: boolean) => void
   onEmojiSelect: (emoji: string) => void
-  isVoiceListening?: boolean
-  isVoiceSupported?: boolean
-  onVoiceToggle?: () => void
 }
 
 export function ActionButtons({
@@ -29,9 +25,6 @@ export function ActionButtons({
   isEmojiPickerOpen,
   onEmojiPickerChange,
   onEmojiSelect,
-  isVoiceListening = false,
-  isVoiceSupported = false,
-  onVoiceToggle,
 }: ActionButtonsExtendedProps) {
   const { t } = useTranslation()
 
@@ -57,19 +50,6 @@ export function ActionButtons({
         onSelectEmoji={onEmojiSelect}
         disabled={isSending || !isConnected}
       />
-
-      {/* 语音输入按钮 */}
-      {onVoiceToggle && (
-        <VoiceInputButton
-          isListening={isVoiceListening}
-          isSupported={isVoiceSupported}
-          onToggle={onVoiceToggle}
-          disabled={isSending || !isConnected}
-          size="sm"
-          variant="ghost"
-          className="h-9 w-9 touch-manipulation p-0 sm:h-10 sm:w-10"
-        />
-      )}
 
       {/* 发送按钮 */}
       <Button
