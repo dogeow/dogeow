@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -27,6 +27,7 @@ import useChatStore from '@/app/chat/chatStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { CreateRoomData } from '../types'
 
+// 创建房间表单校验 schema
 const createRoomSchema = z.object({
   name: z
     .string()
@@ -52,6 +53,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
   const { createRoom, setCurrentRoom, joinRoom } = useChatStore()
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // 初始化表单
   const form = useForm<CreateRoomFormData>({
     resolver: zodResolver(createRoomSchema),
     defaultValues: {
@@ -60,40 +62,44 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
     },
   })
 
-  const onSubmit = async (data: CreateRoomFormData) => {
-    setIsSubmitting(true)
-
-    try {
-      const roomData: CreateRoomData = {
-        name: data.name.trim(),
-        description: data.description?.trim() || undefined,
-      }
-
-      const newRoom = await createRoom(roomData)
-
-      // Automatically join and select the newly created room
-      await joinRoom(newRoom.id)
-      setCurrentRoom(newRoom)
-
-      // Reset form and close dialog
-      form.reset()
-      onOpenChange(false)
-    } catch (error) {
-      console.error('Failed to create room:', error)
-      // Error is handled by the store and will be displayed in the UI
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!isSubmitting) {
-      onOpenChange(newOpen)
-      if (!newOpen) {
+  // 提交表单
+  const onSubmit = useCallback(
+    async (data: CreateRoomFormData) => {
+      setIsSubmitting(true)
+      try {
+        const roomData: CreateRoomData = {
+          name: data.name.trim(),
+          description: data.description?.trim() || undefined,
+        }
+        const newRoom = await createRoom(roomData)
+        // 自动加入并设置当前房间
+        await joinRoom(newRoom.id)
+        setCurrentRoom(newRoom)
+        // 重置表单并关闭弹窗
         form.reset()
+        onOpenChange(false)
+      } catch (error) {
+        console.error('Failed to create room:', error)
+        // 错误已由 store 处理并在 UI 显示
+      } finally {
+        setIsSubmitting(false)
       }
-    }
-  }
+    },
+    [createRoom, joinRoom, setCurrentRoom, form, onOpenChange]
+  )
+
+  // 控制弹窗开关及表单重置
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!isSubmitting) {
+        onOpenChange(newOpen)
+        if (!newOpen) {
+          form.reset()
+        }
+      }
+    },
+    [isSubmitting, onOpenChange, form]
+  )
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -101,9 +107,8 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
         <DialogHeader>
           <DialogTitle>{t('chat.create_new_room', '创建新聊天房间')}</DialogTitle>
         </DialogHeader>
-
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" autoComplete="off">
             <FormField
               control={form.control}
               name="name"
@@ -114,6 +119,8 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
                     <Input
                       placeholder={t('chat.room_name_placeholder', '例如：一般讨论')}
                       disabled={isSubmitting}
+                      autoFocus
+                      maxLength={50}
                       {...field}
                     />
                   </FormControl>
@@ -121,7 +128,6 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
                 </FormItem>
               )}
             />
-
             <FormField
               control={form.control}
               name="description"
@@ -133,6 +139,7 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
                       placeholder={t('chat.description_placeholder', '描述这个房间的用途...')}
                       className="min-h-[80px]"
                       disabled={isSubmitting}
+                      maxLength={200}
                       {...field}
                     />
                   </FormControl>
@@ -140,7 +147,6 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
                 </FormItem>
               )}
             />
-
             <DialogFooter>
               <Button
                 type="button"
@@ -150,8 +156,8 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
               >
                 {t('common.cancel', '取消')}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              <Button type="submit" disabled={isSubmitting} className="relative">
+                {isSubmitting && <Loader2 className="absolute left-4 h-4 w-4 animate-spin" />}
                 {t('chat.create_room', '创建房间')}
               </Button>
             </DialogFooter>

@@ -18,90 +18,65 @@ interface ErrorFallbackProps {
 }
 
 /**
- * 根据错误类型获取对应的图标
+ * 错误类型到相关属性的map映射表
  */
-const getErrorIcon = (errorType: ChatApiError['type']) => {
-  switch (errorType) {
-    case 'network':
-      return <WifiOff className="h-8 w-8 text-red-500" />
-    case 'timeout':
-      return <RefreshCw className="h-8 w-8 text-yellow-500" />
-    case 'authentication':
-      return <Shield className="h-8 w-8 text-orange-500" />
-    case 'server':
-      return <Server className="h-8 w-8 text-red-500" />
-    case 'validation':
-      return <AlertCircle className="h-8 w-8 text-blue-500" />
-    default:
-      return <AlertCircle className="h-8 w-8 text-gray-500" />
-  }
-}
+const ERROR_CONFIG = {
+  network: {
+    icon: <WifiOff className="h-8 w-8 text-red-500" />,
+    colorClass: 'border-red-200 bg-red-50',
+    title: '连接问题',
+    description: '无法连接到聊天服务器。请检查您的网络连接。',
+  },
+  timeout: {
+    icon: <RefreshCw className="h-8 w-8 text-yellow-500" />,
+    colorClass: 'border-yellow-200 bg-yellow-50',
+    title: '请求超时',
+    description: '请求超时，请稍后重试。',
+  },
+  authentication: {
+    icon: <Shield className="h-8 w-8 text-orange-500" />,
+    colorClass: 'border-orange-200 bg-orange-50',
+    title: '需要身份验证',
+    description: '您需要登录才能访问聊天功能。请重新登录。',
+  },
+  server: {
+    icon: <Server className="h-8 w-8 text-red-500" />,
+    colorClass: 'border-red-200 bg-red-50',
+    title: '服务器错误',
+    description: '服务器暂时出现问题，请稍后重试。',
+  },
+  validation: {
+    icon: <AlertCircle className="h-8 w-8 text-blue-500" />,
+    colorClass: 'border-blue-200 bg-blue-50',
+    title: '无效请求',
+    description: '请求格式有误，请检查输入内容后重试。',
+  },
+  unknown: {
+    icon: <AlertCircle className="h-8 w-8 text-gray-500" />,
+    colorClass: 'border-gray-200 bg-gray-50',
+    title: '出现错误',
+    description: '发生未知错误，请重试。',
+  },
+} as const
 
-/**
- * 根据错误类型获取对应的颜色样式
- */
-const getErrorColor = (errorType: ChatApiError['type']) => {
-  switch (errorType) {
-    case 'network':
-      return 'border-red-200 bg-red-50'
-    case 'timeout':
-      return 'border-yellow-200 bg-yellow-50'
-    case 'authentication':
-      return 'border-orange-200 bg-orange-50'
-    case 'server':
-      return 'border-red-200 bg-red-50'
-    case 'validation':
-      return 'border-blue-200 bg-blue-50'
-    default:
-      return 'border-gray-200 bg-gray-50'
-  }
-}
+// 工具函数：获取错误相关属性
+type ErrorConfig = typeof ERROR_CONFIG
+type ErrorConfigKey = keyof ErrorConfig
 
-/**
- * 根据错误类型获取对应的标题
- */
-const getErrorTitle = (errorType: ChatApiError['type']) => {
-  switch (errorType) {
-    case 'network':
-      return '连接问题'
-    case 'timeout':
-      return '请求超时'
-    case 'authentication':
-      return '需要身份验证'
-    case 'server':
-      return '服务器错误'
-    case 'validation':
-      return '无效请求'
-    default:
-      return '出现错误'
-  }
-}
-
-/**
- * 根据错误类型获取对应的描述信息
- */
-const getErrorDescription = (errorType: ChatApiError['type']) => {
-  switch (errorType) {
-    case 'network':
-      return '无法连接到聊天服务器。请检查您的网络连接。'
-    case 'timeout':
-      return '请求超时，请稍后重试。'
-    case 'authentication':
-      return '您需要登录才能访问聊天功能。请重新登录。'
-    case 'server':
-      return '服务器暂时出现问题，请稍后重试。'
-    case 'validation':
-      return '请求格式有误，请检查输入内容后重试。'
-    default:
-      return '发生未知错误，请重试。'
-  }
+function getErrorProp<T extends keyof ErrorConfig['unknown']>(
+  errorType: ChatApiError['type'] | undefined,
+  key: T
+): ErrorConfig[ErrorConfigKey][T] {
+  const hasType = !!errorType && errorType in ERROR_CONFIG
+  const errorKey = (hasType ? errorType : 'unknown') as ErrorConfigKey
+  return ERROR_CONFIG[errorKey][key]
 }
 
 /**
  * 根据错误类型和可重试状态生成对应的操作按钮
  */
 const getActionButtons = (
-  errorType: ChatApiError['type'],
+  errorType: ChatApiError['type'] | undefined,
   retryable: boolean,
   onRetry?: () => void,
   onClearError?: () => void
@@ -179,14 +154,15 @@ export default function ErrorFallback({
   // 解析错误信息
   const chatError = error as ChatApiError
   const errorType = chatError.type || 'unknown'
-  const errorMessage = chatError.message || error.message || '发生未知错误'
+  const errorMessage = chatError.message || (error as Error).message || '发生未知错误'
   const retryable = chatError.retryable !== false
   const timestamp = chatError.timestamp || new Date()
 
-  const icon = getErrorIcon(errorType)
-  const colorClass = getErrorColor(errorType)
-  const title = getErrorTitle(errorType)
-  const description = getErrorDescription(errorType)
+  // 各种错误映射属性
+  const icon = getErrorProp(errorType, 'icon')
+  const colorClass = getErrorProp(errorType, 'colorClass')
+  const title = getErrorProp(errorType, 'title')
+  const description = getErrorProp(errorType, 'description')
   const actionButtons = getActionButtons(errorType, retryable, onRetry, onClearError)
 
   // 最小化变体 - 仅显示简单的错误消息
@@ -236,7 +212,11 @@ export default function ErrorFallback({
             <p className="mt-1 text-sm text-gray-600">{errorMessage}</p>
             <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
               <span>类型：{errorType}</span>
-              <span>{timestamp.toLocaleTimeString()}</span>
+              <span>
+                {timestamp instanceof Date
+                  ? timestamp.toLocaleTimeString()
+                  : new Date(timestamp).toLocaleTimeString()}
+              </span>
             </div>
             {chatError.code && (
               <div className="mt-2">
@@ -274,6 +254,7 @@ export function NetworkErrorFallback({
   onRetry?: () => void
   className?: string
 }) {
+  // 复用 ChatApiError、属性全在定义
   const error: ChatApiError = {
     name: 'ChatApiError',
     type: 'network',

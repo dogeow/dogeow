@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { ChevronDown, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/helpers'
@@ -11,94 +11,79 @@ interface UnreadMessageIndicatorProps {
   className?: string
 }
 
-export function UnreadMessageIndicator({
-  unreadCount,
-  onScrollToBottom,
-  className,
-}: UnreadMessageIndicatorProps) {
-  const [isVisible, setIsVisible] = useState(false)
-  const [shouldAnimate, setShouldAnimate] = useState(false)
+/**
+ * 未读消息指示器组件
+ */
+export const UnreadMessageIndicator: React.FC<UnreadMessageIndicatorProps> = React.memo(
+  ({ unreadCount, onScrollToBottom, className }) => {
+    const isVisible = unreadCount > 0
+    const animationKey = unreadCount
 
-  // 当未读消息数量变化时显示指示器
-  useEffect(() => {
-    if (unreadCount > 0) {
-      setIsVisible(true)
-      setShouldAnimate(true)
+    const handleClick = useCallback(() => {
+      onScrollToBottom()
+    }, [onScrollToBottom])
 
-      // 3秒后停止动画
-      const timer = setTimeout(() => {
-        setShouldAnimate(false)
-      }, 3000)
+    if (!isVisible) return null
 
-      return () => clearTimeout(timer)
-    } else {
-      setIsVisible(false)
-      setShouldAnimate(false)
-    }
-  }, [unreadCount])
-
-  if (!isVisible || unreadCount === 0) {
-    return null
-  }
-
-  return (
-    <div
-      className={cn(
-        'absolute top-4 right-4 z-50 transition-all duration-300',
-        isVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
-        className
-      )}
-    >
-      <Button
-        onClick={onScrollToBottom}
+    return (
+      <div
         className={cn(
-          'bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-full shadow-lg',
-          'h-10 px-4 text-sm font-medium',
-          shouldAnimate && 'animate-pulse'
+          'absolute top-4 right-4 z-50 transition-all duration-300',
+          isVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0',
+          className
         )}
-        size="sm"
       >
-        <MessageSquare className="h-4 w-4" />
-        <span>{unreadCount}</span>
-        <ChevronDown className="h-4 w-4" />
-      </Button>
-    </div>
-  )
-}
+        <Button
+          key={animationKey}
+          onClick={handleClick}
+          className={cn(
+            'bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 rounded-full shadow-lg',
+            'h-10 px-4 text-sm font-medium',
+            'animate-[pulse_3s_ease-in-out_1]'
+          )}
+          size="sm"
+        >
+          <MessageSquare className="h-4 w-4" />
+          <span>{unreadCount}</span>
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </div>
+    )
+  }
+)
+UnreadMessageIndicator.displayName = 'UnreadMessageIndicator'
 
 // Hook to track scroll position and calculate unread messages
 export function useUnreadMessages(
-  messages: unknown[],
+  messages: Array<{ id?: number }>,
   isAtBottom: boolean,
   lastReadMessageId?: number
 ) {
   const [unreadCount, setUnreadCount] = useState(0)
-  const previousMessageCountRef = useRef(0)
-  const lastReadMessageIdRef = useRef(lastReadMessageId)
+  const prevMessagesLengthRef = useRef(messages.length)
+  const lastReadMessageIdRef = useRef<number | undefined>(lastReadMessageId)
 
+  // 更新最后已读消息ID
   useEffect(() => {
-    // 更新最后已读消息ID
     if (lastReadMessageId !== undefined) {
       lastReadMessageIdRef.current = lastReadMessageId
     }
   }, [lastReadMessageId])
 
   useEffect(() => {
-    const currentMessageCount = messages.length
-    const previousMessageCount = previousMessageCountRef.current
+    const prevMsgLen = prevMessagesLengthRef.current
+    const currMsgLen = messages.length
 
     // 如果有新消息且用户不在底部
-    if (currentMessageCount > previousMessageCount && !isAtBottom) {
-      const newMessagesCount = currentMessageCount - previousMessageCount
-      setUnreadCount(prev => prev + newMessagesCount)
+    if (currMsgLen > prevMsgLen && !isAtBottom) {
+      const newMsgsCount = currMsgLen - prevMsgLen
+      setUnreadCount(prev => prev + newMsgsCount)
     }
-
     // 如果用户在底部，清除未读计数
     if (isAtBottom) {
       setUnreadCount(0)
     }
-
-    previousMessageCountRef.current = currentMessageCount
+    prevMessagesLengthRef.current = currMsgLen
   }, [messages.length, isAtBottom])
 
   return unreadCount
@@ -124,8 +109,7 @@ export function useScrollPosition(containerRef: React.RefObject<HTMLElement | nu
       setIsNearBottom(nearBottom)
     }
 
-    container.addEventListener('scroll', handleScroll, { passive: true })
-
+    container.addEventListener('scroll', handleScroll, { passive: true }) // 更优地监听
     // 初始检查
     handleScroll()
 

@@ -1,26 +1,27 @@
 'use client'
 
-import React from 'react'
+import React, { Component, type ErrorInfo, type ReactNode } from 'react'
 import ErrorFallback from './ErrorFallback'
 import { handleChatApiError, type ChatApiError } from '@/lib/api/chat-error-handler'
 
 interface ChatErrorBoundaryState {
   hasError: boolean
   error: ChatApiError | null
-  errorInfo: React.ErrorInfo | null
+  errorInfo: ErrorInfo | null
 }
 
 interface ChatErrorBoundaryProps {
-  children: React.ReactNode
+  children: ReactNode
   fallback?: React.ComponentType<{
     error: ChatApiError | null
     onRetry: () => void
     onClearError: () => void
   }>
-  onError?: (error: ChatApiError, errorInfo: React.ErrorInfo) => void
+  onError?: (error: ChatApiError, errorInfo: ErrorInfo) => void
 }
 
-class ChatErrorBoundary extends React.Component<ChatErrorBoundaryProps, ChatErrorBoundaryState> {
+class ChatErrorBoundary extends Component<ChatErrorBoundaryProps, ChatErrorBoundaryState> {
+  // 构造函数初始化状态
   constructor(props: ChatErrorBoundaryProps) {
     super(props)
     this.state = {
@@ -55,20 +56,17 @@ class ChatErrorBoundary extends React.Component<ChatErrorBoundaryProps, ChatErro
     }
   }
 
-  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     const chatError = handleChatApiError(error, 'React component error', {
       showToast: false,
       logError: true,
     })
 
-    this.setState({
-      errorInfo,
-    })
+    // 仅更新 errorInfo，hasError/error 通过 getDerivedStateFromError 处理
+    this.setState({ errorInfo })
 
     // Call custom error handler if provided
-    if (this.props.onError) {
-      this.props.onError(chatError, errorInfo)
-    }
+    this.props.onError?.(chatError, errorInfo)
 
     // Log to console in development
     if (process.env.NODE_ENV === 'development') {
@@ -83,35 +81,35 @@ class ChatErrorBoundary extends React.Component<ChatErrorBoundaryProps, ChatErro
     }
   }
 
-  handleRetry = () => {
+  // 统一的错误重置/清除方法
+  resetErrorState = () => {
     this.setState({
       hasError: false,
       error: null,
       errorInfo: null,
     })
+  }
+
+  handleRetry = () => {
+    this.resetErrorState()
   }
 
   handleClearError = () => {
-    this.setState({
-      hasError: false,
-      error: null,
-      errorInfo: null,
-    })
+    this.resetErrorState()
   }
 
   render() {
-    if (this.state.hasError) {
+    const { hasError, error } = this.state
+    if (hasError) {
       const FallbackComponent = this.props.fallback || ErrorFallback
-
       return (
         <FallbackComponent
-          error={this.state.error}
+          error={error}
           onRetry={this.handleRetry}
           onClearError={this.handleClearError}
         />
       )
     }
-
     return this.props.children
   }
 }
@@ -144,6 +142,7 @@ export function useChatErrorHandler() {
           result.catch(handleError)
         }
       } catch (err) {
+        // ChatErrorBoundary: Error in error boundary
         console.error('ChatErrorBoundary: Error in error boundary:', err)
         handleError(err as Error)
       }

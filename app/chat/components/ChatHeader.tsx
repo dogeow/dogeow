@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import {
   ArrowLeft,
   Settings,
@@ -75,20 +75,30 @@ export function ChatHeader({
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false)
   const [isRequestingPermission, setIsRequestingPermission] = useState(false)
 
+  // useRef做为缓存，防止notificationService重复初始化
+  const notificationServiceRef = useRef<NotificationService>()
+
+  // 获取通知服务实例 - 优化：避免重复创建
+  const getNotificationService = useCallback(() => {
+    if (!notificationServiceRef.current) {
+      notificationServiceRef.current = NotificationService.getInstance()
+    }
+    return notificationServiceRef.current
+  }, [])
+
   // 获取当前房间的在线用户信息
   const roomOnlineUsers = useMemo(
     () => onlineUsers[room.id.toString()] || [],
     [onlineUsers, room.id]
   )
   const onlineCount = useMemo(() => {
+    // 优化变量命名，提高可读性
     const storeCount = roomOnlineUsers.length
     const roomCount = room.online_count ?? 0
+    // isConnected只代表本地用户是否连接，仅在本地人数为0时体现
     const connectedSelf = isConnected ? 1 : 0
     return Math.max(storeCount, roomCount, connectedSelf)
   }, [roomOnlineUsers.length, room.online_count, isConnected])
-
-  // 获取通知服务实例
-  const notificationService = useMemo(() => NotificationService.getInstance(), [])
 
   // 请求浏览器通知权限
   const handleRequestPermission = useCallback(async () => {
@@ -96,6 +106,7 @@ export function ChatHeader({
     try {
       await requestBrowserNotificationPermission()
     } catch (error) {
+      // 优化提示：可以考虑用toast等提醒
       console.error('请求通知权限失败:', error)
     } finally {
       setIsRequestingPermission(false)
@@ -104,19 +115,19 @@ export function ChatHeader({
 
   // 测试通知功能
   const handleTestNotification = useCallback(() => {
-    notificationService.showNotification({
+    getNotificationService().showNotification({
       title: '测试通知',
       body: '这是来自聊天系统的测试通知。',
       tag: 'test-notification',
     })
-  }, [notificationService])
+  }, [getNotificationService])
 
   // 测试声音效果
   const handleTestSound = useCallback(
     (soundName: string) => {
-      notificationService.playSound(soundName)
+      getNotificationService().playSound(soundName)
     },
-    [notificationService]
+    [getNotificationService]
   )
 
   // 获取权限状态信息
@@ -130,6 +141,72 @@ export function ChatHeader({
         return { text: '未请求', color: 'text-yellow-600' }
     }
   }, [browserNotificationPermission])
+
+  // 简化Render方法，减少重复JSX结构
+  const renderRoomInfoButton = useCallback(
+    () =>
+      room.description && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5"
+          onClick={() => setIsRoomInfoOpen(true)}
+        >
+          <Info className="h-3 w-3" />
+        </Button>
+      ),
+    [room.description]
+  )
+
+  const renderSettingsMenu = useCallback(
+    () => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon">
+            <Settings className="h-4 w-4" />
+            <span className="sr-only">{t('settings.title', '设置')}</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>{t('page.chat_settings', '聊天设置')}</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+
+          {/* 通知设置 */}
+          <DropdownMenuItem
+            onClick={() => setIsNotificationSettingsOpen(true)}
+            className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
+          >
+            <Bell className="mr-2 h-4 w-4" />
+            {t('chat.notification_settings', '通知设置')}
+          </DropdownMenuItem>
+
+          {/* 房间信息 */}
+          <DropdownMenuItem
+            onClick={() => setIsRoomInfoOpen(true)}
+            className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
+          >
+            <Info className="mr-2 h-4 w-4" />
+            {t('chat.room_info', '房间信息')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ),
+    [t]
+  )
+
+  // 优化弹窗头部创建
+  const renderDialogHeader = useCallback(
+    (icon: React.ReactNode, title: string, description?: string) => (
+      <DialogHeader>
+        <DialogTitle className="flex items-center gap-2">
+          {icon}
+          {title}
+        </DialogTitle>
+        {description && <DialogDescription>{description}</DialogDescription>}
+      </DialogHeader>
+    ),
+    []
+  )
 
   return (
     <>
@@ -151,16 +228,7 @@ export function ChatHeader({
             <div className="flex items-center justify-center gap-3">
               <Hash className="text-muted-foreground h-4 w-4" />
               <h1 className="font-semibold">{room.name}</h1>
-              {room.description && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => setIsRoomInfoOpen(true)}
-                >
-                  <Info className="h-3 w-3" />
-                </Button>
-              )}
+              {renderRoomInfoButton()}
               <div className="flex items-center gap-1 text-xs">
                 <div
                   className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}
@@ -184,38 +252,7 @@ export function ChatHeader({
               {onlineCount}
             </Badge>
           </div>
-
-          {/* 设置下拉菜单 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">{t('settings.title', '设置')}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>{t('page.chat_settings', '聊天设置')}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-
-              {/* 通知设置 */}
-              <DropdownMenuItem
-                onClick={() => setIsNotificationSettingsOpen(true)}
-                className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
-              >
-                <Bell className="mr-2 h-4 w-4" />
-                {t('chat.notification_settings', '通知设置')}
-              </DropdownMenuItem>
-
-              {/* 房间信息 */}
-              <DropdownMenuItem
-                onClick={() => setIsRoomInfoOpen(true)}
-                className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
-              >
-                <Info className="mr-2 h-4 w-4" />
-                {t('chat.room_info', '房间信息')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {renderSettingsMenu()}
         </div>
       </div>
 
@@ -229,7 +266,10 @@ export function ChatHeader({
               variant="ghost"
               size="icon"
               onClick={() => {
-                console.log('Menu button clicked')
+                // 仅开发时console
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('Menu button clicked')
+                }
                 onOpenRoomList()
               }}
               className="shrink-0"
@@ -278,16 +318,8 @@ export function ChatHeader({
                 }}
               />
             </div>
-            {room.description && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-5 w-5 shrink-0"
-                onClick={() => setIsRoomInfoOpen(true)}
-              >
-                <Info className="h-3 w-3" />
-              </Button>
-            )}
+            {/* 优化：复用房间描述按钮 */}
+            {renderRoomInfoButton()}
           </div>
         </div>
 
@@ -299,7 +331,9 @@ export function ChatHeader({
               variant="ghost"
               size="icon"
               onClick={() => {
-                console.log('Users list button clicked')
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('Users list button clicked')
+                }
                 onOpenUsersList()
               }}
               className="relative"
@@ -317,50 +351,15 @@ export function ChatHeader({
           )}
 
           {/* 设置下拉菜单 */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-4 w-4" />
-                <span className="sr-only">{t('settings.title', '设置')}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>{t('page.chat_settings', '聊天设置')}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-
-              {/* 通知设置 */}
-              <DropdownMenuItem
-                onClick={() => setIsNotificationSettingsOpen(true)}
-                className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
-              >
-                <Bell className="mr-2 h-4 w-4" />
-                {t('chat.notification_settings', '通知设置')}
-              </DropdownMenuItem>
-
-              {/* 房间信息 */}
-              <DropdownMenuItem
-                onClick={() => setIsRoomInfoOpen(true)}
-                className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
-              >
-                <Info className="mr-2 h-4 w-4" />
-                {t('chat.room_info', '房间信息')}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {renderSettingsMenu()}
         </div>
       </div>
 
       {/* 房间信息对话框 */}
       <Dialog open={isRoomInfoOpen} onOpenChange={setIsRoomInfoOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Hash className="h-5 w-5" />
-              {room.name}
-            </DialogTitle>
-            {room.description && <DialogDescription>{room.description}</DialogDescription>}
-          </DialogHeader>
-
+          {/* 复用DialogHeader渲染方法 */}
+          {renderDialogHeader(<Hash className="h-5 w-5" />, room.name, room.description)}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
@@ -407,13 +406,11 @@ export function ChatHeader({
       {/* 通知设置对话框 */}
       <Dialog open={isNotificationSettingsOpen} onOpenChange={setIsNotificationSettingsOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              {t('chat.notification_settings', '通知设置')}
-            </DialogTitle>
-          </DialogHeader>
-
+          {/* 复用DialogHeader渲染方法 */}
+          {renderDialogHeader(
+            <Bell className="h-5 w-5" />,
+            t('chat.notification_settings', '通知设置')
+          )}
           <div className="space-y-6">
             {/* 浏览器权限状态 */}
             <Card>

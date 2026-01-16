@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef, useCallback, useMemo } from 'react'
+import Image from 'next/image'
 import { format, isToday, isYesterday } from 'date-fns'
 
 import { cn } from '@/lib/helpers'
@@ -55,11 +56,14 @@ const MessageItem = React.memo(function MessageItem({
     >
       <div className="prose prose-sm max-w-none">
         {isImageUrl ? (
-          <img
+          <Image
             src={message.message.trim()}
             alt="uploaded"
-            className="max-h-72 w-auto max-w-full rounded-lg"
-            loading="lazy"
+            width={960}
+            height={720}
+            sizes="(max-width: 768px) 100vw, 480px"
+            className="max-h-72 w-auto max-w-full rounded-lg object-contain"
+            unoptimized
           />
         ) : (
           <MentionHighlight text={message.message} />

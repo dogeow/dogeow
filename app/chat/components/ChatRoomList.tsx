@@ -14,7 +14,6 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-
 import { Skeleton } from '@/components/ui/skeleton'
 import { Input } from '@/components/ui/input'
 import {
@@ -33,9 +32,9 @@ import { DeleteRoomDialog } from './DeleteRoomDialog'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ChatRoom } from '../types'
 
+// 安全获取 localStorage
 const getSafeStorage = () => {
   if (typeof window === 'undefined') return null
-
   try {
     const storage = window.localStorage
     const testKey = '__storage_test__'
@@ -55,10 +54,17 @@ interface ChatRoomListProps {
 
 export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListProps = {}) {
   const { t } = useTranslation()
-  const { rooms, currentRoom, isLoading, error, setCurrentRoom, joinRoom, getRoomUnreadCount } =
-    useChatStore()
+  const {
+    rooms = [],
+    currentRoom,
+    isLoading,
+    error,
+    setCurrentRoom,
+    joinRoom,
+    getRoomUnreadCount,
+  } = useChatStore()
 
-  // Get loadRooms function with stable reference
+  // 保证 loadRooms 是稳定引用
   const loadRooms = useCallback(() => {
     return useChatStore.getState().loadRooms()
   }, [])
@@ -71,75 +77,69 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
   const [recentRooms, setRecentRooms] = useState<number[]>([])
   const [filterType, setFilterType] = useState<'all' | 'favorites' | 'recent'>('all')
 
-  // Removed automatic loadRooms call to prevent duplicate API calls
+  // 自动加载房间逻辑由父组件控制，防止重复调用
   // loadRooms is now handled by the parent ChatPage component
 
-  // Load favorites and recent rooms from localStorage
+  // 从 localStorage 加载收藏和最近房间
   useEffect(() => {
     const storage = getSafeStorage()
     if (!storage) return
 
-    const savedFavorites = storage.getItem('chat-favorite-rooms')
-    const savedRecent = storage.getItem('chat-recent-rooms')
-
-    if (savedFavorites) {
-      try {
+    try {
+      const savedFavorites = storage.getItem('chat-favorite-rooms')
+      if (savedFavorites) {
         setFavoriteRooms(new Set(JSON.parse(savedFavorites)))
-      } catch (error) {
-        console.error('Failed to load favorite rooms:', error)
       }
+    } catch (error) {
+      console.error('Failed to load favorite rooms:', error)
     }
 
-    if (savedRecent) {
-      try {
+    try {
+      const savedRecent = storage.getItem('chat-recent-rooms')
+      if (savedRecent) {
         setRecentRooms(JSON.parse(savedRecent))
-      } catch (error) {
-        console.error('Failed to load recent rooms:', error)
       }
+    } catch (error) {
+      console.error('Failed to load recent rooms:', error)
     }
   }, [])
 
-  // Filter and search rooms
+  // 房间过滤和搜索
   const filteredRooms = useMemo(() => {
-    // Ensure rooms is an array
+    // rooms 必须数组，否则返回空
     if (!Array.isArray(rooms)) {
       console.warn('ChatRoomList: rooms is not an array:', rooms)
       return []
     }
 
-    let filtered = rooms
+    let filtered = [...rooms]
 
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
+    // 搜索过滤
+    const search = searchQuery.trim().toLowerCase()
+    if (search) {
       filtered = filtered.filter(
         room =>
-          room.name.toLowerCase().includes(query) || room.description?.toLowerCase().includes(query)
+          room.name.toLowerCase().includes(search) ||
+          (room.description?.toLowerCase() ?? '').includes(search)
       )
     }
 
-    // Apply type filter
+    // 分类过滤
     switch (filterType) {
       case 'favorites':
         filtered = filtered.filter(room => favoriteRooms.has(room.id))
         break
       case 'recent':
         filtered = filtered.filter(room => recentRooms.includes(room.id))
-        // Sort by recent order
-        filtered.sort((a, b) => {
-          const aIndex = recentRooms.indexOf(a.id)
-          const bIndex = recentRooms.indexOf(b.id)
-          return aIndex - bIndex
-        })
+        // 按 recent 顺序排序
+        filtered.sort((a, b) => recentRooms.indexOf(a.id) - recentRooms.indexOf(b.id))
         break
       default:
-        // Sort by unread count, then by name
+        // 按未读数->名字排序
         filtered.sort((a, b) => {
           const aUnread = getRoomUnreadCount(a.id)
           const bUnread = getRoomUnreadCount(b.id)
-          if (aUnread !== bUnread) {
-            return bUnread - aUnread
-          }
+          if (aUnread !== bUnread) return bUnread - aUnread
           return a.name.localeCompare(b.name)
         })
     }
@@ -147,9 +147,10 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
     return filtered
   }, [rooms, searchQuery, filterType, favoriteRooms, recentRooms, getRoomUnreadCount])
 
+  // 选择房间
   const handleRoomSelect = async (room: ChatRoom) => {
     if (currentRoom?.id === room.id) {
-      // 如果点击的是当前房间，也要关闭侧边栏
+      // 如果是当前房间，也关闭侧边栏
       onRoomSelect?.()
       return
     }
@@ -157,52 +158,57 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
     try {
       console.log('🔥 ChatRoomList: Selecting room:', room)
 
-      // 先设置当前房间，确保UI立即响应
+      // 先设置当前房间，UI立即响应
       setCurrentRoom(room)
 
-      // 然后调用 joinRoom API
+      // 然后 joinRoom
       await joinRoom(room.id)
 
-      // Add to recent rooms
+      // 记录最近房间
       const newRecent = [room.id, ...recentRooms.filter(id => id !== room.id)].slice(0, 10)
       setRecentRooms(newRecent)
       const storage = getSafeStorage()
       storage?.setItem('chat-recent-rooms', JSON.stringify(newRecent))
     } catch (error) {
       console.error('Failed to join room:', error)
-      // 如果加入房间失败，清除当前房间选择
+      // 加入失败后，清除房间选择
       setCurrentRoom(null)
     } finally {
-      // 无论成功还是失败，都要关闭侧边栏（移动端）
+      // 成功或失败都关闭侧边栏（移动端）
       onRoomSelect?.()
     }
   }
 
+  // 切换收藏
   const toggleFavorite = (roomId: number, event: React.MouseEvent) => {
     event.stopPropagation()
-    const newFavorites = new Set(favoriteRooms)
-
-    if (newFavorites.has(roomId)) {
-      newFavorites.delete(roomId)
-    } else {
-      newFavorites.add(roomId)
-    }
-
-    setFavoriteRooms(newFavorites)
-    const storage = getSafeStorage()
-    storage?.setItem('chat-favorite-rooms', JSON.stringify([...newFavorites]))
+    setFavoriteRooms(prev => {
+      const newFavorites = new Set(prev)
+      if (newFavorites.has(roomId)) {
+        newFavorites.delete(roomId)
+      } else {
+        newFavorites.add(roomId)
+      }
+      // 持久化
+      const storage = getSafeStorage()
+      storage?.setItem('chat-favorite-rooms', JSON.stringify([...newFavorites]))
+      return newFavorites
+    })
   }
 
+  // 编辑房间
   const handleEditRoom = (room: ChatRoom, event: React.MouseEvent) => {
     event.stopPropagation()
     setEditingRoom(room)
   }
 
+  // 删除房间
   const handleDeleteRoom = (room: ChatRoom, event: React.MouseEvent) => {
     event.stopPropagation()
     setDeletingRoom(room)
   }
 
+  // 打开新建房间弹窗
   const handleCreateRoom = () => {
     setIsCreateDialogOpen(true)
   }
@@ -215,7 +221,7 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
           <span className="text-sm font-medium">Error loading rooms</span>
         </div>
         <p className="text-destructive/80 mt-1 text-sm">{error?.message || 'Unknown error'}</p>
-        <Button variant="outline" size="sm" className="mt-2" onClick={() => loadRooms()}>
+        <Button variant="outline" size="sm" className="mt-2" onClick={loadRooms}>
           Try Again
         </Button>
       </div>
@@ -236,7 +242,7 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
           </div>
         )}
 
-        {/* Search Bar and Create Button */}
+        {/* 搜索框和新建按钮 */}
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
@@ -255,7 +261,7 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
           )}
         </div>
 
-        {/* Filter Buttons */}
+        {/* 筛选按钮 */}
         <div className="flex gap-1">
           <Button
             variant={filterType === 'all' ? 'default' : 'ghost'}
@@ -286,7 +292,7 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
         </div>
       </div>
 
-      {/* Room List */}
+      {/* 房间列表 */}
       <div className="flex-1 overflow-y-auto">
         {isLoading && rooms.length === 0 ? (
           <div className="space-y-3 p-4">
@@ -367,13 +373,18 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
                       </div>
                     </div>
 
-                    {/* Room Actions */}
+                    {/* 房间操作 */}
                     <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0"
                         onClick={e => toggleFavorite(room.id, e)}
+                        aria-label={
+                          favoriteRooms.has(room.id)
+                            ? t('chat.unfavorite_room', 'Unfavorite')
+                            : t('chat.favorite_room', 'Favorite')
+                        }
                       >
                         <Star
                           className={cn(
@@ -392,6 +403,7 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
                             size="sm"
                             className="h-6 w-6 p-0"
                             onClick={e => e.stopPropagation()}
+                            aria-label={t('chat.more_actions', 'More')}
                           >
                             <MoreVertical className="h-3 w-3" />
                           </Button>
@@ -399,7 +411,7 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={e => handleEditRoom(room, e)}>
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit Room
+                            {t('chat.edit_room', 'Edit Room')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -407,7 +419,7 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
                             className="text-destructive focus:text-destructive"
                           >
                             <Trash2 className="mr-2 h-4 w-4" />
-                            Delete Room
+                            {t('chat.delete_room', 'Delete Room')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -420,9 +432,8 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
         )}
       </div>
 
-      {/* Dialogs */}
+      {/* 弹窗 */}
       <CreateRoomDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
-
       {editingRoom && (
         <EditRoomDialog
           room={editingRoom}
@@ -430,7 +441,6 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
           onOpenChange={open => !open && setEditingRoom(null)}
         />
       )}
-
       {deletingRoom && (
         <DeleteRoomDialog
           room={deletingRoom}

@@ -25,7 +25,7 @@ interface RoomItemProps {
   isVisible: boolean
 }
 
-function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
+const RoomItem = ({ room, isSelected, onClick, isVisible }: RoomItemProps) => {
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageError, setImageError] = useState(false)
 
@@ -35,6 +35,8 @@ function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
   if (!isVisible) {
     return <Skeleton className="h-16 w-full" />
   }
+
+  const avatarDisplay = imageLoaded && !imageError ? 'block' : 'none'
 
   return (
     <div
@@ -52,11 +54,11 @@ function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
             alt={room.name}
             onLoad={handleImageLoad}
             onError={handleImageError}
-            style={{ display: imageLoaded && !imageError ? 'block' : 'none' }}
+            style={{ display: avatarDisplay }}
           />
           <AvatarFallback className="text-xs">{room.name.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
-        {room.online_count && room.online_count > 0 && (
+        {room.online_count > 0 && (
           <Badge
             variant="secondary"
             className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 text-xs"
@@ -65,7 +67,6 @@ function RoomItem({ room, isSelected, onClick, isVisible }: RoomItemProps) {
           </Badge>
         )}
       </div>
-
       {/* Room info */}
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
@@ -108,17 +109,16 @@ function useIntersectionObserver(
     observer.observe(element)
 
     return () => {
-      observer.unobserve(element)
+      observer.disconnect()
     }
   }, [elementRef, options])
 
   return isIntersecting
 }
 
-function LazyRoomItem({ room, isSelected, onClick }: Omit<RoomItemProps, 'isVisible'>) {
+const LazyRoomItem = ({ room, isSelected, onClick }: Omit<RoomItemProps, 'isVisible'>) => {
   const elementRef = useRef<HTMLDivElement>(null)
   const isVisible = useIntersectionObserver(elementRef)
-
   return (
     <div ref={elementRef}>
       <RoomItem room={room} isSelected={isSelected} onClick={onClick} isVisible={isVisible} />
@@ -126,17 +126,15 @@ function LazyRoomItem({ room, isSelected, onClick }: Omit<RoomItemProps, 'isVisi
   )
 }
 
-function RoomListSkeleton({ count = 5 }: { count?: number }) {
-  return (
-    <div className="space-y-2 p-2">
-      {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={i} className="h-16 w-full" />
-      ))}
-    </div>
-  )
-}
+const RoomListSkeleton = ({ count = 5 }: { count?: number }) => (
+  <div className="space-y-2 p-2">
+    {Array.from({ length: count }, (_, i) => (
+      <Skeleton key={i} className="h-16 w-full" />
+    ))}
+  </div>
+)
 
-function EmptyRoomList() {
+const EmptyRoomList = () => {
   const { t } = useTranslation()
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
@@ -147,7 +145,7 @@ function EmptyRoomList() {
   )
 }
 
-function RoomSearch({
+const RoomSearch = ({
   value,
   onChange,
   placeholder = 'Search rooms...',
@@ -155,7 +153,7 @@ function RoomSearch({
   value: string
   onChange: (value: string) => void
   placeholder?: string
-}) {
+}) => {
   const { t } = useTranslation()
   return (
     <div className="relative">
@@ -176,13 +174,11 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'name' | 'activity' | 'members'>('activity')
 
-  // Load rooms with caching
+  // 加载房间缓存
   const loadRoomsWithCache = useCallback(async () => {
     // Check cache first
     const cachedRooms = chatCache.getCachedRoom('all')
-    if (cachedRooms) {
-      return
-    }
+    if (cachedRooms) return
 
     // Load from API and cache
     try {
@@ -193,49 +189,42 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
     }
   }, [loadRooms])
 
-  // Load rooms on mount
+  // 挂载时加载房间
   useEffect(() => {
     loadRoomsWithCache()
   }, [loadRoomsWithCache])
 
-  // Filter and sort rooms
+  // 筛选+排序房间
   const filteredAndSortedRooms = useMemo(() => {
-    // Ensure rooms is an array
     if (!Array.isArray(rooms)) {
       console.warn('LazyRoomList: rooms is not an array:', rooms)
       return []
     }
 
     let filtered = rooms
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase()
+    const query = searchQuery.trim().toLowerCase()
+    if (query) {
       filtered = rooms.filter(
         room =>
           room.name.toLowerCase().includes(query) || room.description?.toLowerCase().includes(query)
       )
     }
 
-    // Apply sorting
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'name':
-          return a.name.localeCompare(b.name)
-        case 'members':
-          return (b.online_count || 0) - (a.online_count || 0)
-        case 'activity':
-        default:
-          const aTime = a.last_activity ? new Date(a.last_activity).getTime() : 0
-          const bTime = b.last_activity ? new Date(b.last_activity).getTime() : 0
-          return bTime - aTime
+    // 单独处理排序逻辑
+    return filtered.slice().sort((a, b) => {
+      if (sortBy === 'name') {
+        return a.name.localeCompare(b.name)
       }
+      if (sortBy === 'members') {
+        return (b.online_count || 0) - (a.online_count || 0)
+      }
+      // 默认按 activity
+      const toTime = (r: ChatRoom) => (r.last_activity ? new Date(r.last_activity).getTime() : 0)
+      return toTime(b) - toTime(a)
     })
-
-    return sorted
   }, [rooms, searchQuery, sortBy])
 
-  // Handle room selection
+  // 处理房间选择
   const handleRoomSelect = useCallback(
     (room: ChatRoom) => {
       // Cache the selected room
@@ -246,6 +235,7 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
   )
 
   if (isLoading && rooms.length === 0) {
+    // 加载骨架
     return (
       <div className={cn('space-y-4', className)}>
         <div className="p-4">
@@ -261,7 +251,6 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
       {/* Search and filters */}
       <div className="space-y-3 p-4">
         <RoomSearch value={searchQuery} onChange={setSearchQuery} />
-
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-sm">{t('chat.sort_by', 'Sort by:')}</span>
           <select

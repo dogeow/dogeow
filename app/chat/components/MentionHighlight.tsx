@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useCallback } from 'react'
 import { cn } from '@/lib/helpers'
 import useAuthStore from '@/stores/authStore'
 
@@ -26,14 +26,14 @@ export function MentionHighlight({ text, className, onMentionClick }: MentionHig
   const currentUsername = user?.name?.toLowerCase()
 
   // Parse text to find mentions
-  const parsedContent = useMemo(() => {
-    if (!text) return [{ type: 'text' as const, content: '' }]
+  const parsedContent = useMemo<MentionMatch[]>(() => {
+    if (!text) return [{ type: 'text', content: '' }]
 
     // Regex to match @username or @"display name" patterns
     const mentionRegex = /@(?:"([^"]+)"|(\w+))/g
     const parts: MentionMatch[] = []
     let lastIndex = 0
-    let match
+    let match: RegExpExecArray | null
 
     while ((match = mentionRegex.exec(text)) !== null) {
       // Add text before mention
@@ -45,8 +45,8 @@ export function MentionHighlight({ text, className, onMentionClick }: MentionHig
       }
 
       // Extract username (either quoted or unquoted)
-      const username = match[1] || match[2] // match[1] is quoted, match[2] is unquoted
-      const isCurrentUser = username.toLowerCase() === currentUsername
+      const username = match[1] || match[2] || ''
+      const isCurrentUser = !!currentUsername && username.toLowerCase() === currentUsername
 
       // Add mention
       parts.push({
@@ -70,35 +70,39 @@ export function MentionHighlight({ text, className, onMentionClick }: MentionHig
     return parts
   }, [text, currentUsername])
 
-  const handleMentionClick = (username: string, event: React.MouseEvent) => {
-    event.preventDefault()
-    event.stopPropagation()
-    onMentionClick?.(username)
-  }
+  // 优化: 避免重复创建函数
+  const handleMentionClick = useCallback(
+    (username: string, event: React.MouseEvent) => {
+      event.preventDefault()
+      event.stopPropagation()
+      onMentionClick?.(username)
+    },
+    [onMentionClick]
+  )
 
   return (
     <span className={className}>
-      {parsedContent.map((part, index) => {
-        if (part.type === 'mention') {
-          return (
-            <button
-              key={index}
-              onClick={e => handleMentionClick(part.username!, e)}
-              className={cn(
-                'hover:bg-primary/20 inline-flex items-center rounded px-1 py-0.5 text-sm font-medium transition-colors',
-                part.isCurrentUser
-                  ? 'bg-primary/15 text-primary border-primary/30 border'
-                  : 'bg-blue-500/15 text-blue-600 hover:bg-blue-500/25 dark:text-blue-400'
-              )}
-              title={`Mention: ${part.username}`}
-            >
-              {part.content}
-            </button>
-          )
-        }
-
-        return <span key={index}>{part.content}</span>
-      })}
+      {parsedContent.map((part, index) =>
+        part.type === 'mention' ? (
+          <button
+            key={index}
+            onClick={e => handleMentionClick(part.username!, e)}
+            className={cn(
+              'hover:bg-primary/20 inline-flex items-center rounded px-1 py-0.5 text-sm font-medium transition-colors',
+              part.isCurrentUser
+                ? 'bg-primary/15 text-primary border-primary/30 border'
+                : 'bg-blue-500/15 text-blue-600 hover:bg-blue-500/25 dark:text-blue-400'
+            )}
+            title={`Mention: ${part.username}`}
+            type="button"
+            tabIndex={0}
+          >
+            {part.content}
+          </button>
+        ) : (
+          <span key={index}>{part.content}</span>
+        )
+      )}
     </span>
   )
 }
@@ -115,19 +119,18 @@ export function useMentionDetection(text: string) {
       return {
         hasMentions: false,
         hasCurrentUserMention: false,
-        mentions: [],
+        mentions: [] as string[],
       }
     }
 
     const mentionRegex = /@(?:"([^"]+)"|(\w+))/g
     const mentions: string[] = []
-    let match
+    let match: RegExpExecArray | null
     let hasCurrentUserMention = false
 
     while ((match = mentionRegex.exec(text)) !== null) {
-      const username = (match[1] || match[2]).toLowerCase()
+      const username = (match[1] || match[2] || '').toLowerCase()
       mentions.push(username)
-
       if (username === currentUsername) {
         hasCurrentUserMention = true
       }
@@ -149,11 +152,13 @@ export function extractMentions(text: string): string[] {
 
   const mentionRegex = /@(?:"([^"]+)"|(\w+))/g
   const mentions: string[] = []
-  let match
+  let match: RegExpExecArray | null
 
   while ((match = mentionRegex.exec(text)) !== null) {
     const username = match[1] || match[2]
-    mentions.push(username)
+    if (username) {
+      mentions.push(username)
+    }
   }
 
   return mentions
@@ -166,11 +171,12 @@ export function containsMention(text: string, username: string): boolean {
   if (!text || !username) return false
 
   const mentionRegex = /@(?:"([^"]+)"|(\w+))/g
-  let match
+  let match: RegExpExecArray | null
+  const usernameLower = username.toLowerCase()
 
   while ((match = mentionRegex.exec(text)) !== null) {
-    const mentionedUsername = (match[1] || match[2]).toLowerCase()
-    if (mentionedUsername === username.toLowerCase()) {
+    const mentionedUsername = (match[1] || match[2] || '').toLowerCase()
+    if (mentionedUsername === usernameLower) {
       return true
     }
   }
