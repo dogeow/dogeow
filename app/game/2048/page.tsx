@@ -92,32 +92,31 @@ export default function Game2048() {
   const directionalRunIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const randomDirectionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const lastGyroMoveTime = useRef<number>(0)
-  const sliderAudioContextRef = useRef<AudioContext | null>(null)
-  const lastSpeedRef = useRef<number | null>(null)
+  const moveAudioContextRef = useRef<AudioContext | null>(null)
 
-  const initSliderAudioContext = useCallback(() => {
-    if (sliderAudioContextRef.current || typeof window === 'undefined') return
+  const initMoveAudioContext = useCallback(() => {
+    if (moveAudioContextRef.current || typeof window === 'undefined') return
     const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext
     if (!AudioContextCtor) return
     try {
-      sliderAudioContextRef.current = new AudioContextCtor()
+      moveAudioContextRef.current = new AudioContextCtor()
     } catch (err) {
       // ignore
     }
   }, [])
 
-  const unlockSliderAudio = useCallback(() => {
-    initSliderAudioContext()
-    const ctx = sliderAudioContextRef.current
+  const unlockMoveAudio = useCallback(() => {
+    initMoveAudioContext()
+    const ctx = moveAudioContextRef.current
     if (!ctx) return
     if (ctx.state === 'suspended') {
       void ctx.resume()
     }
-  }, [initSliderAudioContext])
+  }, [initMoveAudioContext])
 
-  const playSliderSound = useCallback(() => {
-    initSliderAudioContext()
-    const ctx = sliderAudioContextRef.current
+  const playMoveSound = useCallback(() => {
+    initMoveAudioContext()
+    const ctx = moveAudioContextRef.current
     if (!ctx) return
     const play = () => {
       try {
@@ -140,7 +139,7 @@ export default function Game2048() {
       return
     }
     play()
-  }, [initSliderAudioContext])
+  }, [initMoveAudioContext])
 
   const moveHandlers = useMemo(
     () => ({
@@ -173,6 +172,7 @@ export default function Game2048() {
       setBoard(curBoard => {
         const result = moveHandlers[direction](curBoard)
         if (result.moved) {
+          playMoveSound()
           const newBoard = [...result.newBoard]
           addRandomTile(newBoard)
           // check 2048
@@ -207,6 +207,7 @@ export default function Game2048() {
       moveHandlers,
       stopAutoRun,
       stopDirectionalRun,
+      playMoveSound,
     ]
   )
 
@@ -360,8 +361,9 @@ export default function Game2048() {
       setHistory(prev => prev.slice(0, -1))
       setCanUndo(history.length > 1)
       setGameOver(false)
+      playMoveSound()
     }
-  }, [history, canUndo])
+  }, [history, canUndo, playMoveSound])
 
   // 键盘
   useEffect(() => {
@@ -470,7 +472,7 @@ export default function Game2048() {
   }, [score, setBestScore])
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const unlock = () => unlockSliderAudio()
+    const unlock = () => unlockMoveAudio()
     window.addEventListener('pointerdown', unlock, { once: true })
     window.addEventListener('keydown', unlock, { once: true })
     window.addEventListener('touchstart', unlock, { once: true })
@@ -479,17 +481,7 @@ export default function Game2048() {
       window.removeEventListener('keydown', unlock)
       window.removeEventListener('touchstart', unlock)
     }
-  }, [unlockSliderAudio])
-  useEffect(() => {
-    if (lastSpeedRef.current === null) {
-      lastSpeedRef.current = speed
-      return
-    }
-    if (lastSpeedRef.current !== speed) {
-      lastSpeedRef.current = speed
-      playSliderSound()
-    }
-  }, [speed, playSliderSound])
+  }, [unlockMoveAudio])
   useEffect(
     () => () => {
       stopAutoRun()
@@ -610,7 +602,6 @@ export default function Game2048() {
     toggleAutoRun,
     toggleClockwiseRun,
     toggleCounterClockwiseRun,
-    playSliderSound,
   ])
 
   const GyroControls = useMemo(
