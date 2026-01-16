@@ -2,10 +2,11 @@
 
 import './novel-editor.css'
 import { EditorContent, EditorRoot, type JSONContent } from 'novel'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo, startTransition } from 'react'
 import hljs from 'highlight.js'
 import { Markdown } from 'tiptap-markdown'
 import { StarterKit } from 'novel'
+import { useEditor } from '@tiptap/react'
 import { cx } from 'class-variance-authority'
 
 // 简化的预览扩展，只包含基本的 Markdown 渲染功能
@@ -14,17 +15,17 @@ const previewExtensions = [
     codeBlock: false,
     bulletList: {
       HTMLAttributes: {
-        class: cx('list-disc list-outside leading-relaxed space-y-1'),
+        class: cx('list-disc list-outside pl-6 my-2 space-y-1'),
       },
     },
     orderedList: {
       HTMLAttributes: {
-        class: cx('list-decimal list-outside leading-relaxed space-y-1'),
+        class: cx('list-decimal list-outside pl-6 my-2 space-y-1'),
       },
     },
     listItem: {
       HTMLAttributes: {
-        class: cx('leading-relaxed'),
+        class: cx('pl-1 leading-relaxed'),
       },
     },
     blockquote: {
@@ -49,7 +50,7 @@ const previewExtensions = [
     gapcursor: false,
     paragraph: {
       HTMLAttributes: {
-        class: cx('leading-relaxed mb-4'),
+        class: cx('leading-relaxed my-2'),
       },
     },
     heading: {
@@ -78,134 +79,47 @@ interface MarkdownPreviewProps {
 const MarkdownPreview = ({ content, className }: MarkdownPreviewProps) => {
   const [jsonContent, setJsonContent] = useState<JSONContent | null>(null)
 
-  // 将 Markdown 字符串转换为 JSONContent
+  // 创建一个临时编辑器实例来解析 markdown
+  const parserEditor = useEditor({
+    extensions: previewExtensions,
+    content: '',
+    editable: false,
+  })
+
+  // 使用 Tiptap 的 Markdown 扩展解析 markdown 字符串
   useEffect(() => {
-    if (content) {
-      // 简化的 Markdown 到 JSON 转换
-      const lines = content.split('\n')
-      const contentArray: JSONContent[] = []
+    if (content && parserEditor) {
+      try {
+        // 使用编辑器的 setContent 方法和 markdown 扩展来解析
+        parserEditor.commands.setContent(content, false, {
+          parseOptions: {
+            preserveWhitespace: 'full',
+          },
+        })
 
-      let currentList: JSONContent | null = null
-      let currentListType: 'bulletList' | 'orderedList' | null = null
-
-      lines.forEach(line => {
-        const trimmedLine = line.trim()
-        if (!trimmedLine) {
-          if (currentList) {
-            contentArray.push(currentList)
-            currentList = null
-            currentListType = null
-          }
-          return
-        }
-
-        if (trimmedLine.startsWith('# ')) {
-          // H1
-          contentArray.push({
-            type: 'heading',
-            attrs: { level: 1 },
-            content: [{ type: 'text', text: trimmedLine.substring(2) }],
-          })
-        } else if (trimmedLine.startsWith('## ')) {
-          // H2
-          contentArray.push({
-            type: 'heading',
-            attrs: { level: 2 },
-            content: [{ type: 'text', text: trimmedLine.substring(3) }],
-          })
-        } else if (trimmedLine.startsWith('### ')) {
-          // H3
-          contentArray.push({
-            type: 'heading',
-            attrs: { level: 3 },
-            content: [{ type: 'text', text: trimmedLine.substring(4) }],
-          })
-        } else if (trimmedLine.startsWith('- ')) {
-          // List item
-          if (currentListType !== 'bulletList') {
-            if (currentList) {
-              contentArray.push(currentList)
-            }
-            currentList = {
-              type: 'bulletList',
-              content: [],
-            }
-            currentListType = 'bulletList'
-          }
-          if (currentList && currentList.content) {
-            ;(currentList.content as JSONContent[]).push({
-              type: 'listItem',
-              content: [
-                {
-                  type: 'paragraph',
-                  content: [{ type: 'text', text: trimmedLine.substring(2) }],
-                },
-              ],
-            })
-          }
-        } else if (trimmedLine.startsWith('1. ')) {
-          // Ordered list item
-          if (currentListType !== 'orderedList') {
-            if (currentList) {
-              contentArray.push(currentList)
-            }
-            currentList = {
-              type: 'orderedList',
-              content: [],
-            }
-            currentListType = 'orderedList'
-          }
-          if (currentList && currentList.content) {
-            ;(currentList.content as JSONContent[]).push({
-              type: 'listItem',
-              content: [
-                {
-                  type: 'paragraph',
-                  content: [{ type: 'text', text: trimmedLine.substring(3) }],
-                },
-              ],
-            })
-          }
-        } else if (trimmedLine.startsWith('> ')) {
-          // Blockquote
-          contentArray.push({
-            type: 'blockquote',
+        // 获取解析后的 JSONContent
+        const parsedContent = parserEditor.getJSON()
+        // 使用 startTransition 来避免在 effect 中同步调用 setState
+        startTransition(() => {
+          setJsonContent(parsedContent)
+        })
+      } catch (error) {
+        console.error('Failed to parse markdown:', error)
+        // 如果解析失败，使用简单的段落包装
+        startTransition(() => {
+          setJsonContent({
+            type: 'doc',
             content: [
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: trimmedLine.substring(2) }],
+                content: [{ type: 'text', text: content }],
               },
             ],
           })
-        } else if (trimmedLine.startsWith('```')) {
-          // Code block
-          contentArray.push({
-            type: 'codeBlock',
-            attrs: { language: 'text' },
-            content: [{ type: 'text', text: '' }],
-          })
-        } else {
-          // Regular paragraph
-          contentArray.push({
-            type: 'paragraph',
-            content: [{ type: 'text', text: trimmedLine }],
-          })
-        }
-      })
-
-      // 添加最后一个列表
-      if (currentList) {
-        contentArray.push(currentList)
+        })
       }
-
-      const jsonContent: JSONContent = {
-        type: 'doc',
-        content: contentArray,
-      }
-
-      setJsonContent(jsonContent)
     }
-  }, [content])
+  }, [content, parserEditor])
 
   // 应用代码高亮
   const highlightCodeblocks = () => {
@@ -237,7 +151,7 @@ const MarkdownPreview = ({ content, className }: MarkdownPreviewProps) => {
         <EditorContent
           initialContent={jsonContent}
           extensions={previewExtensions}
-          className="prose prose-neutral dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-h1:text-2xl prose-h1:mb-4 prose-h1:mt-6 prose-h2:text-xl prose-h2:mb-3 prose-h2:mt-5 prose-h3:text-lg prose-h3:mb-2 prose-h3:mt-4 prose-p:leading-relaxed prose-p:text-foreground prose-strong:font-semibold prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto prose-blockquote:border-l-4 prose-blockquote:border-primary/20 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:my-6 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-ul:space-y-1 prose-ol:space-y-1 prose-li:leading-relaxed prose-hr:my-8 prose-hr:border-t prose-hr:border-border prose-a:text-primary prose-a:underline prose-a:underline-offset-[3px] hover:prose-a:text-primary/80 prose-img:rounded-lg prose-img:border prose-img:border-border prose-img:my-6 max-w-none font-sans focus:outline-none"
+          className="prose prose-neutral dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-h1:text-2xl prose-h1:mb-3 prose-h1:mt-4 prose-h2:text-xl prose-h2:mb-2 prose-h2:mt-4 prose-h3:text-lg prose-h3:mb-2 prose-h3:mt-3 prose-p:leading-relaxed prose-p:text-foreground prose-p:my-2 prose-strong:font-semibold prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto prose-pre:my-2 prose-blockquote:border-l-4 prose-blockquote:border-primary/20 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:my-4 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-ul:pl-6 prose-ul:my-2 prose-ul:space-y-1 prose-ol:pl-6 prose-ol:my-2 prose-ol:space-y-1 prose-li:leading-relaxed prose-li:pl-1 prose-li:my-0.5 prose-hr:my-4 prose-hr:border-t prose-hr:border-border prose-a:text-primary prose-a:underline prose-a:underline-offset-[3px] hover:prose-a:text-primary/80 prose-img:rounded-lg prose-img:border prose-img:border-border prose-img:my-4 max-w-none font-sans focus:outline-none"
           editable={false}
           editorProps={{
             attributes: {

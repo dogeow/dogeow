@@ -14,10 +14,12 @@ import { AppsView } from './views/AppsView'
 import { SearchResultView } from './views/SearchResultView'
 import { ViewWrapper } from './views/ViewWrapper'
 import { useMusicStore } from '@/stores/musicStore'
+import { AiDialog } from '@/components/app/AiDialog'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
 export function AppLauncher() {
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated } = useAuthStore()
@@ -33,6 +35,34 @@ export function AppLauncher() {
   const searchManager = useSearchManager(pathname)
   const { backgroundImage, setBackgroundImage } = useBackgroundManager()
 
+  // 解构 audioManager 的所有属性，避免 lint 误报
+  const {
+    audioRef,
+    isPlaying,
+    audioError,
+    currentTime,
+    duration,
+    volume,
+    isMuted,
+    availableTracks,
+    currentTrack,
+    readyToPlay,
+    setReadyToPlay,
+    fetchAvailableTracks,
+    setCurrentTrack,
+    setupMediaSource,
+    resetCurrentTime,
+    switchTrack,
+    togglePlay,
+    toggleMute,
+    handleProgressChange,
+    handleLoadedMetadata,
+    handleTimeUpdate,
+    handleAudioError,
+    getCurrentTrackName,
+    formatTime,
+  } = audioManager
+
   // 切换显示模式
   const toggleDisplayMode = useCallback(
     (mode: DisplayMode) => {
@@ -40,39 +70,40 @@ export function AppLauncher() {
 
       // 当切换到音乐模式时，加载音频列表并初始化音频源
       if (mode === 'music') {
-        audioManager.fetchAvailableTracks()
+        fetchAvailableTracks()
 
         // 检查播放列表状态 - 添加安全检查
-        if (!audioManager.availableTracks || audioManager.availableTracks.length === 0) {
+        if (!availableTracks || availableTracks.length === 0) {
           // 播放列表为空，不需要设置音频源
           return
         }
 
-        if (audioManager.currentTrack && !audioManager.audioRef.current?.src) {
-          audioManager.setupMediaSource()
+        if (currentTrack && !audioRef.current?.src) {
+          setupMediaSource()
         }
       }
     },
-    [audioManager]
+    [fetchAvailableTracks, availableTracks, currentTrack, audioRef, setupMediaSource]
   )
 
   const switchToNextTrack = useCallback(() => {
     // 根据播放模式决定播放行为
     if (playMode === 'one') {
       // 单曲循环：重新播放当前歌曲
-      if (audioManager.audioRef.current) {
-        audioManager.audioRef.current.currentTime = 0
-        audioManager.audioRef.current.play().catch(console.error)
+      resetCurrentTime()
+      const audioElement = audioRef.current
+      if (audioElement) {
+        audioElement.play().catch(console.error)
       }
     } else if (playMode === 'all') {
       // 列表循环：播放下一首，如果到末尾则重新开始
-      audioManager.switchTrack('next')
+      switchTrack('next')
     } else {
       // 不循环：播放下一首，如果到末尾则停止
-      audioManager.switchTrack('next')
+      switchTrack('next')
     }
-  }, [audioManager, playMode])
-  const switchToPrevTrack = useCallback(() => audioManager.switchTrack('prev'), [audioManager])
+  }, [playMode, resetCurrentTime, audioRef, switchTrack])
+  const switchToPrevTrack = useCallback(() => switchTrack('prev'), [switchTrack])
 
   // 媒体键盘事件处理
   useEffect(() => {
@@ -80,7 +111,7 @@ export function AppLauncher() {
       // 检查是否为媒体键
       if (event.code === 'MediaPlayPause') {
         event.preventDefault()
-        audioManager.togglePlay()
+        togglePlay()
       } else if (event.code === 'MediaTrackPrevious') {
         event.preventDefault()
         switchToPrevTrack()
@@ -92,16 +123,14 @@ export function AppLauncher() {
 
     window.addEventListener('keydown', handleMediaKeyPress)
     return () => window.removeEventListener('keydown', handleMediaKeyPress)
-  }, [audioManager, switchToPrevTrack, switchToNextTrack])
+  }, [togglePlay, switchToPrevTrack, switchToNextTrack])
 
   // Media Session API 支持
   useEffect(() => {
     if ('mediaSession' in navigator) {
       const updateMediaSession = () => {
-        if (audioManager.currentTrack && audioManager.availableTracks?.length > 0) {
-          const currentTrackInfo = audioManager.availableTracks.find(
-            track => track.path === audioManager.currentTrack
-          )
+        if (currentTrack && availableTracks?.length > 0) {
+          const currentTrackInfo = availableTracks.find(track => track.path === currentTrack)
 
           if (currentTrackInfo) {
             navigator.mediaSession.metadata = new MediaMetadata({
@@ -114,11 +143,11 @@ export function AppLauncher() {
 
         // 设置媒体会话动作处理程序
         navigator.mediaSession.setActionHandler('play', () => {
-          audioManager.togglePlay()
+          togglePlay()
         })
 
         navigator.mediaSession.setActionHandler('pause', () => {
-          audioManager.togglePlay()
+          togglePlay()
         })
 
         navigator.mediaSession.setActionHandler('previoustrack', () => {
@@ -130,7 +159,7 @@ export function AppLauncher() {
         })
 
         // 更新播放状态
-        navigator.mediaSession.playbackState = audioManager.isPlaying ? 'playing' : 'paused'
+        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
       }
 
       updateMediaSession()
@@ -138,7 +167,7 @@ export function AppLauncher() {
       // 监听播放状态变化
       const handlePlayStateChange = () => {
         if ('mediaSession' in navigator) {
-          navigator.mediaSession.playbackState = audioManager.isPlaying ? 'playing' : 'paused'
+          navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
         }
       }
 
@@ -151,7 +180,7 @@ export function AppLauncher() {
         clearInterval(interval)
       }
     }
-  }, [audioManager, switchToPrevTrack, switchToNextTrack])
+  }, [currentTrack, availableTracks, isPlaying, togglePlay, switchToPrevTrack, switchToNextTrack])
 
   // 重置搜索结果
   const resetSearchResult = useCallback(() => {
@@ -165,24 +194,24 @@ export function AppLauncher() {
       music: {
         component: MusicPlayer,
         props: {
-          isPlaying: audioManager.isPlaying,
-          audioError: audioManager.audioError,
-          currentTime: audioManager.currentTime,
-          duration: audioManager.duration,
-          volume: audioManager.volume,
-          isMuted: audioManager.isMuted,
-          availableTracks: audioManager.availableTracks || [],
-          currentTrack: audioManager.currentTrack || '',
+          isPlaying,
+          audioError,
+          currentTime,
+          duration,
+          volume,
+          isMuted,
+          availableTracks: availableTracks || [],
+          currentTrack: currentTrack || '',
           playMode: playMode,
-          toggleMute: audioManager.toggleMute,
+          toggleMute,
           switchToPrevTrack,
           switchToNextTrack,
-          togglePlay: audioManager.togglePlay,
-          handleProgressChange: audioManager.handleProgressChange,
-          getCurrentTrackName: audioManager.getCurrentTrackName,
-          formatTime: audioManager.formatTime,
+          togglePlay,
+          handleProgressChange,
+          getCurrentTrackName,
+          formatTime,
           toggleDisplayMode,
-          onTrackSelect: (trackPath: string) => audioManager.setCurrentTrack?.(trackPath),
+          onTrackSelect: (trackPath: string) => setCurrentTrack?.(trackPath),
           onTogglePlayMode: () => {
             // 切换播放模式 - 只改变状态，下次生效
             togglePlayMode()
@@ -205,15 +234,28 @@ export function AppLauncher() {
       },
     }),
     [
-      audioManager,
+      isPlaying,
+      audioError,
+      currentTime,
+      duration,
+      volume,
+      isMuted,
+      availableTracks,
+      currentTrack,
+      playMode,
+      toggleMute,
+      switchToPrevTrack,
+      switchToNextTrack,
+      togglePlay,
+      handleProgressChange,
+      getCurrentTrackName,
+      formatTime,
+      setCurrentTrack,
       toggleDisplayMode,
+      togglePlayMode,
       backgroundImage,
       setBackgroundImage,
       customBackgrounds,
-      switchToPrevTrack,
-      switchToNextTrack,
-      playMode,
-      togglePlayMode,
     ]
   )
 
@@ -253,6 +295,7 @@ export function AppLauncher() {
             searchManager={searchManager}
             isAuthenticated={isAuthenticated}
             toggleDisplayMode={toggleDisplayMode}
+            onOpenAi={() => setIsAiDialogOpen(true)}
           />
         )
 
@@ -268,6 +311,7 @@ export function AppLauncher() {
 
   return (
     <>
+      <AiDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
       <SearchDialog
         open={searchManager.isSearchDialogOpen}
         onOpenChange={searchManager.setIsSearchDialogOpen}
@@ -282,12 +326,12 @@ export function AppLauncher() {
         {renderContent()}
 
         <audio
-          ref={audioManager.audioRef}
-          onLoadedMetadata={audioManager.handleLoadedMetadata}
-          onTimeUpdate={audioManager.handleTimeUpdate}
-          onError={audioManager.handleAudioError}
+          ref={audioRef}
+          onLoadedMetadata={handleLoadedMetadata}
+          onTimeUpdate={handleTimeUpdate}
+          onError={handleAudioError}
           onEnded={switchToNextTrack}
-          onCanPlay={() => audioManager.setReadyToPlay(true)}
+          onCanPlay={() => setReadyToPlay(true)}
           loop={false}
           hidden
           preload="none"

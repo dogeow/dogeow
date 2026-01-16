@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Settings, Music } from 'lucide-react'
+import { Settings, Music, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
@@ -12,14 +12,20 @@ type DisplayMode = 'music' | 'apps' | 'settings'
 
 export interface AppGridProps {
   toggleDisplayMode: (mode: DisplayMode) => void
+  onOpenAi?: () => void
 }
 
-export function AppGrid({ toggleDisplayMode }: AppGridProps) {
+export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
   const { t } = useTranslation()
   const { isPlaying } = useMusicStore()
 
   // 定义按钮配置
   const buttons = [
+    {
+      icon: <Sparkles className="h-5 w-5" />,
+      label: 'AI 助理',
+      onClick: () => onOpenAi?.(),
+    },
     {
       icon: (
         <motion.div
@@ -59,7 +65,7 @@ export function AppGrid({ toggleDisplayMode }: AppGridProps) {
           <Button
             variant="ghost"
             size="icon"
-            className={cn(buttonStyle, 'hover:bg-background/80')}
+            className={cn(buttonStyle, 'hover:bg-background/80', button.className)}
             onClick={button.onClick}
           >
             {button.icon}

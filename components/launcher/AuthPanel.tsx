@@ -120,7 +120,7 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-destructive hover:text-destructive hover:bg-destructive/10 flex items-center gap-1"
+                className="flex items-center gap-1"
                 onClick={handleLogoutConfirm}
               >
                 <Check className="h-4 w-4" />
@@ -132,11 +132,7 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
               </Button>
             </div>
           ) : (
-            <Button
-              variant="ghost"
-              className="text-destructive hover:text-destructive hover:bg-destructive/10 flex items-center gap-2"
-              onClick={handleLogoutStart}
-            >
+            <Button variant="ghost" className="flex items-center gap-2" onClick={handleLogoutStart}>
               <LogOut className="h-4 w-4" />
             </Button>
           )}

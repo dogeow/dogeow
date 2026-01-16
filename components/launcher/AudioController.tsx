@@ -398,6 +398,13 @@ export function AudioController({
     }
   }, [isMuted, volume, isMobileDevice, setIsMuted])
 
+  // 重置当前播放时间
+  const resetCurrentTime = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0
+    }
+  }, [])
+
   return {
     audioRef,
     togglePlay,
@@ -408,5 +415,6 @@ export function AudioController({
     handleAudioError,
     setupMediaSource,
     toggleMute,
+    resetCurrentTime,
   }
 }
