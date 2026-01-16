@@ -312,7 +312,7 @@ function ChatPageContent() {
       clearComponentError={clearComponentError}
       retryAction={retryAction}
     >
-      <div className="bg-background safe-area-top safe-area-bottom flex h-full min-h-0 flex-col overflow-hidden">
+      <div className="chat-page-shell bg-background safe-area-top safe-area-bottom flex min-h-0 flex-col overflow-hidden">
         <div className="flex min-h-0 flex-1 overflow-hidden">
           {/* Room List Sidebar - Desktop */}
           <ChatSidebar

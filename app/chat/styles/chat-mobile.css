@@ -8,6 +8,18 @@
     --chat-input-height: 100px; /* 输入框区域高度 */
   }
 
+  /* 聊天页面高度：移动端使用动态视口高度 */
+  .chat-page-shell {
+    height: calc(100vh - 50px);
+    min-height: 0;
+  }
+
+  @supports (height: 100dvh) {
+    .chat-page-shell {
+      height: calc(100dvh - 50px);
+    }
+  }
+
   /* 移动端导航栏样式 */
   .chat-header-mobile {
     padding-top: env(safe-area-inset-top, 0);
@@ -63,6 +75,10 @@
 
 /* 桌面端样式优化 */
 @media (min-width: 769px) {
+  .chat-page-shell {
+    height: calc(100vh - 50px);
+    min-height: 0;
+  }
   /* 消息输入区域样式 - 桌面端 */
   .chat-input-area-mobile {
     position: relative;
