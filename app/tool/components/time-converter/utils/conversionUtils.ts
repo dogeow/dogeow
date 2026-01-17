@@ -26,4 +26,4 @@ export const standardizeDateTime = (input: string): string => {
  * 验证输出是否有效（不是错误消息）
  */
 export const isValidOutput = (output: string, errorMessageList: readonly string[]): boolean =>
-  output && !errorMessageList.includes(output as (typeof errorMessageList)[number])
+  Boolean(output && !errorMessageList.includes(output as (typeof errorMessageList)[number]))

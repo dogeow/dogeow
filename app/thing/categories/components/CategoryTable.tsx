@@ -3,8 +3,8 @@ import { Table, TableBody, TableHead, TableHeader, TableRow } from '@/components
 import { CategoryParentRow } from './CategoryParentRow'
 import { CategoryChildRow } from './CategoryChildRow'
 import { CreateChildRow } from './CreateChildRow'
-import { UncategorizedRow } from './UncategorizedRow'
-import { EmptyState } from './EmptyState'
+import UncategorizedRow from './UncategorizedRow'
+import EmptyState from './EmptyState'
 import { buildCategoryTree, type CategoryWithChildren } from '../utils/buildCategoryTree'
 import type { Category } from '../../types'
 
@@ -32,7 +32,7 @@ interface CategoryTableProps {
   onValueChange: (value: string) => void
   onNewChildNameChange: (value: string) => void
   onEditKeyDown: (e: React.KeyboardEvent) => void
-  inputRef: React.RefObject<HTMLInputElement>
+  inputRef: React.RefObject<HTMLInputElement | null>
 }
 
 export const CategoryTable = memo<CategoryTableProps>(

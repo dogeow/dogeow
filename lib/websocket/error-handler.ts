@@ -1,7 +1,7 @@
 // import { ConnectionStatus } from './connection-monitor'
 
 export interface ConnectionError {
-  type: 'connection' | 'authentication' | 'network' | 'timeout' | 'unknown'
+  type: 'connection' | 'authentication' | 'network' | 'timeout' | 'permission' | 'unknown'
   message: string
   code?: string | number
   timestamp: Date

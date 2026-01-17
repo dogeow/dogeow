@@ -22,7 +22,7 @@ export function useMediaSession({
   useEffect(() => {
     if ('mediaSession' in navigator) {
       const updateMediaSession = () => {
-        if (currentTrack && availableTracks?.length > 0) {
+        if (currentTrack && availableTracks && availableTracks.length > 0) {
           const currentTrackInfo = availableTracks.find(track => track.path === currentTrack)
 
           if (currentTrackInfo) {

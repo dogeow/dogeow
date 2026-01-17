@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, startTransition } from 'react'
 import { apiRequest } from '@/lib/api'
-import type { Location } from './formConstants'
+import type { Location } from '../formConstants'
 
 export function useLocationData(isCreateMode: boolean) {
   const [areas, setAreas] = useState<Location[]>([])

@@ -84,7 +84,7 @@ export const FileGridItem = memo<FileGridItemProps>(
               className="text-destructive focus:text-destructive"
               onClick={e => {
                 e.stopPropagation()
-                onDelete(file)
+                onDelete(file, e)
               }}
             >
               <Trash2 className="mr-2 h-4 w-4" />

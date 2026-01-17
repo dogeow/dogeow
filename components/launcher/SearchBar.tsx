@@ -85,10 +85,12 @@ export function SearchBar({
 
   // 清除搜索内容
   const handleClearSearch = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
-      e.preventDefault()
-      e.nativeEvent.stopImmediatePropagation()
+    (e?: React.MouseEvent) => {
+      if (e) {
+        e.stopPropagation()
+        e.preventDefault()
+        e.nativeEvent.stopImmediatePropagation()
+      }
 
       setSearchTerm('')
 

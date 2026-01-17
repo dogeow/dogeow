@@ -83,7 +83,8 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
 
   // 处理节点点击
   const handleNodeClick = useCallback(
-    (n: NodeData) => {
+    (node: { [others: string]: any; id?: string | number }, event?: MouseEvent) => {
+      const n = node as NodeData
       if (String(activeNode?.id) === String(n.id)) {
         // 重复点击已选中的节点，取消选中
         setActiveNode(null)
@@ -99,19 +100,26 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   )
 
   // 处理节点拖拽
-  const handleNodeDrag = useCallback(() => {
-    isDraggingRef.current = true
-    // 拖动时恢复动画以便节点可以移动
-    resumeGraphAnimation()
-  }, [resumeGraphAnimation])
+  const handleNodeDrag = useCallback(
+    (_node: { [others: string]: any; id?: string | number }, _event?: MouseEvent) => {
+      isDraggingRef.current = true
+      // 拖动时恢复动画以便节点可以移动
+      resumeGraphAnimation()
+    },
+    [resumeGraphAnimation]
+  )
 
-  const handleNodeDragEnd = useCallback(() => {
-    isDraggingRef.current = false
-  }, [])
+  const handleNodeDragEnd = useCallback(
+    (_node: { [others: string]: any; id?: string | number }, _event?: MouseEvent) => {
+      isDraggingRef.current = false
+    },
+    []
+  )
 
   // 处理节点右键点击
   const handleNodeRightClick = useCallback(
-    (n: NodeData) => {
+    (node: { [others: string]: any; id?: string | number }, event?: MouseEvent) => {
+      const n = node as NodeData
       setActiveNode(n)
 
       if (isAdmin) {
@@ -224,7 +232,12 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
 
   // 节点渲染函数
   const nodeCanvasObject = useCallback(
-    (node: NodeData, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    (
+      obj: { [others: string]: any; id?: string | number },
+      ctx: CanvasRenderingContext2D,
+      globalScale: number
+    ) => {
+      const node = obj as NodeData
       createNodeCanvasRenderer(
         activeNode,
         hoverNode,
