@@ -8,7 +8,7 @@ import { useLocationCreation } from './location/hooks/useLocationCreation'
 import { LocationSelectField } from './location/components/LocationSelectField'
 import { areaToOptions, roomToOptions, spotToOptions } from './location/utils/optionUtils'
 import { buildPathFromSelection } from './location/utils/pathUtils'
-import type { Area, Room, Spot } from './types'
+import type { Area, Room, Spot } from '@/app/thing/types'
 
 export type LocationSelection =
   | {

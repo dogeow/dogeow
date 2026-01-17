@@ -18,7 +18,7 @@ interface UseAiChatReturn {
   stop: () => void
   handleSend: () => void
   handleClear: () => void
-  messagesEndRef: React.RefObject<HTMLDivElement>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
 }
 
 export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {

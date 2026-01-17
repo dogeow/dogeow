@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import type { UseFormReturn } from 'react-hook-form'
-import type { ItemFormData, ItemFormSchemaType } from './formConstants'
+import type { ItemFormSchemaType } from '../formConstants'
+import type { ItemFormData } from '@/app/thing/types'
 
 type FormDataType = ItemFormSchemaType
 

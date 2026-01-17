@@ -4,7 +4,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { UserAvatar } from './UserAvatar'
 import { UserProfilePopover } from './UserProfilePopover'
 import { userRoleUtils } from '../utils/userUtils'
-import type { OnlineUser } from '../../types'
+import type { OnlineUser } from '@/app/chat/types'
 
 interface UserListItemProps {
   user: OnlineUser

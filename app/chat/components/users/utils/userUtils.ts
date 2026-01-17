@@ -1,4 +1,4 @@
-import type { OnlineUser } from '../../types'
+import type { OnlineUser } from '@/app/chat/types'
 
 export type UserRole = 'admin' | 'moderator' | 'user'
 

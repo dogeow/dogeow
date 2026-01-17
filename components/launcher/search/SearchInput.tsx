@@ -6,10 +6,10 @@ import { useTranslation } from '@/hooks/useTranslation'
 interface SearchInputProps {
   searchTerm: string
   onSearchChange: (value: string) => void
-  onClear: () => void
+  onClear: (e?: React.MouseEvent) => void
   onSubmit: (e: React.FormEvent) => void
   currentApp?: string
-  inputRef?: React.RefObject<HTMLInputElement>
+  inputRef?: React.RefObject<HTMLInputElement | null>
 }
 
 export const SearchInput = memo<SearchInputProps>(

@@ -1,4 +1,4 @@
-import type { Area, Room, Spot } from '../../types'
+import type { Area, Room, Spot } from '@/app/thing/types'
 
 /**
  * 生成区域选项

@@ -2,7 +2,7 @@ import { useEffect, RefObject } from 'react'
 
 interface UseAutoScrollProps {
   trigger: string | null
-  elementRef: RefObject<HTMLDivElement>
+  elementRef: RefObject<HTMLDivElement | null>
   delay?: number
 }
 

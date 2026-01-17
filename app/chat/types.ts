@@ -122,3 +122,6 @@ export interface PresenceData {
   users: PresenceUser[]
   user?: PresenceUser
 }
+
+// 重新导出 ChatRoomState 作为 ChatState（向后兼容）
+export type ChatState = ChatRoomState

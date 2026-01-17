@@ -1,4 +1,4 @@
-import type { LocationTreeResponse, Room, Spot } from '../../types'
+import type { LocationTreeResponse, Room, Spot, Area } from '@/app/thing/types'
 
 /**
  * 搜索匹配函数
@@ -49,8 +49,8 @@ export const filterSearchResults = (
       filteredAreas: filterType === 'room' ? [] : areas,
       filteredRooms: rooms,
       filteredSpots: filterType === 'area' ? [] : spots,
-      visibleAreaIds: isExpanded ? areas.map(area => area.id) : Array.from(expandedAreas),
-      visibleRoomIds: isExpanded ? rooms.map(room => room.id) : Array.from(expandedRooms),
+      visibleAreaIds: isExpanded ? areas.map((area: Area) => area.id) : Array.from(expandedAreas),
+      visibleRoomIds: isExpanded ? rooms.map((room: Room) => room.id) : Array.from(expandedRooms),
     }
   }
 
@@ -59,20 +59,20 @@ export const filterSearchResults = (
   const { areaRoomsMap, roomSpotsMap } = buildLocationMaps(rooms, spots)
 
   // 查找匹配的区域
-  const matchingAreas = areas.filter(area => matchesSearch(area.name, searchTerm))
-  matchingAreas.forEach(area => visibleAreaIds.add(area.id))
+  const matchingAreas = areas.filter((area: Area) => matchesSearch(area.name, searchTerm))
+  matchingAreas.forEach((area: Area) => visibleAreaIds.add(area.id))
 
   // 查找匹配的房间及其所属区域
-  const matchingRooms = rooms.filter(room => matchesSearch(room.name, searchTerm))
-  matchingRooms.forEach(room => {
+  const matchingRooms = rooms.filter((room: Room) => matchesSearch(room.name, searchTerm))
+  matchingRooms.forEach((room: Room) => {
     visibleAreaIds.add(room.area_id)
     visibleRoomIds.add(room.id)
   })
 
   // 查找匹配的位置及其所属房间和区域
-  const matchingSpots = spots.filter(spot => matchesSearch(spot.name, searchTerm))
-  matchingSpots.forEach(spot => {
-    const room = rooms.find(r => r.id === spot.room_id)
+  const matchingSpots = spots.filter((spot: Spot) => matchesSearch(spot.name, searchTerm))
+  matchingSpots.forEach((spot: Spot) => {
+    const room = rooms.find((r: Room) => r.id === spot.room_id)
     if (room) {
       visibleAreaIds.add(room.area_id)
       visibleRoomIds.add(room.id)
@@ -80,21 +80,21 @@ export const filterSearchResults = (
   })
 
   // 为包含匹配子项的父项添加可见性
-  areas.forEach(area => {
+  areas.forEach((area: Area) => {
     const areaRooms = areaRoomsMap.get(area.id) || []
-    const hasMatchingChild = areaRooms.some(room => {
+    const hasMatchingChild = areaRooms.some((room: Room) => {
       if (matchesSearch(room.name, searchTerm)) return true
       const roomSpots = roomSpotsMap.get(room.id) || []
-      return roomSpots.some(spot => matchesSearch(spot.name, searchTerm))
+      return roomSpots.some((spot: Spot) => matchesSearch(spot.name, searchTerm))
     })
 
     if (hasMatchingChild) {
       visibleAreaIds.add(area.id)
-      areaRooms.forEach(room => {
+      areaRooms.forEach((room: Room) => {
         const roomSpots = roomSpotsMap.get(room.id) || []
         if (
           matchesSearch(room.name, searchTerm) ||
-          roomSpots.some(spot => matchesSearch(spot.name, searchTerm))
+          roomSpots.some((spot: Spot) => matchesSearch(spot.name, searchTerm))
         ) {
           visibleRoomIds.add(room.id)
         }
@@ -103,12 +103,13 @@ export const filterSearchResults = (
   })
 
   return {
-    filteredAreas: filterType === 'room' ? [] : areas.filter(area => visibleAreaIds.has(area.id)),
-    filteredRooms: rooms.filter(room => visibleRoomIds.has(room.id)),
+    filteredAreas:
+      filterType === 'room' ? [] : areas.filter((area: Area) => visibleAreaIds.has(area.id)),
+    filteredRooms: rooms.filter((room: Room) => visibleRoomIds.has(room.id)),
     filteredSpots:
       filterType === 'area'
         ? []
-        : spots.filter(spot => {
+        : spots.filter((spot: Spot) => {
             const room = rooms.find(r => r.id === spot.room_id)
             return room && visibleAreaIds.has(room.area_id) && visibleRoomIds.has(room.id)
           }),

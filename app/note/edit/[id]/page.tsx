@@ -26,7 +26,8 @@ interface Note {
 // 笔记编辑页面
 export default function EditNotePage() {
   const { id } = useParams()
-  const { note, loading, error } = useNoteLoader(id)
+  const noteId = id ? (Array.isArray(id) ? id[0] : id) : ''
+  const { note, loading, error } = useNoteLoader(noteId)
   const { getCurrentContent } = useNoteContent()
   const [clientReady, setClientReady] = useState(false)
   const [title, setTitle] = useState('')
@@ -63,7 +64,6 @@ export default function EditNotePage() {
         is_draft: newPrivacyStatus, // 私密状态对应 is_draft
       }
 
-      const noteId = Array.isArray(id) ? id[0] : id
       await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
 
       setIsPrivate(newPrivacyStatus)
@@ -74,7 +74,7 @@ export default function EditNotePage() {
     } finally {
       setIsSaving(false)
     }
-  }, [title, id, isPrivate, getCurrentContent])
+  }, [title, noteId, isPrivate, getCurrentContent])
 
   // 保存笔记
   const handleSave = useCallback(async () => {
@@ -95,7 +95,6 @@ export default function EditNotePage() {
         is_draft: isPrivate, // 保持当前隐私状态
       }
 
-      const noteId = Array.isArray(id) ? id[0] : id
       await apiRequest<Note>(`/notes/${noteId}`, 'PUT', data)
 
       toast.success('笔记已更新')
@@ -105,7 +104,7 @@ export default function EditNotePage() {
     } finally {
       setIsSaving(false)
     }
-  }, [title, id, isPrivate, getCurrentContent])
+  }, [title, noteId, isPrivate, getCurrentContent])
 
   // 添加快捷键支持
   useNoteShortcuts({

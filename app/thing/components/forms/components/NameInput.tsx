@@ -1,7 +1,8 @@
 import React, { memo } from 'react'
 import { Controller, UseFormReturn } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
-import type { ItemFormData, ItemFormSchemaType } from '../formConstants'
+import type { ItemFormSchemaType } from '../formConstants'
+import type { ItemFormData } from '@/app/thing/types'
 
 type FormDataType = ItemFormSchemaType
 

@@ -4,8 +4,7 @@ import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Hash } from 'lucide-react'
 import { PuzzlePieceItem } from './PuzzlePieceItem'
-import { toRoman } from '../../../utils/puzzleUtils'
-import type { PuzzlePiece } from '../../../utils/puzzleUtils'
+import { toRoman, type PuzzlePiece } from '@/app/game/jigsaw-puzzle/utils/puzzleUtils'
 
 interface PieceSelectionAreaProps {
   pieces: PuzzlePiece[]

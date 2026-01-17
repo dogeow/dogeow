@@ -17,7 +17,7 @@ interface CategoryChildRowProps {
   onDelete: () => void
   onValueChange: (value: string) => void
   onKeyDown: (e: React.KeyboardEvent) => void
-  inputRef: React.RefObject<HTMLInputElement>
+  inputRef: React.RefObject<HTMLInputElement | null>
 }
 
 export const CategoryChildRow = memo<CategoryChildRowProps>(

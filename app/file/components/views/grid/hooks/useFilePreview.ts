@@ -1,10 +1,9 @@
 import { useState, useCallback } from 'react'
 import { toast } from 'react-hot-toast'
 import { apiRequest } from '@/lib/api'
-import { getFileStorageUrl } from '../../../services/api'
+import { getFileStorageUrl } from '@/app/file/services/api'
 import { PREVIEW_TYPES, type PreviewType } from '../utils/previewTypes'
-import type { CloudFile } from '../../../types'
-import type { FilePreviewResponse } from '../../../types'
+import type { CloudFile, FilePreviewResponse } from '@/app/file/types'
 
 export const useFilePreview = () => {
   const [previewFile, setPreviewFile] = useState<CloudFile | null>(null)

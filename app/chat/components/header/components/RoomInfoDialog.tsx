@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Separator } from '@/components/ui/separator'
 import { useTranslation } from '@/hooks/useTranslation'
-import type { ChatRoom, OnlineUser } from '../../types'
+import type { ChatRoom, OnlineUser } from '@/app/chat/types'
 
 interface RoomInfoDialogProps {
   open: boolean

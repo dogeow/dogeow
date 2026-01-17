@@ -11,7 +11,7 @@ import {
   DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu'
 import { useTranslation } from '@/hooks/useTranslation'
-import type { ChatRoom } from '../../types'
+import type { ChatRoom } from '@/app/chat/types'
 
 interface ChatHeaderDesktopProps {
   room: ChatRoom

@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 import { apiRequest } from '@/lib/api'
-import type { Area, Room, Spot } from '../../types'
+import type { Area, Room, Spot } from '@/app/thing/types'
 
 /**
  * 管理位置的创建逻辑

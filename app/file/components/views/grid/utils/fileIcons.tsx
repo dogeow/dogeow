@@ -9,8 +9,8 @@ import {
   Folder,
 } from 'lucide-react'
 import Image from 'next/image'
-import { getFileStorageUrl } from '../../../services/api'
-import type { CloudFile } from '../../../types'
+import { getFileStorageUrl } from '@/app/file/services/api'
+import type { CloudFile } from '@/app/file/types'
 
 export const FILE_TYPE_ICONS = {
   pdf: { icon: FileType, color: 'text-red-500' },

@@ -1,5 +1,8 @@
 import type { ThemeColors } from '../types/graph'
 
+// 重新导出类型以便其他地方使用
+export type { ThemeColors } from '../types/graph'
+
 export const LIGHT_FALLBACK: ThemeColors = {
   background: '#ffffff',
   foreground: '#111827',

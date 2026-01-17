@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, startTransition } from 'react'
-import type { Area, Room, Spot } from '../../types'
+import type { Area, Room, Spot } from '@/app/thing/types'
 
 export type LocationSelection =
   | {

@@ -1,4 +1,4 @@
-import type { FolderNode } from '../../../types'
+import type { FolderNode } from '@/app/file/types'
 
 /**
  * 查找节点路径（从根到目标节点的所有节点ID）

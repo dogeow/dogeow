@@ -1,5 +1,6 @@
 import useAuthStore from '@/stores/authStore'
-import type { ChatMessage, ChatState, OnlineUser } from '../../types'
+import type { ChatMessage, OnlineUser } from '../../types'
+import type { ChatState } from '../../chatStore'
 
 /**
  * 获取当前用户ID
@@ -40,7 +41,9 @@ export const cleanRoomData = (state: ChatState, roomId: number): Partial<ChatSta
   const newNotifications = { ...state.notifications }
   delete newNotifications[roomKey]
   newState.notifications = newNotifications
-  newState.mentions = state.mentions.filter(mention => mention.roomId !== roomId)
+  newState.mentions = state.mentions.filter(
+    (mention: { roomId: number }) => mention.roomId !== roomId
+  )
 
   return newState
 }

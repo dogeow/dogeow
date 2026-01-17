@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { apiRequest } from '@/lib/api'
-import type { Area, Room, Spot } from '../../types'
+import type { Area, Room, Spot } from '@/app/thing/types'
 
 export const useLocationData = () => {
   const [areas, setAreas] = useState<Area[]>([])

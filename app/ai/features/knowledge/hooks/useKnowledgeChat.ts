@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import type { ChatMessage } from '../../types'
+import type { ChatMessage } from '../../chat/types'
 
 interface UseKnowledgeChatOptions {
   open?: boolean
@@ -25,7 +25,7 @@ interface UseKnowledgeChatReturn {
   stop: () => void
   handleSend: () => void
   handleClear: () => void
-  messagesEndRef: React.RefObject<HTMLDivElement>
+  messagesEndRef: React.RefObject<HTMLDivElement | null>
 }
 
 export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnowledgeChatReturn {

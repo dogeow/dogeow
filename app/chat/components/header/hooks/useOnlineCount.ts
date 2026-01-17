@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { ChatRoom, OnlineUser } from '../../types'
+import type { ChatRoom, OnlineUser } from '@/app/chat/types'
 
 export function useOnlineCount(
   room: ChatRoom,

@@ -6,6 +6,7 @@ import { ThemeView } from './ThemeView'
 import { LanguageView } from './LanguageView'
 import { SettingsDivider } from './SettingsDivider'
 import type { CustomBackground } from '../SettingsPanel'
+import type { CustomTheme } from '@/app/types'
 
 type SettingsView = 'main' | 'background' | 'theme' | 'language'
 type DisplayMode = 'music' | 'apps' | 'settings'
@@ -17,16 +18,16 @@ interface SettingsContentProps {
   backgroundImage: string
   customBackgrounds: CustomBackground[]
   currentTheme: string
-  customThemes: string[]
+  customThemes: CustomTheme[]
   followSystem: boolean
   showProjectCovers: boolean
   handleSetBackground: (url: string) => void
-  handleUploadBackground: (file: File) => void
+  handleUploadBackground: (e: React.ChangeEvent<HTMLInputElement>) => void
   setCurrentTheme: (theme: string) => void
-  handleAddCustomTheme: (theme: string) => void
-  handleRemoveCustomTheme: (theme: string) => void
-  handleToggleFollowSystem: () => void
-  handleToggleProjectCovers: () => void
+  handleAddCustomTheme: (name: string, color: string) => void
+  handleRemoveCustomTheme: (id: string) => void
+  handleToggleFollowSystem: (checked: boolean) => void
+  handleToggleProjectCovers: (checked: boolean) => void
 }
 
 export function SettingsContent({

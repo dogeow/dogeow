@@ -1,6 +1,6 @@
 import React, { memo } from 'react'
-import type { PuzzlePiece } from '../../../utils/puzzleUtils'
-import { getBackgroundSize, getBackgroundPosition } from '../../../utils/imageUtils'
+import type { PuzzlePiece } from '@/app/game/jigsaw-puzzle/utils/puzzleUtils'
+import { getBackgroundSize, getBackgroundPosition } from '@/app/game/jigsaw-puzzle/utils/imageUtils'
 
 interface PuzzlePieceItemProps {
   piece: PuzzlePiece

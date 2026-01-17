@@ -1,4 +1,4 @@
-import type { Area, Room, Spot } from '../../types'
+import type { Area, Room, Spot } from '@/app/thing/types'
 
 /**
  * 构建位置路径

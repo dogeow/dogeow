@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Eye, EyeOff } from 'lucide-react'
 import { Timer } from './Timer'
-import type { PuzzlePiece } from '../../../utils/puzzleUtils'
+import type { PuzzlePiece } from '@/app/game/jigsaw-puzzle/utils/puzzleUtils'
 
 interface GameInfoCardProps {
   pieces: PuzzlePiece[]

@@ -1,4 +1,4 @@
-import type { OnlineUser } from '../../types'
+import type { OnlineUser } from '@/app/chat/types'
 import { userRoleUtils } from './userUtils'
 
 export type SortOption = 'name' | 'joined' | 'status'

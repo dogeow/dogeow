@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/helpers'
 import { FileIcon } from '../utils/fileIcons'
 import { formatDate } from '../utils/dateUtils'
-import { formatFileSize } from '../../../constants'
-import type { CloudFile } from '../../../types'
+import { formatFileSize } from '@/app/file/constants'
+import type { CloudFile } from '@/app/file/types'
 
 interface FileGridItemProps {
   file: CloudFile

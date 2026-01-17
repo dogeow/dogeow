@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
-import type { CloudFile } from '../../../types'
+import type { CloudFile } from '@/app/file/types'
 
 interface EditFileDialogProps {
   file: CloudFile | null

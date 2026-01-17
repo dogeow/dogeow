@@ -8,6 +8,7 @@ import { handleChatApiError, type ChatApiError } from '@/lib/api/chat-error-hand
 import chatCache from '@/lib/cache/chat-cache'
 import { getSafeStorage } from './stores/utils/storage'
 import { createThrottledFunction } from './stores/utils/throttle'
+import useAuthStore from '@/stores/authStore'
 import {
   getCurrentUserId,
   isOwnMessage,
@@ -24,7 +25,7 @@ import {
 } from './stores/utils/notificationHelpers'
 import type { NotificationSettings, RoomNotification, MentionInfo } from './stores/types'
 
-interface ChatState {
+export interface ChatState {
   // 核心状态
   currentRoom: ChatRoom | null
   rooms: ChatRoom[]

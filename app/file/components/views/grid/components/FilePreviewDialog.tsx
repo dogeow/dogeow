@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import { PreviewContent } from './PreviewContent'
 import type { PreviewType } from '../utils/previewTypes'
-import type { CloudFile } from '../../../types'
+import type { CloudFile } from '@/app/file/types'
 
 interface FilePreviewDialogProps {
   file: CloudFile | null

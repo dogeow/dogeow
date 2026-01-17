@@ -3,7 +3,7 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { File, FileText, Download } from 'lucide-react'
 import { PREVIEW_TYPES, type PreviewType } from '../utils/previewTypes'
-import type { CloudFile } from '../../../types'
+import type { CloudFile } from '@/app/file/types'
 
 interface PreviewContentProps {
   previewType: PreviewType | null
