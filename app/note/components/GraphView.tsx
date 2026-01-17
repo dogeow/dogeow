@@ -101,7 +101,10 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
 
   // 处理节点拖拽
   const handleNodeDrag = useCallback(
-    (_node: { [others: string]: any; id?: string | number }, _event?: MouseEvent) => {
+    (
+      _node: { [others: string]: any; id?: string | number },
+      _translate?: { x: number; y: number }
+    ) => {
       isDraggingRef.current = true
       // 拖动时恢复动画以便节点可以移动
       resumeGraphAnimation()
@@ -110,7 +113,10 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   )
 
   const handleNodeDragEnd = useCallback(
-    (_node: { [others: string]: any; id?: string | number }, _event?: MouseEvent) => {
+    (
+      _node: { [others: string]: any; id?: string | number },
+      _translate?: { x: number; y: number }
+    ) => {
       isDraggingRef.current = false
     },
     []
