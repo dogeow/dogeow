@@ -1,7 +1,9 @@
-/**
- * 拼图游戏组件导出
- */
 export { Timer } from './Timer'
-export { GameStats } from './GameStats'
 export { PuzzleBoard } from './PuzzleBoard'
 export { PuzzleSlot } from './PuzzleSlot'
+export { GameStats } from './GameStats'
+export { GameInfoCard } from './GameInfoCard'
+export { FloatingReference } from './FloatingReference'
+export { PuzzlePieceItem } from './PuzzlePieceItem'
+export { CompletionMessage } from './CompletionMessage'
+export { PieceSelectionArea } from './PieceSelectionArea'

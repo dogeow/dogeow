@@ -1,92 +1,21 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, startTransition } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import Image from 'next/image'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { Search, X, Loader2, Lock, Unlock } from 'lucide-react'
-import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
-import { get } from '@/lib/api'
-import { Badge } from '@/components/ui/badge'
-import { getTranslatedConfigs } from '@/app/configs'
 import useAuthStore from '@/stores/authStore'
-import { useTranslation } from '@/hooks/useTranslation'
-
-interface Category {
-  id: string
-  name: string
-  path: string
-  icon?: React.ReactNode
-  requireAuth?: boolean // 是否需要认证
-}
-
-interface SearchResult {
-  id: number | string
-  title: string
-  content: string
-  url: string
-  category: string
-  isPublic?: boolean
-  requireAuth?: boolean // 是否需要认证才能访问
-  thumbnail_url?: string | null
-}
+import { useKeyboardStatus } from './hooks/useKeyboardStatus'
+import { useSearchCategories } from './hooks/useSearchCategories'
+import { useSearchData } from './hooks/useSearchData'
+import { SearchInput } from './components/SearchInput'
+import { CategoryTabs } from './components/CategoryTabs'
+import { SearchResultsList } from './components/SearchResultsList'
 
 interface SearchDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   initialSearchTerm?: string
   currentRoute?: string
-}
-
-// 简化的键盘检测
-function useKeyboardStatus() {
-  const [keyboardOpen, setKeyboardOpen] = useState(false)
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-
-    // 只在移动设备上检测键盘
-    const isMobile =
-      window.innerWidth <= 768 ||
-      /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-
-    if (!isMobile) {
-      // 使用 requestAnimationFrame 避免同步 setState
-      requestAnimationFrame(() => {
-        setKeyboardOpen(false)
-      })
-      return
-    }
-
-    const handleResize = () => {
-      const visualViewport = window.visualViewport
-      if (visualViewport) {
-        const heightDiff = window.innerHeight - visualViewport.height
-        setKeyboardOpen(heightDiff > 150)
-      } else {
-        // 备用检测方法
-        setKeyboardOpen(window.innerHeight < 500)
-      }
-    }
-
-    // 使用 requestAnimationFrame 延迟初始调用
-    requestAnimationFrame(handleResize)
-
-    const visualViewport = window.visualViewport
-    if (visualViewport) {
-      visualViewport.addEventListener('resize', handleResize)
-      return () => {
-        visualViewport.removeEventListener('resize', handleResize)
-      }
-    } else {
-      window.addEventListener('resize', handleResize)
-      return () => window.removeEventListener('resize', handleResize)
-    }
-  }, [])
-
-  return keyboardOpen
 }
 
 export function SearchDialog({
@@ -98,260 +27,46 @@ export function SearchDialog({
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated } = useAuthStore()
-  const { t } = useTranslation()
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm)
   const [activeCategory, setActiveCategory] = useState('all')
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [loading, setLoading] = useState(false)
-  const [hasSearched, setHasSearched] = useState(false)
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({})
   const inputRef = useRef<HTMLInputElement>(null)
   const keyboardOpen = useKeyboardStatus()
 
-  // 添加上次搜索参数的引用，用于避免重复搜索
-  const lastSearchRef = useRef<{
-    searchTerm: string
-    activeCategory: string
-  }>({
-    searchTerm: '',
-    activeCategory: 'all',
+  // 使用自定义 hooks
+  const categories = useSearchCategories(isAuthenticated)
+  const { results, loading, hasSearched } = useSearchData({
+    isAuthenticated,
+    searchTerm,
+    activeCategory,
   })
 
-  // 根据认证状态过滤搜索类别
-  const categories: Category[] = useMemo(() => {
-    const allCategories: Category[] = [
-      { id: 'all', name: '全部', path: '/search' },
-      { id: 'thing', name: '物品', path: '/thing', requireAuth: false }, // 物品有公开的，不需要认证
-      { id: 'lab', name: '实验室', path: '/lab', requireAuth: false },
-      { id: 'note', name: '笔记', path: '/note', requireAuth: true }, // 笔记需要认证
-      { id: 'file', name: '文件', path: '/file', requireAuth: true }, // 文件需要认证
-      { id: 'game', name: '游戏', path: '/game', requireAuth: false }, // 游戏不需要认证
-      { id: 'tool', name: '工具', path: '/tool', requireAuth: false },
-      { id: 'nav', name: '导航', path: '/nav', requireAuth: true }, // 导航需要认证
-    ]
-
-    // 如果用户未认证，过滤掉需要认证的类别
-    if (!isAuthenticated) {
-      return allCategories.filter(category => !category.requireAuth)
-    }
-
-    return allCategories
-  }, [isAuthenticated])
-
+  // 设置活动类别
   useEffect(() => {
-    if (currentRoute) {
-      const routeCategory = currentRoute.split('/')[1]
-      const matchedCategory = categories.find(c => c.path.startsWith(`/${routeCategory}`))
-      setActiveCategory(matchedCategory?.id || 'all')
-    } else {
-      setActiveCategory('all')
-    }
+    startTransition(() => {
+      if (currentRoute) {
+        const routeCategory = currentRoute.split('/')[1]
+        const matchedCategory = categories.find(c => c.path.startsWith(`/${routeCategory}`))
+        setActiveCategory(matchedCategory?.id || 'all')
+      } else {
+        setActiveCategory('all')
+      }
+    })
   }, [currentRoute, categories])
 
-  // 本地搜索函数
-  const searchLocalData = useCallback(
-    (searchTerm: string, category: string) => {
-      const results: SearchResult[] = []
-      const lowerSearchTerm = searchTerm.toLowerCase()
-      const translatedConfigs = getTranslatedConfigs(t)
-
-      // 搜索游戏（游戏对所有用户开放）
-      if (category === 'all' || category === 'game') {
-        const gameResults = translatedConfigs.games
-          .filter(
-            game =>
-              game.name?.toLowerCase().includes(lowerSearchTerm) ||
-              game.description?.toLowerCase().includes(lowerSearchTerm) ||
-              game.id?.toLowerCase().includes(lowerSearchTerm)
-          )
-          .filter(game => game.id && game.name && game.description)
-          .map(game => ({
-            id: game.id!,
-            title: game.name!,
-            content: game.description!,
-            url: `/game/${game.id!}`,
-            category: 'game',
-            requireAuth: false,
-          }))
-        results.push(...gameResults)
-      }
-
-      // 只有认证用户才能搜索以下内容
-      if (isAuthenticated) {
-        // 搜索导航
-        if (category === 'all' || category === 'nav') {
-          const navResults = translatedConfigs.navigation
-            .filter(
-              nav =>
-                nav.name?.toLowerCase().includes(lowerSearchTerm) ||
-                nav.description?.toLowerCase().includes(lowerSearchTerm)
-            )
-            .filter(nav => nav.id && nav.name && nav.description && nav.url)
-            .map(nav => ({
-              id: nav.id!,
-              title: nav.name!,
-              content: nav.description!,
-              url: nav.url!,
-              category: 'nav',
-              requireAuth: true,
-            }))
-          results.push(...navResults)
+  // 自动聚焦输入框
+  useEffect(() => {
+    if (open) {
+      const timer = setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus()
         }
-
-        // 搜索笔记
-        if (category === 'all' || category === 'note') {
-          const noteResults = translatedConfigs.notes
-            .filter(
-              note =>
-                note.name?.toLowerCase().includes(lowerSearchTerm) ||
-                note.description?.toLowerCase().includes(lowerSearchTerm)
-            )
-            .filter(note => note.id && note.name && note.description && note.url)
-            .map(note => ({
-              id: note.id!,
-              title: note.name!,
-              content: note.description!,
-              url: note.url!,
-              category: 'note',
-              requireAuth: true,
-            }))
-          results.push(...noteResults)
-        }
-
-        // 搜索文件
-        if (category === 'all' || category === 'file') {
-          const fileResults = translatedConfigs.files
-            .filter(
-              file =>
-                file.name?.toLowerCase().includes(lowerSearchTerm) ||
-                file.description?.toLowerCase().includes(lowerSearchTerm)
-            )
-            .filter(file => file.id && file.name && file.description && file.url)
-            .map(file => ({
-              id: file.id!,
-              title: file.name!,
-              content: file.description!,
-              url: file.url!,
-              category: 'file',
-              requireAuth: true,
-            }))
-          results.push(...fileResults)
-        }
-
-        // 搜索实验室
-        if (category === 'all' || category === 'lab') {
-          const labResults = translatedConfigs.lab
-            .filter(
-              lab =>
-                lab.name?.toLowerCase().includes(lowerSearchTerm) ||
-                lab.description?.toLowerCase().includes(lowerSearchTerm)
-            )
-            .filter(lab => lab.id && lab.name && lab.description && lab.url)
-            .map(lab => ({
-              id: lab.id!,
-              title: lab.name!,
-              content: lab.description!,
-              url: lab.url!,
-              category: 'lab',
-              requireAuth: false,
-            }))
-          results.push(...labResults)
-        }
-      }
-
-      return results
-    },
-    [isAuthenticated, t]
-  )
-
-  const performSearch = useCallback(async () => {
-    if (!searchTerm.trim()) {
-      setResults([])
-      setHasSearched(false)
-      lastSearchRef.current = {
-        searchTerm: '',
-        activeCategory,
-      }
-      return
+      }, 200)
+      return () => clearTimeout(timer)
     }
+  }, [open])
 
-    // 检查是否与上次搜索参数相同，避免重复搜索
-    const currentSearchParams = {
-      searchTerm: searchTerm.trim(),
-      activeCategory,
-    }
-
-    if (
-      lastSearchRef.current.searchTerm === currentSearchParams.searchTerm &&
-      lastSearchRef.current.activeCategory === currentSearchParams.activeCategory
-    ) {
-      console.log('搜索参数未变化，跳过重复搜索')
-      return
-    }
-
-    // 更新上次搜索参数
-    lastSearchRef.current = currentSearchParams
-
-    setLoading(true)
-
-    try {
-      const allResults: SearchResult[] = []
-
-      // 搜索本地数据（游戏、导航等）
-      const localResults = searchLocalData(searchTerm, activeCategory)
-      allResults.push(...localResults)
-
-      // 搜索数据库中的物品（后端已经处理了权限控制）
-      if (activeCategory === 'all' || activeCategory === 'thing') {
-        interface SearchApiResponse {
-          results: Array<{
-            id: number
-            name: string
-            description?: string
-            is_public?: boolean
-            user_id?: number
-            thumbnail_url?: string | null
-            [key: string]: unknown
-          }>
-          user_authenticated: boolean
-        }
-
-        const queryParams = new URLSearchParams({
-          q: searchTerm,
-        })
-
-        try {
-          const response = await get<SearchApiResponse>(`/things/search?${queryParams}`)
-
-          if (response.results?.length) {
-            const thingResults = response.results.map(item => ({
-              id: item.id,
-              title: item.name,
-              content: item.description || '无描述',
-              url: `/thing/${item.id}`,
-              category: 'thing',
-              isPublic: item.is_public,
-              requireAuth: false, // 物品搜索不需要认证（后端已处理权限）
-              thumbnail_url: item.thumbnail_url || null,
-            }))
-
-            allResults.push(...thingResults)
-          }
-        } catch (error) {
-          console.error('物品搜索失败:', error)
-          // 如果是认证错误，不显示错误信息，只是不返回结果
-        }
-      }
-
-      setResults(allResults)
-    } catch (error) {
-      console.error('搜索出错:', error)
-    } finally {
-      setLoading(false)
-      setHasSearched(true) // 标记已完成搜索
-    }
-  }, [searchTerm, activeCategory, searchLocalData])
-
+  // 处理搜索提交
   const handleSearch = useCallback(
     (e?: React.FormEvent) => {
       if (e) e.preventDefault()
@@ -386,6 +101,7 @@ export function SearchDialog({
     [searchTerm, activeCategory, currentRoute, pathname, categories, router, onOpenChange]
   )
 
+  // 处理结果点击
   const handleResultClick = useCallback(
     (url: string) => {
       router.push(url)
@@ -394,41 +110,7 @@ export function SearchDialog({
     [router, onOpenChange]
   )
 
-  // 简化的focus逻辑
-  useEffect(() => {
-    if (open) {
-      // 延迟focus，确保DOM已渲染
-      const timer = setTimeout(() => {
-        if (inputRef.current) {
-          inputRef.current.focus()
-        }
-      }, 200)
-      return () => clearTimeout(timer)
-    }
-  }, [open])
-
-  useEffect(() => {
-    const delaySearch = setTimeout(() => {
-      if (searchTerm.trim()) {
-        performSearch()
-      } else {
-        setResults([])
-        setHasSearched(false)
-        lastSearchRef.current = {
-          searchTerm: '',
-          activeCategory,
-        }
-      }
-    }, 500)
-
-    return () => clearTimeout(delaySearch)
-  }, [searchTerm, activeCategory, performSearch])
-
-  const filteredResults = useMemo(
-    () => results.filter(item => activeCategory === 'all' || item.category === activeCategory),
-    [results, activeCategory]
-  )
-
+  // 获取每个类别的结果数量
   const getCountByCategory = useCallback(
     (category: string) => {
       if (!searchTerm.trim()) return 0
@@ -437,6 +119,7 @@ export function SearchDialog({
     [searchTerm, results]
   )
 
+  // 获取对话框标题
   const getDialogTitle = useCallback(() => {
     if (currentRoute) {
       const routeCategory = currentRoute.split('/')[1]
@@ -451,121 +134,16 @@ export function SearchDialog({
     return category ? `搜索${category.name}` : '搜索'
   }, [currentRoute, pathname, categories])
 
+  // 处理图片错误
   const handleImageError = useCallback((resultKey: string) => {
     setImageErrors(prev => ({ ...prev, [resultKey]: true }))
   }, [])
 
-  const renderSearchResults = useCallback(() => {
-    if (loading) {
-      return (
-        <div className="flex min-h-[120px] flex-col items-center justify-center py-8">
-          <Loader2 className="text-muted-foreground mx-auto h-6 w-6 animate-spin" />
-          <p className="text-muted-foreground mt-2 text-sm">搜索中...</p>
-        </div>
-      )
-    }
-
-    if (searchTerm && filteredResults.length === 0 && hasSearched) {
-      return (
-        <div className="flex min-h-[120px] flex-col items-center justify-center py-8">
-          <p className="text-muted-foreground text-sm">未找到相关结果</p>
-          {!isAuthenticated && (
-            <p className="text-muted-foreground mt-2 text-xs">登录后可搜索更多内容</p>
-          )}
-        </div>
-      )
-    }
-
-    if (searchTerm) {
-      return (
-        <div className="space-y-2">
-          {filteredResults.map(result => {
-            const resultKey = `${result.category}-${result.id}`
-            const imageError = imageErrors[resultKey]
-
-            return (
-              <div
-                key={resultKey}
-                className="bg-card hover:bg-accent/50 border-border/50 cursor-pointer rounded-lg border p-3"
-                onClick={() => handleResultClick(result.url)}
-              >
-                <div className="flex gap-3">
-                  {/* 图片区域 */}
-                  {result.thumbnail_url && !imageError ? (
-                    <div className="flex-shrink-0">
-                      <Image
-                        src={result.thumbnail_url}
-                        alt={result.title}
-                        width={64}
-                        height={64}
-                        className="h-16 w-16 rounded object-cover"
-                        onError={() => handleImageError(resultKey)}
-                      />
-                    </div>
-                  ) : result.thumbnail_url && imageError ? (
-                    <div className="bg-muted flex h-16 w-16 flex-shrink-0 items-center justify-center rounded">
-                      <ImagePlaceholder className="text-muted-foreground h-6 w-6 opacity-40" />
-                    </div>
-                  ) : null}
-
-                  {/* 内容区域 */}
-                  <div className="flex min-w-0 flex-1 flex-col gap-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="flex-1 text-sm leading-tight font-medium">{result.title}</h3>
-                      <div className="flex items-center gap-1">
-                        <Badge
-                          variant="outline"
-                          className="flex-shrink-0 text-xs whitespace-nowrap"
-                        >
-                          {categories.find(c => c.id === result.category)?.name || result.category}
-                        </Badge>
-                        {result.category === 'thing' && 'isPublic' in result && (
-                          <Badge
-                            variant={result.isPublic ? 'secondary' : 'default'}
-                            className="flex items-center gap-1 text-xs"
-                          >
-                            {result.isPublic ? (
-                              <Unlock className="h-3 w-3" />
-                            ) : (
-                              <Lock className="h-3 w-3" />
-                            )}
-                            {result.isPublic ? '公开' : '私有'}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <p className="text-muted-foreground line-clamp-2 text-xs leading-relaxed">
-                      {result.content}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )
-    }
-
-    return (
-      <div className="flex min-h-[120px] flex-col items-center justify-center py-8">
-        <Search className="text-muted-foreground/50 mb-2 h-8 w-8" />
-        <p className="text-muted-foreground text-sm">请输入搜索关键词</p>
-        {!isAuthenticated && (
-          <p className="text-muted-foreground mt-2 text-xs">登录后可搜索更多内容</p>
-        )}
-      </div>
-    )
-  }, [
-    loading,
-    searchTerm,
-    filteredResults,
-    categories,
-    handleResultClick,
-    hasSearched,
-    isAuthenticated,
-    imageErrors,
-    handleImageError,
-  ])
+  // 过滤结果
+  const filteredResults = useMemo(
+    () => results.filter(item => activeCategory === 'all' || item.category === activeCategory),
+    [results, activeCategory]
+  )
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -587,56 +165,37 @@ export function SearchDialog({
           </DialogHeader>
 
           {/* 搜索输入框 */}
-          <div className="mb-4 flex-shrink-0">
-            <form onSubmit={handleSearch} className="relative">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-              <Input
-                ref={inputRef}
-                type="text"
-                placeholder="搜索..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className={`h-10 pl-10 ${searchTerm ? 'pr-10' : 'pr-3'}`}
-                autoFocus={!keyboardOpen} // 移动端键盘打开时不自动focus
-              />
-              {searchTerm && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 transform"
-                  onClick={() => setSearchTerm('')}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </form>
-          </div>
+          <SearchInput
+            ref={inputRef}
+            searchTerm={searchTerm}
+            onSearchTermChange={setSearchTerm}
+            onSubmit={handleSearch}
+            keyboardOpen={keyboardOpen}
+          />
 
           {/* 搜索范围 */}
-          <div className="mb-4 flex-shrink-0">
-            <div className="mb-2 text-sm font-medium">搜索范围:</div>
-            <div className="flex max-h-16 flex-wrap gap-1 overflow-y-auto">
-              {categories.map(category => (
-                <Button
-                  key={category.id}
-                  size="sm"
-                  variant={activeCategory === category.id ? 'secondary' : 'outline'}
-                  onClick={() => setActiveCategory(category.id)}
-                  className="h-6 px-2 text-xs whitespace-nowrap"
-                >
-                  {category.name}{' '}
-                  {getCountByCategory(category.id) > 0
-                    ? `(${getCountByCategory(category.id)})`
-                    : ''}
-                </Button>
-              ))}
-            </div>
-          </div>
+          <CategoryTabs
+            categories={categories}
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+            getCountByCategory={getCountByCategory}
+          />
 
           {/* 搜索结果 */}
           <div className="min-h-0 flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto">{renderSearchResults()}</div>
+            <div className="h-full overflow-y-auto">
+              <SearchResultsList
+                loading={loading}
+                searchTerm={searchTerm}
+                filteredResults={filteredResults}
+                categories={categories}
+                hasSearched={hasSearched}
+                isAuthenticated={isAuthenticated}
+                imageErrors={imageErrors}
+                onImageError={handleImageError}
+                onResultClick={handleResultClick}
+              />
+            </div>
           </div>
         </div>
       </DialogContent>

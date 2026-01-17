@@ -1,0 +1,1 @@
+export { KnowledgeChatHeader } from './KnowledgeChatHeader'

@@ -1,11 +1,10 @@
+'use client'
+
 import React from 'react'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
-import { User } from 'lucide-react'
 import { AppGrid } from '../AppGrid'
 import { SearchBar } from '../SearchBar'
-import Logo from '@/public/80.png'
-import { useTranslation } from '@/hooks/useTranslation'
+import { LogoButton } from '../common/LogoButton'
+import { UserButton } from './UserButton'
 import { useFilterPersistenceStore } from '@/app/thing/stores/filterPersistenceStore'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
@@ -35,7 +34,6 @@ export function AppsView({
   toggleDisplayMode,
   onOpenAi,
 }: AppsViewProps) {
-  const { t } = useTranslation()
   const { clearFilters } = useFilterPersistenceStore()
 
   // 处理 Logo 点击，清除筛选条件并跳转到首页
@@ -50,12 +48,7 @@ export function AppsView({
     <div className="flex h-full items-center justify-between">
       {/* 左侧：应用切换按钮 */}
       <div className="mr-6 flex shrink-0 items-center">
-        <Image
-          src={Logo}
-          alt="apps"
-          className="h-10 w-10 cursor-pointer"
-          onClick={handleLogoClick}
-        />
+        <LogoButton onClick={handleLogoClick} />
       </div>
 
       {/* 中间：应用图标 */}
@@ -79,26 +72,12 @@ export function AppsView({
         />
 
         {/* 用户按钮 */}
-        {!(searchManager.isSearchVisible && !searchManager.isHomePage) &&
-          (isAuthenticated ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => toggleDisplayMode('auth')}
-            >
-              <User className="h-5 w-5" />
-            </Button>
-          ) : (
-            <Button
-              variant="default"
-              className="h-8"
-              data-login-trigger
-              onClick={() => toggleDisplayMode('auth')}
-            >
-              {t('auth.login')}
-            </Button>
-          ))}
+        {!(searchManager.isSearchVisible && !searchManager.isHomePage) && (
+          <UserButton
+            isAuthenticated={isAuthenticated}
+            onToggleAuth={() => toggleDisplayMode('auth')}
+          />
+        )}
       </div>
     </div>
   )

@@ -1,0 +1,360 @@
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import Echo from 'laravel-echo'
+import {
+  createEchoInstance,
+  destroyEchoInstance,
+  cancelDestroyEchoInstance,
+  getConnectionMonitor,
+  getAuthManager,
+} from '@/lib/websocket'
+import useChatStore from '@/app/chat/chatStore'
+import OfflineManager, { type OfflineState } from '@/lib/websocket/offline-manager'
+import type { UseChatWebSocketReturn, UseChatWebSocketOptions } from './chat-websocket/types'
+import { isEchoConnected, getAuthToken, createConnectionError } from './chat-websocket/utils/connectionUtils'
+import { sendMessageToServer, leaveRoomViaAPI } from './chat-websocket/utils/messageUtils'
+import { createChannelWrapper, setupRoomEventListeners } from './chat-websocket/utils/channelUtils'
+
+export * from './chat-websocket/types'
+
+export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChatWebSocketReturn => {
+  const {
+    autoConnect = false,
+    onConnect,
+    onDisconnect,
+    onError,
+    onMessage,
+    onOffline,
+    onOnline,
+    onMessageQueued,
+    onMessageSent,
+    onMessageFailed,
+    onMessageSentSuccess,
+    authTokenRefreshCallback,
+  } = options
+
+  const [echo, setEcho] = useState<Echo<'reverb'> | null>(null)
+  const [connectionInfo, setConnectionInfo] = useState(
+    getConnectionMonitor().getStatus()
+  )
+  const [offlineState, setOfflineState] = useState<OfflineState>({
+    isOffline: false,
+    lastOnline: null,
+    queuedMessages: [],
+    queueSize: 0,
+    maxQueueSize: 100,
+  })
+
+  const currentRoomRef = useRef<string | null>(null)
+  const channelRef = useRef<ReturnType<typeof createChannelWrapper> | null>(null)
+  const isComponentMountedRef = useRef(true)
+  const connectionMonitorUnsubscribeRef = useRef<(() => void) | null>(null)
+  const offlineManagerUnsubscribeRef = useRef<(() => void) | null>(null)
+  const offlineManagerRef = useRef<OfflineManager | null>(null)
+
+  // 设置 AuthManager 的刷新回调
+  useEffect(() => {
+    if (authTokenRefreshCallback) {
+      getAuthManager().setRefreshCallback(authTokenRefreshCallback)
+    }
+  }, [authTokenRefreshCallback])
+
+  // 初始化离线管理器
+  useEffect(() => {
+    const offlineManager = new OfflineManager({
+      onOffline,
+      onOnline,
+      onMessageQueued,
+      onMessageSent,
+      onMessageFailed,
+      onQueueFull: () => {
+        console.warn('WebSocket: Offline message queue is full, removing oldest messages')
+      },
+    })
+    offlineManagerRef.current = offlineManager
+
+    offlineManagerUnsubscribeRef.current = offlineManager.subscribe(newState => {
+      setOfflineState(prevState =>
+        prevState.isOffline !== newState.isOffline ||
+        prevState.queueSize !== newState.queueSize ||
+        prevState.lastOnline !== newState.lastOnline ||
+        prevState.queuedMessages.length !== newState.queuedMessages.length
+          ? newState
+          : prevState
+      )
+    })
+
+    return () => {
+      offlineManagerUnsubscribeRef.current?.()
+      offlineManager.destroy()
+      offlineManagerRef.current = null
+    }
+  }, [onOffline, onOnline, onMessageQueued, onMessageSent, onMessageFailed])
+
+  // 连接状态监控
+  useEffect(() => {
+    const monitor = getConnectionMonitor()
+
+    if (echo) {
+      monitor.initializeWithEcho(echo)
+    }
+
+    connectionMonitorUnsubscribeRef.current = monitor.subscribe(info => {
+      console.log('WebSocket: Connection status updated:', info.status)
+      setConnectionInfo(prevInfo =>
+        prevInfo.status !== info.status ||
+        prevInfo.reconnectAttempts !== info.reconnectAttempts ||
+        prevInfo.isRetrying !== info.isRetrying ||
+        prevInfo.lastConnected !== info.lastConnected ||
+        prevInfo.lastError !== info.lastError
+          ? info
+          : prevInfo
+      )
+
+      if (info.status === 'connected') {
+        onConnect?.()
+        offlineManagerRef.current?.processQueuedMessages()
+      } else if (info.status === 'disconnected') {
+        onDisconnect?.()
+      } else if (info.status === 'error' && info.lastError) {
+        onError?.(info.lastError)
+      }
+    })
+
+    return () => {
+      connectionMonitorUnsubscribeRef.current?.()
+    }
+  }, [onConnect, onDisconnect, onError, echo])
+
+  // 自动连接
+  useEffect(() => {
+    if (autoConnect) {
+      const authManager = getAuthManager()
+      const token = authManager.getToken()
+      if (token) {
+        const echoInstance = createEchoInstance()
+        setEcho(echoInstance)
+      }
+    }
+  }, [autoConnect])
+
+  // 组件挂载和卸载管理
+  useEffect(() => {
+    isComponentMountedRef.current = true
+    cancelDestroyEchoInstance()
+    console.log('WebSocket: Component mounted, cancelled any pending cleanup')
+
+    return () => {
+      console.log('WebSocket: Component cleanup triggered')
+      isComponentMountedRef.current = false
+
+      try {
+        if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
+          channelRef.current.stopListening()
+        }
+      } catch (error) {
+        console.error('WebSocket: Error during channel cleanup:', error)
+      }
+      channelRef.current = null
+      currentRoomRef.current = null
+
+      setEcho(null)
+      destroyEchoInstance(false)
+    }
+  }, [])
+
+  const connect = useCallback(async (): Promise<boolean> => {
+    if (!isComponentMountedRef.current) {
+      console.log('WebSocket: Component unmounted, skipping connect')
+      return false
+    }
+
+    // 检查是否已有连接
+    if (echo && isEchoConnected(echo)) {
+      console.log('WebSocket: Reusing existing connection')
+      return true
+    }
+
+    try {
+      console.log('WebSocket: Starting connection process')
+      const token = await getAuthToken(authTokenRefreshCallback)
+      if (!token) {
+        console.error('WebSocket: No auth token available')
+        onError?.(createConnectionError('No authentication token available', false))
+        return false
+      }
+
+      console.log('WebSocket: Creating Echo instance')
+      const echoInstance = createEchoInstance()
+      if (!echoInstance) {
+        console.error('WebSocket: Failed to create Echo instance')
+        onError?.(createConnectionError('Failed to create WebSocket connection', true))
+        return false
+      }
+
+      console.log('WebSocket: Echo instance created successfully')
+
+      const monitor = getConnectionMonitor()
+      monitor.initializeWithEcho(echoInstance)
+      console.log('WebSocket: Connection monitor initialized')
+
+      setEcho(echoInstance)
+      console.log('WebSocket: Echo instance set in state')
+
+      return true
+    } catch (error) {
+      console.error('WebSocket: Connection failed:', error)
+      onError?.(createConnectionError(
+        error instanceof Error ? error.message : 'Failed to connect to WebSocket',
+        true
+      ))
+      return false
+    }
+  }, [authTokenRefreshCallback, onError, echo])
+
+  const disconnect = useCallback(async () => {
+    if (!isComponentMountedRef.current) {
+      console.log('WebSocket: Component unmounted, skipping disconnect')
+      return
+    }
+
+    if (currentRoomRef.current) {
+      await leaveRoomViaAPI(currentRoomRef.current)
+    }
+
+    try {
+      if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
+        console.log('WebSocket: Disconnecting and stopping listening')
+        channelRef.current.stopListening()
+      }
+    } catch (error) {
+      console.error('WebSocket: Error during disconnect:', error)
+    }
+    channelRef.current = null
+    currentRoomRef.current = null
+    setEcho(null)
+    destroyEchoInstance()
+  }, [])
+
+  const joinRoom = useCallback(
+    async (roomId: string, echoInstance?: Echo<'reverb'>) => {
+      if (!isComponentMountedRef.current) {
+        console.log('WebSocket: Component unmounted, skipping joinRoom')
+        return
+      }
+
+      console.log('WebSocket: Attempting to join room:', roomId)
+
+      let echoToUse = echoInstance || echo
+      if (!echoToUse) {
+        const { getEchoInstance } = await import('@/lib/websocket/echo')
+        echoToUse = getEchoInstance()
+        if (!echoToUse) {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          echoToUse = getEchoInstance()
+          if (!echoToUse) return
+        }
+      }
+
+      if (channelRef.current && currentRoomRef.current !== roomId) {
+        try {
+          if (typeof channelRef.current.stopListening === 'function') {
+            console.log('WebSocket: Stopping listening for room', currentRoomRef.current)
+            channelRef.current.stopListening()
+          }
+        } catch (error) {
+          console.error('WebSocket: Error stopping listening:', error)
+        }
+      }
+
+      currentRoomRef.current = roomId
+      if (!echoToUse) return
+
+      try {
+        const channelWrapper = createChannelWrapper(echoToUse, roomId)
+        channelRef.current = channelWrapper
+        setupRoomEventListeners(channelWrapper, roomId, onMessage)
+      } catch (error) {
+        console.error('WebSocket: Error creating channel for room', roomId, ':', error)
+      }
+    },
+    [echo, onMessage]
+  )
+
+  const sendMessage = useCallback(
+    async (roomId: string, message: string): Promise<boolean> => {
+      if (offlineState.isOffline || connectionInfo.status !== 'connected') {
+        offlineManagerRef.current?.queueMessage(roomId, message)
+        return !!offlineManagerRef.current
+      }
+
+      let echoToUse = echo
+      if (!echoToUse) {
+        const { getEchoInstance } = await import('@/lib/websocket/echo')
+        echoToUse = getEchoInstance()
+        if (!echoToUse) {
+          offlineManagerRef.current?.queueMessage(roomId, message)
+          return !!offlineManagerRef.current
+        }
+      }
+
+      const result = await sendMessageToServer(roomId, message)
+
+      if (result.success) {
+        onMessageSentSuccess?.(result.data)
+        return true
+      }
+
+      if (result.error) {
+        const errorText = result.error.message.toLowerCase()
+        if (!errorText.includes('mute')) {
+          offlineManagerRef.current?.queueMessage(roomId, message)
+        }
+        onError?.(result.error)
+      }
+
+      return false
+    },
+    [echo, offlineState.isOffline, connectionInfo.status, onError, onMessageSentSuccess]
+  )
+
+  const reconnect = useCallback(() => {
+    getConnectionMonitor().forceReconnect()
+  }, [])
+
+  const retryFailedMessages = useCallback(() => {
+    offlineManagerRef.current?.retryFailedMessages()
+  }, [])
+
+  const clearOfflineQueue = useCallback(() => {
+    offlineManagerRef.current?.clearQueue()
+  }, [])
+
+  return useMemo(
+    () => ({
+      echo,
+      connect,
+      disconnect,
+      joinRoom,
+      sendMessage,
+      isConnected: connectionInfo.status === 'connected',
+      connectionStatus: connectionInfo.status,
+      connectionInfo,
+      offlineState,
+      reconnect,
+      retryFailedMessages,
+      clearOfflineQueue,
+    }),
+    [
+      echo,
+      connect,
+      disconnect,
+      joinRoom,
+      sendMessage,
+      connectionInfo,
+      offlineState,
+      reconnect,
+      retryFailedMessages,
+      clearOfflineQueue,
+    ]
+  )
+}

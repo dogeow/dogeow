@@ -6,59 +6,23 @@ import type { ChatRoom, ChatMessage, OnlineUser, CreateRoomData, MessagePaginati
 import { get as apiGet, post as apiPost } from '@/lib/api'
 import { handleChatApiError, type ChatApiError } from '@/lib/api/chat-error-handler'
 import chatCache from '@/lib/cache/chat-cache'
-import useAuthStore from '@/stores/authStore'
-
-// 安全的本地存储封装（兼容无痕/隐私模式）
-const createMemoryStorage = () => {
-  const store = new Map<string, string>()
-  return {
-    getItem: (key: string) => store.get(key) ?? null,
-    setItem: (key: string, value: string) => {
-      store.set(key, value)
-    },
-    removeItem: (key: string) => {
-      store.delete(key)
-    },
-  }
-}
-
-const memoryStorage = createMemoryStorage()
-
-const getSafeStorage = () => {
-  if (typeof window === 'undefined') return memoryStorage
-
-  try {
-    const storage = window.localStorage
-    const testKey = '__storage_test__'
-    storage.setItem(testKey, '1')
-    storage.removeItem(testKey)
-    return storage
-  } catch (error) {
-    console.warn('本地存储不可用，已降级到内存存储:', error)
-    return memoryStorage
-  }
-}
-
-interface NotificationSettings {
-  browserNotifications: boolean
-  soundNotifications: boolean
-  mentionNotifications: boolean
-  roomNotifications: boolean
-}
-
-interface RoomNotification {
-  roomId: number
-  unreadCount: number
-  lastMessageAt: string
-  hasMentions: boolean
-}
-
-interface MentionInfo {
-  messageId: number
-  roomId: number
-  mentionedAt: string
-  isRead: boolean
-}
+import { getSafeStorage } from './stores/utils/storage'
+import { createThrottledFunction } from './stores/utils/throttle'
+import {
+  getCurrentUserId,
+  isOwnMessage,
+  cleanRoomData,
+  addOnlineUserToList,
+  removeOnlineUserFromList,
+} from './stores/utils/helpers'
+import {
+  calculateTotalUnreadCount,
+  incrementRoomUnreadCount,
+  hasUnreadMentions,
+  markMentionAsRead,
+  extractMentions,
+} from './stores/utils/notificationHelpers'
+import type { NotificationSettings, RoomNotification, MentionInfo } from './stores/types'
 
 interface ChatState {
   // 核心状态
@@ -169,61 +133,7 @@ const initialState = {
   browserNotificationPermission: 'default' as NotificationPermission,
 }
 
-// 防抖和节流工具函数
-
-const createThrottledFunction = <T extends (...args: any[]) => any>(fn: T, delay: number): T => {
-  let loading = false
-  let lastLoadTime = 0
-
-  return ((...args: Parameters<T>) => {
-    const now = Date.now()
-    if (loading || now - lastLoadTime < delay) {
-      console.log(`Throttled function call skipped (${fn.name})`)
-      return Promise.resolve()
-    }
-
-    loading = true
-    lastLoadTime = now
-
-    const result = fn(...args)
-    if (result instanceof Promise) {
-      return result.finally(() => {
-        loading = false
-      })
-    } else {
-      loading = false
-      return result
-    }
-  }) as T
-}
-
-// 工具函数：获取当前用户ID
-const getCurrentUserId = (): number | null => {
-  return useAuthStore.getState().user?.id || null
-}
-
-// 工具函数：检查是否为自己的消息
-const isOwnMessage = (message: ChatMessage): boolean => {
-  const currentUserId = getCurrentUserId()
-  return currentUserId ? message.user.id === currentUserId : false
-}
-
-// 工具函数：清理房间数据
-const cleanRoomData = (state: ChatState, roomId: number) => {
-  const roomKey = roomId.toString()
-  const newState = { ...state }
-
-  // 清理消息数据
-  delete newState.messages[roomKey]
-  delete newState.onlineUsers[roomKey]
-  delete newState.messagesPagination[roomKey]
-
-  // 清理通知数据
-  delete newState.notifications[roomKey]
-  newState.mentions = newState.mentions.filter(mention => mention.roomId !== roomId)
-
-  return newState
-}
+// 工具函数已移至 stores/utils/ 目录
 
 const useChatStore = create<ChatState>()(
   persist(
@@ -448,9 +358,8 @@ const useChatStore = create<ChatState>()(
           }
 
           // 检查提及
-          const mentionRegex = /@\w+/g
-          const mentions = message.message.match(mentionRegex)
-          if (mentions && state.notificationSettings.mentionNotifications) {
+          const mentions = extractMentions(message.message)
+          if (mentions.length > 0 && state.notificationSettings.mentionNotifications) {
             get().addMention({
               messageId: message.id,
               roomId: roomId,
@@ -631,14 +540,13 @@ const useChatStore = create<ChatState>()(
           const roomKey = roomId.toString()
           const currentUsers = state.onlineUsers[roomKey] || []
 
-          // 避免重复用户
-          const userExists = currentUsers.some(u => u.id === user.id)
-          if (userExists) return state
+          const updatedUsers = addOnlineUserToList(currentUsers, user)
+          if (updatedUsers === currentUsers) return state // 用户已存在
 
           return {
             onlineUsers: {
               ...state.onlineUsers,
-              [roomKey]: [...currentUsers, user],
+              [roomKey]: updatedUsers,
             },
           }
         })
@@ -648,11 +556,12 @@ const useChatStore = create<ChatState>()(
         set(state => {
           const roomKey = roomId.toString()
           const currentUsers = state.onlineUsers[roomKey] || []
+          const updatedUsers = removeOnlineUserFromList(currentUsers, userId)
 
           return {
             onlineUsers: {
               ...state.onlineUsers,
-              [roomKey]: currentUsers.filter(u => u.id !== userId),
+              [roomKey]: updatedUsers,
             },
           }
         })
@@ -766,10 +675,7 @@ const useChatStore = create<ChatState>()(
           }
 
           // 计算总未读数
-          const totalUnreadCount = Object.values(newNotifications).reduce(
-            (total, notification) => total + notification.unreadCount,
-            0
-          )
+          const totalUnreadCount = calculateTotalUnreadCount(newNotifications)
 
           return {
             notifications: newNotifications,
@@ -785,10 +691,7 @@ const useChatStore = create<ChatState>()(
           delete newNotifications[roomKey]
 
           // 计算总未读数
-          const totalUnreadCount = Object.values(newNotifications).reduce(
-            (total, notification) => total + notification.unreadCount,
-            0
-          )
+          const totalUnreadCount = calculateTotalUnreadCount(newNotifications)
 
           // 清理该房间的提及
           const newMentions = state.mentions.filter(mention => mention.roomId !== roomId)
@@ -833,9 +736,7 @@ const useChatStore = create<ChatState>()(
 
       markMentionAsRead: messageId => {
         set(state => ({
-          mentions: state.mentions.map(mention =>
-            mention.messageId === messageId ? { ...mention, isRead: true } : mention
-          ),
+          mentions: markMentionAsRead(state.mentions, messageId),
         }))
       },
 
@@ -857,11 +758,7 @@ const useChatStore = create<ChatState>()(
       },
 
       hasUnreadMentions: roomId => {
-        const { mentions } = get()
-        if (roomId) {
-          return mentions.some(mention => mention.roomId === roomId && !mention.isRead)
-        }
-        return mentions.some(mention => !mention.isRead)
+        return hasUnreadMentions(get().mentions, roomId)
       },
 
       // 错误处理

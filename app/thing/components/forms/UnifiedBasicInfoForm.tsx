@@ -1,31 +1,24 @@
-import { Dispatch, SetStateAction, useState, useEffect, useCallback } from 'react'
-import { Controller, UseFormReturn } from 'react-hook-form'
-import { Input } from '@/components/ui/input'
+import { useState, useEffect, useCallback, startTransition } from 'react'
+import { UseFormReturn } from 'react-hook-form'
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Plus, Tag as TagIcon, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import ImageUploader from '../ImageUploader'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { AlertCircle } from 'lucide-react'
+import ImageUploader from '../ImageUploader'
 import LocationComboboxSelectSimple from '../LocationComboboxSelectSimple'
 import CategoryTreeSelect, { CategorySelection } from '../CategoryTreeSelect'
-import { ItemFormData, Category, Tag, UploadedImage } from '../../types'
-import { LocationSelection } from '../LocationComboboxSelectSimple'
-import { isLightColor } from '@/lib/helpers'
-import { apiRequest } from '@/lib/api'
-import { LocationType, Location, ItemFormSchemaType } from './formConstants'
+import { NameInput } from './components/NameInput'
+import { TagsSection } from './components/TagsSection'
+import { LocationSection } from './components/LocationSection'
+import { QuantityDialog } from './components/QuantityDialog'
+import { useFormValue } from './hooks/useFormValue'
+import { useLocationData } from './hooks/useLocationData'
+import { updateLocationPath, handleLocationSelectLogic } from './utils/locationHelpers'
+import type { ItemFormData, Category, Tag, UploadedImage } from '../../types'
+import type { LocationSelection } from '../LocationComboboxSelectSimple'
+import type { LocationType, ItemFormSchemaType } from './formConstants'
 
-// 表单数据类型
 type FormDataType = ItemFormSchemaType
 
 interface UnifiedBasicInfoFormProps {
@@ -34,16 +27,16 @@ interface UnifiedBasicInfoFormProps {
 
   // 直接状态管理相关 (用于编辑页面)
   formData?: ItemFormData
-  setFormData?: Dispatch<SetStateAction<ItemFormData>>
+  setFormData?: React.Dispatch<React.SetStateAction<ItemFormData>>
 
   // 共同的 props
   tags: Tag[]
   selectedTags: string[]
-  setSelectedTags: Dispatch<SetStateAction<string[]>>
-  setCreateTagDialogOpen: Dispatch<SetStateAction<boolean>>
+  setSelectedTags: React.Dispatch<React.SetStateAction<string[]>>
+  setCreateTagDialogOpen: React.Dispatch<React.SetStateAction<boolean>>
   categories: Category[]
   uploadedImages: UploadedImage[]
-  setUploadedImages: Dispatch<SetStateAction<UploadedImage[]>>
+  setUploadedImages: React.Dispatch<React.SetStateAction<UploadedImage[]>>
 
   // 位置相关 (仅创建页面需要)
   watchAreaId?: string
@@ -78,10 +71,18 @@ export default function UnifiedBasicInfoForm({
   const isCreateMode = !!formMethods
   const isEditMode = !!formData && !!setFormData
 
+  // 使用自定义 hooks
+  const { getCurrentValue, setCurrentValue } = useFormValue({
+    isCreateMode,
+    isEditMode,
+    formMethods,
+    formData,
+    setFormData,
+  })
+
+  const { areas, rooms, spots, loadRooms, loadSpots } = useLocationData(isCreateMode)
+
   // 位置相关状态 (仅创建模式需要)
-  const [areas, setAreas] = useState<Location[]>([])
-  const [rooms, setRooms] = useState<Location[]>([])
-  const [spots, setSpots] = useState<Location[]>([])
   const [internalLocationPath, setInternalLocationPath] = useState<string>('')
   const [internalSelectedLocation, setInternalSelectedLocation] =
     useState<LocationSelection>(undefined)
@@ -93,255 +94,110 @@ export default function UnifiedBasicInfoForm({
   // 分类选择状态
   const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(undefined)
 
-  // 获取当前表单值的辅助函数
-  const getCurrentValue = useCallback(
-    (field: keyof FormDataType | keyof ItemFormData) => {
-      if (isCreateMode && formMethods) {
-        return formMethods.watch(field as keyof FormDataType)
-      }
-      if (isEditMode && formData) {
-        return formData[field as keyof ItemFormData]
-      }
-      return ''
+  // 处理标签切换
+  const toggleTag = useCallback(
+    (tagId: string) => {
+      setSelectedTags(prev => {
+        const newTags = prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
+        return newTags
+      })
     },
-    [isCreateMode, formMethods, isEditMode, formData]
+    [setSelectedTags]
   )
-
-  // 设置表单值的辅助函数
-  const setCurrentValue = useCallback(
-    (field: keyof FormDataType | keyof ItemFormData, value: unknown) => {
-      console.log('setCurrentValue 被调用:', { field, value, isEditMode })
-      if (isCreateMode && formMethods) {
-        formMethods.setValue(field as keyof FormDataType, value as FormDataType[keyof FormDataType])
-      }
-      if (isEditMode && setFormData) {
-        console.log('更新编辑模式的表单数据:', { field, value })
-        setFormData(prev => ({ ...prev, [field]: value }))
-      }
-    },
-    [isCreateMode, formMethods, isEditMode, setFormData]
-  )
-
-  // 获取标签样式
-  const getTagStyle = (color: string = '#3b82f6') => ({
-    backgroundColor: color,
-    color: isLightColor(color) ? '#000' : '#fff',
-  })
-
-  const toggleTag = (tagId: string) => {
-    console.log('toggleTag 被调用:', { tagId })
-    setSelectedTags(prev => {
-      const newTags = prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-      console.log('标签更新:', { prev, newTags })
-      return newTags
-    })
-  }
 
   // 处理分类选择
-  const handleCategorySelect = (type: 'parent' | 'child', id: number | null) => {
-    if (id === null) {
-      // 未分类
-      setSelectedCategory(undefined)
-      setCurrentValue('category_id', '')
-    } else {
-      setSelectedCategory({ type, id })
-      setCurrentValue('category_id', id.toString())
-    }
-    // 注意：在表单中，我们不需要处理弹窗关闭逻辑
-  }
+  const handleCategorySelect = useCallback(
+    (type: 'parent' | 'child', id: number | null) => {
+      if (id === null) {
+        setSelectedCategory(undefined)
+        setCurrentValue('category_id', '')
+      } else {
+        setSelectedCategory({ type, id })
+        setCurrentValue('category_id', id.toString())
+      }
+    },
+    [setCurrentValue]
+  )
 
   // 根据当前表单值设置选中的分类
   useEffect(() => {
     const categoryId = getCurrentValue('category_id')
-    if (categoryId && categoryId !== '') {
-      const category = categories.find(cat => cat.id.toString() === categoryId)
-      if (category) {
-        setSelectedCategory({
-          type: category.parent_id ? 'child' : 'parent',
-          id: category.id,
-        })
+    startTransition(() => {
+      if (categoryId && categoryId !== '') {
+        const category = categories.find(cat => cat.id.toString() === categoryId)
+        if (category) {
+          setSelectedCategory({
+            type: category.parent_id ? 'child' : 'parent',
+            id: category.id,
+          })
+        }
+      } else {
+        setSelectedCategory(undefined)
       }
-    } else {
-      // 空字符串表示未分类
-      setSelectedCategory(undefined)
-    }
+    })
   }, [formMethods, formData, categories, getCurrentValue])
 
   // 位置相关函数 (仅创建模式需要)
-  const loadAreas = useCallback(async () => {
-    if (!isCreateMode) return []
-    try {
-      const data = await apiRequest<Location[]>('/areas')
-      setAreas(data)
-      return data
-    } catch (error) {
-      console.error('加载区域失败', error)
-      return []
-    }
-  }, [isCreateMode])
+  const handleLocationSelect = useCallback(
+    async (type: LocationType, id: number, fullPath?: string) => {
+      if (isCreateMode) {
+        await handleLocationSelectLogic(
+          type,
+          id,
+          fullPath,
+          rooms,
+          spots,
+          getCurrentValue,
+          setCurrentValue,
+          loadSpots
+        )
 
-  const loadRooms = useCallback(
-    async (areaId: string) => {
-      if (!isCreateMode || !areaId) {
-        setRooms([])
-        return []
-      }
-
-      try {
-        const data = await apiRequest<Location[]>(`/areas/${areaId}/rooms`)
-        setRooms(data)
-        return data
-      } catch (error) {
-        console.error('加载房间失败', error)
-        return []
-      }
-    },
-    [isCreateMode]
-  )
-
-  const loadSpots = useCallback(
-    async (roomId: string) => {
-      if (!isCreateMode || !roomId) {
-        setSpots([])
-        return []
-      }
-
-      try {
-        const data = await apiRequest<Location[]>(`/rooms/${roomId}/spots`)
-        setSpots(data)
-        return data
-      } catch (error) {
-        console.error('加载位置失败', error)
-        return []
-      }
-    },
-    [isCreateMode]
-  )
-
-  const handleLocationSelect = async (type: LocationType, id: number, fullPath?: string) => {
-    if (isCreateMode) {
-      // 处理取消选择（id 为 0 或 fullPath 为空）
-      if (id === 0 || !fullPath) {
-        setInternalSelectedLocation(undefined)
-        setInternalLocationPath('')
-        setCurrentValue('area_id', '')
-        setCurrentValue('room_id', '')
-        setCurrentValue('spot_id', '')
-        return
-      }
-
-      setInternalSelectedLocation({ type, id })
-      setInternalLocationPath(fullPath || '')
-
-      if (type === 'area') {
-        setCurrentValue('area_id', id.toString())
-        setCurrentValue('room_id', '')
-        setCurrentValue('spot_id', '')
-      } else if (type === 'room') {
-        setCurrentValue('room_id', id.toString())
-        setCurrentValue('spot_id', '')
-
-        const room = rooms.find(r => r.id === id)
-        if (room?.area_id) {
-          setCurrentValue('area_id', room.area_id.toString())
-        }
-      } else if (type === 'spot') {
-        setCurrentValue('spot_id', id.toString())
-
-        let spot = spots.find(s => s.id === id)
-
-        // 如果找不到 spot（可能是刚创建的），刷新 spots 列表
-        if (!spot) {
-          const currentRoomId = getCurrentValue('room_id')
-          if (currentRoomId) {
-            const refreshedSpots = await loadSpots(String(currentRoomId))
-            // 从刷新后的数据中查找
-            spot = refreshedSpots.find(s => s.id === id)
-          }
-        }
-
-        if (spot?.room_id) {
-          setCurrentValue('room_id', spot.room_id.toString())
-
-          const room = rooms.find(r => r.id === spot.room_id)
-          if (room?.area_id) {
-            setCurrentValue('area_id', room.area_id.toString())
-          }
+        if (id === 0 || !fullPath) {
+          setInternalSelectedLocation(undefined)
+          setInternalLocationPath('')
         } else {
-          // 如果还是找不到，使用当前已知的 room_id 和 area_id
-          // 这通常发生在刚创建位置时，spots 列表还没有更新
-          const currentRoomId = getCurrentValue('room_id')
-          const currentAreaId = getCurrentValue('area_id')
-          if (currentRoomId) {
-            setCurrentValue('room_id', currentRoomId)
-          }
-          if (currentAreaId) {
-            setCurrentValue('area_id', currentAreaId)
-          }
+          setInternalSelectedLocation({ type, id })
+          setInternalLocationPath(fullPath || '')
         }
+      } else if (isEditMode && onLocationSelect) {
+        if (id === 0) {
+          return
+        }
+        onLocationSelect(type, id)
       }
-    } else if (isEditMode && onLocationSelect) {
-      // 编辑模式下，如果 id 为 0，表示取消选择
-      if (id === 0) {
-        // 编辑模式的取消选择逻辑由父组件处理
-        return
-      }
-      onLocationSelect(type, id)
-    }
-  }
+    },
+    [
+      isCreateMode,
+      isEditMode,
+      rooms,
+      spots,
+      getCurrentValue,
+      setCurrentValue,
+      loadSpots,
+      onLocationSelect,
+    ]
+  )
 
-  const updateLocationPath = useCallback(
+  // 更新位置路径
+  const updateLocationPathInternal = useCallback(
     (areaId?: string, roomId?: string, spotId?: string) => {
       if (!isCreateMode) return
 
-      let path = ''
-
-      if (areaId && areas.length > 0) {
-        const area = areas.find(a => a.id.toString() === areaId)
-        if (area) {
-          path = area.name
-
-          if (roomId && rooms.length > 0) {
-            const room = rooms.find(r => r.id.toString() === roomId)
-            if (room) {
-              path += ` > ${room.name}`
-
-              if (spotId && spots.length > 0) {
-                const spot = spots.find(s => s.id.toString() === spotId)
-                if (spot) {
-                  path += ` > ${spot.name}`
-                }
-              }
-            }
-          }
-        }
-      }
-
-      if (path) {
-        setInternalLocationPath(path)
-
-        if (spotId && spots.length > 0) {
-          setInternalSelectedLocation({ type: 'spot', id: Number(spotId) })
-        } else if (roomId && rooms.length > 0) {
-          setInternalSelectedLocation({ type: 'room', id: Number(roomId) })
-        } else if (areaId && areas.length > 0) {
-          setInternalSelectedLocation({ type: 'area', id: Number(areaId) })
-        }
-      } else if (!areaId && !roomId && !spotId) {
-        setInternalLocationPath('')
-        setInternalSelectedLocation(undefined)
-      }
+      const { path, selectedLocation } = updateLocationPath(
+        areaId,
+        roomId,
+        spotId,
+        areas,
+        rooms,
+        spots
+      )
+      setInternalLocationPath(path)
+      setInternalSelectedLocation(selectedLocation)
     },
     [areas, rooms, spots, isCreateMode]
   )
 
   // Effects
-  useEffect(() => {
-    if (isCreateMode) {
-      loadAreas()
-    }
-  }, [isCreateMode, loadAreas])
-
   useEffect(() => {
     if (isCreateMode && watchAreaId) {
       loadRooms(watchAreaId)
@@ -361,64 +217,26 @@ export default function UnifiedBasicInfoForm({
       watchRoomId !== undefined &&
       watchSpotId !== undefined
     ) {
-      updateLocationPath(watchAreaId, watchRoomId, watchSpotId)
+      startTransition(() => {
+        updateLocationPathInternal(watchAreaId, watchRoomId, watchSpotId)
+      })
     }
-  }, [watchAreaId, watchRoomId, watchSpotId, updateLocationPath, isCreateMode])
-
-  const renderLocationInfo = () => {
-    const currentLocationPath = isCreateMode ? internalLocationPath : locationPath
-    const currentAreaId = getCurrentValue('area_id')
-    const currentRoomId = getCurrentValue('room_id')
-    const currentSpotId = getCurrentValue('spot_id')
-
-    if (currentLocationPath) {
-      return <p className="text-muted-foreground mt-2 text-sm">{currentLocationPath}</p>
-    }
-
-    if (currentAreaId || currentRoomId || currentSpotId) {
-      return <p className="mt-2 text-sm text-orange-500">位置数据不完整，请重新选择</p>
-    }
-
-    return <p className="text-muted-foreground mt-2 text-sm">未指定位置</p>
-  }
+  }, [watchAreaId, watchRoomId, watchSpotId, updateLocationPathInternal, isCreateMode])
 
   // 处理数量设置
-  const handleQuantityClick = () => {
+  const handleQuantityClick = useCallback(() => {
     const currentQuantity = (getCurrentValue('quantity') as number) || 1
     setTempQuantity(currentQuantity)
     setQuantityDialogOpen(true)
-  }
+  }, [getCurrentValue])
 
-  const handleQuantityConfirm = () => {
+  const handleQuantityConfirm = useCallback(() => {
     setCurrentValue('quantity', tempQuantity)
     setQuantityDialogOpen(false)
-  }
+  }, [setCurrentValue, tempQuantity])
 
-  // 渲染名称输入框
-  const renderNameInput = () => {
-    if (isCreateMode && formMethods) {
-      return (
-        <Controller
-          name="name"
-          control={formMethods.control}
-          render={({ field }) => <Input id="name" className="h-10 flex-1" {...field} />}
-        />
-      )
-    }
-
-    if (isEditMode && formData && setFormData) {
-      return (
-        <Input
-          id="name"
-          className="h-10 flex-1"
-          value={formData.name}
-          onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-        />
-      )
-    }
-
-    return null
-  }
+  const currentLocationPath = isCreateMode ? internalLocationPath : locationPath
+  const currentSelectedLocation = isCreateMode ? internalSelectedLocation : selectedLocation
 
   return (
     <Card>
@@ -427,7 +245,13 @@ export default function UnifiedBasicInfoForm({
           <div className="space-y-2">
             <Label htmlFor="name">名称</Label>
             <div className="flex items-center gap-2">
-              {renderNameInput()}
+              <NameInput
+                isCreateMode={isCreateMode}
+                isEditMode={isEditMode}
+                formMethods={formMethods}
+                formData={formData}
+                setFormData={setFormData}
+              />
               <Button
                 type="button"
                 variant="outline"
@@ -480,101 +304,31 @@ export default function UnifiedBasicInfoForm({
             />
           </div>
 
-          <div className="space-y-2">
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-foreground text-lg font-bold">标签</h3>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-7 px-2"
-                onClick={() => setCreateTagDialogOpen(true)}
-              >
-                <Plus className="mr-1 h-3.5 w-3.5" />
-                <TagIcon className="mr-1 h-3.5 w-3.5" />
-              </Button>
-            </div>
+          <TagsSection
+            tags={tags}
+            selectedTags={selectedTags}
+            onToggleTag={toggleTag}
+            onCreateTag={() => setCreateTagDialogOpen(true)}
+          />
 
-            <div>
-              <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto p-2">
-                {tags.map(tag => {
-                  const isSelected = selectedTags.includes(tag.id.toString())
-                  return (
-                    <Badge
-                      key={tag.id}
-                      style={getTagStyle(tag.color)}
-                      className={`my-0.5 flex cursor-pointer items-center px-2 py-0.5 transition-all ${
-                        isSelected
-                          ? 'ring-offset-background ring-primary shadow-md ring-2 ring-offset-1'
-                          : 'ring-offset-background ring-2 ring-transparent ring-offset-1'
-                      }`}
-                      onClick={() => toggleTag(tag.id.toString())}
-                    >
-                      <span className="flex-1 whitespace-nowrap">{tag.name}</span>
-                      <span className="ml-1 flex h-4 w-4 flex-shrink-0 items-center justify-center">
-                        {isSelected && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="h-4 w-4 p-0 hover:bg-transparent"
-                            onClick={e => {
-                              e.stopPropagation()
-                              toggleTag(tag.id.toString())
-                            }}
-                          >
-                            <X size={12} />
-                          </Button>
-                        )}
-                      </span>
-                    </Badge>
-                  )
-                })}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="mb-2 block">存放位置</Label>
-            <LocationComboboxSelectSimple
-              onSelect={handleLocationSelect}
-              selectedLocation={isCreateMode ? internalSelectedLocation : selectedLocation}
-            />
-            {renderLocationInfo()}
-          </div>
+          <LocationSection
+            locationPath={currentLocationPath}
+            selectedLocation={currentSelectedLocation}
+            onLocationSelect={handleLocationSelect}
+            getCurrentValue={getCurrentValue}
+            isCreateMode={isCreateMode}
+          />
         </div>
       </CardContent>
 
       {/* 数量设置对话框 */}
-      <Dialog open={quantityDialogOpen} onOpenChange={setQuantityDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>设置数量</DialogTitle>
-            <DialogDescription>设置物品的数量</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="temp-quantity">数量</Label>
-              <Input
-                id="temp-quantity"
-                type="number"
-                min="1"
-                value={tempQuantity}
-                onChange={e => setTempQuantity(e.target.valueAsNumber || 1)}
-                className="h-10"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setQuantityDialogOpen(false)}>
-              取消
-            </Button>
-            <Button type="button" onClick={handleQuantityConfirm}>
-              确定
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <QuantityDialog
+        open={quantityDialogOpen}
+        onOpenChange={setQuantityDialogOpen}
+        quantity={tempQuantity}
+        onQuantityChange={setTempQuantity}
+        onConfirm={handleQuantityConfirm}
+      />
     </Card>
   )
 }

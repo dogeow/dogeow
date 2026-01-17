@@ -2,43 +2,17 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import {
-  Table,
-  TableBody,
-  TableHead,
-  TableHeader,
-  TableRow,
-  TableCell,
-} from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
-import {
-  Folder,
-  FolderOpen,
-  Plus,
-  Trash2,
-  Check,
-  X,
-  ChevronDown,
-  ChevronRight,
-  FileText,
-  Edit,
-} from 'lucide-react'
+import { ChevronDown, ChevronRight, Edit } from 'lucide-react'
 import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 import { useCategories } from './hooks/useCategories'
 import { useInlineEdit } from './hooks/useInlineEdit'
+import { CategoryTable } from './components/CategoryTable'
 import CategorySpeedDial from './components/CategorySpeedDial'
-import UncategorizedRow from './components/UncategorizedRow'
-import EmptyState from './components/EmptyState'
-import { Category } from '../types'
+import { buildCategoryTree } from './utils/buildCategoryTree'
 import { useItemStore } from '../stores/itemStore'
 import { toast } from 'sonner'
-
-// 扩展的分类类型，包含子分类
-interface CategoryWithChildren extends Category {
-  children?: Category[]
-}
 
 export default function Categories() {
   const { categories, loading, updateCategory, deleteCategory, refreshCategories } = useCategories()
@@ -65,32 +39,7 @@ export default function Categories() {
   const [isEditMode, setIsEditMode] = useState(false)
 
   // 将扁平的分类数据转换为树形结构
-  const categoryTree = useMemo(() => {
-    const parentCategories: CategoryWithChildren[] = []
-    const childCategories: Category[] = []
-
-    // 分离父分类和子分类
-    categories.forEach(category => {
-      if (category.parent_id) {
-        childCategories.push(category)
-      } else {
-        parentCategories.push({
-          ...category,
-          children: [],
-        })
-      }
-    })
-
-    // 将子分类添加到对应的父分类下
-    childCategories.forEach(child => {
-      const parent = parentCategories.find(p => p.id === child.parent_id)
-      if (parent) {
-        parent.children!.push(child)
-      }
-    })
-
-    return parentCategories
-  }, [categories])
+  const categoryTree = useMemo(() => buildCategoryTree(categories), [categories])
 
   // 初始化数据
   useEffect(() => {
@@ -118,8 +67,6 @@ export default function Categories() {
   // 处理取消编辑
   const handleCancelEdit = useCallback(() => {
     cancelEdit()
-    // 如果正在创建子分类，取消编辑模式时不清除编辑状态
-    // 只有在没有正在创建子分类时才清除编辑模式
     if (!creatingChildFor) {
       setEditingCategoryId(null)
     }
@@ -183,6 +130,7 @@ export default function Categories() {
   const startCreateChild = useCallback((parentId: number) => {
     setCreatingChildFor(parentId)
     setNewChildName('')
+    setExpandedCategories(prev => new Set(prev).add(parentId))
   }, [])
 
   // 取消创建子分类
@@ -213,19 +161,11 @@ export default function Categories() {
     }
   }, [creatingChildFor, newChildName, createCategory, cancelCreateChild, refreshCategories])
 
-  // 处理取消编辑模式
-  const handleCancelEditMode = useCallback(() => {
-    setEditingCategoryId(null)
-    cancelCreateChild()
-    setIsEditMode(false)
-  }, [cancelCreateChild])
-
   // 切换编辑模式
   const toggleEditMode = useCallback(() => {
     setIsEditMode(prev => {
       const newMode = !prev
       if (!newMode) {
-        // 退出编辑模式时，清除所有编辑状态
         setEditingCategoryId(null)
         cancelCreateChild()
         cancelEdit()
@@ -250,291 +190,6 @@ export default function Categories() {
   const categoryToDeleteName = useMemo(() => {
     return categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''
   }, [categoryToDelete, categories])
-
-  // 渲染表格内容
-  const renderTableContent = useMemo(() => {
-    if (categories.length === 0) {
-      return <EmptyState />
-    }
-
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow className="border-border/50 border-b-2">
-            <TableHead className="text-foreground w-full font-semibold">分类名称</TableHead>
-            {isEditMode ? (
-              <TableHead className="text-foreground text-center font-semibold">操作</TableHead>
-            ) : (
-              <TableHead className="text-foreground text-center font-semibold">物品数量</TableHead>
-            )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <UncategorizedRow count={uncategorizedCount} isEditMode={isEditMode} />
-          {categoryTree.map(parent => (
-            <React.Fragment key={parent.id}>
-              {/* 父分类行 */}
-              <TableRow className="hover:bg-accent/30 transition-colors">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="hover:bg-accent/50 h-8 w-8 rounded-md p-0 transition-all duration-200"
-                      onClick={() => toggleCategory(parent.id)}
-                    >
-                      {expandedCategories.has(parent.id) ? (
-                        <div className="flex items-center justify-center">
-                          <ChevronDown className="text-primary h-4 w-4" />
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center">
-                          <ChevronRight className="text-muted-foreground h-4 w-4" />
-                        </div>
-                      )}
-                    </Button>
-                    <div className="flex items-center gap-2">
-                      {expandedCategories.has(parent.id) ? (
-                        <FolderOpen className="text-primary h-5 w-5" />
-                      ) : (
-                        <Folder className="text-muted-foreground h-5 w-5" />
-                      )}
-                      {isEditing(parent.id) ? (
-                        <div className="flex flex-1 items-center gap-2">
-                          <Input
-                            ref={inputRef}
-                            value={editingValue}
-                            onChange={e => setEditingValue(e.target.value)}
-                            className="border-primary/50 focus:border-primary h-8"
-                            onKeyDown={handleEditKeyDown}
-                            disabled={loading}
-                          />
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleSaveEdit}
-                            disabled={loading}
-                            className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
-                          >
-                            <Check className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleCancelEdit}
-                            disabled={loading}
-                            className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex flex-1 items-center justify-between">
-                          <div
-                            className={`font-semibold transition-colors ${
-                              isEditMode
-                                ? 'text-foreground hover:text-primary cursor-pointer hover:underline'
-                                : 'text-foreground'
-                            }`}
-                            onClick={
-                              isEditMode ? () => startEdit(parent.id, parent.name) : undefined
-                            }
-                          >
-                            {parent.name}
-                          </div>
-                          {isEditMode && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="hover:bg-primary/10 hover:text-primary hover:border-primary/20 h-7 border border-transparent px-3 transition-all duration-200"
-                              onClick={() => {
-                                startCreateChild(parent.id)
-                                // 如果该分类有子分类，自动展开
-                                if (parent.children && parent.children.length > 0) {
-                                  setExpandedCategories(prev => new Set(prev).add(parent.id))
-                                } else {
-                                  setExpandedCategories(prev => new Set(prev).add(parent.id))
-                                }
-                              }}
-                            >
-                              <Plus className="mr-1 h-3 w-3" />
-                              <span className="text-xs">子分类</span>
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </TableCell>
-                {isEditMode ? (
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleConfirmDelete(parent.id)}
-                      disabled={loading}
-                      className="h-8 w-8"
-                    >
-                      <Trash2 className="text-destructive h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                ) : (
-                  <TableCell className="text-center">{parent.items_count ?? 0}</TableCell>
-                )}
-              </TableRow>
-
-              {/* 子分类行 */}
-              {expandedCategories.has(parent.id) && (
-                <>
-                  {parent.children?.map(child => (
-                    <TableRow
-                      key={child.id}
-                      className="hover:bg-accent/20 border-l-primary/20 border-l-2 transition-colors"
-                    >
-                      <TableCell>
-                        <div className="ml-8 flex items-center gap-3">
-                          <div className="flex h-6 w-6 items-center justify-center">
-                            <div className="bg-primary/40 h-2 w-2 rounded-full"></div>
-                          </div>
-                          <FileText className="text-primary/60 h-4 w-4" />
-                          {isEditing(child.id) ? (
-                            <div className="flex flex-1 items-center gap-2">
-                              <Input
-                                ref={inputRef}
-                                value={editingValue}
-                                onChange={e => setEditingValue(e.target.value)}
-                                className="border-primary/50 focus:border-primary h-8"
-                                onKeyDown={handleEditKeyDown}
-                                disabled={loading}
-                              />
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleSaveEdit}
-                                disabled={loading}
-                                className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
-                              >
-                                <Check className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleCancelEdit}
-                                disabled={loading}
-                                className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div
-                              className={`flex-1 font-medium transition-colors ${
-                                isEditMode
-                                  ? 'text-foreground hover:text-primary cursor-pointer hover:underline'
-                                  : 'text-foreground'
-                              }`}
-                              onClick={
-                                isEditMode ? () => startEdit(child.id, child.name) : undefined
-                              }
-                            >
-                              {child.name}
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      {isEditMode ? (
-                        <TableCell className="text-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleConfirmDelete(child.id)}
-                            disabled={loading}
-                            className="h-8 w-8"
-                          >
-                            <Trash2 className="text-destructive h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      ) : (
-                        <TableCell className="text-center">{child.items_count ?? 0}</TableCell>
-                      )}
-                    </TableRow>
-                  ))}
-
-                  {/* 创建子分类行 */}
-                  {creatingChildFor === parent.id && (
-                    <TableRow className="bg-accent/10 border-l-primary/40 border-l-2">
-                      <TableCell>
-                        <div className="ml-8 flex items-center gap-3">
-                          <div className="flex h-6 w-6 items-center justify-center">
-                            <div className="bg-primary/60 h-2 w-2 animate-pulse rounded-full"></div>
-                          </div>
-                          <FileText className="text-primary/60 h-4 w-4" />
-                          <div className="flex flex-1 items-center gap-2">
-                            <Input
-                              value={newChildName}
-                              onChange={e => setNewChildName(e.target.value)}
-                              className="border-primary/50 focus:border-primary bg-background h-8"
-                              placeholder="输入子分类名称"
-                              onKeyDown={handleChildKeyDown}
-                              disabled={creatingChild}
-                              autoFocus
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={saveChild}
-                              disabled={creatingChild || !newChildName.trim()}
-                              className="h-8 w-8 hover:bg-green-50 hover:text-green-600"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={cancelCreateChild}
-                              disabled={creatingChild}
-                              className="h-8 w-8 hover:bg-red-50 hover:text-red-600"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center"></TableCell>
-                    </TableRow>
-                  )}
-                </>
-              )}
-            </React.Fragment>
-          ))}
-        </TableBody>
-      </Table>
-    )
-  }, [
-    categories,
-    categoryTree,
-    uncategorizedCount,
-    expandedCategories,
-    isEditing,
-    editingValue,
-    setEditingValue,
-    inputRef,
-    handleEditKeyDown,
-    loading,
-    handleSaveEdit,
-    handleCancelEdit,
-    startEdit,
-    toggleCategory,
-    startCreateChild,
-    handleConfirmDelete,
-    creatingChildFor,
-    newChildName,
-    handleChildKeyDown,
-    creatingChild,
-    saveChild,
-    cancelCreateChild,
-    isEditMode,
-  ])
 
   return (
     <div className="py-2 pb-24">
@@ -579,7 +234,34 @@ export default function Categories() {
             </div>
           </CardHeader>
         )}
-        <CardContent className="p-0">{renderTableContent}</CardContent>
+        <CardContent className="p-0">
+          <CategoryTable
+            categories={categories}
+            categoryTree={categoryTree}
+            uncategorizedCount={uncategorizedCount}
+            isEditMode={isEditMode}
+            expandedCategories={expandedCategories}
+            isEditing={isEditing}
+            editingValue={editingValue}
+            loading={loading}
+            creatingChildFor={creatingChildFor}
+            newChildName={newChildName}
+            creatingChild={creatingChild}
+            onToggleCategory={toggleCategory}
+            onStartEdit={startEdit}
+            onSaveEdit={handleSaveEdit}
+            onCancelEdit={handleCancelEdit}
+            onConfirmDelete={handleConfirmDelete}
+            onStartCreateChild={startCreateChild}
+            onCancelCreateChild={cancelCreateChild}
+            onSaveChild={saveChild}
+            onChildKeyDown={handleChildKeyDown}
+            onValueChange={setEditingValue}
+            onNewChildNameChange={setNewChildName}
+            onEditKeyDown={handleEditKeyDown}
+            inputRef={inputRef}
+          />
+        </CardContent>
       </Card>
 
       <DeleteConfirmationDialog

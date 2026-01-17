@@ -16,15 +16,22 @@ export function getArticleSlugs(): string[] {
   if (!fs.existsSync(dir)) return []
   return fs
     .readdirSync(dir)
-    .filter(f => f.endsWith('.mdx'))
-    .map(f => f.replace(/\.mdx$/, ''))
+    .filter(f => f.endsWith('.mdx') || f.endsWith('.md'))
+    .map(f => f.replace(/\.(mdx|md)$/, ''))
 }
 
 export async function readArticleSourceBySlug(slug: string): Promise<string> {
-  const filePath = path.join(getWikiContentDir(), `${slug}.mdx`)
-  const exists = fs.existsSync(filePath)
-  if (!exists) {
-    throw new Error(`Article not found: ${slug}`)
+  // 先尝试 .mdx，再尝试 .md
+  const mdxPath = path.join(getWikiContentDir(), `${slug}.mdx`)
+  const mdPath = path.join(getWikiContentDir(), `${slug}.md`)
+
+  if (fs.existsSync(mdxPath)) {
+    return fs.readFileSync(mdxPath, 'utf8')
   }
-  return fs.readFileSync(filePath, 'utf8')
+
+  if (fs.existsSync(mdPath)) {
+    return fs.readFileSync(mdPath, 'utf8')
+  }
+
+  throw new Error(`Article not found: ${slug}`)
 }

@@ -43,3 +43,6 @@ next-env.d.ts
 # 本地环境变量
 .env.local
 .env.*.local
+
+# 知识库向量索引
+.knowledge/

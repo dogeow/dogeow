@@ -99,7 +99,7 @@ function normalizeGraph(inputPath, outputPath = null) {
 // 命令行使用
 if (require.main === module) {
   const args = process.argv.slice(2)
-  const inputPath = args[0] || path.join(process.cwd(), 'data', 'wiki', 'graph.json')
+  const inputPath = args[0] || path.join(process.cwd(), 'content', 'wiki', 'graph.json')
   const outputPath = args[1] || null
 
   normalizeGraph(inputPath, outputPath)

@@ -210,21 +210,15 @@ export default function ThingContent({
     return renderError()
   }
 
-  // 只有在真正加载中时才显示骨架屏
+  // 默认显示骨架屏（loading 状态）
   if (loading) {
     console.log('ThingContent: 显示加载状态')
     return renderLoading()
   }
 
-  // 如果有 meta 数据但 items 为空，说明加载完成但没有数据，显示空状态
+  // 只有当 API 返回成功（有 meta）且 items 为空时，才显示空状态
   if (meta && items.length === 0) {
-    console.log('ThingContent: 显示空状态 (有 meta 但无 items)')
-    return renderEmpty()
-  }
-
-  // 如果既没有 meta 也没有 items，且不在加载中，可能是首次进入，显示空状态
-  if (!meta && items.length === 0) {
-    console.log('ThingContent: 显示空状态 (无 meta 无 items)')
+    console.log('ThingContent: 显示空状态 (API 返回为空)')
     return renderEmpty()
   }
 

@@ -1,12 +1,7 @@
 'use client'
 
 import React from 'react'
-import { BackButton } from '@/components/ui/back-button'
-import { MainView } from './settings/MainView'
-import { BackgroundView } from './settings/BackgroundView'
-import { ThemeView } from './settings/ThemeView'
-import { LanguageView } from './settings/LanguageView'
-import { SettingsDivider } from './settings/SettingsDivider'
+import { SettingsContent } from './settings/SettingsContent'
 import { useSettingsPanel } from './settings/useSettingsPanel'
 
 type DisplayMode = 'music' | 'apps' | 'settings'
@@ -53,60 +48,26 @@ export function SettingsPanel({
     setCustomBackgrounds,
   })
 
-  const renderCurrentView = () => {
-    switch (currentView) {
-      case 'background':
-        return (
-          <BackgroundView
-            onBack={() => setCurrentView('main')}
-            backgroundImage={backgroundImage}
-            onSetBackground={handleSetBackground}
-            customBackgrounds={customBackgrounds}
-            onUploadBackground={handleUploadBackground}
-          />
-        )
-
-      case 'theme':
-        return (
-          <ThemeView
-            onBack={() => setCurrentView('main')}
-            currentTheme={currentTheme}
-            customThemes={customThemes}
-            onSetTheme={setCurrentTheme}
-            onRemoveTheme={handleRemoveCustomTheme}
-            onAddTheme={handleAddCustomTheme}
-          />
-        )
-
-      case 'language':
-        return <LanguageView onBack={() => setCurrentView('main')} />
-
-      default:
-        return (
-          <>
-            {/* 返回按钮 */}
-            <BackButton onClick={() => toggleDisplayMode('apps')} className="shrink-0" />
-
-            <SettingsDivider />
-
-            {/* 主视图选项 */}
-            <MainView
-              onNavigateToBackground={() => setCurrentView('background')}
-              onNavigateToTheme={() => setCurrentView('theme')}
-              onNavigateToLanguage={() => setCurrentView('language')}
-              followSystem={followSystem}
-              onToggleFollowSystem={handleToggleFollowSystem}
-              showProjectCovers={showProjectCovers}
-              onToggleProjectCovers={handleToggleProjectCovers}
-            />
-          </>
-        )
-    }
-  }
-
   return (
     <div className="scrollbar-none flex h-full w-full items-center space-x-3 overflow-x-auto">
-      {renderCurrentView()}
+      <SettingsContent
+        currentView={currentView}
+        setCurrentView={setCurrentView}
+        toggleDisplayMode={toggleDisplayMode}
+        backgroundImage={backgroundImage}
+        customBackgrounds={customBackgrounds}
+        currentTheme={currentTheme}
+        customThemes={customThemes}
+        followSystem={followSystem}
+        showProjectCovers={showProjectCovers}
+        handleSetBackground={handleSetBackground}
+        handleUploadBackground={handleUploadBackground}
+        setCurrentTheme={setCurrentTheme}
+        handleAddCustomTheme={handleAddCustomTheme}
+        handleRemoveCustomTheme={handleRemoveCustomTheme}
+        handleToggleFollowSystem={handleToggleFollowSystem}
+        handleToggleProjectCovers={handleToggleProjectCovers}
+      />
     </div>
   )
 }

@@ -3,6 +3,11 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useMusicStore } from '@/stores/musicStore'
 import { toast } from 'sonner'
+import {
+  buildAudioUrl as buildAudioUrlHelper,
+  isMobileDevice as isMobileDeviceHelper,
+} from './audio/utils'
+import { toggleMuteWithMobileSupport } from './audio/muteUtils'
 
 interface AudioControllerProps {
   volume: number
@@ -44,17 +49,9 @@ export function AudioController({
   // 构建音频URL
   const buildAudioUrl = useCallback(
     (track: string) => {
-      if (track.startsWith('http://') || track.startsWith('https://')) {
-        return track
-      }
-
       // 从路径中提取文件名
-      const trackPath = track.startsWith('/') ? track.slice(1) : track
-      const filename = trackPath.split('/').pop() // 获取文件名部分
-      const baseUrl = apiUrl?.endsWith('/') ? apiUrl : apiUrl + '/'
-      const finalUrl = baseUrl + 'musics/' + filename
-
-      return finalUrl
+      // 获取文件名部分
+      return buildAudioUrlHelper(track, apiUrl)
     },
     [apiUrl]
   )
@@ -343,58 +340,28 @@ export function AudioController({
 
   // 检测是否为移动设备
   const isMobileDevice = useCallback(() => {
-    return (
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-      'ontouchstart' in window ||
-      navigator.maxTouchPoints > 0
-    )
+    return isMobileDeviceHelper()
   }, [])
 
   // 专门的静音切换函数 - 确保手机端兼容性
   const toggleMute = useCallback(() => {
     if (audioRef.current) {
-      const newMutedState = !isMuted
-      const isMobile = isMobileDevice()
-
       // 更新状态
-      setIsMuted(newMutedState)
-
       // 同时设置volume和muted属性，确保在所有设备上都能正常工作
-      if (newMutedState) {
-        audioRef.current.volume = 0
-        audioRef.current.muted = true
-
-        // 手机端额外处理：暂停播放以确保静音效果
-        if (isMobile && !audioRef.current.paused) {
-          audioRef.current.pause()
-          // 记录暂停状态，稍后恢复
-          audioRef.current.dataset.wasPlaying = 'true'
-        }
-      } else {
-        audioRef.current.muted = false
-        audioRef.current.volume = volume
-
-        // 手机端额外处理：如果之前是播放状态，恢复播放
-        if (isMobile && audioRef.current.dataset.wasPlaying === 'true') {
-          // 保存当前播放时间，避免进度重置
-          const currentTime = audioRef.current.currentTime
-
-          // 恢复播放，但保持当前进度
-          audioRef.current
-            .play()
-            .then(() => {
-              // 确保进度没有被重置
-              if (audioRef.current && Math.abs(audioRef.current.currentTime - currentTime) > 1) {
-                audioRef.current.currentTime = currentTime
-              }
-            })
-            .catch(console.error)
-
-          audioRef.current.dataset.wasPlaying = 'false'
-        }
-      }
-
+      // 手机端额外处理：暂停播放以确保静音效果
+      // 记录暂停状态，稍后恢复
+      // 手机端额外处理：如果之前是播放状态，恢复播放
+      // 保存当前播放时间，避免进度重置
+      // 恢复播放，但保持当前进度
+      // 确保进度没有被重置
       // 静音切换完成
+      toggleMuteWithMobileSupport({
+        audio: audioRef.current,
+        isMuted,
+        volume,
+        isMobile: isMobileDevice(),
+        setIsMuted,
+      })
     }
   }, [isMuted, volume, isMobileDevice, setIsMuted])
 

@@ -36,7 +36,7 @@ export interface Article {
  * 获取完整图谱数据
  */
 export const getWikiGraph = async (): Promise<WikiGraph> => {
-  const response = await apiRequest<{ nodes: WikiNode[]; links: WikiLink[] }>('wiki')
+  const response = await apiRequest<{ nodes: WikiNode[]; links: WikiLink[] }>('notes/graph')
   return {
     nodes: response.nodes || [],
     links: response.links || [],
@@ -47,11 +47,11 @@ export const getWikiGraph = async (): Promise<WikiGraph> => {
  * 获取文章内容
  */
 export const getArticle = async (slug: string): Promise<Article> => {
-  return await apiRequest<Article>(`wiki/article/${slug}`)
+  return await apiRequest<Article>(`notes/article/${slug}`)
 }
 
 /**
- * 创建节点
+ * 创建节点（wiki 节点）
  */
 export const createNode = async (data: {
   title: string
@@ -61,11 +61,14 @@ export const createNode = async (data: {
   content?: string
   content_markdown?: string
 }): Promise<{ node: WikiNode }> => {
-  return await apiRequest<{ node: WikiNode }>('wiki/nodes', 'POST', data)
+  return await apiRequest<{ note: WikiNode }>('notes', 'POST', {
+    ...data,
+    is_wiki: true,
+  }).then(response => ({ node: response.note }))
 }
 
 /**
- * 更新节点
+ * 更新节点（wiki 节点）
  */
 export const updateNode = async (
   id: number,
@@ -78,14 +81,16 @@ export const updateNode = async (
     content_markdown?: string
   }
 ): Promise<{ node: WikiNode }> => {
-  return await apiRequest<{ node: WikiNode }>(`wiki/nodes/${id}`, 'PUT', data)
+  return await apiRequest<{ note: WikiNode }>(`notes/${id}`, 'PUT', data).then(response => ({
+    node: response.note,
+  }))
 }
 
 /**
- * 删除节点
+ * 删除节点（wiki 节点）
  */
 export const deleteNode = async (id: number): Promise<void> => {
-  await apiRequest(`wiki/nodes/${id}`, 'DELETE')
+  await apiRequest(`notes/${id}`, 'DELETE')
 }
 
 /**
@@ -96,12 +101,12 @@ export const createLink = async (data: {
   target_id: number
   type?: string
 }): Promise<{ link: WikiLink }> => {
-  return await apiRequest<{ link: WikiLink }>('wiki/links', 'POST', data)
+  return await apiRequest<{ link: WikiLink }>('notes/links', 'POST', data)
 }
 
 /**
  * 删除链接
  */
 export const deleteLink = async (id: number): Promise<void> => {
-  await apiRequest(`wiki/links/${id}`, 'DELETE')
+  await apiRequest(`notes/links/${id}`, 'DELETE')
 }

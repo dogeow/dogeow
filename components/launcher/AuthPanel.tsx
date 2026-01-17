@@ -2,11 +2,12 @@
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import useAuthStore from '@/stores/authStore'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, LayoutDashboard, Check, X, LogOut } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
+import { LoginForm } from './auth/LoginForm'
+import { ProfileView } from './auth/ProfileView'
 
 type DisplayMode = 'music' | 'apps' | 'settings'
 
@@ -65,27 +66,14 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
       </Button>
 
       <div className="flex flex-1 items-center gap-2">
-        <form onSubmit={handleSubmit} className="flex w-full items-center gap-2">
-          <Input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            placeholder="邮箱"
-            className="h-8"
-            required
-          />
-          <Input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            placeholder="密码"
-            className="h-8"
-            required
-          />
-          <Button type="submit" className="h-8" disabled={loading}>
-            {loading ? '登录中...' : '登录'}
-          </Button>
-        </form>
+        <LoginForm
+          email={email}
+          password={password}
+          loading={loading}
+          onEmailChange={setEmail}
+          onPasswordChange={setPassword}
+          onSubmit={handleSubmit}
+        />
       </div>
     </div>
   )
@@ -97,47 +85,16 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
         <ChevronLeft className="h-5 w-5" />
       </Button>
 
-      <div className="flex flex-1 items-center justify-between px-2">
-        <div className="flex items-center gap-2">
-          <div className="bg-primary text-primary-foreground flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold">
-            {user?.name.charAt(0).toUpperCase()}
-          </div>
-          <span className="text-base font-medium">{user?.name}</span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* 仪表盘按钮 */}
-          <Button
-            variant="ghost"
-            className="text-primary hover:text-primary hover:bg-primary/10 flex items-center gap-2"
-            onClick={handleGoToDashboard}
-          >
-            <LayoutDashboard className="h-4 w-4" />
-          </Button>
-
-          {confirmingLogout ? (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-1"
-                onClick={handleLogoutConfirm}
-              >
-                <Check className="h-4 w-4" />
-                <span>确认</span>
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogoutCancel}>
-                <X className="h-4 w-4" />
-                <span>取消</span>
-              </Button>
-            </div>
-          ) : (
-            <Button variant="ghost" className="flex items-center gap-2" onClick={handleLogoutStart}>
-              <LogOut className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </div>
+      {user && (
+        <ProfileView
+          userName={user.name}
+          confirmingLogout={confirmingLogout}
+          onGoToDashboard={handleGoToDashboard}
+          onLogoutStart={handleLogoutStart}
+          onLogoutConfirm={handleLogoutConfirm}
+          onLogoutCancel={handleLogoutCancel}
+        />
+      )}
     </div>
   )
 

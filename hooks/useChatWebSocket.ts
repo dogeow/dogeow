@@ -6,60 +6,19 @@ import {
   cancelDestroyEchoInstance,
   getConnectionMonitor,
   getAuthManager,
-  type ConnectionStatus,
-  type ConnectionMonitor,
 } from '@/lib/websocket'
 import useChatStore from '@/app/chat/chatStore'
-import OfflineManager, {
-  type OfflineState,
-  type QueuedMessage,
-} from '@/lib/websocket/offline-manager'
-import { type ConnectionError } from '@/lib/websocket/error-handler'
+import OfflineManager, { type OfflineState } from '@/lib/websocket/offline-manager'
+import type { UseChatWebSocketReturn, UseChatWebSocketOptions } from './chat-websocket/types'
+import {
+  isEchoConnected,
+  getAuthToken,
+  createConnectionError,
+} from './chat-websocket/utils/connectionUtils'
+import { sendMessageToServer, leaveRoomViaAPI } from './chat-websocket/utils/messageUtils'
+import { createChannelWrapper, setupRoomEventListeners } from './chat-websocket/utils/channelUtils'
 
-export interface UseChatWebSocketReturn {
-  echo: Echo<'reverb'> | null
-  connect: (roomId?: string) => Promise<boolean>
-  disconnect: () => void
-  joinRoom: (roomId: string, echoInstance?: Echo<'reverb'>) => void
-  sendMessage: (roomId: string, message: string) => Promise<boolean>
-  isConnected: boolean
-  connectionStatus: ConnectionStatus
-  connectionInfo: ConnectionMonitor
-  offlineState: OfflineState
-  reconnect: () => void
-  retryFailedMessages: () => void
-  clearOfflineQueue: () => void
-}
-
-export interface User {
-  id: number
-  name: string
-  email?: string
-  [key: string]: unknown
-}
-
-export interface UserPresenceEvent {
-  users?: User[]
-  user?: User
-  action: 'here' | 'joining' | 'leaving'
-}
-
-export interface UseChatWebSocketOptions {
-  autoConnect?: boolean
-  onConnect?: () => void
-  onDisconnect?: () => void
-  onError?: (error: ConnectionError) => void
-  onMessage?: (data: unknown) => void
-  onOffline?: () => void
-  onOnline?: () => void
-  onMessageQueued?: (message: QueuedMessage) => void
-  onMessageSent?: (message: QueuedMessage) => void
-  onMessageFailed?: (message: QueuedMessage, error: unknown) => void
-  onMessageSentSuccess?: (messageData: unknown) => void
-  onUserJoined?: (event: UserPresenceEvent) => void
-  onUserLeft?: (event: UserPresenceEvent) => void
-  authTokenRefreshCallback?: () => Promise<string | null>
-}
+export * from './chat-websocket/types'
 
 export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChatWebSocketReturn => {
   const {
@@ -74,20 +33,11 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     onMessageSent,
     onMessageFailed,
     onMessageSentSuccess,
-    // onUserJoined,  // Currently unused
-    // onUserLeft,    // Currently unused
     authTokenRefreshCallback,
   } = options
 
   const [echo, setEcho] = useState<Echo<'reverb'> | null>(null)
-  const [connectionInfo, setConnectionInfo] = useState<ConnectionMonitor>({
-    status: 'disconnected',
-    lastConnected: null,
-    reconnectAttempts: 0,
-    maxReconnectAttempts: 5,
-    lastError: null,
-    isRetrying: false,
-  })
+  const [connectionInfo, setConnectionInfo] = useState(getConnectionMonitor().getStatus())
   const [offlineState, setOfflineState] = useState<OfflineState>({
     isOffline: false,
     lastOnline: null,
@@ -97,11 +47,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
   })
 
   const currentRoomRef = useRef<string | null>(null)
-  const channelRef = useRef<{
-    stopListening: (event?: string, callback?: () => void) => void
-    listen: (event: string, callback: (data: unknown) => void) => void
-    bind?: (event: string, callback: () => void) => void
-  } | null>(null)
+  const channelRef = useRef<ReturnType<typeof createChannelWrapper> | null>(null)
   const isComponentMountedRef = useRef(true)
   const connectionMonitorUnsubscribeRef = useRef<(() => void) | null>(null)
   const offlineManagerUnsubscribeRef = useRef<(() => void) | null>(null)
@@ -150,7 +96,6 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
   useEffect(() => {
     const monitor = getConnectionMonitor()
 
-    // 初始化连接监控器与Echo实例
     if (echo) {
       monitor.initializeWithEcho(echo)
     }
@@ -196,16 +141,14 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
 
   // 组件挂载和卸载管理
   useEffect(() => {
-    // 组件挂载时，设置为已挂载状态并取消任何待销毁的操作
     isComponentMountedRef.current = true
     cancelDestroyEchoInstance()
-    console.log('🔥 WebSocket: Component mounted, cancelled any pending cleanup')
+    console.log('WebSocket: Component mounted, cancelled any pending cleanup')
 
     return () => {
-      console.log('🔥 WebSocket: Component cleanup triggered')
+      console.log('WebSocket: Component cleanup triggered')
       isComponentMountedRef.current = false
 
-      // 清理频道监听
       try {
         if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
           channelRef.current.stopListening()
@@ -216,91 +159,58 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       channelRef.current = null
       currentRoomRef.current = null
 
-      // 使用延迟销毁机制
       setEcho(null)
-      destroyEchoInstance(false) // 延迟销毁，不立即销毁
+      destroyEchoInstance(false)
     }
-  }, []) // 移除依赖项，只在组件卸载时执行
+  }, [])
 
   const connect = useCallback(async (): Promise<boolean> => {
     if (!isComponentMountedRef.current) {
-      console.log('🔥 WebSocket: Component unmounted, skipping connect')
+      console.log('WebSocket: Component unmounted, skipping connect')
       return false
     }
 
     // 检查是否已有连接
-    if (echo) {
-      console.log('🔥 WebSocket: Echo instance already exists, checking connection state')
-      try {
-        if (echo.connector && 'pusher' in echo.connector) {
-          const connector = echo.connector as { pusher?: { connection?: { state?: string } } }
-          const state = connector.pusher?.connection?.state
-          console.log('🔥 WebSocket: Current connection state:', state)
-          if (state === 'connected' || state === 'connecting') {
-            console.log('🔥 WebSocket: Reusing existing connection')
-            return true
-          }
-        }
-      } catch (error) {
-        console.warn('🔥 WebSocket: Error checking existing connection:', error)
-      }
+    if (echo && isEchoConnected(echo)) {
+      console.log('WebSocket: Reusing existing connection')
+      return true
     }
 
     try {
-      console.log('🔥 WebSocket: Starting connection process')
-      const authManager = getAuthManager()
-      let token = authManager.getToken()
-      if (!token && authTokenRefreshCallback) {
-        console.log('🔥 WebSocket: Refreshing auth token')
-        token = await authTokenRefreshCallback()
-      }
+      console.log('WebSocket: Starting connection process')
+      const token = await getAuthToken(authTokenRefreshCallback)
       if (!token) {
-        console.error('🔥 WebSocket: No auth token available')
-        onError?.({
-          type: 'connection',
-          message: 'No authentication token available',
-          timestamp: new Date(),
-          retryable: false,
-        })
+        console.error('WebSocket: No auth token available')
+        onError?.(createConnectionError('No authentication token available', false))
         return false
       }
 
-      console.log('🔥 WebSocket: Creating Echo instance')
+      console.log('WebSocket: Creating Echo instance')
       const echoInstance = createEchoInstance()
       if (!echoInstance) {
-        console.error('🔥 WebSocket: Failed to create Echo instance')
-        onError?.({
-          type: 'connection',
-          message: 'Failed to create WebSocket connection',
-          timestamp: new Date(),
-          retryable: true,
-        })
+        console.error('WebSocket: Failed to create Echo instance')
+        onError?.(createConnectionError('Failed to create WebSocket connection', true))
         return false
       }
 
-      console.log('🔥 WebSocket: Echo instance created successfully')
+      console.log('WebSocket: Echo instance created successfully')
 
-      // 先初始化连接监控器，再设置Echo实例
       const monitor = getConnectionMonitor()
       monitor.initializeWithEcho(echoInstance)
-      console.log('🔥 WebSocket: Connection monitor initialized')
+      console.log('WebSocket: Connection monitor initialized')
 
       setEcho(echoInstance)
-      console.log('🔥 WebSocket: Echo instance set in state')
+      console.log('WebSocket: Echo instance set in state')
 
-      // 立即返回true，让连接状态通过事件监听器异步更新
-      console.log(
-        '🔥 WebSocket: Echo instance ready, connection will be established asynchronously'
-      )
       return true
     } catch (error) {
-      console.error('🔥 WebSocket: Connection failed:', error)
-      onError?.({
-        type: 'connection',
-        message: error instanceof Error ? error.message : 'Failed to connect to WebSocket',
-        timestamp: new Date(),
-        retryable: true,
-      })
+      console.error('WebSocket: Connection failed:', error)
+      onError?.(
+        createConnectionError(
+          error instanceof Error ? error.message : 'Failed to connect to WebSocket',
+          true
+        )
+      )
       return false
     }
   }, [authTokenRefreshCallback, onError, echo])
@@ -311,30 +221,8 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       return
     }
 
-    // 如果有当前房间，先主动离开房间
     if (currentRoomRef.current) {
-      try {
-        console.log('WebSocket: Leaving room before disconnect:', currentRoomRef.current)
-        // 调用 API 离开房间
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/chat/rooms/${currentRoomRef.current}/leave`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${getAuthManager().getToken()}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-
-        if (response.ok) {
-          console.log('WebSocket: Successfully left room via API')
-        } else {
-          console.warn('WebSocket: Failed to leave room via API:', response.status)
-        }
-      } catch (error) {
-        console.error('WebSocket: Error leaving room via API:', error)
-      }
+      await leaveRoomViaAPI(currentRoomRef.current)
     }
 
     try {
@@ -370,137 +258,27 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
           if (!echoToUse) return
         }
       }
+
       if (channelRef.current && currentRoomRef.current !== roomId) {
         try {
           if (typeof channelRef.current.stopListening === 'function') {
             console.log('WebSocket: Stopping listening for room', currentRoomRef.current)
             channelRef.current.stopListening()
-          } else {
-            console.warn('WebSocket: stopListening method not available on channel')
           }
         } catch (error) {
           console.error('WebSocket: Error stopping listening:', error)
         }
       }
+
       currentRoomRef.current = roomId
       if (!echoToUse) return
 
       try {
-        // 创建普通频道用于消息
-        const channel = echoToUse.channel(`chat.room.${roomId}`)
-        console.log('WebSocket: Created channel for room', roomId, 'channel:', channel)
-
-        if (!channel) {
-          console.error('WebSocket: Failed to create channel for room', roomId)
-          return
-        }
-
-        // 临时禁用presence频道，因为需要认证
-        console.log('🔥 WebSocket: 暂时跳过presence频道创建（认证问题）')
-        // 使用普通频道代替presence频道
-        const presenceChannel = echoToUse.channel(`chat.room.${roomId}.users`)
-        console.log('🔥 WebSocket: ✅ 用户状态频道创建成功（使用普通频道）')
-
-        // 合并两个频道到一个对象中
-        channelRef.current = {
-          listen: (event: string, callback: (data: unknown) => void) => {
-            try {
-              // 消息事件通过普通频道监听
-              if (event.includes('message') || event.includes('MessageSent') || event === '.') {
-                channel.listen(event, callback)
-              } else {
-                // 用户事件通过presence频道监听
-                presenceChannel.listen(event, callback)
-              }
-            } catch (error) {
-              console.error('WebSocket: Error listening to event', event, ':', error)
-            }
-          },
-          bind: (event: string, callback: (data?: unknown) => void) => {
-            try {
-              // Laravel Echo没有bind方法，使用listen代替
-              channel.listen(event, callback)
-              presenceChannel.listen(event, callback)
-            } catch (error) {
-              console.error('WebSocket: Error binding to event', event, ':', error)
-            }
-          },
-          stopListening: (event?: string, callback?: () => void) => {
-            try {
-              if (event && callback) {
-                channel.stopListening(event, callback)
-                presenceChannel.stopListening(event, callback)
-              } else if (event) {
-                // Laravel Echo的stopListening要求至少一个参数
-                console.log('WebSocket: Cannot stop listening without callback, event:', event)
-              } else {
-                // 停止所有监听 - Laravel Echo需要传入空字符串和空函数
-                try {
-                  channel.stopListening('*', () => {})
-                  presenceChannel.stopListening('*', () => {})
-                } catch {
-                  // 如果上面的方法不行，尝试其他方法
-                  console.warn('WebSocket: Using alternative cleanup method')
-                }
-              }
-            } catch (error) {
-              console.error('WebSocket: Error stopping channels:', error)
-            }
-          },
-          // 如果需要访问原始频道的其他方法
-          channel,
-          presenceChannel,
-        } as unknown as {
-          listen: (event: string, callback: (data: unknown) => void) => void
-          bind: (event: string, callback: (data?: unknown) => void) => void
-          stopListening: (event?: string, callback?: () => void) => void
-          channel: ReturnType<Echo<'reverb'>['channel']>
-          presenceChannel: ReturnType<Echo<'reverb'>['channel']>
-        }
+        const channelWrapper = createChannelWrapper(echoToUse, roomId)
+        channelRef.current = channelWrapper
+        setupRoomEventListeners(channelWrapper, roomId, onMessage)
       } catch (error) {
         console.error('WebSocket: Error creating channel for room', roomId, ':', error)
-        return
-      }
-
-      // 消息事件监听
-      const safeOnMessage = (data: unknown, type: string = 'message') => {
-        if (onMessage && data) onMessage({ type, ...data })
-      }
-
-      // 检查频道是否正确初始化
-      if (channelRef.current && typeof channelRef.current.listen === 'function') {
-        console.log('🔥 WebSocket: Setting up event listeners for room', roomId)
-
-        channelRef.current.listen('.message.sent', (data: unknown) => {
-          const typedData = data as { message?: unknown }
-          if (typedData?.message) safeOnMessage({ message: typedData.message }, 'message')
-        })
-        channelRef.current.listen('user.joined', (data: unknown) =>
-          safeOnMessage(data, 'user_joined')
-        )
-        channelRef.current.listen('user.left', (data: unknown) => safeOnMessage(data, 'user_left'))
-        channelRef.current.listen('Chat\\MessageSent', (data: unknown) => {
-          const typedData = data as { message?: unknown }
-          if (typedData?.message) safeOnMessage({ message: typedData.message }, 'message')
-        })
-        channelRef.current.listen('.', (data: unknown) => {
-          const typedData = data as { message?: unknown }
-          if (typedData?.message) {
-            safeOnMessage({ message: typedData.message }, 'message')
-          }
-        })
-
-        // 绑定系统事件
-        if (typeof channelRef.current.bind === 'function') {
-          channelRef.current.bind('pusher:subscription_succeeded', () => {
-            console.log('🔥 WebSocket: Subscription succeeded for room', roomId)
-          })
-          channelRef.current.bind('pusher:subscription_error', () => {
-            console.error('🔥 WebSocket: Subscription error for room', roomId)
-          })
-        }
-      } else {
-        console.error('🔥 WebSocket: Channel reference is invalid - missing listen method')
       }
     },
     [echo, onMessage]
@@ -512,6 +290,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         offlineManagerRef.current?.queueMessage(roomId, message)
         return !!offlineManagerRef.current
       }
+
       let echoToUse = echo
       if (!echoToUse) {
         const { getEchoInstance } = await import('@/lib/websocket/echo')
@@ -521,65 +300,23 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
           return !!offlineManagerRef.current
         }
       }
-      try {
-        const authManager = getAuthManager()
-        const token = authManager.getToken()
-        if (!token) {
-          offlineManagerRef.current?.queueMessage(roomId, message)
-          return !!offlineManagerRef.current
-        }
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/api/chat/rooms/${roomId}/messages`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ message }),
-          }
-        )
-        if (!response.ok) {
-          const errorPayload = await response
-            .clone()
-            .json()
-            .catch(() => null)
-          const errorMessage =
-            typeof errorPayload?.message === 'string' ? errorPayload.message : response.statusText
 
-          if (response.status === 403) {
-            const normalized = errorMessage.toLowerCase()
-            if (normalized.includes('mute')) {
-              const match = errorMessage.match(/until\s+([0-9:\-\s]+)/i)
-              const mutedUntil = match?.[1]?.trim()
-              useChatStore.getState().updateMuteStatus(true, mutedUntil, errorMessage || 'Muted')
-              return false
-            }
+      const result = await sendMessageToServer(roomId, message)
 
-            const newToken = await authManager.refreshToken()
-            if (newToken) return sendMessage(roomId, message)
-            throw new Error('Authentication failed - token expired and refresh failed')
-          }
-
-          throw new Error(errorMessage || `Failed to send message: ${response.statusText}`)
-        }
-
-        const responseData = await response.json()
-        onMessageSentSuccess?.(responseData.data)
+      if (result.success) {
+        onMessageSentSuccess?.(result.data)
         return true
-      } catch (error) {
-        const errorText = error instanceof Error ? error.message : ''
-        if (!errorText.toLowerCase().includes('mute')) {
+      }
+
+      if (result.error) {
+        const errorText = result.error.message.toLowerCase()
+        if (!errorText.includes('mute')) {
           offlineManagerRef.current?.queueMessage(roomId, message)
         }
-        onError?.({
-          type: 'network',
-          message: error instanceof Error ? error.message : 'Failed to send message',
-          timestamp: new Date(),
-          retryable: true,
-        })
-        return false
+        onError?.(result.error)
       }
+
+      return false
     },
     [echo, offlineState.isOffline, connectionInfo.status, onError, onMessageSentSuccess]
   )

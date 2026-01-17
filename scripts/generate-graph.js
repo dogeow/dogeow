@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 // 生成大规模随机图用于性能测试
-// 写入 dogeow/data/wiki/graph.json
+// 写入 dogeow/content/wiki/graph.json
 const fs = require('node:fs')
 const path = require('node:path')
 
@@ -60,7 +60,7 @@ function generateGraph(nodeCount = 3000, avgDegree = 3) {
 }
 
 function main() {
-  const outPath = path.join(process.cwd(), 'data', 'wiki', 'graph.json')
+  const outPath = path.join(process.cwd(), 'content', 'wiki', 'graph.json')
   const graph = generateGraph(3000, 3)
   fs.mkdirSync(path.dirname(outPath), { recursive: true })
   fs.writeFileSync(outPath, JSON.stringify(graph, null, 2), 'utf8')

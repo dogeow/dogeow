@@ -1,44 +1,50 @@
-/**
- * 搜索输入框组件
- */
+'use client'
+
+import React, { memo, forwardRef } from 'react'
+import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { Search, X } from 'lucide-react'
 
 interface SearchInputProps {
-  value: string
-  onChange: (value: string) => void
-  onClear: () => void
+  searchTerm: string
+  onSearchTermChange: (value: string) => void
+  onSubmit: (e: React.FormEvent) => void
+  keyboardOpen: boolean
   placeholder?: string
 }
 
-export function SearchInput({
-  value,
-  onChange,
-  onClear,
-  placeholder = '搜索...',
-}: SearchInputProps) {
-  return (
-    <div className="relative">
-      <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
-      <Input
-        type="text"
-        placeholder={placeholder}
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        className={`h-10 pl-10 ${value ? 'pr-10' : 'pr-3'}`}
-      />
-      {value && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 transform"
-          onClick={onClear}
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      )}
-    </div>
+export const SearchInput = memo(
+  forwardRef<HTMLInputElement, SearchInputProps>(
+    ({ searchTerm, onSearchTermChange, onSubmit, keyboardOpen, placeholder = '搜索...' }, ref) => {
+      return (
+        <div className="mb-4 flex-shrink-0">
+          <form onSubmit={onSubmit} className="relative">
+            <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 transform" />
+            <Input
+              ref={ref}
+              type="text"
+              placeholder={placeholder}
+              value={searchTerm}
+              onChange={e => onSearchTermChange(e.target.value)}
+              className={`h-10 pl-10 ${searchTerm ? 'pr-10' : 'pr-3'}`}
+              autoFocus={!keyboardOpen} // 移动端键盘打开时不自动focus
+            />
+            {searchTerm && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-1/2 right-1 h-8 w-8 -translate-y-1/2 transform"
+                onClick={() => onSearchTermChange('')}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </form>
+        </div>
+      )
+    }
   )
-}
+)
+
+SearchInput.displayName = 'SearchInput'

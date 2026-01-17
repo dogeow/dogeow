@@ -1,7 +1,22 @@
 import { create } from 'zustand'
 import { NavCategory, NavItem } from '@/app/nav/types'
 import * as navApi from '@/app/nav/services/api'
-// import { toast } from 'sonner' // 暂时注释掉未使用的导入
+import { searchItems } from './utils/searchUtils'
+import { getSampleCategories, getSampleItems, combineCategoriesWithItems } from './utils/sampleData'
+import {
+  updateCategoryInList,
+  removeCategoryFromList,
+  addCategoryToList,
+} from './utils/categoryHelpers'
+import {
+  updateItemInList,
+  removeItemFromList,
+  addItemToList,
+  updateItemInCategories,
+  removeItemFromCategories,
+  addItemToCategory,
+  incrementItemClicks,
+} from './utils/itemHelpers'
 
 interface NavStore {
   categories: NavCategory[]
@@ -57,18 +72,7 @@ export const useNavStore = create<NavStore>((set, get) => ({
   // 搜索导航项
   searchItems: (term: string) => {
     const { items } = get()
-    if (!term.trim()) {
-      set({ filteredItems: items })
-      return
-    }
-
-    const searchTermLower = term.toLowerCase()
-    const filtered = items.filter(
-      item =>
-        item.name.toLowerCase().includes(searchTermLower) ||
-        item.description?.toLowerCase().includes(searchTermLower) ||
-        item.url.toLowerCase().includes(searchTermLower)
-    )
+    const filtered = searchItems(items, term)
     console.log('搜索结果:', filtered.length, '项')
     set({ filteredItems: filtered })
   },
@@ -150,189 +154,9 @@ export const useNavStore = create<NavStore>((set, get) => ({
     const { categories, items, isSampleData } = get()
     if (isSampleData || categories.length > 0 || items.length > 0) return
 
-    const now = new Date().toISOString()
-    const sampleCategories: NavCategory[] = [
-      {
-        id: 1,
-        name: '常用',
-        icon: null,
-        description: '常用站点快捷入口',
-        sort_order: 1,
-        is_visible: true,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 2,
-        name: '开发',
-        icon: null,
-        description: '开发相关资源',
-        sort_order: 2,
-        is_visible: true,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 3,
-        name: '学习',
-        icon: null,
-        description: '学习与阅读',
-        sort_order: 3,
-        is_visible: true,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-    ]
-
-    const sampleItems: NavItem[] = [
-      {
-        id: 101,
-        nav_category_id: 1,
-        name: 'Google',
-        url: 'https://www.google.com',
-        icon: null,
-        description: '搜索引擎',
-        sort_order: 1,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 102,
-        nav_category_id: 1,
-        name: 'GitHub',
-        url: 'https://github.com',
-        icon: null,
-        description: '代码托管与协作',
-        sort_order: 2,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 103,
-        nav_category_id: 1,
-        name: 'Notion',
-        url: 'https://www.notion.so',
-        icon: null,
-        description: '笔记与知识库',
-        sort_order: 3,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 201,
-        nav_category_id: 2,
-        name: 'MDN',
-        url: 'https://developer.mozilla.org',
-        icon: null,
-        description: 'Web 文档',
-        sort_order: 1,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 202,
-        nav_category_id: 2,
-        name: 'Stack Overflow',
-        url: 'https://stackoverflow.com',
-        icon: null,
-        description: '技术问答社区',
-        sort_order: 2,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 203,
-        nav_category_id: 2,
-        name: 'Vercel',
-        url: 'https://vercel.com',
-        icon: null,
-        description: '前端部署平台',
-        sort_order: 3,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 301,
-        nav_category_id: 3,
-        name: '掘金',
-        url: 'https://juejin.cn',
-        icon: null,
-        description: '中文技术社区',
-        sort_order: 1,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 302,
-        nav_category_id: 3,
-        name: '阮一峰的网络日志',
-        url: 'https://www.ruanyifeng.com/blog/',
-        icon: null,
-        description: '技术文章与随笔',
-        sort_order: 2,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-      {
-        id: 303,
-        nav_category_id: 3,
-        name: '语雀',
-        url: 'https://www.yuque.com',
-        icon: null,
-        description: '团队知识库',
-        sort_order: 3,
-        is_visible: true,
-        is_new_window: true,
-        clicks: 0,
-        created_at: now,
-        updated_at: now,
-        deleted_at: null,
-      },
-    ]
-
-    const categoriesWithItems = sampleCategories.map(category => {
-      const categoryItems = sampleItems.filter(item => item.nav_category_id === category.id)
-      return {
-        ...category,
-        items: categoryItems,
-        items_count: categoryItems.length,
-      }
-    })
+    const sampleCategories = getSampleCategories()
+    const sampleItems = getSampleItems()
+    const categoriesWithItems = combineCategoriesWithItems(sampleCategories, sampleItems)
 
     set({
       categories: categoriesWithItems,
@@ -351,10 +175,9 @@ export const useNavStore = create<NavStore>((set, get) => ({
       const newCategory = await navApi.createCategory(category)
       console.log('API返回创建分类结果:', newCategory)
 
-      // 更新categories和allCategories状态
       set(state => ({
-        categories: [...state.categories, newCategory],
-        allCategories: [...state.allCategories, newCategory],
+        categories: addCategoryToList(state.categories, newCategory),
+        allCategories: addCategoryToList(state.allCategories, newCategory),
       }))
 
       return newCategory
@@ -371,8 +194,8 @@ export const useNavStore = create<NavStore>((set, get) => ({
     try {
       const updatedCategory = await navApi.updateCategory(id, category)
       set(state => ({
-        categories: state.categories.map(c => (c.id === id ? updatedCategory : c)),
-        allCategories: state.allCategories.map(c => (c.id === id ? updatedCategory : c)),
+        categories: updateCategoryInList(state.categories, id, updatedCategory),
+        allCategories: updateCategoryInList(state.allCategories, id, updatedCategory),
       }))
       return updatedCategory
     } catch (error) {
@@ -387,8 +210,8 @@ export const useNavStore = create<NavStore>((set, get) => ({
     try {
       await navApi.deleteCategory(id)
       set(state => ({
-        categories: state.categories.filter(c => c.id !== id),
-        allCategories: state.allCategories.filter(c => c.id !== id),
+        categories: removeCategoryFromList(state.categories, id),
+        allCategories: removeCategoryFromList(state.allCategories, id),
       }))
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '删除导航分类失败'
@@ -401,24 +224,10 @@ export const useNavStore = create<NavStore>((set, get) => ({
   createItem: async (item: Partial<NavItem>) => {
     try {
       const newItem = await navApi.createItem(item)
-      set(state => {
-        // 更新对应分类的导航项
-        const updatedCategories = state.categories.map(category => {
-          if (category.id === newItem.nav_category_id) {
-            return {
-              ...category,
-              items: [...(category.items || []), newItem],
-              items_count: (category.items_count || 0) + 1,
-            }
-          }
-          return category
-        })
-
-        return {
-          items: [...state.items, newItem],
-          categories: updatedCategories,
-        }
-      })
+      set(state => ({
+        items: addItemToList(state.items, newItem),
+        categories: addItemToCategory(state.categories, newItem),
+      }))
       return newItem
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建导航项失败'
@@ -432,16 +241,8 @@ export const useNavStore = create<NavStore>((set, get) => ({
     try {
       const updatedItem = await navApi.updateItem(id, item)
       set(state => ({
-        items: state.items.map(i => (i.id === id ? updatedItem : i)),
-        categories: state.categories.map(category => {
-          if (category.items) {
-            return {
-              ...category,
-              items: category.items.map(i => (i.id === id ? updatedItem : i)),
-            }
-          }
-          return category
-        }),
+        items: updateItemInList(state.items, id, updatedItem),
+        categories: updateItemInCategories(state.categories, id, updatedItem),
       }))
       return updatedItem
     } catch (error) {
@@ -456,24 +257,12 @@ export const useNavStore = create<NavStore>((set, get) => ({
     try {
       await navApi.deleteItem(id)
       set(state => {
-        // 查找要删除的导航项
         const itemToDelete = state.items.find(i => i.id === id)
-
-        // 更新导航分类
-        const updatedCategories = state.categories.map(category => {
-          if (itemToDelete && category.id === itemToDelete.nav_category_id) {
-            return {
-              ...category,
-              items: (category.items || []).filter(i => i.id !== id),
-              items_count: Math.max(0, (category.items_count || 0) - 1),
-            }
-          }
-          return category
-        })
-
         return {
-          items: state.items.filter(i => i.id !== id),
-          categories: updatedCategories,
+          items: removeItemFromList(state.items, id),
+          categories: itemToDelete
+            ? removeItemFromCategories(state.categories, id, itemToDelete.nav_category_id)
+            : state.categories,
         }
       })
     } catch (error) {
@@ -487,7 +276,6 @@ export const useNavStore = create<NavStore>((set, get) => ({
   recordClick: async (itemId: number) => {
     try {
       await navApi.recordClick(itemId)
-      // 更新本地点击数
       set(state => ({
         items: state.items.map(item => {
           if (item.id === itemId) {
@@ -495,20 +283,7 @@ export const useNavStore = create<NavStore>((set, get) => ({
           }
           return item
         }),
-        categories: state.categories.map(category => {
-          if (category.items) {
-            return {
-              ...category,
-              items: category.items.map(item => {
-                if (item.id === itemId) {
-                  return { ...item, clicks: (item.clicks || 0) + 1 }
-                }
-                return item
-              }),
-            }
-          }
-          return category
-        }),
+        categories: incrementItemClicks(state.categories, itemId),
       }))
     } catch (error) {
       console.error('记录点击失败', error)

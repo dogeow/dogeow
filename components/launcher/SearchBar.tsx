@@ -1,12 +1,11 @@
 'use client'
 
 import React, { useRef, useEffect, useCallback } from 'react'
-import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Search, X } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { SearchBarProps } from './types'
-import { useTranslation } from '@/hooks/useTranslation'
+import { SearchInput } from './search/SearchInput'
 
 export function SearchBar({
   isVisible,
@@ -16,7 +15,6 @@ export function SearchBar({
   onToggleSearch,
   currentApp,
 }: SearchBarProps) {
-  const { t } = useTranslation()
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   const pathname = usePathname()
@@ -72,14 +70,13 @@ export function SearchBar({
 
   // 处理搜索输入变化
   const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = e.target.value
-      setSearchTerm(newValue)
+    (value: string) => {
+      setSearchTerm(value)
 
       if (currentApp === 'thing' || currentApp === 'nav') {
         clearDebounceTimer()
         searchDebounceTimerRef.current = setTimeout(() => {
-          triggerSearch(newValue)
+          triggerSearch(value)
         }, 500)
       }
     },
@@ -116,35 +113,18 @@ export function SearchBar({
   return (
     <div className="mx-auto flex max-w-md flex-1 items-center gap-2">
       <div className="relative flex-1">
-        <form
+        <SearchInput
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+          onClear={handleClearSearch}
           onSubmit={e => {
             e.preventDefault()
             e.stopPropagation()
             onSearch(e, true)
           }}
-          className="flex w-full items-center"
-        >
-          <Search className="text-primary absolute top-1/2 left-2.5 h-4 w-4 -translate-y-1/2 transform" />
-          <Input
-            ref={searchInputRef}
-            type="text"
-            placeholder={`${t('search.in')}${currentApp ? currentApp + '...' : '...'}`}
-            value={searchTerm}
-            onChange={handleSearchChange}
-            className="border-primary/20 animate-in fade-in h-9 w-full pr-8 pl-8 duration-150"
-          />
-
-          {searchTerm && (
-            <div
-              className="absolute top-1/2 right-2 -translate-y-1/2 transform cursor-pointer rounded-full border border-transparent p-1 hover:border-gray-300 hover:bg-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-700"
-              data-clear-button="true"
-              title="清除搜索内容"
-              onClick={handleClearSearch}
-            >
-              <X className="h-3 w-3 text-gray-500" />
-            </div>
-          )}
-        </form>
+          currentApp={currentApp}
+          inputRef={searchInputRef}
+        />
       </div>
 
       <Button

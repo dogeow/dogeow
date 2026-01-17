@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { MusicPlayer } from './MusicPlayer'
 import { SettingsPanel, CustomBackground } from './SettingsPanel'
 import { useRouter, usePathname } from 'next/navigation'
@@ -15,6 +15,8 @@ import { SearchResultView } from './views/SearchResultView'
 import { ViewWrapper } from './views/ViewWrapper'
 import { useMusicStore } from '@/stores/musicStore'
 import { AiDialog } from '@/components/app/AiDialog'
+import { useMediaKeys } from './hooks/useMediaKeys'
+import { useMediaSession } from './hooks/useMediaSession'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
@@ -106,81 +108,17 @@ export function AppLauncher() {
   const switchToPrevTrack = useCallback(() => switchTrack('prev'), [switchTrack])
 
   // 媒体键盘事件处理
-  useEffect(() => {
-    const handleMediaKeyPress = (event: KeyboardEvent) => {
-      // 检查是否为媒体键
-      if (event.code === 'MediaPlayPause') {
-        event.preventDefault()
-        togglePlay()
-      } else if (event.code === 'MediaTrackPrevious') {
-        event.preventDefault()
-        switchToPrevTrack()
-      } else if (event.code === 'MediaTrackNext') {
-        event.preventDefault()
-        switchToNextTrack()
-      }
-    }
-
-    window.addEventListener('keydown', handleMediaKeyPress)
-    return () => window.removeEventListener('keydown', handleMediaKeyPress)
-  }, [togglePlay, switchToPrevTrack, switchToNextTrack])
+  useMediaKeys({ togglePlay, switchToPrevTrack, switchToNextTrack })
 
   // Media Session API 支持
-  useEffect(() => {
-    if ('mediaSession' in navigator) {
-      const updateMediaSession = () => {
-        if (currentTrack && availableTracks?.length > 0) {
-          const currentTrackInfo = availableTracks.find(track => track.path === currentTrack)
-
-          if (currentTrackInfo) {
-            navigator.mediaSession.metadata = new MediaMetadata({
-              title: currentTrackInfo.name || '未知歌曲',
-              artist: '本地音乐播放器',
-              album: '本地音乐',
-            })
-          }
-        }
-
-        // 设置媒体会话动作处理程序
-        navigator.mediaSession.setActionHandler('play', () => {
-          togglePlay()
-        })
-
-        navigator.mediaSession.setActionHandler('pause', () => {
-          togglePlay()
-        })
-
-        navigator.mediaSession.setActionHandler('previoustrack', () => {
-          switchToPrevTrack()
-        })
-
-        navigator.mediaSession.setActionHandler('nexttrack', () => {
-          switchToNextTrack()
-        })
-
-        // 更新播放状态
-        navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
-      }
-
-      updateMediaSession()
-
-      // 监听播放状态变化
-      const handlePlayStateChange = () => {
-        if ('mediaSession' in navigator) {
-          navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused'
-        }
-      }
-
-      // 这里我们需要监听状态变化，但由于没有直接的状态监听器，我们使用定时器
-      const interval = setInterval(() => {
-        handlePlayStateChange()
-      }, 1000)
-
-      return () => {
-        clearInterval(interval)
-      }
-    }
-  }, [currentTrack, availableTracks, isPlaying, togglePlay, switchToPrevTrack, switchToNextTrack])
+  useMediaSession({
+    currentTrack,
+    availableTracks,
+    isPlaying,
+    togglePlay,
+    switchToPrevTrack,
+    switchToNextTrack,
+  })
 
   // 重置搜索结果
   const resetSearchResult = useCallback(() => {
