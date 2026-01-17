@@ -39,11 +39,11 @@ export async function POST(request: NextRequest) {
       // 尝试直接测试后端 API
       let debugInfo: Record<string, unknown> = {
         apiUrl: apiBaseUrl,
-        endpoint: `${apiBaseUrl}/wiki/articles`,
+        endpoint: `${apiBaseUrl}/notes/wiki/articles`,
       }
 
       try {
-        const testResponse = await fetch(`${apiBaseUrl}/wiki/articles`, {
+        const testResponse = await fetch(`${apiBaseUrl}/notes/wiki/articles`, {
           cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',

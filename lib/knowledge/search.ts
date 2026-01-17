@@ -69,7 +69,7 @@ export async function loadDocumentsFromDatabase(): Promise<Document[]> {
     }
 
     console.log(`[文档加载] API URL: ${apiBaseUrl}`)
-    const apiUrl = `${apiBaseUrl}/wiki/articles`
+    const apiUrl = `${apiBaseUrl}/notes/wiki/articles`
     console.log(`[文档加载] 请求 URL: ${apiUrl}`)
 
     // 使用批量接口一次性获取所有文章内容，提高性能
