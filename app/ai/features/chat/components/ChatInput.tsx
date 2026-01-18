@@ -86,7 +86,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                         className={cn(
                           'cursor-pointer',
                           model === 'qwen2.5:0.5b' &&
-                            'bg-primary/10 ring-primary font-medium ring-2 ring-offset-1'
+                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
                         )}
                       >
                         <div className="flex flex-col">
@@ -99,7 +99,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                         className={cn(
                           'cursor-pointer',
                           model === 'qwen3:0.6b' &&
-                            'bg-blue-500/10 font-medium ring-2 ring-blue-500 ring-offset-1'
+                            'relative z-10 bg-blue-500/10 font-medium ring-2 ring-blue-500 ring-offset-1'
                         )}
                       >
                         <div className="flex flex-col">
@@ -112,7 +112,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                         className={cn(
                           'cursor-pointer',
                           model === 'qwen3:8b' &&
-                            'bg-purple-500/10 font-medium ring-2 ring-purple-500 ring-offset-1'
+                            'relative z-10 bg-purple-500/10 font-medium ring-2 ring-purple-500 ring-offset-1'
                         )}
                       >
                         <div className="flex flex-col">
@@ -181,7 +181,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                         className={cn(
                           'cursor-pointer',
                           model === 'qwen2.5:0.5b' &&
-                            'bg-primary/10 ring-primary font-medium ring-2 ring-offset-1'
+                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
                         )}
                       >
                         <div className="flex flex-col">
@@ -194,7 +194,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                         className={cn(
                           'cursor-pointer',
                           model === 'qwen3:0.6b' &&
-                            'bg-blue-500/10 font-medium ring-2 ring-blue-500 ring-offset-1'
+                            'relative z-10 bg-blue-500/10 font-medium ring-2 ring-blue-500 ring-offset-1'
                         )}
                       >
                         <div className="flex flex-col">
@@ -207,7 +207,7 @@ export const ChatInput = React.memo<ChatInputProps>(
                         className={cn(
                           'cursor-pointer',
                           model === 'qwen3:8b' &&
-                            'bg-purple-500/10 font-medium ring-2 ring-purple-500 ring-offset-1'
+                            'relative z-10 bg-purple-500/10 font-medium ring-2 ring-purple-500 ring-offset-1'
                         )}
                       >
                         <div className="flex flex-col">
