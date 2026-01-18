@@ -80,6 +80,8 @@ ${docList}
     setUseContext,
     searchMethod,
     setSearchMethod,
+    model,
+    setModel,
     stop,
     handleSend,
     handleClear,
@@ -108,11 +110,15 @@ ${docList}
         onUseContextChange={setUseContext}
         searchMethod={searchMethod}
         onSearchMethodChange={setSearchMethod}
+        model={model}
+        onModelChange={setModel}
         onClear={handleClear}
         hideUseContext
         hideAiLink
         hideSearchMethod
+        hideModel
         hideTitle
+        hideClear
       />
 
       <ChatMessageList
@@ -129,8 +135,9 @@ ${docList}
         onSend={handleSend}
         onStop={stop}
         isLoading={isLoading}
+        model={model}
+        onModelChange={setModel}
         variant="page"
-        showHint
         placeholder="输入问题开始与我对话"
       />
     </main>

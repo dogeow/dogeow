@@ -17,6 +17,8 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     hasMessages,
     completion,
     isLoading,
+    model,
+    setModel,
     stop,
     handleSend,
     handleClear,
@@ -52,6 +54,8 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
           onSend={handleSend}
           onStop={stop}
           isLoading={isLoading}
+          model={model}
+          onModelChange={setModel}
           variant="dialog"
         />
       </DialogContent>

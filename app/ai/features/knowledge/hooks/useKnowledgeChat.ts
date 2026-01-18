@@ -22,6 +22,8 @@ interface UseKnowledgeChatReturn {
   setUseContext: (value: boolean) => void
   searchMethod: SearchMethod
   setSearchMethod: (value: SearchMethod) => void
+  model: string
+  setModel: (value: string) => void
   stop: () => void
   handleSend: () => void
   handleClear: () => void
@@ -37,6 +39,14 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
   const [isLoading, setIsLoading] = useState(false)
   const [useContext, setUseContext] = useState(true)
   const [searchMethod, setSearchMethod] = useState<SearchMethod>('rag')
+  const [model, setModel] = useState<string>(() => {
+    // 从 localStorage 读取，默认使用 qwen2.5:0.5b
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ollama_model')
+      return saved || 'qwen2.5:0.5b'
+    }
+    return 'qwen2.5:0.5b'
+  })
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -103,6 +113,7 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
           messages: newMessages,
           useContext,
           searchMethod,
+          model,
         }),
         signal: abortController.signal,
       })
@@ -229,7 +240,14 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
     } finally {
       abortControllerRef.current = null
     }
-  }, [prompt, messages, isLoading, useContext, searchMethod])
+  }, [prompt, messages, isLoading, useContext, searchMethod, model])
+
+  // 当 model 改变时保存到 localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ollama_model', model)
+    }
+  }, [model])
 
   return {
     prompt,
@@ -243,6 +261,8 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
     setUseContext,
     searchMethod,
     setSearchMethod,
+    model,
+    setModel,
     stop,
     handleSend,
     handleClear,

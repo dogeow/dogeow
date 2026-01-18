@@ -15,6 +15,8 @@ interface UseAiChatReturn {
   hasMessages: boolean
   completion: string | undefined
   isLoading: boolean
+  model: string
+  setModel: (value: string) => void
   stop: () => void
   handleSend: () => void
   handleClear: () => void
@@ -28,6 +30,14 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [completion, setCompletion] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
+  const [model, setModel] = useState<string>(() => {
+    // 从 localStorage 读取，默认使用 qwen2.5:0.5b
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ollama_model')
+      return saved || 'qwen2.5:0.5b'
+    }
+    return 'qwen2.5:0.5b'
+  })
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -102,6 +112,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
         body: JSON.stringify({
           useChat: true,
           messages: chatMessages,
+          model,
         }),
         signal: abortController.signal,
       })
@@ -219,7 +230,14 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     } finally {
       abortControllerRef.current = null
     }
-  }, [prompt, messages, isLoading])
+  }, [prompt, messages, isLoading, model])
+
+  // 当 model 改变时保存到 localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ollama_model', model)
+    }
+  }, [model])
 
   return {
     prompt,
@@ -229,6 +247,8 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     hasMessages,
     completion: completion || undefined,
     isLoading,
+    model,
+    setModel,
     stop,
     handleSend,
     handleClear,

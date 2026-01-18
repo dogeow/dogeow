@@ -13,20 +13,22 @@ interface KnowledgeChatRequestBody {
   query?: string
   useContext?: boolean // 是否使用知识库上下文
   searchMethod?: KnowledgeSearchMethod // 搜索方法：'simple' 或 'rag'
+  model?: string // Ollama 模型名称
 }
 
 // Ollama配置
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE_URL}/api/chat`
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
+const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
 
 // 调用Ollama Chat API
-const callOllamaChatAPI = async (messages: ChatMessage[]): Promise<Response> => {
+const callOllamaChatAPI = async (messages: ChatMessage[], model?: string): Promise<Response> => {
+  const selectedModel = model || DEFAULT_MODEL
   const res = await fetch(OLLAMA_CHAT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
+      model: selectedModel,
       messages,
       stream: true,
     }),
@@ -258,6 +260,7 @@ export async function POST(request: NextRequest) {
       query,
       useContext = true,
       searchMethod,
+      model,
     }: KnowledgeChatRequestBody = await request.json()
 
     // 如果没有 messages，使用 query 创建单次对话
@@ -313,7 +316,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 调用 Ollama API
-    const ollamaResponse = await callOllamaChatAPI(chatMessages)
+    const ollamaResponse = await callOllamaChatAPI(chatMessages, model)
 
     // 计算 prompt tokens
     const promptTokens = Math.ceil(chatMessages.map(m => m.content).join('').length / 4)

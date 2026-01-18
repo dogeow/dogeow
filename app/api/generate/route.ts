@@ -17,6 +17,7 @@ interface GenerateRequestBody {
   // 连续对话支持
   messages?: ChatMessage[]
   useChat?: boolean // 是否使用 chat 模式
+  model?: string // Ollama 模型名称
 }
 
 // Ollama响应类型
@@ -43,7 +44,7 @@ const PROMPT_TEMPLATES: Record<GenerateOption, (text: string, command?: string) 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_GENERATE_URL = `${OLLAMA_BASE_URL}/api/generate`
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE_URL}/api/chat`
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
+const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
 
 // 转义JSON字符串
 const escapeJsonString = (str: string) =>
@@ -59,12 +60,13 @@ const generatePrompt = (option: GenerateOption, text: string, command?: string) 
   PROMPT_TEMPLATES[option]?.(text, command) ?? `请处理以下文本：\n\n${text}`
 
 // 调用Ollama Generate API（单次生成）
-const callOllamaGenerateAPI = async (prompt: string): Promise<Response> => {
+const callOllamaGenerateAPI = async (prompt: string, model?: string): Promise<Response> => {
+  const selectedModel = model || DEFAULT_MODEL
   const res = await fetch(OLLAMA_GENERATE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
+      model: selectedModel,
       prompt,
       stream: true,
     }),
@@ -74,12 +76,13 @@ const callOllamaGenerateAPI = async (prompt: string): Promise<Response> => {
 }
 
 // 调用Ollama Chat API（连续对话）
-const callOllamaChatAPI = async (messages: ChatMessage[]): Promise<Response> => {
+const callOllamaChatAPI = async (messages: ChatMessage[], model?: string): Promise<Response> => {
+  const selectedModel = model || DEFAULT_MODEL
   const res = await fetch(OLLAMA_CHAT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: OLLAMA_MODEL,
+      model: selectedModel,
       messages,
       stream: true,
     }),
@@ -200,6 +203,7 @@ export async function POST(request: NextRequest) {
       text = '',
       messages,
       useChat = false,
+      model,
     }: GenerateRequestBody = await request.json()
 
     // 如果使用 chat 模式且有 messages，使用连续对话
@@ -215,7 +219,7 @@ export async function POST(request: NextRequest) {
             ...messages,
           ]
 
-      const ollamaResponse = await callOllamaChatAPI(chatMessages)
+      const ollamaResponse = await callOllamaChatAPI(chatMessages, model)
       // chat 模式使用 messages 的总长度估算 token
       const promptTokens = Math.ceil(chatMessages.map(m => m.content).join('').length / 4)
       return createStreamResponse(ollamaResponse, '', promptTokens)
@@ -227,7 +231,7 @@ export async function POST(request: NextRequest) {
     }
 
     const prompt = generatePrompt(option, text, command)
-    const ollamaResponse = await callOllamaGenerateAPI(prompt)
+    const ollamaResponse = await callOllamaGenerateAPI(prompt, model)
     return createStreamResponse(ollamaResponse, prompt)
   } catch (error: unknown) {
     console.error('AI API错误:', error)

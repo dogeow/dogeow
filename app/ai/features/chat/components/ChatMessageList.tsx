@@ -60,13 +60,13 @@ export const ChatMessageList = React.memo<ChatMessageListProps>(
     // page variant
     return (
       <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          {hasMessages ? (
+        {hasMessages ? (
+          <ScrollArea className="h-full">
             <div className="mx-auto max-w-4xl px-4 py-6">{content}</div>
-          ) : (
-            <div className="flex h-full items-center justify-center">{content}</div>
-          )}
-        </ScrollArea>
+          </ScrollArea>
+        ) : (
+          <div className="flex h-full items-center justify-center">{content}</div>
+        )}
       </div>
     )
   }

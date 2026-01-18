@@ -25,12 +25,16 @@ interface KnowledgeChatHeaderProps {
   onUseContextChange: (value: boolean) => void
   searchMethod: SearchMethod
   onSearchMethodChange: (value: SearchMethod) => void
+  model?: string
+  onModelChange?: (value: string) => void
   onClear: () => void
   onClose?: () => void
   hideUseContext?: boolean
   hideAiLink?: boolean
   hideSearchMethod?: boolean
+  hideModel?: boolean
   hideTitle?: boolean
+  hideClear?: boolean
 }
 
 export function KnowledgeChatHeader({
@@ -43,12 +47,16 @@ export function KnowledgeChatHeader({
   onUseContextChange,
   searchMethod,
   onSearchMethodChange,
+  model,
+  onModelChange,
   onClear,
   onClose,
   hideUseContext = false,
   hideAiLink = false,
   hideSearchMethod = false,
+  hideModel = false,
   hideTitle = false,
+  hideClear = false,
 }: KnowledgeChatHeaderProps) {
   return (
     <header className="bg-background flex items-center justify-between px-4 py-3">
@@ -72,6 +80,28 @@ export function KnowledgeChatHeader({
               <span className="hidden sm:inline">普通问答</span>
             </Link>
           </Button>
+        )}
+        {!hideModel && model && onModelChange && (
+          <div className="flex items-center gap-2">
+            <Label htmlFor="model" className="text-sm">
+              模型:
+            </Label>
+            <Select value={model} onValueChange={onModelChange} disabled={isLoading}>
+              <SelectTrigger id="model" className="h-8 w-36 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="qwen2.5:0.5b">Qwen2.5 0.5B (快速)</SelectItem>
+                <SelectItem value="qwen2.5:1.5b">Qwen2.5 1.5B</SelectItem>
+                <SelectItem value="qwen2.5:3b">Qwen2.5 3B</SelectItem>
+                <SelectItem value="qwen3:0.6b">Qwen3 0.6B</SelectItem>
+                <SelectItem value="qwen3:1.8b">Qwen3 1.8B</SelectItem>
+                <SelectItem value="phi3:mini">Phi-3 Mini (推荐)</SelectItem>
+                <SelectItem value="tinyllama:1.1b">TinyLlama 1.1B</SelectItem>
+                <SelectItem value="gemma:2b">Gemma 2B</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         )}
         {useContext && !hideSearchMethod && (
           <div className="flex items-center gap-2">
@@ -103,7 +133,7 @@ export function KnowledgeChatHeader({
           </div>
         )}
 
-        {hasMessages && (
+        {hasMessages && !hideClear && (
           <Button
             variant="ghost"
             size="sm"
