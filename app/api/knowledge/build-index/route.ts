@@ -26,10 +26,7 @@ export async function POST(request: NextRequest) {
     const documents = await loadAllDocuments()
     if (documents.length === 0) {
       // 获取调试信息
-      let apiBaseUrl =
-        process.env.API_INTERNAL_URL ||
-        process.env.NEXT_PUBLIC_API_URL ||
-        'http://localhost:8000/api'
+      let apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
 
       // 确保 URL 以 /api 结尾（如果环境变量是基础 URL）
       if (apiBaseUrl && !apiBaseUrl.endsWith('/api') && !apiBaseUrl.endsWith('/api/')) {

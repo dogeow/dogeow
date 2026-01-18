@@ -133,7 +133,7 @@ describe('Generate API Route', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'qwen3:8b',
+        model: 'qwen3:0.6b',
         prompt: '请改进以下文本的表达和流畅性，保持原意不变：\n\n原始文本',
         stream: true,
       }),
@@ -179,7 +179,7 @@ describe('Generate API Route', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'qwen3:8b',
+        model: 'qwen3:0.6b',
         prompt: '请修正以下文本的语法和拼写错误：\n\n有错误的文本',
         stream: true,
       }),
@@ -226,7 +226,7 @@ describe('Generate API Route', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'qwen3:8b',
+        model: 'qwen3:0.6b',
         prompt: '自定义命令\n\n原文：原文内容',
         stream: true,
       }),

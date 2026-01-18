@@ -18,7 +18,7 @@ interface KnowledgeChatRequestBody {
 // Ollama配置
 const OLLAMA_BASE_URL = 'http://localhost:11434'
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE_URL}/api/chat`
-const OLLAMA_MODEL = 'qwen3:8b'
+const OLLAMA_MODEL = 'qwen3:0.6b'
 
 // 调用Ollama Chat API
 const callOllamaChatAPI = async (messages: ChatMessage[]): Promise<Response> => {

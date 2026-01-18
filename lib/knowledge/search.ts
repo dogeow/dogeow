@@ -60,8 +60,7 @@ export async function loadDocumentsFromFiles(): Promise<Document[]> {
 export async function loadDocumentsFromDatabase(): Promise<Document[]> {
   try {
     // 在服务端，优先使用内部 URL，避免网络问题
-    let apiBaseUrl =
-      process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+    let apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
 
     // 确保 URL 以 /api 结尾（如果环境变量是基础 URL）
     if (apiBaseUrl && !apiBaseUrl.endsWith('/api') && !apiBaseUrl.endsWith('/api/')) {
