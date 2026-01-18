@@ -32,21 +32,11 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
         const data = await response.json()
 
         if (data.success && data.documents && data.documents.length > 0) {
-          const docList = data.documents
-            .map(
-              (doc: { title: string; slug: string }, index: number) => `${index + 1}. ${doc.title}`
-            )
-            .join('\n')
-
           const welcomeMessage: ChatMessage = {
             role: 'assistant',
             content: `你好！欢迎了解我的知识库。
-
-我的知识库目前包含 ${data.documents.length} 个文档：
-
-${docList}
-
-你可以随时问我关于这些文档的问题，我会基于知识库内容为你解答。
+            
+我会基于知识库内容为你解答。
 
 有什么想了解的吗？`,
           }
