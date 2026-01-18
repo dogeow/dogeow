@@ -40,6 +40,7 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const accumulatedContentRef = useRef<string>('')
 
   // 过滤掉 system 消息用于显示
   const displayMessages = messages.filter(m => m.role !== 'system')
@@ -85,6 +86,7 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
     setPrompt('')
     setIsLoading(true)
     setCompletion('')
+    accumulatedContentRef.current = ''
 
     // 创建 abort controller
     const abortController = new AbortController()
@@ -117,7 +119,6 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
       const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
-      let accumulatedContent = ''
 
       while (true) {
         const { done, value } = await reader.read()
@@ -135,10 +136,14 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
           if (line.startsWith('0:')) {
             try {
               const content = JSON.parse(line.slice(2))
-              accumulatedContent += content
-              setCompletion(accumulatedContent)
+              if (content && typeof content === 'string') {
+                // 累积内容到 ref
+                accumulatedContentRef.current += content
+                // 立即更新 UI，确保流式显示
+                setCompletion(accumulatedContentRef.current)
+              }
             } catch (e) {
-              console.warn('Failed to parse content chunk:', line)
+              console.warn('Failed to parse content chunk:', line, e)
             }
           }
 
@@ -146,17 +151,19 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
           if (line.startsWith('d:')) {
             try {
               const metadata = JSON.parse(line.slice(2))
-              // 流完成，将 accumulatedContent 添加到消息中
-              if (accumulatedContent) {
+              // 流完成，将累积内容添加到消息中
+              const finalContent = accumulatedContentRef.current
+              if (finalContent) {
                 setMessages(prev => [
                   ...prev,
                   {
                     role: 'assistant',
-                    content: accumulatedContent,
+                    content: finalContent,
                   },
                 ])
               }
               setCompletion('')
+              accumulatedContentRef.current = ''
               setIsLoading(false)
               return
             } catch (e) {
@@ -171,25 +178,29 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
         if (buffer.startsWith('0:')) {
           try {
             const content = JSON.parse(buffer.slice(2))
-            accumulatedContent += content
-            setCompletion(accumulatedContent)
+            if (content && typeof content === 'string') {
+              accumulatedContentRef.current += content
+              setCompletion(accumulatedContentRef.current)
+            }
           } catch (e) {
-            console.warn('Failed to parse remaining buffer:', buffer)
+            console.warn('Failed to parse remaining buffer:', buffer, e)
           }
         }
       }
 
       // 流结束，添加 assistant 消息
-      if (accumulatedContent) {
+      const finalContent = accumulatedContentRef.current
+      if (finalContent) {
         setMessages(prev => [
           ...prev,
           {
             role: 'assistant',
-            content: accumulatedContent,
+            content: finalContent,
           },
         ])
       }
       setCompletion('')
+      accumulatedContentRef.current = ''
       setIsLoading(false)
     } catch (error: unknown) {
       if (error instanceof Error && error.name === 'AbortError') {
