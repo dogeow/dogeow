@@ -92,7 +92,7 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!fixed !top-1/2 !left-1/2 flex h-[90vh] max-h-[90vh] w-full max-w-4xl !-translate-x-1/2 !-translate-y-1/2 flex-col gap-0 p-0">
-        <DialogHeader className="p-0">
+        <DialogHeader className="flex-none p-0">
           <ChatHeader
             variant="dialog"
             title={chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'}

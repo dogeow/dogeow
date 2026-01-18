@@ -49,8 +49,13 @@ export const ChatMessageList = React.memo<ChatMessageListProps>(
 
     if (variant === 'dialog') {
       return (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="px-3 py-2 sm:px-4">{content}</div>
+        <div className="min-h-0 flex-1 overflow-hidden" style={{ touchAction: 'pan-y' }}>
+          <div
+            className="h-full overflow-y-auto overscroll-contain"
+            style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
+          >
+            <div className="px-3 py-2 sm:px-4">{content}</div>
+          </div>
         </div>
       )
     }
