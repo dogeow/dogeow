@@ -106,24 +106,18 @@ export const TrackInfo = memo(
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
-          {isPlaying ? (
-            <div className="overflow-hidden whitespace-nowrap">
-              <span
-                ref={textRef}
-                className="inline-block text-sm font-medium select-none"
-                style={{
-                  transform: `translateX(-${scrollLeft}px)`,
-                  cursor: shouldShowDrag ? 'grab' : 'default',
-                }}
-              >
-                {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
-              </span>
-            </div>
-          ) : (
-            <span className="block truncate text-sm font-medium">
+          <div className="overflow-hidden whitespace-nowrap">
+            <span
+              ref={textRef}
+              className="inline-block text-sm font-medium select-none"
+              style={{
+                transform: isPlaying ? `translateX(-${scrollLeft}px)` : 'translateX(0)',
+                cursor: isPlaying && shouldShowDrag ? 'grab' : 'default',
+              }}
+            >
               {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
             </span>
-          )}
+          </div>
         </div>
       </div>
     )

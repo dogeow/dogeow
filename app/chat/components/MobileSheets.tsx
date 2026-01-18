@@ -35,7 +35,7 @@ export default function MobileSheets({
     <div className="lg:hidden">
       {/* 房间列表 Sheet */}
       <Sheet open={isRoomListOpen} onOpenChange={onRoomListOpenChange}>
-        <SheetContent side="left" className="w-72 p-0">
+        <SheetContent side="left" className="w-72 p-0" onOpenAutoFocus={e => e.preventDefault()}>
           <SheetHeader className="border-b p-4">
             <SheetTitle className="flex items-center gap-2">
               <MessageSquareIcon className="h-5 w-5" />

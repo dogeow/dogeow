@@ -25,18 +25,25 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import useChatStore from '@/app/chat/chatStore'
 import { useTranslation } from '@/hooks/useTranslation'
+import { calculateCharLength } from '@/lib/helpers'
 import type { CreateRoomData } from '../types'
+
+// 房间名称长度限制（按字符数计算：中文/emoji算2，数字/字母算1）
+const MIN_ROOM_NAME_LENGTH = 2 // 最少2个字符
+const MAX_ROOM_NAME_LENGTH = 20 // 最多20个字符
 
 // 创建房间表单校验 schema
 const createRoomSchema = z.object({
   name: z
     .string()
     .min(1, '房间名称是必需的')
-    .min(3, '房间名称至少需要3个字符')
-    .max(50, '房间名称不能超过50个字符')
-    .regex(
-      /^[\u4e00-\u9fa5a-zA-Z0-9\s\-_]+$/,
-      '房间名称只能包含中文、字母、数字、空格、连字符和下划线'
+    .refine(
+      val => calculateCharLength(val) >= MIN_ROOM_NAME_LENGTH,
+      `房间名称至少需要${MIN_ROOM_NAME_LENGTH}个字符`
+    )
+    .refine(
+      val => calculateCharLength(val) <= MAX_ROOM_NAME_LENGTH,
+      `房间名称不能超过${MAX_ROOM_NAME_LENGTH}个字符（中文/emoji算2个字符，数字/字母算1个字符）`
     ),
   description: z.string().max(200, '描述不能超过200个字符').optional(),
 })
@@ -112,21 +119,30 @@ export function CreateRoomDialog({ open, onOpenChange }: CreateRoomDialogProps) 
             <FormField
               control={form.control}
               name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t('chat.room_name', '房间名称')}</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder={t('chat.room_name_placeholder', '例如：一般讨论')}
-                      disabled={isSubmitting}
-                      autoFocus
-                      maxLength={50}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                // 使用字符长度计算函数（中文/emoji算2，数字/字母算1）
+                const charCount = calculateCharLength(field.value || '')
+                return (
+                  <FormItem>
+                    <FormLabel>{t('chat.room_name', '房间名称')}</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          placeholder={t('chat.room_name_placeholder', '例如：一般讨论')}
+                          disabled={isSubmitting}
+                          autoFocus
+                          className="pr-12"
+                          {...field}
+                        />
+                        <span className="text-muted-foreground absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                          {charCount}/{MAX_ROOM_NAME_LENGTH}
+                        </span>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )
+              }}
             />
             <FormField
               control={form.control}

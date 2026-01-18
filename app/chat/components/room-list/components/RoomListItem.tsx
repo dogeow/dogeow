@@ -51,62 +51,66 @@ export const RoomListItem = memo<RoomListItemProps>(
               {room.description && (
                 <span className="text-muted-foreground text-xs">• {room.description}</span>
               )}
-              <div className="text-muted-foreground flex items-center gap-1 text-xs">
-                <Users className="h-3 w-3" />
-                <span>{room.online_count || 0}</span>
-              </div>
               {isFavorite && <Star className="h-3 w-3 fill-current text-yellow-500" />}
             </div>
           </div>
 
-          {/* 房间操作 */}
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={e => onToggleFavorite(room.id, e)}
-              aria-label={
-                isFavorite
-                  ? t('chat.unfavorite_room', 'Unfavorite')
-                  : t('chat.favorite_room', 'Favorite')
-              }
-            >
-              <Star
-                className={cn(
-                  'h-3 w-3',
-                  isFavorite ? 'fill-current text-yellow-500' : 'text-muted-foreground'
-                )}
-              />
-            </Button>
+          {/* 人数和房间操作 */}
+          <div className="relative flex items-center">
+            {/* 操作按钮 - hover 时显示 */}
+            <div className="absolute right-full mr-2 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={e => onToggleFavorite(room.id, e)}
+                aria-label={
+                  isFavorite
+                    ? t('chat.unfavorite_room', 'Unfavorite')
+                    : t('chat.favorite_room', 'Favorite')
+                }
+              >
+                <Star
+                  className={cn(
+                    'h-3 w-3',
+                    isFavorite ? 'fill-current text-yellow-500' : 'text-muted-foreground'
+                  )}
+                />
+              </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={e => e.stopPropagation()}
-                  aria-label={t('chat.more_actions', 'More')}
-                >
-                  <MoreVertical className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={e => onEdit(room, e)}>
-                  <Edit className="mr-2 h-4 w-4" />
-                  {t('chat.edit_room', 'Edit Room')}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={e => onDelete(room, e)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {t('chat.delete_room', 'Delete Room')}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={e => e.stopPropagation()}
+                    aria-label={t('chat.more_actions', 'More')}
+                  >
+                    <MoreVertical className="h-3 w-3" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={e => onEdit(room, e)}>
+                    <Edit className="mr-2 h-4 w-4" />
+                    {t('chat.edit_room', 'Edit Room')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={e => onDelete(room, e)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    {t('chat.delete_room', 'Delete Room')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            {/* 人数 - 始终靠右 */}
+            <div className="text-muted-foreground flex items-center gap-1 text-xs">
+              <Users className="h-3 w-3" />
+              <span>{room.online_count || 0}</span>
+            </div>
           </div>
         </div>
       </div>

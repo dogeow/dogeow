@@ -29,20 +29,38 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
     {
       icon: (
         <motion.div
-          animate={isPlaying ? { rotate: 360 } : { rotate: 0 }}
+          animate={
+            isPlaying
+              ? {
+                  scale: [1, 1.1, 1],
+                }
+              : {
+                  scale: 1,
+                }
+          }
           transition={
             isPlaying
               ? {
-                  duration: 10,
+                  duration: 2,
                   repeat: Infinity,
-                  ease: 'linear',
+                  ease: 'easeInOut',
                 }
               : {
-                  duration: 10,
+                  duration: 0.3,
                 }
           }
+          className={cn(isPlaying && 'music-rainbow-pulse', isPlaying && 'music-rainbow-wrapper')}
         >
-          <Music className="h-5 w-5" />
+          <Music
+            className={cn('h-5 w-5 transition-colors', isPlaying && 'opacity-0')}
+            style={
+              isPlaying
+                ? undefined
+                : {
+                    color: 'currentColor',
+                  }
+            }
+          />
         </motion.div>
       ),
       label: t('appgrid.music'),
