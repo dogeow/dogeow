@@ -91,7 +91,7 @@ ${docList}
   // 如果正在加载初始消息，显示加载状态
   if (isLoadingInitial) {
     return (
-      <main className="flex h-screen flex-col">
+      <main className="flex h-full min-h-0 flex-col">
         <div className="flex flex-1 items-center justify-center">
           <p className="text-muted-foreground">加载中...</p>
         </div>
@@ -100,7 +100,7 @@ ${docList}
   }
 
   return (
-    <main className="flex h-screen flex-col">
+    <main className="flex h-full min-h-0 flex-col">
       <KnowledgeChatHeader
         variant="page"
         title="关于"

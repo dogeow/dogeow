@@ -24,7 +24,7 @@ const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
 // 调用Ollama Chat API
 const callOllamaChatAPI = async (messages: ChatMessage[], model?: string): Promise<Response> => {
   const selectedModel = model || DEFAULT_MODEL
-  const res = await fetch(OLLAMA_CHAT_URL, {
+  const response = await fetch(OLLAMA_CHAT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -33,8 +33,8 @@ const callOllamaChatAPI = async (messages: ChatMessage[], model?: string): Promi
       stream: true,
     }),
   })
-  if (!res.ok) throw new Error(`Ollama API error: ${res.status}`)
-  return res
+  if (!response.ok) throw new Error(`Ollama API error: ${response.status}`)
+  return response
 }
 
 // 转义JSON字符串
@@ -264,46 +264,31 @@ export async function POST(request: NextRequest) {
     }: KnowledgeChatRequestBody = await request.json()
 
     // 如果没有 messages，使用 query 创建单次对话
-    let chatMessages: ChatMessage[]
+    let chatMessages: ChatMessage[] =
+      messages && messages.length > 0
+        ? [...messages]
+        : query
+          ? [{ role: 'user', content: query }]
+          : []
 
-    if (messages && messages.length > 0) {
-      chatMessages = [...messages]
-    } else if (query) {
-      chatMessages = [
-        {
-          role: 'user',
-          content: query,
-        },
-      ]
-    } else {
+    if (chatMessages.length === 0) {
       return NextResponse.json({ error: '缺少必要参数：messages 或 query' }, { status: 400 })
     }
 
-    // 如果启用上下文，构建包含知识库的系统提示
-    if (useContext) {
-      const userQuery = messages?.[messages.length - 1]?.content || query || ''
-      const systemPrompt = await buildSystemPromptWithContext(userQuery, searchMethod)
-
-      // 确保有 system 消息
+    // 优化：系统提示添加封装
+    const ensureSystemPrompt = async () => {
       const hasSystem = chatMessages.some(m => m.role === 'system')
-      if (!hasSystem) {
-        chatMessages = [
-          {
-            role: 'system',
-            content: systemPrompt,
-          },
-          ...chatMessages,
-        ]
-      } else {
-        // 替换现有的 system 消息
-        chatMessages = chatMessages.map(m =>
-          m.role === 'system' ? { ...m, content: systemPrompt } : m
-        )
-      }
-    } else {
-      // 不使用上下文，添加默认 system 消息
-      const hasSystem = chatMessages.some(m => m.role === 'system')
-      if (!hasSystem) {
+      if (useContext) {
+        const userQuery = messages?.[messages.length - 1]?.content ?? query ?? ''
+        const systemPrompt = await buildSystemPromptWithContext(userQuery, searchMethod)
+        if (!hasSystem) {
+          chatMessages = [{ role: 'system', content: systemPrompt }, ...chatMessages]
+        } else {
+          chatMessages = chatMessages.map(m =>
+            m.role === 'system' ? { ...m, content: systemPrompt } : m
+          )
+        }
+      } else if (!hasSystem) {
         chatMessages = [
           {
             role: 'system',
@@ -314,22 +299,23 @@ export async function POST(request: NextRequest) {
         ]
       }
     }
+    await ensureSystemPrompt()
 
     // 调用 Ollama API
     const ollamaResponse = await callOllamaChatAPI(chatMessages, model)
 
     // 计算 prompt tokens
-    const promptTokens = Math.ceil(chatMessages.map(m => m.content).join('').length / 4)
+    const promptTokens = Math.ceil(chatMessages.reduce((acc, m) => acc + m.content.length, 0) / 4)
 
     return createStreamResponse(ollamaResponse, promptTokens)
   } catch (error: unknown) {
     console.error('知识库问答API错误:', error)
-    const errorMessage =
-      error instanceof Error
-        ? error.message.includes('fetch')
-          ? 'AI服务暂时不可用，请确保Ollama服务正在运行'
-          : error.message
-        : 'AI服务发生未知错误'
+    let errorMessage = 'AI服务发生未知错误'
+    if (error instanceof Error) {
+      errorMessage = error.message.includes('fetch')
+        ? 'AI服务暂时不可用，请确保Ollama服务正在运行'
+        : error.message
+    }
     return NextResponse.json({ error: errorMessage }, { status: 500 })
   }
 }
