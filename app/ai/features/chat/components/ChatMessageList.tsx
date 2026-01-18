@@ -49,10 +49,8 @@ export const ChatMessageList = React.memo<ChatMessageListProps>(
 
     if (variant === 'dialog') {
       return (
-        <div className="min-h-0 flex-1 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="px-3 py-2 sm:px-4">{content}</div>
-          </ScrollArea>
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="px-3 py-2 sm:px-4">{content}</div>
         </div>
       )
     }

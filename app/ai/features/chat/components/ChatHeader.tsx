@@ -11,13 +11,22 @@ interface ChatHeaderProps {
   isLoading: boolean
   onClear: () => void
   variant?: 'dialog' | 'page'
+  hideClear?: boolean
 }
 
 export const ChatHeader = React.memo<ChatHeaderProps>(
-  ({ title = 'AI 助理', subtitle, hasMessages, isLoading, onClear, variant = 'page' }) => {
+  ({
+    title = 'AI 助理',
+    subtitle,
+    hasMessages,
+    isLoading,
+    onClear,
+    variant = 'page',
+    hideClear = false,
+  }) => {
     if (variant === 'dialog') {
       return (
-        <div className="!flex h-12 !flex-row items-center justify-between border-b px-4 py-0">
+        <div className="!flex h-12 flex-none !flex-row items-center justify-between border-b px-4 py-0">
           <div className="m-0 flex min-w-0 flex-1 items-center gap-3">
             <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
               <Sparkles className="h-4 w-4" />
@@ -25,7 +34,7 @@ export const ChatHeader = React.memo<ChatHeaderProps>(
             <DialogTitle className="truncate text-base leading-none">{title}</DialogTitle>
           </div>
           <div className="flex shrink-0 items-center gap-1 pr-10">
-            {hasMessages && (
+            {hasMessages && !hideClear && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -59,7 +68,7 @@ export const ChatHeader = React.memo<ChatHeaderProps>(
                 <span className="hidden sm:inline">知识库问答</span>
               </Link>
             </Button>
-            {hasMessages && (
+            {hasMessages && !hideClear && (
               <Button
                 variant="ghost"
                 size="sm"

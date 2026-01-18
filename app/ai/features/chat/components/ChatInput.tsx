@@ -1,5 +1,5 @@
 import React from 'react'
-import { Send, Square, Cpu } from 'lucide-react'
+import { Send, Square, Cpu, Sparkles, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -19,6 +19,8 @@ interface ChatInputProps {
   isLoading: boolean
   model?: string
   onModelChange?: (value: string) => void
+  chatMode?: 'ai' | 'knowledge'
+  onChatModeChange?: (value: 'ai' | 'knowledge') => void
   variant?: 'dialog' | 'page'
   placeholder?: string
 }
@@ -32,6 +34,8 @@ export const ChatInput = React.memo<ChatInputProps>(
     isLoading,
     model,
     onModelChange,
+    chatMode,
+    onChatModeChange,
     variant = 'page',
     placeholder,
   }) => {
@@ -46,13 +50,13 @@ export const ChatInput = React.memo<ChatInputProps>(
 
     if (variant === 'dialog') {
       return (
-        <div className="border-t p-2">
+        <div className="flex-none border-t p-2">
           <div className="flex items-end gap-2">
             <Textarea
               value={prompt}
               onChange={event => onPromptChange(event.target.value)}
               placeholder={placeholder || '输入消息...'}
-              className="max-h-[60px] min-h-[44px] resize-none py-2"
+              className="max-h-[80px] min-h-[48px] resize-none py-2.5"
               onKeyDown={handleKeyDown}
               disabled={isLoading}
               rows={1}
@@ -64,19 +68,21 @@ export const ChatInput = React.memo<ChatInputProps>(
                     <Button
                       variant="outline"
                       size="icon"
-                      className={cn(
-                        'h-[44px] w-[44px] border-2 transition-all',
-                        model === 'qwen2.5:0.5b'
-                          ? 'border-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]'
-                          : model === 'qwen3:0.6b'
-                            ? 'border-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]'
-                            : model === 'qwen3:8b'
-                              ? 'border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]'
-                              : 'border-border'
-                      )}
+                      className="border-border h-12 w-12 border-2 transition-all"
                       disabled={isLoading}
                     >
-                      <Cpu className="h-5 w-5" />
+                      <Cpu
+                        className={cn(
+                          'h-5 w-5',
+                          model === 'qwen2.5:0.5b'
+                            ? 'text-primary'
+                            : model === 'qwen3:0.6b'
+                              ? 'text-blue-500'
+                              : model === 'qwen3:8b'
+                                ? 'text-purple-500'
+                                : ''
+                        )}
+                      />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -124,11 +130,60 @@ export const ChatInput = React.memo<ChatInputProps>(
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+              {chatMode && onChatModeChange && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 border-2 transition-all"
+                      disabled={isLoading}
+                      aria-label={chatMode === 'knowledge' ? '知识库 AI' : '通用 AI'}
+                    >
+                      {chatMode === 'knowledge' ? (
+                        <BookOpen className="h-5 w-5" />
+                      ) : (
+                        <Sparkles className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuRadioGroup value={chatMode} onValueChange={onChatModeChange}>
+                      <DropdownMenuRadioItem
+                        value="ai"
+                        className={cn(
+                          'cursor-pointer',
+                          chatMode === 'ai' &&
+                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          <span>通用 AI</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="knowledge"
+                        className={cn(
+                          'cursor-pointer',
+                          chatMode === 'knowledge' &&
+                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          <span>知识库 AI</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               <Button
                 onClick={isLoading && onStop ? onStop : onSend}
                 disabled={isLoading ? false : !prompt.trim()}
                 size="icon"
-                className="h-[44px] w-[44px]"
+                className="h-12 w-12"
               >
                 {isLoading ? <Square className="h-5 w-5" /> : <Send className="h-5 w-5" />}
               </Button>
@@ -147,7 +202,7 @@ export const ChatInput = React.memo<ChatInputProps>(
               value={prompt}
               onChange={event => onPromptChange(event.target.value)}
               placeholder={placeholder || '输入消息...'}
-              className="max-h-[60px] min-h-[44px] resize-none py-2"
+              className="max-h-[80px] min-h-[48px] resize-none py-2.5"
               onKeyDown={handleKeyDown}
               disabled={isLoading}
               rows={1}
@@ -159,19 +214,21 @@ export const ChatInput = React.memo<ChatInputProps>(
                     <Button
                       variant="outline"
                       size="icon"
-                      className={cn(
-                        'h-[44px] w-[44px] border-2 transition-all',
-                        model === 'qwen2.5:0.5b'
-                          ? 'border-primary shadow-[0_0_8px_rgba(59,130,246,0.5)]'
-                          : model === 'qwen3:0.6b'
-                            ? 'border-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]'
-                            : model === 'qwen3:8b'
-                              ? 'border-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]'
-                              : 'border-border'
-                      )}
+                      className="border-border h-12 w-12 border-2 transition-all"
                       disabled={isLoading}
                     >
-                      <Cpu className="h-5 w-5" />
+                      <Cpu
+                        className={cn(
+                          'h-5 w-5',
+                          model === 'qwen2.5:0.5b'
+                            ? 'text-primary'
+                            : model === 'qwen3:0.6b'
+                              ? 'text-blue-500'
+                              : model === 'qwen3:8b'
+                                ? 'text-purple-500'
+                                : ''
+                        )}
+                      />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -219,11 +276,60 @@ export const ChatInput = React.memo<ChatInputProps>(
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+              {chatMode && onChatModeChange && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-12 w-12 border-2 transition-all"
+                      disabled={isLoading}
+                      aria-label={chatMode === 'knowledge' ? '知识库 AI' : '通用 AI'}
+                    >
+                      {chatMode === 'knowledge' ? (
+                        <BookOpen className="h-5 w-5" />
+                      ) : (
+                        <Sparkles className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuRadioGroup value={chatMode} onValueChange={onChatModeChange}>
+                      <DropdownMenuRadioItem
+                        value="ai"
+                        className={cn(
+                          'cursor-pointer',
+                          chatMode === 'ai' &&
+                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="h-4 w-4" />
+                          <span>通用 AI</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="knowledge"
+                        className={cn(
+                          'cursor-pointer',
+                          chatMode === 'knowledge' &&
+                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="h-4 w-4" />
+                          <span>知识库 AI</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               <Button
                 onClick={isLoading && onStop ? onStop : onSend}
                 disabled={isLoading ? false : !prompt.trim()}
                 size="icon"
-                className="h-[44px] w-[44px]"
+                className="h-12 w-12"
               >
                 {isLoading ? <Square className="h-5 w-5" /> : <Send className="h-5 w-5" />}
               </Button>

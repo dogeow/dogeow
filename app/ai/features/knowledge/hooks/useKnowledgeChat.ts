@@ -49,12 +49,25 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
   })
 
   const abortControllerRef = useRef<AbortController | null>(null)
+  const hasAppliedInitialMessagesRef = useRef(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const accumulatedContentRef = useRef<string>('')
 
   // 过滤掉 system 消息用于显示
   const displayMessages = messages.filter(m => m.role !== 'system')
   const hasMessages = displayMessages.length > 0
+
+  useEffect(() => {
+    if (hasAppliedInitialMessagesRef.current || initialMessages.length === 0) {
+      return
+    }
+    if (messages.length > 0) {
+      hasAppliedInitialMessagesRef.current = true
+      return
+    }
+    setMessages(initialMessages)
+    hasAppliedInitialMessagesRef.current = true
+  }, [initialMessages, messages.length])
 
   // 自动滚动到底部
   useEffect(() => {
