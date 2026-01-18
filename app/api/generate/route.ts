@@ -40,10 +40,10 @@ const PROMPT_TEMPLATES: Record<GenerateOption, (text: string, command?: string) 
 }
 
 // Ollama配置
-const OLLAMA_BASE_URL = 'http://localhost:11434'
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_GENERATE_URL = `${OLLAMA_BASE_URL}/api/generate`
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE_URL}/api/chat`
-const OLLAMA_MODEL = 'qwen3:8b'
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
 
 // 转义JSON字符串
 const escapeJsonString = (str: string) =>
