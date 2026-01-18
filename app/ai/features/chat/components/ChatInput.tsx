@@ -148,7 +148,10 @@ export const ChatInput = React.memo<ChatInputProps>(
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuRadioGroup value={chatMode} onValueChange={onChatModeChange}>
+                    <DropdownMenuRadioGroup
+                      value={chatMode}
+                      onValueChange={value => onChatModeChange?.(value as 'ai' | 'knowledge')}
+                    >
                       <DropdownMenuRadioItem
                         value="ai"
                         className={cn(
@@ -294,7 +297,10 @@ export const ChatInput = React.memo<ChatInputProps>(
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuRadioGroup value={chatMode} onValueChange={onChatModeChange}>
+                    <DropdownMenuRadioGroup
+                      value={chatMode}
+                      onValueChange={value => onChatModeChange?.(value as 'ai' | 'knowledge')}
+                    >
                       <DropdownMenuRadioItem
                         value="ai"
                         className={cn(
