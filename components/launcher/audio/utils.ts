@@ -6,7 +6,7 @@ export function buildAudioUrl(track: string, apiUrl: string) {
 
   // 从路径中提取文件名
   const trackPath = track.startsWith('/') ? track.slice(1) : track
-  const filename = trackPath.split('/').pop() // 获取文件名部分
+  const filename = trackPath.split('/').pop() || trackPath // 获取文件名部分，如果为空则使用整个路径
   const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl // 移除尾部斜杠
   return baseUrl + '/api/musics/' + encodeURIComponent(filename)
 }
