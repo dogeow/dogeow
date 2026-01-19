@@ -141,6 +141,7 @@ export function AppLauncher() {
           availableTracks: availableTracks || [],
           currentTrack: currentTrack || '',
           playMode: playMode,
+          analyserNode: audioManager.analyserNode,
           toggleMute,
           switchToPrevTrack,
           switchToNextTrack,
@@ -194,6 +195,7 @@ export function AppLauncher() {
       backgroundImage,
       setBackgroundImage,
       customBackgrounds,
+      audioManager.analyserNode,
     ]
   )
 
@@ -273,6 +275,7 @@ export function AppLauncher() {
           loop={false}
           hidden
           preload="none"
+          crossOrigin="anonymous"
           // 手机端特殊属性
           playsInline={true}
           webkit-playsinline="true"

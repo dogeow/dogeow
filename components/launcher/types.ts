@@ -22,6 +22,7 @@ export interface MusicPlayerProps {
   availableTracks: MusicTrack[]
   currentTrack: string
   playMode: PlayMode
+  analyserNode?: AnalyserNode | null
   toggleMute: () => void
   switchToPrevTrack: () => void
   switchToNextTrack: () => void
