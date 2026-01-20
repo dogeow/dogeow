@@ -48,7 +48,7 @@ export const MusicPlayer = memo(
               <AudioVisualizer
                 analyserNode={analyserNode}
                 isPlaying={isPlaying}
-                type="waveform"
+                type="spectrum"
                 barCount={32}
                 showGradient={true}
                 className="h-full w-full"

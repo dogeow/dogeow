@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import { cn } from '@/lib/helpers'
 
-export type VisualizerType = 'bars' | 'wave' | 'circular' | 'waveform'
+export type VisualizerType = 'bars' | 'wave' | 'waveform' | 'bars6' | 'barSingle' | 'spectrum'
 
 interface AudioVisualizerProps {
   analyserNode: AnalyserNode | null
@@ -25,7 +25,7 @@ interface AudioVisualizerProps {
 export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   analyserNode,
   isPlaying,
-  type = 'waveform',
+  type = 'bars6',
   className,
   barCount = 32,
   barWidth = 3,
@@ -122,15 +122,37 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       }
 
       ctx.lineTo(width, height / 2)
-      ctx.strokeStyle = showGradient ? 'url(#waveGradient)' : barColor
+
+      // 获取主题色
+      const getPrimaryColor = () => {
+        if (typeof window !== 'undefined') {
+          const style = getComputedStyle(document.documentElement)
+          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
+        }
+        return 'hsl(35 97% 55%)'
+      }
+      const primaryColor = getPrimaryColor()
+
+      // 使用主题色绘制轮廓
+      let strokeColor = primaryColor
+      if (primaryColor.startsWith('hsl')) {
+        const baseColor = primaryColor.replace(')', '')
+        strokeColor = `${baseColor} / 0.9)`
+      }
+      ctx.strokeStyle = strokeColor
       ctx.lineWidth = 2
       ctx.stroke()
 
-      // 填充波形下方区域
-      ctx.fillStyle = showGradient ? 'rgba(59, 130, 246, 0.2)' : `${barColor}33`
+      // 填充波形下方区域（使用主题色，透明度较低）
+      let fillColor = primaryColor
+      if (primaryColor.startsWith('hsl')) {
+        const baseColor = primaryColor.replace(')', '')
+        fillColor = `${baseColor} / 0.3)`
+      }
+      ctx.fillStyle = fillColor
       ctx.fill()
     },
-    [barColor, showGradient]
+    []
   )
 
   // 绘制波形历史轨迹（波浪形状，下方实心填充，从左到右，动态颜色）
@@ -244,45 +266,154 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     []
   )
 
-  // 绘制圆形频谱
-  const drawCircular = useCallback(
+  // 绘制6个柱状图（宽柱）
+  const drawBars6 = useCallback(
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
       ctx.clearRect(0, 0, width, height)
 
-      const centerX = width / 2
-      const centerY = height / 2
-      const radius = Math.min(width, height) * 0.3
-      const barCount_ = Math.min(barCount, dataArray.length)
-      const angleStep = (Math.PI * 2) / barCount_
+      const barCount_ = 6
+      const barWidth = (width - (barCount_ - 1) * 10) / barCount_
+      const gap = 10
+
+      // 获取主题色
+      const getPrimaryColor = () => {
+        if (typeof window !== 'undefined') {
+          const style = getComputedStyle(document.documentElement)
+          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
+        }
+        return 'hsl(35 97% 55%)'
+      }
+      const primaryColor = getPrimaryColor()
+
+      for (let i = 0; i < barCount_; i++) {
+        // 使用不同频率段的数据
+        const dataIndex = Math.floor((i / barCount_) * dataArray.length)
+        const value = dataArray[dataIndex] / 255
+        const barHeight = value * height * 0.95
+
+        const x = i * (barWidth + gap)
+        const y = height - barHeight
+
+        // 使用主题色，根据高度调整透明度
+        let fillColor = primaryColor
+        if (primaryColor.startsWith('hsl')) {
+          const baseColor = primaryColor.replace(')', '')
+          fillColor = `${baseColor} / ${0.6 + value * 0.4})`
+        }
+
+        ctx.fillStyle = fillColor
+
+        // 绘制宽柱（带圆角）
+        ctx.beginPath()
+        if (ctx.roundRect) {
+          ctx.roundRect(x, y, barWidth, barHeight, 8)
+        } else {
+          const radius = 8
+          ctx.moveTo(x + radius, y)
+          ctx.lineTo(x + barWidth - radius, y)
+          ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius)
+          ctx.lineTo(x + barWidth, y + barHeight - radius)
+          ctx.quadraticCurveTo(x + barWidth, y + barHeight, x + barWidth - radius, y + barHeight)
+          ctx.lineTo(x + radius, y + barHeight)
+          ctx.quadraticCurveTo(x, y + barHeight, x, y + barHeight - radius)
+          ctx.lineTo(x, y + radius)
+          ctx.quadraticCurveTo(x, y, x + radius, y)
+          ctx.closePath()
+        }
+        ctx.fill()
+      }
+    },
+    []
+  )
+
+  // 绘制单个大柱状图
+  const drawBarSingle = useCallback(
+    (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
+      ctx.clearRect(0, 0, width, height)
+
+      // 计算所有频率的平均值
+      const avg = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length
+      const barHeight = (avg / 255) * height * 0.95
+      const barWidth = width * 0.8
+      const x = (width - barWidth) / 2
+      const y = height - barHeight
+
+      // 获取主题色
+      const getPrimaryColor = () => {
+        if (typeof window !== 'undefined') {
+          const style = getComputedStyle(document.documentElement)
+          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
+        }
+        return 'hsl(35 97% 55%)'
+      }
+      const primaryColor = getPrimaryColor()
+
+      let fillColor = primaryColor
+      if (primaryColor.startsWith('hsl')) {
+        const baseColor = primaryColor.replace(')', '')
+        fillColor = `${baseColor} / ${0.7 + (avg / 255) * 0.3})`
+      }
+
+      ctx.fillStyle = fillColor
+
+      // 绘制大柱（带圆角）
+      ctx.beginPath()
+      if (ctx.roundRect) {
+        ctx.roundRect(x, y, barWidth, barHeight, 12)
+      } else {
+        const radius = 12
+        ctx.moveTo(x + radius, y)
+        ctx.lineTo(x + barWidth - radius, y)
+        ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius)
+        ctx.lineTo(x + barWidth, y + barHeight - radius)
+        ctx.quadraticCurveTo(x + barWidth, y + barHeight, x + barWidth - radius, y + barHeight)
+        ctx.lineTo(x + radius, y + barHeight)
+        ctx.quadraticCurveTo(x, y + barHeight, x, y + barHeight - radius)
+        ctx.lineTo(x, y + radius)
+        ctx.quadraticCurveTo(x, y, x + radius, y)
+        ctx.closePath()
+      }
+      ctx.fill()
+    },
+    []
+  )
+
+  // 绘制频谱图（类似音频编辑器的频谱显示）
+  const drawSpectrum = useCallback(
+    (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
+      ctx.clearRect(0, 0, width, height)
+
+      const barCount_ = Math.min(64, dataArray.length)
+      const barWidth = width / barCount_
+
+      // 获取主题色
+      const getPrimaryColor = () => {
+        if (typeof window !== 'undefined') {
+          const style = getComputedStyle(document.documentElement)
+          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
+        }
+        return 'hsl(35 97% 55%)'
+      }
+      const primaryColor = getPrimaryColor()
 
       for (let i = 0; i < barCount_; i++) {
         const value = dataArray[i] / 255
-        const barLength = value * radius * 0.8
+        const barHeight = value * height
 
-        const angle = i * angleStep - Math.PI / 2
-        const startX = centerX + Math.cos(angle) * radius
-        const startY = centerY + Math.sin(angle) * radius
-        const endX = centerX + Math.cos(angle) * (radius + barLength)
-        const endY = centerY + Math.sin(angle) * (radius + barLength)
+        const x = i * barWidth
 
-        ctx.beginPath()
-        ctx.moveTo(startX, startY)
-        ctx.lineTo(endX, endY)
-
-        // 渐变色
-        if (showGradient) {
-          const hue = (i / barCount_) * 360
-          ctx.strokeStyle = `hsl(${hue}, 70%, 50%)`
-        } else {
-          ctx.strokeStyle = barColor
+        // 根据频率高度使用不同透明度
+        let fillColor = primaryColor
+        if (primaryColor.startsWith('hsl')) {
+          const baseColor = primaryColor.replace(')', '')
+          fillColor = `${baseColor} / ${0.4 + value * 0.6})`
         }
 
-        ctx.lineWidth = 3
-        ctx.lineCap = 'round'
-        ctx.stroke()
+        ctx.fillStyle = fillColor
+        ctx.fillRect(x, height - barHeight, barWidth, barHeight)
       }
     },
-    [barCount, barColor, showGradient]
+    []
   )
 
   // 启动/停止动画
@@ -309,23 +440,29 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       const dataArray = dataArrayRef.current
 
       // 获取频率数据
-      analyserNode.getByteFrequencyData(dataArray)
+      analyserNode.getByteFrequencyData(dataArray as any)
 
       // 根据类型绘制
       switch (type) {
         case 'bars':
           drawBars(ctx, dataArray, width, height)
           break
+        case 'bars6':
+          drawBars6(ctx, dataArray, width, height)
+          break
+        case 'barSingle':
+          drawBarSingle(ctx, dataArray, width, height)
+          break
+        case 'spectrum':
+          drawSpectrum(ctx, dataArray, width, height)
+          break
         case 'wave':
-          analyserNode.getByteTimeDomainData(dataArray) // 波形使用时域数据
+          analyserNode.getByteTimeDomainData(dataArray as any) // 波形使用时域数据
           drawWave(ctx, dataArray, width, height)
           break
         case 'waveform':
           // 使用频率数据绘制波形历史轨迹
           drawWaveformHistory(ctx, dataArray, width, height)
-          break
-        case 'circular':
-          drawCircular(ctx, dataArray, width, height)
           break
       }
 
@@ -357,7 +494,17 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [isPlaying, analyserNode, type, drawBars, drawWave, drawWaveformHistory, drawCircular])
+  }, [
+    isPlaying,
+    analyserNode,
+    type,
+    drawBars,
+    drawBars6,
+    drawBarSingle,
+    drawSpectrum,
+    drawWave,
+    drawWaveformHistory,
+  ])
 
   return (
     <canvas
