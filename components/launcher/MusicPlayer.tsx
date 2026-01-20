@@ -8,7 +8,6 @@ import { PlaylistDialog } from './PlaylistDialog'
 import { PlayerControlButton } from './music/PlayerControlButton'
 import { TrackInfo } from './music/TrackInfo'
 import { ProgressBar } from './music/ProgressBar'
-import { AudioVisualizer } from './music/AudioVisualizer'
 
 // 图标尺寸常量
 const ICON_SIZE = 'h-4 w-4'
@@ -41,21 +40,7 @@ export const MusicPlayer = memo(
 
     return (
       <>
-        <div className="relative flex w-full min-w-0 items-center justify-between gap-2 overflow-hidden">
-          {/* 音频可视化 - 作为背景层，显示在左箭头右边到控制按钮之间的区域 */}
-          {analyserNode && (
-            <div className="absolute top-0 right-0 bottom-0 left-10 overflow-hidden">
-              <AudioVisualizer
-                analyserNode={analyserNode}
-                isPlaying={isPlaying}
-                type="spectrum"
-                barCount={32}
-                showGradient={true}
-                className="h-full w-full"
-              />
-            </div>
-          )}
-
+        <div className="relative -mx-2 flex w-full min-w-0 items-center justify-between gap-2 overflow-hidden px-2">
           {/* 内容层 - 控制按钮和文本 */}
           <div className="relative z-10 flex shrink-0 items-center">
             <BackButton onClick={() => toggleDisplayMode('apps')} title="返回启动台" />

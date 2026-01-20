@@ -17,6 +17,15 @@ interface AudioVisualizerProps {
   showGradient?: boolean
 }
 
+// 获取主题色的工具函数
+const getPrimaryColor = (): string => {
+  if (typeof window !== 'undefined') {
+    const style = getComputedStyle(document.documentElement)
+    return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
+  }
+  return 'hsl(35 97% 55%)'
+}
+
 /**
  * 音频可视化组件
  * 使用 Web Audio API 的 AnalyserNode 实时分析音频频率
@@ -49,23 +58,22 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   // 绘制柱状图
   const drawBars = useCallback(
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
-      const barCount_ = Math.min(barCount, dataArray.length)
-      const totalBarWidth = barCount_ * barWidth + (barCount_ - 1) * barGap
+      const barCountActual = Math.min(barCount, dataArray.length)
+      const totalBarWidth = barCountActual * barWidth + (barCountActual - 1) * barGap
       const startX = (width - totalBarWidth) / 2
 
       ctx.clearRect(0, 0, width, height)
 
-      for (let i = 0; i < barCount_; i++) {
+      for (let i = 0; i < barCountActual; i++) {
         const value = dataArray[i] / 255
-        const barHeight = value * height * 0.9
-
+        const h = value * height * 0.9
         const x = startX + i * (barWidth + barGap)
-        const y = height - barHeight
+        const y = height - h
 
         // 渐变色
         if (showGradient) {
           const gradient = ctx.createLinearGradient(x, y, x, height)
-          const hue = (i / barCount_) * 360
+          const hue = (i / barCountActual) * 360
           gradient.addColorStop(0, `hsl(${hue}, 70%, 60%)`)
           gradient.addColorStop(1, `hsl(${hue + 30}, 70%, 40%)`)
           ctx.fillStyle = gradient
@@ -75,18 +83,18 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
         // 绘制柱子（带圆角）
         ctx.beginPath()
-        if (ctx.roundRect) {
-          ctx.roundRect(x, y, barWidth, barHeight, 2)
+        if ((ctx as any).roundRect) {
+          ;(ctx as any).roundRect(x, y, barWidth, h, 2)
         } else {
           // 兼容旧浏览器
           const radius = 2
           ctx.moveTo(x + radius, y)
           ctx.lineTo(x + barWidth - radius, y)
           ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius)
-          ctx.lineTo(x + barWidth, y + barHeight - radius)
-          ctx.quadraticCurveTo(x + barWidth, y + barHeight, x + barWidth - radius, y + barHeight)
-          ctx.lineTo(x + radius, y + barHeight)
-          ctx.quadraticCurveTo(x, y + barHeight, x, y + barHeight - radius)
+          ctx.lineTo(x + barWidth, y + h - radius)
+          ctx.quadraticCurveTo(x + barWidth, y + h, x + barWidth - radius, y + h)
+          ctx.lineTo(x + radius, y + h)
+          ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
           ctx.lineTo(x, y + radius)
           ctx.quadraticCurveTo(x, y, x + radius, y)
           ctx.closePath()
@@ -101,7 +109,6 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   const drawWave = useCallback(
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
       ctx.clearRect(0, 0, width, height)
-
       const sliceWidth = width / dataArray.length
       let x = 0
 
@@ -111,29 +118,18 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       for (let i = 0; i < dataArray.length; i++) {
         const v = dataArray[i] / 128.0
         const y = (v * height) / 2
-
         if (i === 0) {
           ctx.moveTo(x, y)
         } else {
           ctx.lineTo(x, y)
         }
-
         x += sliceWidth
       }
 
       ctx.lineTo(width, height / 2)
 
-      // 获取主题色
-      const getPrimaryColor = () => {
-        if (typeof window !== 'undefined') {
-          const style = getComputedStyle(document.documentElement)
-          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
-        }
-        return 'hsl(35 97% 55%)'
-      }
-      const primaryColor = getPrimaryColor()
-
       // 使用主题色绘制轮廓
+      const primaryColor = getPrimaryColor()
       let strokeColor = primaryColor
       if (primaryColor.startsWith('hsl')) {
         const baseColor = primaryColor.replace(')', '')
@@ -165,9 +161,8 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
       // 新数据添加到开头（左侧），旧数据向右移动
       history.unshift(currentFrame)
-
       // 限制历史长度（根据容器宽度调整）
-      const maxFrames = Math.max(200, Math.floor(width))
+      const maxFrames = Math.max(maxHistoryLength, Math.floor(width))
       if (history.length > maxFrames) {
         history.pop() // 移除最右边的旧数据
       }
@@ -180,21 +175,10 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
       // 计算每帧的位置（从左到右：索引0是最新数据在左边，最后一个是最旧数据在右边）
       const frameWidth = width / maxFrames // 使用固定宽度，确保滚动效果
-
-      // 获取主题色（CSS 变量）
-      const getPrimaryColor = () => {
-        if (typeof window !== 'undefined') {
-          const style = getComputedStyle(document.documentElement)
-          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
-        }
-        return 'hsl(35 97% 55%)'
-      }
-
       const primaryColor = getPrimaryColor()
 
       // 创建波浪路径
       ctx.beginPath()
-
       let pathCreated = false
       const points: Array<{ x: number; y: number; avg: number }> = []
 
@@ -202,7 +186,6 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       for (let frameIndex = 0; frameIndex < history.length; frameIndex++) {
         const frame = history[frameIndex]
         const avg = frame.reduce((sum, val) => sum + val, 0) / frame.length
-
         // 计算波形高度（从底部向上）
         const waveHeight = avg * height * 0.9
         const y = height - waveHeight
@@ -219,13 +202,11 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
           const prevPoint = points[frameIndex - 1]
           const cpX = (prevPoint.x + x) / 2
           const cpY = (prevPoint.y + y) / 2
-
           ctx.quadraticCurveTo(cpX, cpY, x, y)
         }
       }
 
       // 闭合路径到底部，形成实心填充
-      // 从左（最新数据）到右（最旧数据）
       if (points.length > 0) {
         const lastX = points[points.length - 1].x
         ctx.lineTo(lastX, height)
@@ -237,33 +218,21 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       ctx.closePath()
 
       // 使用主题色填充（统一颜色，可以有透明度变化）
-      // 将 HSL 格式转换为可以添加透明度的格式
       let fillColor = primaryColor
       let strokeColor = primaryColor
-
-      // 如果主题色是 hsl 格式，添加透明度
       if (primaryColor.startsWith('hsl')) {
-        // 移除末尾的 )，添加 alpha
         const baseColor = primaryColor.replace(')', '')
-        fillColor = `${baseColor} / 0.8)` // 填充透明度 0.8
-        strokeColor = `${baseColor} / 0.9)` // 轮廓透明度 0.9
-      } else {
-        // 如果是其他格式，尝试转换
-        fillColor = primaryColor
-        strokeColor = primaryColor
+        fillColor = `${baseColor} / 0.8)`
+        strokeColor = `${baseColor} / 0.9)`
       }
 
       ctx.fillStyle = fillColor
-
-      // 填充波浪下方的实心区域
       ctx.fill()
-
-      // 绘制波浪轮廓线（使用主题色）
       ctx.strokeStyle = strokeColor
       ctx.lineWidth = 2
       ctx.stroke()
     },
-    []
+    [maxHistoryLength]
   )
 
   // 绘制6个柱状图（宽柱）
@@ -271,30 +240,21 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
       ctx.clearRect(0, 0, width, height)
 
-      const barCount_ = 6
-      const barWidth = (width - (barCount_ - 1) * 10) / barCount_
+      const barCount6 = 6
+      const barW = (width - (barCount6 - 1) * 10) / barCount6
       const gap = 10
 
-      // 获取主题色
-      const getPrimaryColor = () => {
-        if (typeof window !== 'undefined') {
-          const style = getComputedStyle(document.documentElement)
-          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
-        }
-        return 'hsl(35 97% 55%)'
-      }
       const primaryColor = getPrimaryColor()
 
-      for (let i = 0; i < barCount_; i++) {
+      for (let i = 0; i < barCount6; i++) {
         // 使用不同频率段的数据
-        const dataIndex = Math.floor((i / barCount_) * dataArray.length)
+        const dataIndex = Math.floor((i / barCount6) * dataArray.length)
         const value = dataArray[dataIndex] / 255
-        const barHeight = value * height * 0.95
+        const h = value * height * 0.95
 
-        const x = i * (barWidth + gap)
-        const y = height - barHeight
+        const x = i * (barW + gap)
+        const y = height - h
 
-        // 使用主题色，根据高度调整透明度
         let fillColor = primaryColor
         if (primaryColor.startsWith('hsl')) {
           const baseColor = primaryColor.replace(')', '')
@@ -305,17 +265,17 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
         // 绘制宽柱（带圆角）
         ctx.beginPath()
-        if (ctx.roundRect) {
-          ctx.roundRect(x, y, barWidth, barHeight, 8)
+        if ((ctx as any).roundRect) {
+          ;(ctx as any).roundRect(x, y, barW, h, 8)
         } else {
           const radius = 8
           ctx.moveTo(x + radius, y)
-          ctx.lineTo(x + barWidth - radius, y)
-          ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius)
-          ctx.lineTo(x + barWidth, y + barHeight - radius)
-          ctx.quadraticCurveTo(x + barWidth, y + barHeight, x + barWidth - radius, y + barHeight)
-          ctx.lineTo(x + radius, y + barHeight)
-          ctx.quadraticCurveTo(x, y + barHeight, x, y + barHeight - radius)
+          ctx.lineTo(x + barW - radius, y)
+          ctx.quadraticCurveTo(x + barW, y, x + barW, y + radius)
+          ctx.lineTo(x + barW, y + h - radius)
+          ctx.quadraticCurveTo(x + barW, y + h, x + barW - radius, y + h)
+          ctx.lineTo(x + radius, y + h)
+          ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
           ctx.lineTo(x, y + radius)
           ctx.quadraticCurveTo(x, y, x + radius, y)
           ctx.closePath()
@@ -333,21 +293,12 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
       // 计算所有频率的平均值
       const avg = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length
-      const barHeight = (avg / 255) * height * 0.95
-      const barWidth = width * 0.8
-      const x = (width - barWidth) / 2
-      const y = height - barHeight
+      const h = (avg / 255) * height * 0.95
+      const barW = width * 0.8
+      const x = (width - barW) / 2
+      const y = height - h
 
-      // 获取主题色
-      const getPrimaryColor = () => {
-        if (typeof window !== 'undefined') {
-          const style = getComputedStyle(document.documentElement)
-          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
-        }
-        return 'hsl(35 97% 55%)'
-      }
       const primaryColor = getPrimaryColor()
-
       let fillColor = primaryColor
       if (primaryColor.startsWith('hsl')) {
         const baseColor = primaryColor.replace(')', '')
@@ -358,17 +309,17 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
       // 绘制大柱（带圆角）
       ctx.beginPath()
-      if (ctx.roundRect) {
-        ctx.roundRect(x, y, barWidth, barHeight, 12)
+      if ((ctx as any).roundRect) {
+        ;(ctx as any).roundRect(x, y, barW, h, 12)
       } else {
         const radius = 12
         ctx.moveTo(x + radius, y)
-        ctx.lineTo(x + barWidth - radius, y)
-        ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius)
-        ctx.lineTo(x + barWidth, y + barHeight - radius)
-        ctx.quadraticCurveTo(x + barWidth, y + barHeight, x + barWidth - radius, y + barHeight)
-        ctx.lineTo(x + radius, y + barHeight)
-        ctx.quadraticCurveTo(x, y + barHeight, x, y + barHeight - radius)
+        ctx.lineTo(x + barW - radius, y)
+        ctx.quadraticCurveTo(x + barW, y, x + barW, y + radius)
+        ctx.lineTo(x + barW, y + h - radius)
+        ctx.quadraticCurveTo(x + barW, y + h, x + barW - radius, y + h)
+        ctx.lineTo(x + radius, y + h)
+        ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
         ctx.lineTo(x, y + radius)
         ctx.quadraticCurveTo(x, y, x + radius, y)
         ctx.closePath()
@@ -382,27 +333,21 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   const drawSpectrum = useCallback(
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
       ctx.clearRect(0, 0, width, height)
+      const barCountSpectrum = 64
+      const barW = width / barCountSpectrum
 
-      const barCount_ = Math.min(64, dataArray.length)
-      const barWidth = width / barCount_
-
-      // 获取主题色
-      const getPrimaryColor = () => {
-        if (typeof window !== 'undefined') {
-          const style = getComputedStyle(document.documentElement)
-          return style.getPropertyValue('--primary').trim() || 'hsl(35 97% 55%)'
-        }
-        return 'hsl(35 97% 55%)'
-      }
       const primaryColor = getPrimaryColor()
 
-      for (let i = 0; i < barCount_; i++) {
-        const value = dataArray[i] / 255
-        const barHeight = value * height
+      for (let i = 0; i < barCountSpectrum; i++) {
+        // 映射到实际数据数组的索引（确保能访问所有数据）
+        const dataIndex = Math.floor((i / barCountSpectrum) * dataArray.length)
+        const value = Math.max(0, Math.min(1, dataArray[dataIndex] / 255))
 
-        const x = i * barWidth
+        const x = i * barW
+        const actualBarWidth = i === barCountSpectrum - 1 ? width - x : barW
+        const h = value * height
+        const y = height - h
 
-        // 根据频率高度使用不同透明度
         let fillColor = primaryColor
         if (primaryColor.startsWith('hsl')) {
           const baseColor = primaryColor.replace(')', '')
@@ -410,7 +355,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         }
 
         ctx.fillStyle = fillColor
-        ctx.fillRect(x, height - barHeight, barWidth, barHeight)
+        ctx.fillRect(x, y, actualBarWidth, h)
       }
     },
     []
@@ -424,19 +369,25 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
       const canvas = canvasRef.current
       const ctx = canvas.getContext('2d')
-
       if (!ctx) return
 
-      // 设置 canvas 尺寸
+      // 设置 canvas 尺寸，确保完全填满容器
       const rect = canvas.getBoundingClientRect()
-      if (canvas.width !== rect.width || canvas.height !== rect.height) {
-        canvas.width = rect.width * window.devicePixelRatio
-        canvas.height = rect.height * window.devicePixelRatio
-        ctx.scale(window.devicePixelRatio, window.devicePixelRatio)
+      const dpr = window.devicePixelRatio || 1
+      const displayWidth = Math.ceil(rect.width)
+      const displayHeight = Math.ceil(rect.height)
+
+      // 只在尺寸有变化时重设 scale
+      if (canvas.width !== displayWidth * dpr || canvas.height !== displayHeight * dpr) {
+        canvas.width = displayWidth * dpr
+        canvas.height = displayHeight * dpr
+        ctx.setTransform(1, 0, 0, 1, 0, 0) // 重置变换
+        ctx.scale(dpr, dpr)
       }
 
-      const width = rect.width
-      const height = rect.height
+      // 使用精确的宽度和高度，确保完全填满
+      const width = displayWidth
+      const height = displayHeight
       const dataArray = dataArrayRef.current
 
       // 获取频率数据
@@ -510,7 +461,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     <canvas
       ref={canvasRef}
       className={cn('h-full w-full', className)}
-      style={{ display: 'block' }}
+      style={{ display: 'block', width: '100%', height: '100%' }}
     />
   )
 }

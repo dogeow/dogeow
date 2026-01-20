@@ -17,6 +17,7 @@ import { useMusicStore } from '@/stores/musicStore'
 import { AiDialog } from '@/components/app/AiDialog'
 import { useMediaKeys } from './hooks/useMediaKeys'
 import { useMediaSession } from './hooks/useMediaSession'
+import { AudioVisualizer } from './music/AudioVisualizer'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
@@ -97,11 +98,8 @@ export function AppLauncher() {
       if (audioElement) {
         audioElement.play().catch(console.error)
       }
-    } else if (playMode === 'all') {
-      // 列表循环：播放下一首，如果到末尾则重新开始
-      switchTrack('next')
     } else {
-      // 不循环：播放下一首，如果到末尾则停止
+      // 列表循环、不循环、随机播放：播放下一首，如果到末尾则循环到第一首
       switchTrack('next')
     }
   }, [playMode, resetCurrentTime, audioRef, switchTrack])
@@ -263,6 +261,20 @@ export function AppLauncher() {
         id="app-launcher-bar"
         className="bg-background/80 relative z-50 flex h-full w-full flex-col px-2 backdrop-blur-md"
       >
+        {/* 音频可视化 - 作为背景层，覆盖整个 app-launcher-bar，包括 padding */}
+        {displayMode === 'music' && audioManager.analyserNode && (
+          <div className="absolute inset-0 -right-2 -left-2 overflow-hidden">
+            <AudioVisualizer
+              analyserNode={audioManager.analyserNode}
+              isPlaying={isPlaying}
+              type="spectrum"
+              barCount={32}
+              showGradient={true}
+              className="h-full w-full"
+            />
+          </div>
+        )}
+
         {renderContent()}
 
         <audio

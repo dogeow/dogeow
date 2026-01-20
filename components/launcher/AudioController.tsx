@@ -393,18 +393,7 @@ export function AudioController({
         }
       }
 
-      // 根据循环模式决定是否继续播放
-      if (
-        playMode === 'none' &&
-        direction === 'next' &&
-        currentIndex === availableTracks.length - 1
-      ) {
-        // 不循环模式且到达末尾，停止播放
-        setIsPlaying(false)
-        setAudioError(null)
-        return
-      }
-
+      // 手动切换时总是循环（最后一首时点击下一首会循环到第一首）
       setCurrentTrack(availableTracks[nextIndex].path)
       setAudioError(null)
       setIsPlaying(true)
