@@ -218,7 +218,7 @@ EmptyState.displayName = 'EmptyState'
 
 // 提取笔记卡片组件
 const NoteCard = memo(({ note }: { note: Note }) => (
-  <Link href={`/note/${note.id}`} passHref legacyBehavior>
+  <Link href={`/note/${note.id}`}>
     <Card className="hover:border-primary cursor-pointer transition-all duration-200 hover:shadow-md">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">

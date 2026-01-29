@@ -99,11 +99,11 @@ export default function NoteNodeEditor({
         setSummary(node.summary || '')
         await hydrateEditorStorage(node.slug)
       } else if (templateNode) {
-        // 创建子节点时，不默认填入标题，只继承标签和摘要
+        // 创建子节点：简易模式只填标题，不加载父节点内容
         setTitle('')
         setTags(templateNode.tags || [])
         setSummary(templateNode.summary || '')
-        await hydrateEditorStorage(templateNode.slug)
+        resetEditorStorage()
       } else {
         setTitle('')
         setTags([])
@@ -147,6 +147,9 @@ export default function NoteNodeEditor({
     setTags(tags.filter(tag => tag !== tagToRemove))
   }
 
+  // 是否为「创建子节点」简易模式（只填标题即可）
+  const isSimpleCreateChild = !node && !!templateNode
+
   // 保存节点
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
@@ -159,13 +162,22 @@ export default function NoteNodeEditor({
     try {
       setIsSaving(true)
 
-      const data = {
-        title: title.trim(),
-        tags: tags,
-        summary: summary.trim() || undefined,
-        content,
-        content_markdown: markdown,
-      }
+      const data = isSimpleCreateChild
+        ? {
+            title: title.trim(),
+            tags: templateNode?.tags || [],
+            summary: templateNode?.summary || '',
+            content:
+              '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}',
+            content_markdown: '',
+          }
+        : {
+            title: title.trim(),
+            tags,
+            summary: summary.trim() || undefined,
+            content,
+            content_markdown: markdown,
+          }
 
       if (node) {
         // 更新节点
@@ -207,7 +219,7 @@ export default function NoteNodeEditor({
     } finally {
       setIsSaving(false)
     }
-  }, [title, tags, summary, node, templateNode, onSuccess, onOpenChange])
+  }, [title, tags, summary, node, templateNode, isSimpleCreateChild, onSuccess, onOpenChange])
 
   // 添加快捷键支持
   useEffect(() => {
@@ -231,10 +243,16 @@ export default function NoteNodeEditor({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
-        <Dialog.Content className="border-border bg-background text-foreground fixed top-1/2 left-1/2 z-50 flex max-h-[90vh] w-[90vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border shadow-lg">
+        <Dialog.Content
+          className={
+            isSimpleCreateChild
+              ? 'border-border bg-background text-foreground fixed top-1/2 left-1/2 z-50 w-[90vw] max-w-sm -translate-x-1/2 -translate-y-1/2 rounded-lg border p-4 shadow-lg'
+              : 'border-border bg-background text-foreground fixed top-1/2 left-1/2 z-50 flex max-h-[90vh] w-[90vw] max-w-4xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border shadow-lg'
+          }
+        >
           <div className="border-border flex items-center justify-between border-b p-4">
             <Dialog.Title className="text-lg font-semibold">
-              {node ? '编辑节点' : '新建节点'}
+              {node ? '编辑节点' : isSimpleCreateChild ? '创建子节点' : '新建节点'}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button className="hover:bg-muted rounded p-1">
@@ -243,99 +261,139 @@ export default function NoteNodeEditor({
             </Dialog.Close>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4">
-            {/* 标题输入框 */}
-            <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium">标题 *</label>
-              <Input
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder={
-                  node ? '请输入节点标题' : templateNode ? '请输入节点标题' : '请输入节点标题'
-                }
-                className="bg-background text-foreground placeholder:text-muted-foreground w-full"
-              />
-            </div>
-
-            {/* 标签输入 */}
-            <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium">标签</label>
-              <div className="mb-2 flex gap-2">
+          {isSimpleCreateChild ? (
+            <>
+              <div className="p-4">
+                <label className="mb-2 block text-sm font-medium">标题</label>
                 <Input
-                  value={tagInput}
-                  onChange={e => setTagInput(e.target.value)}
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  placeholder="输入子节点名称"
+                  className="bg-background text-foreground placeholder:text-muted-foreground w-full"
                   onKeyDown={e => {
                     if (e.key === 'Enter') {
                       e.preventDefault()
-                      handleAddTag()
+                      if (title.trim() && !isSaving) handleSave()
                     }
                   }}
-                  placeholder="输入标签后按回车"
-                  className="bg-background text-foreground placeholder:text-muted-foreground flex-1"
+                  autoFocus
                 />
-                <Button onClick={handleAddTag} variant="outline">
-                  添加
+              </div>
+              <div className="border-border flex justify-end gap-2 border-t p-4">
+                <Dialog.Close asChild>
+                  <Button variant="outline" disabled={isSaving}>
+                    取消
+                  </Button>
+                </Dialog.Close>
+                <Button onClick={handleSave} disabled={isSaving || !title.trim()}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      创建中...
+                    </>
+                  ) : (
+                    '创建'
+                  )}
                 </Button>
               </div>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {tags.map(tag => (
-                    <span
-                      key={tag}
-                      className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded px-2 py-1 text-sm"
-                    >
-                      {tag}
-                      <button
-                        onClick={() => handleRemoveTag(tag)}
-                        className="hover:text-primary/80"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </span>
-                  ))}
+            </>
+          ) : (
+            <>
+              <div className="flex-1 overflow-y-auto p-4">
+                {/* 标题输入框 */}
+                <div className="mb-4">
+                  <label className="mb-2 block text-sm font-medium">标题 *</label>
+                  <Input
+                    value={title}
+                    onChange={e => setTitle(e.target.value)}
+                    placeholder={
+                      node ? '请输入节点标题' : templateNode ? '请输入节点标题' : '请输入节点标题'
+                    }
+                    className="bg-background text-foreground placeholder:text-muted-foreground w-full"
+                  />
                 </div>
-              )}
-            </div>
 
-            {/* 摘要输入 */}
-            <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium">摘要</label>
-              <textarea
-                value={summary}
-                onChange={e => setSummary(e.target.value)}
-                placeholder="请输入节点摘要"
-                className="border-border bg-background text-foreground placeholder:text-muted-foreground min-h-[80px] w-full resize-y rounded-md border p-2"
-              />
-            </div>
+                {/* 标签输入 */}
+                <div className="mb-4">
+                  <label className="mb-2 block text-sm font-medium">标签</label>
+                  <div className="mb-2 flex gap-2">
+                    <Input
+                      value={tagInput}
+                      onChange={e => setTagInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          handleAddTag()
+                        }
+                      }}
+                      placeholder="输入标签后按回车"
+                      className="bg-background text-foreground placeholder:text-muted-foreground flex-1"
+                    />
+                    <Button onClick={handleAddTag} variant="outline">
+                      添加
+                    </Button>
+                  </div>
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="bg-primary/10 text-primary inline-flex items-center gap-1 rounded px-2 py-1 text-sm"
+                        >
+                          {tag}
+                          <button
+                            onClick={() => handleRemoveTag(tag)}
+                            className="hover:text-primary/80"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
-            {/* 编辑器 */}
-            <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium">内容</label>
-              {isLoaded && <TailwindAdvancedEditor />}
-            </div>
-          </div>
+                {/* 摘要输入 */}
+                <div className="mb-4">
+                  <label className="mb-2 block text-sm font-medium">摘要</label>
+                  <textarea
+                    value={summary}
+                    onChange={e => setSummary(e.target.value)}
+                    placeholder="请输入节点摘要"
+                    className="border-border bg-background text-foreground placeholder:text-muted-foreground min-h-[80px] w-full resize-y rounded-md border p-2"
+                  />
+                </div>
 
-          {/* 底部按钮 */}
-          <div className="border-border flex justify-end gap-2 border-t p-4">
-            <Dialog.Close asChild>
-              <Button variant="outline" disabled={isSaving}>
-                取消
-              </Button>
-            </Dialog.Close>
-            <Button onClick={handleSave} disabled={isSaving || !title.trim()}>
-              {isSaving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  保存中...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  保存
-                </>
-              )}
-            </Button>
-          </div>
+                {/* 编辑器 */}
+                <div className="mb-4">
+                  <label className="mb-2 block text-sm font-medium">内容</label>
+                  {isLoaded && <TailwindAdvancedEditor />}
+                </div>
+              </div>
+
+              {/* 底部按钮 */}
+              <div className="border-border flex justify-end gap-2 border-t p-4">
+                <Dialog.Close asChild>
+                  <Button variant="outline" disabled={isSaving}>
+                    取消
+                  </Button>
+                </Dialog.Close>
+                <Button onClick={handleSave} disabled={isSaving || !title.trim()}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      保存中...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" />
+                      保存
+                    </>
+                  )}
+                </Button>
+              </div>
+            </>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

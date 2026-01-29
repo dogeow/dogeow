@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Plus, Edit2, Link as LinkIcon, X, Check } from 'lucide-react'
+import { Plus, Edit2, Link as LinkIcon, X, Check, FileText, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -14,6 +14,9 @@ interface NoteNodeActionPanelProps {
   isAdmin: boolean
   onCreateChildNode: () => void
   onCreateLink: () => void
+  onViewArticle?: () => void
+  onEditNode?: () => void
+  onDeleteNode?: () => void
   onNodeUpdated: () => void
   onClose: () => void
 }
@@ -24,6 +27,9 @@ export default function NoteNodeActionPanel({
   isAdmin,
   onCreateChildNode,
   onCreateLink,
+  onViewArticle,
+  onEditNode,
+  onDeleteNode,
   onNodeUpdated,
   onClose,
 }: NoteNodeActionPanelProps) {
@@ -178,29 +184,14 @@ export default function NoteNodeActionPanel({
             </Button>
           </div>
         ) : (
-          <>
-            <div
-              className="flex-1 truncate font-medium"
-              style={{ color: themeColors.foreground }}
-              title={activeNode.title}
-            >
-              {activeNode.title}
-            </div>
-            {isAdmin && (
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleStartEditName}
-                style={{
-                  padding: '4px 8px',
-                  minWidth: 'auto',
-                }}
-                title="修改名称"
-              >
-                <Edit2 className="h-4 w-4" />
-              </Button>
-            )}
-          </>
+          <div
+            className="flex-1 cursor-pointer truncate font-medium"
+            style={{ color: themeColors.foreground }}
+            title={isAdmin ? '点击编辑名称' : activeNode.title}
+            onClick={isAdmin ? handleStartEditName : undefined}
+          >
+            {activeNode.title}
+          </div>
         )}
         <Button
           size="sm"
@@ -217,33 +208,80 @@ export default function NoteNodeActionPanel({
       </div>
 
       {/* 操作按钮 */}
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2">
+        {activeNode.slug && onViewArticle && (
+          <Button
+            onClick={onViewArticle}
+            size="sm"
+            variant="outline"
+            title="查看文章"
+            style={{
+              borderColor: themeColors.border,
+              padding: '4px 8px',
+              minWidth: 'auto',
+            }}
+          >
+            <FileText className="h-4 w-4" />
+          </Button>
+        )}
+        {isAdmin && onEditNode && (
+          <Button
+            onClick={onEditNode}
+            size="sm"
+            variant="outline"
+            title="编辑节点"
+            style={{
+              borderColor: themeColors.border,
+              padding: '4px 8px',
+              minWidth: 'auto',
+            }}
+          >
+            <Edit2 className="h-4 w-4" />
+          </Button>
+        )}
         {isAdmin && (
           <Button
             onClick={onCreateChildNode}
-            size={isMobile ? 'sm' : 'default'}
+            size="sm"
+            title="创建子节点"
             style={{
               background: '#10b981',
               color: '#ffffff',
-              flex: isMobile ? '1 1 calc(50% - 4px)' : 'none',
+              padding: '4px 8px',
+              minWidth: 'auto',
             }}
           >
-            <Plus className="mr-2 h-4 w-4" />
-            创建子节点
+            <Plus className="h-4 w-4" />
           </Button>
         )}
         {isAdmin && (
           <Button
             onClick={onCreateLink}
-            size={isMobile ? 'sm' : 'default'}
+            size="sm"
             variant="outline"
+            title="链接节点"
             style={{
-              flex: isMobile ? '1 1 calc(50% - 4px)' : 'none',
               borderColor: themeColors.border,
+              padding: '4px 8px',
+              minWidth: 'auto',
             }}
           >
-            <LinkIcon className="mr-2 h-4 w-4" />
-            链接节点
+            <LinkIcon className="h-4 w-4" />
+          </Button>
+        )}
+        {isAdmin && onDeleteNode && (
+          <Button
+            onClick={onDeleteNode}
+            size="sm"
+            variant="outline"
+            title="删除节点"
+            style={{
+              borderColor: themeColors.border,
+              padding: '4px 8px',
+              minWidth: 'auto',
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
           </Button>
         )}
       </div>

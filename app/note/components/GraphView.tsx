@@ -26,7 +26,8 @@ import { NoteArticleDialog } from './NoteArticleDialog'
 import { NoteGraphEmptyState } from './NoteGraphEmptyState'
 import { NoteGraphLoadingState } from './NoteGraphLoadingState'
 import NoteNodeActionPanel from './NoteNodeActionPanel'
-import type { NodeData, ForceGraphInstance } from '../types/graph'
+import NoteLinkActionPanel from './NoteLinkActionPanel'
+import type { NodeData, LinkData, ForceGraphInstance } from '../types/graph'
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
@@ -43,6 +44,7 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   const isDraggingRef = useRef<boolean>(false)
   const [hoverNode, setHoverNode] = useState<NodeData | null>(null)
   const [activeNode, setActiveNode] = useState<NodeData | null>(null)
+  const [activeLink, setActiveLink] = useState<LinkData | null>(null)
   const [dialogOpen, setDialogOpen] = useState<boolean>(false)
   const [showNeighborsOnly, setShowNeighborsOnly] = useState<boolean>(false)
   const [editorOpen, setEditorOpen] = useState<boolean>(false)
@@ -50,6 +52,10 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   const [templateNode, setTemplateNode] = useState<WikiNode | null>(null)
   const [linkCreatorOpen, setLinkCreatorOpen] = useState<boolean>(false)
   const [isAdmin] = useState<boolean>(() => isAdminSync())
+  const [selectTargetCallback, setSelectTargetCallback] = useState<
+    ((nodeId: number) => void) | null
+  >(null)
+  const [isSelectingFromGraph, setIsSelectingFromGraph] = useState<boolean>(false)
 
   // 使用自定义 hooks
   const { nodes, setNodes, links, setLinks, loading, fgRef, loadGraphData, resumeGraphAnimation } =
@@ -86,6 +92,18 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   const handleNodeClick = useCallback(
     (node: { [others: string]: any; id?: string | number }, event?: MouseEvent) => {
       const n = node as NodeData
+
+      // 如果正在从图谱选择目标节点，则选择为目标节点（不需要对话框打开）
+      if (selectTargetCallback) {
+        selectTargetCallback(Number(n.id))
+        setSelectTargetCallback(null)
+        setIsSelectingFromGraph(false)
+        return
+      }
+
+      // 点击节点时清除链接选择
+      setActiveLink(null)
+
       if (String(activeNode?.id) === String(n.id)) {
         // 重复点击已选中的节点，取消选中
         setActiveNode(null)
@@ -97,7 +115,30 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
       // 保持当前缩放级别，防止点击触发默认缩放
       requestAnimationFrame(() => restoreView(fgRef))
     },
-    [activeNode, restoreView, fgRef]
+    [activeNode, restoreView, fgRef, selectTargetCallback]
+  )
+
+  // 处理链接点击
+  const handleLinkClick = useCallback(
+    (
+      link: { [others: string]: any; source?: unknown; target?: unknown; id?: number },
+      event?: MouseEvent
+    ) => {
+      const l = link as LinkData
+
+      // 点击链接时清除节点选择
+      setActiveNode(null)
+      setShowNeighborsOnly(false)
+
+      if (activeLink && activeLink.id === l.id) {
+        // 重复点击已选中的链接，取消选中
+        setActiveLink(null)
+      } else {
+        // 选中新链接
+        setActiveLink(l)
+      }
+    },
+    [activeLink]
   )
 
   // 处理节点拖拽
@@ -243,6 +284,7 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   // 处理取消选中
   const handleClearSelection = useCallback(() => {
     setActiveNode(null)
+    setActiveLink(null)
     setShowNeighborsOnly(false)
   }, [])
 
@@ -267,17 +309,17 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   // 链接颜色获取函数
   const linkColor = useCallback(
     (link: unknown) => {
-      return createLinkColorGetter(activeNode, graphPalette)(link as any)
+      return createLinkColorGetter(activeNode, activeLink, graphPalette)(link as any)
     },
-    [activeNode, graphPalette]
+    [activeNode, activeLink, graphPalette]
   )
 
   // 链接宽度获取函数
   const linkWidth = useCallback(
     (link: unknown) => {
-      return createLinkWidthGetter(activeNode)(link as any)
+      return createLinkWidthGetter(activeNode, activeLink)(link as any)
     },
-    [activeNode]
+    [activeNode, activeLink]
   )
 
   return (
@@ -325,19 +367,34 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
           onNodeDrag={handleNodeDrag}
           onNodeDragEnd={handleNodeDragEnd}
           onNodeRightClick={handleNodeRightClick}
-          nodeCanvasObjectMode={() => 'after'}
+          onLinkClick={handleLinkClick}
+          nodeCanvasObjectMode={() => 'replace'}
           nodeCanvasObject={nodeCanvasObject}
           nodePointerAreaPaint={(node, color, ctx) => {
+            // 绘制透明的点击区域，保持点击功能但不可见
             const n = node as NodeData
             ctx.fillStyle = color
             ctx.beginPath()
-            ctx.arc(n.x ?? 0, n.y ?? 0, 5, 0, 2 * Math.PI, false)
+            ctx.arc(n.x ?? 0, n.y ?? 0, 8, 0, 2 * Math.PI, false)
             ctx.fill()
           }}
           cooldownTime={showNeighborsOnly ? 2000 : 3000}
           d3AlphaDecay={0.0228}
           d3VelocityDecay={0.4}
           d3AlphaMin={0.001}
+          nodeRelSize={8}
+          linkDistance={120}
+          linkStrength={0.05}
+          d3Force={(d3: any) => {
+            // 大幅增加节点之间的排斥力，避免拥挤
+            const chargeForce = d3.forceManyBody().strength(-500)
+            // 增加碰撞检测，确保节点不重叠，半径包括节点和标签的空间
+            const collisionForce = d3.forceCollide().radius(50)
+            return {
+              charge: chargeForce,
+              collision: collisionForce,
+            }
+          }}
           onZoom={transform => handleZoom(fgRef, transform)}
           onEngineStop={() => {
             if (!fgRef.current) return
@@ -392,23 +449,54 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
           summary: n.summary,
         }))}
         open={linkCreatorOpen}
-        onOpenChange={setLinkCreatorOpen}
+        onOpenChange={open => {
+          setLinkCreatorOpen(open)
+          // 只有在不是从图谱选择模式时才清除回调
+          if (!open && !isSelectingFromGraph) {
+            setSelectTargetCallback(null)
+          }
+        }}
         onSuccess={() => {
           loadGraphData()
         }}
         sourceNodeId={activeNode ? Number(activeNode.id) : undefined}
+        onSelectTargetFromGraph={callback => {
+          setIsSelectingFromGraph(true)
+          setSelectTargetCallback(() => callback)
+        }}
+        onCancelSelectFromGraph={() => {
+          setIsSelectingFromGraph(false)
+          setSelectTargetCallback(null)
+        }}
       />
 
       {/* 节点操作面板 */}
-      <NoteNodeActionPanel
-        activeNode={activeNode}
-        themeColors={themeColors}
-        isAdmin={isAdmin}
-        onCreateChildNode={handleCreateChildNode}
-        onCreateLink={handleCreateLink}
-        onNodeUpdated={loadGraphData}
-        onClose={handleClearSelection}
-      />
+      {activeNode && (
+        <NoteNodeActionPanel
+          activeNode={activeNode}
+          themeColors={themeColors}
+          isAdmin={isAdmin}
+          onCreateChildNode={handleCreateChildNode}
+          onCreateLink={handleCreateLink}
+          onViewArticle={handleViewArticle}
+          onEditNode={handleEditNode}
+          onDeleteNode={handleDeleteNode}
+          onNodeUpdated={loadGraphData}
+          onClose={handleClearSelection}
+        />
+      )}
+
+      {/* 链接操作面板 */}
+      {activeLink && (
+        <NoteLinkActionPanel
+          activeLink={activeLink}
+          nodes={nodes}
+          themeColors={themeColors}
+          isAdmin={isAdmin}
+          onLinkDeleted={loadGraphData}
+          onClose={handleClearSelection}
+        />
+      )}
     </div>
   )
 }

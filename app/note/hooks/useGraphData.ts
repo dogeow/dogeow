@@ -32,8 +32,12 @@ export function useGraphData() {
       setLoading(true)
       const data = await getWikiGraph()
 
+      // 确保 nodes/links 为数组（后端 filter 后可能变成对象）
+      const rawNodes = Array.isArray(data.nodes) ? data.nodes : []
+      const rawLinks = Array.isArray(data.links) ? data.links : []
+
       // 转换节点数据
-      const normalizedNodes: NodeData[] = data.nodes.map(node => ({
+      const normalizedNodes: NodeData[] = rawNodes.map(node => ({
         id: node.id,
         title: node.title,
         slug: node.slug,
@@ -42,7 +46,7 @@ export function useGraphData() {
       }))
 
       // 转换链接数据
-      const normalizedLinks: LinkData[] = data.links.map(link => ({
+      const normalizedLinks: LinkData[] = rawLinks.map(link => ({
         id: link.id,
         source: link.source,
         target: link.target,
