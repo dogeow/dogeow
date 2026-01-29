@@ -19,11 +19,11 @@ export function useGraphPalette(isDark: boolean, themeColors: ThemeColors): Grap
       background: themeColors.background || fallback.background,
       nodeDefault: themeColors.foreground || fallback.foreground,
       nodeActive: themeColors.primary || fallback.primary,
-      nodeNeighbor: themeColors.ring || fallback.ring,
+      nodeNeighbor: themeColors.foreground || fallback.foreground, // 使用与默认节点相同的颜色
       nodeHover: themeColors.accent || fallback.accent,
       labelDefault: themeColors.mutedForeground || fallback.mutedForeground,
       labelActive: themeColors.primary || fallback.primary,
-      labelNeighbor: themeColors.ring || fallback.ring,
+      labelNeighbor: themeColors.foreground || fallback.foreground, // 使用更亮的颜色
       linkMuted: mutedLink,
       linkActive: activeLink,
       border: themeColors.border || fallback.border,
