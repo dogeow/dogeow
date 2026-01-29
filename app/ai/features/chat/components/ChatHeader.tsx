@@ -37,6 +37,9 @@ export const ChatHeader = React.memo<ChatHeaderProps>(
           <div className="m-0 flex min-w-0 flex-1 items-center gap-3">
             {useTabs ? (
               <>
+                <DialogTitle className="sr-only">
+                  {chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'}
+                </DialogTitle>
                 <Tabs
                   value={chatMode}
                   onValueChange={v => onChatModeChange(v as 'ai' | 'knowledge')}
