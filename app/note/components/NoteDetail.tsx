@@ -32,10 +32,13 @@ export default function NoteDetail() {
   if (error) return <div>加载失败</div>
   if (!note) return <div>加载中...</div>
 
+  // 临时修复：移除标题末尾的"0"（如果存在的话）
+  const cleanTitle = note.title?.replace(/0$/, '') || '(无标题)'
+
   return (
     <div className="mx-auto mt-4 max-w-4xl">
       <NoteDetailHeader
-        title={note.title}
+        title={cleanTitle}
         isDraft={note.is_draft}
         noteId={id}
         onDelete={handleDelete}

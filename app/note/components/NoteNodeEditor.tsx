@@ -99,7 +99,8 @@ export default function NoteNodeEditor({
         setSummary(node.summary || '')
         await hydrateEditorStorage(node.slug)
       } else if (templateNode) {
-        setTitle(templateNode.title ? `${templateNode.title} - 新节点` : '')
+        // 创建子节点时，不默认填入标题，只继承标签和摘要
+        setTitle('')
         setTags(templateNode.tags || [])
         setSummary(templateNode.summary || '')
         await hydrateEditorStorage(templateNode.slug)
@@ -249,7 +250,9 @@ export default function NoteNodeEditor({
               <Input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
-                placeholder="请输入节点标题"
+                placeholder={
+                  node ? '请输入节点标题' : templateNode ? '请输入节点标题' : '请输入节点标题'
+                }
                 className="bg-background text-foreground placeholder:text-muted-foreground w-full"
               />
             </div>

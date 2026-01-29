@@ -25,6 +25,7 @@ import { NoteGraphToolbar } from './NoteGraphToolbar'
 import { NoteArticleDialog } from './NoteArticleDialog'
 import { NoteGraphEmptyState } from './NoteGraphEmptyState'
 import { NoteGraphLoadingState } from './NoteGraphLoadingState'
+import NoteNodeActionPanel from './NoteNodeActionPanel'
 import type { NodeData, ForceGraphInstance } from '../types/graph'
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -155,6 +156,15 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   const handleNewNode = useCallback(() => {
     setEditingNode(null)
     const base = activeNode ? nodeDataToWikiNode(activeNode) : null
+    setTemplateNode(base)
+    setEditorOpen(true)
+  }, [activeNode])
+
+  // 处理创建子节点（以当前选中节点为模板）
+  const handleCreateChildNode = useCallback(() => {
+    if (!activeNode) return
+    setEditingNode(null)
+    const base = nodeDataToWikiNode(activeNode)
     setTemplateNode(base)
     setEditorOpen(true)
   }, [activeNode])
@@ -389,7 +399,16 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
         sourceNodeId={activeNode ? Number(activeNode.id) : undefined}
       />
 
-      {/* 管理员操作菜单已移到 NoteGraphToolbar 中显示 */}
+      {/* 节点操作面板 */}
+      <NoteNodeActionPanel
+        activeNode={activeNode}
+        themeColors={themeColors}
+        isAdmin={isAdmin}
+        onCreateChildNode={handleCreateChildNode}
+        onCreateLink={handleCreateLink}
+        onNodeUpdated={loadGraphData}
+        onClose={handleClearSelection}
+      />
     </div>
   )
 }

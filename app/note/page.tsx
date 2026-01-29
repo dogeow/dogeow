@@ -1,7 +1,7 @@
 'use client'
 
 import './note-styles.css'
-import { useState, useEffect, useMemo, memo, useRef } from 'react'
+import { useState, useEffect, useMemo, memo, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { apiRequest } from '@/lib/api'
 import { Calendar, Lock, List, Network, Plus, Link as LinkIcon, Search, X } from 'lucide-react'
@@ -13,6 +13,8 @@ import { zhCN } from 'date-fns/locale'
 import NoteSpeedDial from './components/NoteSpeedDial'
 import GraphView from './components/GraphView'
 import { normalizeNotes } from './utils/api'
+import { extractTextFromJSON } from '@/lib/helpers/wordCount'
+import { getWikiGraph } from '@/lib/api/wiki'
 
 interface Note {
   id: number
@@ -46,6 +48,141 @@ const getContentPreview = (content: string, maxLength = CONTENT_PREVIEW_MAX_LENG
     .trim()
 
   return plainText.length > maxLength ? `${plainText.substring(0, maxLength)}...` : plainText
+}
+
+/**
+ * 判断笔记是否有内容
+ * 在图谱创建的，只有填写内容才是笔记
+ */
+const hasNoteContent = (note: Note): boolean => {
+  // 优先检查 content_markdown
+  if (note.content_markdown && note.content_markdown.trim()) {
+    return true
+  }
+
+  // 如果 content_markdown 不存在，检查 content
+  if (note.content) {
+    try {
+      const parsedContent = JSON.parse(note.content)
+
+      // 先尝试使用原有的函数
+      let extractedText = extractTextFromJSON(parsedContent)
+
+      // 如果原有函数没有提取到文本，尝试使用增强版本
+      if (!extractedText || !extractedText.trim()) {
+        extractedText = extractTextFromEditorJSON(parsedContent)
+      }
+
+      return extractedText.trim().length > 0
+    } catch {
+      // 如果不是有效的 JSON，可能是纯文本，直接检查
+      return note.content.trim().length > 0
+    }
+  }
+
+  return false
+}
+
+/**
+ * 从编辑器JSON中提取文本的增强版本
+ */
+const extractTextFromEditorJSON = (jsonContent: unknown): string => {
+  if (!jsonContent || typeof jsonContent !== 'object') {
+    return ''
+  }
+
+  let text = ''
+
+  function traverse(node: unknown): void {
+    if (!node || typeof node !== 'object') return
+
+    const nodeObj = node as Record<string, unknown>
+
+    // 处理文本节点
+    if (nodeObj.type === 'text' && typeof nodeObj.text === 'string') {
+      text += nodeObj.text
+    }
+    // 处理段落间的换行
+    else if (nodeObj.type === 'paragraph' && text && !text.endsWith('\n')) {
+      // 在段落之间添加换行，但不在开头添加
+      if (text.length > 0) {
+        text += '\n'
+      }
+    }
+
+    // 递归处理内容
+    if (nodeObj.content && Array.isArray(nodeObj.content)) {
+      nodeObj.content.forEach(traverse)
+    }
+  }
+
+  traverse(jsonContent)
+  return text.trim()
+}
+
+/**
+ * 从笔记中获取预览文本
+ * 优先使用 content_markdown，如果不存在则从 JSON 格式的 content 中提取文本
+ */
+const getNotePreviewText = (note: Note, maxLength = CONTENT_PREVIEW_MAX_LENGTH): string => {
+  // 优先使用 content_markdown
+  if (note.content_markdown && note.content_markdown.trim()) {
+    return getContentPreview(note.content_markdown, maxLength)
+  }
+
+  // 如果 content_markdown 不存在，尝试从 JSON 格式的 content 中提取文本
+  if (note.content && note.content.trim()) {
+    // 检查是否是 JSON 字符串（以 { 或 [ 开头）
+    const trimmedContent = note.content.trim()
+    if (trimmedContent.startsWith('{') || trimmedContent.startsWith('[')) {
+      try {
+        const parsedContent = JSON.parse(trimmedContent)
+
+        // 开发环境下输出调试信息
+        if (process.env.NODE_ENV === 'development') {
+          console.log('笔记JSON结构:', parsedContent)
+        }
+
+        // 先尝试使用原有的函数
+        let extractedText = extractTextFromJSON(parsedContent)
+
+        // 如果原有函数没有提取到文本，尝试使用增强版本
+        if (!extractedText || !extractedText.trim()) {
+          extractedText = extractTextFromEditorJSON(parsedContent)
+        }
+
+        // 开发环境下输出调试信息
+        if (process.env.NODE_ENV === 'development') {
+          console.log('提取的文本:', extractedText)
+        }
+
+        if (extractedText && extractedText.trim()) {
+          // 清理文本：移除多余的换行和空白
+          const cleanedText = extractedText
+            .replace(/\n+/g, ' ') // 将多个换行替换为单个空格
+            .replace(/\s+/g, ' ') // 将多个空白字符替换为单个空格
+            .trim()
+
+          return cleanedText.length > maxLength
+            ? `${cleanedText.substring(0, maxLength)}...`
+            : cleanedText
+        }
+
+        // 如果提取的文本为空，但JSON解析成功，说明是空的编辑器内容
+        // 返回空字符串（会显示"无内容"）
+        return ''
+      } catch (error) {
+        console.warn('解析笔记JSON内容失败:', error)
+        // 如果不是有效的 JSON，可能是纯文本，直接使用
+        return getContentPreview(note.content, maxLength)
+      }
+    } else {
+      // 不是 JSON 格式，直接作为纯文本处理
+      return getContentPreview(note.content, maxLength)
+    }
+  }
+
+  return ''
 }
 
 // 提取加载骨架屏组件
@@ -87,7 +224,7 @@ const NoteCard = memo(({ note }: { note: Note }) => (
         <div className="flex items-start justify-between">
           <h3 className="flex items-center text-base font-medium hover:underline">
             {note.title || '(无标题)'}
-            {note.is_draft && <Lock className="text-muted-foreground ml-2 h-4 w-4" />}
+            {note.is_draft ? <Lock className="text-muted-foreground ml-2 h-4 w-4" /> : null}
           </h3>
         </div>
 
@@ -158,6 +295,7 @@ export default function NotePage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [graphQuery, setGraphQuery] = useState<string>('')
   const [isSearchExpanded, setIsSearchExpanded] = useState<boolean>(false)
+  const [graphNodeCount, setGraphNodeCount] = useState<number>(0)
   const graphNewNodeRef = useRef<(() => void) | null>(null)
   const graphCreateLinkRef = useRef<(() => void) | null>(null)
   const searchInputRef = useRef<HTMLInputElement | null>(null)
@@ -181,6 +319,29 @@ export default function NotePage() {
     fetchNotes()
   }, [])
 
+  // 获取图谱节点数量
+  const fetchGraphNodeCount = useCallback(async () => {
+    try {
+      const graphData = await getWikiGraph()
+      setGraphNodeCount(graphData.nodes.length)
+    } catch (error) {
+      console.error('获取图谱数据失败:', error)
+      setGraphNodeCount(0)
+    }
+  }, [])
+
+  // 初始化时获取图谱节点数量
+  useEffect(() => {
+    fetchGraphNodeCount()
+  }, [fetchGraphNodeCount])
+
+  // 切换到图谱视图时刷新节点数量
+  useEffect(() => {
+    if (viewMode === 'graph') {
+      fetchGraphNodeCount()
+    }
+  }, [viewMode, fetchGraphNodeCount])
+
   // 使用 useMemo 优化排序性能
   const sortedNotes = useMemo(() => {
     // 确保 notes 是数组，如果不是则返回空数组
@@ -193,6 +354,11 @@ export default function NotePage() {
       return timeB - timeA
     })
   }, [notes])
+
+  // 计算有内容的笔记数量（列表模式只显示有内容的笔记）
+  const notesWithContentCount = useMemo(() => {
+    return sortedNotes.filter(hasNoteContent).length
+  }, [sortedNotes])
 
   return (
     <div className="container mx-auto py-4">
@@ -209,7 +375,7 @@ export default function NotePage() {
             }`}
           >
             <List className="h-4 w-4 flex-shrink-0" />
-            <span>列表</span>
+            <span>列表({notesWithContentCount})</span>
           </button>
           <button
             onClick={() => setViewMode('graph')}
@@ -220,7 +386,7 @@ export default function NotePage() {
             }`}
           >
             <Network className="h-4 w-4 flex-shrink-0" />
-            <span>图谱</span>
+            <span>图谱({graphNodeCount})</span>
           </button>
         </div>
 
@@ -290,15 +456,6 @@ export default function NotePage() {
             </div>
           </div>
         )}
-
-        {/* 列表模式下的笔记数量 */}
-        {viewMode === 'list' && (
-          <div className="flex flex-1 items-center justify-center">
-            <div className="text-muted-foreground text-sm" aria-live="polite">
-              共 {sortedNotes.length} 个笔记
-            </div>
-          </div>
-        )}
       </header>
 
       {/* 主要内容区域 */}
@@ -311,11 +468,11 @@ export default function NotePage() {
           />
         ) : loading ? (
           <LoadingSkeleton />
-        ) : sortedNotes.length === 0 ? (
+        ) : sortedNotes.filter(hasNoteContent).length === 0 ? (
           <UIEmptyState icon="📝" title="暂无笔记" description="请添加您的第一个笔记" />
         ) : (
           <div className="space-y-4" role="list" aria-label="笔记列表">
-            {sortedNotes.map(note => (
+            {sortedNotes.filter(hasNoteContent).map(note => (
               <div key={note.id} role="listitem">
                 <NoteCard note={note} />
               </div>
