@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef, useMemo } from 'react'
 import dynamic from 'next/dynamic'
 import { deleteNode, type WikiNode } from '@/lib/api/wiki'
 import { isAdminSync } from '@/lib/auth'
@@ -25,6 +25,9 @@ import { ArticleDialog } from './components/ArticleDialog'
 import { GraphEmptyState } from './components/GraphEmptyState'
 import { GraphLoadingState } from './components/GraphLoadingState'
 import { BottomActionBar } from './components/BottomActionBar'
+import { LayoutSelector } from './components/LayoutSelector'
+import { NodeDetailsPanel } from './components/NodeDetailsPanel'
+import { usePerformanceOptimization } from './hooks/usePerformanceOptimization'
 import type { NodeData, ForceGraphInstance } from './types'
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
@@ -37,16 +40,27 @@ export default function WikiGraphPage() {
   const [activeNode, setActiveNode] = useState<NodeData | null>(null)
   const [query, setQuery] = useState<string>('')
   const [dialogOpen, setDialogOpen] = useState<boolean>(false)
-  const [showNeighborsOnly, setShowNeighborsOnly] = useState<boolean>(false)
   const [editorOpen, setEditorOpen] = useState<boolean>(false)
   const [editingNode, setEditingNode] = useState<WikiNode | null>(null)
   const [templateNode, setTemplateNode] = useState<WikiNode | null>(null)
   const [linkCreatorOpen, setLinkCreatorOpen] = useState<boolean>(false)
   const [isAdmin] = useState<boolean>(() => isAdminSync())
+  const [selectedLayout, setSelectedLayout] = useState<string>('force')
 
   // 使用自定义 hooks
-  const { nodes, setNodes, links, setLinks, loading, fgRef, loadGraphData, resumeGraphAnimation } =
-    useGraphData()
+  const {
+    nodes,
+    setNodes,
+    links,
+    setLinks,
+    loading,
+    currentLayout,
+    fgRef,
+    loadGraphData,
+    resumeGraphAnimation,
+    changeLayout,
+  } = useGraphData()
+  const { optimizeGraphData, showPerformanceWarning } = usePerformanceOptimization()
   const {
     articleHtml,
     articleRaw,
@@ -57,13 +71,82 @@ export default function WikiGraphPage() {
     resetArticle,
   } = useArticleLoader()
   const { isDark, themeColors } = useThemeColors()
-  const { filtered, neighborIds } = useGraphFilter(
-    nodes,
-    links,
-    query,
-    showNeighborsOnly,
-    activeNode
-  )
+  // 简化的过滤逻辑，移除showNeighborsOnly依赖
+  const { filtered: unoptimizedFiltered, neighborIds } = useMemo(() => {
+    // 缓存邻居节点集合，避免在 nodeCanvasObject 中重复计算
+    const neighborIds = (() => {
+      if (!activeNode) return new Set<string>()
+      const activeId = String(activeNode.id)
+      const ids = new Set<string>([activeId])
+      for (const link of links) {
+        const s =
+          typeof link.source === 'string' || typeof link.source === 'number'
+            ? String(link.source)
+            : String((link.source as NodeData).id)
+        const t =
+          typeof link.target === 'string' || typeof link.target === 'number'
+            ? String(link.target)
+            : String((link.target as NodeData).id)
+        if (s === activeId) ids.add(t)
+        if (t === activeId) ids.add(s)
+      }
+      return ids
+    })()
+
+    let filteredNodes = nodes
+    let filteredLinks = links
+
+    // 搜索过滤：显示匹配节点及其直接邻居，使连接完整可见
+    if (query.trim()) {
+      const q = query.toLowerCase()
+      const matchedIds = new Set<string>()
+
+      // 找出所有匹配的节点
+      for (const n of nodes) {
+        const text =
+          `${n.title} ${n.slug} ${(n.tags || []).join(' ')} ${n.summary || ''}`.toLowerCase()
+        if (text.includes(q)) matchedIds.add(String(n.id))
+      }
+
+      // 找出匹配节点的所有邻居（包括连接的节点）
+      const neighborIds = new Set<string>(matchedIds)
+      for (const link of links) {
+        const s =
+          typeof link.source === 'string' || typeof link.source === 'number'
+            ? String(link.source)
+            : String((link.source as NodeData).id)
+        const t =
+          typeof link.target === 'string' || typeof link.target === 'number'
+            ? String(link.target)
+            : String((link.target as NodeData).id)
+        if (matchedIds.has(s)) neighborIds.add(t)
+        if (matchedIds.has(t)) neighborIds.add(s)
+      }
+
+      // 过滤节点：包含匹配节点和它们的邻居
+      filteredNodes = nodes.filter(n => neighborIds.has(String(n.id)))
+      const fSet = new Set(filteredNodes.map(n => String(n.id)))
+
+      // 过滤链接：只显示连接这些节点的完整链接
+      filteredLinks = links.filter(l => {
+        const s =
+          typeof l.source === 'string' || typeof l.source === 'number'
+            ? String(l.source)
+            : String((l.source as NodeData).id)
+        const t =
+          typeof l.target === 'string' || typeof l.target === 'number'
+            ? String(l.target)
+            : String((l.target as NodeData).id)
+        return fSet.has(s) && fSet.has(t)
+      })
+    }
+
+    return { filtered: { nodes: filteredNodes, links: filteredLinks }, neighborIds }
+  }, [nodes, links, query, activeNode])
+
+  const filtered = useMemo(() => {
+    return optimizeGraphData(unoptimizedFiltered.nodes, unoptimizedFiltered.links)
+  }, [unoptimizedFiltered, optimizeGraphData])
   const graphPalette = useGraphPalette(isDark, themeColors)
   const { restoreView, handleZoom } = useGraphZoom()
 
@@ -82,7 +165,6 @@ export default function WikiGraphPage() {
       if (String(activeNode?.id) === String(n.id)) {
         // 重复点击已选中的节点，取消选中
         setActiveNode(null)
-        setShowNeighborsOnly(false)
       } else {
         // 选中新节点（不恢复动画，避免布局偏移）
         setActiveNode(n)
@@ -148,9 +230,6 @@ export default function WikiGraphPage() {
   // 处理查询变化
   const handleQueryChange = useCallback((value: string) => {
     setQuery(value)
-    if (value.trim()) {
-      setShowNeighborsOnly(false)
-    }
   }, [])
 
   // 处理新建节点
@@ -206,7 +285,6 @@ export default function WikiGraphPage() {
   // 处理取消选中
   const handleClearSelection = useCallback(() => {
     setActiveNode(null)
-    setShowNeighborsOnly(false)
   }, [])
 
   // 节点渲染函数
@@ -243,6 +321,18 @@ export default function WikiGraphPage() {
     [activeNode]
   )
 
+  // 处理布局变化
+  const handleLayoutChange = useCallback(
+    (layout: string) => {
+      setSelectedLayout(layout)
+      changeLayout(layout)
+      toast.info(
+        `切换到${layout === 'force' ? '力导向' : layout === 'tree' ? '树状' : layout === 'circle' ? '圆形' : '网格'}布局`
+      )
+    },
+    [changeLayout]
+  )
+
   return (
     <div
       style={{
@@ -267,6 +357,13 @@ export default function WikiGraphPage() {
           onCreateLink={() => setLinkCreatorOpen(true)}
           onViewArticle={handleViewArticle}
           onClearSelection={handleClearSelection}
+        />
+
+        {/* 布局选择器 */}
+        <LayoutSelector
+          currentLayout={selectedLayout}
+          onLayoutChange={handleLayoutChange}
+          themeColors={themeColors}
         />
 
         {!loading && nodes.length === 0 && (
@@ -296,7 +393,7 @@ export default function WikiGraphPage() {
             ctx.arc(n.x ?? 0, n.y ?? 0, 5, 0, 2 * Math.PI, false)
             ctx.fill()
           }}
-          cooldownTime={showNeighborsOnly ? 2000 : 3000}
+          cooldownTime={3000}
           d3AlphaDecay={0.0228}
           d3VelocityDecay={0.4}
           d3AlphaMin={0.001}
@@ -325,6 +422,15 @@ export default function WikiGraphPage() {
         articleError={articleError}
         isDark={isDark}
         themeColors={themeColors}
+      />
+
+      {/* 节点详情面板 */}
+      <NodeDetailsPanel
+        node={activeNode}
+        isOpen={!!activeNode}
+        onClose={() => setActiveNode(null)}
+        themeColors={themeColors}
+        onViewArticle={handleViewArticle}
       />
 
       {/* 节点编辑器 */}

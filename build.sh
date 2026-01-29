@@ -9,8 +9,14 @@ git pull
 # 构建项目
 npm run build
 
-# 重启PM2进程（使用restart而不是reload）
-pm2 restart nextjs
+# 检查PM2进程是否存在
+if pm2 info dogeow-nextjs >/dev/null 2>&1; then
+    echo "PM2进程dogeow-nextjs已存在，正在重启..."
+    pm2 reload dogeow-nextjs
+else
+    echo "PM2进程dogeow-nextjs不存在，正在启动..."
+    pm2 start ecosystem.config.js --only dogeow-nextjs
+fi
 
 # 显示PM2状态
 pm2 status

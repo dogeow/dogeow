@@ -46,3 +46,6 @@ next-env.d.ts
 
 # 知识库向量索引
 .knowledge/
+
+# PM2
+logs/

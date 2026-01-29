@@ -1,12 +1,14 @@
 import { useState, useCallback, useRef } from 'react'
 import { getWikiGraph } from '@/lib/api/wiki'
 import { toast } from 'sonner'
+import { LayoutManager } from '../utils/layoutManager'
 import type { NodeData, LinkData, ForceGraphInstance } from '../types'
 
 export function useGraphData() {
   const [nodes, setNodes] = useState<NodeData[]>([])
   const [links, setLinks] = useState<LinkData[]>([])
   const [loading, setLoading] = useState<boolean>(true)
+  const [currentLayout, setCurrentLayout] = useState<string>('force')
   const fgRef = useRef<ForceGraphInstance | null>(null)
 
   const resumeGraphAnimation = useCallback(() => {
@@ -26,6 +28,28 @@ export function useGraphData() {
     }
   }, [])
 
+  // 切换布局
+  const changeLayout = useCallback(
+    (layoutType: string) => {
+      setCurrentLayout(layoutType)
+      if (nodes.length > 0) {
+        // 应用新的布局
+        const { nodes: layoutNodes, links: layoutLinks } = LayoutManager.applyLayout(
+          nodes,
+          links,
+          layoutType
+        )
+
+        setNodes(layoutNodes)
+        setLinks(layoutLinks)
+
+        // 恢复动画以适应新布局
+        resumeGraphAnimation()
+      }
+    },
+    [nodes, links, resumeGraphAnimation]
+  )
+
   // 加载图谱数据
   const loadGraphData = useCallback(async () => {
     try {
@@ -33,7 +57,7 @@ export function useGraphData() {
       const data = await getWikiGraph()
 
       // 转换节点数据
-      const normalizedNodes: NodeData[] = data.nodes.map(node => ({
+      let normalizedNodes: NodeData[] = data.nodes.map(node => ({
         id: node.id,
         title: node.title,
         slug: node.slug,
@@ -48,6 +72,16 @@ export function useGraphData() {
         target: link.target,
         type: link.type,
       }))
+
+      // 应用当前布局
+      if (currentLayout !== 'force') {
+        const layoutResult = LayoutManager.applyLayout(
+          normalizedNodes,
+          normalizedLinks,
+          currentLayout
+        )
+        normalizedNodes = layoutResult.nodes
+      }
 
       setNodes(normalizedNodes)
       setLinks(normalizedLinks)
@@ -65,7 +99,7 @@ export function useGraphData() {
     } finally {
       setLoading(false)
     }
-  }, [resumeGraphAnimation])
+  }, [resumeGraphAnimation, currentLayout])
 
   return {
     nodes,
@@ -73,8 +107,10 @@ export function useGraphData() {
     links,
     setLinks,
     loading,
+    currentLayout,
     fgRef,
     loadGraphData,
     resumeGraphAnimation,
+    changeLayout,
   }
 }

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Plus, Edit, Trash2, Link as LinkIcon } from 'lucide-react'
+import { Plus, Edit, Trash2, Link as LinkIcon, Search, X } from 'lucide-react'
 import type { NodeData, ThemeColors } from '../types'
 import type { WikiNode } from '@/lib/api/wiki'
 
@@ -43,33 +43,50 @@ export function GraphToolbar({
         flexWrap: 'wrap',
       }}
     >
-      <input
-        value={query}
-        onChange={e => onQueryChange(e.target.value)}
-        placeholder="搜索"
-        style={{
-          padding: '8px 10px',
-          border: `1px solid ${themeColors.border}`,
-          borderRadius: 8,
-          minWidth: 260,
-          background: themeColors.card,
-          color: themeColors.foreground,
-        }}
-      />
-      {query && (
-        <button
-          onClick={() => onQueryChange('')}
+      <div style={{ position: 'relative' }}>
+        <input
+          value={query}
+          onChange={e => onQueryChange(e.target.value)}
+          placeholder="搜索节点..."
           style={{
-            padding: '8px 10px',
+            padding: '8px 32px 8px 36px',
             border: `1px solid ${themeColors.border}`,
             borderRadius: 8,
+            minWidth: 260,
             background: themeColors.card,
             color: themeColors.foreground,
           }}
-        >
-          清空
-        </button>
-      )}
+        />
+        <Search
+          size={16}
+          style={{
+            position: 'absolute',
+            left: 10,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            color: themeColors.mutedForeground,
+          }}
+        />
+        {query && (
+          <button
+            onClick={() => onQueryChange('')}
+            style={{
+              position: 'absolute',
+              right: 8,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              background: 'none',
+              border: 'none',
+              color: themeColors.mutedForeground,
+              cursor: 'pointer',
+              padding: 4,
+            }}
+          >
+            <X size={16} />
+          </button>
+        )}
+      </div>
+
       {/* 管理员按钮 - 始终显示 */}
       {isAdmin && (
         <>
@@ -109,8 +126,9 @@ export function GraphToolbar({
           </button>
         </>
       )}
+
       {activeNode && (
-        <>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {isAdmin && (
             <>
               <button
@@ -159,8 +177,12 @@ export function GraphToolbar({
                 background: '#2563eb',
                 color: '#ffffff',
                 cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
               }}
             >
+              <LinkIcon style={{ width: 16, height: 16 }} />
               查看文章
             </button>
           )}
@@ -177,7 +199,7 @@ export function GraphToolbar({
           >
             取消选中
           </button>
-        </>
+        </div>
       )}
     </div>
   )

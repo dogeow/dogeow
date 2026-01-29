@@ -49,6 +49,8 @@ export type GraphPalette = {
   labelNeighbor: string
   linkMuted: string
   linkActive: string
+  border: string
+  card: string
 }
 
 export type ForceGraphInstance = {

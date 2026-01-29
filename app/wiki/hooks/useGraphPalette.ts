@@ -26,6 +26,8 @@ export function useGraphPalette(isDark: boolean, themeColors: ThemeColors): Grap
       labelNeighbor: themeColors.ring || fallback.ring,
       linkMuted: mutedLink,
       linkActive: activeLink,
+      border: themeColors.border || fallback.border,
+      card: themeColors.card || fallback.card,
     }
   }, [isDark, themeColors])
 
