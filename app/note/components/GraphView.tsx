@@ -383,18 +383,6 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
           d3VelocityDecay={0.4}
           d3AlphaMin={0.001}
           nodeRelSize={8}
-          linkDistance={120}
-          linkStrength={0.05}
-          d3Force={(d3: any) => {
-            // 大幅增加节点之间的排斥力，避免拥挤
-            const chargeForce = d3.forceManyBody().strength(-500)
-            // 增加碰撞检测，确保节点不重叠，半径包括节点和标签的空间
-            const collisionForce = d3.forceCollide().radius(50)
-            return {
-              charge: chargeForce,
-              collision: collisionForce,
-            }
-          }}
           onZoom={transform => handleZoom(fgRef, transform)}
           onEngineStop={() => {
             if (!fgRef.current) return
