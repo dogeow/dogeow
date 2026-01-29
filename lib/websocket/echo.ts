@@ -9,8 +9,10 @@ declare global {
   }
 }
 
-// 配置 Pusher
-window.Pusher = Pusher
+// 配置 Pusher（仅浏览器环境，避免 SSR 报错）
+if (typeof window !== 'undefined') {
+  window.Pusher = Pusher
+}
 
 // 创建 Echo 实例并追踪创建状态
 let echoInstance: Echo<'reverb'> | null = null
