@@ -74,13 +74,22 @@ export const ChatInput = React.memo<ChatInputProps>(
                       <Cpu
                         className={cn(
                           'h-5 w-5',
-                          model === 'qwen2.5:0.5b'
-                            ? 'text-primary'
-                            : model === 'qwen3:0.6b'
-                              ? 'text-blue-500'
-                              : model === 'qwen3:8b'
-                                ? 'text-purple-500'
-                                : ''
+                          (() => {
+                            if (model === 'qwen2.5:0.5b') return 'text-primary'
+                            if (model === 'qwen3:0.6b') return 'text-blue-500'
+                            if (model === 'qwen3:8b' || model === 'qwen3:14b')
+                              return 'text-purple-500'
+                            if (
+                              [
+                                'qwen3-embedding:0.6b',
+                                'embeddinggemma',
+                                'nomic-embed-text:latest',
+                              ].includes(model || '')
+                            ) {
+                              return 'text-amber-500'
+                            }
+                            return ''
+                          })()
                         )}
                       />
                     </Button>
@@ -124,58 +133,6 @@ export const ChatInput = React.memo<ChatInputProps>(
                         <div className="flex flex-col">
                           <span>慢速</span>
                           <span className="text-muted-foreground text-xs">qwen3:8b</span>
-                        </div>
-                      </DropdownMenuRadioItem>
-                    </DropdownMenuRadioGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-              {chatMode && onChatModeChange && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-12 w-12 border-2 transition-all"
-                      disabled={isLoading}
-                      aria-label={chatMode === 'knowledge' ? '知识库 AI' : '通用 AI'}
-                    >
-                      {chatMode === 'knowledge' ? (
-                        <BookOpen className="h-5 w-5" />
-                      ) : (
-                        <Sparkles className="h-5 w-5" />
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-44">
-                    <DropdownMenuRadioGroup
-                      value={chatMode}
-                      onValueChange={value => onChatModeChange?.(value as 'ai' | 'knowledge')}
-                    >
-                      <DropdownMenuRadioItem
-                        value="ai"
-                        className={cn(
-                          'cursor-pointer',
-                          chatMode === 'ai' &&
-                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Sparkles className="h-4 w-4" />
-                          <span>通用 AI</span>
-                        </div>
-                      </DropdownMenuRadioItem>
-                      <DropdownMenuRadioItem
-                        value="knowledge"
-                        className={cn(
-                          'cursor-pointer',
-                          chatMode === 'knowledge' &&
-                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <BookOpen className="h-4 w-4" />
-                          <span>知识库 AI</span>
                         </div>
                       </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
@@ -227,9 +184,15 @@ export const ChatInput = React.memo<ChatInputProps>(
                             ? 'text-primary'
                             : model === 'qwen3:0.6b'
                               ? 'text-blue-500'
-                              : model === 'qwen3:8b'
+                              : model === 'qwen3:8b' || model === 'qwen3:14b'
                                 ? 'text-purple-500'
-                                : ''
+                                : [
+                                      'qwen3-embedding:0.6b',
+                                      'embeddinggemma',
+                                      'nomic-embed-text:latest',
+                                    ].includes(model || '')
+                                  ? 'text-amber-500'
+                                  : ''
                         )}
                       />
                     </Button>
@@ -273,6 +236,62 @@ export const ChatInput = React.memo<ChatInputProps>(
                         <div className="flex flex-col">
                           <span>慢速</span>
                           <span className="text-muted-foreground text-xs">qwen3:8b</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="qwen3:14b"
+                        className={cn(
+                          'cursor-pointer',
+                          model === 'qwen3:14b' &&
+                            'relative z-10 bg-purple-500/10 font-medium ring-2 ring-purple-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>超慢速</span>
+                          <span className="text-muted-foreground text-xs">qwen3:14b</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="qwen3-embedding:0.6b"
+                        className={cn(
+                          'cursor-pointer',
+                          model === 'qwen3-embedding:0.6b' &&
+                            'relative z-10 bg-amber-500/10 font-medium ring-2 ring-amber-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>检索用（不用于对话）</span>
+                          <span className="text-muted-foreground text-xs">
+                            qwen3-embedding:0.6b
+                          </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="embeddinggemma"
+                        className={cn(
+                          'cursor-pointer',
+                          model === 'embeddinggemma' &&
+                            'relative z-10 bg-amber-500/10 font-medium ring-2 ring-amber-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>检索用（不用于对话）</span>
+                          <span className="text-muted-foreground text-xs">embeddinggemma</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="nomic-embed-text:latest"
+                        className={cn(
+                          'cursor-pointer',
+                          model === 'nomic-embed-text:latest' &&
+                            'relative z-10 bg-amber-500/10 font-medium ring-2 ring-amber-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>检索用（不用于对话）</span>
+                          <span className="text-muted-foreground text-xs">
+                            nomic-embed-text:latest
+                          </span>
                         </div>
                       </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>

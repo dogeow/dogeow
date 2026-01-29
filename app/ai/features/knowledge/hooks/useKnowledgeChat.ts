@@ -10,6 +10,9 @@ interface UseKnowledgeChatOptions {
 
 type SearchMethod = 'simple' | 'rag'
 
+const EMBEDDING_MODEL_PREFIXES = ['qwen3-embedding', 'embeddinggemma', 'nomic-embed-text']
+const isEmbeddingModel = (m: string) => EMBEDDING_MODEL_PREFIXES.some(p => m.startsWith(p))
+
 interface UseKnowledgeChatReturn {
   prompt: string
   setPrompt: (value: string) => void
@@ -40,7 +43,7 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
   const [useContext, setUseContext] = useState(true)
   const [searchMethod, setSearchMethod] = useState<SearchMethod>('rag')
   const [model, setModel] = useState<string>(() => {
-    // 从 localStorage 读取，默认使用 qwen2.5:0.5b
+    // 从 localStorage 读取，默认使用 qwen2.5:0.5b；选 embedding 时 API 会用默认对话模型
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ollama_model')
       return saved || 'qwen2.5:0.5b'
@@ -116,14 +119,15 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
     abortControllerRef.current = abortController
 
     try {
-      // 调用知识库问答 API
+      // 检索/embedding 模型只发当前一条用户消息，减少请求体
+      const messagesToSend = isEmbeddingModel(model) ? [userMessage] : newMessages
       const response = await fetch('/api/knowledge/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: newMessages,
+          messages: messagesToSend,
           useContext,
           searchMethod,
           model,

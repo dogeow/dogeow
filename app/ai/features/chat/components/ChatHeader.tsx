@@ -2,6 +2,7 @@ import React from 'react'
 import { Sparkles, Trash2, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DialogTitle } from '@/components/ui/dialog'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import Link from 'next/link'
 
 interface ChatHeaderProps {
@@ -12,6 +13,9 @@ interface ChatHeaderProps {
   onClear: () => void
   variant?: 'dialog' | 'page'
   hideClear?: boolean
+  /** 弹窗下用 Tabs 切换模式时传入 */
+  chatMode?: 'ai' | 'knowledge'
+  onChatModeChange?: (value: 'ai' | 'knowledge') => void
 }
 
 export const ChatHeader = React.memo<ChatHeaderProps>(
@@ -23,15 +27,47 @@ export const ChatHeader = React.memo<ChatHeaderProps>(
     onClear,
     variant = 'page',
     hideClear = false,
+    chatMode,
+    onChatModeChange,
   }) => {
     if (variant === 'dialog') {
+      const useTabs = chatMode !== undefined && onChatModeChange != null
       return (
         <div className="!flex h-12 flex-none !flex-row items-center justify-between border-b px-4 py-0">
           <div className="m-0 flex min-w-0 flex-1 items-center gap-3">
-            <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-              <Sparkles className="h-4 w-4" />
-            </div>
-            <DialogTitle className="truncate text-base leading-none">{title}</DialogTitle>
+            {useTabs ? (
+              <>
+                <Tabs
+                  value={chatMode}
+                  onValueChange={v => onChatModeChange(v as 'ai' | 'knowledge')}
+                  className="w-auto"
+                >
+                  <TabsList className="bg-muted/50 h-9">
+                    <TabsTrigger value="ai" className="gap-1.5 px-3 text-sm">
+                      <Sparkles className="h-4 w-4" />
+                      通用 AI
+                    </TabsTrigger>
+                    <TabsTrigger value="knowledge" className="gap-1.5 px-3 text-sm">
+                      <BookOpen className="h-4 w-4" />
+                      知识库 AI
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                {subtitle && (
+                  <span className="text-muted-foreground shrink-0 text-xs">{subtitle}</span>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="bg-primary/10 text-primary flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <DialogTitle className="truncate text-base leading-none">{title}</DialogTitle>
+                {subtitle && (
+                  <span className="text-muted-foreground shrink-0 text-xs">{subtitle}</span>
+                )}
+              </>
+            )}
           </div>
           <div className="flex shrink-0 items-center gap-1 pr-10">
             {hasMessages && !hideClear && (

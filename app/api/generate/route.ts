@@ -46,6 +46,11 @@ const OLLAMA_GENERATE_URL = `${OLLAMA_BASE_URL}/api/generate`
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE_URL}/api/chat`
 const DEFAULT_MODEL = process.env.OLLAMA_MODEL ?? 'qwen2.5:0.5b'
 
+// embedding 模型仅用于检索，不能用于 Chat/Generate API，需回退为对话模型
+const EMBEDDING_MODEL_PREFIXES = ['qwen3-embedding', 'embeddinggemma', 'nomic-embed-text']
+const isEmbeddingModel = (model: string) =>
+  EMBEDDING_MODEL_PREFIXES.some(prefix => model.startsWith(prefix))
+
 // 转义JSON字符串
 const escapeJsonString = (str: string): string =>
   str
@@ -61,7 +66,8 @@ const generatePrompt = (option: GenerateOption, text: string, command?: string):
 
 // 调用Ollama Generate API（单次生成）
 const callOllamaGenerateAPI = async (prompt: string, model?: string): Promise<Response> => {
-  const selectedModel = model ?? DEFAULT_MODEL
+  const requested = model ?? DEFAULT_MODEL
+  const selectedModel = isEmbeddingModel(requested) ? DEFAULT_MODEL : requested
   const res = await fetch(OLLAMA_GENERATE_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -77,7 +83,8 @@ const callOllamaGenerateAPI = async (prompt: string, model?: string): Promise<Re
 
 // 调用Ollama Chat API（连续对话）
 const callOllamaChatAPI = async (messages: ChatMessage[], model?: string): Promise<Response> => {
-  const selectedModel = model ?? DEFAULT_MODEL
+  const requested = model ?? DEFAULT_MODEL
+  const selectedModel = isEmbeddingModel(requested) ? DEFAULT_MODEL : requested
   const res = await fetch(OLLAMA_CHAT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

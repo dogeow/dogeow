@@ -21,9 +21,17 @@ const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE_URL}/api/chat`
 const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
 
+// embedding 模型仅用于检索，不能用于 Chat API，需回退为对话模型
+const EMBEDDING_MODEL_PREFIXES = ['qwen3-embedding', 'embeddinggemma', 'nomic-embed-text']
+
+function isEmbeddingModel(model: string): boolean {
+  return EMBEDDING_MODEL_PREFIXES.some(prefix => model.startsWith(prefix))
+}
+
 // 调用Ollama Chat API
 const callOllamaChatAPI = async (messages: ChatMessage[], model?: string): Promise<Response> => {
-  const selectedModel = model || DEFAULT_MODEL
+  const requested = model || DEFAULT_MODEL
+  const selectedModel = isEmbeddingModel(requested) ? DEFAULT_MODEL : requested
   const response = await fetch(OLLAMA_CHAT_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -300,6 +308,13 @@ export async function POST(request: NextRequest) {
       }
     }
     await ensureSystemPrompt()
+
+    // 只把最近几轮发给 Ollama：RAG 已用最后一条用户消息，历史全量发送浪费 token
+    // 检索/embedding 模型只发一条（当前用户问题），对话模型保留最近 2 轮
+    const maxHistory = isEmbeddingModel(model ?? '') ? 1 : 4
+    const systemPart = chatMessages.filter(m => m.role === 'system')
+    const conversationPart = chatMessages.filter(m => m.role !== 'system')
+    chatMessages = [...systemPart, ...conversationPart.slice(-maxHistory)]
 
     // 调用 Ollama API
     const ollamaResponse = await callOllamaChatAPI(chatMessages, model)
