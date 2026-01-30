@@ -5,7 +5,7 @@ module.exports = {
       script: 'npm',
       args: 'start',
       cwd: '/var/www/dogeow-next',
-      instances: 2, // 或者使用 'max' 自动检测CPU核心数
+      instances: 'max', // 或者使用 'max' 自动检测CPU核心数
       exec_mode: 'cluster', // 集群模式，充分利用多核CPU
       env: {
         NODE_ENV: 'production',
