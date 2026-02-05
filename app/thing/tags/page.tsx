@@ -167,7 +167,7 @@ export default function ThingTags() {
         {tags && tags.length > 0 && (
           <div className="space-y-6">
             {/* 标签统计 */}
-            <div className="rounded-lg bg-gray-50 p-4 dark:bg-gray-800/50">
+            <div className="rounded-lg p-4">
               <div className="flex items-center text-sm text-gray-600 dark:text-gray-400">
                 <div className="flex items-center gap-3">
                   <span>共 {tags.length} 个标签</span>

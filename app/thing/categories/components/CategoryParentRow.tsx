@@ -2,7 +2,7 @@ import React, { memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TableRow, TableCell } from '@/components/ui/table'
-import { Folder, FolderOpen, Plus, Trash2, Check, X, ChevronDown, ChevronRight } from 'lucide-react'
+import { Folder, FolderOpen, Plus, Trash2, Check, X } from 'lucide-react'
 import type { Category } from '../../types'
 
 interface CategoryParentRowProps {
@@ -45,28 +45,26 @@ export const CategoryParentRow = memo<CategoryParentRowProps>(
       <TableRow className="hover:bg-accent/30 transition-colors">
         <TableCell>
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="hover:bg-accent/50 h-8 w-8 rounded-md p-0 transition-all duration-200"
-              onClick={onToggle}
-            >
-              {isExpanded ? (
-                <div className="flex items-center justify-center">
-                  <ChevronDown className="text-primary h-4 w-4" />
-                </div>
-              ) : (
-                <div className="flex items-center justify-center">
-                  <ChevronRight className="text-muted-foreground h-4 w-4" />
-                </div>
-              )}
-            </Button>
             <div className="flex items-center gap-2">
-              {isExpanded ? (
-                <FolderOpen className="text-primary h-5 w-5" />
-              ) : (
-                <Folder className="text-muted-foreground h-5 w-5" />
-              )}
+              <div
+                className="flex h-8 w-8 cursor-pointer items-center justify-center"
+                onClick={onToggle}
+                role="button"
+                tabIndex={0}
+                aria-label={isExpanded ? '折叠分类' : '展开分类'}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    onToggle()
+                  }
+                }}
+              >
+                {isExpanded ? (
+                  <FolderOpen className="text-muted-foreground h-5 w-5" />
+                ) : (
+                  <Folder className="text-muted-foreground h-5 w-5" />
+                )}
+              </div>
               {isEditing ? (
                 <div className="flex flex-1 items-center gap-2">
                   <Input

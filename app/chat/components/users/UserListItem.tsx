@@ -3,7 +3,7 @@ import { Circle, Clock, Shield, Crown } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
 import { UserAvatar } from './UserAvatar'
 import { UserProfilePopover } from './UserProfilePopover'
-import { userRoleUtils } from '../utils/userUtils'
+import { userRoleUtils } from '@/app/chat/utils/users/userUtils'
 import type { OnlineUser } from '@/app/chat/types'
 
 interface UserListItemProps {

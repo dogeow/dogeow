@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useEffect, useRef, useCallback, useMemo } from 'react'
+import React, { useEffect, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import { format, isToday, isYesterday } from 'date-fns'
 
 import { cn } from '@/lib/helpers'
 import useChatStore from '@/app/chat/chatStore'
+import { useMessageScroll } from '@/app/chat/hooks/message-list/useMessageScroll'
 import type { ChatMessage } from '../types'
 import { MessageInteractions } from './MessageInteractions'
 import { MentionHighlight, useMentionDetection } from './MentionHighlight'
@@ -17,6 +18,7 @@ interface MessageListProps {
   className?: string
   onReply?: (message: ChatMessage) => void
   searchQuery?: string
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>
 }
 
 interface MessageGroupProps {
@@ -39,9 +41,10 @@ const MessageItem = React.memo(function MessageItem({
   onReact,
 }: MessageItemProps) {
   const mentionInfo = useMentionDetection(message.message)
+  const messageText = useMemo(() => message.message.trim(), [message.message])
   const isImageUrl = useMemo(
-    () => /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(message.message.trim()),
-    [message.message]
+    () => /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(messageText),
+    [messageText]
   )
 
   return (
@@ -54,19 +57,21 @@ const MessageItem = React.memo(function MessageItem({
           : 'hover:bg-muted/50'
       )}
     >
-      <div className="prose prose-sm max-w-none">
+      <div className="prose prose-sm max-w-none break-words">
         {isImageUrl ? (
           <Image
-            src={message.message.trim()}
+            src={messageText}
             alt="uploaded"
             width={960}
             height={720}
             sizes="(max-width: 768px) 100vw, 480px"
             className="max-h-72 w-auto max-w-full rounded-lg object-contain"
+            loading="lazy"
+            decoding="async"
             unoptimized
           />
         ) : (
-          <MentionHighlight text={message.message} />
+          <MentionHighlight text={message.message} className="break-words whitespace-pre-wrap" />
         )}
       </div>
       <MessageInteractions message={message} onReply={onReply} onReact={onReact} />
@@ -133,25 +138,28 @@ function EmptyState() {
   )
 }
 
-function MessageListContent({ roomId, className, onReply, searchQuery }: MessageListProps) {
+function MessageListContent({
+  roomId,
+  className,
+  onReply,
+  searchQuery,
+  scrollContainerRef,
+}: MessageListProps) {
   const { t } = useTranslation()
   const roomKey = useMemo(() => roomId.toString(), [roomId])
   const isLoading = useChatStore(state => state.isLoading)
   const loadMessages = useChatStore(state => state.loadMessages)
   const messages = useChatStore(state => state.messages)
   const messagesForRoom = useMemo(() => messages[roomKey] || [], [messages, roomKey])
+  const hasSearchQuery = useMemo(() => !!searchQuery?.trim(), [searchQuery])
 
   const filteredMessages = useMemo(() => {
-    if (!searchQuery || !searchQuery.trim()) return messagesForRoom
-    const query = searchQuery.toLowerCase().trim()
+    if (!hasSearchQuery) return messagesForRoom
+    const query = searchQuery!.toLowerCase().trim()
     return messagesForRoom.filter(
       m => m.message.toLowerCase().includes(query) || m.user.name.toLowerCase().includes(query)
     )
-  }, [searchQuery, messagesForRoom])
-
-  const previousMessageCountRef = useRef(0)
-  const isUserScrollingRef = useRef(false)
-  const lastScrollTopRef = useRef(0)
+  }, [searchQuery, messagesForRoom, hasSearchQuery])
 
   const stableLoadMessages = useCallback((id: number) => loadMessages(id), [loadMessages])
 
@@ -163,10 +171,10 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
     }
   }, [])
 
-  const getScrollContainer = useCallback(
-    () => document.querySelector('.chat-messages-mobile') as HTMLDivElement | null,
-    []
-  )
+  const getScrollContainer = useCallback(() => {
+    if (scrollContainerRef?.current) return scrollContainerRef.current
+    return document.querySelector('.chat-messages-mobile') as HTMLDivElement | null
+  }, [scrollContainerRef])
 
   // 分组，优化分组逻辑与类型推断
   const groupedMessages = useMemo(() => {
@@ -227,41 +235,12 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
     }
   }, [roomId, stableLoadMessages])
 
-  useEffect(() => {
-    const scrollContainer = getScrollContainer()
-    if (!scrollContainer) return
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = scrollContainer
-      const isNearBottom = scrollTop + clientHeight >= scrollHeight - 50
-
-      if (scrollTop < lastScrollTopRef.current) {
-        isUserScrollingRef.current = true
-      } else if (isNearBottom) {
-        isUserScrollingRef.current = false
-      }
-      lastScrollTopRef.current = scrollTop
-    }
-
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true })
-
-    const currentCount = filteredMessages.length
-    const prevCount = previousMessageCountRef.current
-
-    if (currentCount > prevCount && !isUserScrollingRef.current) {
-      requestAnimationFrame(() => {
-        if (scrollContainer) {
-          scrollContainer.scrollTop = scrollContainer.scrollHeight
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🔥 MessageList: auto scroll to bottom', scrollContainer.scrollHeight)
-          }
-        }
-      })
-    }
-
-    previousMessageCountRef.current = currentCount
-    return () => scrollContainer.removeEventListener('scroll', handleScroll)
-  }, [filteredMessages.length, getScrollContainer])
+  useMessageScroll({
+    roomId,
+    messageCount: filteredMessages.length,
+    hasSearchQuery,
+    getScrollContainer,
+  })
 
   if (filteredMessages.length === 0 && !isLoading) {
     return (
@@ -272,7 +251,13 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
   }
 
   return (
-    <div className={cn('p-2', className)}>
+    <div
+      className={cn('p-2', className)}
+      role="log"
+      aria-live="polite"
+      aria-relevant="additions text"
+      aria-busy={isLoading}
+    >
       {isLoading && (
         <div className="flex justify-center py-4">
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -297,7 +282,13 @@ function MessageListContent({ roomId, className, onReply, searchQuery }: Message
   )
 }
 
-export function MessageList({ roomId, className, onReply, searchQuery }: MessageListProps) {
+export function MessageList({
+  roomId,
+  className,
+  onReply,
+  searchQuery,
+  scrollContainerRef,
+}: MessageListProps) {
   return (
     <ChatErrorBoundary>
       <MessageListContent
@@ -305,6 +296,7 @@ export function MessageList({ roomId, className, onReply, searchQuery }: Message
         className={className}
         onReply={onReply}
         searchQuery={searchQuery}
+        scrollContainerRef={scrollContainerRef}
       />
     </ChatErrorBoundary>
   )

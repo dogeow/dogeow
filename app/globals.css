@@ -8,6 +8,8 @@
   /* 默认主题色彩 - 会被 ThemeProvider 动态覆盖 */
   --primary: hsl(35 97% 55%);
   --primary-color: #fc9d1c;
+  --app-header-height: 50px;
+  --navbar-height: var(--app-header-height);
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -133,23 +135,47 @@
   }
 }
 
+#main-container {
+  scrollbar-gutter: stable both-edges;
+}
+
 /* start Sonner Toast Styles */
-.sonner-toast {
-  --normal-bg: hsl(var(--background));
-  --normal-border: hsl(var(--border));
-  --normal-text: hsl(var(--foreground));
-  /* 成功提示 - 绿色，更明显 */
-  --success-bg: hsl(var(--success));
-  --success-border: hsl(var(--success));
-  --success-text: hsl(var(--success-foreground));
-  /* 错误提示 - 红色，更明显 */
-  --error-bg: hsl(var(--destructive));
-  --error-border: hsl(var(--destructive));
-  --error-text: hsl(var(--destructive-foreground));
-  /* 警告提示 - 橘色 */
-  --warning-bg: hsl(var(--warning));
-  --warning-border: hsl(var(--warning));
-  --warning-text: hsl(var(--warning-foreground));
+/* Toaster 容器：垂直居中 + 水平靠右 */
+.toaster-center-right[data-sonner-toaster],
+.toaster-center-right[data-sonner-toaster][data-x-position='right'] {
+  position: fixed !important;
+  top: 50% !important;
+  bottom: auto !important;
+  right: 16px !important;
+  left: auto !important;
+  transform: translateY(-50%) !important;
+  width: auto !important;
+}
+
+/* Toast 单条样式：宽度自适应内容 */
+.toaster-center-right [data-sonner-toast],
+.toaster-center-right [data-sonner-toast][data-styled='true'] {
+  position: relative !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 400px !important;
+  white-space: nowrap !important;
+  right: 0 !important;
+  left: auto !important;
+}
+
+/* 移动端也保持相同样式 */
+@media (max-width: 600px) {
+  .toaster-center-right[data-sonner-toaster] {
+    right: 16px !important;
+    left: auto !important;
+    width: auto !important;
+  }
+  .toaster-center-right [data-sonner-toast] {
+    width: auto !important;
+    left: auto !important;
+    right: 0 !important;
+  }
 }
 
 /* 确保 toast 使用正确的背景色和文字颜色 - 使用更明显的颜色 */

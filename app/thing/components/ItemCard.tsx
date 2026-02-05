@@ -17,8 +17,8 @@ interface ItemCardProps {
 export default function ItemCard({ item, onView, isLoading = false }: ItemCardProps) {
   if (isLoading) {
     return (
-      <Card className="flex min-h-[72px] flex-row items-center gap-3 px-3 py-3">
-        <Skeleton className="h-14 w-14 flex-shrink-0 rounded" />
+      <Card className="flex flex-row items-start gap-2 p-1">
+        <Skeleton className="h-12 w-12 flex-shrink-0 rounded" />
         <div className="flex min-w-0 flex-grow flex-col space-y-2">
           <div className="flex items-center justify-between gap-2">
             <Skeleton className="h-4 w-24" />
@@ -36,18 +36,18 @@ export default function ItemCard({ item, onView, isLoading = false }: ItemCardPr
 
   return (
     <Card
-      className="group hover:bg-accent/30 border-border/50 hover:border-border flex min-h-[72px] cursor-pointer flex-row items-center gap-3 px-3 py-3 transition-all duration-200 hover:shadow-md"
+      className="group hover:bg-accent/30 border-border/50 hover:border-border flex cursor-pointer flex-row items-start gap-2 p-1 transition-all duration-200 hover:shadow-md"
       onClick={onView}
     >
       {/* 缩略图，优化尺寸和圆角 */}
-      <div className="bg-muted/50 h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg border transition-shadow group-hover:shadow-sm">
+      <div className="bg-muted/50 h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border transition-shadow group-hover:shadow-sm">
         <ItemCardImage
           initialPrimaryImage={item.primary_image}
           images={item.images}
           itemName={item.name}
           status={item.status}
           isPublic={item.is_public}
-          size={56}
+          size={48}
         />
       </div>
 

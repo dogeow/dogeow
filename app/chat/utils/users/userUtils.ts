@@ -1,3 +1,6 @@
+/**
+ * 用户工具函数
+ */
 import type { OnlineUser } from '@/app/chat/types'
 
 export type UserRole = 'admin' | 'moderator' | 'user'
@@ -7,14 +10,23 @@ export type UserRole = 'admin' | 'moderator' | 'user'
  * 提供判断用户是否为管理员、版主的方法
  */
 export const userRoleUtils = {
+  /**
+   * 判断用户是否为管理员
+   */
   isAdmin: (user: OnlineUser): boolean => {
     return user.email.includes('admin')
   },
 
+  /**
+   * 判断用户是否为版主
+   */
   isModerator: (user: OnlineUser): boolean => {
     return user.email.includes('admin') || user.email.includes('mod')
   },
 
+  /**
+   * 获取用户角色
+   */
   getUserRole: (user: OnlineUser): UserRole => {
     if (userRoleUtils.isAdmin(user)) return 'admin'
     if (userRoleUtils.isModerator(user)) return 'moderator'

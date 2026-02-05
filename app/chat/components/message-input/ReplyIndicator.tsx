@@ -3,8 +3,8 @@
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 import { useTranslation } from '@/hooks/useTranslation'
-import { truncateMessage } from './utils'
-import type { ReplyIndicatorProps } from './types'
+import { truncateMessage } from '@/app/chat/utils/message-input/utils'
+import type { ReplyIndicatorProps } from '@/app/chat/types/messageInput'
 
 export function ReplyIndicator({ replyingTo, onCancel }: ReplyIndicatorProps) {
   const { t } = useTranslation()

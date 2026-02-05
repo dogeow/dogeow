@@ -8,9 +8,9 @@ import {
   MAX_TEXTAREA_HEIGHT,
   TYPING_TIMEOUT,
   DEBOUNCE_DELAY,
-} from '../constants'
-import { getDraftKey } from '../utils'
-import type { MessageInputProps } from '../types'
+} from '@/app/chat/utils/message-input/constants'
+import { getDraftKey } from '@/app/chat/utils/message-input/utils'
+import type { MessageInputProps } from '@/app/chat/types/messageInput'
 
 export function useMessageInput({
   roomId,

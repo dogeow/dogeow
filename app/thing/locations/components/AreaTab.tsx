@@ -101,23 +101,26 @@ export default function AreaTab({
     </>
   )
 
+  const renderDefaultButton = (area: Area) => (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => onSetDefaultArea(area.id)}
+      disabled={loading}
+      className={
+        area.is_default ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'
+      }
+      title={area.is_default ? t('location.current_default_area') : t('location.set_as_default')}
+      aria-label={
+        area.is_default ? t('location.current_default_area') : t('location.set_as_default')
+      }
+    >
+      <Star className={`h-4 w-4 ${area.is_default ? 'fill-current' : ''}`} />
+    </Button>
+  )
+
   const renderViewActions = (area: Area) => (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => onSetDefaultArea(area.id)}
-        disabled={loading}
-        className={
-          area.is_default ? 'text-yellow-500' : 'text-muted-foreground hover:text-yellow-500'
-        }
-        title={area.is_default ? t('location.current_default_area') : t('location.set_as_default')}
-        aria-label={
-          area.is_default ? t('location.current_default_area') : t('location.set_as_default')
-        }
-      >
-        <Star className={`h-4 w-4 ${area.is_default ? 'fill-current' : ''}`} />
-      </Button>
       <Button
         variant="ghost"
         size="icon"
@@ -155,11 +158,14 @@ export default function AreaTab({
                 className="flex items-center justify-between rounded-md border p-2"
                 aria-label={area.is_default ? t('location.current_default_area') : undefined}
               >
-                {editingInlineAreaId === area.id ? (
-                  renderEditMode(area)
-                ) : (
-                  <span className={area.is_default ? 'font-semibold' : ''}>{area.name}</span>
-                )}
+                <div className="flex flex-1 items-center gap-2">
+                  {renderDefaultButton(area)}
+                  {editingInlineAreaId === area.id ? (
+                    renderEditMode(area)
+                  ) : (
+                    <span className={area.is_default ? 'font-semibold' : ''}>{area.name}</span>
+                  )}
+                </div>
                 <div className="flex space-x-2">
                   {editingInlineAreaId === area.id
                     ? renderEditActions(area)

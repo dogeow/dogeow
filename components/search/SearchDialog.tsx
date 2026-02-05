@@ -151,10 +151,10 @@ export function SearchDialog({
         className={`w-full max-w-[95vw] sm:max-w-[550px] ${
           keyboardOpen
             ? 'fixed top-2 right-2 left-2 h-[60svh] max-h-[60svh] translate-x-0 translate-y-0'
-            : 'h-[70vh] max-h-[80vh]'
-        } gap-0 p-0`}
+            : 'max-h-[85svh] sm:max-h-[85vh]'
+        } gap-0 overflow-hidden p-0`}
       >
-        <div className="flex h-full flex-col p-4 sm:p-6">
+        <div className="flex max-h-[85svh] flex-col p-4 sm:max-h-[85vh] sm:p-6">
           {/* 标题栏 */}
           <DialogHeader className="mb-4 flex-shrink-0">
             <div className="flex items-center justify-between">
@@ -182,8 +182,8 @@ export function SearchDialog({
           />
 
           {/* 搜索结果 */}
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto">
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <div className="pb-2">
               <SearchResultsList
                 loading={loading}
                 searchTerm={searchTerm}

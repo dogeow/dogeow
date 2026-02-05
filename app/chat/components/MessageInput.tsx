@@ -4,8 +4,6 @@
 
 import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { Textarea } from '@/components/ui/textarea'
-import { toast } from '@/components/ui/use-toast'
-import { apiRequest } from '@/lib/api'
 import { useTranslation } from '@/hooks/useTranslation'
 import useChatStore from '@/app/chat/chatStore'
 import {
@@ -15,19 +13,17 @@ import {
 } from './UnreadMessageIndicator'
 
 // 导入重构后的组件和hooks
-import {
-  ReplyIndicator,
-  MuteStatusAlert,
-  FilePreview,
-  MentionSuggestions,
-  ActionButtons,
-  useMessageInput,
-  useMentions,
-  useFileUpload,
-  MAX_MESSAGE_LENGTH,
-  type MessageInputProps,
-} from './message-input'
-import { isImageFile } from './message-input/utils'
+import { ReplyIndicator } from './message-input/ReplyIndicator'
+import { MuteStatusAlert } from './message-input/MuteStatusAlert'
+import { FilePreview } from './message-input/FilePreview'
+import { MentionSuggestions } from './message-input/MentionSuggestions'
+import { ActionButtons } from './message-input/ActionButtons'
+import { useMessageInput } from '@/app/chat/hooks/message-input/useMessageInput'
+import { useMentions } from '@/app/chat/hooks/message-input/useMentions'
+import { useFileUpload } from '@/app/chat/hooks/message-input/useFileUpload'
+import { useMessageInputHandlers } from '@/app/chat/hooks/message-input/useMessageInputHandlers'
+import { MAX_MESSAGE_LENGTH } from '@/app/chat/utils/message-input/constants'
+import type { MessageInputProps } from '@/app/chat/types/messageInput'
 
 export function MessageInput({
   roomId,
@@ -92,160 +88,37 @@ export function MessageInput({
     fileInputRef.current?.click()
   }, [fileInputRef])
 
-  // 处理文件输入变化
-  const handleFileInputChange = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || [])
-      if (files.length === 0) return
-
-      const imageFiles = files.filter(file => isImageFile(file))
-      const otherFiles = files.filter(file => !isImageFile(file))
-
-      if (imageFiles.length > 0) {
-        const isMuted = checkMuteStatus()
-        if (isMuted) {
-          const muteMessage = muteUntil
-            ? `您在此房间被静音直到 ${new Date(muteUntil).toLocaleString()}`
-            : '您在此房间被静音'
-          toast.error(muteMessage)
-        } else if (!isConnected) {
-          toast.error(t('chat.not_connected', 'Not connected to chat server'))
-        } else {
-          try {
-            const formData = new FormData()
-            imageFiles.forEach(file => formData.append('images[]', file))
-
-            const uploadedImages = await apiRequest<
-              Array<{ url: string; origin_url?: string; path?: string; origin_path?: string }>
-            >('upload/images', 'POST', formData)
-
-            await Promise.all(
-              uploadedImages.map(image => sendMessage(roomId.toString(), image.url))
-            )
-          } catch (error) {
-            console.error('图片上传失败:', error)
-            toast.error(t('chat.file_processing_error', 'Error processing file'))
-          }
-        }
-      }
-
-      if (otherFiles.length > 0) {
-        handleFileUpload(otherFiles)
-      }
-
-      // 清空输入
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    },
-    [
-      handleFileUpload,
-      fileInputRef,
-      checkMuteStatus,
-      muteUntil,
-      isConnected,
-      sendMessage,
-      roomId,
-      t,
-    ]
-  )
-
-  // 处理消息输入变化
-  const handleTextareaChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      const value = e.target.value
-      const cursorPosition = e.target.selectionStart
-
-      handleInputChange(value)
-      checkForMentions(value, cursorPosition)
-    },
-    [handleInputChange, checkForMentions]
-  )
-
-  // 处理提及选择
-  const handleMentionSelect = useCallback(
-    (suggestion: { id: number; name: string; email: string }) => {
-      const result = insertMention(suggestion, message, setMessage)
-      if (result && textareaRef.current) {
-        setTimeout(() => {
-          textareaRef.current?.focus()
-          textareaRef.current?.setSelectionRange(result.newCursorPos, result.newCursorPos)
-        }, 0)
-      }
-    },
-    [insertMention, message, setMessage, textareaRef]
-  )
-
-  // 处理键盘快捷键
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      // 处理@提及导航
-      if (handleMentionNavigation(e.key)) {
-        e.preventDefault()
-        return
-      }
-
-      // 如果有提及建议且按下Enter或Tab
-      if (showMentions && mentionSuggestions.length > 0 && (e.key === 'Enter' || e.key === 'Tab')) {
-        e.preventDefault()
-        handleMentionSelect(mentionSuggestions[selectedMentionIndex])
-        return
-      }
-
-      // 按Enter发送消息（不按Shift）
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-        handleSendMessage()
-      }
-
-      // 按Escape取消回复
-      if (e.key === 'Escape' && replyingTo && onCancelReply) {
-        e.preventDefault()
-        onCancelReply()
-      }
-    },
-    [
-      handleMentionNavigation,
-      showMentions,
-      mentionSuggestions,
-      selectedMentionIndex,
-      handleMentionSelect,
-      handleSendMessage,
-      replyingTo,
-      onCancelReply,
-    ]
-  )
-
-  // 滚动到底部
-  const scrollToBottom = useCallback(() => {
-    if (scrollContainerRef?.current) {
-      scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollHeight,
-        behavior: 'smooth',
-      })
-    }
-  }, [scrollContainerRef])
-
-  useEffect(() => {
-    const container = inputContainerRef.current
-    if (!container || typeof window === 'undefined') return
-
-    const updateHeight = () => {
-      const height = container.offsetHeight
-      document.documentElement.style.setProperty('--chat-input-height', `${height}px`)
-    }
-
-    updateHeight()
-
-    const observer = new ResizeObserver(() => {
-      updateHeight()
-    })
-    observer.observe(container)
-
-    return () => {
-      observer.disconnect()
-    }
-  }, [])
+  const {
+    handleFileInputChange,
+    handleTextareaChange,
+    handleMentionSelect,
+    handleKeyDown,
+    scrollToBottom,
+  } = useMessageInputHandlers({
+    roomId,
+    message,
+    handleInputChange,
+    setMessage,
+    replyTarget: replyingTo,
+    onCancelReply,
+    mentionSuggestions,
+    selectedMentionIndex,
+    showMentions,
+    checkForMentions,
+    insertMention,
+    handleMentionNavigation,
+    handleSendMessage,
+    sendMessage,
+    isConnected,
+    checkMuteStatus,
+    muteUntil,
+    t,
+    fileInputRef,
+    textareaRef,
+    scrollContainerRef,
+    handleFileUpload,
+    inputContainerRef,
+  })
 
   useEffect(() => {
     refreshMuteStatus()

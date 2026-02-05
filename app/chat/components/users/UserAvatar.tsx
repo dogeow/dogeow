@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useAvatarImage } from '@/hooks/useAvatarImage'
-import { AVATAR_CONFIGS } from '../utils/avatarConfig'
-import { getInitials } from '../utils/userUtils'
+import { AVATAR_CONFIGS } from '@/app/chat/utils/users/avatarConfig'
+import { getInitials } from '@/app/chat/utils/users/userUtils'
 import type { OnlineUser } from '@/app/chat/types'
 
 interface UserAvatarProps {

@@ -1,5 +1,7 @@
 /**
  * 聊天头部组件导出
  */
-export { DesktopHeader } from './DesktopHeader'
-export { MobileHeader } from './MobileHeader'
+export { ChatHeaderDesktop } from './ChatHeaderDesktop'
+export { ChatHeaderMobile } from './ChatHeaderMobile'
+export { RoomInfoDialog } from './RoomInfoDialog'
+export { NotificationSettingsDialog } from './NotificationSettingsDialog'

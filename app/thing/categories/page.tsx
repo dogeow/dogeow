@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
-import { ChevronDown, ChevronRight, Edit } from 'lucide-react'
+import { ChevronDown, ChevronRight, Edit2 } from 'lucide-react'
 import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 import { useCategories } from './hooks/useCategories'
 import { useInlineEdit } from './hooks/useInlineEdit'
@@ -193,47 +193,53 @@ export default function Categories() {
 
   return (
     <div className="py-2 pb-24">
+      {categoryTree.length > 0 && (
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={isAllExpanded ? collapseAll : expandAll}
+              className="border-border/50 hover:border-border hover:bg-accent/50 flex items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200"
+            >
+              {isAllExpanded ? (
+                <>
+                  <ChevronRight className="h-4 w-4" />
+                  <span className="text-sm font-medium">全部折叠</span>
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  <span className="text-sm font-medium">全部展开</span>
+                </>
+              )}
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isEditMode ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleEditMode}
+                className="h-7 px-2 text-xs"
+              >
+                <Edit2 className="mr-1 h-3 w-3" />
+                编辑
+              </Button>
+            ) : (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleEditMode}
+                className="h-7 px-2 text-xs"
+              >
+                完成
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
       <Card>
-        {categoryTree.length > 0 && (
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="text-muted-foreground text-sm">共 {categories.length} 个分类</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={isEditMode ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={toggleEditMode}
-                  className="flex items-center gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span className="text-sm font-medium">
-                    {isEditMode ? '退出编辑' : '编辑模式'}
-                  </span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={isAllExpanded ? collapseAll : expandAll}
-                  className="border-border/50 hover:border-border hover:bg-accent/50 flex items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-200"
-                >
-                  {isAllExpanded ? (
-                    <>
-                      <ChevronRight className="h-4 w-4" />
-                      <span className="text-sm font-medium">全部折叠</span>
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown className="h-4 w-4" />
-                      <span className="text-sm font-medium">全部展开</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-        )}
         <CardContent className="p-0">
           <CategoryTable
             categories={categories}

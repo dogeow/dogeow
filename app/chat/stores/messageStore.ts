@@ -7,6 +7,34 @@ import chatCache from '@/lib/cache/chat-cache'
 import { get as apiGet } from '@/lib/api'
 import { handleChatApiError } from '@/lib/api/chat-error-handler'
 
+type JsonApiPaginatedResponse<T> = {
+  data: T[]
+  meta?: {
+    current_page?: number
+    last_page?: number
+    per_page?: number
+    total?: number
+  }
+  links?: {
+    next?: string | null
+  }
+}
+
+const toPagination = (response: JsonApiPaginatedResponse<ChatMessage>): MessagePagination => {
+  const meta = response.meta || {}
+  const currentPage = meta.current_page ?? 1
+  const lastPage = meta.last_page ?? currentPage
+
+  return {
+    data: response.data,
+    current_page: currentPage,
+    last_page: lastPage,
+    per_page: meta.per_page ?? response.data.length,
+    total: meta.total ?? response.data.length,
+    has_more: Boolean(response.links?.next) || currentPage < lastPage,
+  }
+}
+
 interface MessageState {
   messages: Record<string, ChatMessage[]>
   messagesPagination: Record<string, MessagePagination>
@@ -73,27 +101,19 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
 
     set({ isLoading: true, error: null })
     try {
-      const response = await apiGet<{ messages: ChatMessage[]; pagination: MessagePagination }>(
+      const response = await apiGet<JsonApiPaginatedResponse<ChatMessage>>(
         `/chat/rooms/${roomId}/messages?page=${page}`
       )
-
-      const paginationData: MessagePagination = {
-        data: response.messages,
-        current_page: response.pagination.current_page,
-        last_page: response.pagination.last_page || 1,
-        per_page: response.pagination.per_page || 50,
-        total: response.pagination.total || response.messages.length,
-        has_more: response.pagination.has_more_pages || false,
-      }
+      const paginationData = toPagination(response)
 
       if (page === 1) {
-        chatCache.cacheMessages(roomKey, response.messages, paginationData)
+        chatCache.cacheMessages(roomKey, response.data, paginationData)
       }
 
       set(state => ({
         messages: {
           ...state.messages,
-          [roomKey]: response.messages,
+          [roomKey]: response.data,
         },
         messagesPagination: {
           ...state.messagesPagination,
@@ -125,18 +145,10 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     const nextPage = currentPagination.current_page + 1
 
     try {
-      const response = await apiGet<{ messages: ChatMessage[]; pagination: MessagePagination }>(
+      const response = await apiGet<JsonApiPaginatedResponse<ChatMessage>>(
         `/chat/rooms/${roomId}/messages?page=${nextPage}`
       )
-
-      const paginationData: MessagePagination = {
-        data: response.messages,
-        current_page: response.pagination.current_page,
-        last_page: response.pagination.last_page || 1,
-        per_page: response.pagination.per_page || 50,
-        total: response.pagination.total || response.messages.length,
-        has_more: response.pagination.has_more_pages || false,
-      }
+      const paginationData = toPagination(response)
 
       set(state => {
         const currentMessages = state.messages[roomKey] || []
@@ -144,7 +156,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
         return {
           messages: {
             ...state.messages,
-            [roomKey]: [...response.messages, ...currentMessages],
+            [roomKey]: [...response.data, ...currentMessages],
           },
           messagesPagination: {
             ...state.messagesPagination,

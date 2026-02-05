@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Smile } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useTranslation } from '@/hooks/useTranslation'
-import { COMMON_EMOJIS } from './constants'
-import type { EmojiPickerProps } from './types'
+import { COMMON_EMOJIS } from '@/app/chat/utils/message-input/constants'
+import type { EmojiPickerProps } from '@/app/chat/types/messageInput'
 
 export function EmojiPicker({
   isOpen,

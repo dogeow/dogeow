@@ -5,7 +5,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator'
 import { Shield, Circle, Calendar, AtSign, MessageCircle, UserX, Flag, Crown } from 'lucide-react'
 import { UserAvatar } from './UserAvatar'
-import { userRoleUtils, formatJoinedDate } from '../utils/userUtils'
+import { userRoleUtils, formatJoinedDate } from '@/app/chat/utils/users/userUtils'
 import type { OnlineUser } from '@/app/chat/types'
 
 interface UserProfilePopoverProps {

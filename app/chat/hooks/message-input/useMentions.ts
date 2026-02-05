@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
-import { MAX_MENTION_SUGGESTIONS } from '../constants'
-import type { MentionSuggestion } from '../types'
+import { MAX_MENTION_SUGGESTIONS } from '@/app/chat/utils/message-input/constants'
+import type { MentionSuggestion } from '@/app/chat/types/messageInput'
 
 interface OnlineUser {
   id: number

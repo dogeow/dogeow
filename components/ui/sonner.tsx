@@ -9,17 +9,29 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps['theme']}
-      className="toaster group"
+      className="toaster group toaster-center-right"
       position="top-right"
+      dir="ltr"
+      offset={{ top: 0, right: 16 }}
+      mobileOffset={{ top: 0, right: 16 }}
+      expand
+      richColors
+      style={
+        {
+          '--width': 'auto',
+        } as React.CSSProperties
+      }
       toastOptions={{
-        style: {
-          marginTop: '60px', // 为顶部导航栏留出空间
-        },
         classNames: {
+          toast: 'sonner-toast-custom',
           success: 'toast-success',
           error: 'toast-error',
           warning: 'toast-warning',
           info: 'toast-info',
+        },
+        style: {
+          width: 'auto',
+          maxWidth: '400px',
         },
       }}
       {...props}

@@ -2,7 +2,7 @@
 
 import { useRef } from 'react'
 import { useTranslation } from '@/hooks/useTranslation'
-import type { MentionSuggestionsProps } from './types'
+import type { MentionSuggestionsProps } from '@/app/chat/types/messageInput'
 
 export function MentionSuggestions({
   suggestions,

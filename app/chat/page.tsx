@@ -360,7 +360,11 @@ function ChatPageContent() {
                   ref={scrollContainerRef}
                   className="chat-messages-mobile min-h-0 flex-1 overflow-y-auto"
                 >
-                  <MessageList roomId={currentRoom.id} onReply={mobileHandlers.handleReply} />
+                  <MessageList
+                    roomId={currentRoom.id}
+                    onReply={mobileHandlers.handleReply}
+                    scrollContainerRef={scrollContainerRef}
+                  />
                 </div>
 
                 {/* Message Input */}

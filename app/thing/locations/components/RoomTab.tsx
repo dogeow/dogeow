@@ -1,10 +1,18 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Pencil, Trash2 } from 'lucide-react'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -37,76 +45,97 @@ export default function RoomTab({
   const { t } = useTranslation()
   const [editingRoom, setEditingRoom] = useState<Room | null>(null)
 
+  // 使用 useMemo 计算编辑表单的值，避免在 useEffect 中调用 setState
+  const editingRoomName = useMemo(() => (editingRoom ? editingRoom.name : ''), [editingRoom])
+  const editingAreaId = useMemo(
+    () => (editingRoom ? String(editingRoom.area_id) : ''),
+    [editingRoom]
+  )
+
+  // 本地状态用于表单输入（允许用户修改）
+  const [localRoomName, setLocalRoomName] = useState('')
+  const [localAreaId, setLocalAreaId] = useState<string>('')
+
+  // 当 editingRoom 变化时，更新本地状态
+  const handleSetEditingRoom = (room: Room | null) => {
+    setEditingRoom(room)
+    if (room) {
+      setLocalRoomName(room.name)
+      setLocalAreaId(String(room.area_id))
+    } else {
+      setLocalRoomName('')
+      setLocalAreaId('')
+    }
+  }
+
+  // 使用本地状态或计算值（优先使用本地状态，如果 editingRoom 存在）
+  const displayRoomName = editingRoom ? localRoomName : editingRoomName
+  const displayAreaId = editingRoom ? localAreaId : editingAreaId
+
   const handleUpdateRoom = async () => {
     if (!editingRoom) return
     const success = await onUpdateRoom(editingRoom.id, {
-      name: editingRoom.name,
-      area_id: editingRoom.area_id,
+      name: localRoomName.trim(),
+      area_id: parseInt(localAreaId),
     })
     if (success) {
-      setEditingRoom(null)
+      handleSetEditingRoom(null)
     }
   }
 
   return (
     <div className="flex flex-col">
-      {/* 编辑房间卡片，仅在编辑时显示 */}
-      {editingRoom && (
-        <div className="mb-6 border-b pb-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">{t('location.edit_room')}</h3>
-            <p className="text-muted-foreground text-sm">{t('location.edit_room')}</p>
-          </div>
-          <div>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="roomName">{t('location.room_name')}</Label>
-                <Input
-                  id="roomName"
-                  placeholder={t('location.enter_room_name')}
-                  value={editingRoom.name}
-                  onChange={e => setEditingRoom({ ...editingRoom, name: e.target.value })}
-                  onKeyDown={e => e.key === 'Enter' && handleUpdateRoom()}
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="areaSelect">{t('location.belongs_to_area')}</Label>
-                <Select
-                  value={String(editingRoom.area_id)}
-                  onValueChange={value =>
-                    setEditingRoom({ ...editingRoom, area_id: parseInt(value) })
-                  }
-                  disabled={loading}
-                >
-                  <SelectTrigger id="areaSelect">
-                    <SelectValue placeholder={t('location.select_area')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {areas.map(area => (
-                      <SelectItem key={area.id} value={area.id.toString()}>
-                        {area.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+      <Dialog open={!!editingRoom} onOpenChange={open => !open && handleSetEditingRoom(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('location.edit_room')}</DialogTitle>
+            <DialogDescription>{t('location.edit_room')}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="roomName">{t('location.room_name')}</Label>
+              <Input
+                id="roomName"
+                placeholder={t('location.enter_room_name')}
+                value={displayRoomName}
+                onChange={e => setLocalRoomName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleUpdateRoom()}
+                disabled={loading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="areaSelect">{t('location.belongs_to_area')}</Label>
+              <Select
+                value={displayAreaId}
+                onValueChange={value => setLocalAreaId(value)}
+                disabled={loading}
+              >
+                <SelectTrigger id="areaSelect">
+                  <SelectValue placeholder={t('location.select_area')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {areas.map(area => (
+                    <SelectItem key={area.id} value={area.id.toString()}>
+                      {area.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <div className="mt-4 flex justify-between">
-            <Button variant="outline" onClick={() => setEditingRoom(null)} disabled={loading}>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => handleSetEditingRoom(null)} disabled={loading}>
               {t('common.cancel')}
             </Button>
             <Button
               onClick={handleUpdateRoom}
-              disabled={loading || !editingRoom.area_id || !editingRoom.name.trim()}
+              disabled={loading || !displayAreaId || !displayRoomName.trim()}
             >
               {loading ? t('location.processing') : t('location.update_room')}
             </Button>
-          </div>
-        </div>
-      )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 房间列表卡片 */}
       <div>
@@ -131,7 +160,7 @@ export default function RoomTab({
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setEditingRoom(room)}
+                      onClick={() => handleSetEditingRoom(room)}
                       disabled={loading}
                       aria-label={t('common.edit')}
                       title={t('common.edit')}

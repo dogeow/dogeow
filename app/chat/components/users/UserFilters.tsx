@@ -9,18 +9,41 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Filter } from 'lucide-react'
-
-type SortOption = 'name' | 'joined' | 'status'
-type FilterOption = 'all' | 'online' | 'moderators'
+import type { SortOption, FilterOption } from '@/app/chat/utils/users/filterUtils'
 
 interface UserFiltersProps {
   sortBy: SortOption
   filterBy: FilterOption
   onSortChange: (sort: SortOption) => void
   onFilterChange: (filter: FilterOption) => void
+  sortLabels?: {
+    name: string
+    joined: string
+    status: string
+  }
+  filterLabels?: {
+    all: string
+    online: string
+    moderators: string
+  }
 }
 
-export function UserFilters({ sortBy, filterBy, onSortChange, onFilterChange }: UserFiltersProps) {
+export function UserFilters({
+  sortBy,
+  filterBy,
+  onSortChange,
+  onFilterChange,
+  sortLabels = {
+    name: '按名称排序',
+    joined: '按加入时间排序',
+    status: '按状态排序',
+  },
+  filterLabels = {
+    all: '全部用户',
+    online: '仅在线',
+    moderators: '版主',
+  },
+}: UserFiltersProps) {
   return (
     <div className="flex space-x-2">
       <Select value={sortBy} onValueChange={(value: SortOption) => onSortChange(value)}>
@@ -28,9 +51,9 @@ export function UserFilters({ sortBy, filterBy, onSortChange, onFilterChange }: 
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="name">按名称排序</SelectItem>
-          <SelectItem value="joined">按加入时间排序</SelectItem>
-          <SelectItem value="status">按状态排序</SelectItem>
+          <SelectItem value="name">{sortLabels.name}</SelectItem>
+          <SelectItem value="joined">{sortLabels.joined}</SelectItem>
+          <SelectItem value="status">{sortLabels.status}</SelectItem>
         </SelectContent>
       </Select>
 
@@ -40,9 +63,9 @@ export function UserFilters({ sortBy, filterBy, onSortChange, onFilterChange }: 
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="all">全部用户</SelectItem>
-          <SelectItem value="online">仅在线</SelectItem>
-          <SelectItem value="moderators">版主</SelectItem>
+          <SelectItem value="all">{filterLabels.all}</SelectItem>
+          <SelectItem value="online">{filterLabels.online}</SelectItem>
+          <SelectItem value="moderators">{filterLabels.moderators}</SelectItem>
         </SelectContent>
       </Select>
     </div>

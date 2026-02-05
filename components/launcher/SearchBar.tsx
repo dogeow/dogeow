@@ -50,9 +50,7 @@ export function SearchBar({
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      const isClearButton =
-        target.closest('div[class*="right-2 top-1/2"]') ||
-        target.closest('div.rounded-full > svg.h-3')
+      const isClearButton = target.closest('[data-clear-button="true"]')
 
       if (isClearButton) return
 
@@ -106,7 +104,13 @@ export function SearchBar({
 
   if (!isVisible) {
     return (
-      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={onToggleSearch}>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9"
+        onClick={onToggleSearch}
+        aria-label="Open search"
+      >
         <Search className="h-5 w-5" />
       </Button>
     )
@@ -138,6 +142,7 @@ export function SearchBar({
           e.stopPropagation()
           onToggleSearch()
         }}
+        aria-label="Close search"
       >
         <X className="h-4 w-4" />
       </Button>

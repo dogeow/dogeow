@@ -3,4 +3,7 @@
  */
 export { UserSearchBar } from './UserSearchBar'
 export { UserFilters } from './UserFilters'
-export * from './userUtils'
+export { UserAvatar } from './UserAvatar'
+export { UserListItem } from './UserListItem'
+export { UserProfilePopover } from './UserProfilePopover'
+export * from '@/app/chat/utils/users/userUtils'

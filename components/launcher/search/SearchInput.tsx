@@ -25,18 +25,21 @@ export const SearchInput = memo<SearchInputProps>(
           placeholder={`${t('search.in')}${currentApp ? currentApp + '...' : '...'}`}
           value={searchTerm}
           onChange={e => onSearchChange(e.target.value)}
+          aria-label="Search"
           className="border-primary/20 animate-in fade-in h-9 w-full pr-8 pl-8 duration-150"
         />
 
         {searchTerm && (
-          <div
-            className="absolute top-1/2 right-2 -translate-y-1/2 transform cursor-pointer rounded-full border border-transparent p-1 hover:border-gray-300 hover:bg-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-700"
+          <button
+            type="button"
+            className="absolute top-1/2 right-2 -translate-y-1/2 transform rounded-full border border-transparent p-1 hover:border-gray-300 hover:bg-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-700"
             data-clear-button="true"
+            aria-label="Clear search"
             title="清除搜索内容"
             onClick={onClear}
           >
             <X className="h-3 w-3 text-gray-500" />
-          </div>
+          </button>
         )}
       </form>
     )

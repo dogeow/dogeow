@@ -25,6 +25,34 @@ import {
 } from './stores/utils/notificationHelpers'
 import type { NotificationSettings, RoomNotification, MentionInfo } from './stores/types'
 
+type JsonApiPaginatedResponse<T> = {
+  data: T[]
+  meta?: {
+    current_page?: number
+    last_page?: number
+    per_page?: number
+    total?: number
+  }
+  links?: {
+    next?: string | null
+  }
+}
+
+const toPagination = (response: JsonApiPaginatedResponse<ChatMessage>): MessagePagination => {
+  const meta = response.meta || {}
+  const currentPage = meta.current_page ?? 1
+  const lastPage = meta.last_page ?? currentPage
+
+  return {
+    data: response.data,
+    current_page: currentPage,
+    last_page: lastPage,
+    per_page: meta.per_page ?? response.data.length,
+    total: meta.total ?? response.data.length,
+    has_more: Boolean(response.links?.next) || currentPage < lastPage,
+  }
+}
+
 export interface ChatState {
   // 核心状态
   currentRoom: ChatRoom | null
@@ -415,32 +443,24 @@ const useChatStore = create<ChatState>()(
 
         set({ isLoading: true, error: null })
         try {
-          const response = await apiGet<{ messages: ChatMessage[]; pagination: MessagePagination }>(
+          const response = await apiGet<JsonApiPaginatedResponse<ChatMessage>>(
             `/chat/rooms/${roomId}/messages?page=${page}`
           )
           console.log('聊天室状态: API响应:', response)
 
-          // 转换API响应以匹配MessagePagination格式
-          const paginationData: MessagePagination = {
-            data: response.messages,
-            current_page: response.pagination.current_page,
-            last_page: response.pagination.last_page || 1,
-            per_page: response.pagination.per_page || 50,
-            total: response.pagination.total || response.messages.length,
-            has_more: response.pagination.has_more_pages || false,
-          }
+          const paginationData = toPagination(response)
 
           // 缓存第一页的消息
           if (page === 1) {
-            chatCache.cacheMessages(roomKey, response.messages, paginationData)
+            chatCache.cacheMessages(roomKey, response.data, paginationData)
           }
 
-          console.log('聊天室状态: 为房间设置消息:', roomKey, '数量:', response.messages.length)
+          console.log('聊天室状态: 为房间设置消息:', roomKey, '数量:', response.data.length)
 
           set(state => ({
             messages: {
               ...state.messages,
-              [roomKey]: response.messages,
+              [roomKey]: response.data,
             },
             messagesPagination: {
               ...state.messagesPagination,
@@ -473,18 +493,10 @@ const useChatStore = create<ChatState>()(
         const nextPage = currentPagination.current_page + 1
 
         try {
-          const response = await apiGet<{ messages: ChatMessage[]; pagination: MessagePagination }>(
+          const response = await apiGet<JsonApiPaginatedResponse<ChatMessage>>(
             `/chat/rooms/${roomId}/messages?page=${nextPage}`
           )
-
-          const paginationData: MessagePagination = {
-            data: response.messages,
-            current_page: response.pagination.current_page,
-            last_page: response.pagination.last_page || 1,
-            per_page: response.pagination.per_page || 50,
-            total: response.pagination.total || response.messages.length,
-            has_more: response.pagination.has_more_pages || false,
-          }
+          const paginationData = toPagination(response)
 
           set(state => {
             const currentMessages = state.messages[roomKey] || []
@@ -492,7 +504,7 @@ const useChatStore = create<ChatState>()(
             return {
               messages: {
                 ...state.messages,
-                [roomKey]: [...response.messages, ...currentMessages], // 将较旧的消息添加到前面
+                [roomKey]: [...response.data, ...currentMessages], // 将较旧的消息添加到前面
               },
               messagesPagination: {
                 ...state.messagesPagination,

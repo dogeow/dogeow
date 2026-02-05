@@ -88,7 +88,7 @@ export const ChatHeaderMobile = memo<ChatHeaderMobileProps>(
     )
 
     return (
-      <div className="bg-background flex items-center justify-between border-b p-4 md:hidden">
+      <div className="bg-background flex items-center justify-between border-b px-3 py-2 md:hidden">
         {/* 左侧 - 导航和房间信息 */}
         <div className="flex min-w-0 flex-1 items-center gap-2">
           {/* 菜单按钮 */}

@@ -5,7 +5,8 @@ export { DeleteRoomDialog } from './DeleteRoomDialog'
 export { ChatHeader } from './ChatHeader'
 export { MessageList } from './MessageList'
 export { MessageInput } from './MessageInput'
-export { MessageInteractions, MessageSearch, MessageThread } from './MessageInteractions'
+export { MessageInteractions, MessageThread } from './MessageInteractions'
+export { MessageSearchDialog } from './message-search/MessageSearchDialog'
 export { default as OnlineUsers } from './OnlineUsers'
 
 export {

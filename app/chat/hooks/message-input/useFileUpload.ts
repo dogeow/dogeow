@@ -7,9 +7,9 @@ import {
   createFilePreview,
   sanitizeFileName,
   formatFileSize,
-} from '../utils'
-import { MAX_FILE_SIZE } from '../constants'
-import type { UploadedFile } from '../types'
+} from '@/app/chat/utils/message-input/utils'
+import { MAX_FILE_SIZE } from '@/app/chat/utils/message-input/constants'
+import type { UploadedFile } from '@/app/chat/types/messageInput'
 
 export function useFileUpload() {
   const { t } = useTranslation()

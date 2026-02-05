@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import useChatStore from '@/app/chat/chatStore'
-import { useOnlineCount } from './header/hooks/useOnlineCount'
-import { ChatHeaderDesktop } from './header/components/ChatHeaderDesktop'
-import { ChatHeaderMobile } from './header/components/ChatHeaderMobile'
-import { RoomInfoDialog } from './header/components/RoomInfoDialog'
-import { NotificationSettingsDialog } from './header/components/NotificationSettingsDialog'
+import { useOnlineCount } from '@/app/chat/hooks/useOnlineCount'
+import { ChatHeaderDesktop } from './header/ChatHeaderDesktop'
+import { ChatHeaderMobile } from './header/ChatHeaderMobile'
+import { RoomInfoDialog } from './header/RoomInfoDialog'
+import { NotificationSettingsDialog } from './header/NotificationSettingsDialog'
 import type { ChatRoom } from '../types'
 
 // 聊天头部组件属性接口

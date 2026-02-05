@@ -98,7 +98,7 @@ export default function Locations() {
         {/* 使用flex布局，让树形视图独立，后面三个作为一组 */}
         <div className="flex items-center gap-3">
           {/* 树形视图独立按钮 - 必须放在 TabsList 内，使用与右边三个相同的样式 */}
-          <TabsList className="h-auto">
+          <TabsList>
             <TabsTrigger value="tree" className="px-3">
               <FolderTree className="h-4 w-4" />
             </TabsTrigger>

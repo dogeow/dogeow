@@ -1,6 +1,6 @@
 'use client'
 
-import type { MuteStatusAlertProps } from './types'
+import type { MuteStatusAlertProps } from '@/app/chat/types/messageInput'
 
 export function MuteStatusAlert({ muteUntil, muteReason }: MuteStatusAlertProps) {
   return (

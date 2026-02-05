@@ -168,12 +168,24 @@ class NotificationService {
   /**
    * 播放音效
    */
-  public playSound(soundName: string, options: SoundOptions = {}): void {
-    if (!this.audioContext || !this.soundCache.has(soundName)) {
+  public async playSound(soundName: string, options: SoundOptions = {}): Promise<void> {
+    if (!this.audioContext) {
       return
     }
 
     try {
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume()
+      }
+
+      if (!this.soundCache.has(soundName)) {
+        await this.preloadSounds()
+      }
+
+      if (!this.soundCache.has(soundName)) {
+        return
+      }
+
       const audioBuffer = this.soundCache.get(soundName)!
       const source = this.audioContext.createBufferSource()
       const gainNode = this.audioContext.createGain()

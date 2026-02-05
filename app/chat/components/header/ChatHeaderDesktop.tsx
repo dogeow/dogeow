@@ -84,7 +84,7 @@ export const ChatHeaderDesktop = memo<ChatHeaderDesktopProps>(
     )
 
     return (
-      <div className="bg-background hidden items-center justify-between border-b p-4 md:flex">
+      <div className="bg-background hidden items-center justify-between border-b px-4 py-2 md:flex">
         {/* 左侧 - 导航和房间信息 */}
         <div className="flex items-center gap-3">
           {showBackButton && (

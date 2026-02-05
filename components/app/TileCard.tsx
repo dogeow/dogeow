@@ -1,9 +1,9 @@
-import { memo, useState, useCallback, KeyboardEvent, useMemo } from 'react'
+import { memo, useState, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import { Lock } from 'lucide-react'
 import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
-import { PERFORMANCE, ANIMATIONS } from '@/lib/constants'
+import { PERFORMANCE } from '@/lib/constants'
 
 // 常量定义
 const TILE_CLASSES = {
@@ -12,10 +12,13 @@ const TILE_CLASSES = {
     'w-full h-full min-h-[8rem]',
     'relative flex flex-col items-start justify-end',
     'p-3 sm:p-4 rounded-lg overflow-hidden',
-    `transition-all duration-${ANIMATIONS.TRANSITION_DURATION} ease-in-out`,
-    `hover:scale-${ANIMATIONS.HOVER_SCALE.toString().replace('0.', '')} active:scale-${ANIMATIONS.ACTIVE_SCALE.toString().replace('0.', '')} cursor-pointer`,
+    'transition-[transform,box-shadow,filter] duration-200 ease-in-out',
+    'hover:scale-95 active:scale-90 cursor-pointer',
     'shadow-sm hover:shadow-md',
     'will-change-transform',
+    'border-0 text-left outline-none',
+    'focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black/30',
+    'motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100',
   ].join(' '),
   GRADIENT_OVERLAY: 'absolute inset-0 z-[2]',
   LOCK_ICON:
@@ -37,7 +40,6 @@ const BLUR_DATA_URL =
 interface TileCardProps {
   tile: Tile
   index: number
-  keyPrefix: string
   customStyles?: string
   showCover: boolean
   needsLogin: boolean
@@ -105,15 +107,6 @@ export const TileCard = memo(
     // 事件处理器
     const handleImageError = useCallback(() => setImageError(true), [])
     const handleImageLoad = useCallback(() => setImageLoaded(true), [])
-    const handleKeyDown = useCallback(
-      (e: KeyboardEvent<HTMLDivElement>) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault()
-          onClick()
-        }
-      },
-      [onClick]
-    )
 
     // 样式计算
     const className = useMemo(() => `${TILE_CLASSES.BASE} ${customStyles}`, [customStyles])
@@ -131,16 +124,18 @@ export const TileCard = memo(
       }),
       [tile.color]
     )
+    const ariaLabel = useMemo(
+      () => (needsLogin ? `打开 ${tileName}（需登录）` : `打开 ${tileName}`),
+      [needsLogin, tileName]
+    )
 
     return (
-      <div
+      <button
+        type="button"
         className={className}
         style={dynamicStyles}
         onClick={onClick}
-        role="button"
-        tabIndex={0}
-        onKeyDown={handleKeyDown}
-        aria-label={`打开 ${tileName}`}
+        aria-label={ariaLabel}
       >
         {/* 背景图片 */}
         {hasBackground && (
@@ -187,7 +182,7 @@ export const TileCard = memo(
             {tileName}
           </span>
         </div>
-      </div>
+      </button>
     )
   }
 )

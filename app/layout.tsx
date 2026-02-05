@@ -103,9 +103,9 @@ export default function RootLayout({
             <LanguageProvider>
               <div
                 id="header-container"
-                className="bg-background sticky top-0 z-30 h-[50px] flex-none border-b shadow-sm"
+                className="bg-background/90 sticky top-0 z-30 h-[var(--app-header-height)] flex-none border-b shadow-sm backdrop-blur"
               >
-                <div className="mx-auto flex h-full w-full max-w-7xl items-center">
+                <div className="mx-auto flex h-full w-full max-w-7xl items-center px-2 sm:px-4">
                   <AppLauncher />
                 </div>
               </div>

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { X, Paperclip } from 'lucide-react'
 import Image from 'next/image'
 import { useTranslation } from '@/hooks/useTranslation'
-import type { FilePreviewProps } from './types'
+import type { FilePreviewProps } from '@/app/chat/types/messageInput'
 
 export function FilePreview({ files, onRemove }: FilePreviewProps) {
   const { t } = useTranslation()

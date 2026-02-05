@@ -6,7 +6,8 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTranslation } from '@/hooks/useTranslation'
-import { useNotificationService } from '../hooks/useNotificationService'
+import { toast } from 'sonner'
+import { useNotificationService } from '@/app/chat/hooks/useNotificationService'
 
 interface NotificationSettings {
   browserNotifications: boolean
@@ -36,6 +37,7 @@ export const NotificationSettingsDialog = memo<NotificationSettingsDialogProps>(
     const { t } = useTranslation()
     const { getNotificationService } = useNotificationService()
     const [isRequestingPermission, setIsRequestingPermission] = useState(false)
+    const [testNotificationStatus, setTestNotificationStatus] = useState<string | null>(null)
 
     const permissionStatus = useMemo(() => {
       switch (browserNotificationPermission) {
@@ -60,11 +62,33 @@ export const NotificationSettingsDialog = memo<NotificationSettingsDialogProps>(
     }, [onRequestBrowserNotificationPermission])
 
     const handleTestNotification = useCallback(() => {
-      getNotificationService().showNotification({
+      const notificationService = getNotificationService()
+      setTestNotificationStatus(null)
+
+      if (!notificationService.isNotificationSupported()) {
+        const message = '浏览器未授权通知或不支持通知'
+        toast.error(message)
+        setTestNotificationStatus(message)
+        return
+      }
+
+      const notification = notificationService.showNotification({
         title: '测试通知',
         body: '这是来自聊天系统的测试通知。',
         tag: 'test-notification',
+        requireInteraction: true,
       })
+
+      if (!notification) {
+        const message = '通知未显示，可能被系统勿扰模式或浏览器设置阻止'
+        toast.error(message)
+        setTestNotificationStatus(message)
+        return
+      }
+
+      const successMessage = '已发送测试通知，请查看系统通知中心'
+      toast.success(successMessage)
+      setTestNotificationStatus(successMessage)
     }, [getNotificationService])
 
     const handleTestSound = useCallback(
@@ -114,6 +138,9 @@ export const NotificationSettingsDialog = memo<NotificationSettingsDialogProps>(
                     >
                       测试通知
                     </Button>
+                    {testNotificationStatus && (
+                      <p className="text-muted-foreground text-xs">{testNotificationStatus}</p>
+                    )}
                   </div>
                 )}
 
@@ -125,10 +152,54 @@ export const NotificationSettingsDialog = memo<NotificationSettingsDialogProps>(
               </CardContent>
             </Card>
 
-            {/* 通知偏好设置 */}
+            {/* 通知偏好设置 - 频道层 */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm">通知偏好设置</CardTitle>
+                <CardDescription>选择接收哪些类型的消息</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* 房间通知 */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4" />
+                    <Label htmlFor="room-notifications" className="text-sm">
+                      新消息
+                    </Label>
+                  </div>
+                  <Switch
+                    id="room-notifications"
+                    checked={notificationSettings.roomNotifications}
+                    onCheckedChange={checked =>
+                      onUpdateNotificationSettings({ roomNotifications: checked })
+                    }
+                  />
+                </div>
+
+                {/* 提及通知 */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AtSign className="h-4 w-4" />
+                    <Label htmlFor="mention-notifications" className="text-sm">
+                      提及
+                    </Label>
+                  </div>
+                  <Switch
+                    id="mention-notifications"
+                    checked={notificationSettings.mentionNotifications}
+                    onCheckedChange={checked =>
+                      onUpdateNotificationSettings({ mentionNotifications: checked })
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 通知方式设置 - 设备层 */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">通知方式设置</CardTitle>
+                <CardDescription>控制通知的呈现方式</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* 浏览器通知 */}
@@ -162,40 +233,6 @@ export const NotificationSettingsDialog = memo<NotificationSettingsDialogProps>(
                     checked={notificationSettings.soundNotifications}
                     onCheckedChange={checked =>
                       onUpdateNotificationSettings({ soundNotifications: checked })
-                    }
-                  />
-                </div>
-
-                {/* 房间通知 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    <Label htmlFor="room-notifications" className="text-sm">
-                      新消息
-                    </Label>
-                  </div>
-                  <Switch
-                    id="room-notifications"
-                    checked={notificationSettings.roomNotifications}
-                    onCheckedChange={checked =>
-                      onUpdateNotificationSettings({ roomNotifications: checked })
-                    }
-                  />
-                </div>
-
-                {/* 提及通知 */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <AtSign className="h-4 w-4" />
-                    <Label htmlFor="mention-notifications" className="text-sm">
-                      提及
-                    </Label>
-                  </div>
-                  <Switch
-                    id="mention-notifications"
-                    checked={notificationSettings.mentionNotifications}
-                    onCheckedChange={checked =>
-                      onUpdateNotificationSettings({ mentionNotifications: checked })
                     }
                   />
                 </div>

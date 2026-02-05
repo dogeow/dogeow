@@ -1,4 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import { TileCard } from '../TileCard'
 
@@ -44,7 +45,6 @@ describe('TileCard', () => {
   const defaultProps = {
     tile: mockTile,
     index: 0,
-    keyPrefix: 'main',
     customStyles: '',
     showCover: false,
     needsLogin: false,
@@ -139,27 +139,31 @@ describe('TileCard', () => {
     expect(onClick).toHaveBeenCalledTimes(1)
   })
 
-  it('should handle keyboard navigation', () => {
+  it('should handle keyboard navigation', async () => {
     const onClick = vi.fn()
     render(<TileCard {...defaultProps} onClick={onClick} />)
 
     const card = screen.getByRole('button')
+    const user = userEvent.setup()
+    card.focus()
 
     // Test Enter key
-    fireEvent.keyDown(card, { key: 'Enter' })
+    await user.keyboard('{Enter}')
     expect(onClick).toHaveBeenCalledTimes(1)
 
     // Test Space key
-    fireEvent.keyDown(card, { key: ' ' })
+    await user.keyboard('{Space}')
     expect(onClick).toHaveBeenCalledTimes(2)
   })
 
-  it('should not call onClick for other keys', () => {
+  it('should not call onClick for other keys', async () => {
     const onClick = vi.fn()
     render(<TileCard {...defaultProps} onClick={onClick} />)
 
     const card = screen.getByRole('button')
-    fireEvent.keyDown(card, { key: 'Tab' })
+    const user = userEvent.setup()
+    card.focus()
+    await user.keyboard('{Escape}')
 
     expect(onClick).not.toHaveBeenCalled()
   })
@@ -168,7 +172,6 @@ describe('TileCard', () => {
     render(<TileCard {...defaultProps} />)
 
     const card = screen.getByRole('button')
-    expect(card).toHaveAttribute('tabIndex', '0')
     expect(card).toHaveAttribute('aria-label', '打开 测试瓦片')
   })
 
@@ -197,7 +200,7 @@ describe('TileCard', () => {
       'sm:p-4',
       'rounded-lg',
       'overflow-hidden',
-      'transition-all',
+      'transition-[transform,box-shadow,filter]',
       'duration-200',
       'ease-in-out',
       'hover:scale-95',
@@ -205,7 +208,17 @@ describe('TileCard', () => {
       'cursor-pointer',
       'shadow-sm',
       'hover:shadow-md',
-      'will-change-transform'
+      'will-change-transform',
+      'border-0',
+      'text-left',
+      'outline-none',
+      'focus-visible:ring-2',
+      'focus-visible:ring-white/80',
+      'focus-visible:ring-offset-2',
+      'focus-visible:ring-offset-black/30',
+      'motion-reduce:transition-none',
+      'motion-reduce:hover:scale-100',
+      'motion-reduce:active:scale-100'
     )
   })
 
@@ -261,13 +274,10 @@ describe('TileCard', () => {
     expect(image).toHaveAttribute('sizes', '(max-width: 640px) 150px, 120px')
   })
 
-  it('should prevent default on keyboard events', () => {
-    const onClick = vi.fn()
-    render(<TileCard {...defaultProps} onClick={onClick} />)
+  it('should include login hint in aria-label when needed', () => {
+    render(<TileCard {...defaultProps} needsLogin={true} />)
 
     const card = screen.getByRole('button')
-    fireEvent.keyDown(card, { key: 'Enter' })
-
-    expect(onClick).toHaveBeenCalled()
+    expect(card).toHaveAttribute('aria-label', '打开 测试瓦片（需登录）')
   })
 })

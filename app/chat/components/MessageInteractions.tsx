@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
-import { Copy, MoreVertical, Reply, Search, Heart, ThumbsUp, Laugh } from 'lucide-react'
+import React, { useState, useRef } from 'react'
+import { Copy, MoreVertical, Reply, Heart, ThumbsUp, Laugh } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,16 +9,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/helpers'
+import { useMessageInteractions } from '@/app/chat/hooks/message-interactions/useMessageInteractions'
 import type { ChatMessage } from '../types'
 
 interface MessageInteractionsProps {
@@ -26,11 +19,6 @@ interface MessageInteractionsProps {
   onReply?: (message: ChatMessage) => void
   onReact?: (messageId: number, emoji: string) => void
   className?: string
-}
-
-interface MessageSearchProps {
-  messages: ChatMessage[]
-  onMessageSelect?: (messageId: number) => void
 }
 
 interface EmojiReaction {
@@ -72,81 +60,6 @@ function MessageReactions({
   )
 }
 
-// Message search dialog
-export function MessageSearch({ messages, onMessageSelect }: MessageSearchProps) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [isOpen, setIsOpen] = useState(false)
-
-  const filteredMessages = React.useMemo(() => {
-    if (!searchQuery.trim()) return []
-
-    return messages
-      .filter(
-        message =>
-          message.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          message.user.name.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      .slice(0, 50) // Limit results
-  }, [messages, searchQuery])
-
-  const handleMessageSelect = (messageId: number) => {
-    onMessageSelect?.(messageId)
-    setIsOpen(false)
-    setSearchQuery('')
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Search className="mr-2 h-4 w-4" />
-          Search Messages
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-h-[80vh] max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Search Messages</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Input
-            placeholder="Search messages..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full"
-          />
-
-          {searchQuery.trim() && (
-            <div className="max-h-96 space-y-2 overflow-y-auto">
-              {filteredMessages.length > 0 ? (
-                filteredMessages.map(message => (
-                  <div
-                    key={message.id}
-                    onClick={() => handleMessageSelect(message.id)}
-                    className="hover:bg-muted/50 cursor-pointer rounded-lg border p-3 transition-colors"
-                  >
-                    <div className="mb-1 flex items-center gap-2">
-                      <span className="text-sm font-medium">{message.user.name}</span>
-                      <span className="text-muted-foreground text-xs">
-                        {new Date(message.created_at).toLocaleString()}
-                      </span>
-                    </div>
-                    <p className="text-muted-foreground line-clamp-2 text-sm">{message.message}</p>
-                  </div>
-                ))
-              ) : (
-                <div className="text-muted-foreground py-8 text-center">
-                  <Search className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                  <p>No messages found</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
 // Main message interactions component
 export function MessageInteractions({
   message,
@@ -154,9 +67,9 @@ export function MessageInteractions({
   onReact,
   className,
 }: MessageInteractionsProps) {
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const messageRef = useRef<HTMLDivElement>(null)
+  const { showMobileMenu, closeMenu, handleTouchStart, handleTouchEnd, handleTouchMove } =
+    useMessageInteractions()
 
   // Get reactions from message data - if no reactions exist, show empty array
   const reactions: EmojiReaction[] = message.reactions || []
@@ -173,42 +86,6 @@ export function MessageInteractions({
   const handleReact = (emoji: string) => {
     onReact?.(message.id, emoji)
   }
-
-  // Long press handlers for mobile
-  const handleTouchStart = () => {
-    if (window.innerWidth > 768) return // Only on mobile
-
-    longPressTimer.current = setTimeout(() => {
-      setShowMobileMenu(true)
-      // Add haptic feedback if available
-      if (navigator.vibrate) {
-        navigator.vibrate(50)
-      }
-    }, 500) // 500ms long press
-  }
-
-  const handleTouchEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-    }
-  }
-
-  const handleTouchMove = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-    }
-  }
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (longPressTimer.current) {
-        clearTimeout(longPressTimer.current)
-      }
-    }
-  }, [])
 
   return (
     <div
@@ -269,7 +146,7 @@ export function MessageInteractions({
                 size="sm"
                 onClick={() => {
                   onReact?.(message.id, '👍')
-                  setShowMobileMenu(false)
+                  closeMenu()
                 }}
                 className="flex items-center gap-2"
               >
@@ -281,7 +158,7 @@ export function MessageInteractions({
                 size="sm"
                 onClick={() => {
                   onReact?.(message.id, '❤️')
-                  setShowMobileMenu(false)
+                  closeMenu()
                 }}
                 className="flex items-center gap-2"
               >
@@ -293,7 +170,7 @@ export function MessageInteractions({
                 size="sm"
                 onClick={() => {
                   onReact?.(message.id, '😂')
-                  setShowMobileMenu(false)
+                  closeMenu()
                 }}
                 className="flex items-center gap-2"
               >
@@ -305,7 +182,7 @@ export function MessageInteractions({
                 size="sm"
                 onClick={() => {
                   onReply?.(message)
-                  setShowMobileMenu(false)
+                  closeMenu()
                 }}
                 className="flex items-center gap-2"
               >
@@ -324,12 +201,7 @@ export function MessageInteractions({
                 <Copy className="h-4 w-4" />
                 复制
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowMobileMenu(false)}
-                className="flex-1"
-              >
+              <Button variant="outline" size="sm" onClick={closeMenu} className="flex-1">
                 取消
               </Button>
             </div>
