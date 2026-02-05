@@ -171,9 +171,21 @@ export default function BookDetailPage() {
                       {word.phonetic_us}
                     </span>
                   )}
+                  {word.education_levels && word.education_levels.length > 0 && (
+                    <div className="flex shrink-0 gap-1">
+                      {word.education_levels.map(level => (
+                        <span
+                          key={level.id}
+                          className="bg-primary/10 text-primary rounded-full px-1.5 py-0.5 text-xs font-medium"
+                        >
+                          {level.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {word.explanation?.zh && (
-                    <span className="text-muted-foreground truncate text-sm">
-                      {word.explanation.zh}
+                    <span className="text-muted-foreground truncate text-sm whitespace-pre-line">
+                      {word.explanation.zh.split('\n')[0]}
                     </span>
                   )}
                 </div>

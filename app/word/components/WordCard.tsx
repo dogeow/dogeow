@@ -150,6 +150,19 @@ export function WordCard({ word, onNext }: WordCardProps) {
                 <Volume2 className="h-4 w-4" />
               </Button>
             </div>
+            {/* 教育级别标签 */}
+            {word.education_levels && word.education_levels.length > 0 && (
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
+                {word.education_levels.map(level => (
+                  <span
+                    key={level.id}
+                    className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-xs font-medium"
+                  >
+                    {level.name}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* 选择记得/不记得 */}
@@ -178,7 +191,13 @@ export function WordCard({ word, onNext }: WordCardProps) {
               {/* 释义 */}
               <div className="bg-muted/50 rounded-lg p-4">
                 {word.explanation?.zh ? (
-                  <p className="text-base">{word.explanation.zh}</p>
+                  <div className="text-base whitespace-pre-line">
+                    {word.explanation.zh.split('\n').map((line, idx) => (
+                      <p key={idx} className={idx > 0 ? 'mt-1' : ''}>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
                 ) : (
                   <p className="text-muted-foreground text-sm">暂无中文释义</p>
                 )}

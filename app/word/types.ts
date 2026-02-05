@@ -1,5 +1,11 @@
 // 单词相关类型定义
 
+export interface EducationLevel {
+  id: number
+  code: string
+  name: string
+}
+
 export interface Word {
   id: number
   content: string
@@ -15,6 +21,7 @@ export interface Word {
   difficulty: number
   frequency: number
   book?: Book
+  education_levels?: EducationLevel[]
 }
 
 export interface Book {
