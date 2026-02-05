@@ -241,13 +241,15 @@ export function WordAIDialog({ word, open, onOpenChange }: WordAIDialogProps) {
       }
 
       // 解析生成的内容
-      const explanationMatch = content.match(/【释义】(.+?)(?=【例句|$)/s)
+      const explanationMatch = content.match(/【释义】([\s\S]+?)(?=【例句|$)/)
       if (explanationMatch) {
         setEditedExplanation(explanationMatch[1].trim())
       }
 
       const examples: string[] = []
-      const exampleMatches = content.matchAll(/【例句\d+】(.+?)【翻译\d+】(.+?)(?=【例句|$)/gs)
+      const exampleMatches = content.matchAll(
+        /【例句\d+】([\s\S]+?)【翻译\d+】([\s\S]+?)(?=【例句|$)/g
+      )
       for (const m of exampleMatches) {
         examples.push(`${m[1].trim()}\n${m[2].trim()}`)
       }

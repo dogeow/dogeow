@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2017", // 使用 ES2017 目标
+    "target": "ES2018", // 使用 ES2018 目标以支持正则表达式 s 标志
     "lib": ["dom", "dom.iterable", "esnext"], // 使用 DOM 和 ESNext 库
     "allowJs": true, // 允许使用 JavaScript 文件
     "skipLibCheck": true, // 跳过库文件检查

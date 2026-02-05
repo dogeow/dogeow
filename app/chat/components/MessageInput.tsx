@@ -24,6 +24,7 @@ import { useFileUpload } from '@/app/chat/hooks/message-input/useFileUpload'
 import { useMessageInputHandlers } from '@/app/chat/hooks/message-input/useMessageInputHandlers'
 import { MAX_MESSAGE_LENGTH } from '@/app/chat/utils/message-input/constants'
 import type { MessageInputProps } from '@/app/chat/types/messageInput'
+import type { ChatMessage } from '@/app/chat/types'
 
 export function MessageInput({
   roomId,
@@ -99,7 +100,7 @@ export function MessageInput({
     message,
     handleInputChange,
     setMessage,
-    replyTarget: replyingTo,
+    replyTarget: (replyingTo ?? null) as ChatMessage | null,
     onCancelReply,
     mentionSuggestions,
     selectedMentionIndex,

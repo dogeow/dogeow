@@ -29,11 +29,11 @@ interface UseMessageInputHandlersParams {
   checkMuteStatus: () => boolean
   muteUntil: string | null
   t: (key: string, fallback?: string) => string
-  fileInputRef: React.RefObject<HTMLInputElement>
-  textareaRef: React.RefObject<HTMLTextAreaElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>
   scrollContainerRef?: React.RefObject<HTMLElement | null>
   handleFileUpload: (files: File[]) => Promise<void>
-  inputContainerRef: React.RefObject<HTMLDivElement>
+  inputContainerRef: React.RefObject<HTMLDivElement | null>
   onImageUploadSuccess?: () => void
 }
 
