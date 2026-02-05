@@ -3,11 +3,12 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Volume2, Sparkles } from 'lucide-react'
+import { Volume2, Sparkles, Zap } from 'lucide-react'
 import { Word } from '../types'
 import { useWordStore } from '../stores/wordStore'
-import { markWord } from '../hooks/useWord'
+import { markWord, markWordAsSimple } from '../hooks/useWord'
 import { WordAIDialog } from './WordAIDialog'
+import { toast } from 'sonner'
 
 interface WordCardProps {
   word: Word
@@ -17,6 +18,7 @@ interface WordCardProps {
 export function WordCard({ word, onNext }: WordCardProps) {
   const { showTranslation, toggleTranslation, updateDailyProgress, learningStatus } = useWordStore()
   const [isMarking, setIsMarking] = useState(false)
+  const [isMarkingSimple, setIsMarkingSimple] = useState(false)
   const [voicesLoaded, setVoicesLoaded] = useState(false)
   const [showAIDialog, setShowAIDialog] = useState(false)
 
@@ -131,6 +133,21 @@ export function WordCard({ word, onNext }: WordCardProps) {
     toggleTranslation()
   }
 
+  const handleMarkSimpleAndNext = async () => {
+    setIsMarkingSimple(true)
+    try {
+      await markWordAsSimple(word.id)
+      toast.success('已设为简单词，后续不再背诵')
+      updateDailyProgress('learned')
+      onNext()
+    } catch (error) {
+      console.error('设为简单词失败:', error)
+      toast.error('操作失败')
+    } finally {
+      setIsMarkingSimple(false)
+    }
+  }
+
   return (
     <>
       <Card className="w-full">
@@ -219,12 +236,12 @@ export function WordCard({ word, onNext }: WordCardProps) {
                 </div>
               )}
 
-              {/* 确认按钮 - 记住了在左，还是不会在右 */}
-              <div className="flex items-center justify-center gap-3 pt-2">
+              {/* 确认按钮 - 记住了 / AI / 还是不会 / 简单词 */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
                 <Button
                   onClick={() => handleMarkAndNext(true)}
                   disabled={isMarking}
-                  className="max-w-[120px] flex-1"
+                  className="max-w-[100px] flex-1"
                 >
                   记住了
                 </Button>
@@ -241,9 +258,20 @@ export function WordCard({ word, onNext }: WordCardProps) {
                   onClick={() => handleMarkAndNext(false)}
                   disabled={isMarking}
                   variant="outline"
-                  className="max-w-[120px] flex-1"
+                  className="max-w-[100px] flex-1"
                 >
                   还是不会
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMarkSimpleAndNext}
+                  disabled={isMarkingSimple}
+                  className="shrink-0 gap-1"
+                  title="设为简单词，不再背诵和复习"
+                >
+                  <Zap className="h-3.5 w-3.5" />
+                  简单词
                 </Button>
               </div>
             </div>

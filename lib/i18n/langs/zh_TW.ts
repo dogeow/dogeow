@@ -13,6 +13,7 @@ export const zh_TW = {
   'nav.game': '遊戲',
   'nav.chat': '聊天',
   'nav.about': '關於',
+  'nav.word': '單詞',
 
   // Settings
   'settings.language': '語言設定',

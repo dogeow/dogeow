@@ -95,6 +95,7 @@ export interface WordProgress {
   learned_words: number
   mastered_words: number
   difficult_words: number
+  simple_words?: number
   progress_percentage: number
 }
 

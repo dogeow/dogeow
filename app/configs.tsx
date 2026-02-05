@@ -94,6 +94,14 @@ const TILES = [
     color: '#E91E63',
     needLogin: true,
   },
+  {
+    name: 'word',
+    nameKey: 'nav.word',
+    icon: <MessageSquare />,
+    href: '/word',
+    color: '#E91E63',
+    needLogin: true,
+  },
 ]
 
 // 游戏列表配置
@@ -171,7 +179,7 @@ export const configs = {
   gridLayout: {
     columns: 3,
     templateAreas: `
-      "thing thing thing"
+      "thing thing word"
       "chat file file"
       "chat tool lab"
       "nav note game"

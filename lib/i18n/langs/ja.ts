@@ -13,6 +13,7 @@ export const ja = {
   'nav.game': 'ゲーム',
   'nav.chat': 'チャット',
   'nav.about': 'について',
+  'nav.word': '単語',
 
   // Settings
   'settings.language': '言語',

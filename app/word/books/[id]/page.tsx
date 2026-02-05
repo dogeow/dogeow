@@ -21,6 +21,7 @@ const WORD_FILTERS: { value: WordFilter; label: string }[] = [
   { value: 'all', label: '全部' },
   { value: 'mastered', label: '已学会' },
   { value: 'difficult', label: '困难词' },
+  { value: 'simple', label: '简单词' },
 ]
 
 export default function BookDetailPage() {

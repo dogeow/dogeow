@@ -35,7 +35,7 @@ export const useBooks = () => useSWR<Book[]>('/word/books', fetcher)
 
 export const useBook = (id: number) => useSWR<Book>(id ? `/word/books/${id}` : null, fetcher)
 
-export type WordFilter = 'all' | 'mastered' | 'difficult'
+export type WordFilter = 'all' | 'mastered' | 'difficult' | 'simple'
 
 export const useBookWords = (
   bookId: number | null | undefined,
@@ -116,6 +116,10 @@ export const useWordSettings = () => useSWR<UserWordSetting>('/word/settings', f
 // Mutation functions
 export const markWord = async (wordId: number, remembered: boolean) => {
   return post<{ message: string }>(`/word/mark/${wordId}`, { remembered })
+}
+
+export const markWordAsSimple = async (wordId: number) => {
+  return post<{ message: string }>(`/word/simple/${wordId}`, {})
 }
 
 export const checkIn = async () => {

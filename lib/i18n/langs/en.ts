@@ -13,6 +13,7 @@ export const en = {
   'nav.game': 'Games',
   'nav.chat': 'Chat',
   'nav.about': 'About',
+  'nav.word': 'Word',
 
   // Settings
   'settings.language': 'Language',

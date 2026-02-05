@@ -13,6 +13,7 @@ export const zh_CN = {
   'nav.game': '游戏',
   'nav.chat': '聊天',
   'nav.about': '关于',
+  'nav.word': '单词',
 
   // Settings
   'settings.language': '语言设置',
