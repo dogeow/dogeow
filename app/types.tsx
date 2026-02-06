@@ -16,6 +16,7 @@ export interface Tile {
   icon: string | ReactNode
   href: string
   color: string
+  description?: string // 可选描述，用于不同主题的卡片显示
   cover?: string // 封面图片，自动根据 name 生成
   gridArea?: string // CSS Grid Area 名称，自动根据 name 生成
   needLogin: boolean

@@ -10,6 +10,9 @@ interface ThemeState {
   customThemes: CustomTheme[]
   followSystem: boolean
   previousThemeMode: string
+  // UI 主题（用于切换完整布局主题）
+  currentUITheme: string
+  setCurrentUITheme: (themeId: string) => void
   setCurrentTheme: (theme: string) => void
   addCustomTheme: (theme: CustomTheme) => void
   removeCustomTheme: (id: string) => void
@@ -24,6 +27,9 @@ export const useThemeStore = create<ThemeState>()(
       followSystem: false,
       previousThemeMode: 'light',
       setCurrentTheme: theme => set({ currentTheme: theme }),
+      // UI 主题方法
+      currentUITheme: 'default',
+      setCurrentUITheme: themeId => set({ currentUITheme: themeId }),
       addCustomTheme: theme =>
         set(state => ({
           customThemes: [...state.customThemes, theme],

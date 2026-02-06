@@ -43,6 +43,7 @@ export default function Sidebar() {
   if (!theme) return null
 
   const tiles = translatedConfigs.tiles
+  const getNameKey = (tile: any) => (tile.name ?? '') as string
 
   return (
     <aside className="bg-card flex h-full flex-col border-r">
@@ -54,12 +55,13 @@ export default function Sidebar() {
       {/* 导航菜单 */}
       <nav className="flex-1 overflow-y-auto p-2">
         <ul className="space-y-1">
-          {tiles.map(tile => {
-            const Icon = iconMap[tile.name] || Package
+          {tiles.map((tile, idx) => {
+            const key = getNameKey(tile)
+            const Icon = iconMap[key] || Package
             const isActive = pathname === tile.href
 
             return (
-              <li key={tile.name}>
+              <li key={tile.name ?? tile.href ?? idx}>
                 <Link
                   href={tile.href || '#'}
                   className={cn(

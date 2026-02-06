@@ -14,7 +14,7 @@ export function UIThemeProvider({ children }: { children: React.ReactNode }) {
 
   // 获取当前主题配置
   const theme = useMemo(() => {
-    return getTheme(currentUITheme) || getTheme('default')
+    return (getTheme(currentUITheme) || getTheme('default')) ?? null
   }, [currentUITheme])
 
   // 应用主题的 CSS 变量
@@ -53,6 +53,6 @@ export function UIThemeProvider({ children }: { children: React.ReactNode }) {
 export function useUITheme(): UITheme | null {
   const { currentUITheme } = useThemeStore()
   return useMemo(() => {
-    return getTheme(currentUITheme) || getTheme('default')
+    return (getTheme(currentUITheme) || getTheme('default')) ?? null
   }, [currentUITheme])
 }

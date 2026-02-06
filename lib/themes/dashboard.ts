@@ -29,9 +29,11 @@ export const dashboardTheme: UITheme = {
       defaultCollapsed: false,
     },
     main: {
-      maxWidth: '100%',
+      maxWidth: '1200px',
       padding: '1.5rem',
-      containerType: 'sidebar',
+      containerType: 'centered',
+      // 新增 margin 属性用于居中
+      margin: '0 auto',
     },
   },
 

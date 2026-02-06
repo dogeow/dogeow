@@ -65,7 +65,7 @@ export interface UITheme {
       card?: 'default' | 'minimal' | 'glass' | 'bordered'
       button?: 'default' | 'minimal' | 'rounded' | 'square'
       input?: 'default' | 'minimal' | 'outlined'
-      tile?: 'default' | 'compact' | 'large' | 'minimal'
+      tile?: 'default' | 'compact' | 'large' | 'minimal' | 'grid'
     }
   }
 

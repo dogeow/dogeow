@@ -112,7 +112,7 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
           className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
           style={{
             maxWidth: theme.layout.main.maxWidth === '100%' ? '100%' : theme.layout.main.maxWidth,
-            padding: theme.layout.main.padding,
+            margin: 'auto',
           }}
         >
           {children}

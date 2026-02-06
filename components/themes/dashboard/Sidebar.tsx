@@ -48,9 +48,16 @@ export default function DashboardSidebar() {
 
   const tiles = translatedConfigs.tiles
 
+  // 安全的 name key（翻译可能会导致 name undefined）
+  const getNameKey = (tile: any) => (tile.name ?? '') as string
+
   // 分组：常用和工具
-  const commonTiles = tiles.filter(tile => ['thing', 'file', 'note', 'chat'].includes(tile.name))
-  const toolTiles = tiles.filter(tile => !['thing', 'file', 'note', 'chat'].includes(tile.name))
+  const commonTiles = tiles.filter(tile =>
+    ['thing', 'file', 'note', 'chat'].includes(getNameKey(tile))
+  )
+  const toolTiles = tiles.filter(
+    tile => !['thing', 'file', 'note', 'chat'].includes(getNameKey(tile))
+  )
 
   return (
     <aside
@@ -81,11 +88,12 @@ export default function DashboardSidebar() {
             </p>
             <ul className="space-y-1">
               {commonTiles.map(tile => {
-                const Icon = iconMap[tile.name] || Package
+                const key = getNameKey(tile)
+                const Icon = iconMap[key] || Package
                 const isActive = pathname === tile.href
 
                 return (
-                  <li key={tile.name}>
+                  <li key={tile.name ?? tile.href}>
                     <Link
                       href={tile.href || '#'}
                       className={cn(
@@ -94,7 +102,7 @@ export default function DashboardSidebar() {
                           ? 'bg-primary text-primary-foreground shadow-sm'
                           : 'hover:bg-muted/50 text-muted-foreground hover:text-foreground'
                       )}
-                      title={collapsed ? tile.name : undefined}
+                      title={collapsed ? (tile.name ?? undefined) : undefined}
                     >
                       <Icon className="h-5 w-5 shrink-0" />
                       {!collapsed && <span>{tile.name}</span>}
@@ -114,11 +122,12 @@ export default function DashboardSidebar() {
             </p>
             <ul className="space-y-1">
               {toolTiles.map(tile => {
-                const Icon = iconMap[tile.name] || Package
+                const key = getNameKey(tile)
+                const Icon = iconMap[key] || Package
                 const isActive = pathname === tile.href
 
                 return (
-                  <li key={tile.name}>
+                  <li key={tile.name ?? tile.href}>
                     <Link
                       href={tile.href || '#'}
                       className={cn(
@@ -141,12 +150,13 @@ export default function DashboardSidebar() {
         {/* 折叠状态下的图标 */}
         {collapsed && (
           <ul className="space-y-1">
-            {tiles.map(tile => {
-              const Icon = iconMap[tile.name] || Package
+            {tiles.map((tile, idx) => {
+              const key = getNameKey(tile)
+              const Icon = iconMap[key] || Package
               const isActive = pathname === tile.href
 
               return (
-                <li key={tile.name}>
+                <li key={tile.name ?? tile.href ?? idx}>
                   <Link
                     href={tile.href || '#'}
                     className={cn(
