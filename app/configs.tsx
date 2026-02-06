@@ -4,9 +4,10 @@ import {
   FileText,
   Wrench,
   Compass,
-  BookOpen,
+  NotebookPen,
   Gamepad2,
   MessageSquare,
+  Languages,
 } from 'lucide-react'
 
 // 控制台Logo文本
@@ -73,7 +74,7 @@ const TILES = [
   {
     name: 'note',
     nameKey: 'nav.note',
-    icon: <BookOpen />,
+    icon: <NotebookPen />,
     href: '/note',
     color: '#1976D2',
     needLogin: true,
@@ -97,7 +98,7 @@ const TILES = [
   {
     name: 'word',
     nameKey: 'nav.word',
-    icon: <MessageSquare />,
+    icon: <Languages />,
     href: '/word',
     color: '#E91E63',
     needLogin: true,

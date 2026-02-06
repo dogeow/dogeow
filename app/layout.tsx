@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/app/ThemeProvider'
+import { UIThemeProvider } from '@/components/themes/UIThemeProvider'
+import { LayoutRenderer } from '@/components/themes/LayoutRenderer'
 import { Toaster } from '@/components/ui/sonner'
 import { AppLauncher } from '@/components/launcher'
 import { BackgroundWrapper } from '@/components/provider/BackgroundWrapper'
@@ -11,6 +13,7 @@ import { LanguageProvider } from '@/components/provider/LanguageProvider'
 import { PWAInstallPrompt } from '@/components/app/PWAInstallPrompt'
 import { PWARegister } from '@/components/app/PWARegister'
 import { LanguageDetectionPrompt } from '@/components/ui/language-detection-prompt'
+import '@/lib/themes/registry' // 初始化主题注册表
 import '@/lib/i18n/log-control'
 
 const geistSans = Geist({
@@ -100,27 +103,19 @@ export default function RootLayout({
       >
         <SWRProvider>
           <ThemeProvider>
-            <LanguageProvider>
-              <div
-                id="header-container"
-                className="bg-background/90 sticky top-0 z-30 h-[var(--app-header-height)] flex-none border-b shadow-sm backdrop-blur"
-              >
-                <div className="mx-auto flex h-full w-full max-w-7xl items-center px-2 sm:px-4">
-                  <AppLauncher />
-                </div>
-              </div>
-              <div id="main-container" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-                <div className="mx-auto flex h-full w-full max-w-7xl flex-col p-0">
+            <UIThemeProvider>
+              <LanguageProvider>
+                <LayoutRenderer>
                   <BackgroundWrapper>
                     <ProtectedRoute>{children}</ProtectedRoute>
                   </BackgroundWrapper>
-                </div>
-              </div>
-              <Toaster />
-              <PWAInstallPrompt />
-              <PWARegister />
-              <LanguageDetectionPrompt />
-            </LanguageProvider>
+                </LayoutRenderer>
+                <Toaster />
+                <PWAInstallPrompt />
+                <PWARegister />
+                <LanguageDetectionPrompt />
+              </LanguageProvider>
+            </UIThemeProvider>
           </ThemeProvider>
         </SWRProvider>
       </body>

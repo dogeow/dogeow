@@ -1,13 +1,14 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Palette, Image, Grid, Languages, Moon, Sun } from 'lucide-react'
+import React, { useState, useSyncExternalStore } from 'react'
+import { Palette, Image, Grid, Languages, Moon, Sun, LayoutGrid, List } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { SettingsDivider } from './SettingsDivider'
 import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
+import { useLayoutStore } from '@/stores/layoutStore'
 
 interface MainViewProps {
   onNavigateToBackground: () => void
@@ -30,12 +31,12 @@ export function MainView({
 }: MainViewProps) {
   const { theme, setTheme } = useTheme()
   const { setFollowSystem } = useThemeStore()
-  const [mounted, setMounted] = useState(false)
-
-  // 等待组件挂载后再处理主题，避免水合不匹配错误
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const { siteLayout, setSiteLayout } = useLayoutStore()
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   // 处理夜晚模式切换
   const handleToggleDarkMode = () => {
@@ -89,6 +90,16 @@ export function MainView({
         onClick={onNavigateToBackground}
       >
         <Image className="h-4 w-4" role="img" aria-label="Background Imag Setting" />
+      </Button>
+
+      {/* 布局切换 */}
+      <Button
+        variant="ghost"
+        className="flex h-9 shrink-0 items-center gap-2 px-3"
+        onClick={() => setSiteLayout(siteLayout === 'grid' ? 'magazine' : 'grid')}
+        aria-label="切换布局"
+      >
+        {siteLayout === 'grid' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
       </Button>
 
       <SettingsDivider />
