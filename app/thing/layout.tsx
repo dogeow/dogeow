@@ -7,7 +7,7 @@ export default function ThingLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex flex-col gap-2">
       <ThingNavigation />
-      <div className="px-4">{children}</div>
+      <div>{children}</div>
     </div>
   )
 }

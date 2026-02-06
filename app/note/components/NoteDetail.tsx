@@ -3,6 +3,7 @@
 import useSWR from 'swr'
 import { get } from '@/lib/api'
 import { useParams } from 'next/navigation'
+import { PageContainer } from '@/components/layout'
 import { normalizeNote } from '../utils/api'
 import { renderNoteContent } from '../utils/noteContentRenderer'
 import { formatNoteDate } from '../utils/noteDateFormat'
@@ -36,14 +37,14 @@ export default function NoteDetail() {
   const cleanTitle = note.title?.replace(/0$/, '') || '(无标题)'
 
   return (
-    <div className="mx-auto mt-4 max-w-4xl">
+    <PageContainer maxWidth="4xl">
       <NoteDetailHeader
         title={cleanTitle}
         isDraft={note.is_draft}
         noteId={id}
         onDelete={handleDelete}
       />
-      <div className="mb-4 text-center text-xs text-gray-500">
+      <div className="text-muted-foreground mb-4 text-center text-xs">
         更新于 {formatNoteDate(note.updated_at)}
       </div>
       <div className="max-w-none">
@@ -55,6 +56,6 @@ export default function NoteDetail() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   )
 }

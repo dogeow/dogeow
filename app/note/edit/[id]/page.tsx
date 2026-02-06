@@ -11,6 +11,7 @@ import { useNoteShortcuts } from '../../hooks/useNoteShortcuts'
 import { NoteEditorToolbar } from '../../components/NoteEditorToolbar'
 import { NoteLoadingState } from '../../components/NoteLoadingState'
 import { NoteErrorState } from '../../components/NoteErrorState'
+import { PageContainer } from '@/components/layout'
 
 // 使用dynamic import避免服务端渲染问题
 const TailwindAdvancedEditor = dynamic(() => import('@/components/novel-editor'), { ssr: false })
@@ -127,7 +128,7 @@ export default function EditNotePage() {
   }
 
   return (
-    <div className="container mx-auto py-4">
+    <PageContainer>
       <div className="flex justify-center">
         <div className="w-full max-w-screen-lg">
           <NoteEditorToolbar
@@ -143,6 +144,6 @@ export default function EditNotePage() {
           {clientReady && <TailwindAdvancedEditor />}
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 }

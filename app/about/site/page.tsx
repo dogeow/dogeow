@@ -11,6 +11,7 @@ import { SystemStatusList } from './components/SystemStatusList'
 import { DEV_LOGS } from './data/devLogs'
 import { useSystemStatus } from './data/systemStatus'
 import type { DevLogEntry } from './types'
+import { PageContainer } from '@/components/layout'
 
 const SiteLogTree: React.FC = () => {
   const { t } = useTranslation()
@@ -23,7 +24,7 @@ const SiteLogTree: React.FC = () => {
   )
 
   return (
-    <div className="container mx-auto max-w-4xl p-4 sm:p-6">
+    <PageContainer maxWidth="4xl">
       <Tabs defaultValue="logs" className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="logs">网站日志</TabsTrigger>
@@ -74,7 +75,7 @@ const SiteLogTree: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+    </PageContainer>
   )
 }
 

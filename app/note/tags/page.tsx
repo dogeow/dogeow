@@ -8,6 +8,7 @@ import useSWR, { mutate } from 'swr'
 import { get, del } from '@/lib/api'
 import { toast } from 'sonner'
 import { isLightColor } from '@/lib/helpers'
+import { PageContainer } from '@/components/layout'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
 import TagSpeedDial from './components/TagSpeedDial'
 
@@ -61,7 +62,7 @@ export default function NoteTags() {
   }
 
   return (
-    <div className="container mx-auto py-4 pb-24">
+    <PageContainer className="pb-24">
       <div>
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-foreground text-xl font-semibold">标签列表</h2>
@@ -109,6 +110,6 @@ export default function NoteTags() {
       />
 
       <TagSpeedDial />
-    </div>
+    </PageContainer>
   )
 }

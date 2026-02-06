@@ -1,7 +1,9 @@
+import { PageContainer } from '@/components/layout'
+
 export default function TermsPage() {
   return (
-    <div className="mx-auto max-w-4xl p-6">
-      <h1 className="mb-6 text-center text-3xl font-bold">用户协议</h1>
+    <PageContainer maxWidth="4xl">
+      <h1 className="mb-6 text-center text-2xl font-bold tracking-tight">用户协议</h1>
 
       <div className="prose prose-gray max-w-none">
         <section className="mb-8">
@@ -60,6 +62,6 @@ export default function TermsPage() {
 
         <p className="mt-8 text-sm text-gray-600">最后更新日期：2025年11月21日</p>
       </div>
-    </div>
+    </PageContainer>
   )
 }

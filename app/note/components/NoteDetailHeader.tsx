@@ -19,7 +19,7 @@ export const NoteDetailHeader = memo<NoteDetailHeaderProps>(
         <Button variant="ghost" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="flex flex-1 items-center justify-center truncate text-center text-xl font-bold">
+        <h1 className="flex flex-1 items-center justify-center truncate text-center text-2xl font-bold tracking-tight">
           {title}
           {isDraft && <Lock className="text-muted-foreground ml-2 h-4 w-4" />}
         </h1>

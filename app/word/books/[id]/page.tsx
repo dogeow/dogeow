@@ -16,6 +16,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { ArrowLeft, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
+import { PageContainer } from '@/components/layout'
 
 const WORD_FILTERS: { value: WordFilter; label: string }[] = [
   { value: 'all', label: '全部' },
@@ -89,30 +90,30 @@ export default function BookDetailPage() {
 
   if (bookLoading) {
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-6">
+      <PageContainer maxWidth="2xl" className="py-6">
         <div className="flex justify-center py-12">
           <LoadingSpinner className="h-8 w-8" />
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   if (!book) {
     return (
-      <div className="container mx-auto max-w-2xl px-4 py-6">
+      <PageContainer maxWidth="2xl" className="py-6">
         <div className="py-12 text-center">
           <p className="text-muted-foreground">单词书不存在</p>
           <Link href="/word/settings">
             <Button variant="link">返回设置</Button>
           </Link>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
     <div
-      className="container mx-auto flex max-w-2xl flex-col overflow-hidden px-4 py-4"
+      className="mx-auto flex w-full max-w-2xl flex-col overflow-hidden px-3 py-4 sm:px-4"
       style={{ height: 'calc(100dvh - var(--app-header-height))' }}
     >
       {/* 标题栏 */}
@@ -122,7 +123,7 @@ export default function BookDetailPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
-        <h1 className="flex-1 text-xl font-bold">{book.name}</h1>
+        <h1 className="flex-1 text-2xl font-bold tracking-tight">{book.name}</h1>
         {isCurrentBook ? (
           <span className="text-primary flex items-center gap-1 text-sm">
             <Check className="h-4 w-4" />

@@ -15,6 +15,7 @@ import { ItemDetailModal } from './components/ItemDetailModal'
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import { useThingFilters } from '@/app/thing/hooks/useThingFilters'
 import { useThingSearch } from '@/app/thing/hooks/useThingSearch'
+import { PageContainer } from '@/components/layout'
 
 // Types
 import { Tag, LocationTreeResponse, ViewMode } from '@/app/thing/types'
@@ -122,7 +123,7 @@ export default function Thing() {
   }, [fetchItems, filters])
 
   return (
-    <div className="container mx-auto py-2">
+    <PageContainer>
       <div className="flex flex-col space-y-4">
         <ThingHeader
           categories={categories}
@@ -165,6 +166,6 @@ export default function Thing() {
         onModeChange={setModalMode}
         onItemDeleted={handleItemDeleted}
       />
-    </div>
+    </PageContainer>
   )
 }

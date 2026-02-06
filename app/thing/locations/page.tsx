@@ -12,6 +12,7 @@ import DeleteConfirmDialog from './components/DeleteConfirmDialog'
 import LocationsSpeedDial from './components/LocationsSpeedDial'
 import { useLocationManagement, LocationType } from './hooks/useLocationManagement'
 import { useTranslation } from '@/hooks/useTranslation'
+import { PageContainer } from '@/components/layout'
 
 export default function Locations() {
   const { t } = useTranslation()
@@ -92,7 +93,7 @@ export default function Locations() {
   }
 
   return (
-    <div className="mt-2">
+    <PageContainer>
       {/* 四个按钮放在同一行，但视觉上分为两组 */}
       <Tabs value={activeTab} onValueChange={value => setActiveTab(value as LocationType | 'tree')}>
         {/* 使用flex布局，让树形视图独立，后面三个作为一组 */}
@@ -142,6 +143,6 @@ export default function Locations() {
         onAddRoom={handleAddRoom}
         onAddSpot={handleAddSpot}
       />
-    </div>
+    </PageContainer>
   )
 }

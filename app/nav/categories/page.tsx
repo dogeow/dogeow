@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
+import { PageContainer } from '@/components/layout'
 import {
   Table,
   TableBody,
@@ -109,7 +110,7 @@ export default function CategoryManager() {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <PageContainer>
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
           <Button
@@ -120,7 +121,7 @@ export default function CategoryManager() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold md:text-3xl">导航分类管理</h1>
+          <h1 className="text-2xl font-bold tracking-tight">导航分类管理</h1>
         </div>
       </div>
 
@@ -226,6 +227,6 @@ export default function CategoryManager() {
           }
         />
       </div>
-    </div>
+    </PageContainer>
   )
 }

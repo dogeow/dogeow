@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ChevronDown } from 'lucide-react'
 import { tools, searchTools } from './tools'
 import { useRouter } from 'next/navigation'
+import { PageContainer } from '@/components/layout'
 
 export default function ToolPage() {
   const [activeTab, setActiveTab] = useState('time-converter')
@@ -67,7 +68,7 @@ export default function ToolPage() {
   }, [activeTab])
 
   return (
-    <div className="container mx-auto p-4">
+    <PageContainer>
       <div className="space-y-6">
         {/* 工具内容区 */}
         <div>
@@ -150,6 +151,6 @@ export default function ToolPage() {
           )}
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 }

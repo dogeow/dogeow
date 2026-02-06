@@ -8,6 +8,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { ArrowLeft, ChevronDown } from 'lucide-react'
+import { PageContainer } from '@/components/layout'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
 
@@ -52,7 +53,7 @@ export default function SettingsPage() {
   const isLoading = booksLoading || settingsLoading
 
   return (
-    <div className="container mx-auto max-w-2xl space-y-6 px-4 py-6">
+    <PageContainer maxWidth="2xl" className="space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/word">
           <Button variant="ghost" size="icon">
@@ -131,6 +132,6 @@ export default function SettingsPage() {
 
       {/* 学习设置 */}
       <SettingsForm />
-    </div>
+    </PageContainer>
   )
 }

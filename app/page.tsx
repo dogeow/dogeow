@@ -4,6 +4,7 @@ import Footer from '@/components/app/Footer'
 import { configs } from '@/app/configs'
 import { TileCard } from '@/components/app/TileCard'
 import { useTileManagement } from '@/hooks/useTileManagement'
+import { PageContainer } from '@/components/layout'
 
 export default function Home() {
   const { tiles, showProjectCovers, handleTileClick, getTileStatus } = useTileManagement()
@@ -17,7 +18,7 @@ export default function Home() {
       </div>
 
       {/* 主要内容区域 */}
-      <main className="mx-auto w-full max-w-7xl p-2" role="main">
+      <PageContainer className="py-2">
         {/* 静态网格布局 */}
         <div
           className="grid gap-3 sm:gap-4"
@@ -44,7 +45,7 @@ export default function Home() {
             )
           })}
         </div>
-      </main>
+      </PageContainer>
 
       <Footer />
     </>

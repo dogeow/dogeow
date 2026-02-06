@@ -11,6 +11,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { toast } from 'sonner'
 import { CheckCircle2, BookX, ArrowLeft, PartyPopper } from 'lucide-react'
 import Link from 'next/link'
+import { PageContainer } from '@/components/layout'
 
 export default function ReviewPage() {
   const router = useRouter()
@@ -75,16 +76,16 @@ export default function ReviewPage() {
   // 加载中
   if (isLoading) {
     return (
-      <div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4 py-8">
+      <PageContainer className="flex min-h-[60vh] items-center justify-center">
         <LoadingSpinner />
-      </div>
+      </PageContainer>
     )
   }
 
   // 错误处理
   if (error) {
     return (
-      <div className="container mx-auto max-w-md px-4 py-8">
+      <PageContainer maxWidth="md">
         <Card>
           <CardContent className="p-6 text-center">
             <p className="text-destructive mb-4">
@@ -100,14 +101,14 @@ export default function ReviewPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PageContainer>
     )
   }
 
   // 未选择单词书
   if (!hasSelectedBook) {
     return (
-      <div className="container mx-auto max-w-md px-4 py-8">
+      <PageContainer maxWidth="md">
         <Card>
           <CardContent className="space-y-4 p-6 text-center">
             <BookX className="text-muted-foreground mx-auto h-12 w-12" />
@@ -127,14 +128,14 @@ export default function ReviewPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PageContainer>
     )
   }
 
   // 复习完成
   if (learningStatus === 'completed') {
     return (
-      <div className="container mx-auto max-w-md px-4 py-8">
+      <PageContainer maxWidth="md">
         <Card>
           <CardContent className="space-y-4 p-6 text-center">
             <CheckCircle2 className="text-primary mx-auto h-12 w-12" />
@@ -152,7 +153,7 @@ export default function ReviewPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PageContainer>
     )
   }
 
@@ -162,7 +163,7 @@ export default function ReviewPage() {
   // 今天没有需要复习的单词
   if (wordsArray.length === 0) {
     return (
-      <div className="container mx-auto max-w-md px-4 py-8">
+      <PageContainer maxWidth="md">
         <Card>
           <CardContent className="space-y-4 p-6 text-center">
             <PartyPopper className="mx-auto h-12 w-12 text-green-500" />
@@ -182,23 +183,23 @@ export default function ReviewPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </PageContainer>
     )
   }
 
   // 正在初始化
   if (currentWords.length === 0) {
     return (
-      <div className="container mx-auto flex min-h-[60vh] items-center justify-center px-4 py-8">
+      <PageContainer className="flex min-h-[60vh] items-center justify-center">
         <LoadingSpinner />
-      </div>
+      </PageContainer>
     )
   }
 
   const currentWord = currentWords[currentIndex]
 
   return (
-    <div className="container mx-auto max-w-2xl px-4 py-6">
+    <PageContainer maxWidth="2xl">
       <div className="mb-4 flex items-center justify-between">
         <Link href="/word">
           <Button variant="ghost" size="icon">
@@ -211,6 +212,6 @@ export default function ReviewPage() {
         <div className="w-9" />
       </div>
       {currentWord && <WordCard word={currentWord} onNext={handleNext} />}
-    </div>
+    </PageContainer>
   )
 }

@@ -24,6 +24,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Combobox } from '@/components/ui/combobox'
 import { apiRequest } from '@/lib/api'
+import { PageContainer } from '@/components/layout'
 
 // 定义表单数据类型
 type FormData = {
@@ -140,7 +141,7 @@ export default function AddNavItem() {
       })) || []
 
   return (
-    <div className="container mx-auto p-4">
+    <PageContainer>
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
           <Button
@@ -151,7 +152,7 @@ export default function AddNavItem() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold md:text-3xl">添加导航</h1>
+          <h1 className="text-2xl font-bold tracking-tight">添加导航</h1>
         </div>
       </div>
 
@@ -330,6 +331,6 @@ export default function AddNavItem() {
           </Form>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

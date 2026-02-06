@@ -6,6 +6,7 @@ import { apiRequest } from '@/lib/api'
 import useSWR from 'swr'
 import { getBrowserInfo, getOSInfo } from '@/lib/utils/userAgent'
 import { LoadingState } from '@/components/ui/loading-state'
+import { PageContainer, PageTitle } from '@/components/layout'
 
 interface Location {
   country: string
@@ -43,31 +44,29 @@ export default function Dashboard() {
 
   // 显示加载状态，直到确认用户已加载
   if (!isAuthenticated) {
-    return <div className="p-6 dark:text-gray-200">正在加载用户信息...</div>
+    return <div className="text-muted-foreground p-6">正在加载用户信息...</div>
   }
 
   return (
     <ProtectedRoute>
-      <div className="p-6">
-        <h1 className="mb-4 text-xl font-bold dark:text-gray-100">仪表盘</h1>
+      <PageContainer>
+        <PageTitle className="mb-4">仪表盘</PageTitle>
 
         <div className="space-y-4">
           <div>
-            <div className="mb-1 text-sm text-gray-600 dark:text-gray-400">IP 地址</div>
-            <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm break-all text-gray-800 dark:border-gray-700 dark:bg-[#1a1a1a] dark:text-gray-200">
+            <div className="text-muted-foreground mb-1 text-sm">IP 地址</div>
+            <div className="bg-muted rounded border p-3 text-sm break-all">
               {basicLoading ? '加载中...' : basicInfo?.ip}
             </div>
           </div>
 
           <div>
-            <div className="mb-1 text-sm text-gray-600 dark:text-gray-400">地理位置</div>
-            <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm break-all text-gray-800 dark:border-gray-700 dark:bg-[#1a1a1a] dark:text-gray-200">
+            <div className="text-muted-foreground mb-1 text-sm">地理位置</div>
+            <div className="bg-muted rounded border p-3 text-sm break-all">
               {locationLoading ? (
                 <LoadingState message="正在获取地理位置信息..." size="sm" />
               ) : locationError ? (
-                <div className="text-red-600 dark:text-red-400">
-                  地理位置信息获取失败，请稍后重试
-                </div>
+                <div className="text-destructive">地理位置信息获取失败，请稍后重试</div>
               ) : locationInfo?.location ? (
                 <div className="space-y-1">
                   <div>国家/地区：{locationInfo.location.country || '未知'}</div>
@@ -77,14 +76,14 @@ export default function Dashboard() {
                   <div>时区：{locationInfo.location.timezone || '未知'}</div>
                 </div>
               ) : (
-                <div className="text-gray-500 dark:text-gray-400">暂无地理位置信息</div>
+                <div className="text-muted-foreground">暂无地理位置信息</div>
               )}
             </div>
           </div>
 
           <div>
-            <div className="mb-1 text-sm text-gray-600 dark:text-gray-400">User-Agent</div>
-            <div className="rounded border border-gray-200 bg-gray-50 p-3 text-sm break-all text-gray-800 dark:border-gray-700 dark:bg-[#1a1a1a] dark:text-gray-200">
+            <div className="text-muted-foreground mb-1 text-sm">User-Agent</div>
+            <div className="bg-muted rounded border p-3 text-sm break-all">
               {basicLoading ? (
                 '加载中...'
               ) : (
@@ -116,7 +115,7 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-      </div>
+      </PageContainer>
     </ProtectedRoute>
   )
 }

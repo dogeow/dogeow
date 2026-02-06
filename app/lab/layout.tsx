@@ -1,4 +1,5 @@
 import { Header } from './Header'
+import { PageContainer } from '@/components/layout'
 
 export default function RootLayout({
   children,
@@ -6,9 +7,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <div className="container mx-auto">
+    <PageContainer className="py-0">
       <Header />
       <main className="py-4">{children}</main>
-    </div>
+    </PageContainer>
   )
 }

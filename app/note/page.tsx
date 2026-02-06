@@ -15,6 +15,7 @@ import GraphView from './components/GraphView'
 import { normalizeNotes } from './utils/api'
 import { extractTextFromJSON } from '@/lib/helpers/wordCount'
 import { getWikiGraph } from '@/lib/api/wiki'
+import { PageContainer } from '@/components/layout'
 
 interface Note {
   id: number
@@ -361,7 +362,7 @@ export default function NotePage() {
   }, [sortedNotes])
 
   return (
-    <div className="container mx-auto py-4">
+    <PageContainer>
       {/* 页面头部 */}
       <header className="mb-6 flex min-w-0 items-center gap-4 overflow-hidden">
         {/* 视图切换按钮 - 最左侧 */}
@@ -482,6 +483,6 @@ export default function NotePage() {
       </main>
 
       {viewMode === 'list' && <NoteSpeedDial />}
-    </div>
+    </PageContainer>
   )
 }

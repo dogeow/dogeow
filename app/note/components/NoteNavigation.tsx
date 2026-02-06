@@ -63,7 +63,7 @@ export default function NoteNavigation() {
 
   return (
     <div className="bg-background/95 supports-[backdrop-filter]:bg-background/60 relative border-b shadow-sm backdrop-blur">
-      <nav className="flex items-center overflow-x-auto px-2 py-2">
+      <nav className="flex items-center overflow-x-auto px-3 py-2 sm:px-4">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="sm" onClick={() => handleNavigate('/note')}>
             <FileText className="mr-2 h-4 w-4" />

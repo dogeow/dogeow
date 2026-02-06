@@ -10,7 +10,7 @@ export default function NoteLayout({ children }: { children: React.ReactNode }) 
     <ProtectedRoute>
       <div className="flex min-h-[calc(100vh-50px)] flex-col">
         <NoteNavigation />
-        <div className="flex-1 px-4">{children}</div>
+        <div className="flex-1">{children}</div>
       </div>
     </ProtectedRoute>
   )

@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
 import { BookOpen, Settings, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useWordSettings, useWordStats } from './hooks/useWord'
+import { PageContainer } from '@/components/layout'
 
 export default function WordPage() {
   const { data: settings } = useWordSettings()
@@ -15,7 +16,7 @@ export default function WordPage() {
   const todayCheckedIn = stats?.today_checked_in ?? false
 
   return (
-    <div className="container mx-auto max-w-2xl space-y-6 px-4 py-6">
+    <PageContainer maxWidth="2xl" className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold">背单词</h1>
@@ -84,6 +85,6 @@ export default function WordPage() {
 
       {/* 打卡日历 */}
       <CheckInCalendar />
-    </div>
+    </PageContainer>
   )
 }

@@ -9,6 +9,7 @@ import { toast } from 'sonner'
 import { apiRequest } from '@/lib/api'
 import { Save, Loader2, Lock, Unlock } from 'lucide-react'
 import { normalizeNote } from '../utils/api'
+import { PageContainer } from '@/components/layout'
 
 // 使用dynamic import避免服务端渲染问题
 const TailwindAdvancedEditor = dynamic(() => import('@/components/novel-editor'), { ssr: false })
@@ -127,7 +128,7 @@ export default function NewNotePage() {
   }, [title, isSaving, handleSave, handleTogglePrivacy])
 
   return (
-    <div className="container mx-auto py-4">
+    <PageContainer>
       <div className="flex justify-center">
         <div className="w-full max-w-screen-lg">
           {/* 标题输入框 */}
@@ -196,6 +197,6 @@ export default function NewNotePage() {
           {isLoaded && <TailwindAdvancedEditor />}
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 }

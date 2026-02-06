@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
 import { Switch } from '@/components/ui/switch'
+import { PageContainer } from '@/components/layout'
 
 // 定义表单数据类型
 type FormData = {
@@ -183,16 +184,16 @@ export default function EditNavPage() {
 
   if (initialLoading) {
     return (
-      <div className="container mx-auto px-4 py-2">
+      <PageContainer className="py-2">
         <div className="flex h-40 items-center justify-center">
           <p className="text-muted-foreground">加载中...</p>
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-2">
+    <PageContainer className="py-2">
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center">
           <Button
@@ -203,7 +204,7 @@ export default function EditNavPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold md:text-3xl">编辑导航</h1>
+          <h1 className="text-2xl font-bold tracking-tight">编辑导航</h1>
         </div>
       </div>
 
@@ -338,6 +339,6 @@ export default function EditNavPage() {
           </Form>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

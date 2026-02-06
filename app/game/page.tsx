@@ -5,6 +5,7 @@ import { memo } from 'react'
 import { Card } from '@/components/ui/card'
 import { getTranslatedConfigs } from '@/app/configs'
 import { useTranslation } from '@/hooks/useTranslation'
+import { PageContainer } from '@/components/layout'
 
 // 常量定义
 const GAME_CARD_CLASSES = {
@@ -57,7 +58,7 @@ export default function GamePage() {
   const games = allGames.filter(isValidGame)
 
   return (
-    <div className="container px-4 py-4">
+    <PageContainer>
       <div className="mx-auto max-w-6xl">
         {/* 页面标题 - 改进SEO */}
         <div className="sr-only">
@@ -76,6 +77,6 @@ export default function GamePage() {
           ))}
         </div>
       </div>
-    </div>
+    </PageContainer>
   )
 }

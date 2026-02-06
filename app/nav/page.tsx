@@ -10,6 +10,7 @@ import { useLoginTrigger } from '@/hooks/useLoginTrigger'
 import { useTranslation } from '@/hooks/useTranslation'
 import { NavCard } from './components/NavCard'
 import { NavCategory } from '@/app/nav/types'
+import { PageContainer } from '@/components/layout'
 
 // 创建一个新的组件来处理搜索参数
 function NavContent() {
@@ -118,40 +119,11 @@ function NavContent() {
   }
 
   const renderCategorySidebar = () => (
-    <aside className="flex w-20 shrink-0 flex-col gap-0 px-2 py-2">
-      <div className="flex items-center justify-center gap-2 px-2">
-        <Button
-          onClick={handleManageCategories}
-          size="icon"
-          variant="outline"
-          className="relative h-8 w-8"
-          disabled={!isAuthenticated}
-          style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
-          aria-label={t('nav.manage_categories', '管理分类')}
-        >
-          <Settings className="h-4 w-4" />
-          {!isAuthenticated && <Lock className="text-muted-foreground ml-1 h-3 w-3" />}
-        </Button>
-        <Button
-          onClick={handleAddNav}
-          size="icon"
-          variant="default"
-          className="relative h-8 w-8"
-          disabled={!isAuthenticated}
-          style={{
-            backgroundColor: themeColor.color,
-            color: '#fff',
-            opacity: !isAuthenticated ? 0.6 : 1,
-          }}
-          aria-label={t('nav.add_nav', '添加导航')}
-        >
-          <Plus className="h-4 w-4" />
-          {!isAuthenticated && <Lock className="h-3 w-3 text-white" />}
-        </Button>
-      </div>
-      <div className="my-2 h-px w-full bg-gray-700/50" />
+    <aside className="flex w-20 shrink-0 flex-col gap-1 px-2 py-2">
       <button
-        className={`rounded px-2 py-1 text-left text-sm font-bold ${selectedCategory === 'all' ? '' : 'hover:bg-gray-100'}`}
+        className={`rounded px-2 py-1 text-left text-sm font-bold ${
+          selectedCategory === 'all' ? '' : 'hover:bg-gray-100'
+        }`}
         style={selectedCategory === 'all' ? { background: themeColor.color, color: '#fff' } : {}}
         onClick={() => handleCategoryClick('all')}
       >
@@ -160,7 +132,9 @@ function NavContent() {
       {categories.map((cat: NavCategory) => (
         <button
           key={cat.id}
-          className={`rounded px-2 py-1 text-left text-sm ${selectedCategory === cat.id ? 'font-bold' : 'hover:bg-gray-100'}`}
+          className={`rounded px-2 py-1 text-left text-sm ${
+            selectedCategory === cat.id ? 'font-bold' : 'hover:bg-gray-100'
+          }`}
           style={selectedCategory === cat.id ? { background: themeColor.color, color: '#fff' } : {}}
           onClick={() => handleCategoryClick(cat.id)}
         >
@@ -195,22 +169,57 @@ function NavContent() {
   }
 
   return (
-    <div className="flex pt-2">
-      {renderCategorySidebar()}
-      <div className="flex flex-1 flex-col gap-2 border-l border-dashed border-gray-500 px-2">
-        {loading || storeLoading ? null : items.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-            {items.map(item => (
-              <NavCard key={item.id} item={item} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-xl font-semibold text-gray-700">没有找到任何导航</p>
-          </div>
-        )}
+    <PageContainer className="py-2">
+      <div className="mb-3 flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">网址导航</h1>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleAddNav}
+            size="icon"
+            variant="default"
+            className="relative h-9 w-9"
+            disabled={!isAuthenticated}
+            style={{
+              backgroundColor: themeColor.color,
+              color: '#fff',
+              opacity: !isAuthenticated ? 0.6 : 1,
+            }}
+            aria-label={t('nav.add_nav', '添加导航')}
+          >
+            <Plus className="h-4 w-4" />
+            {!isAuthenticated && <Lock className="h-3 w-3 text-white" />}
+          </Button>
+          <Button
+            onClick={handleManageCategories}
+            size="icon"
+            variant="outline"
+            className="relative h-9 w-9"
+            disabled={!isAuthenticated}
+            style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
+            aria-label={t('nav.manage_categories', '管理分类')}
+          >
+            <Settings className="h-4 w-4" />
+            {!isAuthenticated && <Lock className="text-muted-foreground ml-1 h-3 w-3" />}
+          </Button>
+        </div>
       </div>
-    </div>
+      <div className="flex">
+        {renderCategorySidebar()}
+        <div className="border-border flex flex-1 flex-col gap-2 border-l border-dashed px-2">
+          {loading || storeLoading ? null : items.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {items.map(item => (
+                <NavCard key={item.id} item={item} />
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <p className="text-muted-foreground text-xl font-semibold">没有找到任何导航</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </PageContainer>
   )
 }
 

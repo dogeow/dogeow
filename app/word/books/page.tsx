@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { updateWordSettings } from '../hooks/useWord'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { PageContainer, PageTitle } from '@/components/layout'
 
 export default function BooksPage() {
   const router = useRouter()
@@ -25,15 +26,15 @@ export default function BooksPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto flex min-h-[60vh] items-center justify-center py-8">
+      <PageContainer className="flex min-h-[60vh] items-center justify-center">
         <LoadingSpinner />
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="container mx-auto space-y-6 py-8">
-      <h1 className="text-3xl font-bold">选择单词书</h1>
+    <PageContainer className="space-y-6">
+      <PageTitle>选择单词书</PageTitle>
 
       {books && books.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -61,6 +62,6 @@ export default function BooksPage() {
           </CardContent>
         </Card>
       )}
-    </div>
+    </PageContainer>
   )
 }

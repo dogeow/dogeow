@@ -2,6 +2,7 @@
 
 import { ReactNode } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { PageContainer } from '@/components/layout'
 import AutoSaveStatus from './AutoSaveStatus'
 
 interface ItemFormLayoutProps {
@@ -18,8 +19,8 @@ interface ItemFormLayoutProps {
 }
 
 export default function ItemFormLayout({
-  title, // eslint-disable-line @typescript-eslint/no-unused-vars
-  onBack, // eslint-disable-line @typescript-eslint/no-unused-vars
+  title,
+  onBack,
   children,
   footer,
   actionButton,
@@ -27,7 +28,7 @@ export default function ItemFormLayout({
   lastSaved,
 }: ItemFormLayoutProps) {
   return (
-    <div className="container mx-auto py-2">
+    <PageContainer className="py-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {autoSaving !== undefined && lastSaved !== undefined && (
@@ -55,6 +56,6 @@ export default function ItemFormLayout({
 
         {footer && <div className="mt-6 w-full">{footer}</div>}
       </div>
-    </div>
+    </PageContainer>
   )
 }

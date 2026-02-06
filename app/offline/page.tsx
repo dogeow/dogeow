@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react'
 import { Wifi, WifiOff, RefreshCw } from 'lucide-react'
 
 export default function OfflinePage() {
-  const [isOnline, setIsOnline] = useState(false)
+  const [isOnline, setIsOnline] = useState(() =>
+    typeof navigator !== 'undefined' ? navigator.onLine : false
+  )
 
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
@@ -12,9 +14,6 @@ export default function OfflinePage() {
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
-
-    // 检查初始状态
-    setIsOnline(navigator.onLine)
 
     return () => {
       window.removeEventListener('online', handleOnline)
@@ -51,7 +50,7 @@ export default function OfflinePage() {
         <WifiOff className="text-muted-foreground mx-auto h-20 w-20" />
 
         <div className="space-y-2">
-          <h1 className="text-foreground text-3xl font-bold">网络连接断开</h1>
+          <h1 className="text-foreground text-2xl font-bold">网络连接断开</h1>
           <p className="text-muted-foreground">
             看起来你的网络连接出现了问题。请检查你的网络设置并重试。
           </p>

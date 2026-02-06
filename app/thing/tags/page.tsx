@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { isLightColor } from '@/lib/helpers'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
 import TagSpeedDial from './components/TagSpeedDial'
+import { PageContainer } from '@/components/layout'
 
 // 标签类型定义
 type Tag = {
@@ -143,7 +144,7 @@ export default function ThingTags() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-7xl py-6 pb-24">
+    <PageContainer className="pb-24">
       <div className="mx-auto max-w-4xl">
         {error && (
           <div className="mb-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-red-700">
@@ -288,6 +289,6 @@ export default function ThingTags() {
         {/* 添加标签Speed Dial */}
         <TagSpeedDial />
       </div>
-    </div>
+    </PageContainer>
   )
 }

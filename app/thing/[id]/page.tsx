@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, Edit, Trash2, Lock, Unlock } from 'lucide-react'
 import { format } from 'date-fns'
+import { PageContainer } from '@/components/layout'
 import Image from 'next/image'
 import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
 import { toast } from 'sonner'
@@ -244,23 +245,23 @@ const TimeInfo = ({ item }: { item: Item }) => {
 
 // 加载状态组件
 const LoadingState = () => (
-  <div className="container mx-auto py-2">
+  <PageContainer>
     <div className="flex h-64 items-center justify-center">
       <p>加载中...</p>
     </div>
-  </div>
+  </PageContainer>
 )
 
 // 错误状态组件
 const ErrorState = ({ error, onBack }: { error?: Error; onBack: () => void }) => (
-  <div className="container mx-auto py-2">
+  <PageContainer>
     <div className="flex h-64 flex-col items-center justify-center">
       <p className="mb-4 text-red-500">{error?.message || '物品不存在'}</p>
       <Button onClick={onBack}>
         <ArrowLeft className="mr-2 h-4 w-4" /> 返回物品列表
       </Button>
     </div>
-  </div>
+  </PageContainer>
 )
 
 export default function ItemDetail() {
@@ -320,14 +321,14 @@ export default function ItemDetail() {
   if (!item) return null
 
   return (
-    <div className="container mx-auto py-2">
+    <PageContainer>
       {/* 页面头部 */}
       <div className="mb-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
         <div className="flex w-full items-center">
           <Button variant="ghost" size="icon" onClick={handleBack} className="mr-2 p-1">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="truncate text-2xl font-bold md:text-3xl">{item.name}</h1>
+          <h1 className="truncate text-2xl font-bold tracking-tight">{item.name}</h1>
           <div className="ml-auto flex justify-end gap-1">
             <Button variant="ghost" onClick={handleEdit} className="flex-1 p-1 sm:flex-auto">
               <Edit className="h-4 w-4" />
@@ -431,6 +432,6 @@ export default function ItemDetail() {
         onConfirm={handleDelete}
         itemName={item.name}
       />
-    </div>
+    </PageContainer>
   )
 }

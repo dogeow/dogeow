@@ -1,4 +1,5 @@
 import React, { memo } from 'react'
+import { PageContainer } from '@/components/layout'
 
 interface NoteErrorStateProps {
   message: string
@@ -8,7 +9,7 @@ interface NoteErrorStateProps {
 export const NoteErrorState = memo<NoteErrorStateProps>(({ message, variant = 'error' }) => {
   const isError = variant === 'error'
   return (
-    <div className="container mx-auto py-4">
+    <PageContainer>
       <div
         className={`rounded border px-4 py-3 ${
           isError
@@ -18,7 +19,7 @@ export const NoteErrorState = memo<NoteErrorStateProps>(({ message, variant = 'e
       >
         {message}
       </div>
-    </div>
+    </PageContainer>
   )
 })
 

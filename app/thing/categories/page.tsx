@@ -13,6 +13,7 @@ import CategorySpeedDial from './components/CategorySpeedDial'
 import { buildCategoryTree } from './utils/buildCategoryTree'
 import { useItemStore } from '../stores/itemStore'
 import { toast } from 'sonner'
+import { PageContainer } from '@/components/layout'
 
 export default function Categories() {
   const { categories, loading, updateCategory, deleteCategory, refreshCategories } = useCategories()
@@ -192,7 +193,7 @@ export default function Categories() {
   }, [categoryToDelete, categories])
 
   return (
-    <div className="py-2 pb-24">
+    <PageContainer className="pb-24">
       {categoryTree.length > 0 && (
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -278,6 +279,6 @@ export default function Categories() {
       />
 
       <CategorySpeedDial onCategoryAdded={refreshCategories} />
-    </div>
+    </PageContainer>
   )
 }

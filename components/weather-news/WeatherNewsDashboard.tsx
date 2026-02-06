@@ -83,7 +83,7 @@ const WeatherNewsDashboard = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">天气新闻看板</h2>
+          <h2 className="text-2xl font-bold tracking-tight">天气新闻看板</h2>
           <Button variant="outline" onClick={refreshData} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             刷新
@@ -123,7 +123,7 @@ const WeatherNewsDashboard = () => {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-3xl font-bold tracking-tight">天气新闻看板</h2>
+          <h2 className="text-2xl font-bold tracking-tight">天气新闻看板</h2>
           <Button variant="outline" onClick={refreshData} disabled={loading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             刷新
@@ -160,7 +160,7 @@ const WeatherNewsDashboard = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">天气新闻看板</h2>
+        <h2 className="text-2xl font-bold tracking-tight">天气新闻看板</h2>
         <Button variant="outline" onClick={refreshData} disabled={loading}>
           <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           刷新

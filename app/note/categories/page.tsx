@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import useSWR, { mutate } from 'swr'
 import { get, put, del } from '@/lib/api'
 import { toast } from 'sonner'
+import { PageContainer } from '@/components/layout'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
 import CategorySpeedDial from './components/CategorySpeedDial'
 
@@ -110,7 +111,7 @@ export default function NoteCategories() {
   }
 
   return (
-    <div className="container mx-auto py-4 pb-24">
+    <PageContainer className="pb-24">
       <div>
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-foreground text-xl font-semibold">分类列表</h2>
@@ -202,6 +203,6 @@ export default function NoteCategories() {
       />
 
       <CategorySpeedDial onCategoryAdded={() => mutate('/notes/categories')} />
-    </div>
+    </PageContainer>
   )
 }
