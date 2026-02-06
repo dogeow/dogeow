@@ -122,8 +122,19 @@ export const markWordAsSimple = async (wordId: number) => {
   return post<{ message: string }>(`/word/simple/${wordId}`, {})
 }
 
+/** 获取用户本地日期 YYYY-MM-DD，用于打卡避免服务端 UTC 导致跨日显示错误 */
+function getLocalDateString(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 export const checkIn = async () => {
-  return post<{ message: string; check_in: unknown }>('/word/check-in', {})
+  return post<{ message: string; check_in: unknown }>('/word/check-in', {
+    local_date: getLocalDateString(),
+  })
 }
 
 export const updateWordSettings = async (settings: Partial<UserWordSetting>) => {
