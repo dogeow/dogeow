@@ -33,6 +33,7 @@ export interface MusicPlayerProps {
   toggleDisplayMode: (mode: DisplayMode) => void
   onTrackSelect: (trackPath: string) => void
   onTogglePlayMode: () => void
+  onOpenFullscreen?: () => void
 }
 
 export interface SearchBarProps {

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import { Play, Pause, Music } from 'lucide-react'
+import { Play, Pause, Music, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { MusicTrack, PlayMode } from '@/stores/musicStore'
@@ -14,9 +14,13 @@ interface PlaylistDialogProps {
   availableTracks: MusicTrack[]
   currentTrack: string
   isPlaying: boolean
+  isMuted?: boolean
   onTrackSelect: (trackPath: string) => void
   onTogglePlay: () => void
   onTogglePlayMode: () => void
+  onToggleMute?: () => void
+  onPrevTrack?: () => void
+  onNextTrack?: () => void
   playMode: PlayMode
 }
 
@@ -33,9 +37,13 @@ export function PlaylistDialog({
   availableTracks,
   currentTrack,
   isPlaying,
+  isMuted,
   onTrackSelect,
   onTogglePlay,
   onTogglePlayMode,
+  onToggleMute,
+  onPrevTrack,
+  onNextTrack,
   playMode,
 }: PlaylistDialogProps) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -97,19 +105,34 @@ export function PlaylistDialog({
         {/* 底部控制栏 */}
         <div className="flex flex-shrink-0 items-center gap-2 border-t pt-4">
           <RepeatModeButton playMode={playMode} onTogglePlayMode={onTogglePlayMode} />
+          {onToggleMute && (
+            <Button variant="outline" size="icon" onClick={onToggleMute} className="shrink-0">
+              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+            </Button>
+          )}
+          {onPrevTrack && (
+            <Button variant="outline" size="icon" onClick={onPrevTrack} className="shrink-0">
+              <SkipBack className="h-4 w-4" />
+            </Button>
+          )}
           <Button onClick={onTogglePlay} disabled={availableTracks.length === 0} className="flex-1">
             {isPlaying ? (
-              <>
-                <Play className="mr-2 h-4 w-4" />
-                播放
-              </>
-            ) : (
               <>
                 <Pause className="mr-2 h-4 w-4" />
                 暂停
               </>
+            ) : (
+              <>
+                <Play className="mr-2 h-4 w-4" />
+                播放
+              </>
             )}
           </Button>
+          {onNextTrack && (
+            <Button variant="outline" size="icon" onClick={onNextTrack} className="shrink-0">
+              <SkipForward className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

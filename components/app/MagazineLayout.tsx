@@ -124,7 +124,7 @@ const ListCard = memo(
       <button
         type="button"
         onClick={onClick}
-        className="bg-card hover:bg-accent group focus-visible:ring-primary flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all duration-200 outline-none hover:shadow-md focus-visible:ring-2 active:scale-[0.98]"
+        className="bg-card/70 hover:bg-accent/80 group focus-visible:ring-primary flex w-full items-center gap-4 rounded-xl border p-4 text-left backdrop-blur-[1px] transition-all duration-200 outline-none hover:shadow-md focus-visible:ring-2 active:scale-[0.98]"
         aria-label={needsLogin ? `打开 ${tileName}（需登录）` : `打开 ${tileName}`}
       >
         {/* 图标 */}

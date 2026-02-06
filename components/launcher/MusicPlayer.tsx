@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, memo } from 'react'
-import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, List } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, List, Maximize2 } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import type { MusicPlayerProps } from './types'
 import { PlaylistDialog } from './PlaylistDialog'
@@ -35,6 +35,7 @@ export const MusicPlayer = memo(
     toggleDisplayMode,
     onTrackSelect,
     onTogglePlayMode,
+    onOpenFullscreen,
   }: MusicPlayerProps) => {
     const [playlistOpen, setPlaylistOpen] = useState(false)
 
@@ -69,11 +70,6 @@ export const MusicPlayer = memo(
               icon={isMuted ? <VolumeX className={ICON_SIZE} /> : <Volume2 className={ICON_SIZE} />}
             />
             <PlayerControlButton
-              onClick={switchToPrevTrack}
-              title="上一首"
-              icon={<SkipBack className={ICON_SIZE} />}
-            />
-            <PlayerControlButton
               onClick={togglePlay}
               title={isPlaying ? '暂停' : '播放'}
               icon={isPlaying ? <Pause className={ICON_SIZE} /> : <Play className={ICON_SIZE} />}
@@ -89,6 +85,13 @@ export const MusicPlayer = memo(
               title="播放列表"
               icon={<List className={ICON_SIZE} />}
             />
+            {onOpenFullscreen && (
+              <PlayerControlButton
+                onClick={onOpenFullscreen}
+                title="全屏可视化"
+                icon={<Maximize2 className={ICON_SIZE} />}
+              />
+            )}
           </div>
         </div>
 
@@ -105,9 +108,13 @@ export const MusicPlayer = memo(
           availableTracks={availableTracks}
           currentTrack={currentTrack}
           isPlaying={isPlaying}
+          isMuted={isMuted}
           onTrackSelect={onTrackSelect}
           onTogglePlay={togglePlay}
           onTogglePlayMode={onTogglePlayMode}
+          onToggleMute={toggleMute}
+          onPrevTrack={switchToPrevTrack}
+          onNextTrack={switchToNextTrack}
           playMode={playMode}
         />
       </>

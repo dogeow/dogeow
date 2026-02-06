@@ -3,7 +3,14 @@
 import React, { useEffect, useRef, useCallback } from 'react'
 import { cn } from '@/lib/helpers'
 
-export type VisualizerType = 'bars' | 'wave' | 'waveform' | 'bars6' | 'barSingle' | 'spectrum'
+export type VisualizerType =
+  | 'bars'
+  | 'waveform'
+  | 'bars6'
+  | 'barSingle'
+  | 'spectrum'
+  | 'particles'
+  | 'silk'
 
 interface AudioVisualizerProps {
   analyserNode: AnalyserNode | null
@@ -47,6 +54,29 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   const dataArrayRef = useRef<Uint8Array | null>(null)
   const waveformHistoryRef = useRef<number[][]>([]) // 存储历史波形数据
   const maxHistoryLength = 200 // 最多保留 200 帧历史数据
+
+  // 星空系统状态
+  const particlesRef = useRef<
+    Array<{
+      x: number
+      y: number
+      z: number
+      prevX: number
+      prevY: number
+    }>
+  >([])
+
+  // 雨滴系统状态
+  const silkPointsRef = useRef<
+    Array<{
+      x: number
+      y: number
+      len: number
+      speed: number
+      alpha: number
+      hue: number
+    }>
+  >([])
 
   // 初始化数据数组
   useEffect(() => {
@@ -109,24 +139,28 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   const drawWave = useCallback(
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
       ctx.clearRect(0, 0, width, height)
-      const sliceWidth = width / dataArray.length
-      let x = 0
 
-      ctx.beginPath()
-      ctx.moveTo(0, height / 2)
-
-      for (let i = 0; i < dataArray.length; i++) {
+      // 降采样使曲线更平滑
+      const step = 6
+      const points: Array<{ x: number; y: number }> = []
+      for (let i = 0; i < dataArray.length; i += step) {
         const v = dataArray[i] / 128.0
+        const x = (i / dataArray.length) * width
         const y = (v * height) / 2
-        if (i === 0) {
-          ctx.moveTo(x, y)
-        } else {
-          ctx.lineTo(x, y)
-        }
-        x += sliceWidth
+        points.push({ x, y })
       }
+      points.push({ x: width, y: height / 2 })
 
-      ctx.lineTo(width, height / 2)
+      // 用贝塞尔曲线连接，更优雅
+      ctx.beginPath()
+      ctx.moveTo(points[0].x, points[0].y)
+      for (let i = 1; i < points.length - 1; i++) {
+        const cpx = (points[i].x + points[i + 1].x) / 2
+        const cpy = (points[i].y + points[i + 1].y) / 2
+        ctx.quadraticCurveTo(points[i].x, points[i].y, cpx, cpy)
+      }
+      const last = points[points.length - 1]
+      ctx.lineTo(last.x, last.y)
 
       // 使用主题色绘制轮廓
       const primaryColor = getPrimaryColor()
@@ -136,14 +170,19 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         strokeColor = `${baseColor} / 0.9)`
       }
       ctx.strokeStyle = strokeColor
-      ctx.lineWidth = 2
+      ctx.lineWidth = 2.5
+      ctx.lineJoin = 'round'
+      ctx.lineCap = 'round'
       ctx.stroke()
 
-      // 填充波形下方区域（使用主题色，透明度较低）
+      // 填充波形下方区域
+      ctx.lineTo(width, height)
+      ctx.lineTo(0, height)
+      ctx.closePath()
       let fillColor = primaryColor
       if (primaryColor.startsWith('hsl')) {
         const baseColor = primaryColor.replace(')', '')
-        fillColor = `${baseColor} / 0.3)`
+        fillColor = `${baseColor} / 0.2)`
       }
       ctx.fillStyle = fillColor
       ctx.fill()
@@ -360,7 +399,150 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     },
     []
   )
+  // 绘制星空穿越效果
+  const drawParticles = useCallback(
+    (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)'
+      ctx.fillRect(0, 0, width, height)
 
+      const stars = particlesRef.current
+      const primaryColor = getPrimaryColor()
+
+      const avg = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length / 255
+      const bass = dataArray.slice(0, 4).reduce((sum, val) => sum + val, 0) / 4 / 255
+
+      // 根据音量动态调整目标星星数量
+      const targetCount = Math.floor(20 + avg * 180)
+
+      // 声音小时减少星星
+      while (stars.length > targetCount) {
+        stars.pop()
+      }
+
+      // 声音大时增加星星
+      while (stars.length < targetCount) {
+        stars.push({
+          x: (Math.random() - 0.5) * width * 2,
+          y: (Math.random() - 0.5) * height * 2,
+          z: Math.random() * 1000 + 200,
+          prevX: 0,
+          prevY: 0,
+        })
+      }
+
+      let baseHue = 35
+      if (primaryColor.startsWith('hsl')) {
+        const parts = primaryColor.replace(')', '').replace('hsl(', '').split(/\s+/)
+        baseHue = parseFloat(parts[0]) || 35
+      }
+
+      const cx = width / 2
+      const cy = height / 2
+      const speed = 1.5 + avg * 10 + bass * 5
+
+      for (const star of stars) {
+        // 记录前一帧位置
+        star.prevX = (star.x / star.z) * 400 + cx
+        star.prevY = (star.y / star.z) * 400 + cy
+
+        // z轴前进
+        star.z -= speed
+
+        // 超出范围重置
+        if (star.z <= 1) {
+          star.x = (Math.random() - 0.5) * width * 2
+          star.y = (Math.random() - 0.5) * height * 2
+          star.z = 800 + Math.random() * 200
+          star.prevX = (star.x / star.z) * 400 + cx
+          star.prevY = (star.y / star.z) * 400 + cy
+        }
+
+        const sx = (star.x / star.z) * 400 + cx
+        const sy = (star.y / star.z) * 400 + cy
+
+        // 距离越近越亮越长
+        const depth = 1 - star.z / 1000
+        const alpha = depth * (0.4 + avg * 0.6)
+        const lineW = depth * (1 + bass * 1.5)
+
+        // 只绘制拖尾线条，不绘制圆形
+        ctx.beginPath()
+        ctx.moveTo(star.prevX, star.prevY)
+        ctx.lineTo(sx, sy)
+        ctx.strokeStyle = `hsla(${baseHue + depth * 30}, 65%, ${75 + depth * 20}%, ${alpha})`
+        ctx.lineWidth = lineW
+        ctx.lineCap = 'round'
+        ctx.stroke()
+      }
+    },
+    []
+  )
+
+  // 绘制下雨效果
+  const drawSilk = useCallback(
+    (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
+      // 对雨模式使用接近不透明的清除，避免留下多重拖尾线条
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.98)'
+      ctx.fillRect(0, 0, width, height)
+
+      const drops = silkPointsRef.current
+      const primaryColor = getPrimaryColor()
+
+      const avg = dataArray.reduce((sum, val) => sum + val, 0) / dataArray.length / 255
+      const bass = dataArray.slice(0, 4).reduce((sum, val) => sum + val, 0) / 4 / 255
+
+      // 固定淡蓝色雨滴
+      const baseHue = 210
+
+      // 根据音量生成雨滴，声音越大雨越密
+      const spawnCount = Math.random() < 0.3 + avg * 0.7 ? Math.floor(1 + avg * 3) : 0
+      for (let i = 0; i < spawnCount && drops.length < 100; i++) {
+        drops.push({
+          x: Math.random() * width,
+          y: -Math.random() * 20,
+          len: 5,
+          speed: 4 + Math.random() * 6 + avg * 8,
+          alpha: 0.4 + Math.random() * 0.3 + avg * 0.3,
+          hue: baseHue + Math.random() * 20 - 10,
+        })
+      }
+
+      // 更新和绘制雨滴
+      const wind = avg * 4 + bass * 2 // 声音越大风越大，角度越斜
+      for (let i = drops.length - 1; i >= 0; i--) {
+        const d = drops[i]
+        d.y += d.speed
+        d.x += wind
+
+        // 超出屏幕移除
+        if (d.y > height + d.len || d.x > width + 20) {
+          drops.splice(i, 1)
+          continue
+        }
+
+        // 绘制雨滴线条（带角度）
+        const dx = wind * (d.len / d.speed)
+        ctx.beginPath()
+        ctx.setLineDash([])
+        ctx.moveTo(d.x, d.y)
+        ctx.lineTo(d.x - dx, d.y - d.len)
+        ctx.strokeStyle = `hsla(${d.hue}, 55%, 80%, ${d.alpha})`
+        ctx.lineWidth = 1
+        ctx.lineCap = 'round'
+        ctx.stroke()
+      }
+
+      // 底部溢射反光效果
+      if (avg > 0.15) {
+        const gradient = ctx.createLinearGradient(0, height - 30, 0, height)
+        gradient.addColorStop(0, `hsla(${baseHue}, 40%, 70%, 0)`)
+        gradient.addColorStop(1, `hsla(${baseHue}, 40%, 70%, ${avg * 0.15})`)
+        ctx.fillStyle = gradient
+        ctx.fillRect(0, height - 30, width, 30)
+      }
+    },
+    []
+  )
   // 启动/停止动画
   useEffect(() => {
     // 绘制循环函数
@@ -407,13 +589,16 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         case 'spectrum':
           drawSpectrum(ctx, dataArray, width, height)
           break
-        case 'wave':
-          analyserNode.getByteTimeDomainData(dataArray as any) // 波形使用时域数据
-          drawWave(ctx, dataArray, width, height)
-          break
+        // 'wave' mode removed per user request
         case 'waveform':
           // 使用频率数据绘制波形历史轨迹
           drawWaveformHistory(ctx, dataArray, width, height)
+          break
+        case 'particles':
+          drawParticles(ctx, dataArray, width, height)
+          break
+        case 'silk':
+          drawSilk(ctx, dataArray, width, height)
           break
       }
 
@@ -429,15 +614,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         cancelAnimationFrame(animationFrameRef.current)
         animationFrameRef.current = null
       }
-      // 清空画布和历史数据
-      if (canvasRef.current) {
-        const ctx = canvasRef.current.getContext('2d')
-        if (ctx) {
-          ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
-        }
-      }
-      // 清空历史波形数据
-      waveformHistoryRef.current = []
+      // 暂停时保留画布内容，不清空
     }
 
     return () => {
@@ -455,6 +632,8 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     drawSpectrum,
     drawWave,
     drawWaveformHistory,
+    drawParticles,
+    drawSilk,
   ])
 
   return (

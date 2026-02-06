@@ -18,6 +18,7 @@ import { AiDialog } from '@/components/app/AiDialog'
 import { useMediaKeys } from './hooks/useMediaKeys'
 import { useMediaSession } from './hooks/useMediaSession'
 import { AudioVisualizer } from './music/AudioVisualizer'
+import { FullscreenVisualizer } from './music/FullscreenVisualizer'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
@@ -29,7 +30,7 @@ export function AppLauncher() {
 
   const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
-
+  const [isFullscreenViz, setIsFullscreenViz] = useState(false)
   // 使用音乐存储中的播放模式状态
   const { playMode, togglePlayMode } = useMusicStore()
 
@@ -153,6 +154,7 @@ export function AppLauncher() {
             // 切换播放模式 - 只改变状态，下次生效
             togglePlayMode()
           },
+          onOpenFullscreen: () => setIsFullscreenViz(true),
         },
       },
       settings: {
@@ -256,6 +258,21 @@ export function AppLauncher() {
         initialSearchTerm={searchManager.searchTerm}
         currentRoute={!searchManager.isHomePage ? pathname : undefined}
       />
+
+      {/* 全屏音频可视化 */}
+      {isFullscreenViz && (
+        <FullscreenVisualizer
+          analyserNode={audioManager.analyserNode}
+          isPlaying={isPlaying}
+          isMuted={isMuted}
+          trackName={getCurrentTrackName() || '未知曲目'}
+          onClose={() => setIsFullscreenViz(false)}
+          onTogglePlay={togglePlay}
+          onToggleMute={toggleMute}
+          onPrevTrack={switchToPrevTrack}
+          onNextTrack={switchToNextTrack}
+        />
+      )}
 
       <div
         id="app-launcher-bar"

@@ -112,8 +112,9 @@ export const TileCard = memo(
     const className = useMemo(() => `${TILE_CLASSES.BASE} ${customStyles}`, [customStyles])
     const dynamicStyles = useMemo(
       () => ({
-        backgroundColor: tile.color,
+        backgroundColor: `${tile.color}b3`,
         opacity: needsLogin ? 0.7 : 1,
+        backdropFilter: 'blur(1px)',
       }),
       [tile.color, needsLogin]
     )
