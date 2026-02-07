@@ -73,9 +73,6 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
     },
   ]
 
-  // 自定义按钮样式，确保在任何背景下都有足够的对比度
-  const buttonStyle = 'h-9 w-9 bg-background/60 backdrop-blur-sm'
-
   return (
     <div className="flex items-center space-x-4">
       {buttons.map((button, index) => (
@@ -83,7 +80,7 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
           <Button
             variant="ghost"
             size="icon"
-            className={cn(buttonStyle, 'hover:bg-background/80')}
+            className="h-9 w-9 hover:bg-transparent hover:opacity-80"
             onClick={button.onClick}
           >
             {button.icon}

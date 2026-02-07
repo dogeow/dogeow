@@ -62,12 +62,12 @@ export default function DashboardSidebar() {
   return (
     <aside
       className={cn(
-        'bg-card/50 flex h-full flex-col border-r backdrop-blur-sm transition-all duration-300',
+        'bg-background flex h-full flex-col border-r transition-all duration-300',
         collapsed ? 'w-16' : 'w-[280px]'
       )}
     >
-      {/* 折叠按钮 */}
-      <div className="flex h-16 items-center justify-between border-b px-4">
+      {/* 折叠按钮：与顶部 header 颜色一致 */}
+      <div className="border-border/50 flex h-16 items-center justify-between border-b px-4">
         {!collapsed && <h2 className="text-sm font-semibold tracking-wider uppercase">导航</h2>}
         <button
           onClick={() => setCollapsed(!collapsed)}

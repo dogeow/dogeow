@@ -4,6 +4,8 @@ import { useUITheme } from './UIThemeProvider'
 import { AppLauncher } from '@/components/launcher'
 import dynamic from 'next/dynamic'
 import { useMemo } from 'react'
+import { useBackgroundStore } from '@/stores/backgroundStore'
+import { cn } from '@/lib/helpers'
 
 /**
  * 动态布局渲染器
@@ -11,6 +13,7 @@ import { useMemo } from 'react'
  */
 export function LayoutRenderer({ children }: { children: React.ReactNode }) {
   const theme = useUITheme()
+  const { backgroundImage } = useBackgroundStore()
 
   // 动态加载 Header 组件
   const HeaderComponent = useMemo(() => {
@@ -74,15 +77,22 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
   const Sidebar = SidebarComponent
   const Footer = FooterComponent
 
-  // 根据主题配置渲染布局
+  // 根据主题配置渲染布局（整页使用同一背景，顶部用毛玻璃与内容区一致）
   return (
-    <div className="flex h-screen flex-col" data-theme-layout={theme.id}>
-      {/* Header */}
+    <div
+      className={cn('flex h-screen flex-col', backgroundImage && 'bg-cover bg-fixed bg-center')}
+      style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : undefined}
+      data-theme-layout={theme.id}
+    >
+      {/* Header：整栏全宽、统一背景、延伸至左右边缘 */}
       {Header && (
         <header
-          className={`bg-background/90 z-30 flex-none border-b shadow-sm backdrop-blur ${
-            theme.layout.header.position === 'fixed' ? 'fixed top-0 right-0 left-0' : ''
-          } ${theme.layout.header.position === 'sticky' ? 'sticky top-0' : ''}`}
+          className={cn(
+            'z-30 w-full flex-none border-b shadow-sm',
+            'bg-background',
+            theme.layout.header.position === 'fixed' && 'fixed top-0 right-0 left-0',
+            theme.layout.header.position === 'sticky' && 'sticky top-0'
+          )}
           style={{
             height: theme.layout.header.height,
           }}

@@ -18,7 +18,7 @@ export default function DashboardHeader() {
   if (!theme) return null
 
   return (
-    <div className="bg-background/95 flex h-full w-full items-center justify-between border-b px-6 shadow-sm backdrop-blur-md">
+    <div className="flex h-full w-full items-center justify-between px-6">
       {/* 左侧：菜单按钮和 Logo */}
       <div className="flex items-center gap-4">
         <button
