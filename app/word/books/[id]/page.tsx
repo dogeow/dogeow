@@ -185,9 +185,9 @@ export default function BookDetailPage() {
                       ))}
                     </div>
                   )}
-                  {word.explanation?.zh && (
+                  {word.explanation && (
                     <span className="text-muted-foreground truncate text-sm whitespace-pre-line">
-                      {word.explanation.zh.split('\n')[0]}
+                      {word.explanation.split('\n')[0]}
                     </span>
                   )}
                 </div>

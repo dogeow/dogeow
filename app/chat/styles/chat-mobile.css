@@ -39,7 +39,6 @@
     background-color: hsl(var(--background));
     border-top: 1px solid hsl(var(--border));
     min-height: auto;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
     /* 确保输入框有足够的高度 */
     min-height: var(--chat-input-height);
   }
@@ -70,6 +69,8 @@
     /* 确保内容区域在头部下方 */
     position: relative;
     z-index: 1;
+    /* 移除底部边框，避免与输入区域产生两条横线 */
+    border-bottom: none;
   }
 }
 
@@ -103,5 +104,7 @@
     /* 确保内容区域在头部下方 */
     position: relative;
     z-index: 1;
+    /* 移除底部边框，避免与输入区域产生两条横线 */
+    border-bottom: none;
   }
 }

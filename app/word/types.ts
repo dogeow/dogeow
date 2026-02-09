@@ -10,10 +10,7 @@ export interface Word {
   id: number
   content: string
   phonetic_us?: string
-  explanation?: {
-    en?: string
-    zh?: string
-  }
+  explanation?: string
   example_sentences?: Array<{
     en: string
     zh: string

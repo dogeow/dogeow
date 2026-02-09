@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 import { Shuffle, Repeat, Repeat1, Ban } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import type { PlayMode } from '@/stores/musicStore'
 
 // 播放模式按钮组件（简化逻辑）
@@ -35,9 +34,13 @@ export function RepeatModeButton(props: { playMode: PlayMode; onTogglePlayMode: 
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleClick}>
+    <button
+      onClick={handleClick}
+      className="flex items-center gap-2 transition-opacity hover:opacity-80"
+      aria-label={label}
+    >
       {icon}
-      <span className="ml-2">{label}</span>
-    </Button>
+      <span>{label}</span>
+    </button>
   )
 }

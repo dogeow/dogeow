@@ -49,7 +49,7 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <PageContainer>
+      <PageContainer maxWidth="2xl" className="mx-auto">
         <PageTitle className="mb-4">仪表盘</PageTitle>
 
         <div className="space-y-4">

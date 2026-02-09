@@ -3,11 +3,18 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Volume2, Sparkles } from 'lucide-react'
+import { Volume2, Sparkles, MoreVertical, Edit, CheckCircle } from 'lucide-react'
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu'
 import { Word } from '../types'
 import { useWordStore } from '../stores/wordStore'
 import { markWord, markWordAsSimple } from '../hooks/useWord'
 import { WordAIDialog } from './WordAIDialog'
+import { EditWordDialog } from './EditWordDialog'
 import { toast } from 'sonner'
 
 interface WordCardProps {
@@ -21,6 +28,7 @@ export function WordCard({ word, onNext }: WordCardProps) {
   const [isMarkingSimple, setIsMarkingSimple] = useState(false)
   const [voicesLoaded, setVoicesLoaded] = useState(false)
   const [showAIDialog, setShowAIDialog] = useState(false)
+  const [showEditDialog, setShowEditDialog] = useState(false)
 
   // 发音函数
   const speak = useCallback((text: string) => {
@@ -152,18 +160,26 @@ export function WordCard({ word, onNext }: WordCardProps) {
     <>
       <Card className="w-full">
         <CardContent className="relative p-6">
-          {/* 卡片右上角：简单词文字链接（仅展示释义时显示） */}
+          {/* 卡片右上角：更多按钮+菜单（仅展示释义时显示） */}
           {showTranslation && (
             <div className="absolute top-4 right-4">
-              <button
-                type="button"
-                onClick={handleMarkSimpleAndNext}
-                disabled={isMarkingSimple}
-                className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2 transition-colors disabled:opacity-50"
-                title="设为简单词，不再背诵和复习"
-              >
-                简单词
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 p-0" aria-label="更多操作">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleMarkSimpleAndNext} disabled={isMarkingSimple}>
+                    <CheckCircle className="text-muted-foreground mr-2 h-4 w-4" />
+                    简单词
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
+                    <Edit className="text-muted-foreground mr-2 h-4 w-4" />
+                    编辑单词
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
           {/* 单词和音标 */}
@@ -221,9 +237,9 @@ export function WordCard({ word, onNext }: WordCardProps) {
             <div className="space-y-4">
               {/* 释义 */}
               <div className="bg-muted/50 rounded-lg p-4">
-                {word.explanation?.zh ? (
+                {word.explanation ? (
                   <div className="text-base whitespace-pre-line">
-                    {word.explanation.zh.split('\n').map((line, idx) => (
+                    {word.explanation.split('\n').map((line, idx) => (
                       <p key={idx} className={idx > 0 ? 'mt-1' : ''}>
                         {line}
                       </p>
@@ -231,9 +247,6 @@ export function WordCard({ word, onNext }: WordCardProps) {
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-sm">暂无中文释义</p>
-                )}
-                {word.explanation?.en && (
-                  <p className="text-muted-foreground mt-1 text-sm">{word.explanation.en}</p>
                 )}
               </div>
 
@@ -282,6 +295,8 @@ export function WordCard({ word, onNext }: WordCardProps) {
         </CardContent>
       </Card>
       <WordAIDialog word={word} open={showAIDialog} onOpenChange={setShowAIDialog} />
+      {/* 编辑单词Dialog（复用组件，后续实现） */}
+      <EditWordDialog word={word} open={showEditDialog} onOpenChange={setShowEditDialog} />
     </>
   )
 }

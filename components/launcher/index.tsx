@@ -271,6 +271,15 @@ export function AppLauncher() {
           onToggleMute={toggleMute}
           onPrevTrack={switchToPrevTrack}
           onNextTrack={switchToNextTrack}
+          availableTracks={availableTracks || []}
+          currentTrack={currentTrack || ''}
+          onTrackSelect={(trackPath: string) => setCurrentTrack?.(trackPath)}
+          playMode={playMode}
+          onTogglePlayMode={togglePlayMode}
+          currentTime={currentTime}
+          duration={duration}
+          handleProgressChange={handleProgressChange}
+          formatTime={formatTime}
         />
       )}
 

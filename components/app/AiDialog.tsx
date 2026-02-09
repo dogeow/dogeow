@@ -54,6 +54,11 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
         const response = await fetch('/api/knowledge/documents')
         const data = await response.json()
 
+        // 构建更新时间文本
+        const updateTimeText = knowledgeSubtitle
+          ? `\n\n<small class="text-muted-foreground">${knowledgeSubtitle}</small>`
+          : ''
+
         if (data.success && data.documents && data.documents.length > 0) {
           const welcomeMessage: ChatMessage = {
             role: 'assistant',
@@ -61,7 +66,7 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
             
 我会基于知识库内容为你解答。
 
-有什么想了解的吗？`,
+有什么想了解的吗？${updateTimeText}`,
           }
 
           setKnowledgeInitialMessages([welcomeMessage])
@@ -73,16 +78,19 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
 
 目前知识库中还没有文档。
 
-有什么想了解的吗？`,
+有什么想了解的吗？${updateTimeText}`,
             },
           ])
         }
       } catch (error) {
         console.error('加载初始消息失败:', error)
+        const updateTimeText = knowledgeSubtitle
+          ? `\n\n<small class="text-muted-foreground">${knowledgeSubtitle}</small>`
+          : ''
         setKnowledgeInitialMessages([
           {
             role: 'assistant',
-            content: '你好！欢迎了解我的知识库。有什么想了解的吗？',
+            content: `你好！欢迎了解我的知识库。有什么想了解的吗？${updateTimeText}`,
           },
         ])
       } finally {
@@ -91,7 +99,49 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     }
 
     loadInitialMessage()
-  }, [open, knowledgeInitialMessages.length, isLoadingKnowledgeInitial])
+  }, [open, knowledgeInitialMessages.length, isLoadingKnowledgeInitial, knowledgeSubtitle])
+
+  // 当更新时间变化时，更新第一条消息
+  useEffect(() => {
+    if (
+      chatMode === 'knowledge' &&
+      knowledgeInitialMessages.length > 0 &&
+      knowledgeInitialMessages[0]?.role === 'assistant' &&
+      knowledgeSubtitle
+    ) {
+      setKnowledgeInitialMessages(prev => {
+        const firstMessage = prev[0]
+        if (!firstMessage) return prev
+
+        // 检查是否已经包含更新时间
+        const hasUpdateTime = firstMessage.content.includes('更新于')
+        const updateTimeText = `\n\n<small class="text-muted-foreground">${knowledgeSubtitle}</small>`
+
+        if (!hasUpdateTime) {
+          return [
+            {
+              ...firstMessage,
+              content: firstMessage.content + updateTimeText,
+            },
+            ...prev.slice(1),
+          ]
+        } else {
+          // 如果已包含，则更新它
+          const contentWithoutUpdateTime = firstMessage.content.replace(
+            /\n\n<small class="text-muted-foreground">更新于.*?<\/small>/,
+            ''
+          )
+          return [
+            {
+              ...firstMessage,
+              content: contentWithoutUpdateTime + updateTimeText,
+            },
+            ...prev.slice(1),
+          ]
+        }
+      })
+    }
+  }, [knowledgeSubtitle, chatMode])
 
   const activeChat = chatMode === 'knowledge' ? knowledgeChat : aiChat
   const {
@@ -119,7 +169,6 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
           <ChatHeader
             variant="dialog"
             title={chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'}
-            subtitle={chatMode === 'knowledge' ? knowledgeSubtitle : undefined}
             hasMessages={hasMessages}
             isLoading={isLoading}
             onClear={handleClear}
@@ -137,17 +186,19 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
           variant="dialog"
         />
 
-        <div className="relative flex-none border-t p-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={handleClear}
-            disabled={isLoading}
-            className="absolute right-4 bottom-full mb-2 h-9 gap-1.5 rounded-full px-3 shadow-md"
-          >
-            <MessageSquarePlus className="h-4 w-4" />
-            新会话
-          </Button>
+        <div className="relative flex-none p-2">
+          {prompt.trim() && (
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleClear}
+              disabled={isLoading}
+              className="absolute right-4 bottom-full mb-2 h-9 gap-1.5 rounded-full px-3 shadow-md"
+            >
+              <MessageSquarePlus className="h-4 w-4" />
+              新会话
+            </Button>
+          )}
           <ChatInput
             prompt={prompt}
             onPromptChange={setPrompt}

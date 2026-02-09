@@ -33,32 +33,13 @@ export const ChatHeader = React.memo<ChatHeaderProps>(
     if (variant === 'dialog') {
       const useTabs = chatMode !== undefined && onChatModeChange != null
       return (
-        <div className="!flex h-12 flex-none !flex-row items-center justify-between border-b px-4 py-0">
+        <div className="relative !flex h-14 flex-none !flex-row items-center justify-between border-b px-4 py-0">
           <div className="m-0 flex min-w-0 flex-1 items-center gap-3">
             {useTabs ? (
               <>
                 <DialogTitle className="sr-only">
                   {chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'}
                 </DialogTitle>
-                <Tabs
-                  value={chatMode}
-                  onValueChange={v => onChatModeChange(v as 'ai' | 'knowledge')}
-                  className="w-auto"
-                >
-                  <TabsList className="bg-muted/50 h-9">
-                    <TabsTrigger value="ai" className="gap-1.5 px-3 text-sm">
-                      <Sparkles className="h-4 w-4" />
-                      通用 AI
-                    </TabsTrigger>
-                    <TabsTrigger value="knowledge" className="gap-1.5 px-3 text-sm">
-                      <BookOpen className="h-4 w-4" />
-                      知识库 AI
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-                {subtitle && (
-                  <span className="text-muted-foreground shrink-0 text-xs">{subtitle}</span>
-                )}
               </>
             ) : (
               <>
@@ -72,6 +53,26 @@ export const ChatHeader = React.memo<ChatHeaderProps>(
               </>
             )}
           </div>
+          {useTabs && (
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+              <Tabs
+                value={chatMode}
+                onValueChange={v => onChatModeChange(v as 'ai' | 'knowledge')}
+                className="w-auto"
+              >
+                <TabsList className="bg-muted/50 h-11">
+                  <TabsTrigger value="ai" className="gap-2 px-5 text-base">
+                    <Sparkles className="h-5 w-5" />
+                    通用 AI
+                  </TabsTrigger>
+                  <TabsTrigger value="knowledge" className="gap-2 px-5 text-base">
+                    <BookOpen className="h-5 w-5" />
+                    知识库 AI
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
           <div className="flex shrink-0 items-center gap-1 pr-10">
             {hasMessages && !hideClear && (
               <Button

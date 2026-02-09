@@ -2,9 +2,11 @@
 
 import React, { useCallback, useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, SkipBack, SkipForward, Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import { X, SkipBack, SkipForward, Play, Pause, Volume2, VolumeX, List } from 'lucide-react'
 import { AudioVisualizer, type VisualizerType } from './AudioVisualizer'
 import { cn } from '@/lib/helpers'
+import { PlaylistDialog } from '../PlaylistDialog'
+import type { MusicTrack, PlayMode } from '@/stores/musicStore'
 
 interface FullscreenVisualizerProps {
   analyserNode: AnalyserNode | null
@@ -16,6 +18,15 @@ interface FullscreenVisualizerProps {
   onToggleMute: () => void
   onPrevTrack: () => void
   onNextTrack: () => void
+  availableTracks?: MusicTrack[]
+  currentTrack?: string
+  onTrackSelect?: (trackPath: string) => void
+  playMode?: PlayMode
+  onTogglePlayMode?: () => void
+  currentTime?: number
+  duration?: number
+  handleProgressChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
+  formatTime?: (time: number) => string
 }
 
 const VISUALIZER_TYPES: { type: VisualizerType; label: string }[] = [
@@ -35,10 +46,24 @@ export function FullscreenVisualizer({
   onToggleMute,
   onPrevTrack,
   onNextTrack,
+  availableTracks = [],
+  currentTrack = '',
+  onTrackSelect,
+  playMode = 'list',
+  onTogglePlayMode,
+  currentTime = 0,
+  duration = 0,
+  handleProgressChange,
+  formatTime = (time: number) => {
+    const mins = Math.floor(time / 60)
+    const secs = Math.floor(time % 60)
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  },
 }: FullscreenVisualizerProps) {
   const [vizType, setVizType] = useState<VisualizerType>('spectrum')
   const [showControls, setShowControls] = useState(true)
   const [hideTimer, setHideTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const [playlistOpen, setPlaylistOpen] = useState(false)
 
   // 自动隐藏控件
   const resetHideTimer = useCallback(() => {
@@ -112,7 +137,7 @@ export function FullscreenVisualizer({
         </div>
 
         {/* 底部：可视化类型切换 + 播放控件 */}
-        <div className="space-y-6 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12">
+        <div className="space-y-6 bg-gradient-to-t from-black/60 to-transparent p-4 pt-12 pb-20">
           {/* 可视化类型切换 */}
           <div className="flex justify-center gap-2">
             {VISUALIZER_TYPES.map(({ type, label }) => (
@@ -161,10 +186,72 @@ export function FullscreenVisualizer({
             >
               <SkipForward className="h-6 w-6" />
             </button>
-            <div className="w-10" />
+            <button
+              onClick={() => setPlaylistOpen(true)}
+              className="flex h-10 w-10 items-center justify-center text-white/70 transition-colors hover:text-white"
+              aria-label="播放列表"
+            >
+              <List className="h-5 w-5" />
+            </button>
           </div>
+
+          {/* 进度条和时间显示 */}
+          {handleProgressChange && duration > 0 && (
+            <div className="flex items-center justify-center gap-2 px-2 sm:px-4 md:px-6 lg:px-8">
+              <span className="min-w-[2.5rem] text-right text-sm font-medium text-white/80 tabular-nums">
+                {formatTime(currentTime)}
+              </span>
+              <div className="group relative h-1.5 max-w-6xl flex-1 cursor-pointer">
+                {/* 进度条背景 */}
+                <div className="absolute inset-0 rounded-full bg-white/20" />
+                {/* 已播放进度 */}
+                <div
+                  className="absolute inset-y-0 left-0 rounded-full bg-white/80 transition-all duration-100"
+                  style={{ width: `${((currentTime / duration) * 100).toFixed(2)}%` }}
+                />
+                {/* 可拖动的滑块 */}
+                <input
+                  type="range"
+                  min={0}
+                  max={duration || 100}
+                  step={0.1}
+                  value={currentTime}
+                  onChange={handleProgressChange}
+                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  aria-label="播放进度"
+                />
+                {/* 悬停时显示的滑块圆点 */}
+                <div
+                  className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
+                  style={{ left: `calc(${((currentTime / duration) * 100).toFixed(2)}% - 8px)` }}
+                />
+              </div>
+              <span className="min-w-[2.5rem] text-sm font-medium text-white/80 tabular-nums">
+                {formatTime(duration)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* 播放列表弹窗 */}
+      {onTrackSelect && (
+        <PlaylistDialog
+          open={playlistOpen}
+          onOpenChange={setPlaylistOpen}
+          availableTracks={availableTracks}
+          currentTrack={currentTrack}
+          isPlaying={isPlaying}
+          isMuted={isMuted}
+          onTrackSelect={onTrackSelect}
+          onTogglePlay={onTogglePlay}
+          onTogglePlayMode={onTogglePlayMode}
+          onToggleMute={onToggleMute}
+          onPrevTrack={onPrevTrack}
+          onNextTrack={onNextTrack}
+          playMode={playMode}
+        />
+      )}
     </div>,
     document.body
   )

@@ -33,6 +33,165 @@ const getPrimaryColor = (): string => {
   return 'hsl(35 97% 55%)'
 }
 
+// 解析 CSS 颜色为 {r,g,b}
+// 支持 #hex, rgb()/rgba(), 现代空格分隔 rgb 语法, hsl(), 以及 CSS 变量或关键字（通过临时元素解析）
+const parseCssColor = (css: string) => {
+  if (!css) return null
+  css = css.trim()
+
+  // hex
+  if (css.startsWith('#')) {
+    const hex = css.slice(1)
+    const full =
+      hex.length === 3
+        ? hex
+            .split('')
+            .map(h => h + h)
+            .join('')
+        : hex
+    const bigint = parseInt(full, 16)
+    const r = (bigint >> 16) & 255
+    const g = (bigint >> 8) & 255
+    const b = bigint & 255
+    return { r, g, b }
+  }
+
+  // 直接提取数字（适配逗号和空格分隔，并能处理带 / 的 alpha 值）
+  const nums = css.match(/-?[\d.]+%?/g)
+  if (nums && (css.startsWith('rgb') || css.startsWith('rgba'))) {
+    const r = parseInt(nums[0].replace('%', ''), 10) || 0
+    const g = parseInt(nums[1].replace('%', ''), 10) || 0
+    const b = parseInt(nums[2].replace('%', ''), 10) || 0
+    return { r, g, b }
+  }
+
+  // hsl -> rgb 转换
+  if (nums && (css.startsWith('hsl') || css.startsWith('hsla'))) {
+    const h = parseFloat(nums[0])
+    const s = parseFloat(nums[1].replace('%', '')) / 100
+    const l = parseFloat(nums[2].replace('%', '')) / 100
+    const c = (1 - Math.abs(2 * l - 1)) * s
+    const hh = (h / 60) % 6
+    const x = c * (1 - Math.abs((hh % 2) - 1))
+    let r1 = 0,
+      g1 = 0,
+      b1 = 0
+    if (0 <= hh && hh < 1) {
+      r1 = c
+      g1 = x
+      b1 = 0
+    } else if (1 <= hh && hh < 2) {
+      r1 = x
+      g1 = c
+      b1 = 0
+    } else if (2 <= hh && hh < 3) {
+      r1 = 0
+      g1 = c
+      b1 = x
+    } else if (3 <= hh && hh < 4) {
+      r1 = 0
+      g1 = x
+      b1 = c
+    } else if (4 <= hh && hh < 5) {
+      r1 = x
+      g1 = 0
+      b1 = c
+    } else {
+      r1 = c
+      g1 = 0
+      b1 = x
+    }
+    const m = l - c / 2
+    const r = Math.round((r1 + m) * 255)
+    const g = Math.round((g1 + m) * 255)
+    const b = Math.round((b1 + m) * 255)
+    return { r, g, b }
+  }
+
+  // 最后尝试用浏览器解析（能解析变量、关键字等）
+  if (typeof window !== 'undefined') {
+    try {
+      const el = document.createElement('div')
+      el.style.color = css
+      el.style.display = 'none'
+      document.documentElement.appendChild(el)
+      const resolved = getComputedStyle(el).color
+      document.documentElement.removeChild(el)
+      const m = resolved.match(/rgba?\(([^)]+)\)/)
+      if (m) {
+        const parts = m[1].split(',').map(p => p.trim())
+        const r = parseInt(parts[0], 10) || 0
+        const g = parseInt(parts[1], 10) || 0
+        const b = parseInt(parts[2], 10) || 0
+        return { r, g, b }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  return null
+}
+
+// 查找元素或其祖先的第一个非透明背景色
+const findNearestBackgroundColor = (el?: HTMLElement | null) => {
+  if (typeof window === 'undefined') return ''
+  let node: HTMLElement | null = el || document.body
+  while (node) {
+    try {
+      const style = getComputedStyle(node)
+      const bg = style.backgroundColor || style.getPropertyValue('--background') || ''
+      if (bg && bg !== 'transparent' && bg !== 'rgba(0, 0, 0, 0)') return bg
+    } catch (e) {
+      // ignore and continue
+    }
+    node = node.parentElement
+  }
+  return ''
+}
+
+// 获取背景色信息并判断是否为浅色主题，优先使用传入元素的最近背景
+const getBackgroundInfo = (el?: HTMLElement | null) => {
+  if (typeof window === 'undefined') return { r: 0, g: 0, b: 0, isLight: false }
+
+  // 优先检测画布自身或最近的带背景的祖先
+  let cssBg = ''
+  try {
+    cssBg = findNearestBackgroundColor(el) || ''
+  } catch (e) {
+    cssBg = ''
+  }
+
+  // 仍然没有则回退到 prefers-color-scheme
+  let rgb = parseCssColor(cssBg)
+  if (!rgb) {
+    const isLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+    const fallback = isLight
+      ? { r: 255, g: 255, b: 255, isLight: true }
+      : { r: 0, g: 0, b: 0, isLight: false }
+
+    if (process && process.env && process.env.NODE_ENV !== 'production') {
+      console.debug('[AudioVisualizer] background detect fallback:', {
+        cssBg,
+        parsed: rgb,
+        fallback,
+      })
+    }
+
+    return fallback
+  }
+
+  // 判断亮度（相对亮度）
+  const luminance = (0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b) / 255
+  const info = { ...rgb, isLight: luminance > 0.6 }
+
+  if (process && process.env && process.env.NODE_ENV !== 'production') {
+    console.debug('[AudioVisualizer] background detect:', { cssBg, parsed: rgb, info })
+  }
+
+  return info
+}
+
 /**
  * 音频可视化组件
  * 使用 Web Audio API 的 AnalyserNode 实时分析音频频率
@@ -75,6 +234,8 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       speed: number
       alpha: number
       hue: number
+      vx?: number
+      seed?: number
     }>
   >([])
 
@@ -97,8 +258,11 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       for (let i = 0; i < barCountActual; i++) {
         const value = dataArray[i] / 255
         const h = value * height * 0.9
-        const x = startX + i * (barWidth + barGap)
-        const y = height - h
+        // 使用整数坐标避免子像素渲染导致的缝隙
+        const x = Math.round(startX + i * (barWidth + barGap))
+        const w = Math.max(1, Math.round(barWidth))
+        const hRounded = Math.max(1, Math.round(h))
+        const y = Math.round(height - hRounded)
 
         // 渐变色
         if (showGradient) {
@@ -111,25 +275,14 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
           ctx.fillStyle = barColor
         }
 
-        // 绘制柱子（带圆角）
-        ctx.beginPath()
+        // 绘制柱子：优先使用 roundRect（若支持），否则使用 fillRect（整像素绘制更稳定）
         if ((ctx as any).roundRect) {
-          ;(ctx as any).roundRect(x, y, barWidth, h, 2)
+          ctx.beginPath()
+          ;(ctx as any).roundRect(x, y, w, hRounded, 2)
+          ctx.fill()
         } else {
-          // 兼容旧浏览器
-          const radius = 2
-          ctx.moveTo(x + radius, y)
-          ctx.lineTo(x + barWidth - radius, y)
-          ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + radius)
-          ctx.lineTo(x + barWidth, y + h - radius)
-          ctx.quadraticCurveTo(x + barWidth, y + h, x + barWidth - radius, y + h)
-          ctx.lineTo(x + radius, y + h)
-          ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
-          ctx.lineTo(x, y + radius)
-          ctx.quadraticCurveTo(x, y, x + radius, y)
-          ctx.closePath()
+          ctx.fillRect(x, y, w, hRounded)
         }
-        ctx.fill()
       }
     },
     [barCount, barWidth, barGap, barColor, showGradient]
@@ -280,19 +433,28 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       ctx.clearRect(0, 0, width, height)
 
       const barCount6 = 6
-      const barW = (width - (barCount6 - 1) * 10) / barCount6
       const gap = 10
+      const totalGap = gap * (barCount6 - 1)
+      const availableWidth = Math.max(0, width - totalGap)
+
+      // 分配整数像素宽度，避免子像素缝隙
+      const baseW = Math.floor(availableWidth / barCount6)
+      let remainder = availableWidth - baseW * barCount6
+      const widths: number[] = new Array(barCount6)
+        .fill(baseW)
+        .map(() => (remainder-- > 0 ? baseW + 1 : baseW))
 
       const primaryColor = getPrimaryColor()
 
+      let x = 0
       for (let i = 0; i < barCount6; i++) {
         // 使用不同频率段的数据
         const dataIndex = Math.floor((i / barCount6) * dataArray.length)
         const value = dataArray[dataIndex] / 255
-        const h = value * height * 0.95
+        const h = Math.round(value * height * 0.95)
 
-        const x = i * (barW + gap)
-        const y = height - h
+        const w = Math.max(1, widths[i])
+        const y = Math.max(0, height - h)
 
         let fillColor = primaryColor
         if (primaryColor.startsWith('hsl')) {
@@ -302,24 +464,16 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
         ctx.fillStyle = fillColor
 
-        // 绘制宽柱（带圆角）
-        ctx.beginPath()
+        // 绘制宽柱（优先使用 roundRect，否则使用 fillRect）
         if ((ctx as any).roundRect) {
-          ;(ctx as any).roundRect(x, y, barW, h, 8)
+          ctx.beginPath()
+          ;(ctx as any).roundRect(x, y, w, h, 8)
+          ctx.fill()
         } else {
-          const radius = 8
-          ctx.moveTo(x + radius, y)
-          ctx.lineTo(x + barW - radius, y)
-          ctx.quadraticCurveTo(x + barW, y, x + barW, y + radius)
-          ctx.lineTo(x + barW, y + h - radius)
-          ctx.quadraticCurveTo(x + barW, y + h, x + barW - radius, y + h)
-          ctx.lineTo(x + radius, y + h)
-          ctx.quadraticCurveTo(x, y + h, x, y + h - radius)
-          ctx.lineTo(x, y + radius)
-          ctx.quadraticCurveTo(x, y, x + radius, y)
-          ctx.closePath()
+          ctx.fillRect(x, y, w, h)
         }
-        ctx.fill()
+
+        x += w + gap
       }
     },
     []
@@ -373,19 +527,23 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
       ctx.clearRect(0, 0, width, height)
       const barCountSpectrum = 64
-      const barW = width / barCountSpectrum
-
       const primaryColor = getPrimaryColor()
 
+      // 以整数像素分配宽度，避免子像素缝隙
+      const baseW = Math.floor(width / barCountSpectrum)
+      let remainder = width - baseW * barCountSpectrum
+      const widths: number[] = new Array(barCountSpectrum)
+        .fill(baseW)
+        .map(() => (remainder-- > 0 ? baseW + 1 : baseW))
+
+      let x = 0
       for (let i = 0; i < barCountSpectrum; i++) {
-        // 映射到实际数据数组的索引（确保能访问所有数据）
         const dataIndex = Math.floor((i / barCountSpectrum) * dataArray.length)
         const value = Math.max(0, Math.min(1, dataArray[dataIndex] / 255))
 
-        const x = i * barW
-        const actualBarWidth = i === barCountSpectrum - 1 ? width - x : barW
-        const h = value * height
-        const y = height - h
+        const w = Math.max(1, widths[i])
+        const h = Math.round(value * height)
+        const y = Math.max(0, height - h)
 
         let fillColor = primaryColor
         if (primaryColor.startsWith('hsl')) {
@@ -394,11 +552,13 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         }
 
         ctx.fillStyle = fillColor
-        ctx.fillRect(x, y, actualBarWidth, h)
+        ctx.fillRect(x, y, w, h)
+        x += w
       }
     },
     []
   )
+
   // 绘制星空穿越效果
   const drawParticles = useCallback(
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
@@ -482,7 +642,12 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   const drawSilk = useCallback(
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
       // 对雨模式使用接近不透明的清除，避免留下多重拖尾线条
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.98)'
+      const bg = getBackgroundInfo(canvasRef.current)
+      // 开发模式下打印背景检测结果以便调试
+      if (process && process.env && process.env.NODE_ENV !== 'production') {
+        console.debug('[AudioVisualizer] drawSilk using bg:', bg)
+      }
+      ctx.fillStyle = `rgba(${bg.r}, ${bg.g}, ${bg.b}, 0.98)`
       ctx.fillRect(0, 0, width, height)
 
       const drops = silkPointsRef.current
@@ -494,39 +659,70 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       // 固定淡蓝色雨滴
       const baseHue = 210
 
-      // 根据音量生成雨滴，声音越大雨越密
-      const spawnCount = Math.random() < 0.3 + avg * 0.7 ? Math.floor(1 + avg * 3) : 0
+      // 根据音量生成雨滴，声音越大雨越密 — 减少数量约为原来的 50%
+      const baseSpawn = Math.floor(1 + avg * 3)
+      const spawnCount =
+        Math.random() < 0.3 + avg * 0.7 ? Math.max(0, Math.floor(baseSpawn / 2)) : 0
       for (let i = 0; i < spawnCount && drops.length < 100; i++) {
+        // spawn across slightly extended horizontal range so edges receive drops
+        const spawnX = (Math.random() - 0.05) * width
         drops.push({
-          x: Math.random() * width,
+          x: spawnX,
           y: -Math.random() * 20,
           len: 5,
           speed: 4 + Math.random() * 6 + avg * 8,
           alpha: 0.4 + Math.random() * 0.3 + avg * 0.3,
           hue: baseHue + Math.random() * 20 - 10,
+          vx: (Math.random() - 0.5) * 0.3, // smaller initial horizontal velocity
+          seed: Math.random() * 1000,
         })
       }
 
       // 更新和绘制雨滴
-      const wind = avg * 4 + bass * 2 // 声音越大风越大，角度越斜
+      const t = performance.now() / 1000
+      const windMain = avg * 4 + bass * 2 // base wind magnitude
+
       for (let i = drops.length - 1; i >= 0; i--) {
         const d = drops[i]
-        d.y += d.speed
-        d.x += wind
+        // 计算平滑、低频的局部风（基于每个雨滴的种子和时间），频率低且振幅小
+        const localGust = Math.sin((d.seed ?? 0) + t * 0.18 + d.y * 0.003) * (avg * 0.6)
+        const localWind = windMain * 0.6 + localGust
 
-        // 超出屏幕移除
-        if (d.y > height + d.len || d.x > width + 20) {
+        // 平滑追随局部风：使用较小的响应系数减少左右摆动
+        const vxPrev = d.vx ?? 0
+        const adapt = 0.03
+        const jitter = (Math.random() - 0.5) * 0.01 // 很小的随机扰动
+        d.vx = vxPrev + (localWind - vxPrev) * adapt + jitter
+
+        // 阻尼，抑制持续摆动
+        d.vx *= 0.995
+
+        // 少量概率发生短促的侧风突变（模拟真实阵风，但不频繁）
+        if (Math.random() < 0.005 * (avg + 0.2)) {
+          d.vx += (Math.random() < 0.5 ? -1 : 1) * (0.2 + Math.random() * 0.4)
+        }
+
+        d.y += d.speed
+        d.x += d.vx
+
+        // 超出屏幕移除（左右两边均判断，给左右边留出缓冲区）
+        if (d.y > height + d.len || d.x > width + 40 || d.x < -40) {
           drops.splice(i, 1)
           continue
         }
 
-        // 绘制雨滴线条（带角度）
-        const dx = wind * (d.len / d.speed)
+        // 绘制雨滴线条，根据实际水平速度计算倾斜
+        const dx = (d.vx ?? 0) * (d.len / d.speed)
         ctx.beginPath()
         ctx.setLineDash([])
         ctx.moveTo(d.x, d.y)
         ctx.lineTo(d.x - dx, d.y - d.len)
-        ctx.strokeStyle = `hsla(${d.hue}, 55%, 80%, ${d.alpha})`
+        // 根据背景亮暗选择滴色：暗色背景使用偏亮的色彩，浅色背景使用较深和更低饱和度的色彩
+        if (bg.isLight) {
+          ctx.strokeStyle = `hsla(${d.hue}, 30%, 25%, ${Math.min(0.9, d.alpha + 0.1)})`
+        } else {
+          ctx.strokeStyle = `hsla(${d.hue}, 55%, 80%, ${d.alpha})`
+        }
         ctx.lineWidth = 1
         ctx.lineCap = 'round'
         ctx.stroke()

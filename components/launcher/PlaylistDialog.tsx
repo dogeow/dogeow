@@ -2,7 +2,6 @@
 
 import React, { useState, useMemo } from 'react'
 import { Play, Pause, Music, SkipBack, SkipForward, Volume2, VolumeX } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { MusicTrack, PlayMode } from '@/stores/musicStore'
 import { RepeatModeButton } from './music/RepeatModeButton'
@@ -102,37 +101,51 @@ export function PlaylistDialog({
           )}
         </div>
 
-        {/* 底部控制栏 */}
-        <div className="flex flex-shrink-0 items-center gap-2 border-t pt-4">
-          <RepeatModeButton playMode={playMode} onTogglePlayMode={onTogglePlayMode} />
-          {onToggleMute && (
-            <Button variant="outline" size="icon" onClick={onToggleMute} className="shrink-0">
-              {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-            </Button>
-          )}
-          {onPrevTrack && (
-            <Button variant="outline" size="icon" onClick={onPrevTrack} className="shrink-0">
-              <SkipBack className="h-4 w-4" />
-            </Button>
-          )}
-          <Button onClick={onTogglePlay} disabled={availableTracks.length === 0} className="flex-1">
-            {isPlaying ? (
-              <>
-                <Pause className="mr-2 h-4 w-4" />
-                暂停
-              </>
-            ) : (
-              <>
-                <Play className="mr-2 h-4 w-4" />
-                播放
-              </>
+        {/* 底部控制栏：分两行布局，第一行为循环和静音，第二行为播放/暂停和上下首 */}
+        <div className="flex flex-shrink-0 flex-col border-t pt-4">
+          {/* 第一行：循环和静音 - 分别靠两边 */}
+          <div className="mb-2 flex items-center justify-between">
+            <RepeatModeButton playMode={playMode} onTogglePlayMode={onTogglePlayMode} />
+            {onToggleMute && (
+              <button
+                onClick={onToggleMute}
+                className="flex h-9 w-9 shrink-0 items-center justify-center transition-opacity hover:opacity-80"
+                aria-label={isMuted ? '取消静音' : '静音'}
+              >
+                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </button>
             )}
-          </Button>
-          {onNextTrack && (
-            <Button variant="outline" size="icon" onClick={onNextTrack} className="shrink-0">
-              <SkipForward className="h-4 w-4" />
-            </Button>
-          )}
+          </div>
+
+          {/* 第二行：播放/暂停和上下首 - 样式与全屏可视化一致 */}
+          <div className="flex items-center justify-center gap-6">
+            {onPrevTrack && (
+              <button
+                onClick={onPrevTrack}
+                className="text-foreground/80 hover:text-foreground flex h-12 w-12 items-center justify-center transition-colors"
+                aria-label="上一首"
+              >
+                <SkipBack className="h-6 w-6" />
+              </button>
+            )}
+            <button
+              onClick={onTogglePlay}
+              disabled={availableTracks.length === 0}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 flex h-16 w-16 items-center justify-center rounded-full transition-all hover:scale-105 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
+              aria-label={isPlaying ? '暂停' : '播放'}
+            >
+              {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="ml-1 h-8 w-8" />}
+            </button>
+            {onNextTrack && (
+              <button
+                onClick={onNextTrack}
+                className="text-foreground/80 hover:text-foreground flex h-12 w-12 items-center justify-center transition-colors"
+                aria-label="下一首"
+              >
+                <SkipForward className="h-6 w-6" />
+              </button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
