@@ -49,7 +49,7 @@ export function FullscreenVisualizer({
   availableTracks = [],
   currentTrack = '',
   onTrackSelect,
-  playMode = 'list',
+  playMode = 'none',
   onTogglePlayMode,
   currentTime = 0,
   duration = 0,
@@ -235,7 +235,7 @@ export function FullscreenVisualizer({
       </div>
 
       {/* 播放列表弹窗 */}
-      {onTrackSelect && (
+      {onTrackSelect && onTogglePlayMode && (
         <PlaylistDialog
           open={playlistOpen}
           onOpenChange={setPlaylistOpen}
