@@ -1,7 +1,16 @@
 import useSWR from 'swr'
 import useSWRInfinite from 'swr/infinite'
 import { get, post, put } from '@/lib/api'
-import type { Word, Book, UserWordSetting, WordProgress, WordStats, CalendarData } from '../types'
+import type {
+  Word,
+  Book,
+  UserWordSetting,
+  WordProgress,
+  WordStats,
+  CalendarData,
+  YearCalendarData,
+  RangeCalendarData,
+} from '../types'
 
 // Fetcher function - 处理 Laravel Resource Collection 返回格式
 const fetcher = async <T>(url: string): Promise<T> => {
@@ -107,6 +116,14 @@ export const useWordProgress = () => useSWR<WordProgress>('/word/progress', fetc
 // 打卡相关 hooks
 export const useCheckInCalendar = (year: number, month: number) =>
   useSWR<CalendarData>(`/word/calendar/${year}/${month}`, fetcher)
+
+// 获取整年日历
+export const useYearCheckInCalendar = (year: number) =>
+  useSWR<YearCalendarData>(`/word/calendar/year/${year}`, fetcher)
+
+// 获取最近 365 天日历
+export const useLast365CheckInCalendar = () =>
+  useSWR<RangeCalendarData>(`/word/calendar/last365`, fetcher)
 
 export const useWordStats = () => useSWR<WordStats>('/word/stats', fetcher)
 

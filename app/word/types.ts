@@ -87,6 +87,17 @@ export interface CalendarData {
   calendar: CalendarDay[]
 }
 
+export interface YearCalendarData {
+  year: number
+  calendar: CalendarDay[]
+}
+
+export interface RangeCalendarData {
+  start_date: string
+  end_date: string
+  calendar: CalendarDay[]
+}
+
 export interface WordProgress {
   total_words: number
   learned_words: number
