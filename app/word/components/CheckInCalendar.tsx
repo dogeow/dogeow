@@ -57,22 +57,23 @@ export function CheckInCalendar() {
       return '#239a3b'
     }
 
+    const emptyColor = '#ebedf0'
     const cellStyle = (bg: string) => ({ background: bg, borderRadius: 3 })
 
     if (fillHeight) {
-      // 全屏模式：整体填满屏幕（矩形），今天第一行第一个，按行延伸至 365 天前，无横向滚动
+      // 全屏模式：整体填满屏幕（矩形），今天第一行第一个，按行延伸至 365 天前；列数少一点、间距大一点，避免太密
       const today = new Date()
       const dateList: Date[] = []
       for (let i = 0; i < 365; i++) {
         dateList.push(subDays(today, i))
       }
-      const cols = 20
+      const cols = 15
       const rows = Math.ceil(365 / cols)
 
       return (
         <div className="h-full min-h-0 p-4">
           <div
-            className="grid h-full min-h-[120px] w-full gap-px"
+            className="grid h-full min-h-[120px] w-full gap-1.5"
             style={{
               gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
               gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
@@ -82,20 +83,20 @@ export function CheckInCalendar() {
               const dateStr = format(d, 'yyyy-MM-dd')
               const dayObj = m.get(dateStr)
               const bg = colorFor(dayObj)
+              const isEmpty = bg === emptyColor
               return (
                 <div
                   key={dateStr}
                   title={`${dateStr}${dayObj ? ` — ${(dayObj.new_words_count || 0) + (dayObj.review_words_count || 0)}` : ''}`}
-                  style={cellStyle(bg)}
-                  className="h-full min-h-0 w-full min-w-0"
+                  style={isEmpty ? undefined : cellStyle(bg)}
+                  className={`h-full min-h-0 w-full min-w-0 rounded-[3px] ${isEmpty ? 'bg-muted' : ''}`}
                 />
               )
             })}
             {Array.from({ length: cols * rows - 365 }).map((_, i) => (
               <div
                 key={`empty-${i}`}
-                style={cellStyle('#ebedf0')}
-                className="h-full min-h-0 w-full min-w-0"
+                className="bg-muted h-full min-h-0 w-full min-w-0 rounded-[3px]"
               />
             ))}
           </div>
@@ -316,7 +317,7 @@ export function CheckInCalendar() {
           typeof document !== 'undefined' &&
           createPortal(
             <div
-              className={`fixed inset-0 z-[9999] bg-white`}
+              className="bg-background text-foreground fixed inset-0 z-[9999]"
               style={{ margin: 0, padding: 0, width: '100vw', height: '100vh', minHeight: '100vh' }}
             >
               <div className="absolute top-3 right-4 left-4 flex items-center">
@@ -345,7 +346,10 @@ export function CheckInCalendar() {
                     style={{ paddingTop: 56, paddingLeft: 0, paddingRight: 0, ...gridStyle } as any}
                   >
                     {Array.from({ length: 12 }).map((_, idx) => (
-                      <div key={idx} className={`rounded border ${fitOneScreen ? 'p-1' : 'p-3'}`}>
+                      <div
+                        key={idx}
+                        className={`border-border bg-card rounded border ${fitOneScreen ? 'p-1' : 'p-3'}`}
+                      >
                         {renderMonthMini(
                           new Date(year, idx, 1),
                           dayMapAll,
@@ -365,7 +369,7 @@ export function CheckInCalendar() {
           typeof document !== 'undefined' &&
           createPortal(
             <div
-              className="fixed inset-0 z-[9999] flex flex-col bg-white"
+              className="bg-background text-foreground fixed inset-0 z-[9999] flex flex-col"
               style={{ margin: 0, padding: 0, width: '100vw', height: '100vh', minHeight: '100vh' }}
             >
               <div className="flex flex-shrink-0 items-center px-4 pt-3 pb-2">
