@@ -111,6 +111,8 @@ export const useDailyWords = () => useSWR<Word[]>('/word/daily', fetcher)
 
 export const useReviewWords = () => useSWR<Word[]>('/word/review', fetcher)
 
+export const useFillBlankWords = () => useSWR<Word[]>('/word/fill-blank', fetcher)
+
 export const useWordProgress = () => useSWR<WordProgress>('/word/progress', fetcher)
 
 // 打卡相关 hooks
@@ -156,4 +158,19 @@ export const checkIn = async () => {
 
 export const updateWordSettings = async (settings: Partial<UserWordSetting>) => {
   return put<{ message: string; setting: UserWordSetting }>('/word/settings', settings)
+}
+
+// 搜索单词
+export const searchWord = async (keyword: string) => {
+  return get<{ found: boolean; word?: Word; keyword?: string }>(`/word/search/${keyword}`)
+}
+
+// 创建新单词
+export const createWord = async (data: {
+  content: string
+  phonetic_us?: string
+  explanation?: string
+  example_sentences?: Array<{ en: string; zh: string }>
+}) => {
+  return post<{ word: Word }>('/word/create', data)
 }
