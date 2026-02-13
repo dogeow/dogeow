@@ -108,6 +108,12 @@ const TILES = [
 // 游戏列表配置
 const GAMES = [
   {
+    id: 'rpg',
+    nameKey: 'game.rpg',
+    descriptionKey: 'game.rpg.desc',
+    icon: '⚔️',
+  },
+  {
     id: 'sliding-puzzle',
     nameKey: 'game.sliding-puzzle',
     descriptionKey: 'game.sliding-puzzle.desc',

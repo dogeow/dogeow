@@ -375,7 +375,7 @@ export async function apiRequest<T>(
 }
 
 // HTTP方法包装器
-export const get = <T>(endpoint: string): Promise<T> => {
+export const apiGet = <T>(endpoint: string): Promise<T> => {
   if (process.env.NODE_ENV === 'development') {
     console.log('🔗 API GET Request:', {
       endpoint,
@@ -386,6 +386,8 @@ export const get = <T>(endpoint: string): Promise<T> => {
   }
   return apiRequest<T>(endpoint, 'GET')
 }
+
+export const get = <T>(endpoint: string): Promise<T> => apiGet<T>(endpoint)
 
 export const post = <T>(endpoint: string, data: unknown): Promise<T> =>
   apiRequest<T>(endpoint, 'POST', data)

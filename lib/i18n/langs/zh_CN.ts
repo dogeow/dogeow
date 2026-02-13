@@ -57,6 +57,8 @@ export const zh_CN = {
   'devlog.no_results': '没有找到符合条件的日志',
 
   // Games
+  'game.rpg': '暗黑挂机',
+  'game.rpg.desc': '暗黑2风格的挂机RPG游戏，创建角色、打怪升级、收集装备',
   'game.sliding-puzzle': '滑块拼图',
   'game.sliding-puzzle.desc': '经典的数字滑块拼图游戏，通过移动数字方块来排列顺序',
   'game.picture-puzzle': '图片拼图',
