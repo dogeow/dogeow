@@ -40,7 +40,7 @@ interface GameState {
   isFighting: boolean
   shouldAutoCombat: boolean // 是否应该自动战斗（不管在哪个标签页）
   combatResult: CombatResult | null
-  combatLogs: CombatLog[]
+  combatLogs: (CombatResult | CombatLog)[]
 
   // UI状态
   isLoading: boolean
@@ -309,7 +309,8 @@ const store: StateCreator<GameState> = (set, get) => ({
       soundManager.play('equip')
 
       // 卸下的装备放回背包
-      const updatedInventory = [...state.inventory]
+      const currentInventory = get().inventory
+      const updatedInventory = [...currentInventory]
       if (response.unequipped_item) {
         updatedInventory.push(response.unequipped_item)
       }

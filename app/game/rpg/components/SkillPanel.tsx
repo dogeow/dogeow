@@ -38,9 +38,9 @@ export function SkillPanel() {
                   onClick={() => {
                     console.log(
                       '[SkillCard] Clicked skill:',
-                      skill.skill?.name || skill.name,
+                      skill.skill?.name,
                       'type:',
-                      skill.skill?.type || skill.type,
+                      skill.skill?.type,
                       'is CharacterSkill:',
                       'level' in skill
                     )

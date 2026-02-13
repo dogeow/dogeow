@@ -152,7 +152,7 @@ export function CombatPanel() {
           ) : (
             combatLogs.slice(0, 50).map((log, index) => (
               <div
-                key={`${log.id}-${index}`}
+                key={`combat-log-${index}`}
                 className={`flex flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm ${
                   log.victory ? 'bg-green-600/10' : 'bg-red-600/10'
                 }`}
