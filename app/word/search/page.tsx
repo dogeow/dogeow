@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout'
 import { WordDataEditor } from '../components/WordDataEditor'
-import { searchWord, createWord } from '../hooks/useWord'
+import { searchWord, createWord, classifyWordEducationLevel } from '../hooks/useWord'
 import { Word } from '../types'
-import { Search, ArrowLeft, Loader2, BookOpen, Plus } from 'lucide-react'
+import { Search, ArrowLeft, Loader2, BookOpen } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 
@@ -57,16 +57,30 @@ export default function SearchWordPage() {
     phonetic_us: string
     explanation: string
     example_sentences: Array<{ en: string; zh: string }>
+    education_level_codes?: string[]
   }) => {
     if (!searchResult?.keyword) return
 
     try {
+      let education_level_codes = data.education_level_codes
+      if (!education_level_codes?.length) {
+        try {
+          education_level_codes = await classifyWordEducationLevel(searchResult.keyword)
+        } catch {
+          education_level_codes = []
+        }
+      }
       const result = await createWord({
         content: searchResult.keyword,
-        ...data,
+        phonetic_us: data.phonetic_us,
+        explanation: data.explanation,
+        example_sentences: data.example_sentences,
+        education_level_codes: education_level_codes.length > 0 ? education_level_codes : undefined,
       })
 
-      toast.success('单词已添加到数据库')
+      toast.success(
+        education_level_codes.length > 0 ? '单词已添加并加入对应级别单词书' : '单词已添加到数据库'
+      )
 
       // 显示创建成功的单词
       setSearchResult({
@@ -189,22 +203,8 @@ export default function SearchWordPage() {
               </CardContent>
             </Card>
           ) : (
-            // 未找到单词 - 显示创建表单
+            // 未找到单词 - 直接显示创建表单
             <div className="space-y-4">
-              <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950">
-                <CardContent className="flex items-start gap-3 p-4">
-                  <Plus className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <div>
-                    <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                      未找到单词 &quot;{searchResult.keyword}&quot;
-                    </p>
-                    <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                      你可以使用 AI 生成单词数据并添加到数据库
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
               <WordDataEditor
                 wordContent={searchResult.keyword || ''}
                 onSave={handleCreateWord}

@@ -12,8 +12,9 @@ import {
 } from '../../hooks/useWord'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { LoadingSpinner } from '@/components/ui/loading-spinner'
-import { ArrowLeft, Check } from 'lucide-react'
+import { ArrowLeft, Check, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
 import { PageContainer } from '@/components/layout'
@@ -30,6 +31,7 @@ export default function BookDetailPage() {
   const bookId = params.id ? Number(params.id) : null
 
   const [filter, setFilter] = useState<WordFilter>('all')
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [isSelecting, setIsSelecting] = useState(false)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const loadMoreRef = useRef<HTMLDivElement>(null)
@@ -60,7 +62,7 @@ export default function BookDetailPage() {
     isReachingEnd,
     total,
     loadMore,
-  } = useBookWordsInfinite(bookId, 30, filter)
+  } = useBookWordsInfinite(bookId, 30, filter, searchKeyword)
 
   // 无限滚动 - Intersection Observer
   const handleObserver = useCallback(
@@ -136,6 +138,20 @@ export default function BookDetailPage() {
         )}
       </div>
 
+      {/* 搜索框 */}
+      <div className="shrink-0 py-2">
+        <div className="relative">
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Input
+            type="search"
+            placeholder="搜索本单词书..."
+            value={searchKeyword}
+            onChange={e => setSearchKeyword(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
       {/* 筛选按钮 */}
       <div className="flex shrink-0 flex-wrap gap-2 py-3">
         {WORD_FILTERS.map(f => (
@@ -204,11 +220,13 @@ export default function BookDetailPage() {
             </div>
           ) : (
             <p className="text-muted-foreground py-8 text-center">
-              {filter === 'all'
-                ? '暂无单词'
-                : filter === 'mastered'
-                  ? '暂无已学会的单词'
-                  : '暂无困难词'}
+              {searchKeyword.trim()
+                ? '未找到匹配的单词'
+                : filter === 'all'
+                  ? '暂无单词'
+                  : filter === 'mastered'
+                    ? '暂无已学会的单词'
+                    : '暂无困难词'}
             </p>
           )}
         </CardContent>

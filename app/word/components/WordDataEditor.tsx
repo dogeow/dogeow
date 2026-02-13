@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Loader2, Save, RefreshCw, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
+import { parseEducationLevelNames, getEducationLevelNames } from '../hooks/useWord'
 
 interface WordDataEditorProps {
   wordContent: string
@@ -19,6 +20,7 @@ interface WordDataEditorProps {
     phonetic_us: string
     explanation: string
     example_sentences: Array<{ en: string; zh: string }>
+    education_level_codes?: string[]
   }) => Promise<void>
   saveButtonText?: string
 }
@@ -34,6 +36,7 @@ export function WordDataEditor({
   const [examples, setExamples] = useState(
     initialData?.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') || ''
   )
+  const [educationLevelCodes, setEducationLevelCodes] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
@@ -53,7 +56,8 @@ export function WordDataEditor({
 【例句1】英文句子
 【翻译1】中文翻译
 【例句2】英文句子
-【翻译2】中文翻译`
+【翻译2】中文翻译
+【阶段】阶段名称（从以下选一个或多个，用逗号分隔：小学、初中、高中、CET4、CET6、考研、雅思、托福、专四、专八）`
 
       const body = {
         useChat: true,
@@ -105,16 +109,25 @@ export function WordDataEditor({
         setExplanation(explanationMatch[1].trim())
       }
 
-      // 解析例句
+      // 解析例句（确保不匹配到【阶段】）
       const examplesList: string[] = []
       const exampleMatches = content.matchAll(
-        /【例句\d+】([\s\S]+?)【翻译\d+】([\s\S]+?)(?=【例句|$)/g
+        /【例句\d+】([\s\S]+?)【翻译\d+】([\s\S]+?)(?=【(?:例句|阶段)】|$)/g
       )
       for (const m of exampleMatches) {
         examplesList.push(`${m[1].trim()}\n${m[2].trim()}`)
       }
       if (examplesList.length > 0) {
         setExamples(examplesList.join('\n\n'))
+      }
+
+      // 解析阶段名称并转为 code
+      const stageMatch = content.match(/【阶段】\s*([^\n]+)/)
+      if (stageMatch) {
+        const codes = parseEducationLevelNames(stageMatch[1].trim())
+        setEducationLevelCodes(codes)
+      } else {
+        setEducationLevelCodes([])
       }
 
       toast.success('数据已生成，请检查后保存')
@@ -150,6 +163,7 @@ export function WordDataEditor({
         phonetic_us: phonetic.trim(),
         explanation: explanation.trim(),
         example_sentences: examplePairs,
+        education_level_codes: educationLevelCodes.length > 0 ? educationLevelCodes : undefined,
       })
 
       toast.success('保存成功')
@@ -228,6 +242,23 @@ export function WordDataEditor({
             className="min-h-[150px]"
           />
         </div>
+
+        {/* 教育阶段 */}
+        {educationLevelCodes.length > 0 && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">教育阶段</label>
+            <div className="flex flex-wrap gap-2">
+              {getEducationLevelNames(educationLevelCodes).map(name => (
+                <span
+                  key={name}
+                  className="bg-primary/10 text-primary rounded-full px-3 py-1 text-sm font-medium"
+                >
+                  {name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 保存按钮 */}
         <Button onClick={handleSave} disabled={isSaving || isGenerating} className="w-full">

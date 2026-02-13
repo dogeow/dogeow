@@ -11,8 +11,9 @@ import {
   AlertCircle,
   CheckCircle2,
   PenLine,
-  RotateCcw,
   Search,
+  ScanLine,
+  FileInput,
 } from 'lucide-react'
 import { useWordSettings, useWordStats } from './hooks/useWord'
 import { PageContainer } from '@/components/layout'
@@ -41,12 +42,22 @@ export default function WordPage() {
           )}
         </div>
         <div className="flex gap-2">
-          <Link href="/word/search">
+          <Link href="/word/search" title="搜索单词">
             <Button variant="outline" size="icon">
               <Search className="h-4 w-4" />
             </Button>
           </Link>
-          <Link href="/word/settings">
+          <Link href="/word/import" title="导入文本">
+            <Button variant="outline" size="icon">
+              <FileInput className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href="/word/scan" title="摄像头扫描">
+            <Button variant="outline" size="icon">
+              <ScanLine className="h-4 w-4" />
+            </Button>
+          </Link>
+          <Link href="/word/settings" title="设置">
             <Button variant="outline" size="icon">
               <Settings className="h-4 w-4" />
             </Button>
@@ -82,7 +93,7 @@ export default function WordPage() {
       <ProgressStats />
 
       {/* 学习模式 */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2">
         {/* 开始学习按钮 */}
         <Link href="/word/learn">
           <Card className="h-full transition-shadow hover:shadow-md">
@@ -94,23 +105,6 @@ export default function WordPage() {
                 <div className="flex-1">
                   <h3 className="font-medium">{todayCheckedIn ? '继续学习' : '开始学习'}</h3>
                   <p className="text-muted-foreground text-sm">学习新单词 + 复习旧单词</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-
-        {/* 复习模式 */}
-        <Link href="/word/review">
-          <Card className="h-full transition-shadow hover:shadow-md">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-orange-100 p-3 dark:bg-orange-900">
-                  <RotateCcw className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium">复习模式</h3>
-                  <p className="text-muted-foreground text-sm">复习已学过的单词</p>
                 </div>
               </div>
             </CardContent>

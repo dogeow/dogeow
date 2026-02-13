@@ -60,19 +60,22 @@ export const useBookWords = (
     }
   )
 
-// 无限滚动 hook
+// 无限滚动 hook（keyword 为空时不传，避免影响缓存 key 一致性）
 export const useBookWordsInfinite = (
   bookId: number | null | undefined,
   perPage = 30,
-  filter: WordFilter = 'all'
+  filter: WordFilter = 'all',
+  keyword?: string
 ) => {
+  const search = keyword?.trim() ?? ''
   const getKey = (
     pageIndex: number,
     previousPageData: { data: Word[]; meta: { last_page: number } } | null
   ) => {
     if (!bookId) return null
     if (previousPageData && pageIndex + 1 > previousPageData.meta.last_page) return null
-    return `/word/books/${bookId}/words?page=${pageIndex + 1}&per_page=${perPage}&filter=${filter}`
+    const base = `/word/books/${bookId}/words?page=${pageIndex + 1}&per_page=${perPage}&filter=${filter}`
+    return search ? `${base}&keyword=${encodeURIComponent(search)}` : base
   }
 
   const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<{
@@ -165,12 +168,93 @@ export const searchWord = async (keyword: string) => {
   return get<{ found: boolean; word?: Word; keyword?: string }>(`/word/search/${keyword}`)
 }
 
-// 创建新单词
+// 教育级别名称 -> 后端 code 映射（供 WordDataEditor 等解析阶段用）
+export const EDUCATION_LEVEL_NAME_TO_CODE: Record<string, string> = {
+  小学: 'primary',
+  初中: 'junior_high',
+  高中: 'senior_high',
+  CET4: 'cet4',
+  CET6: 'cet6',
+  考研: 'postgraduate',
+  雅思: 'ielts',
+  托福: 'toefl',
+  专四: 'tem4',
+  专八: 'tem8',
+}
+const VALID_CODES = new Set(Object.values(EDUCATION_LEVEL_NAME_TO_CODE))
+
+/** 将阶段名称字符串解析为后端 code 数组 */
+export function parseEducationLevelNames(namesStr: string): string[] {
+  const names = namesStr
+    .split(/[,，]/)
+    .map(s => s.trim())
+    .filter(Boolean)
+  const codes = names
+    .map(n => EDUCATION_LEVEL_NAME_TO_CODE[n] ?? (VALID_CODES.has(n) ? n : null))
+    .filter((c): c is string => c != null)
+  return [...new Set(codes)]
+}
+
+/** code -> 显示名称映射（供显示用） */
+export const EDUCATION_LEVEL_CODE_TO_NAME: Record<string, string> = {
+  primary: '小学',
+  junior_high: '初中',
+  senior_high: '高中',
+  cet4: 'CET4',
+  cet6: 'CET6',
+  postgraduate: '考研',
+  ielts: '雅思',
+  toefl: '托福',
+  tem4: '专四',
+  tem8: '专八',
+}
+
+/** 将 code 数组转换为显示名称数组 */
+export function getEducationLevelNames(codes: string[]): string[] {
+  return codes.map(c => EDUCATION_LEVEL_CODE_TO_NAME[c] ?? c).filter(Boolean)
+}
+
+/** 用 AI 判断单词所属教育级别，返回后端使用的 code 数组 */
+export async function classifyWordEducationLevel(word: string): Promise<string[]> {
+  const prompt = `判断英语单词 "${word}" 属于以下哪个学习阶段？只返回阶段名称，多个用逗号分隔：小学、初中、高中、CET4、CET6、考研、雅思、托福、专四、专八。只返回上述名称，不要其他内容。`
+  const body = {
+    useChat: true,
+    messages: [{ role: 'user' as const, content: prompt }],
+    command: '你是一个英语学习助手。只返回阶段名称，多个用逗号分隔。',
+  }
+  const response = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new Error('AI 判断失败')
+  const reader = response.body?.getReader()
+  if (!reader) throw new Error('无法读取响应')
+  let content = ''
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    const text = new TextDecoder().decode(value)
+    const lines = text.split('\n').filter(line => line.trim())
+    for (const line of lines) {
+      if (line.startsWith('0:')) {
+        const match = line.match(/^0:"(.*)"$/)
+        if (match) {
+          content += match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+        }
+      }
+    }
+  }
+  return parseEducationLevelNames(content)
+}
+
+// 创建新单词（可传 education_level_codes，由 AI 判断后加入对应级别单词书）
 export const createWord = async (data: {
   content: string
   phonetic_us?: string
   explanation?: string
   example_sentences?: Array<{ en: string; zh: string }>
+  education_level_codes?: string[]
 }) => {
   return post<{ word: Word }>('/word/create', data)
 }
