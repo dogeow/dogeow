@@ -39,6 +39,11 @@ function stackInventoryItems(items: GameItem[]): StackedInventoryItem[] {
   const stacks = new Map<string, StackedInventoryItem>()
 
   items.forEach(item => {
+    // 跳过没有定义的物品（孤立的物品记录）
+    if (!item.definition) {
+      return
+    }
+
     // 对于药品，按定义ID堆叠
     if (item.definition.type === 'potion') {
       const key = `potion-${item.definition.id}`
@@ -100,6 +105,8 @@ export function ShopPanel() {
 
   // 计算出售总价
   const getSellPrice = (item: StackedInventoryItem): number => {
+    if (!item.definition) return 0 // 防止孤立的物品记录
+
     const basePrice = item.definition.base_stats?.price ?? 50
     const qualityMultiplier =
       {
@@ -369,35 +376,40 @@ export function ShopPanel() {
               <p className="py-8 text-center text-sm text-gray-400">背包中没有可出售的物品</p>
             ) : (
               <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8">
-                {stackedInventory.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => {
-                      setSelectedInventoryItem(item)
-                      setSellQuantity(1)
-                    }}
-                    className={`relative flex h-14 w-14 items-center justify-center rounded-lg border-2 text-xl transition-all ${
-                      selectedInventoryItem?.id === item.id
-                        ? 'border-yellow-500 bg-yellow-500/20'
-                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
-                    }`}
-                    style={{
-                      borderColor:
+                {stackedInventory.map(item => {
+                  // 跳过没有定义的物品
+                  if (!item.definition) return null
+
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setSelectedInventoryItem(item)
+                        setSellQuantity(1)
+                      }}
+                      className={`relative flex h-14 w-14 items-center justify-center rounded-lg border-2 text-xl transition-all ${
                         selectedInventoryItem?.id === item.id
-                          ? undefined
-                          : QUALITY_COLORS[item.quality],
-                    }}
-                    disabled={isLoading}
-                    title={item.definition.name}
-                  >
-                    <span>{getItemIcon(item.definition.type)}</span>
-                    {(item.displayQuantity || item.quantity) > 1 && (
-                      <span className="absolute right-0 bottom-0 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-bold text-white">
-                        {item.displayQuantity || item.quantity}
-                      </span>
-                    )}
-                  </button>
-                ))}
+                          ? 'border-yellow-500 bg-yellow-500/20'
+                          : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                      }`}
+                      style={{
+                        borderColor:
+                          selectedInventoryItem?.id === item.id
+                            ? undefined
+                            : QUALITY_COLORS[item.quality],
+                      }}
+                      disabled={isLoading}
+                      title={item.definition.name}
+                    >
+                      <span>{getItemIcon(item.definition.type)}</span>
+                      {(item.displayQuantity || item.quantity) > 1 && (
+                        <span className="absolute right-0 bottom-0 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-bold text-white">
+                          {item.displayQuantity || item.quantity}
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -405,7 +417,7 @@ export function ShopPanel() {
           {/* 出售详情 */}
           <div className="rounded-lg bg-gray-800 p-3">
             <h4 className="mb-3 text-lg font-medium text-white">出售详情</h4>
-            {selectedInventoryItem ? (
+            {selectedInventoryItem && selectedInventoryItem.definition ? (
               <div className="space-y-3">
                 <div className="rounded-lg bg-gray-700/50 p-3">
                   <div className="mb-2 flex items-center gap-2">
