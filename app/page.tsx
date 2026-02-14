@@ -28,7 +28,7 @@ export default function Home() {
       </div>
 
       {/* 主要内容区域 */}
-      <PageContainer className="py-2">
+      <PageContainer className="py-3">
         {isMagazineLayout ? (
           /* 杂志风格布局 */
           <MagazineLayout

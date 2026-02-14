@@ -140,6 +140,7 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
               onClick={e => {
                 e.stopPropagation()
                 setOpenCharacterId(character.id)
+                handleSelectCharacter(character.id)
               }}
               className="border-border bg-card text-foreground hover:bg-muted w-full flex-shrink-0 rounded border px-2 py-1.5 text-xs transition-colors"
             >

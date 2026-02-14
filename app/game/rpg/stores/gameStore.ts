@@ -149,6 +149,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       console.log('[GameStore] Fetching characters...')
       const response = (await apiGet('/rpg/characters')) as {
         characters: GameCharacter[]
+        experience_table?: Record<number, number>
         message?: string
       }
       console.log('[GameStore] Full response:', JSON.stringify(response, null, 2))
@@ -161,6 +162,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       set(state => ({
         ...state,
         characters: response?.characters || [],
+        experienceTable: response?.experience_table ?? state.experienceTable,
         isLoading: false,
       }))
     } catch (error) {
