@@ -124,11 +124,11 @@ export function InventoryPanel() {
   ]
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
-      {/* 装备栏 - 移动端优化，与背包边距一致 */}
-      <div className="shrink-0 rounded-lg bg-gray-800 p-4 sm:p-5 lg:min-w-0">
-        <h4 className="mb-4 text-base font-medium text-white sm:text-lg">装备</h4>
-        <div className="mx-auto flex max-w-[320px] flex-col gap-1.5 sm:gap-2 lg:mx-0">
+    <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row">
+      {/* 装备栏 - 边距与角色面板一致 */}
+      <div className="shrink-0 rounded-lg bg-gray-800 p-3 sm:p-4 lg:min-w-0">
+        <h4 className="mb-3 text-base font-medium text-white sm:mb-4 sm:text-lg">装备</h4>
+        <div className="flex max-w-[320px] flex-col gap-1.5 sm:gap-2">
           {/* 第一行：头盔 */}
           <div className="flex gap-1.5 sm:gap-2">
             <div className="flex-1" />
@@ -214,9 +214,9 @@ export function InventoryPanel() {
         </div>
       </div>
 
-      {/* 背包/仓库 - 移动端优化，统一上下左右边距 */}
-      <div className="flex min-w-0 flex-1 flex-col rounded-lg bg-gray-800 p-4 sm:p-5">
-        <div className="mb-4 flex shrink-0 items-center justify-between">
+      {/* 背包/仓库 - 边距与角色面板一致 */}
+      <div className="flex min-w-0 flex-1 flex-col rounded-lg bg-gray-800 p-3 sm:p-4">
+        <div className="mb-3 flex shrink-0 items-center justify-between sm:mb-4">
           <h4 className="text-base font-medium text-white sm:text-lg">
             {showStorage ? '仓库' : '背包'}
             <span className="ml-2 text-sm text-gray-400">
@@ -244,8 +244,8 @@ export function InventoryPanel() {
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto p-1">
-          <div className="mx-auto flex w-[17.5rem] flex-wrap gap-x-2 gap-y-2 sm:w-[23.5rem]">
+        <div className="mx-auto min-h-0 flex-1 overflow-auto p-1">
+          <div className="flex w-[17.5rem] flex-wrap gap-x-2 gap-y-2 sm:w-[23.5rem]">
             {(showStorage ? warehouseSlots : inventorySlots).map((item, index) =>
               item ? (
                 <ItemSlot
@@ -262,7 +262,7 @@ export function InventoryPanel() {
           </div>
         </div>
 
-        {/* 选中物品详情 - 移动端优化 */}
+        {/* 选中物品详情 */}
         {selectedItem && (
           <div className="mt-3 rounded-lg bg-gray-700/50 p-3 sm:mt-4 sm:p-4">
             <div className="mb-2 flex items-start justify-between">

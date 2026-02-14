@@ -34,10 +34,10 @@ export function SoundSettings({ onLogout }: SoundSettingsProps) {
   }
 
   return (
-    <div className="space-y-4 rounded-lg bg-gray-800 p-4">
-      <h3 className="mb-3 text-lg font-bold text-white">设置</h3>
+    <div className="space-y-3 rounded-lg bg-gray-800 p-3 sm:space-y-4 sm:p-4">
+      <h3 className="mb-3 text-lg font-bold text-white sm:mb-4">设置</h3>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         <div className="space-y-3">
           <h4 className="text-base font-medium text-white">音效设置</h4>
 

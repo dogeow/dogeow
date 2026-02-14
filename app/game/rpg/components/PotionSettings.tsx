@@ -106,7 +106,7 @@ export function PotionSettings() {
 
   return (
     <div className="rounded-lg bg-gray-800 p-3 sm:p-4">
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mb-3 flex items-center justify-between sm:mb-4">
         <h4 className="text-base font-medium text-white sm:text-lg">药品设置</h4>
         {saving && <span className="text-xs text-gray-400">保存中...</span>}
       </div>

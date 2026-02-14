@@ -267,7 +267,7 @@ export default function RPGGame() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="flex min-h-screen flex-col bg-gray-900 text-white">
       {/* 浮动文字覆盖层 */}
       <FloatingTextOverlay />
 
@@ -323,8 +323,8 @@ export default function RPGGame() {
         </div>
       </header>
 
-      {/* 主内容区 */}
-      <main className="mx-auto max-w-6xl p-3 sm:p-4">
+      {/* 主内容区 - flex + overflow-hidden 以便背包/仓库等内部可滚动 */}
+      <main className="flex max-w-6xl flex-1 flex-col overflow-hidden p-3 sm:p-4">
         {/* 标签导航 - 桌面端显示，移动端隐藏 */}
         <nav className="mb-4 hidden gap-1 rounded-lg bg-gray-800 p-1 lg:flex">
           {tabs.map(tab => (
@@ -350,20 +350,22 @@ export default function RPGGame() {
           </div>
         )}
 
-        {/* 内容区 - 增加底部内边距避免被底部导航遮挡 */}
-        <div className="pb-20 lg:pb-4">
-          {activeTab === 'character' && <CharacterPanel />}
-          {activeTab === 'inventory' && <InventoryPanel />}
-          {activeTab === 'skills' && <SkillPanel />}
-          {activeTab === 'maps' && <MapPanel />}
-          {activeTab === 'combat' && <CombatPanel />}
-          {activeTab === 'shop' && <ShopPanel />}
-          {activeTab === 'settings' && (
-            <>
-              <PotionSettings />
-              <SoundSettings onLogout={handleLogout} />
-            </>
-          )}
+        {/* 内容区 - 整体可滚动，地图/设置/背包等超出视口时在此区域滚动 */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 lg:pb-4">
+          <div className="w-full min-w-0">
+            {activeTab === 'character' && <CharacterPanel />}
+            {activeTab === 'inventory' && <InventoryPanel />}
+            {activeTab === 'skills' && <SkillPanel />}
+            {activeTab === 'maps' && <MapPanel />}
+            {activeTab === 'combat' && <CombatPanel />}
+            {activeTab === 'shop' && <ShopPanel />}
+            {activeTab === 'settings' && (
+              <div className="space-y-4">
+                <PotionSettings />
+                <SoundSettings onLogout={handleLogout} />
+              </div>
+            )}
+          </div>
         </div>
       </main>
 

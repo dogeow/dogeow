@@ -68,17 +68,17 @@ export function ShopPanel() {
   )
 
   return (
-    <div className="space-y-4">
-      {/* 商店物品网格 - 固定格位表格布局 */}
-      <div>
-        <h4 className="mb-4 text-base font-medium text-gray-300">
+    <div className="space-y-3 sm:space-y-4">
+      {/* 商店物品网格 - 边距与角色面板一致 */}
+      <div className="rounded-lg bg-gray-800 p-3 sm:p-4">
+        <h4 className="mb-3 text-base font-medium text-gray-300 sm:mb-4">
           商店物品
           <span className="ml-2 text-sm text-gray-400">
             ({shopItems.length}/{SHOP_SLOTS})
           </span>
         </h4>
-        <div className="min-h-0 overflow-auto p-1">
-          <div className="mx-auto flex w-[17.5rem] flex-wrap gap-x-2 gap-y-2 sm:w-[23.5rem]">
+        <div className="flex min-h-0 justify-center overflow-auto p-1">
+          <div className="flex w-[17.5rem] flex-wrap gap-x-2 gap-y-2 sm:w-[23.5rem]">
             {shopSlots.map((item, index) =>
               item ? (
                 <button
