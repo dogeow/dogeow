@@ -19,6 +19,7 @@ const ITEM_ICONS: Record<ItemType, string> = {
   ring: '💍',
   amulet: '📿',
   potion: '🧪',
+  gem: '💎',
 }
 
 // 物品类型名称
@@ -32,6 +33,7 @@ const ITEM_TYPE_NAMES: Record<ItemType, string> = {
   ring: '戒指',
   amulet: '护身符',
   potion: '药品',
+  gem: '宝石',
 }
 
 /** 获取物品图标：药水按 sub_type 区分 HP❤️/MP💙 */
