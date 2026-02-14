@@ -80,7 +80,7 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
   // 根据主题配置渲染布局（整页使用同一背景，顶部用毛玻璃与内容区一致）
   return (
     <div
-      className={cn('flex h-screen flex-col', backgroundImage && 'bg-cover bg-fixed bg-center')}
+      className={cn('flex h-full flex-col', backgroundImage && 'bg-cover bg-fixed bg-center')}
       style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : undefined}
       data-theme-layout={theme.id}
     >
@@ -122,7 +122,6 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
           className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
           style={{
             maxWidth: theme.layout.main.maxWidth === '100%' ? '100%' : theme.layout.main.maxWidth,
-            margin: 'auto',
           }}
         >
           {children}
@@ -155,7 +154,7 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
 // 默认布局回退（当前布局）
 function DefaultLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
+    <div className="flex h-full flex-col">
       <div
         id="header-container"
         className="bg-background/90 sticky top-0 z-30 h-[var(--app-header-height)] flex-none border-b shadow-sm backdrop-blur"
@@ -167,7 +166,7 @@ function DefaultLayout({ children }: { children: React.ReactNode }) {
       <div id="main-container" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
         <div className="mx-auto flex h-full w-full max-w-7xl flex-col p-0">{children}</div>
       </div>
-    </>
+    </div>
   )
 }
 

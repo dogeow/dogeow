@@ -99,7 +99,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} flex h-screen flex-col antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} flex h-screen flex-col overflow-hidden antialiased`}
       >
         <SWRProvider>
           <ThemeProvider>

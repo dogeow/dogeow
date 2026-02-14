@@ -14,7 +14,7 @@ export function BackgroundWrapper({ children }: BackgroundWrapperProps) {
   return (
     <div
       className={cn(
-        'flex min-h-[calc(100vh-var(--navbar-height,64px))] flex-col',
+        'flex min-h-0 flex-1 flex-col',
         backgroundImage && 'bg-cover bg-fixed bg-center'
       )}
       style={backgroundImage ? { backgroundImage: `url(${backgroundImage})` } : {}}
