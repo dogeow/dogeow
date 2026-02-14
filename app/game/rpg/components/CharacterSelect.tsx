@@ -75,13 +75,13 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
 
         {/* 角色列表 */}
         {characters && characters.length > 0 ? (
-          <div className="mx-auto grid max-w-2xl grid-cols-3 gap-3">
+          <div className="mx-auto flex max-w-2xl flex-wrap justify-center gap-3">
             {characters.map(character => {
               const classInfo = CLASS_INFO[character.class as keyof typeof CLASS_INFO]
               return (
                 <div
                   key={character.id}
-                  className={`aspect-square rounded-lg border-2 p-2 ${classInfo.color} cursor-pointer transition-transform hover:scale-105`}
+                  className={`aspect-square max-w-[200px] min-w-[calc(33.333%-8px)] flex-1 rounded-lg border-2 p-2 ${classInfo.color} cursor-pointer transition-transform hover:scale-105`}
                   onClick={() => handleSelectCharacter(character.id)}
                 >
                   <div className="flex h-full flex-col items-center justify-center text-center">

@@ -95,26 +95,26 @@ export function CombatPanel() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-4 sm:gap-4 sm:text-sm">
-            <div>
+          <div className="flex flex-wrap justify-center gap-2 text-center text-xs sm:gap-4 sm:text-sm">
+            <div className="min-w-[calc(50%-4px)] flex-1 sm:min-w-[calc(25%-12px)]">
               <p className="text-xs text-gray-400">造成伤害</p>
               <p className="text-sm font-bold text-orange-400 sm:text-base">
                 {combatResult.damage_dealt}
               </p>
             </div>
-            <div>
+            <div className="min-w-[calc(50%-4px)] flex-1 sm:min-w-[calc(25%-12px)]">
               <p className="text-xs text-gray-400">受到伤害</p>
               <p className="text-sm font-bold text-red-400 sm:text-base">
                 {combatResult.damage_taken}
               </p>
             </div>
-            <div>
+            <div className="min-w-[calc(50%-4px)] flex-1 sm:min-w-[calc(25%-12px)]">
               <p className="text-xs text-gray-400">获得经验</p>
               <p className="text-sm font-bold text-purple-400 sm:text-base">
                 +{combatResult.experience_gained}
               </p>
             </div>
-            <div>
+            <div className="min-w-[calc(50%-4px)] flex-1 sm:min-w-[calc(25%-12px)]">
               <p className="text-xs text-gray-400">获得金币</p>
               <p className="text-sm font-bold text-yellow-400 sm:text-base">
                 +{combatResult.gold_gained}

@@ -21,9 +21,9 @@ export function SkillPanel() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      <div className="grid grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-2">
+      <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row">
         {/* 已学技能 - 移动端优化 */}
-        <div className="rounded-lg bg-gray-800 p-3 sm:p-4">
+        <div className="min-w-0 flex-1 rounded-lg bg-gray-800 p-3 sm:p-4">
           <h4 className="mb-3 text-base font-medium text-white sm:mb-4 sm:text-lg">已学技能</h4>
 
           {skills.length === 0 ? (
@@ -53,7 +53,7 @@ export function SkillPanel() {
         </div>
 
         {/* 可学习技能 - 移动端优化 */}
-        <div className="rounded-lg bg-gray-800 p-3 sm:p-4">
+        <div className="min-w-0 flex-1 rounded-lg bg-gray-800 p-3 sm:p-4">
           <h4 className="mb-3 text-base font-medium text-white sm:mb-4 sm:text-lg">可学习技能</h4>
 
           {unlearnedSkills.length === 0 ? (
@@ -116,7 +116,7 @@ export function SkillPanel() {
           {/* 已学技能才显示属性 */}
           {'skill' in selectedSkill && (
             <>
-              <div className="mb-3 grid grid-cols-2 gap-2 sm:mb-4 sm:gap-4">
+              <div className="mb-3 flex flex-wrap gap-2 sm:mb-4 sm:gap-4">
                 {selectedSkill.skill.type === 'active' && (
                   <>
                     <div className="rounded-lg bg-gray-700/50 p-2 sm:p-3">

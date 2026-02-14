@@ -61,7 +61,7 @@ export function MapPanel() {
             <h4 className="mb-3 text-base font-medium text-white sm:mb-4 sm:text-lg">
               {actNames[parseInt(act)] || `第${act}幕`}
             </h4>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               {actMaps.map(map => {
                 const progress = mapProgress[map.id]
                 const hasTeleport = progress?.teleport_unlocked || false
@@ -71,7 +71,7 @@ export function MapPanel() {
                 return (
                   <div
                     key={map.id}
-                    className={`cursor-pointer rounded-lg border-2 p-3 transition-all sm:p-4 ${
+                    className={`min-w-full flex-1 cursor-pointer rounded-lg border-2 p-3 transition-all sm:min-w-[calc(50%-0.375rem)] sm:p-4 lg:min-w-[calc(33.333%-0.5rem)] ${
                       isCurrentMap
                         ? 'border-green-500 bg-green-600/20'
                         : canEnter
@@ -121,14 +121,14 @@ export function MapPanel() {
             <h4 className="mb-2 text-lg font-bold text-white sm:text-xl">{selectedMap.name}</h4>
             <p className="mb-4 text-sm text-gray-400 sm:text-base">{selectedMap.description}</p>
 
-            <div className="mb-4 grid grid-cols-2 gap-2 sm:gap-4">
-              <div className="rounded-lg bg-gray-700/50 p-2 sm:p-3">
+            <div className="mb-4 flex flex-wrap gap-2 sm:gap-4">
+              <div className="min-w-[calc(50%-4px)] flex-1 rounded-lg bg-gray-700/50 p-2 sm:p-3">
                 <p className="text-xs text-gray-400 sm:text-sm">等级范围</p>
                 <p className="text-sm font-bold text-white sm:text-base">
                   Lv.{selectedMap.min_level}-{selectedMap.max_level}
                 </p>
               </div>
-              <div className="rounded-lg bg-gray-700/50 p-2 sm:p-3">
+              <div className="min-w-[calc(50%-4px)] flex-1 rounded-lg bg-gray-700/50 p-2 sm:p-3">
                 <p className="text-xs text-gray-400 sm:text-sm">传送费用</p>
                 <p className="text-sm font-bold text-yellow-400 sm:text-base">
                   {selectedMap.teleport_cost > 0 ? `${selectedMap.teleport_cost} 金币` : '免费'}

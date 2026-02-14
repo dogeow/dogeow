@@ -22,15 +22,20 @@ const ITEM_ICONS: Record<string, string> = {
   ring: '💍',
   amulet: '📿',
   potion: '🧪',
+  gem: '💎',
 }
 
-// 获取物品图标
+/** 背包固定格位数（表格形式展示） */
+const INVENTORY_SLOTS = 40
+/** 仓库固定格位数（表格形式展示） */
+const WAREHOUSE_SLOTS = 60
+
+// 获取物品图标：优先按 type 映射（避免后端 icon 为 "gem" 等文字时显示成文字），否则用 definition.icon，最后默认 📦
 function getItemIcon(item: GameItem): string {
-  // 如果 definition.icon 是文件名（包含.），则忽略它，使用默认图标映射
-  if (item.definition.icon && !item.definition.icon.includes('.')) {
-    return item.definition.icon
-  }
-  return ITEM_ICONS[item.definition.type] || '📦'
+  const typeIcon = ITEM_ICONS[item.definition.type]
+  if (typeIcon) return typeIcon
+  if (item.definition.icon && !item.definition.icon.includes('.')) return item.definition.icon
+  return '📦'
 }
 
 // 物品堆叠函数 - 相同属性的物品可以堆叠
@@ -69,10 +74,19 @@ export function InventoryPanel() {
   const [showStorage, setShowStorage] = useState(false)
   const [showSellConfirm, setShowSellConfirm] = useState(false)
 
-  // 使用 useMemo 优化性能，计算堆叠后的物品
+  // 使用 useMemo 优化性能，计算堆叠后的物品（详情等仍可用）
   const stackedInventory = useMemo(() => stackItems(inventory), [inventory])
   const stackedStorage = useMemo(() => stackItems(storage), [storage])
-  const currentItems = showStorage ? stackedStorage : stackedInventory
+  // 背包按固定格位展示（类似表格），空位也占格
+  const inventorySlots = useMemo(
+    () => Array.from({ length: INVENTORY_SLOTS }, (_, i) => inventory[i] ?? null),
+    [inventory]
+  )
+  // 仓库按固定格位展示（类似表格），空位也占格
+  const warehouseSlots = useMemo(
+    () => Array.from({ length: WAREHOUSE_SLOTS }, (_, i) => storage[i] ?? null),
+    [storage]
+  )
 
   const handleEquip = async () => {
     if (!selectedItem) return
@@ -110,76 +124,105 @@ export function InventoryPanel() {
   ]
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-      {/* 装备栏 - 移动端优化 */}
-      <div className="rounded-lg bg-gray-800 p-3 sm:p-4">
-        <h4 className="mb-3 text-base font-medium text-white sm:mb-4 sm:text-lg">装备</h4>
-        <div className="mx-auto grid max-w-[320px] grid-cols-3 gap-1.5 sm:gap-2 lg:mx-0">
+    <div className="flex flex-col gap-4 lg:flex-row">
+      {/* 装备栏 - 移动端优化，与背包边距一致 */}
+      <div className="shrink-0 rounded-lg bg-gray-800 p-4 sm:p-5 lg:min-w-0">
+        <h4 className="mb-4 text-base font-medium text-white sm:text-lg">装备</h4>
+        <div className="mx-auto flex max-w-[320px] flex-col gap-1.5 sm:gap-2 lg:mx-0">
           {/* 第一行：头盔 */}
-          <div className="col-start-2">
-            <EquipmentSlotComponent
-              slot="helmet"
-              item={equipment.helmet}
-              onClick={() => equipment.helmet && handleUnequip('helmet')}
-            />
+          <div className="flex gap-1.5 sm:gap-2">
+            <div className="flex-1" />
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="helmet"
+                item={equipment.helmet}
+                onClick={() => equipment.helmet && handleUnequip('helmet')}
+              />
+            </div>
+            <div className="flex-1" />
           </div>
 
           {/* 第二行：武器、盔甲、戒指1 */}
-          <EquipmentSlotComponent
-            slot="weapon"
-            item={equipment.weapon}
-            onClick={() => equipment.weapon && handleUnequip('weapon')}
-          />
-          <EquipmentSlotComponent
-            slot="armor"
-            item={equipment.armor}
-            onClick={() => equipment.armor && handleUnequip('armor')}
-          />
-          <EquipmentSlotComponent
-            slot="ring1"
-            item={equipment.ring1}
-            onClick={() => equipment.ring1 && handleUnequip('ring1')}
-            label="戒指1"
-          />
+          <div className="flex gap-1.5 sm:gap-2">
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="weapon"
+                item={equipment.weapon}
+                onClick={() => equipment.weapon && handleUnequip('weapon')}
+              />
+            </div>
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="armor"
+                item={equipment.armor}
+                onClick={() => equipment.armor && handleUnequip('armor')}
+              />
+            </div>
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="ring1"
+                item={equipment.ring1}
+                onClick={() => equipment.ring1 && handleUnequip('ring1')}
+                label="戒指1"
+              />
+            </div>
+          </div>
 
           {/* 第三行：手套、腰带、戒指2 */}
-          <EquipmentSlotComponent
-            slot="gloves"
-            item={equipment.gloves}
-            onClick={() => equipment.gloves && handleUnequip('gloves')}
-          />
-          <EquipmentSlotComponent
-            slot="belt"
-            item={equipment.belt}
-            onClick={() => equipment.belt && handleUnequip('belt')}
-          />
-          <EquipmentSlotComponent
-            slot="ring2"
-            item={equipment.ring2}
-            onClick={() => equipment.ring2 && handleUnequip('ring2')}
-            label="戒指2"
-          />
+          <div className="flex gap-1.5 sm:gap-2">
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="gloves"
+                item={equipment.gloves}
+                onClick={() => equipment.gloves && handleUnequip('gloves')}
+              />
+            </div>
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="belt"
+                item={equipment.belt}
+                onClick={() => equipment.belt && handleUnequip('belt')}
+              />
+            </div>
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="ring2"
+                item={equipment.ring2}
+                onClick={() => equipment.ring2 && handleUnequip('ring2')}
+                label="戒指2"
+              />
+            </div>
+          </div>
 
           {/* 第四行：靴子、护身符 */}
-          <EquipmentSlotComponent
-            slot="boots"
-            item={equipment.boots}
-            onClick={() => equipment.boots && handleUnequip('boots')}
-          />
-          <EquipmentSlotComponent
-            slot="amulet"
-            item={equipment.amulet}
-            onClick={() => equipment.amulet && handleUnequip('amulet')}
-          />
+          <div className="flex gap-1.5 sm:gap-2">
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="boots"
+                item={equipment.boots}
+                onClick={() => equipment.boots && handleUnequip('boots')}
+              />
+            </div>
+            <div className="flex-1">
+              <EquipmentSlotComponent
+                slot="amulet"
+                item={equipment.amulet}
+                onClick={() => equipment.amulet && handleUnequip('amulet')}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* 背包/仓库 - 移动端优化 */}
-      <div className="rounded-lg bg-gray-800 p-3 sm:p-4 lg:col-span-2">
-        <div className="mb-3 flex items-center justify-between sm:mb-4">
+      {/* 背包/仓库 - 移动端优化，统一上下左右边距 */}
+      <div className="flex min-w-0 flex-1 flex-col rounded-lg bg-gray-800 p-4 sm:p-5">
+        <div className="mb-4 flex shrink-0 items-center justify-between">
           <h4 className="text-base font-medium text-white sm:text-lg">
             {showStorage ? '仓库' : '背包'}
-            <span className="ml-2 text-sm text-gray-400">({currentItems.length})</span>
+            <span className="ml-2 text-sm text-gray-400">
+              ({showStorage ? storage.length : inventory.length}
+              {showStorage ? `/${WAREHOUSE_SLOTS}` : `/${INVENTORY_SLOTS}`})
+            </span>
           </h4>
           <div className="flex gap-1.5 sm:gap-2">
             <button
@@ -201,16 +244,22 @@ export function InventoryPanel() {
           </div>
         </div>
 
-        <div className="grid grid-cols-6 gap-1 sm:grid-cols-8">
-          {currentItems.map(item => (
-            <ItemSlot
-              key={item.id}
-              item={item}
-              quantity={(item as StackedItem).quantity}
-              selected={selectedItem?.id === item.id}
-              onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
-            />
-          ))}
+        <div className="min-h-0 flex-1 overflow-auto p-1">
+          <div className="mx-auto flex w-[17.5rem] flex-wrap gap-x-2 gap-y-2 sm:w-[23.5rem]">
+            {(showStorage ? warehouseSlots : inventorySlots).map((item, index) =>
+              item ? (
+                <ItemSlot
+                  key={item.id}
+                  item={item}
+                  quantity={1}
+                  selected={selectedItem?.id === item.id}
+                  onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
+                />
+              ) : (
+                <EmptySlot key={`empty-${index}`} />
+              )
+            )}
+          </div>
         </div>
 
         {/* 选中物品详情 - 移动端优化 */}
@@ -348,6 +397,19 @@ function EquipmentSlotComponent({
   )
 }
 
+function EmptySlot() {
+  return (
+    <div
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 border-dashed border-gray-600 bg-gray-800/50"
+      style={{
+        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
+        backgroundSize: '8px 8px',
+      }}
+      aria-hidden
+    />
+  )
+}
+
 function ItemSlot({
   item,
   quantity,
@@ -362,7 +424,7 @@ function ItemSlot({
   return (
     <button
       onClick={onClick}
-      className={`relative flex h-10 w-10 items-center justify-center rounded border-2 text-lg shadow-sm transition-all hover:shadow-md ${
+      className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 text-lg shadow-sm transition-all hover:shadow-md ${
         selected ? 'border-yellow-500 ring-2 ring-yellow-500/50' : 'border-gray-600'
       }`}
       style={{

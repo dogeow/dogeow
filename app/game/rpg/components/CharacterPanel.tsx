@@ -87,7 +87,7 @@ export function CharacterPanel() {
       {combatStats && (
         <div className="rounded-lg bg-gray-800 p-3 sm:p-4">
           <h4 className="mb-3 text-base font-medium text-white sm:text-lg">战斗属性</h4>
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <StatBar
               label="生命值"
               value={`${currentHp ?? combatStats.max_hp} / ${combatStats.max_hp}`}

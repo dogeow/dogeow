@@ -68,14 +68,14 @@ export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
 
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-300">选择职业</label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="flex flex-wrap gap-3">
               {(Object.keys(classDescriptions) as Array<keyof typeof classDescriptions>).map(
                 cls => (
                   <button
                     key={cls}
                     type="button"
                     onClick={() => setSelectedClass(cls)}
-                    className={`rounded-lg border-2 p-3 transition-all ${
+                    className={`min-w-[calc(33.333%-8px)] flex-1 rounded-lg border-2 p-3 transition-all ${
                       selectedClass === cls
                         ? 'border-blue-500 bg-blue-500/20'
                         : 'border-gray-600 bg-gray-700 hover:border-gray-500'

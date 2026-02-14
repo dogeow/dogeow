@@ -197,7 +197,7 @@ export function PotionSettings() {
         {/* 手动使用药品 */}
         <div className="rounded-lg bg-gray-700/50 p-3">
           <h5 className="mb-2 text-sm font-medium text-white">手动使用药品</h5>
-          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6">
+          <div className="flex flex-wrap gap-2">
             {potions.map(potion => (
               <button
                 key={potion.id}
