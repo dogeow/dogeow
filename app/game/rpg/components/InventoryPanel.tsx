@@ -30,8 +30,12 @@ const INVENTORY_SLOTS = 40
 /** 仓库固定格位数（表格形式展示） */
 const WAREHOUSE_SLOTS = 60
 
-// 获取物品图标：优先按 type 映射（避免后端 icon 为 "gem" 等文字时显示成文字），否则用 definition.icon，最后默认 📦
+// 获取物品图标：药水按 sub_type 区分 HP❤️/MP💙，其余优先按 type 映射，否则用 definition.icon，最后默认 📦
 function getItemIcon(item: GameItem): string {
+  if (item.definition.type === 'potion') {
+    if (item.definition.sub_type === 'hp') return '❤️'
+    if (item.definition.sub_type === 'mp') return '💙'
+  }
   const typeIcon = ITEM_ICONS[item.definition.type]
   if (typeIcon) return typeIcon
   if (item.definition.icon && !item.definition.icon.includes('.')) return item.definition.icon
@@ -111,115 +115,100 @@ export function InventoryPanel() {
     setSelectedItem(null)
   }
 
-  const slots: EquipmentSlot[] = [
-    'weapon',
-    'helmet',
-    'armor',
-    'gloves',
-    'boots',
-    'belt',
-    'ring1',
-    'ring2',
-    'amulet',
-  ]
-
   return (
     <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row">
-      {/* 装备栏 - 边距与角色面板一致 */}
-      <div className="shrink-0 rounded-lg bg-gray-800 p-3 sm:p-4 lg:min-w-0">
-        <h4 className="mb-3 text-base font-medium text-white sm:mb-4 sm:text-lg">装备</h4>
-        <div className="flex max-w-[320px] flex-col gap-1.5 sm:gap-2">
-          {/* 第一行：头盔 */}
-          <div className="flex gap-1.5 sm:gap-2">
-            <div className="flex-1" />
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="helmet"
-                item={equipment.helmet}
-                onClick={() => equipment.helmet && handleUnequip('helmet')}
-              />
-            </div>
-            <div className="flex-1" />
+      {/* 装备栏 - 参考经典 RPG 三列布局：左(武器/手套/靴子)、中(头盔/盔甲/腰带/护身符)、右(戒指) */}
+      <div className="bg-card border-border flex shrink-0 flex-col rounded-lg border p-3 sm:p-4 lg:min-w-[360px] lg:items-center">
+        <h4 className="text-foreground mb-3 text-base font-medium sm:mb-4 sm:text-lg lg:w-full">
+          装备
+        </h4>
+        <div className="mb-3 w-full border-b-2 border-red-500/80 sm:mb-4" aria-hidden />
+        {/* 4 行 x 3 列网格：左(武器/手套/靴子)、中(头盔/盔甲/腰带/护身符)、右(戒指与盔甲/腰带同行) */}
+        <div className="mx-auto grid w-[280px] max-w-full grid-cols-3 gap-x-4 gap-y-3 sm:w-[320px] sm:gap-x-5 sm:gap-y-4">
+          {/* 第 1 行：空、头盔、护身符 */}
+          <div className="h-12 w-12 shrink-0" aria-hidden />
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="helmet"
+              item={equipment.helmet}
+              onClick={() => equipment.helmet && handleUnequip('helmet')}
+            />
+          </div>
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="amulet"
+              item={equipment.amulet}
+              onClick={() => equipment.amulet && handleUnequip('amulet')}
+            />
           </div>
 
-          {/* 第二行：武器、盔甲、戒指1 */}
-          <div className="flex gap-1.5 sm:gap-2">
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="weapon"
-                item={equipment.weapon}
-                onClick={() => equipment.weapon && handleUnequip('weapon')}
-              />
-            </div>
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="armor"
-                item={equipment.armor}
-                onClick={() => equipment.armor && handleUnequip('armor')}
-              />
-            </div>
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="ring1"
-                item={equipment.ring1}
-                onClick={() => equipment.ring1 && handleUnequip('ring1')}
-                label="戒指1"
-              />
-            </div>
+          {/* 第 2 行：武器、盔甲、戒指1（武器在盔甲左侧，同一行水平对齐） */}
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="weapon"
+              item={equipment.weapon}
+              onClick={() => equipment.weapon && handleUnequip('weapon')}
+            />
+          </div>
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="armor"
+              item={equipment.armor}
+              onClick={() => equipment.armor && handleUnequip('armor')}
+            />
+          </div>
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="gloves"
+              item={equipment.gloves}
+              onClick={() => equipment.gloves && handleUnequip('gloves')}
+            />
           </div>
 
-          {/* 第三行：手套、腰带、戒指2 */}
-          <div className="flex gap-1.5 sm:gap-2">
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="gloves"
-                item={equipment.gloves}
-                onClick={() => equipment.gloves && handleUnequip('gloves')}
-              />
-            </div>
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="belt"
-                item={equipment.belt}
-                onClick={() => equipment.belt && handleUnequip('belt')}
-              />
-            </div>
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="ring2"
-                item={equipment.ring2}
-                onClick={() => equipment.ring2 && handleUnequip('ring2')}
-                label="戒指2"
-              />
-            </div>
+          {/* 第 3 行：戒指1、腰带、戒指2 */}
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="ring1"
+              item={equipment.ring1}
+              onClick={() => equipment.ring1 && handleUnequip('ring1')}
+              label="戒指1"
+            />
+          </div>
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="belt"
+              item={equipment.belt}
+              onClick={() => equipment.belt && handleUnequip('belt')}
+            />
+          </div>
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="ring2"
+              item={equipment.ring2}
+              onClick={() => equipment.ring2 && handleUnequip('ring2')}
+              label="戒指2"
+            />
           </div>
 
-          {/* 第四行：靴子、护身符 */}
-          <div className="flex gap-1.5 sm:gap-2">
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="boots"
-                item={equipment.boots}
-                onClick={() => equipment.boots && handleUnequip('boots')}
-              />
-            </div>
-            <div className="flex-1">
-              <EquipmentSlotComponent
-                slot="amulet"
-                item={equipment.amulet}
-                onClick={() => equipment.amulet && handleUnequip('amulet')}
-              />
-            </div>
+          {/* 第 4 行：空、靴子（腰带正下方）、空 */}
+          <div className="h-12 w-12 shrink-0" aria-hidden />
+          <div className="flex justify-center">
+            <EquipmentSlotComponent
+              slot="boots"
+              item={equipment.boots}
+              onClick={() => equipment.boots && handleUnequip('boots')}
+            />
           </div>
+          <div className="h-12 w-12 shrink-0" aria-hidden />
         </div>
       </div>
 
       {/* 背包/仓库 - 边距与角色面板一致 */}
-      <div className="flex min-w-0 flex-1 flex-col rounded-lg bg-gray-800 p-3 sm:p-4">
+      <div className="bg-card border-border flex min-w-0 flex-1 flex-col rounded-lg border p-3 sm:p-4">
         <div className="mb-3 flex shrink-0 items-center justify-between sm:mb-4">
-          <h4 className="text-base font-medium text-white sm:text-lg">
+          <h4 className="text-foreground text-base font-medium sm:text-lg">
             {showStorage ? '仓库' : '背包'}
-            <span className="ml-2 text-sm text-gray-400">
+            <span className="text-muted-foreground ml-2 text-sm">
               ({showStorage ? storage.length : inventory.length}
               {showStorage ? `/${WAREHOUSE_SLOTS}` : `/${INVENTORY_SLOTS}`})
             </span>
@@ -228,7 +217,9 @@ export function InventoryPanel() {
             <button
               onClick={() => setShowStorage(false)}
               className={`rounded px-2.5 py-1 text-xs sm:px-3 sm:text-sm ${
-                !showStorage ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+                !showStorage
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
               }`}
             >
               背包
@@ -236,7 +227,9 @@ export function InventoryPanel() {
             <button
               onClick={() => setShowStorage(true)}
               className={`rounded px-2.5 py-1 text-xs sm:px-3 sm:text-sm ${
-                showStorage ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'
+                showStorage
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground'
               }`}
             >
               仓库
@@ -264,7 +257,7 @@ export function InventoryPanel() {
 
         {/* 选中物品详情 */}
         {selectedItem && (
-          <div className="mt-3 rounded-lg bg-gray-700/50 p-3 sm:mt-4 sm:p-4">
+          <div className="bg-muted/50 border-border mt-3 rounded-lg border p-3 sm:mt-4 sm:p-4">
             <div className="mb-2 flex items-start justify-between">
               <h5
                 className="text-sm font-bold sm:text-base"
@@ -272,25 +265,27 @@ export function InventoryPanel() {
               >
                 {selectedItem.definition.name}
               </h5>
-              <span className="text-xs text-gray-400 sm:text-sm">
+              <span className="text-muted-foreground text-xs sm:text-sm">
                 {QUALITY_NAMES[selectedItem.quality]}
               </span>
             </div>
 
             <div className="mb-3 space-y-1 text-xs sm:mb-4 sm:text-sm">
               {Object.entries(selectedItem.stats || {}).map(([stat, value]) => (
-                <p key={stat} className="text-green-400">
+                <p key={stat} className="text-green-600 dark:text-green-400">
                   +{value} {STAT_NAMES[stat] || stat}
                 </p>
               ))}
               {selectedItem.affixes?.map((affix, i) => (
-                <p key={i} className="text-blue-400">
+                <p key={i} className="text-blue-600 dark:text-blue-400">
                   {Object.entries(affix)
                     .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
                     .join(', ')}
                 </p>
               ))}
-              <p className="text-gray-400">需求等级: {selectedItem.definition.required_level}</p>
+              <p className="text-muted-foreground">
+                需求等级: {selectedItem.definition.required_level}
+              </p>
             </div>
 
             <div className="flex flex-wrap gap-1.5 sm:gap-2">
@@ -298,7 +293,7 @@ export function InventoryPanel() {
                 <button
                   onClick={handleEquip}
                   disabled={isLoading}
-                  className="flex-1 rounded bg-green-600 px-3 py-2 text-xs text-white hover:bg-green-700 disabled:bg-gray-600 sm:flex-none sm:px-4 sm:text-sm"
+                  className="flex-1 rounded bg-green-600 px-3 py-2 text-xs text-white hover:bg-green-700 disabled:opacity-50 sm:flex-none sm:px-4 sm:text-sm"
                 >
                   装备
                 </button>
@@ -306,7 +301,7 @@ export function InventoryPanel() {
               <button
                 onClick={() => handleMove(!showStorage)}
                 disabled={isLoading}
-                className="flex-1 rounded bg-blue-600 px-3 py-2 text-xs text-white hover:bg-blue-700 disabled:bg-gray-600 sm:flex-none sm:px-4 sm:text-sm"
+                className="flex-1 rounded bg-blue-600 px-3 py-2 text-xs text-white hover:bg-blue-700 disabled:opacity-50 sm:flex-none sm:px-4 sm:text-sm"
               >
                 {showStorage ? '放入背包' : '存入仓库'}
               </button>
@@ -314,7 +309,7 @@ export function InventoryPanel() {
                 <button
                   onClick={() => setShowSellConfirm(true)}
                   disabled={isLoading}
-                  className="flex-1 rounded bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-700 disabled:bg-gray-600 sm:flex-none sm:px-4 sm:text-sm"
+                  className="flex-1 rounded bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-700 disabled:opacity-50 sm:flex-none sm:px-4 sm:text-sm"
                 >
                   出售
                 </button>
@@ -326,9 +321,11 @@ export function InventoryPanel() {
         {/* 出售确认 - 移动端优化 */}
         {showSellConfirm && selectedItem && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="w-full max-w-sm rounded-lg bg-gray-800 p-4 sm:p-6">
-              <h4 className="mb-3 text-base font-bold text-white sm:mb-4 sm:text-lg">确认出售</h4>
-              <p className="mb-4 text-sm text-gray-300 sm:text-base">
+            <div className="bg-card border-border w-full max-w-sm rounded-lg border p-4 sm:p-6">
+              <h4 className="text-foreground mb-3 text-base font-bold sm:mb-4 sm:text-lg">
+                确认出售
+              </h4>
+              <p className="text-muted-foreground mb-4 text-sm sm:text-base">
                 确定要出售
                 <span className="mx-1" style={{ color: QUALITY_COLORS[selectedItem.quality] }}>
                   {selectedItem.definition.name}
@@ -338,7 +335,7 @@ export function InventoryPanel() {
               <div className="flex justify-end gap-2">
                 <button
                   onClick={() => setShowSellConfirm(false)}
-                  className="rounded bg-gray-600 px-3 py-2 text-sm text-white hover:bg-gray-500 sm:px-4"
+                  className="bg-muted text-foreground hover:bg-secondary rounded px-3 py-2 text-sm sm:px-4"
                 >
                   取消
                 </button>
@@ -374,24 +371,15 @@ function EquipmentSlotComponent({
       disabled={!item}
       className={`relative flex h-12 w-12 items-center justify-center rounded border-2 text-xl shadow-sm transition-all ${
         item
-          ? 'cursor-pointer border-gray-500 bg-gradient-to-br from-gray-700 to-gray-800 hover:border-yellow-500 hover:shadow-md'
-          : 'cursor-default border-dashed border-gray-700 bg-gray-800/30'
+          ? 'border-border bg-secondary hover:border-primary cursor-pointer hover:shadow-md'
+          : 'border-border bg-card cursor-default border-dashed'
       }`}
-      style={
-        !item
-          ? {
-              backgroundImage:
-                'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
-              backgroundSize: '8px 8px',
-            }
-          : undefined
-      }
       title={item ? `${item.definition.name} (点击卸下)` : label || SLOT_NAMES[slot]}
     >
       {item ? (
         <span className="drop-shadow-sm">{getItemIcon(item)}</span>
       ) : (
-        <span className="text-xs text-gray-600">{label || SLOT_NAMES[slot]}</span>
+        <span className="text-muted-foreground text-xs">{label || SLOT_NAMES[slot]}</span>
       )}
     </button>
   )
@@ -400,11 +388,7 @@ function EquipmentSlotComponent({
 function EmptySlot() {
   return (
     <div
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 border-dashed border-gray-600 bg-gray-800/50"
-      style={{
-        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
-        backgroundSize: '8px 8px',
-      }}
+      className="border-border bg-card flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 border-dashed"
       aria-hidden
     />
   )
@@ -425,7 +409,9 @@ function ItemSlot({
     <button
       onClick={onClick}
       className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 text-lg shadow-sm transition-all hover:shadow-md ${
-        selected ? 'border-yellow-500 ring-2 ring-yellow-500/50' : 'border-gray-600'
+        selected
+          ? 'border-yellow-500 ring-2 ring-yellow-500/50 dark:border-yellow-400 dark:ring-yellow-400/50'
+          : 'border-border'
       }`}
       style={{
         background: selected
@@ -437,7 +423,7 @@ function ItemSlot({
     >
       <span className="drop-shadow-sm">{getItemIcon(item)}</span>
       {quantity && quantity > 1 && (
-        <span className="absolute right-0 bottom-0 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-bold text-white">
+        <span className="bg-foreground text-background absolute right-0 bottom-0 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold">
           {quantity}
         </span>
       )}

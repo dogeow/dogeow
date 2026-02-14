@@ -59,6 +59,8 @@ interface GameState {
   fetchCharacter: () => Promise<void>
   createCharacter: (name: string, characterClass: string) => Promise<void>
   allocateStats: (stats: Record<string, number>) => Promise<void>
+  setDifficulty: (difficultyTier: number) => Promise<void>
+  setDifficultyForCharacter: (characterId: number, difficultyTier: number) => Promise<void>
   setCharacter: (updater: (prev: GameCharacter | null) => GameCharacter | null) => void
 
   // 背包操作
@@ -212,7 +214,9 @@ const store: StateCreator<GameState> = (set, get) => ({
       })) as { character: GameCharacter; combat_stats: CombatStats }
       set(state => ({
         ...state,
-        character: response.character,
+        // 乐观更新：立即把新角色加入列表，避免依赖后续 fetchCharacters 的时序
+        characters: [...(state.characters || []), response.character],
+        // 不在这里设置 character，让用户回到选择界面看到新角色后再选择进入游戏
         combatStats: response.combat_stats,
         isLoading: false,
       }))
@@ -248,6 +252,49 @@ const store: StateCreator<GameState> = (set, get) => ({
       }))
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  setDifficulty: async difficultyTier => {
+    const selectedId = get().selectedCharacterId
+    if (selectedId == null) return
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const response = (await put('/rpg/character/difficulty', {
+        character_id: selectedId,
+        difficulty_tier: difficultyTier,
+      })) as { character: GameCharacter }
+      set(state => ({
+        ...state,
+        character: state.character
+          ? { ...state.character, ...response.character }
+          : response.character,
+        isLoading: false,
+      }))
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  setDifficultyForCharacter: async (characterId, difficultyTier) => {
+    set(state => ({ ...state, error: null }))
+    try {
+      const response = (await put('/rpg/character/difficulty', {
+        character_id: characterId,
+        difficulty_tier: difficultyTier,
+      })) as { character: GameCharacter }
+      set(state => ({
+        ...state,
+        characters: (state.characters ?? []).map(c =>
+          c.id === characterId ? { ...c, difficulty_tier: response.character.difficulty_tier } : c
+        ),
+        character:
+          state.character?.id === characterId
+            ? { ...state.character, difficulty_tier: response.character.difficulty_tier }
+            : state.character,
+      }))
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message }))
     }
   },
 

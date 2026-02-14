@@ -19,7 +19,7 @@ export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
 
     try {
       await createCharacter(name.trim(), selectedClass)
-      // 创建成功后刷新角色列表
+      // 创建成功后拉取最新列表（与乐观更新双保险），再切到选择界面
       await fetchCharacters()
       onCreateSuccess?.()
     } catch (err) {
@@ -50,24 +50,24 @@ export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-lg bg-gray-800 p-6 shadow-xl">
-        <h2 className="mb-6 text-center text-2xl font-bold text-white">创建角色</h2>
+      <div className="bg-card border-border w-full max-w-md rounded-lg border p-6 shadow-xl">
+        <h2 className="text-foreground mb-6 text-center text-2xl font-bold">创建角色</h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-300">角色名称</label>
+            <label className="text-foreground mb-2 block text-sm font-medium">角色名称</label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="输入角色名称"
               maxLength={16}
-              className="w-full rounded-lg border border-gray-600 bg-gray-700 px-4 py-2 text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              className="border-input bg-muted text-foreground placeholder:text-muted-foreground focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-2 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-300">选择职业</label>
+            <label className="text-foreground mb-2 block text-sm font-medium">选择职业</label>
             <div className="flex flex-wrap gap-3">
               {(Object.keys(classDescriptions) as Array<keyof typeof classDescriptions>).map(
                 cls => (
@@ -77,12 +77,12 @@ export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
                     onClick={() => setSelectedClass(cls)}
                     className={`min-w-[calc(33.333%-8px)] flex-1 rounded-lg border-2 p-3 transition-all ${
                       selectedClass === cls
-                        ? 'border-blue-500 bg-blue-500/20'
-                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                        ? 'border-primary bg-primary/20'
+                        : 'border-border bg-muted hover:border-muted-foreground/30'
                     }`}
                   >
                     <div className="mb-2 text-3xl">{classDescriptions[cls].icon}</div>
-                    <div className="text-sm font-medium text-white">
+                    <div className="text-foreground text-sm font-medium">
                       {classDescriptions[cls].title}
                     </div>
                   </button>
@@ -91,19 +91,23 @@ export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
             </div>
           </div>
 
-          <div className="rounded-lg bg-gray-700/50 p-4">
+          <div className="bg-muted/50 border-border rounded-lg border p-4">
             <div className="mb-2 flex items-center gap-3">
               <span className="text-2xl">{classDescriptions[selectedClass].icon}</span>
-              <span className="text-lg font-medium text-white">
+              <span className="text-foreground text-lg font-medium">
                 {classDescriptions[selectedClass].title}
               </span>
             </div>
-            <p className="mb-2 text-sm text-gray-400">{classDescriptions[selectedClass].desc}</p>
-            <p className="text-sm text-green-400">{classDescriptions[selectedClass].stats}</p>
+            <p className="text-muted-foreground mb-2 text-sm">
+              {classDescriptions[selectedClass].desc}
+            </p>
+            <p className="text-sm text-green-600 dark:text-green-400">
+              {classDescriptions[selectedClass].stats}
+            </p>
           </div>
 
           {error && (
-            <div className="rounded-lg border border-red-500 bg-red-500/20 p-3 text-sm text-red-400">
+            <div className="border-destructive bg-destructive/20 text-destructive rounded-lg border p-3 text-sm">
               {error}
             </div>
           )}
@@ -111,7 +115,7 @@ export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
           <button
             type="submit"
             disabled={isLoading || !name.trim()}
-            className="w-full rounded-lg bg-blue-600 py-3 font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-600"
+            className="bg-primary text-primary-foreground w-full rounded-lg py-3 font-medium transition-colors hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? '创建中...' : '创建角色'}
           </button>

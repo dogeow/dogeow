@@ -105,22 +105,24 @@ export function PotionSettings() {
     })
 
   return (
-    <div className="rounded-lg bg-gray-800 p-3 sm:p-4">
+    <div className="bg-card border-border rounded-lg border p-3 sm:p-4">
       <div className="mb-3 flex items-center justify-between sm:mb-4">
-        <h4 className="text-base font-medium text-white sm:text-lg">药品设置</h4>
-        {saving && <span className="text-xs text-gray-400">保存中...</span>}
+        <h4 className="text-foreground text-base font-medium sm:text-lg">药品设置</h4>
+        {saving && <span className="text-muted-foreground text-xs">保存中...</span>}
       </div>
 
       <div className="space-y-3 sm:space-y-4">
         {/* HP药水设置 */}
-        <div className="rounded-lg bg-gray-700/50 p-3">
+        <div className="bg-muted/50 border-border rounded-lg border p-3">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-white">自动使用HP药水</span>
+            <span className="text-foreground text-sm font-medium">自动使用HP药水</span>
             <button
               onClick={toggleHpPotion}
               disabled={saving}
               className={`rounded px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 sm:text-sm ${
-                settings.autoUseHpPotion ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'
+                settings.autoUseHpPotion
+                  ? 'bg-green-600 text-white'
+                  : 'bg-muted text-muted-foreground'
               }`}
             >
               {settings.autoUseHpPotion ? '已开启' : '已关闭'}
@@ -129,7 +131,7 @@ export function PotionSettings() {
 
           {settings.autoUseHpPotion && (
             <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-300 sm:text-sm">HP低于</label>
+              <label className="text-muted-foreground text-xs sm:text-sm">HP低于</label>
               <input
                 type="number"
                 min={1}
@@ -137,16 +139,16 @@ export function PotionSettings() {
                 value={settings.hpPotionThreshold}
                 onChange={e => updateHpThreshold(Number(e.target.value))}
                 disabled={saving}
-                className="w-20 rounded border border-gray-600 bg-gray-800 px-2 py-1 text-center text-xs text-white disabled:opacity-50 sm:text-sm"
+                className="border-input bg-muted text-foreground w-20 rounded border px-2 py-1 text-center text-xs disabled:opacity-50 sm:text-sm"
               />
-              <span className="text-xs text-gray-400">%时自动使用</span>
+              <span className="text-muted-foreground text-xs">%时自动使用</span>
             </div>
           )}
 
-          <div className="mt-2 text-xs text-gray-400">
+          <div className="text-muted-foreground mt-2 text-xs">
             拥有HP药水: {hpPotions.reduce((sum, p) => sum + p.quantity, 0)} 个
             {hpPotions.length > 0 && (
-              <span className="ml-2 text-green-400">
+              <span className="ml-2 text-green-600 dark:text-green-400">
                 (最高恢复 {hpPotions[0].definition.base_stats?.max_hp ?? 0} HP)
               </span>
             )}
@@ -154,14 +156,16 @@ export function PotionSettings() {
         </div>
 
         {/* MP药水设置 */}
-        <div className="rounded-lg bg-gray-700/50 p-3">
+        <div className="bg-muted/50 border-border rounded-lg border p-3">
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-white">自动使用MP药水</span>
+            <span className="text-foreground text-sm font-medium">自动使用MP药水</span>
             <button
               onClick={toggleMpPotion}
               disabled={saving}
               className={`rounded px-3 py-1 text-xs font-medium transition-colors disabled:opacity-50 sm:text-sm ${
-                settings.autoUseMpPotion ? 'bg-green-600 text-white' : 'bg-gray-600 text-gray-300'
+                settings.autoUseMpPotion
+                  ? 'bg-green-600 text-white'
+                  : 'bg-muted text-muted-foreground'
               }`}
             >
               {settings.autoUseMpPotion ? '已开启' : '已关闭'}
@@ -170,7 +174,7 @@ export function PotionSettings() {
 
           {settings.autoUseMpPotion && (
             <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-300 sm:text-sm">MP低于</label>
+              <label className="text-muted-foreground text-xs sm:text-sm">MP低于</label>
               <input
                 type="number"
                 min={1}
@@ -178,16 +182,16 @@ export function PotionSettings() {
                 value={settings.mpPotionThreshold}
                 onChange={e => updateMpThreshold(Number(e.target.value))}
                 disabled={saving}
-                className="w-20 rounded border border-gray-600 bg-gray-800 px-2 py-1 text-center text-xs text-white disabled:opacity-50 sm:text-sm"
+                className="border-input bg-muted text-foreground w-20 rounded border px-2 py-1 text-center text-xs disabled:opacity-50 sm:text-sm"
               />
-              <span className="text-xs text-gray-400">%时自动使用</span>
+              <span className="text-muted-foreground text-xs">%时自动使用</span>
             </div>
           )}
 
-          <div className="mt-2 text-xs text-gray-400">
+          <div className="text-muted-foreground mt-2 text-xs">
             拥有MP药水: {mpPotions.reduce((sum, p) => sum + p.quantity, 0)} 个
             {mpPotions.length > 0 && (
-              <span className="ml-2 text-blue-400">
+              <span className="ml-2 text-blue-600 dark:text-blue-400">
                 (最高恢复 {mpPotions[0].definition.base_stats?.max_mana ?? 0} MP)
               </span>
             )}
@@ -195,25 +199,25 @@ export function PotionSettings() {
         </div>
 
         {/* 手动使用药品 */}
-        <div className="rounded-lg bg-gray-700/50 p-3">
-          <h5 className="mb-2 text-sm font-medium text-white">手动使用药品</h5>
+        <div className="bg-muted/50 border-border rounded-lg border p-3">
+          <h5 className="text-foreground mb-2 text-sm font-medium">手动使用药品</h5>
           <div className="flex flex-wrap gap-2">
             {potions.map(potion => (
               <button
                 key={potion.id}
                 onClick={() => consumePotion(potion.id)}
                 disabled={isLoading}
-                className="relative flex flex-col items-center rounded border-2 border-gray-600 bg-gray-800 p-2 transition-all hover:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-border bg-card hover:border-primary relative flex flex-col items-center rounded border-2 p-2 transition-all disabled:cursor-not-allowed disabled:opacity-50"
                 title={`${potion.definition.name} - 恢复 ${potion.definition.base_stats?.max_hp ?? potion.definition.base_stats?.max_mana ?? 0}`}
               >
                 <span className="text-2xl">
                   {potion.definition.sub_type === 'hp' ? '❤️' : '💙'}
                 </span>
-                <span className="mt-1 text-xs text-gray-300">
+                <span className="text-muted-foreground mt-1 text-xs">
                   {potion.definition.sub_type === 'hp' ? 'HP' : 'MP'}
                 </span>
                 {potion.quantity > 1 && (
-                  <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-bold text-white">
+                  <span className="bg-primary text-primary-foreground absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-bold">
                     {potion.quantity}
                   </span>
                 )}
@@ -221,7 +225,7 @@ export function PotionSettings() {
             ))}
           </div>
           {potions.length === 0 && (
-            <p className="text-center text-xs text-gray-400">背包中没有药品</p>
+            <p className="text-muted-foreground text-center text-xs">背包中没有药品</p>
           )}
         </div>
       </div>

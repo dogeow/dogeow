@@ -42,6 +42,7 @@ export interface GameCharacter {
   current_map_id: number | null
   is_fighting: boolean
   last_combat_at: string | null
+  difficulty_tier?: number // 0=普通 1=专家 2+=地狱1/地狱2...
   current_hp?: number
   current_mana?: number
   auto_use_hp_potion?: boolean
@@ -125,6 +126,7 @@ export interface MapDefinition {
   min_level: number
   max_level: number
   monster_ids: number[]
+  monsters?: MonsterDefinition[]
   has_teleport: boolean
   teleport_cost: number
   background?: string

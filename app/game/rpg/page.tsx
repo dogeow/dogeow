@@ -205,10 +205,10 @@ export default function RPGGame() {
   // 等待认证初始化
   if (authLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-900">
+      <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-          <p className="text-gray-400">初始化中...</p>
+          <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
+          <p className="text-muted-foreground">初始化中...</p>
         </div>
       </div>
     )
@@ -227,7 +227,7 @@ export default function RPGGame() {
   // 显示创建角色界面
   if (currentView === 'create') {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="bg-background text-foreground min-h-screen">
         <CreateCharacter onCreateSuccess={() => setCurrentView('select')} />
       </div>
     )
@@ -236,10 +236,10 @@ export default function RPGGame() {
   // 加载中
   if (isLoading && !character) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-900">
+      <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-          <p className="text-gray-400">加载中...</p>
+          <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
+          <p className="text-muted-foreground">加载中...</p>
         </div>
       </div>
     )
@@ -267,28 +267,33 @@ export default function RPGGame() {
   ]
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-900 text-white">
+    <div className="bg-background text-foreground flex min-h-screen flex-col">
       {/* 浮动文字覆盖层 */}
       <FloatingTextOverlay />
 
-      {/* 顶部状态栏 - 移动端优化 */}
-      <header className="border-b border-gray-700 bg-gray-800 px-3 py-2 sm:px-4 sm:py-3">
+      {/* 顶部状态栏 - 固定在应用顶栏下方，使用与布局一致的变量避免被遮挡 */}
+      <header
+        className="border-border bg-card fixed right-0 left-0 z-20 border-b px-3 py-2 sm:px-4 sm:py-3"
+        style={{ top: 'var(--app-header-height, 50px)' }}
+      >
         <div className="mx-auto max-w-6xl">
           {/* 移动端：紧凑布局 */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {character && combatStats && (
               <div className="flex flex-1 items-center gap-2 text-xs sm:gap-3 sm:text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-purple-400">Lv.{character.level}</span>
-                  <span className="max-w-[80px] truncate text-green-400 sm:max-w-[120px]">
+                  <span className="text-black dark:text-white">Lv.{character.level}</span>
+                  <span className="max-w-[80px] truncate text-black sm:max-w-[120px] dark:text-white">
                     {character.name}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   {/* 血量 - 使用 currentHp 状态显示实际血量 */}
                   <div className="flex items-center gap-1">
-                    <span className="text-red-400">❤</span>
-                    <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-700 sm:h-2.5 sm:w-24">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center text-sm leading-none text-red-500 dark:text-red-400">
+                      ❤
+                    </span>
+                    <div className="bg-muted h-2 w-16 overflow-hidden rounded-full sm:h-2.5 sm:w-24">
                       <div
                         className="h-full bg-red-500 transition-all"
                         style={{
@@ -296,14 +301,16 @@ export default function RPGGame() {
                         }}
                       />
                     </div>
-                    <span className="text-xs text-red-400 sm:text-sm">
+                    <span className="text-xs text-red-500 sm:text-sm dark:text-red-400">
                       {currentHp ?? combatStats.max_hp}
                     </span>
                   </div>
                   {/* 魔法量 - 使用 currentMana 状态显示实际魔法量 */}
                   <div className="flex items-center gap-1">
-                    <span className="text-blue-400">✦</span>
-                    <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-700 sm:h-2.5 sm:w-24">
+                    <span className="flex h-4 w-4 shrink-0 items-center justify-center text-sm leading-none text-blue-500 dark:text-blue-400">
+                      ✦
+                    </span>
+                    <div className="bg-muted h-2 w-16 overflow-hidden rounded-full sm:h-2.5 sm:w-24">
                       <div
                         className="h-full bg-blue-500 transition-all"
                         style={{
@@ -311,30 +318,32 @@ export default function RPGGame() {
                         }}
                       />
                     </div>
-                    <span className="text-xs text-blue-400 sm:text-sm">
+                    <span className="text-xs text-blue-500 sm:text-sm dark:text-blue-400">
                       {currentMana ?? combatStats.max_mana}
                     </span>
                   </div>
                 </div>
-                <span className="text-yellow-400">💰 {character.gold.toLocaleString()}</span>
+                <span className="text-yellow-600 dark:text-yellow-400">
+                  💰 {character.gold.toLocaleString()}
+                </span>
               </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* 主内容区 - flex + overflow-hidden 以便背包/仓库等内部可滚动 */}
-      <main className="flex max-w-6xl flex-1 flex-col overflow-hidden p-3 sm:p-4">
+      {/* 主内容区 - pt 预留固定顶栏高度，避免被遮挡 */}
+      <main className="flex max-w-6xl flex-1 flex-col overflow-hidden px-3 pt-14 pb-3 sm:px-4 sm:pt-16 sm:pb-4">
         {/* 标签导航 - 桌面端显示，移动端隐藏 */}
-        <nav className="mb-4 hidden gap-1 rounded-lg bg-gray-800 p-1 lg:flex">
+        <nav className="bg-muted mb-4 hidden gap-1 rounded-lg p-1 lg:flex">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                 activeTab === tab.id
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               }`}
             >
               <span className="mr-2">{tab.icon}</span>
@@ -345,7 +354,7 @@ export default function RPGGame() {
 
         {/* 错误提示 */}
         {error && (
-          <div className="mb-4 rounded-lg border border-red-500 bg-red-500/20 p-3 text-sm text-red-400">
+          <div className="border-destructive bg-destructive/20 text-destructive mb-4 rounded-lg border p-3 text-sm">
             {error}
           </div>
         )}
@@ -371,7 +380,7 @@ export default function RPGGame() {
       </main>
 
       {/* 底部导航（仅移动端） */}
-      <nav className="safe-area-bottom fixed right-0 bottom-0 left-0 border-t border-gray-700 bg-gray-800/95 backdrop-blur lg:hidden">
+      <nav className="safe-area-bottom border-border bg-card/95 fixed right-0 bottom-0 left-0 border-t backdrop-blur lg:hidden">
         <div className="flex justify-around">
           {tabs.map(tab => (
             <button
@@ -379,8 +388,8 @@ export default function RPGGame() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex min-h-[64px] flex-1 flex-col items-center justify-center py-3 text-center transition-colors ${
                 activeTab === tab.id
-                  ? 'bg-gray-700/50 text-blue-400'
-                  : 'text-gray-400 hover:text-gray-300'
+                  ? 'bg-muted text-primary'
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               <div className="mb-1 text-xl">{tab.icon}</div>

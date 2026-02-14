@@ -34,23 +34,23 @@ export function SoundSettings({ onLogout }: SoundSettingsProps) {
   }
 
   return (
-    <div className="space-y-3 rounded-lg bg-gray-800 p-3 sm:space-y-4 sm:p-4">
-      <h3 className="mb-3 text-lg font-bold text-white sm:mb-4">设置</h3>
+    <div className="bg-card border-border space-y-3 rounded-lg border p-3 sm:space-y-4 sm:p-4">
+      <h3 className="text-foreground mb-3 text-lg font-bold sm:mb-4">设置</h3>
 
       <div className="space-y-3 sm:space-y-4">
         <div className="space-y-3">
-          <h4 className="text-base font-medium text-white">音效设置</h4>
+          <h4 className="text-foreground text-base font-medium">音效设置</h4>
 
           <div className="flex items-center justify-between">
-            <span className="text-gray-300">启用音效</span>
+            <span className="text-muted-foreground">启用音效</span>
             <button
               onClick={handleToggle}
               className={`h-8 w-14 rounded-full transition-colors ${
-                enabled ? 'bg-blue-600' : 'bg-gray-600'
+                enabled ? 'bg-primary' : 'bg-muted'
               }`}
             >
               <div
-                className={`h-6 w-6 rounded-full bg-white transition-transform ${
+                className={`bg-primary-foreground h-6 w-6 rounded-full transition-transform ${
                   enabled ? 'translate-x-7' : 'translate-x-1'
                 }`}
               />
@@ -59,7 +59,7 @@ export function SoundSettings({ onLogout }: SoundSettingsProps) {
 
           {enabled && (
             <div className="space-y-2">
-              <div className="flex justify-between text-sm text-gray-400">
+              <div className="text-muted-foreground flex justify-between text-sm">
                 <span>音量</span>
                 <span>{Math.round(volume * 100)}%</span>
               </div>
@@ -70,20 +70,20 @@ export function SoundSettings({ onLogout }: SoundSettingsProps) {
                 step="0.1"
                 value={volume}
                 onChange={handleVolumeChange}
-                className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-700 accent-blue-600"
+                className="bg-muted accent-primary h-2 w-full cursor-pointer appearance-none rounded-lg"
               />
             </div>
           )}
 
           <button
             onClick={() => soundManager.play('button_click')}
-            className="w-full rounded bg-gray-700 py-2 text-sm text-gray-300 transition-colors hover:bg-gray-600"
+            className="bg-muted text-foreground hover:bg-secondary w-full rounded py-2 text-sm transition-colors"
           >
             测试音效
           </button>
         </div>
 
-        <div className="border-t border-gray-700 pt-4">
+        <div className="border-border border-t pt-4">
           <button
             onClick={handleLogout}
             className="w-full rounded-lg bg-red-600 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-red-700"
