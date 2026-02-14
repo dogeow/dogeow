@@ -15,6 +15,7 @@ import { PotionSettings } from './components/PotionSettings'
 import { FloatingTextOverlay } from './components/FloatingTextOverlay'
 import { useCombatWebSocket } from './hooks/useCombatWebSocket'
 import useAuthStore from '@/stores/authStore'
+import { CopperDisplay } from './components/CopperDisplay'
 
 type GameView = 'select' | 'create' | 'game'
 
@@ -280,60 +281,61 @@ export default function RPGGame() {
           {/* 移动端：紧凑布局 */}
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {character && combatStats && (
-              <div className="flex flex-1 items-center gap-2 text-xs sm:gap-3 sm:text-sm">
-                <div className="flex items-center gap-2">
+              <div className="flex w-full items-center gap-2 text-xs sm:gap-3 sm:text-sm">
+                {/* 左侧：等级+名字，不伸缩 */}
+                <div className="flex shrink-0 items-center gap-2">
                   <span className="text-black dark:text-white">Lv.{character.level}</span>
                   <span className="max-w-[80px] truncate text-black sm:max-w-[120px] dark:text-white">
                     {character.name}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {/* 血量 - 使用 currentHp 状态显示实际血量 */}
+                {/* 中间：血量+魔法，占满剩余空间并居中 */}
+                <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
                   <div className="flex items-center gap-1">
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center text-sm leading-none text-red-500 dark:text-red-400">
-                      ❤
-                    </span>
-                    <div className="bg-muted h-2 w-16 overflow-hidden rounded-full sm:h-2.5 sm:w-24">
-                      <div
-                        className="h-full bg-red-500 transition-all"
-                        style={{
-                          width: `${Math.max(0, ((currentHp ?? combatStats.max_hp) / combatStats.max_hp) * 100)}%`,
-                        }}
-                      />
-                    </div>
+                    <CircularProgress
+                      percent={Math.max(
+                        0,
+                        combatStats.max_hp > 0
+                          ? ((currentHp ?? combatStats.max_hp) / combatStats.max_hp) * 100
+                          : 0
+                      )}
+                      color="red"
+                      size="sm"
+                    />
                     <span className="text-xs text-red-500 sm:text-sm dark:text-red-400">
                       {currentHp ?? combatStats.max_hp}
                     </span>
                   </div>
-                  {/* 魔法量 - 使用 currentMana 状态显示实际魔法量 */}
                   <div className="flex items-center gap-1">
-                    <span className="flex h-4 w-4 shrink-0 items-center justify-center text-sm leading-none text-blue-500 dark:text-blue-400">
-                      ✦
-                    </span>
-                    <div className="bg-muted h-2 w-16 overflow-hidden rounded-full sm:h-2.5 sm:w-24">
-                      <div
-                        className="h-full bg-blue-500 transition-all"
-                        style={{
-                          width: `${Math.max(0, ((currentMana ?? combatStats.max_mana) / combatStats.max_mana) * 100)}%`,
-                        }}
-                      />
-                    </div>
+                    <CircularProgress
+                      percent={Math.max(
+                        0,
+                        combatStats.max_mana > 0
+                          ? ((currentMana ?? combatStats.max_mana) / combatStats.max_mana) * 100
+                          : 0
+                      )}
+                      color="blue"
+                      size="sm"
+                    />
                     <span className="text-xs text-blue-500 sm:text-sm dark:text-blue-400">
                       {currentMana ?? combatStats.max_mana}
                     </span>
                   </div>
                 </div>
-                <span className="text-yellow-600 dark:text-yellow-400">
-                  💰 {character.gold.toLocaleString()}
-                </span>
+                {/* 右侧：货币，始终靠右 */}
+                <div className="ml-auto shrink-0">
+                  <span className="text-yellow-600 dark:text-yellow-400">
+                    <CopperDisplay copper={character.copper} size="sm" />
+                  </span>
+                </div>
               </div>
             )}
           </div>
         </div>
       </header>
 
-      {/* 主内容区 - pt 预留固定顶栏高度，避免被遮挡 */}
-      <main className="flex max-w-6xl flex-1 flex-col overflow-hidden px-3 pt-14 pb-3 sm:px-4 sm:pt-16 sm:pb-4">
+      {/* 主内容区 - pt 预留固定顶栏高度，避免被遮挡；mx-auto 使内容水平居中 */}
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden px-3 pt-14 pb-3 sm:px-4 sm:pt-16 sm:pb-4">
         {/* 标签导航 - 桌面端显示，移动端隐藏 */}
         <nav className="bg-muted mb-4 hidden gap-1 rounded-lg p-1 lg:flex">
           {tabs.map(tab => (
@@ -399,5 +401,65 @@ export default function RPGGame() {
         </div>
       </nav>
     </div>
+  )
+}
+
+/** 圆形进度：容器式从底部向上填充，用于顶栏 HP/MP 显示 */
+function CircularProgress({
+  percent,
+  color,
+  size = 'sm',
+}: {
+  percent: number
+  color: 'red' | 'blue'
+  size?: 'sm'
+}) {
+  const pct = Math.min(100, Math.max(0, percent))
+  const r = size === 'sm' ? 8 : 10
+  const cx = r
+  const cy = r
+  const fillClass =
+    color === 'red' ? 'fill-red-500 dark:fill-red-400' : 'fill-blue-500 dark:fill-blue-400'
+  // 水平线 y = level，只显示圆内「底部到该线」的部分（从下往上填）
+  const level = cy + r - (2 * r * pct) / 100
+  const clipId = `rpg-hpmp-clip-${color}-${size}-${r}`
+
+  // 圆与 y>=level 的交线半宽
+  const dy = level - cy
+  const dx2 = r * r - dy * dy
+  const dx = dx2 > 0 ? Math.sqrt(dx2) : 0
+
+  let clipPathD: string
+  if (pct <= 0) {
+    clipPathD = '' // 不显示
+  } else if (pct >= 100) {
+    clipPathD = `M ${cx} ${cy} m -${r} 0 a ${r} ${r} 0 1 1 ${r * 2} 0 a ${r} ${r} 0 1 1 -${r * 2} 0` // 整圆
+  } else {
+    // 下半部分：弦 (cx+dx,level)-(cx-dx,level) + 下方圆弧
+    const largeArc = level <= cy ? 1 : 0
+    clipPathD = `M ${cx + dx} ${level} A ${r} ${r} 0 ${largeArc} 1 ${cx - dx} ${level} L ${cx + dx} ${level} Z`
+  }
+
+  return (
+    <svg width={r * 2} height={r * 2} className="shrink-0" aria-hidden>
+      <defs>
+        <clipPath id={clipId}>
+          {clipPathD ? <path d={clipPathD} /> : <path d={`M 0 0 L 0 0 Z`} />}
+        </clipPath>
+      </defs>
+      {/* 背景：整圆 */}
+      <circle cx={cx} cy={cy} r={r} className="fill-muted" />
+      {/* 进度：同圆用 clip 只保留底部到水平线 */}
+      {pct > 0 && (
+        <g clipPath={`url(#${clipId})`}>
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r}
+            className={`${fillClass} transition-[clip-path] duration-300`}
+          />
+        </g>
+      )}
+    </svg>
   )
 }

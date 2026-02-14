@@ -12,10 +12,10 @@ interface CombatUpdateData {
   damage_taken: number
   rounds: number
   experience_gained: number
-  gold_gained: number
+  copper_gained: number
   loot?: {
     item?: any
-    gold: number
+    copper: number
   }
   character: any
   combat_log_id: number
@@ -23,7 +23,7 @@ interface CombatUpdateData {
 
 interface LootDroppedData {
   item?: any
-  gold: number
+  copper: number
 }
 
 export function useCombatWebSocket(characterId: number | null) {

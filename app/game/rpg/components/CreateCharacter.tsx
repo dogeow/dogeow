@@ -1,52 +1,73 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { useGameStore } from '../stores/gameStore'
-import { CLASS_NAMES } from '../types'
 
 interface CreateCharacterProps {
   onCreateSuccess?: () => void
 }
 
-export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
+const CLASS_OPTIONS = [
+  {
+    key: 'warrior',
+    title: '战士',
+    desc: '高生命、高攻击的近战职业',
+    stats: '力量+5, 体力+5',
+    icon: '⚔️',
+  },
+  {
+    key: 'mage',
+    title: '法师',
+    desc: '高法力、高技能伤害的魔法职业',
+    stats: '能量+10, 智力+5',
+    icon: '🔮',
+  },
+  {
+    key: 'ranger',
+    title: '游侠',
+    desc: '高敏捷、高暴击的远程职业',
+    stats: '敏捷+10, 暴击+5%',
+    icon: '🏹',
+  },
+] as const
+
+type ClassKey = (typeof CLASS_OPTIONS)[number]['key']
+
+const classDict = Object.fromEntries(CLASS_OPTIONS.map(opt => [opt.key, opt])) as Record<
+  ClassKey,
+  (typeof CLASS_OPTIONS)[number]
+>
+
+function CharacterForm({ onCreateSuccess }: CreateCharacterProps) {
   const { createCharacter, isLoading, error, fetchCharacters } = useGameStore()
   const [name, setName] = useState('')
-  const [selectedClass, setSelectedClass] = useState<'warrior' | 'mage' | 'ranger'>('warrior')
+  const [selectedClass, setSelectedClass] = useState<ClassKey>('warrior')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
+  const handleSetName = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setName(e.target.value)
+  }, [])
 
-    try {
-      await createCharacter(name.trim(), selectedClass)
-      // 创建成功后拉取最新列表（与乐观更新双保险），再切到选择界面
-      await fetchCharacters()
-      onCreateSuccess?.()
-    } catch (err) {
-      console.error('创建角色失败:', err)
-    }
-  }
+  const handleSelectClass = useCallback((cls: ClassKey) => {
+    setSelectedClass(cls)
+  }, [])
 
-  const classDescriptions = {
-    warrior: {
-      title: '战士',
-      desc: '高生命、高攻击的近战职业',
-      stats: '力量+5, 体力+5',
-      icon: '⚔️',
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault()
+      const trimmed = name.trim()
+      if (!trimmed) return
+      try {
+        await createCharacter(trimmed, selectedClass)
+        await fetchCharacters()
+        onCreateSuccess?.()
+      } catch (err) {
+        // 错误会被全局 error 处理，保持简洁
+      }
     },
-    mage: {
-      title: '法师',
-      desc: '高法力、高技能伤害的魔法职业',
-      stats: '能量+10, 智力+5',
-      icon: '🔮',
-    },
-    ranger: {
-      title: '游侠',
-      desc: '高敏捷、高暴击的远程职业',
-      stats: '敏捷+10, 暴击+5%',
-      icon: '🏹',
-    },
-  }
+    [name, selectedClass, createCharacter, fetchCharacters, onCreateSuccess]
+  )
+
+  const info = classDict[selectedClass]
 
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center p-4">
@@ -55,59 +76,62 @@ export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="text-foreground mb-2 block text-sm font-medium">角色名称</label>
+            <label className="text-foreground mb-2 block text-sm font-medium" htmlFor="char-name">
+              角色名称
+            </label>
             <input
+              id="char-name"
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={handleSetName}
               placeholder="输入角色名称"
               maxLength={16}
+              autoComplete="off"
               className="border-input bg-muted text-foreground placeholder:text-muted-foreground focus:ring-primary w-full rounded-lg border px-4 py-2 focus:ring-2 focus:outline-none"
+              aria-label="角色名称"
+              required
+              disabled={isLoading}
             />
           </div>
 
           <div>
             <label className="text-foreground mb-2 block text-sm font-medium">选择职业</label>
-            <div className="flex flex-wrap gap-3">
-              {(Object.keys(classDescriptions) as Array<keyof typeof classDescriptions>).map(
-                cls => (
-                  <button
-                    key={cls}
-                    type="button"
-                    onClick={() => setSelectedClass(cls)}
-                    className={`min-w-[calc(33.333%-8px)] flex-1 rounded-lg border-2 p-3 transition-all ${
-                      selectedClass === cls
-                        ? 'border-primary bg-primary/20'
-                        : 'border-border bg-muted hover:border-muted-foreground/30'
-                    }`}
-                  >
-                    <div className="mb-2 text-3xl">{classDescriptions[cls].icon}</div>
-                    <div className="text-foreground text-sm font-medium">
-                      {classDescriptions[cls].title}
-                    </div>
-                  </button>
-                )
-              )}
+            <div className="flex flex-wrap gap-3" role="radiogroup" aria-label="职业">
+              {CLASS_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => handleSelectClass(opt.key)}
+                  aria-pressed={selectedClass === opt.key}
+                  aria-label={opt.title}
+                  tabIndex={0}
+                  className={`min-w-[calc(33.333%-8px)] flex-1 rounded-lg border-2 p-3 transition-all ${
+                    selectedClass === opt.key
+                      ? 'border-primary bg-primary/20'
+                      : 'border-border bg-muted hover:border-muted-foreground/30'
+                  } `}
+                >
+                  <div className="mb-2 text-3xl">{opt.icon}</div>
+                  <div className="text-foreground text-sm font-medium">{opt.title}</div>
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="bg-muted/50 border-border rounded-lg border p-4">
+          <div className="bg-muted/50 border-border rounded-lg border p-4" aria-live="polite">
             <div className="mb-2 flex items-center gap-3">
-              <span className="text-2xl">{classDescriptions[selectedClass].icon}</span>
-              <span className="text-foreground text-lg font-medium">
-                {classDescriptions[selectedClass].title}
-              </span>
+              <span className="text-2xl">{info.icon}</span>
+              <span className="text-foreground text-lg font-medium">{info.title}</span>
             </div>
-            <p className="text-muted-foreground mb-2 text-sm">
-              {classDescriptions[selectedClass].desc}
-            </p>
-            <p className="text-sm text-green-600 dark:text-green-400">
-              {classDescriptions[selectedClass].stats}
-            </p>
+            <p className="text-muted-foreground mb-2 text-sm">{info.desc}</p>
+            <p className="text-sm text-green-600 dark:text-green-400">{info.stats}</p>
           </div>
 
           {error && (
-            <div className="border-destructive bg-destructive/20 text-destructive rounded-lg border p-3 text-sm">
+            <div
+              className="border-destructive bg-destructive/20 text-destructive rounded-lg border p-3 text-sm"
+              role="alert"
+            >
               {error}
             </div>
           )}
@@ -124,3 +148,5 @@ export function CreateCharacter({ onCreateSuccess }: CreateCharacterProps) {
     </div>
   )
 }
+
+export const CreateCharacter = memo(CharacterForm)

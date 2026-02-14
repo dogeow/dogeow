@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { useGameStore } from '../stores/gameStore'
+import { formatCopper } from '../types'
 
 interface FloatingText {
   id: number
@@ -12,35 +13,40 @@ interface FloatingText {
   type: 'damage' | 'heal' | 'gold' | 'exp' | 'level_up' | 'item'
 }
 
+const FLOATING_TEXT_DURATION = 2000
+
+// 更清晰的 id 生成器，避免在同一帧内 Date.now() 冲突
+let idCounter = 0
+function generateId() {
+  return Date.now() + idCounter++
+}
+
 export function FloatingTextOverlay() {
   const [texts, setTexts] = useState<FloatingText[]>([])
   const combatResult = useGameStore(state => state.combatResult)
   const activeTab = useGameStore(state => state.activeTab)
   const processedResultRef = useRef<any>(null)
 
+  // 通过 useCallback 保证引用稳定，减少不必要渲染
   const addFloatingTexts = useCallback((newTexts: FloatingText[]) => {
     setTexts(prev => [...prev, ...newTexts])
-    // 自动移除
+    // 自动移除对应 floating text
     setTimeout(() => {
       setTexts(prev => prev.filter(t => !newTexts.some(n => n.id === t.id)))
-    }, 2000)
+    }, FLOATING_TEXT_DURATION)
   }, [])
 
   useEffect(() => {
-    // 避免重复处理相同的战斗结果
-    if (!combatResult || processedResultRef.current === combatResult) {
-      return
-    }
+    // 避免重复处理相同 combatResult
+    if (!combatResult || processedResultRef.current === combatResult) return
     processedResultRef.current = combatResult
 
-    console.log('[FloatingText] combatResult:', combatResult)
     const newTexts: FloatingText[] = []
 
     // 伤害数字
     if (combatResult.damage_dealt > 0) {
-      console.log('[FloatingText] Adding damage text:', combatResult.damage_dealt)
       newTexts.push({
-        id: Date.now(),
+        id: generateId(),
         text: `-${combatResult.damage_dealt}`,
         x: Math.random() * 60 + 20,
         y: Math.random() * 20 + 30,
@@ -49,22 +55,21 @@ export function FloatingTextOverlay() {
       })
     }
 
-    // 胜利
+    // 胜利信息
     if (combatResult.victory) {
-      if (combatResult.gold_gained > 0) {
+      if (combatResult.copper_gained > 0) {
         newTexts.push({
-          id: Date.now() + 1,
-          text: `+${combatResult.gold_gained} 金币`,
+          id: generateId(),
+          text: `+${formatCopper(combatResult.copper_gained)}`,
           x: Math.random() * 40 + 30,
           y: Math.random() * 20 + 40,
           color: '#eab308',
           type: 'gold',
         })
       }
-
       if (combatResult.experience_gained > 0) {
         newTexts.push({
-          id: Date.now() + 2,
+          id: generateId(),
           text: `+${combatResult.experience_gained} 经验`,
           x: Math.random() * 40 + 30,
           y: Math.random() * 20 + 50,
@@ -72,10 +77,9 @@ export function FloatingTextOverlay() {
           type: 'exp',
         })
       }
-
       if (combatResult.loot?.item) {
         newTexts.push({
-          id: Date.now() + 3,
+          id: generateId(),
           text: `获得 ${combatResult.loot.item.definition?.name || '物品'}`,
           x: 50,
           y: 60,
@@ -86,7 +90,7 @@ export function FloatingTextOverlay() {
     }
 
     if (newTexts.length > 0) {
-      // 使用 setTimeout 将 setState 调用推迟到下一个事件循环
+      // 微任务延迟，避免批量状态更新问题
       setTimeout(() => addFloatingTexts(newTexts), 0)
     }
   }, [combatResult, addFloatingTexts])
@@ -94,18 +98,20 @@ export function FloatingTextOverlay() {
   return (
     <div className="pointer-events-none fixed inset-0 z-50">
       {activeTab === 'combat' &&
-        texts.map(text => (
+        texts.map(({ id, text, x, y, color, type }) => (
           <div
-            key={text.id}
-            className="animate-float-up text-shadow absolute font-bold"
+            key={id}
+            className="animate-float-up text-shadow absolute font-bold select-none"
             style={{
-              left: `${text.x}%`,
-              top: `${text.y}%`,
-              color: text.color,
-              fontSize: text.type === 'level_up' ? '2rem' : '1.2rem',
+              left: `${x}%`,
+              top: `${y}%`,
+              color,
+              fontSize: type === 'level_up' ? '2rem' : '1.2rem',
+              userSelect: 'none',
             }}
+            aria-live="polite"
           >
-            {text.text}
+            {text}
           </div>
         ))}
     </div>

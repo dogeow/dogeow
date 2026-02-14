@@ -6,6 +6,7 @@ import type { StateCreator } from 'zustand'
 import {
   GameCharacter,
   CombatStats,
+  CombatStatsBreakdown,
   GameItem,
   CharacterSkill,
   SkillDefinition,
@@ -16,7 +17,7 @@ import {
   EquipmentSlot,
   ShopItem,
 } from '../types'
-import { apiGet, post, put, ApiRequestError } from '@/lib/api'
+import { apiGet, post, put, del, ApiRequestError } from '@/lib/api'
 import { soundManager } from '../utils/soundManager'
 
 interface GameState {
@@ -24,7 +25,9 @@ interface GameState {
   characters: GameCharacter[]
   character: GameCharacter | null
   selectedCharacterId: number | null
+  experienceTable: Record<number, number> // 等级 -> 累计经验，由后端提供
   combatStats: CombatStats | null
+  statsBreakdown: CombatStatsBreakdown | null // 攻击/防御等属性明细（基础+装备）
   currentHp: number | null // 当前HP
   currentMana: number | null // 当前Mana
   inventory: GameItem[]
@@ -58,6 +61,7 @@ interface GameState {
   selectCharacter: (characterId: number) => Promise<void>
   fetchCharacter: () => Promise<void>
   createCharacter: (name: string, characterClass: string) => Promise<void>
+  deleteCharacter: (characterId: number) => Promise<void>
   allocateStats: (stats: Record<string, number>) => Promise<void>
   setDifficulty: (difficultyTier: number) => Promise<void>
   setDifficultyForCharacter: (characterId: number, difficultyTier: number) => Promise<void>
@@ -86,6 +90,9 @@ interface GameState {
   stopCombat: () => Promise<void>
   executeCombat: () => Promise<void>
   setShouldAutoCombat: (should: boolean) => void // 设置是否应该自动战斗
+  /** 已启用的技能 id 列表，可多选；自动战斗时会按顺序尝试施放 */
+  enabledSkillIds: number[]
+  toggleEnabledSkill: (skillId: number) => void
   consumePotion: (itemId: number) => Promise<void> // 使用药品
 
   // WebSocket 事件处理
@@ -107,7 +114,9 @@ const initialState = {
   characters: [],
   character: null,
   selectedCharacterId: null,
+  experienceTable: {} as Record<number, number>,
   combatStats: null,
+  statsBreakdown: null,
   currentHp: null,
   currentMana: null,
   inventory: [],
@@ -120,6 +129,7 @@ const initialState = {
   currentMap: null,
   isFighting: false,
   shouldAutoCombat: false, // 是否应该自动战斗
+  enabledSkillIds: [] as number[], // 已启用的技能，可多选
   combatResult: null,
   combatLogs: [],
   isLoading: false,
@@ -186,7 +196,9 @@ const store: StateCreator<GameState> = (set, get) => ({
       const params = selectedId ? `?character_id=${selectedId}` : ''
       const response = (await apiGet(`/rpg/character${params}`)) as {
         character: GameCharacter | null
+        experience_table?: Record<number, number>
         combat_stats?: CombatStats
+        stats_breakdown?: CombatStatsBreakdown
         current_hp?: number
         current_mana?: number
       }
@@ -194,7 +206,9 @@ const store: StateCreator<GameState> = (set, get) => ({
       set(state => ({
         ...state,
         character: response.character,
+        experienceTable: response.experience_table ?? state.experienceTable,
         combatStats: response.combat_stats || null,
+        statsBreakdown: response.stats_breakdown ?? null,
         currentHp: response.current_hp ?? null,
         currentMana: response.current_mana ?? null,
         isLoading: false,
@@ -211,15 +225,56 @@ const store: StateCreator<GameState> = (set, get) => ({
       const response = (await post('/rpg/character', {
         name,
         class: characterClass,
-      })) as { character: GameCharacter; combat_stats: CombatStats }
+      })) as {
+        character: GameCharacter
+        combat_stats: CombatStats
+        stats_breakdown?: CombatStatsBreakdown
+      }
       set(state => ({
         ...state,
-        // 乐观更新：立即把新角色加入列表，避免依赖后续 fetchCharacters 的时序
         characters: [...(state.characters || []), response.character],
-        // 不在这里设置 character，让用户回到选择界面看到新角色后再选择进入游戏
         combatStats: response.combat_stats,
+        statsBreakdown: response.stats_breakdown ?? null,
         isLoading: false,
       }))
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  deleteCharacter: async characterId => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      await del(`/rpg/character?character_id=${characterId}`)
+      set(state => {
+        const nextCharacters = (state.characters || []).filter(c => c.id !== characterId)
+        const wasSelected = state.selectedCharacterId === characterId
+        return {
+          ...state,
+          characters: nextCharacters,
+          ...(wasSelected
+            ? {
+                selectedCharacterId: null,
+                character: null,
+                combatStats: null,
+                statsBreakdown: null,
+                currentHp: null,
+                currentMana: null,
+                inventory: [],
+                equipment: {},
+                skills: [],
+                availableSkills: [],
+                mapProgress: {},
+                currentMap: null,
+                combatResult: null,
+                combatLogs: [],
+                isFighting: false,
+                shouldAutoCombat: false,
+              }
+            : {}),
+          isLoading: false,
+        }
+      })
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }
@@ -239,6 +294,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       })) as {
         character: GameCharacter
         combat_stats: CombatStats
+        stats_breakdown?: CombatStatsBreakdown
         current_hp: number
         current_mana: number
       }
@@ -246,6 +302,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         ...state,
         character: response.character,
         combatStats: response.combat_stats,
+        statsBreakdown: response.stats_breakdown ?? null,
         currentHp: response.current_hp,
         currentMana: response.current_mana,
         isLoading: false,
@@ -352,16 +409,15 @@ const store: StateCreator<GameState> = (set, get) => ({
         equipped_slot: string
         unequipped_item: GameItem | null
         combat_stats: CombatStats
+        stats_breakdown?: CombatStatsBreakdown
       }
       soundManager.play('equip')
 
-      // 卸下的装备放回背包
       const currentInventory = get().inventory
       const updatedInventory = [...currentInventory]
       if (response.unequipped_item) {
         updatedInventory.push(response.unequipped_item)
       }
-      // 从背包移除刚装备的物品
       const filteredInventory = updatedInventory.filter(i => i.id !== itemId)
 
       set(state => ({
@@ -372,6 +428,7 @@ const store: StateCreator<GameState> = (set, get) => ({
           [response.equipped_slot]: response.equipped_item,
         },
         combatStats: response.combat_stats,
+        statsBreakdown: response.stats_breakdown ?? state.statsBreakdown,
         isLoading: false,
       }))
     } catch (error) {
@@ -393,6 +450,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       })) as {
         item: GameItem
         combat_stats: CombatStats
+        stats_breakdown?: CombatStatsBreakdown
       }
       set(state => ({
         ...state,
@@ -402,6 +460,7 @@ const store: StateCreator<GameState> = (set, get) => ({
           [slot]: null,
         },
         combatStats: response.combat_stats,
+        statsBreakdown: response.stats_breakdown ?? state.statsBreakdown,
         isLoading: false,
       }))
     } catch (error) {
@@ -421,11 +480,11 @@ const store: StateCreator<GameState> = (set, get) => ({
         item_id: itemId,
         quantity,
         character_id: selectedId,
-      })) as { gold: number; sell_price: number }
+      })) as { copper: number; sell_price: number }
       soundManager.play('gold')
       set(state => ({
         ...state,
-        character: state.character ? { ...state.character, gold: response.gold } : null,
+        character: state.character ? { ...state.character, copper: response.copper } : null,
         inventory: state.inventory.filter(i => i.id !== itemId),
         isLoading: false,
       }))
@@ -495,15 +554,19 @@ const store: StateCreator<GameState> = (set, get) => ({
       const response = (await post('/rpg/skills/learn', {
         skill_id: skillId,
         character_id: selectedId,
-      })) as { character_skill: CharacterSkill; skill_points: number }
+      })) as { character_skill?: CharacterSkill; skill_points: number }
+      const newSkill = response.character_skill
       set(state => ({
         ...state,
-        skills: [...state.skills, response.character_skill],
+        skills: newSkill ? [...state.skills, newSkill] : state.skills,
         character: state.character
           ? { ...state.character, skill_points: response.skill_points }
           : null,
         isLoading: false,
       }))
+      if (!newSkill) {
+        get().fetchSkills()
+      }
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }
@@ -581,7 +644,6 @@ const store: StateCreator<GameState> = (set, get) => ({
         character_id: selectedId,
       })) as {
         character: GameCharacter
-        gold_cost: number
       }
       soundManager.play('skill_use')
       const maps = get().maps
@@ -693,6 +755,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         return
       }
       await (post as any)('/rpg/combat/stop', { character_id: selectedId })
+      set(state => ({ ...state, enabledSkillIds: [] }))
       set(state => ({
         ...state,
         isFighting: false,
@@ -707,20 +770,27 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   executeCombat: async () => {
     try {
-      console.log('[GameStore] Executing combat...')
+      const enabledIds = get().enabledSkillIds
+      console.log(
+        '[GameStore] Executing combat...',
+        enabledIds.length ? { skill_ids: enabledIds } : ''
+      )
       const selectedId = get().selectedCharacterId
       if (!selectedId) {
         console.warn('[GameStore] executeCombat - no character selected, skipping')
         return
       }
-      const response = (await post('/rpg/combat/execute', {
-        character_id: selectedId,
-      })) as CombatResult
+      const body: { character_id: number; skill_ids?: number[] } = { character_id: selectedId }
+      if (enabledIds.length > 0) body.skill_ids = enabledIds
+      const response = (await post('/rpg/combat/execute', body)) as CombatResult
       console.log('[GameStore] Combat execute response:', response)
       console.log('[GameStore] response.character?.current_hp:', response.character?.current_hp)
       console.log('[GameStore] response.character?.current_mana:', response.character?.current_mana)
       set(state => {
-        const newLogs = [response, ...state.combatLogs].slice(0, 100)
+        const newLogs =
+          response.combat_log_id != null
+            ? [response, ...state.combatLogs].slice(0, 100)
+            : state.combatLogs
         console.log('[GameStore] Updated combatLogs:', newLogs)
 
         // 总是更新 currentHp 和 currentMana（使用新值或保持旧值）
@@ -729,11 +799,32 @@ const store: StateCreator<GameState> = (set, get) => ({
         console.log('[GameStore] Setting currentHp to:', newCurrentHp)
         console.log('[GameStore] Setting currentMana to:', newCurrentMana)
 
+        // 合并角色数据，并保留药水设置（execute 返回的 character 可能未包含或错误覆盖）
+        const potionKeys = [
+          'auto_use_hp_potion',
+          'hp_potion_threshold',
+          'auto_use_mp_potion',
+          'mp_potion_threshold',
+        ] as const
+        const preservedPotion = state.character
+          ? Object.fromEntries(
+              potionKeys
+                .filter(k => state.character![k] !== undefined)
+                .map(k => [k, state.character![k]])
+            )
+          : {}
+        const mergedCharacter =
+          response.character != null
+            ? state.character != null
+              ? { ...state.character, ...response.character, ...preservedPotion }
+              : { ...response.character, ...preservedPotion }
+            : state.character
+
         return {
           ...state,
           combatResult: response,
           combatLogs: newLogs,
-          character: response.character,
+          character: mergedCharacter,
           currentHp: newCurrentHp,
           currentMana: newCurrentMana,
           inventory: response.loot?.item
@@ -772,6 +863,17 @@ const store: StateCreator<GameState> = (set, get) => ({
     set(state => ({ ...state, shouldAutoCombat: should }))
   },
 
+  toggleEnabledSkill: (skillId: number) => {
+    set(state => {
+      const ids = state.enabledSkillIds
+      const has = ids.includes(skillId)
+      return {
+        ...state,
+        enabledSkillIds: has ? ids.filter(id => id !== skillId) : [...ids, skillId],
+      }
+    })
+  },
+
   consumePotion: async (itemId: number) => {
     set(state => ({ ...state, isLoading: true, error: null }))
     try {
@@ -797,9 +899,10 @@ const store: StateCreator<GameState> = (set, get) => ({
         combatStats: response.combat_stats,
         currentHp: response.current_hp,
         currentMana: response.current_mana,
-        inventory: state.inventory.filter(i => i.id !== itemId),
         isLoading: false,
       }))
+      // 重新拉取背包，使堆叠数量减一或已删除与服务器一致（避免刷新后“药品又出现”）
+      await get().fetchInventory()
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }
@@ -817,7 +920,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       if (data.loot?.item) {
         soundManager.play('item_drop')
       }
-      if (data.gold_gained > 0) {
+      if (data.copper_gained > 0) {
         soundManager.play('gold')
       }
     } else if (data.defeat) {
@@ -834,7 +937,8 @@ const store: StateCreator<GameState> = (set, get) => ({
       console.log('[GameStore] handleCombatUpdate setting currentMana to:', newCurrentMana)
       return {
         combatResult: data,
-        combatLogs: [data, ...state.combatLogs].slice(0, 100),
+        combatLogs:
+          data.combat_log_id != null ? [data, ...state.combatLogs].slice(0, 100) : state.combatLogs,
         character: data.character,
         // 只有当新值存在且不为 undefined 时才更新
         ...(newCurrentHp !== undefined && { currentHp: newCurrentHp }),
@@ -858,7 +962,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       character: state.character
         ? {
             ...state.character,
-            gold: (state.character.gold || 0) + (data.gold || 0),
+            copper: (state.character.copper || 0) + (data.copper || 0),
             current_hp: data.character?.current_hp ?? state.character.current_hp,
             current_mana: data.character?.current_mana ?? state.character.current_mana,
           }
@@ -893,12 +997,12 @@ const store: StateCreator<GameState> = (set, get) => ({
       const params = `?character_id=${selectedId}`
       const response = (await apiGet(`/rpg/shop${params}`)) as {
         items: ShopItem[]
-        player_gold: number
+        player_copper: number
       }
       set(state => ({
         ...state,
         shopItems: response.items || [],
-        character: state.character ? { ...state.character, gold: response.player_gold } : null,
+        character: state.character ? { ...state.character, copper: response.player_copper } : null,
         isLoading: false,
       }))
     } catch (error) {
@@ -920,7 +1024,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         quantity,
         character_id: selectedId,
       })) as {
-        gold: number
+        copper: number
         total_price: number
         quantity: number
         item_name: string
@@ -929,7 +1033,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       // 更新金币和重新获取背包
       set(state => ({
         ...state,
-        character: state.character ? { ...state.character, gold: response.gold } : null,
+        character: state.character ? { ...state.character, copper: response.copper } : null,
         isLoading: false,
       }))
       // 刷新背包
@@ -952,7 +1056,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         quantity,
         character_id: selectedId,
       })) as {
-        gold: number
+        copper: number
         sell_price: number
         quantity: number
         item_name: string
@@ -960,7 +1064,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       soundManager.play('gold')
       set(state => ({
         ...state,
-        character: state.character ? { ...state.character, gold: response.gold } : null,
+        character: state.character ? { ...state.character, copper: response.copper } : null,
         inventory: state.inventory.filter(i => i.id !== itemId),
         isLoading: false,
       }))

@@ -21,7 +21,7 @@ interface PotionSettingsResponse {
 }
 
 export function PotionSettings() {
-  const { inventory, consumePotion, isLoading, character, setCharacter } = useGameStore()
+  const { inventory, character, setCharacter } = useGameStore()
   const [settings, setSettings] = useState<PotionSettings>({
     autoUseHpPotion: character?.auto_use_hp_potion ?? false,
     hpPotionThreshold: character?.hp_potion_threshold ?? 30,
@@ -45,13 +45,22 @@ export function PotionSettings() {
   // 获取药品
   const potions = inventory.filter(item => item.definition.type === 'potion')
 
-  // 更新设置到后端
+  // 更新设置到后端（API 使用 snake_case）
   const updateSettings = async (newSettings: Partial<PotionSettings>) => {
     setSaving(true)
     try {
+      const payload: Record<string, unknown> = {}
+      if (newSettings.autoUseHpPotion !== undefined)
+        payload.auto_use_hp_potion = newSettings.autoUseHpPotion
+      if (newSettings.hpPotionThreshold !== undefined)
+        payload.hp_potion_threshold = newSettings.hpPotionThreshold
+      if (newSettings.autoUseMpPotion !== undefined)
+        payload.auto_use_mp_potion = newSettings.autoUseMpPotion
+      if (newSettings.mpPotionThreshold !== undefined)
+        payload.mp_potion_threshold = newSettings.mpPotionThreshold
       const response = (await post(
         '/rpg/combat/potion-settings',
-        newSettings
+        payload
       )) as PotionSettingsResponse
       setSettings(prev => ({ ...prev, ...newSettings }))
       // 同时更新 store 中的 character 对象
@@ -196,37 +205,6 @@ export function PotionSettings() {
               </span>
             )}
           </div>
-        </div>
-
-        {/* 手动使用药品 */}
-        <div className="bg-muted/50 border-border rounded-lg border p-3">
-          <h5 className="text-foreground mb-2 text-sm font-medium">手动使用药品</h5>
-          <div className="flex flex-wrap gap-2">
-            {potions.map(potion => (
-              <button
-                key={potion.id}
-                onClick={() => consumePotion(potion.id)}
-                disabled={isLoading}
-                className="border-border bg-card hover:border-primary relative flex flex-col items-center rounded border-2 p-2 transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                title={`${potion.definition.name} - 恢复 ${potion.definition.base_stats?.max_hp ?? potion.definition.base_stats?.max_mana ?? 0}`}
-              >
-                <span className="text-2xl">
-                  {potion.definition.sub_type === 'hp' ? '❤️' : '💙'}
-                </span>
-                <span className="text-muted-foreground mt-1 text-xs">
-                  {potion.definition.sub_type === 'hp' ? 'HP' : 'MP'}
-                </span>
-                {potion.quantity > 1 && (
-                  <span className="bg-primary text-primary-foreground absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[10px] font-bold">
-                    {potion.quantity}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-          {potions.length === 0 && (
-            <p className="text-muted-foreground text-center text-xs">背包中没有药品</p>
-          )}
         </div>
       </div>
     </div>

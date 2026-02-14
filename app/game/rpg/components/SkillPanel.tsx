@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { CharacterSkill, SkillDefinition } from '../types'
 
@@ -9,69 +9,69 @@ export function SkillPanel() {
   const [selectedSkill, setSelectedSkill] = useState<CharacterSkill | SkillDefinition | null>(null)
   const [showLearnConfirm, setShowLearnConfirm] = useState(false)
 
-  const learnedSkillIds = skills.map(s => s.skill_id)
-  const unlearnedSkills = availableSkills.filter(s => !learnedSkillIds.includes(s.id))
+  // 过滤无效项，防止接口返回不完整或历史脏数据时报错
+  const validSkills = useMemo(
+    () =>
+      skills.filter((s): s is CharacterSkill => s != null && 'skill_id' in s && s.skill != null),
+    [skills]
+  )
+  const learnedSkillIds = useMemo(() => validSkills.map(s => s.skill_id), [validSkills])
+  const unlearnedSkills = useMemo(
+    () => availableSkills.filter(s => !learnedSkillIds.includes(s.id)),
+    [availableSkills, learnedSkillIds]
+  )
 
-  const handleLearn = async () => {
+  // 优化 handleLearn，避免多余渲染
+  const handleLearn = useCallback(async () => {
     if (!selectedSkill || !('class_restriction' in selectedSkill)) return
     await learnSkill(selectedSkill.id)
     setShowLearnConfirm(false)
     setSelectedSkill(null)
-  }
+  }, [selectedSkill, learnSkill])
+
+  const handleSkillCardClick = useCallback((skill: CharacterSkill) => {
+    setSelectedSkill(prev => (prev?.id === skill.id ? null : skill))
+  }, [])
+
+  const handleUnlearnedSkillClick = useCallback((skill: SkillDefinition) => {
+    setSelectedSkill(skill)
+    setShowLearnConfirm(true)
+  }, [])
+
+  const clearSelection = useCallback(() => {
+    setShowLearnConfirm(false)
+    setSelectedSkill(null)
+  }, [])
 
   return (
     <div className="space-y-3 sm:space-y-4">
       <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row">
-        {/* 已学技能 - 移动端优化 */}
-        <div className="bg-card border-border min-w-0 flex-1 rounded-lg border p-3 sm:p-4">
-          <h4 className="text-foreground mb-3 text-base font-medium sm:mb-4 sm:text-lg">
-            已学技能
-          </h4>
-
-          {skills.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">还没有学习任何技能</p>
-          ) : (
+        {/* 已学技能 */}
+        <SkillSection title="已学技能" emptyText="还没有学习任何技能">
+          {skills.length > 0 && (
             <div className="space-y-1.5 sm:space-y-2">
               {skills.map(skill => (
                 <SkillCard
                   key={skill.id}
                   skill={skill}
                   isSelected={selectedSkill?.id === skill.id}
-                  onClick={() => {
-                    console.log(
-                      '[SkillCard] Clicked skill:',
-                      skill.skill?.name,
-                      'type:',
-                      skill.skill?.type,
-                      'is CharacterSkill:',
-                      'level' in skill
-                    )
-                    setSelectedSkill(selectedSkill?.id === skill.id ? null : skill)
-                  }}
+                  onClick={() => handleSkillCardClick(skill)}
                 />
               ))}
             </div>
           )}
-        </div>
+        </SkillSection>
 
-        {/* 可学习技能 - 移动端优化 */}
-        <div className="bg-card border-border min-w-0 flex-1 rounded-lg border p-3 sm:p-4">
-          <h4 className="text-foreground mb-3 text-base font-medium sm:mb-4 sm:text-lg">
-            可学习技能
-          </h4>
-
-          {unlearnedSkills.length === 0 ? (
-            <p className="text-muted-foreground py-4 text-center text-sm">没有可学习的技能</p>
-          ) : (
+        {/* 可学习技能 */}
+        <SkillSection title="可学习技能" emptyText="没有可学习的技能">
+          {unlearnedSkills.length > 0 && (
             <div className="space-y-1.5 sm:space-y-2">
               {unlearnedSkills.map(skill => (
                 <button
                   key={skill.id}
-                  onClick={() => {
-                    setSelectedSkill(skill)
-                    setShowLearnConfirm(true)
-                  }}
+                  onClick={() => handleUnlearnedSkillClick(skill)}
                   className="bg-muted/50 hover:bg-muted w-full rounded-lg p-2.5 text-left transition-colors sm:p-3"
+                  disabled={isLoading}
                 >
                   <div className="flex items-center justify-between">
                     <span className="text-foreground text-sm font-medium sm:text-base">
@@ -88,116 +88,186 @@ export function SkillPanel() {
               ))}
             </div>
           )}
-        </div>
+        </SkillSection>
       </div>
 
-      {/* 选中技能详情 - 移动端优化 */}
-      {selectedSkill && (
-        <div className="bg-card border-border rounded-lg border p-3 sm:p-4">
-          <div className="mb-3 flex items-start justify-between sm:mb-4">
-            <div>
-              <h5 className="text-foreground text-lg font-bold sm:text-xl">
-                {'skill' in selectedSkill ? selectedSkill.skill.name : selectedSkill.name}
-              </h5>
-              <p className="text-muted-foreground text-xs sm:text-sm">
-                {'skill' in selectedSkill
-                  ? selectedSkill.skill.description
-                  : selectedSkill.description}
-              </p>
-            </div>
-            <div className="text-right">
-              {'level' in selectedSkill ? (
-                <>
-                  <p className="text-sm font-bold text-purple-500 sm:text-base dark:text-purple-400">
-                    Lv.{selectedSkill.level}
-                  </p>
-                  <p className="text-muted-foreground text-xs">
-                    最高 {selectedSkill.skill.max_level} 级
-                  </p>
-                </>
-              ) : (
-                <p className="text-xs text-green-600 sm:text-sm dark:text-green-400">未学习</p>
-              )}
-            </div>
-          </div>
+      {/* 选中技能详情 */}
+      {selectedSkill && <SkillDetailPanel selectedSkill={selectedSkill} />}
 
-          {/* 已学技能才显示属性 */}
-          {'skill' in selectedSkill && (
+      {/* 学习确认弹窗 */}
+      {showLearnConfirm && selectedSkill && !('level' in selectedSkill) && (
+        <LearnSkillModal
+          skill={selectedSkill}
+          onCancel={clearSelection}
+          onConfirm={handleLearn}
+          loading={isLoading}
+        />
+      )}
+    </div>
+  )
+}
+
+function SkillSection({
+  title,
+  emptyText,
+  children,
+}: {
+  title: string
+  emptyText: string
+  children: React.ReactNode
+}) {
+  const isEmpty = !children || (Array.isArray(children) && children.length === 0)
+  return (
+    <div className="bg-card border-border min-w-0 flex-1 rounded-lg border p-3 sm:p-4">
+      <h4 className="text-foreground mb-3 text-base font-medium sm:mb-4 sm:text-lg">{title}</h4>
+      {isEmpty ? (
+        <p className="text-muted-foreground py-4 text-center text-sm">{emptyText}</p>
+      ) : (
+        children
+      )}
+    </div>
+  )
+}
+
+function SkillDetailPanel({ selectedSkill }: { selectedSkill: CharacterSkill | SkillDefinition }) {
+  const isLearned = 'level' in selectedSkill
+  const hasSkillData = 'skill' in selectedSkill
+
+  // 伤害与消耗显示（仅主动技能）
+  let damage: number | null = null
+  let manaCost: number | null = null
+  let maxLevel: number | null = null
+  let type: string = ''
+  let cooldown: number | null = null
+  if (hasSkillData) {
+    const skill = selectedSkill.skill
+    maxLevel = skill.max_level
+    type = skill.type
+    cooldown = skill.cooldown
+    if (skill.type === 'active') {
+      damage =
+        skill.base_damage +
+        skill.damage_per_level * ((isLearned ? selectedSkill.level : skill.max_level) - 1)
+      manaCost =
+        skill.mana_cost +
+        skill.mana_cost_per_level * ((isLearned ? selectedSkill.level : skill.max_level) - 1)
+    }
+  }
+
+  return (
+    <div className="bg-card border-border rounded-lg border p-3 sm:p-4">
+      <div className="mb-3 flex items-start justify-between sm:mb-4">
+        <div>
+          <h5 className="text-foreground text-lg font-bold sm:text-xl">
+            {hasSkillData ? selectedSkill.skill.name : selectedSkill.name}
+          </h5>
+          <p className="text-muted-foreground text-xs sm:text-sm">
+            {hasSkillData ? selectedSkill.skill.description : selectedSkill.description}
+          </p>
+        </div>
+        <div className="text-right">
+          {isLearned ? (
             <>
-              <div className="mb-3 flex flex-wrap gap-2 sm:mb-4 sm:gap-4">
-                {selectedSkill.skill.type === 'active' && (
-                  <>
-                    <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
-                      <p className="text-muted-foreground text-xs sm:text-sm">伤害</p>
-                      <p className="text-sm font-bold text-orange-500 sm:text-base dark:text-orange-400">
-                        {selectedSkill.skill.base_damage +
-                          selectedSkill.skill.damage_per_level *
-                            (selectedSkill.skill.max_level - 1)}
-                      </p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
-                      <p className="text-muted-foreground text-xs sm:text-sm">法力消耗</p>
-                      <p className="text-sm font-bold text-blue-500 sm:text-base dark:text-blue-400">
-                        {selectedSkill.skill.mana_cost +
-                          selectedSkill.skill.mana_cost_per_level *
-                            (selectedSkill.skill.max_level - 1)}
-                      </p>
-                    </div>
-                  </>
-                )}
-                <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
-                  <p className="text-muted-foreground text-xs sm:text-sm">类型</p>
-                  <p className="text-foreground text-sm font-bold sm:text-base">
-                    {selectedSkill.skill.type === 'active' ? '主动技能' : '被动技能'}
-                  </p>
-                </div>
-                <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
-                  <p className="text-muted-foreground text-xs sm:text-sm">冷却时间</p>
-                  <p className="text-foreground text-sm font-bold sm:text-base">
-                    {selectedSkill.skill.cooldown}s
-                  </p>
-                </div>
-              </div>
+              <p className="text-sm font-bold text-purple-500 sm:text-base dark:text-purple-400">
+                Lv.{(selectedSkill as CharacterSkill).level}
+              </p>
+              <p className="text-muted-foreground text-xs">
+                最高 {hasSkillData ? (selectedSkill as CharacterSkill).skill.max_level : ''} 级
+              </p>
             </>
+          ) : (
+            <p className="text-xs text-green-600 sm:text-sm dark:text-green-400">未学习</p>
           )}
         </div>
-      )}
-
-      {/* 学习确认 - 移动端优化 */}
-      {showLearnConfirm && selectedSkill && !('level' in selectedSkill) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-card border-border w-full max-w-sm rounded-lg border p-4 sm:p-6">
-            <h4 className="text-foreground mb-3 text-base font-bold sm:mb-4 sm:text-lg">
-              学习技能
-            </h4>
-            <p className="text-muted-foreground mb-2 text-sm sm:text-base">
-              确定要学习
-              <span className="mx-1 text-purple-500 dark:text-purple-400">
-                {selectedSkill.name}
-              </span>
-              吗？
-            </p>
-            <p className="text-muted-foreground mb-4 text-xs sm:text-sm">将消耗1技能点</p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowLearnConfirm(false)
-                  setSelectedSkill(null)
-                }}
-                className="bg-muted text-foreground hover:bg-secondary rounded px-3 py-2 text-sm sm:px-4"
-              >
-                取消
-              </button>
-              <button
-                onClick={handleLearn}
-                className="rounded bg-purple-600 px-3 py-2 text-sm text-white hover:bg-purple-700 sm:px-4"
-              >
-                确认学习
-              </button>
-            </div>
-          </div>
+      </div>
+      {/* 技能属性展示 */}
+      {hasSkillData && (
+        <div className="mb-3 flex flex-wrap gap-2 sm:mb-4 sm:gap-4">
+          {type === 'active' && (
+            <>
+              <SkillAttr
+                label="伤害"
+                value={damage!}
+                valueClass="text-orange-500 dark:text-orange-400"
+              />
+              <SkillAttr
+                label="法力消耗"
+                value={manaCost!}
+                valueClass="text-blue-500 dark:text-blue-400"
+              />
+            </>
+          )}
+          <SkillAttr
+            label="类型"
+            value={type === 'active' ? '主动技能' : '被动技能'}
+            valueClass="text-foreground"
+          />
+          <SkillAttr
+            label="冷却时间"
+            value={cooldown !== null ? `${cooldown}s` : '-'}
+            valueClass="text-foreground"
+          />
         </div>
       )}
+    </div>
+  )
+}
+
+function SkillAttr({
+  label,
+  value,
+  valueClass = '',
+}: {
+  label: string
+  value: React.ReactNode
+  valueClass?: string
+}) {
+  return (
+    <div className="bg-muted/50 rounded-lg p-2 sm:p-3">
+      <p className="text-muted-foreground text-xs sm:text-sm">{label}</p>
+      <p className={`text-sm font-bold sm:text-base ${valueClass}`}>{value}</p>
+    </div>
+  )
+}
+
+function LearnSkillModal({
+  skill,
+  onCancel,
+  onConfirm,
+  loading,
+}: {
+  skill: SkillDefinition
+  onCancel: () => void
+  onConfirm: () => void
+  loading: boolean
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-card border-border w-full max-w-sm rounded-lg border p-4 sm:p-6">
+        <h4 className="text-foreground mb-3 text-base font-bold sm:mb-4 sm:text-lg">学习技能</h4>
+        <p className="text-muted-foreground mb-2 text-sm sm:text-base">
+          确定要学习
+          <span className="mx-1 text-purple-500 dark:text-purple-400">{skill.name}</span>
+          吗？
+        </p>
+        <p className="text-muted-foreground mb-4 text-xs sm:text-sm">将消耗1技能点</p>
+        <div className="flex justify-end gap-2">
+          <button
+            onClick={onCancel}
+            className="bg-muted text-foreground hover:bg-secondary rounded px-3 py-2 text-sm sm:px-4"
+            disabled={loading}
+          >
+            取消
+          </button>
+          <button
+            onClick={onConfirm}
+            className="rounded bg-purple-600 px-3 py-2 text-sm text-white hover:bg-purple-700 sm:px-4"
+            disabled={loading}
+          >
+            {loading ? '学习中...' : '确认学习'}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
@@ -214,7 +284,6 @@ function SkillCard({
   // 防御性检查 - 确保 skill 对象和 skill 属性都存在
   const skillName = skill?.skill?.name || '未知技能'
   const skillDescription = skill?.skill?.description || ''
-  const skillIcon = skill?.skill?.icon
 
   return (
     <button

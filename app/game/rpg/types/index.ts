@@ -32,7 +32,7 @@ export interface GameCharacter {
   class: CharacterClass
   level: number
   experience: number
-  gold: number
+  copper: number
   strength: number
   dexterity: number
   vitality: number
@@ -42,7 +42,7 @@ export interface GameCharacter {
   current_map_id: number | null
   is_fighting: boolean
   last_combat_at: string | null
-  difficulty_tier?: number // 0=普通 1=专家 2+=地狱1/地狱2...
+  difficulty_tier?: number
   current_hp?: number
   current_mana?: number
   auto_use_hp_potion?: boolean
@@ -60,6 +60,20 @@ export interface CombatStats {
   defense: number
   crit_rate: number
   crit_damage: number
+}
+
+/** 单条战斗属性的明细（基础 + 装备） */
+export interface StatBreakdownItem {
+  base: number
+  equipment: number
+  total: number
+}
+
+export interface CombatStatsBreakdown {
+  attack: StatBreakdownItem
+  defense: StatBreakdownItem
+  crit_rate: StatBreakdownItem
+  crit_damage: StatBreakdownItem
 }
 
 export interface ItemDefinition {
@@ -127,8 +141,6 @@ export interface MapDefinition {
   max_level: number
   monster_ids: number[]
   monsters?: MonsterDefinition[]
-  has_teleport: boolean
-  teleport_cost: number
   background?: string
   description?: string
 }
@@ -159,6 +171,14 @@ export interface MonsterDefinition {
   icon?: string
 }
 
+/** 单场战斗中释放的技能（含次数） */
+export interface SkillUsedEntry {
+  skill_id: number
+  name: string
+  icon?: string | null
+  use_count: number
+}
+
 export interface CombatResult {
   victory: boolean
   defeat?: boolean
@@ -167,21 +187,27 @@ export interface CombatResult {
     name: string
     type: MonsterType
     level: number
+    hp?: number
+    max_hp?: number
   }
+  /** 本回合开始时的怪物血量，用于先渲染再播扣血动画 */
+  monster_hp_before_round?: number
   damage_dealt: number
   damage_taken: number
   rounds: number
   experience_gained: number
-  gold_gained: number
+  copper_gained: number
   loot: {
-    gold?: number
+    copper?: number
     item?: GameItem
     potion?: GameItem
     item_lost?: boolean
     item_lost_reason?: string
   }
+  skills_used?: SkillUsedEntry[]
   character: GameCharacter
-  combat_log_id: number
+  /** 仅当本场战斗结束（胜利/失败）时存在 */
+  combat_log_id?: number
 }
 
 export interface CombatLog {
@@ -196,15 +222,16 @@ export interface CombatLog {
   victory: boolean
   loot_dropped: Record<string, unknown> | null
   loot?: {
-    gold?: number
+    copper?: number
     item?: GameItem
     potion?: GameItem
     item_lost?: boolean
     item_lost_reason?: string
   }
   experience_gained: number
-  gold_gained: number
+  copper_gained: number
   duration_seconds: number
+  skills_used?: SkillUsedEntry[]
   created_at: string
 }
 
@@ -294,6 +321,15 @@ export const STAT_NAMES: Record<string, string> = {
   all_stats: '全属性',
 }
 
+/** 基础属性对战斗属性的影响说明（与后端 GameCharacter 计算公式一致） */
+export const STAT_DESCRIPTIONS: Record<'strength' | 'dexterity' | 'vitality' | 'energy', string> = {
+  strength: '战士主属性。攻击力 = 力量×2；部分装备有力量需求。',
+  dexterity:
+    '游侠主属性。攻击力 = 敏捷×2；参与防御；暴击率每点+1%（上限10%）；部分装备有敏捷需求。',
+  vitality: '最大生命每点+5；参与防御计算。',
+  energy: '法师主属性。攻击力 = 能量×2；最大法力每点+3；部分装备有能量需求。',
+}
+
 // 商店物品
 export interface ShopItem {
   id: number
@@ -313,19 +349,31 @@ export interface ShopItem {
 
 export interface ShopResponse {
   items: ShopItem[]
-  player_gold: number
+  player_copper: number
 }
 
 export interface BuyResponse {
-  gold: number
+  copper: number
   total_price: number
   quantity: number
   item_name: string
 }
 
 export interface SellResponse {
-  gold: number
+  copper: number
   sell_price: number
   quantity: number
   item_name: string
+}
+
+/** 货币：1金=100银=10000铜，格式化为 "X金 Y银 Z铜"（纯文字，界面可用 🪙 等前缀表示货币） */
+export function formatCopper(copper: number): string {
+  const g = Math.floor(copper / 10000)
+  const s = Math.floor((copper % 10000) / 100)
+  const c = copper % 100
+  const parts: string[] = []
+  if (g > 0) parts.push(`${g}金`)
+  if (s > 0) parts.push(`${s}银`)
+  if (c > 0 || parts.length === 0) parts.push(`${c}铜`)
+  return parts.join(' ')
 }

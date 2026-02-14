@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useGameStore } from '../stores/gameStore'
 import {
   GameItem,
@@ -25,10 +26,32 @@ const ITEM_ICONS: Record<string, string> = {
   gem: '💎',
 }
 
-/** 背包固定格位数（表格形式展示） */
-const INVENTORY_SLOTS = 40
-/** 仓库固定格位数（表格形式展示） */
-const WAREHOUSE_SLOTS = 60
+/** 背包固定格位数（与后端 InventoryController::INVENTORY_SIZE 一致） */
+const INVENTORY_SLOTS = 100
+/** 仓库固定格位数（与后端 InventoryController::STORAGE_SIZE 一致） */
+const WAREHOUSE_SLOTS = 100
+
+// 物品类型中文名（用于无 name 时的回退）
+const ITEM_TYPE_NAMES: Record<string, string> = {
+  weapon: '武器',
+  helmet: '头盔',
+  armor: '盔甲',
+  gloves: '手套',
+  boots: '靴子',
+  belt: '腰带',
+  ring: '戒指',
+  amulet: '护身符',
+  potion: '药水',
+  gem: '宝石',
+}
+
+// 获取物品显示名称：优先 definition.name，否则用品质+类型
+function getItemDisplayName(item: GameItem): string {
+  const name = item.definition?.name?.trim()
+  if (name) return name
+  const typeName = ITEM_TYPE_NAMES[item.definition?.type ?? ''] ?? item.definition?.type ?? '物品'
+  return `${QUALITY_NAMES[item.quality]} ${typeName}`
+}
 
 // 获取物品图标：药水按 sub_type 区分 HP❤️/MP💙，其余优先按 type 映射，否则用 definition.icon，最后默认 📦
 function getItemIcon(item: GameItem): string {
@@ -72,25 +95,41 @@ function stackItems(items: GameItem[]): StackedItem[] {
 }
 
 export function InventoryPanel() {
-  const { inventory, storage, equipment, equipItem, unequipItem, sellItem, moveItem, isLoading } =
-    useGameStore()
+  const {
+    inventory,
+    storage,
+    equipment,
+    equipItem,
+    unequipItem,
+    sellItem,
+    moveItem,
+    consumePotion,
+    isLoading,
+  } = useGameStore()
   const [selectedItem, setSelectedItem] = useState<GameItem | null>(null)
   const [showStorage, setShowStorage] = useState(false)
-  const [showSellConfirm, setShowSellConfirm] = useState(false)
 
   // 使用 useMemo 优化性能，计算堆叠后的物品（详情等仍可用）
   const stackedInventory = useMemo(() => stackItems(inventory), [inventory])
   const stackedStorage = useMemo(() => stackItems(storage), [storage])
-  // 背包按固定格位展示（类似表格），空位也占格
-  const inventorySlots = useMemo(
-    () => Array.from({ length: INVENTORY_SLOTS }, (_, i) => inventory[i] ?? null),
-    [inventory]
-  )
-  // 仓库按固定格位展示（类似表格），空位也占格
-  const warehouseSlots = useMemo(
-    () => Array.from({ length: WAREHOUSE_SLOTS }, (_, i) => storage[i] ?? null),
-    [storage]
-  )
+  // 背包按 slot_index 放入对应格位，与后端格位一致
+  const inventorySlots = useMemo(() => {
+    const slots: (GameItem | null)[] = Array.from({ length: INVENTORY_SLOTS }, () => null)
+    inventory.forEach(item => {
+      const idx = item.slot_index
+      if (typeof idx === 'number' && idx >= 0 && idx < INVENTORY_SLOTS) slots[idx] = item
+    })
+    return slots
+  }, [inventory])
+  // 仓库按 slot_index 放入对应格位
+  const warehouseSlots = useMemo(() => {
+    const slots: (GameItem | null)[] = Array.from({ length: WAREHOUSE_SLOTS }, () => null)
+    storage.forEach(item => {
+      const idx = item.slot_index
+      if (typeof idx === 'number' && idx >= 0 && idx < WAREHOUSE_SLOTS) slots[idx] = item
+    })
+    return slots
+  }, [storage])
 
   const handleEquip = async () => {
     if (!selectedItem) return
@@ -106,12 +145,17 @@ export function InventoryPanel() {
     if (!selectedItem) return
     await sellItem(selectedItem.id)
     setSelectedItem(null)
-    setShowSellConfirm(false)
   }
 
   const handleMove = async (toStorage: boolean) => {
     if (!selectedItem) return
     await moveItem(selectedItem.id, toStorage)
+    setSelectedItem(null)
+  }
+
+  const handleUsePotion = async () => {
+    if (!selectedItem) return
+    await consumePotion(selectedItem.id)
     setSelectedItem(null)
   }
 
@@ -241,114 +285,116 @@ export function InventoryPanel() {
           <div className="flex w-[17.5rem] flex-wrap gap-x-2 gap-y-2 sm:w-[23.5rem]">
             {(showStorage ? warehouseSlots : inventorySlots).map((item, index) =>
               item ? (
-                <ItemSlot
+                <Popover
                   key={item.id}
-                  item={item}
-                  quantity={1}
-                  selected={selectedItem?.id === item.id}
-                  onClick={() => setSelectedItem(selectedItem?.id === item.id ? null : item)}
-                />
+                  open={selectedItem?.id === item.id}
+                  onOpenChange={open => {
+                    if (!open) setSelectedItem(null)
+                  }}
+                >
+                  <PopoverTrigger asChild>
+                    <button
+                      onClick={() => setSelectedItem(prev => (prev?.id === item.id ? null : item))}
+                      className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 text-lg shadow-sm transition-all hover:shadow-md ${
+                        selectedItem?.id === item.id
+                          ? 'border-yellow-500 ring-2 ring-yellow-500/50 dark:border-yellow-400 dark:ring-yellow-400/50'
+                          : 'border-border'
+                      }`}
+                      style={{
+                        background:
+                          selectedItem?.id === item.id
+                            ? `${QUALITY_COLORS[item.quality]}20`
+                            : `linear-gradient(135deg, ${QUALITY_COLORS[item.quality]}15 0%, ${QUALITY_COLORS[item.quality]}08 100%)`,
+                        borderColor:
+                          selectedItem?.id === item.id ? undefined : QUALITY_COLORS[item.quality],
+                      }}
+                      title={getItemDisplayName(item)}
+                    >
+                      <span className="drop-shadow-sm">{getItemIcon(item)}</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-48 max-w-[85vw] p-2.5 sm:w-56 sm:p-3"
+                    side="right"
+                    align="start"
+                    sideOffset={8}
+                  >
+                    <div className="min-w-0 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h5
+                          className="min-w-0 shrink text-sm leading-tight font-bold break-words sm:text-base"
+                          style={{ color: QUALITY_COLORS[item.quality] }}
+                        >
+                          {getItemDisplayName(item)}
+                        </h5>
+                        <span className="text-muted-foreground shrink-0 text-xs sm:text-sm">
+                          {QUALITY_NAMES[item.quality]}
+                        </span>
+                      </div>
+                      <div className="min-w-0 space-y-0.5 text-xs sm:text-sm">
+                        {Object.entries(item.stats || {}).map(([stat, value]) => (
+                          <p key={stat} className="text-green-600 dark:text-green-400">
+                            +{value} {STAT_NAMES[stat] || stat}
+                          </p>
+                        ))}
+                        {item.affixes?.map((affix, i) => (
+                          <p key={i} className="text-blue-600 dark:text-blue-400">
+                            {Object.entries(affix)
+                              .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
+                              .join(', ')}
+                          </p>
+                        ))}
+                        <p className="text-muted-foreground">
+                          需求等级: {item.definition.required_level}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {!showStorage && item.definition.type === 'potion' && (
+                          <button
+                            onClick={handleUsePotion}
+                            disabled={isLoading}
+                            className="rounded bg-violet-600 px-2.5 py-1.5 text-xs text-white hover:bg-violet-700 disabled:opacity-50"
+                          >
+                            使用
+                          </button>
+                        )}
+                        {!showStorage &&
+                          item.definition.type !== 'potion' &&
+                          item.definition.type !== 'gem' && (
+                            <button
+                              onClick={handleEquip}
+                              disabled={isLoading}
+                              className="rounded bg-green-600 px-2.5 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
+                            >
+                              装备
+                            </button>
+                          )}
+                        <button
+                          onClick={() => handleMove(!showStorage)}
+                          disabled={isLoading}
+                          className="rounded bg-blue-600 px-2.5 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {showStorage ? '放入背包' : '存入仓库'}
+                        </button>
+                        {!showStorage && (
+                          <button
+                            onClick={handleSell}
+                            disabled={isLoading}
+                            className="rounded bg-red-600 px-2.5 py-1.5 text-xs text-white hover:bg-red-700 disabled:opacity-50"
+                          >
+                            出售
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               ) : (
                 <EmptySlot key={`empty-${index}`} />
               )
             )}
           </div>
         </div>
-
-        {/* 选中物品详情 */}
-        {selectedItem && (
-          <div className="bg-muted/50 border-border mt-3 rounded-lg border p-3 sm:mt-4 sm:p-4">
-            <div className="mb-2 flex items-start justify-between">
-              <h5
-                className="text-sm font-bold sm:text-base"
-                style={{ color: QUALITY_COLORS[selectedItem.quality] }}
-              >
-                {selectedItem.definition.name}
-              </h5>
-              <span className="text-muted-foreground text-xs sm:text-sm">
-                {QUALITY_NAMES[selectedItem.quality]}
-              </span>
-            </div>
-
-            <div className="mb-3 space-y-1 text-xs sm:mb-4 sm:text-sm">
-              {Object.entries(selectedItem.stats || {}).map(([stat, value]) => (
-                <p key={stat} className="text-green-600 dark:text-green-400">
-                  +{value} {STAT_NAMES[stat] || stat}
-                </p>
-              ))}
-              {selectedItem.affixes?.map((affix, i) => (
-                <p key={i} className="text-blue-600 dark:text-blue-400">
-                  {Object.entries(affix)
-                    .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
-                    .join(', ')}
-                </p>
-              ))}
-              <p className="text-muted-foreground">
-                需求等级: {selectedItem.definition.required_level}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 sm:gap-2">
-              {!showStorage && selectedItem.definition.type !== 'potion' && (
-                <button
-                  onClick={handleEquip}
-                  disabled={isLoading}
-                  className="flex-1 rounded bg-green-600 px-3 py-2 text-xs text-white hover:bg-green-700 disabled:opacity-50 sm:flex-none sm:px-4 sm:text-sm"
-                >
-                  装备
-                </button>
-              )}
-              <button
-                onClick={() => handleMove(!showStorage)}
-                disabled={isLoading}
-                className="flex-1 rounded bg-blue-600 px-3 py-2 text-xs text-white hover:bg-blue-700 disabled:opacity-50 sm:flex-none sm:px-4 sm:text-sm"
-              >
-                {showStorage ? '放入背包' : '存入仓库'}
-              </button>
-              {!showStorage && (
-                <button
-                  onClick={() => setShowSellConfirm(true)}
-                  disabled={isLoading}
-                  className="flex-1 rounded bg-red-600 px-3 py-2 text-xs text-white hover:bg-red-700 disabled:opacity-50 sm:flex-none sm:px-4 sm:text-sm"
-                >
-                  出售
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* 出售确认 - 移动端优化 */}
-        {showSellConfirm && selectedItem && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div className="bg-card border-border w-full max-w-sm rounded-lg border p-4 sm:p-6">
-              <h4 className="text-foreground mb-3 text-base font-bold sm:mb-4 sm:text-lg">
-                确认出售
-              </h4>
-              <p className="text-muted-foreground mb-4 text-sm sm:text-base">
-                确定要出售
-                <span className="mx-1" style={{ color: QUALITY_COLORS[selectedItem.quality] }}>
-                  {selectedItem.definition.name}
-                </span>
-                吗？
-              </p>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setShowSellConfirm(false)}
-                  className="bg-muted text-foreground hover:bg-secondary rounded px-3 py-2 text-sm sm:px-4"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleSell}
-                  className="rounded bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700 sm:px-4"
-                >
-                  确认出售
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -374,7 +420,7 @@ function EquipmentSlotComponent({
           ? 'border-border bg-secondary hover:border-primary cursor-pointer hover:shadow-md'
           : 'border-border bg-card cursor-default border-dashed'
       }`}
-      title={item ? `${item.definition.name} (点击卸下)` : label || SLOT_NAMES[slot]}
+      title={item ? `${getItemDisplayName(item)} (点击卸下)` : label || SLOT_NAMES[slot]}
     >
       {item ? (
         <span className="drop-shadow-sm">{getItemIcon(item)}</span>
@@ -419,7 +465,7 @@ function ItemSlot({
           : `linear-gradient(135deg, ${QUALITY_COLORS[item.quality]}15 0%, ${QUALITY_COLORS[item.quality]}08 100%)`,
         borderColor: selected ? undefined : QUALITY_COLORS[item.quality],
       }}
-      title={item.definition.name}
+      title={getItemDisplayName(item)}
     >
       <span className="drop-shadow-sm">{getItemIcon(item)}</span>
       {quantity && quantity > 1 && (
