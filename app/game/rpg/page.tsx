@@ -351,7 +351,8 @@ export default function RPGGame() {
         )}
 
         {/* 内容区 - 整体可滚动，地图/设置/背包等超出视口时在此区域滚动 */}
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-20 lg:pb-4">
+        {/* pb-28 = 112px，覆盖底部导航栏 min-h-[64px] + py-3(24px) + border-t(1px) + safe-area-inset */}
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-28 lg:pb-4">
           <div className="w-full min-w-0">
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'inventory' && <InventoryPanel />}
