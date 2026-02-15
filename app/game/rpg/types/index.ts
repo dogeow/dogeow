@@ -381,6 +381,52 @@ export interface SellResponse {
   item_name: string
 }
 
+// 图鉴相关类型
+export interface CompendiumItem {
+  id: number
+  name: string
+  type: ItemType
+  sub_type?: string
+  base_stats: Record<string, number>
+  required_level: number
+  required_strength: number
+  required_dexterity: number
+  required_energy: number
+  icon?: string
+  description?: string
+}
+
+export interface CompendiumMonster {
+  id: number
+  name: string
+  type: MonsterType
+  level: number
+  hp_base: number
+  hp_per_level: number
+  attack_base: number
+  attack_per_level: number
+  defense_base: number
+  defense_per_level: number
+  experience_base: number
+  experience_per_level: number
+  drop_table: Record<string, unknown>
+  icon?: string
+}
+
+export interface CompendiumMonsterDrops {
+  monster: CompendiumMonster
+  drop_table: Record<string, unknown>
+  possible_items: CompendiumItem[]
+}
+
+export interface CompendiumItemsResponse {
+  items: CompendiumItem[]
+}
+
+export interface CompendiumMonstersResponse {
+  monsters: CompendiumMonster[]
+}
+
 /** 货币：1金=100银=10000铜。maxParts=1 时只显示一种（金/银/铜取最高位），否则最多两种 */
 export function formatCopper(copper: number, maxParts: number = 2): string {
   const g = Math.floor(copper / 10000)

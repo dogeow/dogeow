@@ -45,7 +45,7 @@ const TILES = [
     icon: <FlaskConical />,
     href: '/lab',
     color: '#388e3c',
-    needLogin: false,
+    needLogin: true,
   },
   {
     name: 'file',
@@ -61,7 +61,7 @@ const TILES = [
     icon: <Wrench />,
     href: '/tool',
     color: '#8B5A2B',
-    needLogin: false,
+    needLogin: true,
   },
   {
     name: 'nav',
@@ -85,7 +85,7 @@ const TILES = [
     icon: <Gamepad2 />,
     href: '/game',
     color: '#424242',
-    needLogin: false,
+    needLogin: true,
   },
   {
     name: 'chat',

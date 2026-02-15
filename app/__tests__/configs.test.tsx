@@ -79,7 +79,7 @@ describe('App Configs', () => {
       const labTile = configs.tiles.find(tile => tile.name === 'lab')
       expect(labTile).toBeDefined()
       expect(labTile?.href).toBe('/lab')
-      expect(labTile?.needLogin).toBe(false)
+      expect(labTile?.needLogin).toBe(true)
     })
 
     it('should have all expected tile names', () => {

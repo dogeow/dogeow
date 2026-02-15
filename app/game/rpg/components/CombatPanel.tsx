@@ -297,7 +297,7 @@ function BattleSkillBar({
 }) {
   if (activeSkills.length === 0) return null
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap items-start gap-2">
       {activeSkills.map(cs => {
         const def = cs.skill
         const endAt = skillCooldownEnd[def.id] ?? 0
@@ -330,6 +330,7 @@ function BattleSkillBar({
             </span>
           </>
         )
+        const btnClass = `hover:bg-muted/80 focus-visible:ring-ring relative flex flex-col items-center gap-0.5 rounded-md transition-[transform,background-color] duration-150 focus:outline-none focus-visible:ring-2 outline-offset-0 active:translate-y-0.5`
         return enabled ? (
           <div key={cs.id} className="skill-marquee-wrap">
             <svg className="skill-marquee-border" viewBox="0 0 100 100" preserveAspectRatio="none">
@@ -337,7 +338,7 @@ function BattleSkillBar({
             </svg>
             <button
               type="button"
-              className="skill-marquee-btn bg-muted/50 hover:bg-muted/80 focus-visible:ring-ring flex flex-col items-center gap-0.5 rounded-md transition-colors focus:outline-none focus-visible:ring-2"
+              className={`skill-marquee-btn bg-muted/50 ${btnClass}`}
               title={`${def.name} 已启用（再点关闭）`}
               onClick={() => onSkillToggle(def.id)}
             >
@@ -348,7 +349,7 @@ function BattleSkillBar({
           <button
             key={cs.id}
             type="button"
-            className="hover:bg-muted/80 focus-visible:ring-ring relative flex flex-col items-center gap-0.5 rounded-md transition-colors focus:outline-none focus-visible:ring-2"
+            className={btnClass}
             title={`${def.name} 点击启用`}
             onClick={() => onSkillToggle(def.id)}
           >

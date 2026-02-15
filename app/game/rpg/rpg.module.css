@@ -13,8 +13,8 @@
 .skill-marquee-wrap {
   position: relative;
   display: inline-flex;
-  padding: 3px;
   overflow: visible;
+  vertical-align: top;
 }
 
 .skill-marquee-wrap .skill-marquee-border {
@@ -32,12 +32,14 @@
   stroke-width: 2;
   stroke-dasharray: 15 15;
   animation: skill-marquee-run 0.8s linear infinite;
+  vector-effect: non-scaling-stroke;
 }
 
 .skill-marquee-wrap .skill-marquee-btn {
   position: relative;
   z-index: 1;
   border-radius: 0.375rem;
+  outline-offset: 0;
 }
 
 /* VS emoji 战斗中动画：轻微缩放 */

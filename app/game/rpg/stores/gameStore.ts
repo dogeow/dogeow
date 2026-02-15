@@ -17,6 +17,9 @@ import {
   CombatLog,
   EquipmentSlot,
   ShopItem,
+  CompendiumItem,
+  CompendiumMonster,
+  CompendiumMonsterDrops,
 } from '../types'
 import { apiGet, post, put, del, ApiRequestError } from '@/lib/api'
 import { soundManager } from '../utils/soundManager'
@@ -52,16 +55,37 @@ interface GameState {
   // UI状态
   isLoading: boolean
   error: string | null
-  activeTab: 'character' | 'inventory' | 'skills' | 'maps' | 'combat' | 'shop' | 'settings'
+  activeTab:
+    | 'character'
+    | 'inventory'
+    | 'skills'
+    | 'maps'
+    | 'combat'
+    | 'shop'
+    | 'settings'
+    | 'compendium'
 
   // 商店状态
   shopItems: ShopItem[]
-  /** 下次商店装备刷新的时间戳（秒），用于显示“下次刷新” */
+  /** 下次商店装备刷新的时间戳（秒），用于显示"下次刷新" */
   shopNextRefreshAt: number | null
+
+  // 图鉴状态
+  compendiumItems: CompendiumItem[]
+  compendiumMonsters: CompendiumMonster[]
+  compendiumMonsterDrops: CompendiumMonsterDrops | null
 
   // Actions
   setActiveTab: (
-    tab: 'character' | 'inventory' | 'skills' | 'maps' | 'combat' | 'shop' | 'settings'
+    tab:
+      | 'character'
+      | 'inventory'
+      | 'skills'
+      | 'maps'
+      | 'combat'
+      | 'shop'
+      | 'settings'
+      | 'compendium'
   ) => void
   fetchCharacters: () => Promise<void>
   selectCharacter: (characterId: number) => Promise<void>
@@ -111,6 +135,12 @@ interface GameState {
   buyItem: (itemId: number, quantity?: number) => Promise<void>
   sellItemToShop: (itemId: number, quantity?: number) => Promise<void>
 
+  // 图鉴操作
+  fetchCompendiumItems: () => Promise<void>
+  fetchCompendiumMonsters: () => Promise<void>
+  fetchCompendiumMonsterDrops: (monsterId: number) => Promise<void>
+  clearCompendiumMonsterDrops: () => void
+
   // 工具
   clearError: () => void
   reset: () => void
@@ -145,6 +175,9 @@ const initialState = {
   activeTab: 'character' as const,
   shopItems: [],
   shopNextRefreshAt: null,
+  compendiumItems: [],
+  compendiumMonsters: [],
+  compendiumMonsterDrops: null,
 }
 
 const store: StateCreator<GameState> = (set, get) => ({
@@ -1101,6 +1134,60 @@ const store: StateCreator<GameState> = (set, get) => ({
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }
+  },
+
+  // 图鉴操作
+  fetchCompendiumItems: async () => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const response = (await apiGet('/rpg/compendium/items')) as { items: CompendiumItem[] }
+      set(state => ({
+        ...state,
+        compendiumItems: response.items || [],
+        isLoading: false,
+      }))
+    } catch (error) {
+      console.error('[GameStore] Fetch compendium items error:', error)
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  fetchCompendiumMonsters: async () => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const response = (await apiGet('/rpg/compendium/monsters')) as {
+        monsters: CompendiumMonster[]
+      }
+      set(state => ({
+        ...state,
+        compendiumMonsters: response.monsters || [],
+        isLoading: false,
+      }))
+    } catch (error) {
+      console.error('[GameStore] Fetch compendium monsters error:', error)
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  fetchCompendiumMonsterDrops: async (monsterId: number) => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const response = (await apiGet(
+        `/rpg/compendium/monsters/${monsterId}/drops`
+      )) as CompendiumMonsterDrops
+      set(state => ({
+        ...state,
+        compendiumMonsterDrops: response,
+        isLoading: false,
+      }))
+    } catch (error) {
+      console.error('[GameStore] Fetch compendium monster drops error:', error)
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  clearCompendiumMonsterDrops: () => {
+    set(state => ({ ...state, compendiumMonsterDrops: null }))
   },
 })
 

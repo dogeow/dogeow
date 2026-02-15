@@ -9,6 +9,7 @@ import { InventoryPanel } from './components/InventoryPanel'
 import { SkillPanel } from './components/SkillPanel'
 import { CombatPanel } from './components/CombatPanel'
 import { ShopPanel } from './components/ShopPanel'
+import { CompendiumPanel } from './components/CompendiumPanel'
 import { SoundSettings } from './components/SoundSettings'
 import { PotionSettings } from './components/PotionSettings'
 import { FloatingTextOverlay } from './components/FloatingTextOverlay'
@@ -223,6 +224,7 @@ export default function RPGGame() {
     { id: 'skills' as const, name: '技能', icon: '✨' },
     { id: 'combat' as const, name: '战斗', icon: '⚔️' },
     { id: 'shop' as const, name: '商店', icon: '🏪' },
+    { id: 'compendium' as const, name: '图鉴', icon: '📖' },
     { id: 'settings' as const, name: '设置', icon: '⚙️' },
   ]
 
@@ -339,6 +341,7 @@ export default function RPGGame() {
             {activeTab === 'skills' && <SkillPanel />}
             {activeTab === 'combat' && <CombatPanel />}
             {activeTab === 'shop' && <ShopPanel />}
+            {activeTab === 'compendium' && <CompendiumPanel />}
             {activeTab === 'settings' && (
               <div className="space-y-4">
                 <PotionSettings />
