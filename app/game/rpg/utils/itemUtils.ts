@@ -1,6 +1,6 @@
 // 物品相关的通用工具函数
 
-import type { GameItem, ItemType } from '../types'
+import type { GameItem, ItemType, EquipmentSlot } from '../types'
 
 // 物品类型图标映射
 export const ITEM_TYPE_ICONS: Record<string, string> = {
@@ -120,4 +120,37 @@ export function isEquippable(item: GameItem): boolean {
  */
 export function isPotion(item: GameItem): boolean {
   return item.definition?.type === 'potion'
+}
+
+/**
+ * 获取物品对应的装备槽位（戒指默认返回 ring1）
+ */
+export function getEquipmentSlot(item: GameItem): EquipmentSlot | null {
+  const type = item.definition?.type
+  if (!type) return null
+  const slotMap: Record<string, EquipmentSlot> = {
+    weapon: 'weapon',
+    helmet: 'helmet',
+    armor: 'armor',
+    gloves: 'gloves',
+    boots: 'boots',
+    belt: 'belt',
+    ring: 'ring1',
+    amulet: 'amulet',
+  }
+  return slotMap[type] ?? null
+}
+
+/**
+ * 计算物品的总属性（包括基础属性 + 词缀）
+ */
+export function getItemTotalStats(item: GameItem): Record<string, number> {
+  const total: Record<string, number> = { ...(item.stats || {}) }
+  // 词缀累加
+  item.affixes?.forEach(affix => {
+    Object.entries(affix).forEach(([key, value]) => {
+      total[key] = (total[key] || 0) + value
+    })
+  })
+  return total
 }
