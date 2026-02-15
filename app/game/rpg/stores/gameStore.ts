@@ -10,6 +10,7 @@ import {
   GameItem,
   CharacterSkill,
   SkillDefinition,
+  SkillWithLearnedState,
   MapDefinition,
   CharacterMap,
   CombatResult,
