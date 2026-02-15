@@ -8,7 +8,7 @@ import {
   type CombatResult,
   type SkillUsedEntry,
 } from '../types'
-import { useMemo, useState, useRef, useCallback } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import type { CharacterSkill } from '../types'
 import type { MapDefinition } from '../types'
