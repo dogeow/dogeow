@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout'
-import { NavForm } from './components/NavForm'
+import { NavForm } from '../components/NavForm'
 
 export default function AddNavPage() {
   const router = useRouter()

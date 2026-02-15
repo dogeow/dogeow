@@ -47,10 +47,12 @@ export const LoginForm = memo<LoginFormProps>(
         await register(name, email, password, confirmPassword)
         toast.success('注册成功', {
           description: `欢迎，${name}！`,
+          position: 'top-center',
         })
       } catch (err) {
         toast.error('注册失败', {
           description: err instanceof Error ? err.message : '注册失败，请稍后重试',
+          position: 'top-center',
         })
       } finally {
         setLocalLoading(false)

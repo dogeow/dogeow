@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useSyncExternalStore } from 'react'
-import { Palette, Image, Grid, Languages, Moon, Sun, LayoutGrid, List } from 'lucide-react'
+import { Palette, Image, Grid, Languages, Moon, Sun, LayoutGrid, List, Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -14,6 +14,7 @@ interface MainViewProps {
   onNavigateToBackground: () => void
   onNavigateToTheme: () => void
   onNavigateToLanguage: () => void
+  onNavigateToSonner: () => void
   followSystem: boolean
   onToggleFollowSystem: (checked: boolean) => void
   showProjectCovers: boolean
@@ -24,6 +25,7 @@ export function MainView({
   onNavigateToBackground,
   onNavigateToTheme,
   onNavigateToLanguage,
+  onNavigateToSonner,
   followSystem,
   onToggleFollowSystem,
   showProjectCovers,
@@ -100,6 +102,16 @@ export function MainView({
         aria-label="切换布局"
       >
         {siteLayout === 'grid' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+      </Button>
+
+      {/* 提示设置 */}
+      <Button
+        variant="ghost"
+        className="flex h-9 shrink-0 items-center gap-2 px-3"
+        onClick={onNavigateToSonner}
+        aria-label="提示设置"
+      >
+        <Bell className="h-4 w-4" />
       </Button>
 
       <SettingsDivider />

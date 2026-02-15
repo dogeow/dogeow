@@ -8,7 +8,7 @@ import { hexToHSL } from '@/lib/helpers'
 import type { CustomTheme } from '@/app/types'
 import type { CustomBackground } from '../SettingsPanel'
 
-type SettingsView = 'main' | 'background' | 'theme' | 'language'
+type SettingsView = 'main' | 'background' | 'theme' | 'language' | 'sonner'
 
 interface UseSettingsPanelProps {
   backgroundImage: string

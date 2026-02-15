@@ -4,12 +4,8 @@ import React from 'react'
 import { LanguageSelector } from '@/components/ui/language-selector'
 import { useLanguageDetection } from '@/hooks/useTranslation'
 import { useLanguageStore } from '@/stores/languageStore'
-import { useTranslation as useTrans } from '@/hooks/useTranslation'
-import { RefreshCw, Check, Globe, ArrowRight } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { RefreshCw, Check, Globe } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { getLanguageFlag } from '@/lib/helpers/languageFlags'
-import { toast } from 'sonner'
 
 interface LanguageViewProps {
   onBack: () => void
@@ -18,66 +14,10 @@ interface LanguageViewProps {
 
 export function LanguageView({ onBack, showBackButton = true }: LanguageViewProps) {
   const { refreshDetection, isDetecting, detectionStats } = useLanguageDetection()
-  const { currentLanguage, availableLanguages, setLanguage } = useTrans()
-  const { detectedLanguage, isAutoDetected, detectionResult } = useLanguageStore()
-
-  // 获取语言信息
-  const detectedLanguageInfo = availableLanguages.find(lang => lang.code === detectedLanguage)
-  const currentLanguageInfo = availableLanguages.find(lang => lang.code === currentLanguage)
-
-  // 切换到检测到的语言
-  const handleSwitchToDetected = async () => {
-    if (detectedLanguage) {
-      toast.info('正在切换语言...')
-      await setLanguage(detectedLanguage)
-      toast.success(`已切换到: ${detectedLanguageInfo?.nativeName}`)
-    }
-  }
-
-  // 获取检测方法标签
-  const getMethodLabel = (method: string) => {
-    const methodMap: Record<string, string> = {
-      browser: '浏览器',
-      geolocation: '定位',
-      user_agent: 'UA',
-      stored_preference: '偏好',
-      default: '默认',
-      none: '无',
-    }
-    return methodMap[method] || method
-  }
+  const { isAutoDetected } = useLanguageStore()
 
   return (
     <div className="flex flex-col gap-3">
-      {/* 检测到的语言信息 */}
-      {detectedLanguage && detectedLanguage !== currentLanguage && (
-        <div className="bg-muted/50 rounded-lg border p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <Globe className="h-3 w-3" />
-              <span>检测到的语言</span>
-            </div>
-            {detectionResult && (
-              <Badge variant="secondary" className="text-[10px]">
-                {getMethodLabel(detectionResult.method)} ·{' '}
-                {Math.round(detectionResult.confidence * 100)}%
-              </Badge>
-            )}
-          </div>
-          <div className="mb-2 flex items-center gap-3">
-            <span className="text-2xl">{getLanguageFlag(detectedLanguage)}</span>
-            <div>
-              <div className="text-sm font-medium">{detectedLanguageInfo?.nativeName}</div>
-              <div className="text-muted-foreground text-xs">{detectedLanguageInfo?.name}</div>
-            </div>
-          </div>
-          <Button onClick={handleSwitchToDetected} size="sm" className="w-full text-xs">
-            <ArrowRight className="mr-1 h-3 w-3" />
-            切换到 {detectedLanguageInfo?.nativeName}
-          </Button>
-        </div>
-      )}
-
       {/* 语言检测信息 */}
       <div className="bg-muted/50 flex items-center justify-between rounded-lg p-2">
         <div className="text-muted-foreground flex items-center gap-2 text-[10px]">

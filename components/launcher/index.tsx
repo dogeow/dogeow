@@ -19,7 +19,7 @@ import { useMediaKeys } from './hooks/useMediaKeys'
 import { useMediaSession } from './hooks/useMediaSession'
 import { AudioVisualizer } from './music/AudioVisualizer'
 import { FullscreenVisualizer } from './music/FullscreenVisualizer'
-import { IpadOSSettingsDialog } from './settings/IpadOSSettingsDialog'
+import { SettingsDialog } from './settings/SettingsDialog'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
@@ -253,8 +253,8 @@ export function AppLauncher() {
         currentRoute={!searchManager.isHomePage ? pathname : undefined}
       />
 
-      {/* iPadOS 风格设置对话框 */}
-      <IpadOSSettingsDialog
+      {/* 设置对话框 */}
+      <SettingsDialog
         open={isSettingsDialogOpen}
         onOpenChange={setIsSettingsDialogOpen}
         backgroundImage={backgroundImage}

@@ -10,7 +10,7 @@ import {
 } from '../types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
-import type { CharacterSkill } from '../types'
+import type { CharacterSkill, SkillWithLearnedState } from '../types'
 import type { MapDefinition } from '../types'
 import { getMapBackgroundStyle } from '../utils/mapBackground'
 
@@ -476,7 +476,28 @@ export function CombatPanel() {
     [enterMap]
   )
 
-  const activeSkills = useMemo(() => skills.filter(s => s.skill?.type === 'active'), [skills])
+  const learnedSkills = useMemo((): CharacterSkill[] => {
+    const c = character
+    if (!c) return []
+    return skills
+      .filter(
+        (s): s is SkillWithLearnedState & { character_skill_id: number } =>
+          s.is_learned && s.character_skill_id != null
+      )
+      .map(s => ({
+        id: s.character_skill_id!,
+        character_id: c.id,
+        skill_id: s.id,
+        skill: s,
+        level: s.level ?? 1,
+        slot_index: s.slot_index ?? null,
+      }))
+  }, [skills, character])
+
+  const activeSkills = useMemo(
+    () => learnedSkills.filter(s => s.skill?.type === 'active'),
+    [learnedSkills]
+  )
   const cooldownSecondsBySkillId = useMemo(() => {
     const m: Record<number, number> = {}
     activeSkills.forEach(s => {

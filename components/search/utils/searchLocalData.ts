@@ -1,4 +1,5 @@
 import { getTranslatedConfigs } from '@/app/configs'
+import type { TranslatableItem } from '@/app/configs'
 import type { SearchResult } from '../types'
 
 /**
@@ -7,12 +8,7 @@ import type { SearchResult } from '../types'
 interface LocalDataSource {
   category: string
   requireAuth: boolean
-  getData: (configs: ReturnType<typeof getTranslatedConfigs>) => Array<{
-    id: string | number
-    name?: string
-    description?: string
-    url?: string
-  }>
+  getData: (configs: ReturnType<typeof getTranslatedConfigs>) => TranslatableItem[]
 }
 
 /**

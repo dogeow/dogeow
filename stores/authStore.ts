@@ -16,6 +16,12 @@ interface AuthState {
   // 操作方法
   setLoading: (loading: boolean) => void
   login: (email: string, password: string) => Promise<AuthResponse>
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    passwordConfirmation: string
+  ) => Promise<AuthResponse>
   logout: () => Promise<void>
   setUser: (user: User | null) => void
   setToken: (token: string | null) => Promise<void>
@@ -96,6 +102,46 @@ const useAuthStore = create<AuthState>()(
 
         try {
           const data = await post<AuthResponse>('/login', { email, password })
+
+          // 更新状态
+          set({
+            user: data.user,
+            token: data.token,
+            loading: false,
+            isAuthenticated: true,
+          })
+
+          // 备份到 localStorage
+          if (typeof window !== 'undefined') {
+            const storage = getSafeStorage()
+            storage.setItem(AUTH_TOKEN_KEY, data.token)
+          }
+
+          // 同步到 WebSocket
+          await syncWithWebSocketAuth(data.token)
+
+          return data
+        } catch (error) {
+          set({ loading: false })
+          throw error
+        }
+      },
+
+      register: async (
+        name: string,
+        email: string,
+        password: string,
+        passwordConfirmation: string
+      ) => {
+        set({ loading: true })
+
+        try {
+          const data = await post<AuthResponse>('/register', {
+            name,
+            email,
+            password,
+            password_confirmation: passwordConfirmation,
+          })
 
           // 更新状态
           set({

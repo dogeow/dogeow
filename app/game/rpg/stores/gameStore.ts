@@ -32,9 +32,12 @@ interface GameState {
   currentMana: number | null // 当前Mana
   inventory: GameItem[]
   storage: GameItem[]
+  /** 背包格位数（由后端 /rpg/inventory 返回） */
+  inventorySize: number
+  /** 仓库格位数（由后端 /rpg/inventory 返回） */
+  storageSize: number
   equipment: Record<string, GameItem | null>
-  skills: CharacterSkill[]
-  availableSkills: SkillDefinition[]
+  skills: SkillWithLearnedState[]
   maps: MapDefinition[]
   mapProgress: Record<number, CharacterMap>
   currentMap: MapDefinition | null
@@ -123,6 +126,8 @@ const initialState = {
   currentMana: null,
   inventory: [],
   storage: [],
+  inventorySize: 100,
+  storageSize: 100,
   equipment: {},
   skills: [],
   availableSkills: [],
@@ -258,7 +263,6 @@ const store: StateCreator<GameState> = (set, get) => ({
                 inventory: [],
                 equipment: {},
                 skills: [],
-                availableSkills: [],
                 mapProgress: {},
                 currentMap: null,
                 combatResult: null,
@@ -371,6 +375,8 @@ const store: StateCreator<GameState> = (set, get) => ({
         inventory: GameItem[]
         storage: GameItem[]
         equipment: Record<string, { slot: string; item: GameItem | null }>
+        inventory_size?: number
+        storage_size?: number
       }
       const equipment: Record<string, GameItem | null> = {}
       Object.entries(response.equipment || {}).forEach(([slot, data]) => {
@@ -380,6 +386,12 @@ const store: StateCreator<GameState> = (set, get) => ({
         ...state,
         inventory: response.inventory || [],
         storage: response.storage || [],
+        inventorySize:
+          typeof response.inventory_size === 'number'
+            ? response.inventory_size
+            : state.inventorySize,
+        storageSize:
+          typeof response.storage_size === 'number' ? response.storage_size : state.storageSize,
         equipment,
         isLoading: false,
       }))
@@ -520,14 +532,12 @@ const store: StateCreator<GameState> = (set, get) => ({
       }
       const params = `?character_id=${selectedId}`
       const response = (await apiGet(`/rpg/skills${params}`)) as {
-        available_skills: SkillDefinition[]
-        learned_skills: CharacterSkill[]
+        skills: SkillWithLearnedState[]
         skill_points: number
       }
       set(state => ({
         ...state,
-        availableSkills: response.available_skills || [],
-        skills: response.learned_skills || [],
+        skills: response.skills ?? [],
         character: state.character
           ? { ...state.character, skill_points: response.skill_points }
           : null,
@@ -550,16 +560,38 @@ const store: StateCreator<GameState> = (set, get) => ({
         skill_id: skillId,
         character_id: selectedId,
       })) as { character_skill?: CharacterSkill; skill_points: number }
-      const newSkill = response.character_skill
-      set(state => ({
-        ...state,
-        skills: newSkill ? [...state.skills, newSkill] : state.skills,
-        character: state.character
-          ? { ...state.character, skill_points: response.skill_points }
-          : null,
-        isLoading: false,
-      }))
-      if (!newSkill) {
+      const cs = response.character_skill
+      set(state => {
+        if (!cs) {
+          return {
+            ...state,
+            character: state.character
+              ? { ...state.character, skill_points: response.skill_points }
+              : null,
+            isLoading: false,
+          }
+        }
+        const nextSkills = state.skills.map(s =>
+          s.id === cs.skill_id
+            ? {
+                ...s,
+                is_learned: true,
+                character_skill_id: cs.id,
+                level: cs.level ?? 1,
+                slot_index: cs.slot_index ?? null,
+              }
+            : s
+        )
+        return {
+          ...state,
+          skills: nextSkills,
+          character: state.character
+            ? { ...state.character, skill_points: response.skill_points }
+            : null,
+          isLoading: false,
+        }
+      })
+      if (!cs) {
         get().fetchSkills()
       }
     } catch (error) {

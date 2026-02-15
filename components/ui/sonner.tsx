@@ -2,23 +2,41 @@
 
 import { useTheme } from 'next-themes'
 import { Toaster as Sonner, ToasterProps } from 'sonner'
+import { useToastStore } from '@/stores/toastStore'
 
 const Toaster = ({ ...props }: ToasterProps) => {
   const { theme = 'system' } = useTheme()
+  const { position, duration } = useToastStore()
+
+  // 根据位置动态调整 offset
+  const getOffset = () => {
+    if (position.includes('top')) {
+      return { top: 16 }
+    }
+    if (position.includes('bottom')) {
+      return { bottom: 80, right: 16 }
+    }
+    // 两侧位置
+    return { top: 16, bottom: 80 }
+  }
+
+  const offset = getOffset()
 
   return (
     <Sonner
       theme={theme as ToasterProps['theme']}
-      className="toaster group toaster-bottom-right"
-      position="bottom-right"
+      className="toaster group"
+      position="top-center"
       dir="ltr"
-      offset={{ bottom: 80, right: 16 }}
-      mobileOffset={{ bottom: 80, right: 16 }}
-      expand
+      offset={62}
+      mobileOffset={62}
+      duration={duration}
       richColors
       style={
         {
-          '--width': 'auto',
+          top: '62px',
+          left: '50%',
+          transform: 'translateX(-50%)',
           zIndex: 9999,
         } as React.CSSProperties
       }
@@ -32,7 +50,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         },
         style: {
           width: 'auto',
-          maxWidth: '400px',
+          maxWidth: 'none',
           zIndex: 9999,
         },
       }}

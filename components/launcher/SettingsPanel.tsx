@@ -54,7 +54,7 @@ export function SettingsPanel({
     <div className="flex h-full w-full flex-col">
       <SettingsContent
         currentView={currentView}
-        setCurrentView={setCurrentView}
+        setCurrentView={view => setCurrentView(view)}
         toggleDisplayMode={toggleDisplayMode}
         backgroundImage={backgroundImage}
         customBackgrounds={customBackgrounds}

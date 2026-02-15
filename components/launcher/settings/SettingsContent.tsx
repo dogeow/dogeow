@@ -4,11 +4,12 @@ import { MainView } from './MainView'
 import { BackgroundView } from './BackgroundView'
 import { ThemeView } from './ThemeView'
 import { LanguageView } from './LanguageView'
+import { SonnerView } from './SonnerView'
 import { SettingsDivider } from './SettingsDivider'
 import type { CustomBackground } from '../SettingsPanel'
 import type { CustomTheme } from '@/app/types'
 
-type SettingsView = 'main' | 'background' | 'theme' | 'language'
+type SettingsView = 'main' | 'background' | 'theme' | 'language' | 'sonner'
 type DisplayMode = 'music' | 'apps' | 'settings'
 
 interface SettingsContentProps {
@@ -85,6 +86,9 @@ export function SettingsContent({
     case 'language':
       return <LanguageView onBack={() => setCurrentView('main')} />
 
+    case 'sonner':
+      return <SonnerView onBack={() => setCurrentView('main')} />
+
     default:
       return (
         <>
@@ -98,6 +102,7 @@ export function SettingsContent({
             onNavigateToBackground={() => setCurrentView('background')}
             onNavigateToTheme={() => setCurrentView('theme')}
             onNavigateToLanguage={() => setCurrentView('language')}
+            onNavigateToSonner={() => setCurrentView('sonner')}
             followSystem={followSystem}
             onToggleFollowSystem={handleToggleFollowSystem}
             showProjectCovers={showProjectCovers}

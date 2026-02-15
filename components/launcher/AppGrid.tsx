@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import { cn } from '@/lib/helpers'
+import '@/components/launcher/music/music-visualizer.css'
 
 type DisplayMode = 'music' | 'apps' | 'settings'
 

@@ -1,9 +1,10 @@
 'use client'
 
 import React, { useState, useCallback } from 'react'
+import type { CustomTheme } from '@/app/types'
 import {
   Palette,
-  Image,
+  Image as ImageIcon,
   Grid,
   Languages,
   Sun,
@@ -17,6 +18,7 @@ import {
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
+import { useProjectCoverStore } from '@/stores/projectCoverStore'
 import { useLayoutStore } from '@/stores/layoutStore'
 import { BackgroundView } from './BackgroundView'
 import { ThemeView } from './ThemeView'
@@ -33,7 +35,7 @@ export type SettingsSection =
   | 'system'
   | 'apps'
 
-interface IpadOSSettingsDialogProps {
+interface SettingsDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   backgroundImage: string
@@ -44,19 +46,20 @@ interface IpadOSSettingsDialogProps {
   >
 }
 
-export function IpadOSSettingsDialog({
+export function SettingsDialog({
   open,
   onOpenChange,
   backgroundImage,
   setBackgroundImage,
   customBackgrounds,
   setCustomBackgrounds,
-}: IpadOSSettingsDialogProps) {
+}: SettingsDialogProps) {
   const [activeSection, setActiveSection] = useState<SettingsSection>('appearance')
 
   // Theme store
   const { theme, setTheme } = useTheme()
-  const { followSystem, setFollowSystem, showProjectCovers, setShowProjectCovers } = useThemeStore()
+  const { followSystem, setFollowSystem } = useThemeStore()
+  const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
   const { siteLayout, setSiteLayout } = useLayoutStore()
 
   const mounted = typeof window !== 'undefined'
@@ -91,9 +94,9 @@ export function IpadOSSettingsDialog({
   )
 
   // Handle theme
-  const [customThemes, setCustomThemes] = useState<{ id: string; name: string; color: string }[]>(
-    []
-  )
+
+  // Handle theme
+  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([])
   const handleSetTheme = useCallback(
     (newTheme: string) => {
       setTheme(newTheme as 'light' | 'dark' | 'system')
@@ -102,10 +105,11 @@ export function IpadOSSettingsDialog({
   )
 
   const handleAddTheme = useCallback((name: string, color: string) => {
-    const newTheme = {
+    const newTheme: CustomTheme = {
       id: `theme-${Date.now()}`,
       name,
       color,
+      primary: color,
     }
     setCustomThemes(prev => [...prev, newTheme])
   }, [])
@@ -219,7 +223,7 @@ export function IpadOSSettingsDialog({
 
             {/* 背景 */}
             <SettingsItem
-              icon={<Image className="h-4 w-4" />}
+              icon={<ImageIcon className="h-4 w-4" aria-hidden />}
               label="背景"
               onClick={() => setActiveSection('background')}
               trailing={<ChevronRight className="text-muted-foreground h-3 w-3" />}
@@ -270,18 +274,25 @@ export function IpadOSSettingsDialog({
             <div className="bg-muted/20 w-24 shrink-0 border-r">
               <ScrollArea className="h-full">
                 <div className="flex flex-col p-1">
-                  {settingsItems.map(item => (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveSection(item.id)}
-                      className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-left transition-colors ${
-                        activeSection === item.id ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
-                      }`}
-                    >
-                      {item.icon}
-                      <span className="text-sm">{item.label}</span>
-                    </button>
-                  ))}
+                  {settingsItems.map(item => {
+                    // 判断是否选中：当前 section 等于 item，或者当前 section 是 item 的子项
+                    const isSelected =
+                      activeSection === item.id ||
+                      (item.id === 'appearance' &&
+                        ['language', 'theme', 'background', 'apps'].includes(activeSection))
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => setActiveSection(item.id)}
+                        className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-left transition-colors ${
+                          isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
+                        }`}
+                      >
+                        {item.icon}
+                        <span className="text-sm">{item.label}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               </ScrollArea>
             </div>

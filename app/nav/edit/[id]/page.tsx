@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { useNavStore } from '@/app/nav/stores/navStore'
 import { Card, CardContent } from '@/components/ui/card'
 import { PageContainer } from '@/components/layout'
-import { NavForm } from '../components/NavForm'
+import { NavForm } from '../../components/NavForm'
 import { NavItem } from '@/app/nav/types'
 
 export default function EditNavPage() {

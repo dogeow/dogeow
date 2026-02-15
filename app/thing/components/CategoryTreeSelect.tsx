@@ -133,8 +133,8 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   // 处理主分类选择
   const handleParentSelect = useCallback(
     (parentId: string) => {
-      setSelectedParentId(parentId)
-      setSelectedChildId('')
+      setLocalParentId(parentId)
+      setLocalChildId('')
 
       if (parentId === 'none') {
         onSelect('parent', null, '未分类', true)
@@ -151,7 +151,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   // 处理子分类选择
   const handleChildSelect = useCallback(
     (childId: string) => {
-      setSelectedChildId(childId)
+      setLocalChildId(childId)
 
       if (childId) {
         const parent = categoryTree.find(p => p.id.toString() === localParentId)
@@ -174,7 +174,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
         })
 
         toast.success(`已创建主分类 "${categoryName}"`)
-        setSelectedParentId(newCategory.id.toString())
+        setLocalParentId(newCategory.id.toString())
         onSelect('parent', newCategory.id, newCategory.name, false) // 创建主分类后不关闭弹窗
       } catch (error) {
         console.error('创建主分类失败:', error)
@@ -200,7 +200,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
 
         const parent = categoryTree.find(p => p.id.toString() === localParentId)
         toast.success(`已创建子分类 "${categoryName}"`)
-        setSelectedChildId(newCategory.id.toString())
+        setLocalChildId(newCategory.id.toString())
 
         if (parent) {
           onSelect('child', newCategory.id, `${parent.name} / ${newCategory.name}`, true) // 创建子分类后关闭弹窗
@@ -213,26 +213,28 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
     [createCategory, localParentId, categoryTree, onSelect]
   )
 
-  // 根据当前选择更新下拉框状态
+  // 根据当前选择更新下拉框状态（在微任务中执行，避免在 effect 中同步 setState 导致级联渲染）
   useEffect(() => {
-    if (selectedCategory) {
-      if (selectedCategory.type === 'parent') {
-        setSelectedParentId(selectedCategory.id.toString())
-        setSelectedChildId('')
-      } else if (selectedCategory.type === 'child') {
-        const child = categoryTree
-          .flatMap(p => p.children || [])
-          .find(c => c.id === selectedCategory.id)
-        if (child?.parent_id) {
-          setSelectedParentId(child.parent_id.toString())
-          setSelectedChildId(selectedCategory.id.toString())
+    const timer = setTimeout(() => {
+      if (selectedCategory) {
+        if (selectedCategory.type === 'parent') {
+          setLocalParentId(selectedCategory.id.toString())
+          setLocalChildId('')
+        } else if (selectedCategory.type === 'child') {
+          const child = categoryTree
+            .flatMap(p => p.children || [])
+            .find(c => c.id === selectedCategory.id)
+          if (child?.parent_id) {
+            setLocalParentId(child.parent_id.toString())
+            setLocalChildId(selectedCategory.id.toString())
+          }
         }
+      } else {
+        setLocalParentId('none')
+        setLocalChildId('')
       }
-    } else {
-      // 未分类或未选择任何分类
-      setSelectedParentId('none')
-      setSelectedChildId('')
-    }
+    }, 0)
+    return () => clearTimeout(timer)
   }, [selectedCategory, categoryTree])
 
   return (

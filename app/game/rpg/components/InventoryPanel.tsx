@@ -22,11 +22,6 @@ import {
   itemMatchesCategory,
 } from '../utils/itemUtils'
 
-// 背包固定格位数（与后端 InventoryController::INVENTORY_SIZE 一致）
-const INVENTORY_SLOTS = 100
-/** 仓库固定格位数（与后端 InventoryController::STORAGE_SIZE 一致） */
-const WAREHOUSE_SLOTS = 100
-
 // 背包分类 tabs：emoji + 对应物品 type（不显示「全部」按钮，再次点击当前分类即取消选择 = 显示全部）
 const INVENTORY_CATEGORIES = [
   { id: 'weapon', emoji: '⚔️', label: '武器', types: ['weapon'] },
@@ -67,31 +62,69 @@ function ItemIcon({ item, className }: { item: GameItem; className?: string }) {
   )
 }
 
+/** 物品 tip 中的大图标 */
+function ItemTipIcon({ item, className }: { item: GameItem; className?: string }) {
+  const definitionId = item.definition?.id
+  const fallback = getItemIconFallback(item)
+  const [useImg, setUseImg] = useState(definitionId != null)
+  const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
+  return (
+    <span
+      className={`relative inline-flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-lg border-2 shadow-sm ${className ?? ''}`}
+      style={{ borderColor: QUALITY_COLORS[item.quality] }}
+    >
+      {useImg && src ? (
+        <Image
+          src={src}
+          alt=""
+          fill
+          className="rounded-md object-contain p-1"
+          sizes="100px"
+          onError={() => setUseImg(false)}
+        />
+      ) : (
+        <span className="text-5xl drop-shadow-sm">{fallback}</span>
+      )}
+    </span>
+  )
+}
+
 export function InventoryPanel() {
-  const { inventory, storage, equipItem, sellItem, moveItem, consumePotion, isLoading } =
-    useGameStore()
+  const {
+    inventory,
+    storage,
+    inventorySize,
+    storageSize,
+    equipItem,
+    sellItem,
+    moveItem,
+    consumePotion,
+    isLoading,
+  } = useGameStore()
   const [selectedItem, setSelectedItem] = useState<GameItem | null>(null)
   const [showStorage, setShowStorage] = useState(false)
   const [categoryId, setCategoryId] = useState<string>('')
+  const [sellQuantity, setSellQuantity] = useState<number>(1)
+  const [showSellConfirm, setShowSellConfirm] = useState(false)
 
-  // 背包按 slot_index 放入对应格位，与后端格位一致
+  // 背包按 slot_index 放入对应格位，与后端格位一致（格位数由后端提供）
   const inventorySlots = useMemo(() => {
-    const slots: (GameItem | null)[] = Array.from({ length: INVENTORY_SLOTS }, () => null)
+    const slots: (GameItem | null)[] = Array.from({ length: inventorySize }, () => null)
     inventory.forEach(item => {
       const idx = item.slot_index
-      if (typeof idx === 'number' && idx >= 0 && idx < INVENTORY_SLOTS) slots[idx] = item
+      if (typeof idx === 'number' && idx >= 0 && idx < inventorySize) slots[idx] = item
     })
     return slots
-  }, [inventory])
+  }, [inventory, inventorySize])
   // 仓库按 slot_index 放入对应格位
   const warehouseSlots = useMemo(() => {
-    const slots: (GameItem | null)[] = Array.from({ length: WAREHOUSE_SLOTS }, () => null)
+    const slots: (GameItem | null)[] = Array.from({ length: storageSize }, () => null)
     storage.forEach(item => {
       const idx = item.slot_index
-      if (typeof idx === 'number' && idx >= 0 && idx < WAREHOUSE_SLOTS) slots[idx] = item
+      if (typeof idx === 'number' && idx >= 0 && idx < storageSize) slots[idx] = item
     })
     return slots
-  }, [storage])
+  }, [storage, storageSize])
 
   const category = useMemo(
     () =>
@@ -123,7 +156,19 @@ export function InventoryPanel() {
 
   const handleSell = async () => {
     if (!selectedItem) return
-    await sellItem(selectedItem.id)
+    if (selectedItem.quantity > 1) {
+      setSellQuantity(1)
+      setShowSellConfirm(true)
+    } else {
+      await sellItem(selectedItem.id, 1)
+      setSelectedItem(null)
+    }
+  }
+
+  const handleSellConfirm = async () => {
+    if (!selectedItem) return
+    await sellItem(selectedItem.id, sellQuantity)
+    setShowSellConfirm(false)
     setSelectedItem(null)
   }
 
@@ -153,7 +198,7 @@ export function InventoryPanel() {
           >
             <span>背包</span>
             <span className="text-[10px] opacity-90 sm:text-xs">
-              {inventory.length}/{INVENTORY_SLOTS}
+              {inventory.length}/{inventorySize}
             </span>
           </button>
           <button
@@ -165,7 +210,7 @@ export function InventoryPanel() {
           >
             <span>仓库</span>
             <span className="text-[10px] opacity-90 sm:text-xs">
-              {storage.length}/{WAREHOUSE_SLOTS}
+              {storage.length}/{storageSize}
             </span>
           </button>
           <div className="ml-auto flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -222,55 +267,99 @@ export function InventoryPanel() {
                       title={getItemDisplayName(cell.item)}
                     >
                       <ItemIcon item={cell.item} className="drop-shadow-sm" />
+                      {cell.item.quantity > 1 && (
+                        <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded bg-black/70 text-[10px] font-bold text-white">
+                          {cell.item.quantity}
+                        </span>
+                      )}
                     </button>
                   </PopoverTrigger>
                   <PopoverContent
-                    className="w-48 max-w-[85vw] p-2.5 sm:w-56 sm:p-3"
-                    side="right"
+                    className="w-[280px] max-w-[85vw] p-0"
+                    side="bottom"
                     align="center"
                     sideOffset={8}
-                    collisionPadding={8}
+                    collisionPadding={12}
                   >
-                    <div className="min-w-0 space-y-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <h5
-                          className="min-w-0 shrink text-sm leading-tight font-bold break-words sm:text-base"
-                          style={{ color: QUALITY_COLORS[cell.item.quality] }}
-                        >
-                          {getItemDisplayName(cell.item)}
-                        </h5>
-                        <span className="text-muted-foreground shrink-0 text-xs sm:text-sm">
-                          {QUALITY_NAMES[cell.item.quality]}
-                        </span>
+                    <div className="flex flex-col">
+                      {/* 头部：图片在左，属性在右 */}
+                      <div
+                        className="relative flex gap-3 p-3"
+                        style={{
+                          background: `linear-gradient(135deg, ${QUALITY_COLORS[cell.item.quality]}20 0%, ${QUALITY_COLORS[cell.item.quality]}10 100%)`,
+                          borderBottom: `1px solid ${QUALITY_COLORS[cell.item.quality]}30`,
+                        }}
+                      >
+                        {/* 物品图片 */}
+                        <ItemTipIcon item={cell.item} className="shrink-0 drop-shadow-lg" />
+                        {/* 物品名称和属性 */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <h5
+                                className="min-w-0 text-sm leading-tight font-bold break-words sm:text-base"
+                                style={{ color: QUALITY_COLORS[cell.item.quality] }}
+                              >
+                                {getItemDisplayName(cell.item)}
+                              </h5>
+                              <span
+                                className="text-xs"
+                                style={{ color: QUALITY_COLORS[cell.item.quality] }}
+                              >
+                                {QUALITY_NAMES[cell.item.quality]}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => setSelectedItem(null)}
+                              className="text-muted-foreground hover:text-foreground ml-1 shrink-0 p-1"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                          {/* 属性信息 */}
+                          <div className="mt-1 space-y-0.5 text-xs">
+                            {Object.entries(cell.item.stats || {}).map(([stat, value]) => (
+                              <p key={stat} className="text-green-600 dark:text-green-400">
+                                +{value} {STAT_NAMES[stat] || stat}
+                              </p>
+                            ))}
+                            {cell.item.affixes?.map((affix, i) => (
+                              <p key={i} className="text-blue-600 dark:text-blue-400">
+                                {Object.entries(affix)
+                                  .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
+                                  .join(', ')}
+                              </p>
+                            ))}
+                            <p className="text-muted-foreground">
+                              需求等级: {cell.item.definition?.required_level ?? '—'}
+                            </p>
+                            {cell.item.definition?.buy_price != null &&
+                              cell.item.definition.buy_price > 0 && (
+                                <p className="text-purple-600 dark:text-purple-400">
+                                  售价:{' '}
+                                  <CopperDisplay
+                                    copper={cell.item.definition.buy_price}
+                                    size="xs"
+                                    nowrap
+                                  />
+                                </p>
+                              )}
+                            {cell.item.sell_price != null && cell.item.sell_price > 0 && (
+                              <p className="text-yellow-600 dark:text-yellow-400">
+                                卖出:{' '}
+                                <CopperDisplay copper={cell.item.sell_price} size="xs" nowrap />
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0 space-y-0.5 text-xs sm:text-sm">
-                        {Object.entries(cell.item.stats || {}).map(([stat, value]) => (
-                          <p key={stat} className="text-green-600 dark:text-green-400">
-                            +{value} {STAT_NAMES[stat] || stat}
-                          </p>
-                        ))}
-                        {cell.item.affixes?.map((affix, i) => (
-                          <p key={i} className="text-blue-600 dark:text-blue-400">
-                            {Object.entries(affix)
-                              .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
-                              .join(', ')}
-                          </p>
-                        ))}
-                        <p className="text-muted-foreground">
-                          需求等级: {cell.item.definition?.required_level ?? '—'}
-                        </p>
-                        {cell.item.sell_price != null && cell.item.sell_price > 0 && (
-                          <p className="text-yellow-600 dark:text-yellow-400">
-                            卖出: <CopperDisplay copper={cell.item.sell_price} size="xs" nowrap />
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 pt-1">
+                      {/* 操作按钮 */}
+                      <div className="border-border bg-muted/30 flex flex-wrap gap-1.5 border-t p-2.5">
                         {cell.source === 'inventory' && cell.item.definition?.type === 'potion' && (
                           <button
                             onClick={handleUsePotion}
                             disabled={isLoading}
-                            className="rounded bg-violet-600 px-2.5 py-1.5 text-xs text-white hover:bg-violet-700 disabled:opacity-50"
+                            className="rounded bg-violet-600 px-3 py-1.5 text-xs text-white hover:bg-violet-700 disabled:opacity-50"
                           >
                             使用
                           </button>
@@ -281,7 +370,7 @@ export function InventoryPanel() {
                             <button
                               onClick={handleEquip}
                               disabled={isLoading}
-                              className="rounded bg-green-600 px-2.5 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
+                              className="rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
                             >
                               装备
                             </button>
@@ -289,15 +378,15 @@ export function InventoryPanel() {
                         <button
                           onClick={() => handleMove(cell.source === 'inventory')}
                           disabled={isLoading}
-                          className="rounded bg-blue-600 px-2.5 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+                          className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {cell.source === 'storage' ? '取' : '存'}
+                          {cell.source === 'storage' ? '取回' : '存入'}
                         </button>
                         {cell.source === 'inventory' && (
                           <button
                             onClick={handleSell}
                             disabled={isLoading}
-                            className="rounded bg-red-600 px-2.5 py-1.5 text-xs text-white hover:bg-red-700 disabled:opacity-50"
+                            className="rounded bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700 disabled:opacity-50"
                           >
                             出售
                           </button>

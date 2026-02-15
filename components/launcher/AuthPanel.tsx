@@ -31,11 +31,13 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
       await login(email, password)
       toast.success('登录成功', {
         description: `欢迎回来，${email}`,
+        position: 'top-center',
       })
       onOpenChange(false)
     } catch (err) {
       toast.error('登录失败', {
         description: err instanceof Error ? err.message : '登录失败，请检查邮箱和密码',
+        position: 'top-center',
       })
     }
   }
@@ -46,7 +48,9 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
 
   const handleLogoutConfirm = () => {
     logout()
-    toast.success('已退出登录')
+    toast.success('已退出登录', {
+      position: 'top-center',
+    })
     setConfirmingLogout(false)
     onOpenChange(false)
   }
@@ -117,11 +121,13 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
       await login(email, password)
       toast.success('登录成功', {
         description: `欢迎回来，${email}`,
+        position: 'top-center',
       })
       toggleDisplayMode('apps')
     } catch (err) {
       toast.error('登录失败', {
         description: err instanceof Error ? err.message : '登录失败，请检查邮箱和密码',
+        position: 'top-center',
       })
     }
   }
@@ -132,7 +138,9 @@ export function AuthPanel({ toggleDisplayMode }: AuthPanelProps) {
 
   const handleLogoutConfirm = () => {
     logout()
-    toast.success('已退出登录')
+    toast.success('已退出登录', {
+      position: 'top-center',
+    })
     setConfirmingLogout(false)
     toggleDisplayMode('apps')
   }

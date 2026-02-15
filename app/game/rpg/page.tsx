@@ -17,6 +17,8 @@ import useAuthStore from '@/stores/authStore'
 import { CopperDisplay } from './components/CopperDisplay'
 import { CircularProgress } from './components/CircularProgress'
 
+import './rpg.module.css'
+
 type GameView = 'select' | 'create' | 'game'
 
 export default function RPGGame() {

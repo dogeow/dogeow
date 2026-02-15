@@ -90,6 +90,7 @@ export interface ItemDefinition {
   required_energy: number
   icon?: string
   description?: string
+  buy_price?: number
 }
 
 export interface GameItem {
@@ -125,6 +126,14 @@ export interface SkillDefinition {
   cooldown: number
   icon?: string
   effects?: Record<string, unknown>
+}
+
+/** 技能列表项：定义 + 是否已学；已学时含 character_skill_id、level、slot_index */
+export interface SkillWithLearnedState extends SkillDefinition {
+  is_learned: boolean
+  character_skill_id?: number
+  level?: number
+  slot_index?: number | null
 }
 
 export interface CharacterSkill {
