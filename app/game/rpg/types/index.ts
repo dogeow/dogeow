@@ -277,7 +277,7 @@ export interface CombatStatusResponse {
 
 // 常量
 export const QUALITY_COLORS: Record<ItemQuality, string> = {
-  common: '#ffffff',
+  common: '#9ca3af',
   magic: '#6888ff',
   rare: '#ffcc00',
   legendary: '#ff8000',
