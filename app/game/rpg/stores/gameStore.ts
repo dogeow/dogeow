@@ -52,6 +52,8 @@ interface GameState {
 
   // 商店状态
   shopItems: ShopItem[]
+  /** 下次商店装备刷新的时间戳（秒），用于显示“下次刷新” */
+  shopNextRefreshAt: number | null
 
   // Actions
   setActiveTab: (
@@ -136,6 +138,7 @@ const initialState = {
   error: null,
   activeTab: 'character' as const,
   shopItems: [],
+  shopNextRefreshAt: null,
 }
 
 const store: StateCreator<GameState> = (set, get) => ({
@@ -144,33 +147,23 @@ const store: StateCreator<GameState> = (set, get) => ({
   setActiveTab: tab => set(state => ({ ...state, activeTab: tab })),
 
   fetchCharacters: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    set(state => ({ ...state, error: null }))
     try {
-      console.log('[GameStore] Fetching characters...')
       const response = (await apiGet('/rpg/characters')) as {
         characters: GameCharacter[]
         experience_table?: Record<number, number>
         message?: string
       }
-      console.log('[GameStore] Full response:', JSON.stringify(response, null, 2))
-      console.log('[GameStore] Response keys:', Object.keys(response || {}))
-      console.log('[GameStore] Characters response:', response)
-      console.log('[GameStore] Characters array:', response?.characters)
-      console.log('[GameStore] Characters count:', response?.characters?.length)
-      console.log('[GameStore] Characters type:', typeof response?.characters)
-      console.log('[GameStore] Is array?:', Array.isArray(response?.characters))
       set(state => ({
         ...state,
-        characters: response?.characters || [],
+        characters: Array.isArray(response?.characters) ? response.characters : [],
         experienceTable: response?.experience_table ?? state.experienceTable,
-        isLoading: false,
       }))
     } catch (error) {
       console.error('[GameStore] Fetch characters error:', error)
       set(state => ({
         ...state,
         error: (error as Error).message,
-        isLoading: false,
         characters: [],
       }))
     }
@@ -1000,10 +993,12 @@ const store: StateCreator<GameState> = (set, get) => ({
       const response = (await apiGet(`/rpg/shop${params}`)) as {
         items: ShopItem[]
         player_copper: number
+        next_refresh_at?: number
       }
       set(state => ({
         ...state,
         shopItems: response.items || [],
+        shopNextRefreshAt: response.next_refresh_at ?? null,
         character: state.character ? { ...state.character, copper: response.player_copper } : null,
         isLoading: false,
       }))

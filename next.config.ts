@@ -33,6 +33,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'public.blob.vercel-storage.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'upyun.dogeow.com',
+        pathname: '/**',
+      },
     ],
     // 优化设备尺寸，添加更多小尺寸选项以匹配卡片大小
     deviceSizes: [

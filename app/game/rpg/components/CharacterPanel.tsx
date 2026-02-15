@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useGameStore } from '../stores/gameStore'
-import { CopperDisplay } from './CopperDisplay'
+import { EquipmentGrid } from './InventoryPanel'
 import {
   CLASS_NAMES,
   STAT_DESCRIPTIONS,
@@ -23,11 +23,10 @@ const classIcon: Record<CharacterClass, string> = {
 export function CharacterPanel() {
   const {
     character,
-    experienceTable,
     combatStats,
     statsBreakdown,
-    currentHp,
-    currentMana,
+    equipment,
+    unequipItem,
     allocateStats,
     isLoading,
   } = useGameStore()
@@ -48,17 +47,6 @@ export function CharacterPanel() {
     () => (character ? character.stat_points - totalAllocating : 0),
     [character, totalAllocating]
   )
-
-  // 经验值由后端 experience_table 提供；进度条与文案一致：当前经验 / 下一级所需总经验
-  const expInfo = useMemo(() => {
-    if (!character) return { expToCurrent: 0, expToNext: 1, expPercent: 0 }
-    const expToCurrent = experienceTable[character.level] ?? character.level * 5000
-    const expToNext = experienceTable[character.level + 1] ?? (character.level + 1) * 5000
-    // 与界面文案「当前 / 下一级总需求」一致：用当前经验占下一级需求的比例，避免因数据不一致算出 0%
-    const expPercent =
-      expToNext > 0 ? Math.max(0, Math.min(100, (character.experience / expToNext) * 100)) : 0
-    return { expToCurrent, expToNext, expPercent }
-  }, [character, experienceTable])
 
   const handleAllocate = useCallback(async () => {
     if (!character) return
@@ -88,31 +76,13 @@ export function CharacterPanel() {
               Lv.{character.level} {CLASS_NAMES[character.class]}
             </p>
           </div>
-          <div className="text-right">
-            <p className="text-sm font-bold sm:text-base">
-              <CopperDisplay copper={character.copper} size="md" />
-            </p>
-          </div>
         </div>
+      </PanelCard>
 
-        {/* 经验条 */}
-        <div className="mb-3 sm:mb-4">
-          <div className="text-muted-foreground mb-1 flex justify-between text-xs sm:text-sm">
-            <span>经验值</span>
-            <span className="text-xs">
-              {character.experience.toLocaleString()} / {expInfo.expToNext.toLocaleString()}
-            </span>
-          </div>
-          <div className="bg-muted h-2 overflow-hidden rounded-full">
-            <div
-              className="h-full min-w-0 rounded-full transition-[width] duration-300"
-              style={{
-                width: `${Math.min(100, expInfo.expPercent)}%`,
-                backgroundColor: expInfo.expPercent > 0 ? '#f59e0b' : 'transparent',
-              }}
-            />
-          </div>
-        </div>
+      {/* 装备栏 */}
+      <PanelCard>
+        <h4 className="text-foreground mb-3 text-base font-medium sm:mb-4 sm:text-lg">装备</h4>
+        <EquipmentGrid equipment={equipment} onUnequip={unequipItem} />
       </PanelCard>
 
       {/* 战斗属性 - 移动端优化 */}
@@ -120,18 +90,6 @@ export function CharacterPanel() {
         <PanelCard>
           <h4 className="text-foreground mb-3 text-base font-medium sm:text-lg">战斗属性</h4>
           <div className="flex flex-wrap gap-2 sm:gap-3">
-            <StatBar
-              label="生命值"
-              value={`${currentHp ?? combatStats.max_hp} / ${combatStats.max_hp}`}
-              icon="❤️"
-              color="red"
-            />
-            <StatBar
-              label="法力值"
-              value={`${currentMana ?? combatStats.max_mana} / ${combatStats.max_mana}`}
-              icon="💙"
-              color="blue"
-            />
             <StatBarWithBreakdown
               label="攻击力"
               value={combatStats.attack}
@@ -366,7 +324,7 @@ function StatBarWithBreakdown({
       </div>
       {breakdown != null && (
         <p className="text-muted-foreground mt-1 text-[10px] sm:text-xs">
-          基础 {fmt(breakdown.base)} + 装备 {fmt(breakdown.equipment)} = {fmt(breakdown.total)}
+          基础 {fmt(breakdown.base)} + 装备 {fmt(breakdown.equipment)}
         </p>
       )}
     </div>

@@ -1,0 +1,4 @@
+# 物品图标抠图（透明背景），仅 items 流程需要；[cpu] 含 onnxruntime
+rembg[cpu]>=2.0.50
+# 缩放/保存图片（PIL）
+Pillow>=10.0.0

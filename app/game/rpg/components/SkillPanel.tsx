@@ -1,8 +1,40 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
+import Image from 'next/image'
 import { useGameStore } from '../stores/gameStore'
 import { CharacterSkill, SkillDefinition } from '../types'
+
+/** 技能图标：优先 /game/rpg/skills/skill_{id}.png，加载失败则用 emoji/首字 */
+function SkillIcon({
+  skillId,
+  icon,
+  name,
+}: {
+  skillId: number
+  icon?: string | null
+  name: string
+}) {
+  const fallback = icon && icon.length <= 4 ? icon : (name?.[0] ?? '?')
+  const [useImg, setUseImg] = useState(true)
+  const src = `/game/rpg/skills/skill_${skillId}.png`
+  return (
+    <span className="bg-muted relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded text-base sm:h-10 sm:w-10">
+      {useImg ? (
+        <Image
+          src={src}
+          alt={name}
+          fill
+          className="object-cover"
+          sizes="40px"
+          onError={() => setUseImg(false)}
+        />
+      ) : (
+        fallback
+      )}
+    </span>
+  )
+}
 
 export function SkillPanel() {
   const { character, skills, availableSkills, learnSkill, isLoading } = useGameStore()
@@ -45,6 +77,14 @@ export function SkillPanel() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {character != null && (
+        <div className="bg-muted/50 text-foreground flex items-center justify-between rounded-lg px-3 py-2 sm:px-4 sm:py-2.5">
+          <span className="text-sm font-medium sm:text-base">技能点</span>
+          <span className="text-lg font-bold text-purple-600 sm:text-xl dark:text-purple-400">
+            {character.skill_points}
+          </span>
+        </div>
+      )}
       <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row">
         {/* 已学技能 */}
         <SkillSection title="已学技能" emptyText="还没有学习任何技能">
@@ -70,20 +110,23 @@ export function SkillPanel() {
                 <button
                   key={skill.id}
                   onClick={() => handleUnlearnedSkillClick(skill)}
-                  className="bg-muted/50 hover:bg-muted w-full rounded-lg p-2.5 text-left transition-colors sm:p-3"
+                  className="bg-muted/50 hover:bg-muted flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-colors sm:p-3"
                   disabled={isLoading}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="text-foreground text-sm font-medium sm:text-base">
-                      {skill.name}
-                    </span>
-                    <span className="text-xs text-purple-500 dark:text-purple-400">
-                      {skill.type === 'active' ? '主动' : '被动'}
-                    </span>
+                  <SkillIcon skillId={skill.id} icon={skill.icon} name={skill.name} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-foreground text-sm font-medium sm:text-base">
+                        {skill.name}
+                      </span>
+                      <span className="text-xs text-purple-500 dark:text-purple-400">
+                        {skill.type === 'active' ? '主动' : '被动'}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+                      {skill.description}
+                    </p>
                   </div>
-                  <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
-                    {skill.description}
-                  </p>
                 </button>
               ))}
             </div>
@@ -281,23 +324,26 @@ function SkillCard({
   isSelected: boolean
   onClick: () => void
 }) {
-  // 防御性检查 - 确保 skill 对象和 skill 属性都存在
   const skillName = skill?.skill?.name || '未知技能'
   const skillDescription = skill?.skill?.description || ''
+  const def = skill?.skill
 
   return (
     <button
       onClick={onClick}
-      className={`w-full rounded-lg p-2.5 text-left transition-all sm:p-3 ${
+      className={`flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-all sm:p-3 ${
         isSelected
           ? 'border border-purple-500 bg-purple-600/30 dark:border-purple-400 dark:bg-purple-500/20'
           : 'bg-muted/50 hover:bg-muted'
       }`}
     >
-      <div className="flex items-center justify-between">
-        <span className="text-foreground text-sm font-medium sm:text-base">{skillName}</span>
+      {def && <SkillIcon skillId={def.id} icon={def.icon} name={skillName} />}
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between">
+          <span className="text-foreground text-sm font-medium sm:text-base">{skillName}</span>
+        </div>
+        <p className="text-muted-foreground mt-1 text-xs">{skillDescription}</p>
       </div>
-      <p className="text-muted-foreground mt-1 text-xs">{skillDescription}</p>
     </button>
   )
 }

@@ -8,76 +8,125 @@ import {
   type CombatResult,
   type SkillUsedEntry,
 } from '../types'
-import { useMemo, useState, useEffect, useRef } from 'react'
+import { useMemo, useState, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import type { CharacterSkill } from '../types'
+import type { MapDefinition } from '../types'
+import { getMapBackgroundStyle } from '../utils/mapBackground'
 
-function MapInfo({ currentMap }: { currentMap: any }) {
-  if (!currentMap) {
-    return <p className="text-muted-foreground text-sm">尚未进入任何地图</p>
-  }
+const ACT_NAMES: Record<number, string> = {
+  1: '一',
+  2: '二',
+  3: '三',
+  4: '四',
+  5: '五',
+  6: '六',
+  7: '七',
+  8: '八',
+}
+function getActName(actNum: number): string {
+  return `第${ACT_NAMES[actNum] ?? actNum}幕`
+}
+
+function MapCardMonsterAvatar({ monsterId, name }: { monsterId: number; name: string }) {
+  const [useImg, setUseImg] = useState(true)
   return (
-    <div>
-      <p className="text-base font-bold text-green-600 sm:text-lg dark:text-green-400">
-        {currentMap.name}
-      </p>
-      <p className="text-muted-foreground text-xs sm:text-sm">{currentMap.description}</p>
-      <p className="text-muted-foreground/80 text-xs">
-        等级范围: Lv.{currentMap.min_level}-{currentMap.max_level}
-      </p>
-    </div>
+    <span
+      className="bg-muted/80 relative flex h-6 w-6 shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 text-[10px] font-medium"
+      title={name}
+    >
+      {useImg ? (
+        <Image
+          src={`/game/rpg/monsters/monster_${monsterId}.png`}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="24px"
+          onError={() => setUseImg(false)}
+        />
+      ) : (
+        (name?.[0] ?? '?')
+      )}
+    </span>
   )
 }
 
-function CombatButton({
-  currentMap,
+/** VS 区域：可点击的 emoji，未战斗静止、战斗中播放动画 */
+function VSSwords({
   isFighting,
   isLoading,
-  onStart,
-  onStop,
+  onToggle,
 }: {
-  currentMap: any
   isFighting: boolean
   isLoading: boolean
-  onStart: () => void
-  onStop: () => void
+  onToggle: () => void
 }) {
-  if (!currentMap) return null
-  if (!isFighting)
-    return (
-      <button
-        onClick={onStart}
-        disabled={isLoading}
-        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-bold text-white hover:bg-red-700 disabled:opacity-50 sm:px-6 sm:py-3 sm:text-base"
-      >
-        ⚔️ 开始挂机
-      </button>
-    )
   return (
     <button
-      onClick={onStop}
+      type="button"
+      onClick={onToggle}
       disabled={isLoading}
-      className="rounded-lg bg-orange-600 px-4 py-2 text-sm font-bold text-white hover:bg-orange-700 disabled:opacity-50 sm:px-6 sm:py-3 sm:text-base"
+      className="text-primary hover:text-primary/90 focus-visible:ring-ring flex shrink-0 flex-col items-center justify-center gap-0.5 transition-colors focus:outline-none focus-visible:ring-2 disabled:opacity-50"
+      title={isFighting ? '停止挂机' : '开始挂机'}
+      aria-label={isFighting ? '停止挂机' : '开始挂机'}
     >
-      停止挂机
+      <span
+        className={`text-3xl leading-none sm:text-4xl ${isFighting ? 'vs-emoji-fighting' : ''}`}
+        aria-hidden
+      >
+        ⚔️
+      </span>
+      <span className="text-primary text-xs font-bold sm:text-sm">VS</span>
     </button>
   )
 }
 
-/** 战斗对阵：左侧用户，右侧怪物；支持先显示怪物再扣血（monsterHpBeforeRound） */
+/** 怪物图标：有 monsterId 时优先用 /game/rpg/monsters/monster_{id}.png，失败则回退到首字；父组件用 key={monsterId} 以便切换怪物时重置 */
+function MonsterIcon({ monsterId, name }: { monsterId?: number; name: string }) {
+  const fallback = name && name[0] ? name[0] : '?'
+  const src = monsterId != null ? `/game/rpg/monsters/monster_${monsterId}.png` : ''
+  const [useImg, setUseImg] = useState(true)
+  return (
+    <span className="bg-destructive/20 relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full text-2xl sm:h-24 sm:w-24 sm:text-3xl">
+      {useImg && src ? (
+        <Image
+          src={src}
+          alt={name}
+          fill
+          className="object-cover"
+          sizes="96px"
+          onError={() => setUseImg(false)}
+        />
+      ) : (
+        fallback
+      )}
+    </span>
+  )
+}
+
+/** 战斗对阵：左侧用户，右侧怪物；支持先显示怪物再扣血（monsterHpBeforeRound）；中间 VS 可点击开始/停止挂机 */
 function BattleArena({
   character,
   combatStats,
   currentHp,
   currentMana,
   monster,
+  monsterId,
   monsterHpBeforeRound,
+  isFighting,
+  isLoading,
+  onCombatToggle,
 }: {
   character: { name: string; class: string; level: number } | null
   combatStats: { max_hp: number; max_mana: number } | null
   currentHp: number | null
   currentMana: number | null
   monster: { name: string; type: string; level: number; hp?: number; max_hp?: number } | null
+  monsterId?: number
   monsterHpBeforeRound?: number
+  isFighting: boolean
+  isLoading: boolean
+  onCombatToggle: () => void
 }) {
   const finalMonsterHp = monster?.hp ?? 0
   const maxHp = monster?.max_hp ?? 0
@@ -117,15 +166,14 @@ function BattleArena({
     : 0
 
   return (
-    <div className="border-border bg-muted/30 flex items-stretch gap-3 rounded-lg border p-3 sm:gap-4 sm:p-4">
+    <div className="flex items-stretch gap-3 p-3 sm:gap-4 sm:p-4">
       {/* 左侧：用户 */}
-      <div className="bg-card border-border flex flex-1 flex-col items-center gap-2 rounded-lg border p-3 sm:p-4">
-        <div className="text-muted-foreground text-xs font-medium sm:text-sm">我方</div>
-        <div className="bg-primary/20 text-primary flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold sm:h-14 sm:w-14 sm:text-xl">
+      <div className="flex flex-1 flex-col items-center gap-2 p-3 sm:p-4">
+        <div className="bg-primary/20 text-primary flex h-20 w-20 shrink-0 items-center justify-center rounded-full text-2xl font-bold sm:h-24 sm:w-24 sm:text-3xl">
           {character?.name?.charAt(0) ?? '?'}
         </div>
         <div className="text-center">
-          <p className="text-foreground font-medium">{character?.name ?? '—'}</p>
+          <p className="text-muted-foreground text-sm font-medium">{character?.name ?? '—'}</p>
           <p className="text-muted-foreground text-xs">
             Lv.{character?.level ?? '?'} {character?.class ?? ''}
           </p>
@@ -160,19 +208,14 @@ function BattleArena({
         )}
       </div>
 
-      {/* VS 分隔 */}
-      <div className="text-muted-foreground flex shrink-0 items-center text-lg font-bold sm:text-xl">
-        VS
-      </div>
+      {/* VS 双剑：点击开始/停止挂机，战斗中播放交击动画 */}
+      <VSSwords isFighting={isFighting} isLoading={isLoading} onToggle={onCombatToggle} />
 
       {/* 右侧：怪物 */}
-      <div className="bg-card border-border flex flex-1 flex-col items-center gap-2 rounded-lg border p-3 sm:p-4">
-        <div className="text-muted-foreground text-xs font-medium sm:text-sm">敌方</div>
-        <div className="bg-destructive/20 flex h-12 w-12 items-center justify-center rounded-full text-lg sm:h-14 sm:w-14 sm:text-xl">
-          {monster?.name?.charAt(0) ?? '?'}
-        </div>
+      <div className="flex flex-1 flex-col items-center gap-2 p-3 sm:p-4">
+        <MonsterIcon key={monsterId} monsterId={monsterId} name={monster?.name ?? ''} />
         <div className="text-center">
-          <p className="text-foreground font-medium">{monster?.name ?? '—'}</p>
+          <p className="text-muted-foreground text-sm font-medium">{monster?.name ?? '—'}</p>
           <p className="text-muted-foreground text-xs">
             Lv.{monster?.level ?? '?'} {monster?.type ?? ''}
           </p>
@@ -203,12 +246,33 @@ function BattleArena({
   )
 }
 
-/** 技能图标：优先 emoji/icon，否则取首字 */
-function SkillIcon({ icon, name }: { icon?: string | null; name: string }) {
-  const display = icon && icon.length <= 4 ? icon : name && name[0] ? name[0] : '?'
+/** 技能图标：有 skillId 时优先用 /game/rpg/skills/skill_{id}.png，加载失败则回退到 emoji/首字 */
+function SkillIcon({
+  icon,
+  name,
+  skillId,
+}: {
+  icon?: string | null
+  name: string
+  skillId?: number
+}) {
+  const fallback = icon && icon.length <= 4 ? icon : name && name[0] ? name[0] : '?'
+  const [useImg, setUseImg] = useState(!!skillId)
+  const src = skillId != null ? `/game/rpg/skills/skill_${skillId}.png` : ''
   return (
-    <span className="bg-muted flex h-8 w-8 items-center justify-center rounded text-base sm:h-9 sm:w-9">
-      {display}
+    <span className="bg-muted relative flex h-8 w-8 items-center justify-center overflow-hidden rounded text-base sm:h-9 sm:w-9">
+      {useImg && src ? (
+        <Image
+          src={src}
+          alt={name}
+          fill
+          className="object-cover"
+          sizes="36px"
+          onError={() => setUseImg(false)}
+        />
+      ) : (
+        fallback
+      )}
     </span>
   )
 }
@@ -245,7 +309,7 @@ function BattleSkillBar({
         const buttonContent = (
           <>
             <div className="relative">
-              <SkillIcon icon={def.icon} name={def.name} />
+              <SkillIcon icon={def.icon} name={def.name} skillId={def.id} />
               {onCooldown && (
                 <div
                   className="absolute inset-0 flex items-center justify-center overflow-hidden rounded bg-black/50"
@@ -306,11 +370,7 @@ function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[] }) {
       {maxLogs.map((log, index) => (
         <div
           key={`combat-log-${index}`}
-          className={`flex flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm ${
-            log.victory
-              ? 'bg-green-600/10 dark:bg-green-500/10'
-              : 'bg-red-600/10 dark:bg-red-500/10'
-          }`}
+          className="flex flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
         >
           <span
             className={`font-semibold ${log.victory ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
@@ -320,7 +380,6 @@ function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[] }) {
           <span className="text-foreground">
             {log.monster?.name ?? '?'} Lv.{log.monster?.level ?? '?'}
           </span>
-          <span className="text-orange-500 dark:text-orange-400">{log.damage_dealt}</span>
           <span className="text-purple-500 dark:text-purple-400">+{log.experience_gained}</span>
           {(log.copper_gained ?? 0) > 0 && (
             <span className="inline-flex items-center text-yellow-600 dark:text-yellow-400">
@@ -352,6 +411,10 @@ function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[] }) {
 export function CombatPanel() {
   const {
     currentMap,
+    maps,
+    mapProgress,
+    enterMap,
+    fetchMaps,
     startCombat,
     isFighting,
     setShouldAutoCombat,
@@ -367,6 +430,51 @@ export function CombatPanel() {
     enabledSkillIds,
     toggleEnabledSkill,
   } = useGameStore()
+
+  const [mapDropdownOpen, setMapDropdownOpen] = useState(false)
+  const [dropdownAct, setDropdownAct] = useState(1)
+  const mapDropdownRef = useRef<HTMLDivElement>(null)
+
+  const mapsByAct = useMemo(() => {
+    const actMaps: Record<number, MapDefinition[]> = {}
+    for (const map of maps) {
+      if (!actMaps[map.act]) actMaps[map.act] = []
+      actMaps[map.act].push(map)
+    }
+    return actMaps
+  }, [maps])
+  const actOrder = useMemo(
+    () =>
+      Object.keys(mapsByAct)
+        .map(Number)
+        .sort((a, b) => a - b),
+    [mapsByAct]
+  )
+  const effectiveAct = actOrder.includes(dropdownAct) ? dropdownAct : (actOrder[0] ?? 1)
+  const displayActMaps = mapsByAct[effectiveAct] ?? []
+
+  useEffect(() => {
+    if (mapDropdownOpen && maps.length === 0) fetchMaps()
+  }, [mapDropdownOpen, maps.length, fetchMaps])
+
+  useEffect(() => {
+    if (!mapDropdownOpen) return
+    const onDocClick = (e: MouseEvent) => {
+      if (mapDropdownRef.current && !mapDropdownRef.current.contains(e.target as Node)) {
+        setMapDropdownOpen(false)
+      }
+    }
+    document.addEventListener('click', onDocClick)
+    return () => document.removeEventListener('click', onDocClick)
+  }, [mapDropdownOpen])
+
+  const handleSelectMap = useCallback(
+    async (mapId: number) => {
+      await enterMap(mapId)
+      setMapDropdownOpen(false)
+    },
+    [enterMap]
+  )
 
   const activeSkills = useMemo(() => skills.filter(s => s.skill?.type === 'active'), [skills])
   const cooldownSecondsBySkillId = useMemo(() => {
@@ -434,38 +542,170 @@ export function CombatPanel() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
-      {/* 当前地图与战斗控制 */}
-      <div className="bg-card border-border rounded-lg border p-3 sm:p-4">
-        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
-            <h4 className="text-foreground mb-2 text-base font-medium sm:mb-3 sm:text-lg">
-              当前地图
-            </h4>
-            <MapInfo currentMap={currentMap} />
+      {/* 战斗导航顶部：当前地图（带缩略图，点击展开下拉选择） */}
+      <div className="relative" ref={mapDropdownRef}>
+        <button
+          type="button"
+          onClick={() => setMapDropdownOpen(prev => !prev)}
+          className="border-border hover:bg-muted/50 flex w-full items-stretch overflow-hidden rounded-lg border text-left transition-colors"
+        >
+          {currentMap ? (
+            <>
+              <div
+                className="h-14 w-14 shrink-0 rounded-l-[calc(theme(borderRadius.lg)-1px)] sm:h-16 sm:w-16"
+                style={getMapBackgroundStyle(currentMap, { useOrigin: true })}
+              />
+              <div className="text-foreground flex min-w-0 flex-1 flex-col justify-center px-3 py-2 sm:px-4">
+                <span className="truncate text-sm font-medium text-green-600 sm:text-base dark:text-green-400">
+                  {currentMap.name}
+                </span>
+                <span className="text-muted-foreground truncate text-xs">
+                  {currentMap.description}
+                </span>
+              </div>
+              <span
+                className="text-muted-foreground flex shrink-0 items-center pr-2 text-xs sm:pr-3"
+                aria-hidden
+              >
+                {mapDropdownOpen ? '▲' : '▼'}
+              </span>
+            </>
+          ) : (
+            <>
+              <div
+                className="bg-muted/50 flex h-14 w-14 shrink-0 items-center justify-center sm:h-16 sm:w-16"
+                aria-hidden
+              >
+                <span className="text-muted-foreground text-xl">🗺️</span>
+              </div>
+              <span className="text-muted-foreground flex flex-1 items-center px-3 py-2 sm:px-4">
+                选择地图
+              </span>
+              <span
+                className="text-muted-foreground flex shrink-0 items-center pr-2 text-xs sm:pr-3"
+                aria-hidden
+              >
+                ▼
+              </span>
+            </>
+          )}
+        </button>
+        {mapDropdownOpen && (
+          <div className="border-border bg-card absolute top-full right-0 left-0 z-50 mt-1 flex max-h-[70vh] overflow-hidden rounded-lg border shadow-lg">
+            {actOrder.length > 0 ? (
+              <>
+                <div className="bg-muted/50 flex shrink-0 flex-col gap-1 overflow-y-auto p-1.5">
+                  {actOrder.map(actNum => (
+                    <button
+                      key={actNum}
+                      type="button"
+                      onClick={() => setDropdownAct(actNum)}
+                      className={`w-full rounded-md px-3 py-2 text-left text-xs font-medium whitespace-nowrap transition-colors sm:text-sm ${
+                        effectiveAct === actNum
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      }`}
+                    >
+                      {getActName(actNum)}
+                    </button>
+                  ))}
+                </div>
+                <div className="min-w-0 flex-1 overflow-y-auto p-2">
+                  <div className="flex flex-col gap-2">
+                    {displayActMaps.map(map => {
+                      const isCurrentMap = currentMap?.id === map.id
+                      const canEnter = !!character && character.level >= map.min_level
+                      return (
+                        <button
+                          key={map.id}
+                          type="button"
+                          onClick={() => canEnter && handleSelectMap(map.id)}
+                          disabled={!canEnter}
+                          className={`relative min-h-[80px] w-full overflow-hidden rounded-lg border-2 text-left transition-all ${
+                            isCurrentMap
+                              ? 'border-primary'
+                              : canEnter
+                                ? 'border-border hover:border-primary'
+                                : 'border-border opacity-60'
+                          }`}
+                          style={getMapBackgroundStyle(map, { fill: true })}
+                        >
+                          <div className="bg-black/50 p-2.5 sm:p-3">
+                            <div className="mb-1 flex items-start justify-between">
+                              <span className="text-foreground text-sm font-medium sm:text-base">
+                                {map.name}
+                              </span>
+                              {isCurrentMap && (
+                                <span className="bg-primary text-primary-foreground rounded px-1.5 py-0.5 text-xs">
+                                  当前
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-muted-foreground mb-1 line-clamp-1 text-xs">
+                              {map.description}
+                            </p>
+                            <p className="text-muted-foreground mb-1.5 text-xs">
+                              Lv.{map.min_level}-{map.max_level}
+                              {map.monsters?.length
+                                ? ` · ${map.monsters.map(m => m.name).join('、')}`
+                                : ''}
+                            </p>
+                            {map.monsters?.length ? (
+                              <div className="flex flex-wrap gap-1">
+                                {map.monsters.map(m => (
+                                  <MapCardMonsterAvatar key={m.id} monsterId={m.id} name={m.name} />
+                                ))}
+                              </div>
+                            ) : null}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground p-4 text-center text-sm">加载地图中…</p>
+            )}
           </div>
-          <CombatButton
-            currentMap={currentMap}
-            isFighting={isFighting}
-            isLoading={isLoading}
-            onStart={handleStartCombat}
-            onStop={handleStopCombat}
-          />
-        </div>
-        {/* 用户 vs 怪物（战斗时或最近一次战斗结果） */}
-        {(isFighting || combatResult) && (
+        )}
+      </div>
+
+      {/* 战斗区域：有地图时显示，VS 处点击开始/停止挂机 */}
+      <div className="border-border bg-card rounded-lg border p-2 sm:p-3">
+        {/* 用户 vs 怪物（仅此区域显示地图背景，区域 1:1 比例） */}
+        {currentMap && (
           <div className="border-border mt-3 border-t pt-3">
-            <BattleArena
-              character={
-                character
-                  ? { name: character.name, class: character.class, level: character.level }
-                  : null
+            <div
+              className="relative aspect-square w-full overflow-hidden rounded-lg"
+              style={
+                currentMap
+                  ? getMapBackgroundStyle(currentMap, { useOrigin: true, fill: true })
+                  : undefined
               }
-              combatStats={combatStats}
-              currentHp={currentHp}
-              currentMana={currentMana}
-              monster={combatResult?.monster ?? null}
-              monsterHpBeforeRound={combatResult?.monster_hp_before_round}
-            />
+            >
+              {currentMap && (
+                <div className="absolute inset-0 rounded-lg bg-black/15" aria-hidden />
+              )}
+              <div className="relative flex h-full w-full items-center justify-center p-3 sm:p-4">
+                <BattleArena
+                  character={
+                    character
+                      ? { name: character.name, class: character.class, level: character.level }
+                      : null
+                  }
+                  combatStats={combatStats}
+                  currentHp={currentHp}
+                  currentMana={currentMana}
+                  monster={combatResult?.monster ?? null}
+                  monsterId={combatResult?.monster_id ?? character?.combat_monster_id ?? undefined}
+                  monsterHpBeforeRound={combatResult?.monster_hp_before_round}
+                  isFighting={isFighting}
+                  isLoading={isLoading}
+                  onCombatToggle={isFighting ? handleStopCombat : handleStartCombat}
+                />
+              </div>
+            </div>
           </div>
         )}
         {/* 战斗中的技能栏：图标 + CD 冷却动画 */}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useGameStore } from '../stores/gameStore'
 import {
@@ -45,6 +46,26 @@ const ITEM_TYPE_NAMES: Record<string, string> = {
   gem: '宝石',
 }
 
+// 背包分类 tabs：emoji + 对应物品 type（不显示「全部」按钮，再次点击当前分类即取消选择 = 显示全部）
+const INVENTORY_CATEGORIES = [
+  { id: 'weapon', emoji: '⚔️', label: '武器', types: ['weapon'] },
+  {
+    id: 'armor',
+    emoji: '🛡️',
+    label: '防具',
+    types: ['helmet', 'armor', 'gloves', 'boots', 'belt'],
+  },
+  { id: 'accessory', emoji: '💍', label: '饰品', types: ['ring', 'amulet'] },
+  { id: 'potion', emoji: '🧪', label: '药水', types: ['potion'] },
+  { id: 'gem', emoji: '💎', label: '宝石', types: ['gem'] },
+] as const
+
+function itemMatchesCategory(item: GameItem, types: readonly string[] | null): boolean {
+  if (!types) return true
+  const t = item.definition?.type ?? ''
+  return types.includes(t)
+}
+
 // 获取物品显示名称：优先 definition.name，否则用品质+类型
 function getItemDisplayName(item: GameItem): string {
   const name = item.definition?.name?.trim()
@@ -53,16 +74,44 @@ function getItemDisplayName(item: GameItem): string {
   return `${QUALITY_NAMES[item.quality]} ${typeName}`
 }
 
-// 获取物品图标：药水按 sub_type 区分 HP❤️/MP💙，其余优先按 type 映射，否则用 definition.icon，最后默认 📦
-function getItemIcon(item: GameItem): string {
-  if (item.definition.type === 'potion') {
-    if (item.definition.sub_type === 'hp') return '❤️'
-    if (item.definition.sub_type === 'mp') return '💙'
+// 获取物品图标回退：药水按 sub_type 区分 HP❤️/MP💙，其余按 type 或 definition.icon，最后 📦
+function getItemIconFallback(item: GameItem): string {
+  const def = item.definition
+  if (!def) return '📦'
+  if (def.type === 'potion') {
+    if (def.sub_type === 'hp') return '❤️'
+    if (def.sub_type === 'mp') return '💙'
   }
-  const typeIcon = ITEM_ICONS[item.definition.type]
+  const typeIcon = ITEM_ICONS[def.type]
   if (typeIcon) return typeIcon
-  if (item.definition.icon && !item.definition.icon.includes('.')) return item.definition.icon
+  if (def.icon && !def.icon.includes('.')) return def.icon
   return '📦'
+}
+
+/** 物品图标：优先 /game/rpg/items/item_{definition_id}.png（按 game_item_definitions 生成），加载失败则用 emoji */
+function ItemIcon({ item, className }: { item: GameItem; className?: string }) {
+  const definitionId = item.definition?.id
+  const fallback = getItemIconFallback(item)
+  const [useImg, setUseImg] = useState(definitionId != null)
+  const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
+  return (
+    <span
+      className={`relative inline-flex h-full w-full items-center justify-center ${className ?? ''}`}
+    >
+      {useImg && src ? (
+        <Image
+          src={src}
+          alt=""
+          fill
+          className="object-contain"
+          sizes="48px"
+          onError={() => setUseImg(false)}
+        />
+      ) : (
+        <span className="drop-shadow-sm">{fallback}</span>
+      )}
+    </span>
+  )
 }
 
 // 物品堆叠函数 - 相同属性的物品可以堆叠
@@ -74,14 +123,14 @@ function stackItems(items: GameItem[]): StackedItem[] {
   const stacks = new Map<string, StackedItem>()
 
   items.forEach(item => {
-    // 生成唯一键：物品定义ID + 属性 + 词缀
+    const defId = item.definition?.id ?? item.definition_id ?? 'unknown'
     const statsKey = item.stats
       ? JSON.stringify(Object.entries(item.stats).sort(([a], [b]) => a.localeCompare(b)))
       : ''
     const affixesKey = item.affixes
       ? JSON.stringify(item.affixes.map(a => JSON.stringify(a)).sort())
       : ''
-    const key = `${item.definition.id}-${statsKey}-${affixesKey}`
+    const key = `${defId}-${statsKey}-${affixesKey}`
 
     const existing = stacks.get(key)
     if (existing) {
@@ -95,23 +144,12 @@ function stackItems(items: GameItem[]): StackedItem[] {
 }
 
 export function InventoryPanel() {
-  const {
-    inventory,
-    storage,
-    equipment,
-    equipItem,
-    unequipItem,
-    sellItem,
-    moveItem,
-    consumePotion,
-    isLoading,
-  } = useGameStore()
+  const { inventory, storage, equipItem, sellItem, moveItem, consumePotion, isLoading } =
+    useGameStore()
   const [selectedItem, setSelectedItem] = useState<GameItem | null>(null)
   const [showStorage, setShowStorage] = useState(false)
+  const [categoryId, setCategoryId] = useState<string>('')
 
-  // 使用 useMemo 优化性能，计算堆叠后的物品（详情等仍可用）
-  const stackedInventory = useMemo(() => stackItems(inventory), [inventory])
-  const stackedStorage = useMemo(() => stackItems(storage), [storage])
   // 背包按 slot_index 放入对应格位，与后端格位一致
   const inventorySlots = useMemo(() => {
     const slots: (GameItem | null)[] = Array.from({ length: INVENTORY_SLOTS }, () => null)
@@ -131,14 +169,32 @@ export function InventoryPanel() {
     return slots
   }, [storage])
 
+  const category = useMemo(
+    () =>
+      categoryId === ''
+        ? { types: null as readonly string[] | null }
+        : (INVENTORY_CATEGORIES.find(c => c.id === categoryId) ?? {
+            types: null as readonly string[] | null,
+          }),
+    [categoryId]
+  )
+  // 当前 Tab 对应的格位（背包或仓库），每格带 source；分类非空时只显示该分类物品（紧凑）
+  type SlotCell = { item: GameItem | null; source: 'inventory' | 'storage' }
+  const displaySlots = useMemo((): SlotCell[] => {
+    const raw = showStorage
+      ? warehouseSlots.map(item => ({ item, source: 'storage' as const }))
+      : inventorySlots.map(item => ({ item, source: 'inventory' as const }))
+    if (!category.types) return raw
+    return raw.filter(
+      (cell): cell is SlotCell & { item: GameItem } =>
+        cell.item != null && itemMatchesCategory(cell.item, category.types)
+    )
+  }, [showStorage, inventorySlots, warehouseSlots, category])
+
   const handleEquip = async () => {
     if (!selectedItem) return
     await equipItem(selectedItem.id)
     setSelectedItem(null)
-  }
-
-  const handleUnequip = async (slot: EquipmentSlot) => {
-    await unequipItem(slot)
   }
 
   const handleSell = async () => {
@@ -161,156 +217,87 @@ export function InventoryPanel() {
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row">
-      {/* 装备栏 - 参考经典 RPG 三列布局：左(武器/手套/靴子)、中(头盔/盔甲/腰带/护身符)、右(戒指) */}
-      <div className="bg-card border-border flex shrink-0 flex-col rounded-lg border p-3 sm:p-4 lg:min-w-[360px] lg:items-center">
-        <h4 className="text-foreground mb-3 text-base font-medium sm:mb-4 sm:text-lg lg:w-full">
-          装备
-        </h4>
-        <div className="mb-3 w-full border-b-2 border-red-500/80 sm:mb-4" aria-hidden />
-        {/* 4 行 x 3 列网格：左(武器/手套/靴子)、中(头盔/盔甲/腰带/护身符)、右(戒指与盔甲/腰带同行) */}
-        <div className="mx-auto grid w-[280px] max-w-full grid-cols-3 gap-x-4 gap-y-3 sm:w-[320px] sm:gap-x-5 sm:gap-y-4">
-          {/* 第 1 行：空、头盔、护身符 */}
-          <div className="h-12 w-12 shrink-0" aria-hidden />
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="helmet"
-              item={equipment.helmet}
-              onClick={() => equipment.helmet && handleUnequip('helmet')}
-            />
-          </div>
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="amulet"
-              item={equipment.amulet}
-              onClick={() => equipment.amulet && handleUnequip('amulet')}
-            />
-          </div>
-
-          {/* 第 2 行：武器、盔甲、戒指1（武器在盔甲左侧，同一行水平对齐） */}
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="weapon"
-              item={equipment.weapon}
-              onClick={() => equipment.weapon && handleUnequip('weapon')}
-            />
-          </div>
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="armor"
-              item={equipment.armor}
-              onClick={() => equipment.armor && handleUnequip('armor')}
-            />
-          </div>
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="gloves"
-              item={equipment.gloves}
-              onClick={() => equipment.gloves && handleUnequip('gloves')}
-            />
-          </div>
-
-          {/* 第 3 行：戒指1、腰带、戒指2 */}
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="ring1"
-              item={equipment.ring1}
-              onClick={() => equipment.ring1 && handleUnequip('ring1')}
-              label="戒指1"
-            />
-          </div>
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="belt"
-              item={equipment.belt}
-              onClick={() => equipment.belt && handleUnequip('belt')}
-            />
-          </div>
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="ring2"
-              item={equipment.ring2}
-              onClick={() => equipment.ring2 && handleUnequip('ring2')}
-              label="戒指2"
-            />
-          </div>
-
-          {/* 第 4 行：空、靴子（腰带正下方）、空 */}
-          <div className="h-12 w-12 shrink-0" aria-hidden />
-          <div className="flex justify-center">
-            <EquipmentSlotComponent
-              slot="boots"
-              item={equipment.boots}
-              onClick={() => equipment.boots && handleUnequip('boots')}
-            />
-          </div>
-          <div className="h-12 w-12 shrink-0" aria-hidden />
-        </div>
-      </div>
-
-      {/* 背包/仓库 - 边距与角色面板一致 */}
+      {/* 背包/仓库 - 装备栏已移至角色面板 */}
       <div className="bg-card border-border flex min-w-0 flex-1 flex-col rounded-lg border p-3 sm:p-4">
-        <div className="mb-3 flex shrink-0 items-center justify-between sm:mb-4">
-          <h4 className="text-foreground text-base font-medium sm:text-lg">
-            {showStorage ? '仓库' : '背包'}
-            <span className="text-muted-foreground ml-2 text-sm">
-              ({showStorage ? storage.length : inventory.length}
-              {showStorage ? `/${WAREHOUSE_SLOTS}` : `/${INVENTORY_SLOTS}`})
+        <div className="mb-3 flex shrink-0 flex-wrap items-center gap-1.5 sm:mb-4 sm:gap-2">
+          <button
+            type="button"
+            onClick={() => setShowStorage(false)}
+            className={`flex flex-col items-center rounded px-2.5 py-1 text-xs sm:px-3 sm:text-sm ${
+              !showStorage ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            <span>背包</span>
+            <span className="text-[10px] opacity-90 sm:text-xs">
+              {inventory.length}/{INVENTORY_SLOTS}
             </span>
-          </h4>
-          <div className="flex gap-1.5 sm:gap-2">
-            <button
-              onClick={() => setShowStorage(false)}
-              className={`rounded px-2.5 py-1 text-xs sm:px-3 sm:text-sm ${
-                !showStorage
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}
-            >
-              背包
-            </button>
-            <button
-              onClick={() => setShowStorage(true)}
-              className={`rounded px-2.5 py-1 text-xs sm:px-3 sm:text-sm ${
-                showStorage
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground'
-              }`}
-            >
-              仓库
-            </button>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowStorage(true)}
+            className={`flex flex-col items-center rounded px-2.5 py-1 text-xs sm:px-3 sm:text-sm ${
+              showStorage ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            <span>仓库</span>
+            <span className="text-[10px] opacity-90 sm:text-xs">
+              {storage.length}/{WAREHOUSE_SLOTS}
+            </span>
+          </button>
+          <div className="ml-auto flex flex-wrap items-center gap-1.5 sm:gap-2">
+            {INVENTORY_CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategoryId(prev => (prev === cat.id ? '' : cat.id))}
+                className={`rounded px-2 py-1.5 text-sm transition-colors ${
+                  categoryId === cat.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+                title={cat.label}
+              >
+                <span className="mr-0.5">{cat.emoji}</span>
+                <span className="hidden sm:inline">{cat.label}</span>
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="mx-auto min-h-0 flex-1 overflow-auto p-1">
-          <div className="flex w-[17.5rem] flex-wrap gap-x-2 gap-y-2 sm:w-[23.5rem]">
-            {(showStorage ? warehouseSlots : inventorySlots).map((item, index) =>
-              item ? (
+          <div className="flex w-[20.5rem] flex-wrap gap-x-2 gap-y-2 sm:w-[26.5rem]">
+            {displaySlots.map((cell, index) =>
+              cell.item ? (
                 <Popover
-                  key={item.id}
-                  open={selectedItem?.id === item.id}
+                  key={cell.item.id}
+                  open={selectedItem?.id === cell.item.id}
                   onOpenChange={open => {
                     if (!open) setSelectedItem(null)
                   }}
                 >
                   <PopoverTrigger asChild>
                     <button
-                      onClick={() => setSelectedItem(prev => (prev?.id === item.id ? null : item))}
+                      onClick={() =>
+                        setSelectedItem(prev => (prev?.id === cell.item?.id ? null : cell.item))
+                      }
                       className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 text-lg shadow-sm transition-all hover:shadow-md ${
-                        selectedItem?.id === item.id
+                        selectedItem?.id === cell.item.id
                           ? 'border-yellow-500 ring-2 ring-yellow-500/50 dark:border-yellow-400 dark:ring-yellow-400/50'
                           : 'border-border'
                       }`}
                       style={{
                         background:
-                          selectedItem?.id === item.id
-                            ? `${QUALITY_COLORS[item.quality]}20`
-                            : `linear-gradient(135deg, ${QUALITY_COLORS[item.quality]}15 0%, ${QUALITY_COLORS[item.quality]}08 100%)`,
+                          selectedItem?.id === cell.item.id
+                            ? `${QUALITY_COLORS[cell.item.quality]}20`
+                            : `linear-gradient(135deg, ${QUALITY_COLORS[cell.item.quality]}15 0%, ${QUALITY_COLORS[cell.item.quality]}08 100%)`,
                         borderColor:
-                          selectedItem?.id === item.id ? undefined : QUALITY_COLORS[item.quality],
+                          selectedItem?.id === cell.item.id
+                            ? undefined
+                            : QUALITY_COLORS[cell.item.quality],
                       }}
-                      title={getItemDisplayName(item)}
+                      title={getItemDisplayName(cell.item)}
                     >
-                      <span className="drop-shadow-sm">{getItemIcon(item)}</span>
+                      <ItemIcon item={cell.item} className="drop-shadow-sm" />
                     </button>
                   </PopoverTrigger>
                   <PopoverContent
@@ -323,21 +310,21 @@ export function InventoryPanel() {
                       <div className="flex items-start justify-between gap-2">
                         <h5
                           className="min-w-0 shrink text-sm leading-tight font-bold break-words sm:text-base"
-                          style={{ color: QUALITY_COLORS[item.quality] }}
+                          style={{ color: QUALITY_COLORS[cell.item.quality] }}
                         >
-                          {getItemDisplayName(item)}
+                          {getItemDisplayName(cell.item)}
                         </h5>
                         <span className="text-muted-foreground shrink-0 text-xs sm:text-sm">
-                          {QUALITY_NAMES[item.quality]}
+                          {QUALITY_NAMES[cell.item.quality]}
                         </span>
                       </div>
                       <div className="min-w-0 space-y-0.5 text-xs sm:text-sm">
-                        {Object.entries(item.stats || {}).map(([stat, value]) => (
+                        {Object.entries(cell.item.stats || {}).map(([stat, value]) => (
                           <p key={stat} className="text-green-600 dark:text-green-400">
                             +{value} {STAT_NAMES[stat] || stat}
                           </p>
                         ))}
-                        {item.affixes?.map((affix, i) => (
+                        {cell.item.affixes?.map((affix, i) => (
                           <p key={i} className="text-blue-600 dark:text-blue-400">
                             {Object.entries(affix)
                               .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
@@ -345,11 +332,11 @@ export function InventoryPanel() {
                           </p>
                         ))}
                         <p className="text-muted-foreground">
-                          需求等级: {item.definition.required_level}
+                          需求等级: {cell.item.definition?.required_level ?? '—'}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {!showStorage && item.definition.type === 'potion' && (
+                        {cell.source === 'inventory' && cell.item.definition?.type === 'potion' && (
                           <button
                             onClick={handleUsePotion}
                             disabled={isLoading}
@@ -358,9 +345,9 @@ export function InventoryPanel() {
                             使用
                           </button>
                         )}
-                        {!showStorage &&
-                          item.definition.type !== 'potion' &&
-                          item.definition.type !== 'gem' && (
+                        {cell.source === 'inventory' &&
+                          cell.item.definition?.type !== 'potion' &&
+                          cell.item.definition?.type !== 'gem' && (
                             <button
                               onClick={handleEquip}
                               disabled={isLoading}
@@ -370,13 +357,13 @@ export function InventoryPanel() {
                             </button>
                           )}
                         <button
-                          onClick={() => handleMove(!showStorage)}
+                          onClick={() => handleMove(cell.source === 'inventory')}
                           disabled={isLoading}
                           className="rounded bg-blue-600 px-2.5 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {showStorage ? '放入背包' : '存入仓库'}
+                          {cell.source === 'storage' ? '放入背包' : '存入仓库'}
                         </button>
-                        {!showStorage && (
+                        {cell.source === 'inventory' && (
                           <button
                             onClick={handleSell}
                             disabled={isLoading}
@@ -396,6 +383,88 @@ export function InventoryPanel() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+/** 装备栏网格，供角色面板使用 */
+export function EquipmentGrid({
+  equipment,
+  onUnequip,
+}: {
+  equipment: Record<string, GameItem | null>
+  onUnequip: (slot: EquipmentSlot) => void
+}) {
+  return (
+    <div className="mx-auto grid w-[280px] max-w-full grid-cols-3 gap-x-4 gap-y-3 sm:w-[320px] sm:gap-x-5 sm:gap-y-4">
+      <div className="h-12 w-12 shrink-0" aria-hidden />
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="helmet"
+          item={equipment.helmet}
+          onClick={() => equipment.helmet && onUnequip('helmet')}
+        />
+      </div>
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="amulet"
+          item={equipment.amulet}
+          onClick={() => equipment.amulet && onUnequip('amulet')}
+        />
+      </div>
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="weapon"
+          item={equipment.weapon}
+          onClick={() => equipment.weapon && onUnequip('weapon')}
+        />
+      </div>
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="armor"
+          item={equipment.armor}
+          onClick={() => equipment.armor && onUnequip('armor')}
+        />
+      </div>
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="gloves"
+          item={equipment.gloves}
+          onClick={() => equipment.gloves && onUnequip('gloves')}
+        />
+      </div>
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="ring1"
+          item={equipment.ring1}
+          onClick={() => equipment.ring1 && onUnequip('ring1')}
+          label="戒指1"
+        />
+      </div>
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="belt"
+          item={equipment.belt}
+          onClick={() => equipment.belt && onUnequip('belt')}
+        />
+      </div>
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="ring2"
+          item={equipment.ring2}
+          onClick={() => equipment.ring2 && onUnequip('ring2')}
+          label="戒指2"
+        />
+      </div>
+      <div className="h-12 w-12 shrink-0" aria-hidden />
+      <div className="flex justify-center">
+        <EquipmentSlotComponent
+          slot="boots"
+          item={equipment.boots}
+          onClick={() => equipment.boots && onUnequip('boots')}
+        />
+      </div>
+      <div className="h-12 w-12 shrink-0" aria-hidden />
     </div>
   )
 }
@@ -423,7 +492,7 @@ function EquipmentSlotComponent({
       title={item ? `${getItemDisplayName(item)} (点击卸下)` : label || SLOT_NAMES[slot]}
     >
       {item ? (
-        <span className="drop-shadow-sm">{getItemIcon(item)}</span>
+        <ItemIcon item={item} className="drop-shadow-sm" />
       ) : (
         <span className="text-muted-foreground text-xs">{label || SLOT_NAMES[slot]}</span>
       )}
@@ -467,7 +536,7 @@ function ItemSlot({
       }}
       title={getItemDisplayName(item)}
     >
-      <span className="drop-shadow-sm">{getItemIcon(item)}</span>
+      <ItemIcon item={item} className="drop-shadow-sm" />
       {quantity && quantity > 1 && (
         <span className="bg-foreground text-background absolute right-0 bottom-0 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold">
           {quantity}

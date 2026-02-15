@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { MapDefinition, MonsterDefinition } from '../types'
+import { getMapBackgroundStyle } from '../utils/mapBackground'
 
 const CN_DIGITS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九']
 
@@ -74,71 +75,73 @@ const MapDetailDialog = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-card border-border w-full max-w-md rounded-lg border p-4 sm:p-6">
-        <h4 className="text-foreground mb-2 text-lg font-bold sm:text-xl">{map.name}</h4>
-        <p className="text-muted-foreground mb-4 text-sm sm:text-base">{map.description}</p>
-        <div className="bg-muted/50 mb-4 rounded-lg p-2 sm:p-3">
-          <p className="text-muted-foreground text-xs sm:text-sm">等级范围</p>
-          <p className="text-foreground text-sm font-bold sm:text-base">
-            Lv.{map.min_level}-{map.max_level}
-          </p>
-        </div>
-        {map.monsters?.length ? (
-          <div className="mb-4">
-            <p className="text-muted-foreground mb-2 text-xs sm:text-sm">本图怪物</p>
-            <ul className="flex flex-wrap gap-2">
-              {map.monsters.map(m => (
-                <li
-                  key={m.id}
-                  className="bg-muted/60 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm"
-                >
-                  <span className="text-foreground font-medium">{m.name}</span>
-                  <span
-                    className={`rounded px-1 text-xs ${
-                      m.type === 'boss'
-                        ? 'bg-amber-600/30 text-amber-700 dark:text-amber-400'
-                        : m.type === 'elite'
-                          ? 'bg-purple-600/30 text-purple-700 dark:text-purple-400'
-                          : 'bg-muted-foreground/30 text-muted-foreground'
-                    }`}
-                  >
-                    {MONSTER_TYPE_LABEL[m.type] ?? m.type}
-                  </span>
-                  <span className="text-muted-foreground text-xs">Lv.{m.level}</span>
-                </li>
-              ))}
-            </ul>
+      <div className="border-border bg-card relative w-full max-w-md overflow-hidden rounded-lg border p-4 sm:p-6">
+        <div className="rounded-lg p-3 sm:p-4">
+          <h4 className="text-foreground mb-2 text-lg font-bold sm:text-xl">{map.name}</h4>
+          <p className="text-muted-foreground mb-4 text-sm sm:text-base">{map.description}</p>
+          <div className="bg-muted/50 mb-4 rounded-lg p-2 sm:p-3">
+            <p className="text-muted-foreground text-xs sm:text-sm">等级范围</p>
+            <p className="text-foreground text-sm font-bold sm:text-base">
+              Lv.{map.min_level}-{map.max_level}
+            </p>
           </div>
-        ) : null}
-        <div className="flex gap-2">
-          {canShowEnter && (
-            <button
-              onClick={() => onEnter(map.id)}
-              disabled={isLoading}
-              className="flex-1 rounded bg-green-600 py-2 text-white hover:bg-green-700 disabled:opacity-50"
-            >
-              进入地图
-            </button>
-          )}
-          {canTeleport && (
-            <button
-              onClick={() => onTeleport(map.id)}
-              disabled={disabledTeleport}
-              className="flex-1 rounded bg-blue-600 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              传送
-            </button>
-          )}
-          {!canEnter && (
-            <p className="text-sm text-red-600 dark:text-red-400">需要等级 {map.min_level}</p>
-          )}
+          {map.monsters?.length ? (
+            <div className="mb-4">
+              <p className="text-muted-foreground mb-2 text-xs sm:text-sm">本图怪物</p>
+              <ul className="flex flex-wrap gap-2">
+                {map.monsters.map(m => (
+                  <li
+                    key={m.id}
+                    className="bg-muted/60 flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm"
+                  >
+                    <span className="text-foreground font-medium">{m.name}</span>
+                    <span
+                      className={`rounded px-1 text-xs ${
+                        m.type === 'boss'
+                          ? 'bg-amber-600/30 text-amber-700 dark:text-amber-400'
+                          : m.type === 'elite'
+                            ? 'bg-purple-600/30 text-purple-700 dark:text-purple-400'
+                            : 'bg-muted-foreground/30 text-muted-foreground'
+                      }`}
+                    >
+                      {MONSTER_TYPE_LABEL[m.type] ?? m.type}
+                    </span>
+                    <span className="text-muted-foreground text-xs">Lv.{m.level}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <div className="flex gap-2">
+            {canShowEnter && (
+              <button
+                onClick={() => onEnter(map.id)}
+                disabled={isLoading}
+                className="flex-1 rounded bg-green-600 py-2 text-white hover:bg-green-700 disabled:opacity-50"
+              >
+                进入地图
+              </button>
+            )}
+            {canTeleport && (
+              <button
+                onClick={() => onTeleport(map.id)}
+                disabled={disabledTeleport}
+                className="flex-1 rounded bg-blue-600 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                传送
+              </button>
+            )}
+            {!canEnter && (
+              <p className="text-sm text-red-600 dark:text-red-400">需要等级 {map.min_level}</p>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="bg-muted text-foreground hover:bg-secondary mt-4 w-full rounded py-2"
+          >
+            关闭
+          </button>
         </div>
-        <button
-          onClick={onClose}
-          className="bg-muted text-foreground hover:bg-secondary mt-4 w-full rounded py-2"
-        >
-          关闭
-        </button>
       </div>
     </div>
   )
@@ -220,49 +223,55 @@ export function MapPanel() {
                   return (
                     <div
                       key={map.id}
-                      className={`min-w-full flex-1 cursor-pointer rounded-lg border-2 p-3 transition-all sm:min-w-[calc(50%-0.375rem)] sm:p-4 lg:min-w-[calc(33.333%-0.5rem)] ${
+                      className={`relative min-w-full flex-1 cursor-pointer overflow-hidden rounded-lg border-2 transition-all sm:min-w-[calc(50%-0.375rem)] lg:min-w-[calc(33.333%-0.5rem)] ${
                         isCurrentMap
-                          ? 'border-green-500 bg-green-600/20 dark:bg-green-500/20'
+                          ? 'border-green-500'
                           : canEnter
-                            ? 'border-border bg-muted/50 hover:border-blue-500 dark:hover:border-blue-400'
-                            : 'border-border bg-muted/30 opacity-60'
+                            ? 'border-border hover:border-blue-500 dark:hover:border-blue-400'
+                            : 'border-border opacity-60'
                       }`}
+                      style={getMapBackgroundStyle(map)}
                       onClick={() => setSelectedMap(map)}
                       tabIndex={0}
                       role="button"
                       aria-disabled={!canEnter && !isCurrentMap}
                     >
-                      <div className="mb-2 flex items-start justify-between">
-                        <h5 className="text-foreground text-sm font-medium sm:text-base">
-                          {map.name}
-                        </h5>
-                        {isCurrentMap && (
-                          <span className="rounded bg-green-600 px-1.5 py-0.5 text-xs text-white sm:px-2">
-                            当前
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-muted-foreground mb-2 text-xs sm:text-sm">
-                        {map.description}
-                      </p>
-                      <div className="mb-1.5 flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">
-                          Lv.{map.min_level}-{map.max_level}
-                        </span>
-                        <div className="flex gap-1">
-                          {canEnter && (
-                            <span className="text-green-600 dark:text-green-400" title="可进入">
-                              ✓
-                            </span>
-                          )}
-                          {hasTeleport && (
-                            <span className="text-blue-600 dark:text-blue-400" title="传送点已解锁">
-                              🌀
+                      <div className="bg-black/40 p-3 sm:p-4">
+                        <div className="mb-2 flex items-start justify-between">
+                          <h5 className="text-foreground text-sm font-medium sm:text-base">
+                            {map.name}
+                          </h5>
+                          {isCurrentMap && (
+                            <span className="rounded bg-green-600 px-1.5 py-0.5 text-xs text-white sm:px-2">
+                              当前
                             </span>
                           )}
                         </div>
+                        <p className="text-muted-foreground mb-2 text-xs sm:text-sm">
+                          {map.description}
+                        </p>
+                        <div className="mb-1.5 flex items-center justify-between text-xs">
+                          <span className="text-muted-foreground">
+                            Lv.{map.min_level}-{map.max_level}
+                          </span>
+                          <div className="flex gap-1">
+                            {canEnter && (
+                              <span className="text-green-600 dark:text-green-400" title="可进入">
+                                ✓
+                              </span>
+                            )}
+                            {hasTeleport && (
+                              <span
+                                className="text-blue-600 dark:text-blue-400"
+                                title="传送点已解锁"
+                              >
+                                🌀
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        {!!map.monsters?.length && <MonsterList monsters={map.monsters} />}
                       </div>
-                      {!!map.monsters?.length && <MonsterList monsters={map.monsters} />}
                     </div>
                   )
                 })}

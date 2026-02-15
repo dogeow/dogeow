@@ -466,3 +466,18 @@
   z-index: 1;
   border-radius: 0.375rem;
 }
+
+/* VS emoji 战斗中动画：轻微缩放 */
+@keyframes vs-emoji-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.vs-emoji-fighting {
+  animation: vs-emoji-pulse 0.5s ease-in-out infinite;
+}

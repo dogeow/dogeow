@@ -7,7 +7,6 @@ import { CharacterSelect } from './components/CharacterSelect'
 import { CharacterPanel } from './components/CharacterPanel'
 import { InventoryPanel } from './components/InventoryPanel'
 import { SkillPanel } from './components/SkillPanel'
-import { MapPanel } from './components/MapPanel'
 import { CombatPanel } from './components/CombatPanel'
 import { ShopPanel } from './components/ShopPanel'
 import { SoundSettings } from './components/SoundSettings'
@@ -47,6 +46,7 @@ export default function RPGGame() {
     setShouldAutoCombat,
     combatStats,
     combatResult,
+    experienceTable,
   } = useGameStore()
 
   const { isAuthenticated, loading: authLoading } = useAuthStore()
@@ -219,11 +219,19 @@ export default function RPGGame() {
     { id: 'character' as const, name: '角色', icon: '👤' },
     { id: 'inventory' as const, name: '背包', icon: '🎒' },
     { id: 'skills' as const, name: '技能', icon: '✨' },
-    { id: 'maps' as const, name: '地图', icon: '🗺️' },
     { id: 'combat' as const, name: '战斗', icon: '⚔️' },
     { id: 'shop' as const, name: '商店', icon: '🏪' },
     { id: 'settings' as const, name: '设置', icon: '⚙️' },
   ]
+
+  const { expPercent, expToNext } =
+    character && experienceTable
+      ? (() => {
+          const next = experienceTable[character.level + 1] ?? (character.level + 1) * 5000
+          const pct = next > 0 ? Math.max(0, Math.min(100, (character.experience / next) * 100)) : 0
+          return { expPercent: pct, expToNext: next }
+        })()
+      : { expPercent: 0, expToNext: 0 }
 
   return (
     <div className="bg-background text-foreground flex min-h-screen flex-col">
@@ -234,18 +242,17 @@ export default function RPGGame() {
         className="border-border bg-card fixed right-0 left-0 z-20 border-b px-3 py-2 sm:px-4 sm:py-3"
         style={{ top: 'var(--app-header-height, 50px)' }}
       >
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-7xl">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {character && combatStats && (
               <div className="flex w-full items-center gap-2 text-xs sm:gap-3 sm:text-sm">
-                {/* 左侧：等级+名字 */}
+                {/* 左侧：货币 */}
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-black dark:text-white">Lv.{character.level}</span>
-                  <span className="max-w-[80px] truncate text-black sm:max-w-[120px] dark:text-white">
-                    {character.name}
+                  <span className="text-yellow-600 dark:text-yellow-400">
+                    <CopperDisplay copper={character.copper} size="sm" />
                   </span>
                 </div>
-                {/* 中间：HP/MP */}
+                {/* 中间：血量/魔量 */}
                 <div className="flex min-w-0 flex-1 items-center justify-center gap-2">
                   <div className="flex items-center gap-1">
                     <CircularProgress
@@ -274,20 +281,32 @@ export default function RPGGame() {
                     </span>
                   </div>
                 </div>
-                {/* 右侧：货币 */}
-                <div className="ml-auto shrink-0">
-                  <span className="text-yellow-600 dark:text-yellow-400">
-                    <CopperDisplay copper={character.copper} size="sm" />
+                {/* 右侧：经验值 */}
+                <div className="flex shrink-0">
+                  <span className="text-muted-foreground text-xs sm:text-sm">
+                    {character.experience.toLocaleString()} / {expToNext.toLocaleString()}
                   </span>
                 </div>
               </div>
             )}
           </div>
         </div>
+        {/* 经验条 1px，紧贴状态栏下方 */}
+        {character && (
+          <div className="bg-muted absolute right-0 bottom-0 left-0 h-px overflow-hidden">
+            <div
+              className="h-full min-w-0 transition-[width] duration-300"
+              style={{
+                width: `${expPercent}%`,
+                backgroundColor: expPercent > 0 ? '#f59e0b' : 'transparent',
+              }}
+            />
+          </div>
+        )}
       </header>
 
       {/* 主体内容/导航 */}
-      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden px-3 pt-14 pb-3 sm:px-4 sm:pt-16 sm:pb-4">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col overflow-hidden px-3 pt-14 pb-3 sm:px-4 sm:pt-16 sm:pb-4">
         <nav className="bg-muted mb-4 hidden gap-1 rounded-lg p-1 lg:flex">
           {tabs.map(tab => (
             <button
@@ -316,7 +335,6 @@ export default function RPGGame() {
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'inventory' && <InventoryPanel />}
             {activeTab === 'skills' && <SkillPanel />}
-            {activeTab === 'maps' && <MapPanel />}
             {activeTab === 'combat' && <CombatPanel />}
             {activeTab === 'shop' && <ShopPanel />}
             {activeTab === 'settings' && (

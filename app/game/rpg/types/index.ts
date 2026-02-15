@@ -42,6 +42,7 @@ export interface GameCharacter {
   stat_points: number
   current_map_id: number | null
   is_fighting: boolean
+  combat_monster_id?: number | null
   last_combat_at: string | null
   difficulty_tier?: number
   current_hp?: number
@@ -184,6 +185,7 @@ export interface CombatResult {
   victory: boolean
   defeat?: boolean
   auto_stopped?: boolean
+  monster_id?: number
   monster: {
     name: string
     type: MonsterType
@@ -351,6 +353,8 @@ export interface ShopItem {
 export interface ShopResponse {
   items: ShopItem[]
   player_copper: number
+  /** 下次商店装备刷新的时间戳（秒） */
+  next_refresh_at?: number
 }
 
 export interface BuyResponse {
@@ -367,8 +371,8 @@ export interface SellResponse {
   item_name: string
 }
 
-/** 货币：1金=100银=10000铜，格式化为 "X金 Y银 Z铜"（纯文字，界面可用 🪙 等前缀表示货币） */
-export function formatCopper(copper: number): string {
+/** 货币：1金=100银=10000铜。maxParts=1 时只显示一种（金/银/铜取最高位），否则最多两种 */
+export function formatCopper(copper: number, maxParts: number = 2): string {
   const g = Math.floor(copper / 10000)
   const s = Math.floor((copper % 10000) / 100)
   const c = copper % 100
@@ -376,5 +380,5 @@ export function formatCopper(copper: number): string {
   if (g > 0) parts.push(`${g}金`)
   if (s > 0) parts.push(`${s}银`)
   if (c > 0 || parts.length === 0) parts.push(`${c}铜`)
-  return parts.join(' ')
+  return parts.slice(0, maxParts).join(' ')
 }

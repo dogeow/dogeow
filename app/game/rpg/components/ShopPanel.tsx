@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { format } from 'date-fns'
+import { zhCN } from 'date-fns/locale'
 import { useGameStore } from '../stores/gameStore'
 import { CopperDisplay } from './CopperDisplay'
 import { ShopItem, STAT_NAMES, ItemType, formatCopper } from '../types'
@@ -46,7 +48,8 @@ const getItemIcon = (type: ItemType, subType?: string): string => {
 }
 
 export function ShopPanel() {
-  const { shopItems, character, buyItem, fetchShopItems, isLoading } = useGameStore()
+  const { shopItems, character, buyItem, fetchShopItems, isLoading, shopNextRefreshAt } =
+    useGameStore()
   const [selectedShopItem, setSelectedShopItem] = useState<ShopItem | null>(null)
   const [buyQuantity, setBuyQuantity] = useState(1)
 
@@ -87,36 +90,42 @@ export function ShopPanel() {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-4">
-      {/* 商店物品网格 - 边距与角色面板一致 */}
-      <div className="bg-card border-border rounded-lg border p-3 sm:p-4">
-        <h4 className="text-foreground mb-3 text-base font-medium sm:mb-4">
-          商店物品
-          <span className="text-muted-foreground ml-2 text-sm">
-            ({shopItems.length}/{SHOP_SLOTS})
-          </span>
-        </h4>
-        <div className="flex min-h-0 justify-center overflow-auto p-1">
-          {/* 网格宽度由列数+间距决定，w-max 无右侧留白 */}
-          <div className="grid w-max max-w-full grid-cols-[repeat(4,5rem)] gap-2 sm:grid-cols-[repeat(5,5rem)]">
+    <div className="space-y-2 sm:space-y-3">
+      {/* 商店物品网格 - 紧凑布局 */}
+      <div className="bg-card border-border rounded-lg border p-2 sm:p-3">
+        <div className="text-foreground mb-2 flex flex-wrap items-baseline justify-between gap-1.5 sm:mb-3">
+          <h4 className="text-sm font-medium">
+            商店物品
+            <span className="text-muted-foreground ml-1.5 text-xs">
+              ({shopItems.length}/{SHOP_SLOTS})
+            </span>
+          </h4>
+          {shopNextRefreshAt != null && (
+            <span className="text-muted-foreground text-[10px] sm:text-xs">
+              下次刷新：{format(shopNextRefreshAt * 1000, 'HH:mm', { locale: zhCN })}
+            </span>
+          )}
+        </div>
+        <div className="flex min-h-0 justify-center overflow-auto p-0.5">
+          <div className="grid w-max max-w-full grid-cols-[repeat(5,3.25rem)] gap-2.5 sm:grid-cols-[repeat(6,3.25rem)] sm:gap-3">
             {shopSlots.map((item, index) =>
               item ? (
                 <button
                   key={item.id}
                   onClick={() => handleSelectShopItem(item)}
-                  className={`flex h-20 w-20 shrink-0 flex-col rounded border-2 transition-all hover:scale-105 ${
+                  className={`flex h-14 w-14 shrink-0 flex-col rounded border-2 transition-all hover:scale-105 ${
                     selectedShopItem?.id === item.id
                       ? 'border-green-500 bg-green-500/20 shadow-lg shadow-green-500/50 dark:border-green-400 dark:bg-green-400/20'
                       : 'border-border bg-muted/50 hover:border-muted-foreground/30 hover:bg-muted'
                   } ${item.required_level > (character?.level || 0) ? 'opacity-40' : ''}`}
                   disabled={isLoading}
-                  title={`${item.name} - ${formatCopper(item.buy_price)}`}
+                  title={`${item.name} - ${formatCopper(item.buy_price, 1)}`}
                 >
-                  <span className="flex min-h-0 flex-1 items-center justify-center text-2xl">
+                  <span className="flex min-h-0 flex-1 items-center justify-center text-lg">
                     {getItemIcon(item.type, item.sub_type)}
                   </span>
-                  <span className="border-border/50 bg-muted/80 flex shrink-0 items-center justify-center overflow-hidden rounded-b-[calc(0.25rem-2px)] border-t py-0.5">
-                    <CopperDisplay copper={item.buy_price} size="xs" nowrap />
+                  <span className="border-border/50 bg-muted/80 flex shrink-0 items-center justify-center overflow-hidden rounded-b-[calc(0.2rem-2px)] border-t px-1.5 py-1">
+                    <CopperDisplay copper={item.buy_price} size="xs" nowrap maxParts={1} />
                   </span>
                 </button>
               ) : (
@@ -195,23 +204,25 @@ function ItemDetailModal({
             </button>
           </div>
 
-          {/* 属性 */}
+          {/* 属性（药品不显示 restore，与生命值/法力值重复） */}
           <div className="space-y-1">
-            {Object.entries(item.base_stats || {}).map(([stat, value]) => (
-              <p key={stat} className="text-sm text-green-600 dark:text-green-400">
-                +
-                {typeof value === 'number' && value < 1 && stat.includes('crit')
-                  ? `${(value * 100).toFixed(0)}%`
-                  : value}{' '}
-                {STAT_NAMES[stat] || stat}
-              </p>
-            ))}
+            {Object.entries(item.base_stats || {})
+              .filter(([stat]) => item.type !== 'potion' || stat !== 'restore')
+              .map(([stat, value]) => (
+                <p key={stat} className="text-sm text-green-600 dark:text-green-400">
+                  +
+                  {typeof value === 'number' && value < 1 && stat.includes('crit')
+                    ? `${(value * 100).toFixed(0)}%`
+                    : value}{' '}
+                  {STAT_NAMES[stat] || stat}
+                </p>
+              ))}
           </div>
 
           <div className="text-muted-foreground flex items-center justify-between text-sm">
             <span>需要等级: {item.required_level}</span>
             <span className="text-yellow-600 dark:text-yellow-400">
-              <CopperDisplay copper={item.buy_price} size="sm" />
+              <CopperDisplay copper={item.buy_price} size="sm" maxParts={1} />
             </span>
           </div>
 
@@ -257,7 +268,7 @@ function ItemDetailModal({
                     : 'text-red-600 dark:text-red-400'
                 }`}
               >
-                <CopperDisplay copper={totalBuyPrice} size="sm" />
+                <CopperDisplay copper={totalBuyPrice} size="sm" maxParts={1} />
               </span>
             </div>
 
@@ -278,7 +289,7 @@ function ItemDetailModal({
 function EmptySlot() {
   return (
     <div
-      className="border-border bg-muted/50 flex h-20 w-20 shrink-0 items-center justify-center rounded border-2 border-dashed"
+      className="border-border bg-muted/50 flex h-14 w-14 shrink-0 items-center justify-center rounded border-2 border-dashed"
       style={{
         backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
         backgroundSize: '8px 8px',

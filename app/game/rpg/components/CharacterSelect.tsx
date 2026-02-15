@@ -50,7 +50,6 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
     characters,
     isLoading,
     error,
-    fetchCharacters,
     selectCharacter,
     setDifficultyForCharacter,
     deleteCharacter,
@@ -66,9 +65,8 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
 
   const currentTier = openCharacter?.difficulty_tier ?? 0
 
-  useEffect(() => {
-    fetchCharacters()
-  }, [fetchCharacters])
+  // 不在选择页重复拉取：角色列表由 page 初次认证后拉取，创建/删除后各自会调 fetchCharacters
+  // 原 useEffect 会导致：fetchCharacters 置 isLoading→页面显示加载并卸载本组件→请求完成后再次挂载又拉取→死循环
 
   const handleDifficultySelect = useCallback(
     (tier: number) => {

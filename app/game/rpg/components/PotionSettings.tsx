@@ -42,14 +42,15 @@ export function PotionSettings() {
     }
   }, [character])
 
-  // 获取药品
-  const potions = inventory.filter(item => item.definition.type === 'potion')
+  // 获取药品（definition 可能为空，如物品未加载或数据异常）
+  const potions = inventory.filter(item => item.definition?.type === 'potion')
 
-  // 更新设置到后端（API 使用 snake_case）
+  // 更新设置到后端（API 使用 snake_case，必须带 character_id 以更新当前角色）
   const updateSettings = async (newSettings: Partial<PotionSettings>) => {
+    if (!character?.id) return
     setSaving(true)
     try {
-      const payload: Record<string, unknown> = {}
+      const payload: Record<string, unknown> = { character_id: character.id }
       if (newSettings.autoUseHpPotion !== undefined)
         payload.auto_use_hp_potion = newSettings.autoUseHpPotion
       if (newSettings.hpPotionThreshold !== undefined)
@@ -98,18 +99,18 @@ export function PotionSettings() {
 
   // 按恢复量排序药水（高级优先）
   const hpPotions = potions
-    .filter(item => item.definition.sub_type === 'hp')
+    .filter(item => item.definition?.sub_type === 'hp')
     .sort((a, b) => {
-      const aRestore = a.definition.base_stats?.max_hp ?? 0
-      const bRestore = b.definition.base_stats?.max_hp ?? 0
+      const aRestore = a.definition?.base_stats?.max_hp ?? 0
+      const bRestore = b.definition?.base_stats?.max_hp ?? 0
       return bRestore - aRestore
     })
 
   const mpPotions = potions
-    .filter(item => item.definition.sub_type === 'mp')
+    .filter(item => item.definition?.sub_type === 'mp')
     .sort((a, b) => {
-      const aRestore = a.definition.base_stats?.max_mana ?? 0
-      const bRestore = b.definition.base_stats?.max_mana ?? 0
+      const aRestore = a.definition?.base_stats?.max_mana ?? 0
+      const bRestore = b.definition?.base_stats?.max_mana ?? 0
       return bRestore - aRestore
     })
 
@@ -158,7 +159,7 @@ export function PotionSettings() {
             拥有HP药水: {hpPotions.reduce((sum, p) => sum + p.quantity, 0)} 个
             {hpPotions.length > 0 && (
               <span className="ml-2 text-green-600 dark:text-green-400">
-                (最高恢复 {hpPotions[0].definition.base_stats?.max_hp ?? 0} HP)
+                (最高恢复 {hpPotions[0].definition?.base_stats?.max_hp ?? 0} HP)
               </span>
             )}
           </div>
@@ -201,7 +202,7 @@ export function PotionSettings() {
             拥有MP药水: {mpPotions.reduce((sum, p) => sum + p.quantity, 0)} 个
             {mpPotions.length > 0 && (
               <span className="ml-2 text-blue-600 dark:text-blue-400">
-                (最高恢复 {mpPotions[0].definition.base_stats?.max_mana ?? 0} MP)
+                (最高恢复 {mpPotions[0].definition?.base_stats?.max_mana ?? 0} MP)
               </span>
             )}
           </div>
