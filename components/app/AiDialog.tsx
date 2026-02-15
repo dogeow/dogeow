@@ -159,6 +159,9 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     messagesEndRef,
   } = activeChat
 
+  // provider 和 setProvider 始终从 aiChat 获取（知识库模式不支持 provider）
+  const { provider, setProvider } = aiChat
+
   // 当弹窗关闭时，可以选择保留或清空对话历史
   // 这里选择保留，用户下次打开时继续之前的对话
 
@@ -207,6 +210,8 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
             isLoading={isLoading}
             model={model}
             onModelChange={setModel}
+            provider={provider}
+            onProviderChange={setProvider}
             chatMode={chatMode}
             onChatModeChange={value => setChatMode(value as 'ai' | 'knowledge')}
             variant="dialog"

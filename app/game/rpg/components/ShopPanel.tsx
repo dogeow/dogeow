@@ -151,7 +151,7 @@ function ItemDetailModal({
         <div className="space-y-4">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
-              <span className="text-4xl">{getItemIcon(item.type, item.sub_type)}</span>
+              <span className="text-4xl">{getShopItemIcon(item.type, item.sub_type)}</span>
               <div>
                 <h5 className="text-foreground text-lg font-bold">{item.name}</h5>
                 <p className="text-muted-foreground text-sm">

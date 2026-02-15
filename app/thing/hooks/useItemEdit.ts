@@ -49,7 +49,6 @@ export function useItemEdit() {
 
   // 自动保存逻辑
   const handleAutoSave = useCallback(async () => {
-    console.log('开始自动保存...', { formData, selectedTags, uploadedImages })
     const updateData: Parameters<typeof updateItem>[1] = {
       ...formData,
       purchase_date: formData.purchase_date ?? null,
@@ -70,7 +69,6 @@ export function useItemEdit() {
     }
 
     await updateItem(Number(params.id), updateData)
-    console.log('自动保存完成')
   }, [formData, uploadedImages, selectedTags, tags, updateItem, params.id])
 
   const { autoSaving, lastSaved, triggerAutoSave, setInitialData } = useAutoSave<AutoSaveData>({
@@ -237,47 +235,6 @@ export function useItemEdit() {
   // 监听数据变化，触发自动保存
   const initialDataRef = useRef<CompareData | null>(null)
 
-  useEffect(() => {
-    console.log('useEffect 被触发:', {
-      initialLoading,
-      formData,
-      selectedTags,
-      uploadedImages: uploadedImages.length,
-    })
-
-    if (initialLoading) {
-      console.log('跳过：仍在初始加载中')
-      return
-    }
-
-    // 检查是否有数据变化
-    const currentData = {
-      formData,
-      selectedTags,
-      uploadedImages: uploadedImages.map(img => ({ path: img.path, id: img.id })),
-    }
-
-    // 如果是第一次设置数据，直接保存为初始数据
-    if (!initialDataRef.current) {
-      console.log('设置初始数据:', currentData)
-      initialDataRef.current = currentData
-      return
-    }
-
-    const hasChanges = hasDataChanged(currentData, initialDataRef.current)
-    console.log('数据变化检查:', { hasChanges, currentData, initial: initialDataRef.current })
-
-    if (hasChanges) {
-      console.log('检测到数据变化，触发自动保存:', {
-        current: currentData,
-        initial: initialDataRef.current,
-      })
-      triggerAutoSave()
-      // 更新参考数据
-      initialDataRef.current = currentData
-    }
-  })
-
   // 提取复杂表达式到变量
   const purchaseDateTime = formData.purchase_date?.getTime()
   const expiryDateTime = formData.expiry_date?.getTime()
@@ -294,19 +251,13 @@ export function useItemEdit() {
 
     // 如果是第一次设置数据，直接保存为初始数据
     if (!initialDataRef.current) {
-      console.log('设置初始数据:', currentData)
       initialDataRef.current = currentData
       return
     }
 
     const hasChanges = hasDataChanged(currentData, initialDataRef.current)
-    console.log('数据变化检查:', { hasChanges, currentData, initial: initialDataRef.current })
 
     if (hasChanges) {
-      console.log('检测到数据变化，触发自动保存:', {
-        current: currentData,
-        initial: initialDataRef.current,
-      })
       triggerAutoSave()
       // 更新参考数据
       initialDataRef.current = currentData

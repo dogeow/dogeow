@@ -171,7 +171,9 @@ const useChatStore = create<ChatState>()(
 
       // 房间操作
       setCurrentRoom: room => {
-        console.log('聊天室状态: 设置当前房间:', room)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('ChatStore: Setting current room:', room)
+        }
 
         set(state => {
           const newState = { ...state, currentRoom: room }
@@ -180,7 +182,9 @@ const useChatStore = create<ChatState>()(
           if (room) {
             const roomExists = state.rooms.find(r => r.id === room.id)
             if (!roomExists) {
-              console.log('聊天室状态: 将当前房间添加到房间列表:', room)
+              if (process.env.NODE_ENV === 'development') {
+                console.log('ChatStore: Adding current room to room list:', room)
+              }
               newState.rooms = [...state.rooms, room]
             }
 
@@ -188,11 +192,11 @@ const useChatStore = create<ChatState>()(
             const cleanedOnlineUsers: Record<string, OnlineUser[]> = {}
             cleanedOnlineUsers[room.id.toString()] = state.onlineUsers[room.id.toString()] || []
             newState.onlineUsers = cleanedOnlineUsers
-
-            console.log('聊天室状态: 清理其他房间的在线用户数据，只保留房间', room.id)
           } else {
             // 如果没有当前房间，清空所有在线用户数据
-            console.log('聊天室状态: 没有当前房间，清空所有在线用户数据')
+            if (process.env.NODE_ENV === 'development') {
+              console.log('ChatStore: No current room, clearing all online users')
+            }
             newState.onlineUsers = {}
           }
 
@@ -226,33 +230,31 @@ const useChatStore = create<ChatState>()(
         set({ isLoading: true, error: null })
 
         try {
-          console.log('聊天室状态: 从API加载房间...')
+          if (process.env.NODE_ENV === 'development') {
+            console.log('ChatStore: Loading rooms from API...')
+          }
           const authState = useAuthStore.getState()
-          console.log('聊天室状态: 当前认证状态:', {
-            isAuthenticated: authState.isAuthenticated,
-            hasToken: !!authState.token,
-          })
 
           const response = await apiGet<{ rooms: ChatRoom[] }>('/chat/rooms')
           const rooms = response.rooms || []
-          console.log('聊天室状态: API返回房间:', rooms)
 
           const safeRooms = Array.isArray(rooms) ? rooms : []
-          console.log('聊天室状态: 设置房间:', safeRooms.length, '个房间')
 
           set(state => {
             const newState = { rooms: safeRooms, isLoading: false }
 
             // 如果当前房间不在房间列表中，但存在，则添加到列表中
             if (state.currentRoom && !safeRooms.find(room => room.id === state.currentRoom!.id)) {
-              console.log('聊天室状态: 当前房间不在列表中，添加它:', state.currentRoom)
+              if (process.env.NODE_ENV === 'development') {
+                console.log('ChatStore: Adding current room to list:', state.currentRoom)
+              }
               newState.rooms = [...safeRooms, state.currentRoom]
             }
 
             return newState
           })
         } catch (error) {
-          console.error('聊天室状态: 加载房间失败:', error)
+          console.error('ChatStore: Failed to load rooms:', error)
           const chatError = handleChatApiError(error, '加载聊天室失败', {
             showToast: true,
             retryable: true,
@@ -338,8 +340,6 @@ const useChatStore = create<ChatState>()(
 
       // 消息操作
       addMessage: (roomId, message) => {
-        console.log('聊天室状态: 添加消息:', { roomId, message })
-
         const state = get()
         const roomKey = roomId.toString()
         const currentMessages = state.messages[roomKey] || []
@@ -347,11 +347,8 @@ const useChatStore = create<ChatState>()(
         // 避免重复消息
         const messageExists = currentMessages.some(m => m.id === message.id)
         if (messageExists) {
-          console.log('聊天室状态: 消息已存在，跳过:', message.id)
           return
         }
-
-        console.log('聊天室状态: 添加新消息到房间:', roomKey)
 
         // 添加到缓存
         chatCache.addMessageToCache(roomKey, message)
@@ -362,12 +359,6 @@ const useChatStore = create<ChatState>()(
             ...prevState.messages,
             [roomKey]: [...(prevState.messages[roomKey] || []), message],
           }
-
-          console.log('聊天室状态: 更新消息状态:', {
-            roomKey,
-            newCount: newMessages[roomKey].length,
-            lastMessage: newMessages[roomKey][newMessages[roomKey].length - 1]?.message,
-          })
 
           return {
             ...prevState,
@@ -425,7 +416,9 @@ const useChatStore = create<ChatState>()(
         if (page === 1) {
           const cached = chatCache.getCachedMessages(roomKey)
           if (cached) {
-            console.log('聊天室状态: 使用缓存的消息，房间:', roomKey)
+            if (process.env.NODE_ENV === 'development') {
+              console.log('ChatStore: Using cached messages for room:', roomKey)
+            }
             set(state => ({
               messages: {
                 ...state.messages,
@@ -446,7 +439,6 @@ const useChatStore = create<ChatState>()(
           const response = await apiGet<JsonApiPaginatedResponse<ChatMessage>>(
             `/chat/rooms/${roomId}/messages?page=${page}`
           )
-          console.log('聊天室状态: API响应:', response)
 
           const paginationData = toPagination(response)
 
@@ -454,8 +446,6 @@ const useChatStore = create<ChatState>()(
           if (page === 1) {
             chatCache.cacheMessages(roomKey, response.data, paginationData)
           }
-
-          console.log('聊天室状态: 为房间设置消息:', roomKey, '数量:', response.data.length)
 
           set(state => ({
             messages: {
@@ -593,7 +583,7 @@ const useChatStore = create<ChatState>()(
             },
           }))
         } catch (error) {
-          console.error('加载在线用户失败:', error)
+          console.error('ChatStore: Failed to load online users:', error)
           const chatError = handleChatApiError(error, '加载在线用户失败', {
             showToast: false,
             retryable: true,
@@ -603,7 +593,6 @@ const useChatStore = create<ChatState>()(
       }, 5000) as unknown as (roomId: number) => Promise<void>,
 
       updateRoomOnlineCount: (roomId, onlineCount) => {
-        console.log('聊天室状态: 更新房间在线人数:', { roomId, onlineCount })
         set(state => ({
           rooms: state.rooms.map(room =>
             room.id === roomId ? { ...room, online_count: onlineCount } : room
@@ -837,7 +826,6 @@ const useChatStore = create<ChatState>()(
       setLoading: loading => set({ isLoading: loading }),
 
       clearAllOnlineUsers: () => {
-        console.log('聊天室状态: 清空所有在线用户数据')
         set({ onlineUsers: {} })
       },
 
@@ -874,12 +862,8 @@ const useChatStore = create<ChatState>()(
 
           // 状态恢复后检查并修复状态不一致问题
           if (state.currentRoom && state.rooms.length === 0) {
-            console.log('聊天室状态: 检测到状态不一致 - 存在当前房间但没有房间列表')
-            console.log('聊天室状态: 当前房间:', state.currentRoom)
-
             // 将当前房间添加到房间列表中
             state.rooms = [state.currentRoom]
-            console.log('聊天室状态: 已修复状态 - 将当前房间添加到房间列表')
           }
         }
       },

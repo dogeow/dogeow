@@ -1,14 +1,5 @@
-import useSWR from 'swr'
 import { NavCategory, NavItem } from '@/app/nav/types'
 import { apiRequest, post, put, del } from '@/lib/api'
-
-// SWR fetcher
-const fetcher = <T>(url: string): Promise<T> => apiRequest<T>(url)
-
-// SWR hooks
-export const useNavCategories = () => useSWR('/nav-categories', fetcher)
-export const useNavItems = (categoryId?: number) =>
-  useSWR(categoryId ? `/nav-categories/${categoryId}/items` : null, fetcher)
 
 // 获取所有导航分类（及其导航项）
 export async function getCategories(filterName?: string) {
@@ -51,64 +42,8 @@ export async function getAllCategories() {
 }
 
 export async function createCategory(category: Partial<NavCategory>) {
-  try {
-    console.log('发送创建分类请求:', category)
-    const result = await post<{ message: string; category: NavCategory }>(
-      `/nav/categories`,
-      category
-    )
-    console.log('创建分类API返回:', result)
-
-    // 验证返回的数据
-    if (
-      !result ||
-      typeof result !== 'object' ||
-      !result.category ||
-      result.category.id === undefined
-    ) {
-      console.warn('API返回的分类数据无效，使用模拟数据:', result)
-
-      // 创建一个模拟的分类对象
-      // 使用时间戳作为临时ID
-      const mockCategory: NavCategory = {
-        id: Date.now(),
-        name: category.name || '未命名分类',
-        icon: null,
-        description: category.description || null,
-        sort_order: category.sort_order || 0,
-        is_visible: category.is_visible !== undefined ? category.is_visible : true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        deleted_at: null,
-        items_count: 0,
-      }
-
-      console.log('使用模拟数据:', mockCategory)
-      return mockCategory
-    }
-
-    // 返回正确的分类数据
-    return result.category
-  } catch (error) {
-    console.error('创建分类API错误:', error)
-
-    // 创建一个模拟的分类对象作为回退方案
-    const mockCategory: NavCategory = {
-      id: Date.now(),
-      name: category.name || '未命名分类',
-      icon: null,
-      description: category.description || null,
-      sort_order: category.sort_order || 0,
-      is_visible: category.is_visible !== undefined ? category.is_visible : true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      deleted_at: null,
-      items_count: 0,
-    }
-
-    console.log('API错误，使用模拟数据:', mockCategory)
-    return mockCategory
-  }
+  const result = await post<{ message: string; category: NavCategory }>(`/nav/categories`, category)
+  return result.category
 }
 
 export async function updateCategory(id: number, category: Partial<NavCategory>) {

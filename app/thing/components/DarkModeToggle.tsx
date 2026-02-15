@@ -7,23 +7,16 @@ import { useEffect, useState } from 'react'
 
 export function DarkModeToggle() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  // 使用初始化函数在客户端判断是否已挂载，避免水合不匹配
+  const [mounted, setMounted] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return true
+    }
+    return false
+  })
 
-  // 等待组件挂载后再处理主题，避免水合不匹配错误
+  // 仅在主题变化时执行副作用，不在挂载时设置状态
   useEffect(() => {
-    setMounted(true)
-
-    // 调试暗色模式状态
-    console.log('DarkModeToggle mounted:', {
-      theme,
-      htmlHasDarkClass:
-        typeof document !== 'undefined'
-          ? document.documentElement.classList.contains('dark')
-          : 'unknown',
-      bodyHasDarkClass:
-        typeof document !== 'undefined' ? document.body.classList.contains('dark') : 'unknown',
-    })
-
     // 确保深色模式类被正确应用
     if (theme === 'dark' && typeof document !== 'undefined') {
       document.documentElement.classList.add('dark')

@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { format } from 'date-fns'
-import { apiRequest, API_URL } from '@/lib/api'
+import { apiRequest } from '@/lib/api'
 import { Item, Category, Tag, ItemFormData, ApiSubmitItemData } from '@/app/thing/types'
 
 // 前端专用过滤器，不发送到后端
@@ -156,7 +156,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
 
     // 防止重复请求
     if (state.loading) {
-      console.log('ItemStore: 请求已在进行中，跳过重复请求')
       return
     }
 
@@ -173,7 +172,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
             const parsed = JSON.parse(persistedFilters)
             if (parsed.state && parsed.state.savedFilters) {
               finalParams = parsed.state.savedFilters
-              console.log('使用持久化的筛选条件:', finalParams)
             }
           }
         } catch (error) {
@@ -198,27 +196,12 @@ export const useItemStore = create<ItemState>((set, get) => ({
       const queryString = queryParams.toString()
       const url = `/things/items${queryString ? `?${queryString}` : ''}`
 
-      console.log(`请求 API: ${API_URL}/api/things/items${queryString ? `?${queryString}` : ''}`)
-
       const data = await apiRequest<{ data: Item[]; meta: PaginationMeta }>(url)
-
-      console.log('ItemStore: API 响应数据:', {
-        itemsCount: data.data?.length || 0,
-        meta: data.meta,
-        hasData: !!data.data,
-        hasMeta: !!data.meta,
-      })
 
       set({
         items: data.data || [],
         loading: false,
         meta: data.meta || null,
-      })
-
-      console.log('ItemStore: 状态已更新:', {
-        items: (data.data || []).length,
-        loading: false,
-        meta: data.meta ? { current_page: data.meta.current_page, total: data.meta.total } : null,
       })
 
       return data
@@ -253,7 +236,6 @@ export const useItemStore = create<ItemState>((set, get) => ({
   createCategory: async data => {
     try {
       const response = await apiRequest<unknown>('/things/categories', 'POST', data)
-      console.log('创建分类API响应:', response)
 
       // 刷新分类列表
       await get().fetchCategories()

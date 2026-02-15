@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 
@@ -28,13 +28,6 @@ const QuantityEditor: React.FC<QuantityEditorProps> = ({
 
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
-
-  // 当外部 quantity 变化时更新 tempQuantity（但只在非编辑状态下）
-  useEffect(() => {
-    if (!isEditing) {
-      setTempQuantity(quantity.toString())
-    }
-  }, [quantity, isEditing])
 
   const handleEdit = useCallback(() => {
     setTempQuantity(quantity.toString())

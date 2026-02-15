@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Card } from '@/components/ui/card'
 import { Item } from '@/app/thing/types'
 import { TagList } from './TagList'
@@ -14,7 +15,7 @@ interface ItemCardProps {
   isLoading?: boolean
 }
 
-export default function ItemCard({ item, onView, isLoading = false }: ItemCardProps) {
+function ItemCard({ item, onView, isLoading = false }: ItemCardProps) {
   if (isLoading) {
     return (
       <Card className="flex flex-row items-start gap-2 p-1">
@@ -85,3 +86,5 @@ export default function ItemCard({ item, onView, isLoading = false }: ItemCardPr
     </Card>
   )
 }
+
+export default memo(ItemCard)

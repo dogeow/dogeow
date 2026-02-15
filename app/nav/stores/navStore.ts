@@ -22,12 +22,10 @@ interface NavStore {
   categories: NavCategory[]
   allCategories: NavCategory[]
   items: NavItem[]
-  sampleItems: NavItem[]
   isSampleData: boolean
   loading: boolean
   error: string | null
   searchTerm: string
-  filteredItems: NavItem[]
 
   // 获取数据
   fetchCategories: (filterName?: string) => Promise<NavCategory[]>
@@ -37,7 +35,6 @@ interface NavStore {
 
   // 搜索
   setSearchTerm: (term: string) => void
-  searchItems: (term: string) => void
   handleSearch: (term: string) => void
 
   // 分类管理
@@ -56,31 +53,19 @@ export const useNavStore = create<NavStore>((set, get) => ({
   categories: [],
   allCategories: [],
   items: [],
-  sampleItems: [],
   isSampleData: false,
   loading: false,
   error: null,
   searchTerm: '',
-  filteredItems: [],
 
   // 设置搜索词
   setSearchTerm: (term: string) => {
     set({ searchTerm: term })
-    get().searchItems(term)
-  },
-
-  // 搜索导航项
-  searchItems: (term: string) => {
-    const { items } = get()
-    const filtered = searchItems(items, term)
-    console.log('搜索结果:', filtered.length, '项')
-    set({ filteredItems: filtered })
   },
 
   // 处理搜索事件
   handleSearch: (term: string) => {
-    console.log('处理搜索:', term)
-    get().setSearchTerm(term)
+    set({ searchTerm: term })
   },
 
   // 获取所有导航分类（用于展示，只包含有导航项的分类）
@@ -92,13 +77,10 @@ export const useNavStore = create<NavStore>((set, get) => ({
         return categories
       }
       set({ loading: true, error: null })
-      console.log('开始从API获取分类数据')
       const categories = (await navApi.getCategories(filterName)) || []
-      console.log('API返回分类数据:', categories)
       set({ categories, loading: false })
       return categories
     } catch (error) {
-      console.error('获取分类数据错误:', error)
       const errorMessage = error instanceof Error ? error.message : '获取导航分类失败'
       set({ loading: false, error: errorMessage, categories: [] })
       throw error
@@ -114,13 +96,10 @@ export const useNavStore = create<NavStore>((set, get) => ({
         return allCategories
       }
       set({ loading: true, error: null })
-      console.log('开始从API获取所有分类数据')
       const allCategories = (await navApi.getAllCategories()) || []
-      console.log('API返回所有分类数据:', allCategories)
       set({ allCategories, loading: false })
       return allCategories
     } catch (error) {
-      console.error('获取所有分类数据错误:', error)
       const errorMessage = error instanceof Error ? error.message : '获取所有导航分类失败'
       set({ loading: false, error: errorMessage, allCategories: [] })
       throw error
@@ -131,11 +110,11 @@ export const useNavStore = create<NavStore>((set, get) => ({
   fetchItems: async (categoryId?: number) => {
     try {
       if (get().isSampleData) {
-        const { sampleItems } = get()
+        const { items: allItems } = get()
         const filtered = categoryId
-          ? sampleItems.filter(item => item.nav_category_id === categoryId)
-          : sampleItems
-        set({ items: filtered, filteredItems: filtered, loading: false, error: null })
+          ? allItems.filter(item => item.nav_category_id === categoryId)
+          : allItems
+        set({ items: filtered, loading: false, error: null })
         return filtered
       }
       set({ loading: true, error: null })
@@ -162,8 +141,6 @@ export const useNavStore = create<NavStore>((set, get) => ({
       categories: categoriesWithItems,
       allCategories: categoriesWithItems,
       items: sampleItems,
-      sampleItems,
-      filteredItems: sampleItems,
       isSampleData: true,
     })
   },
@@ -171,18 +148,13 @@ export const useNavStore = create<NavStore>((set, get) => ({
   // 创建分类
   createCategory: async (category: Partial<NavCategory>) => {
     try {
-      console.log('开始创建分类:', category)
       const newCategory = await navApi.createCategory(category)
-      console.log('API返回创建分类结果:', newCategory)
-
       set(state => ({
         categories: addCategoryToList(state.categories, newCategory),
         allCategories: addCategoryToList(state.allCategories, newCategory),
       }))
-
       return newCategory
     } catch (error) {
-      console.error('创建分类失败:', error)
       const errorMessage = error instanceof Error ? error.message : '创建导航分类失败'
       set({ error: errorMessage })
       throw error

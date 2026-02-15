@@ -9,16 +9,17 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       theme={theme as ToasterProps['theme']}
-      className="toaster group toaster-center-right"
-      position="top-right"
+      className="toaster group toaster-bottom-right"
+      position="bottom-right"
       dir="ltr"
-      offset={{ top: 0, right: 16 }}
-      mobileOffset={{ top: 0, right: 16 }}
+      offset={{ bottom: 80, right: 16 }}
+      mobileOffset={{ bottom: 80, right: 16 }}
       expand
       richColors
       style={
         {
           '--width': 'auto',
+          zIndex: 9999,
         } as React.CSSProperties
       }
       toastOptions={{
@@ -32,6 +33,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         style: {
           width: 'auto',
           maxWidth: '400px',
+          zIndex: 9999,
         },
       }}
       {...props}

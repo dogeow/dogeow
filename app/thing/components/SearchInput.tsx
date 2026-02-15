@@ -61,13 +61,13 @@ export default function SearchInput({
   const inputRef = useRef<HTMLInputElement>(null)
   const [isFocused, setIsFocused] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
-  const [searchHistory, setSearchHistory] = useState<string[]>([])
+  const [searchHistory, setSearchHistory] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      return getSearchHistory()
+    }
+    return []
+  })
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
-
-  // 加载搜索历史
-  useEffect(() => {
-    setSearchHistory(getSearchHistory())
-  }, [])
 
   // 使用防抖处理搜索
   const debouncedSearch = useCallback(
@@ -78,12 +78,10 @@ export default function SearchInput({
 
       if (searchValue.trim()) {
         debounceTimerRef.current = setTimeout(() => {
-          console.log('执行防抖搜索:', searchValue)
           onSearch(searchValue)
         }, debounceTime)
       } else if (value && !searchValue.trim()) {
         debounceTimerRef.current = setTimeout(() => {
-          console.log('清空搜索')
           onSearch('')
         }, debounceTime)
       }
@@ -103,8 +101,6 @@ export default function SearchInput({
     e.preventDefault()
 
     if (!value.trim()) return
-
-    console.log('表单提交搜索:', value)
 
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current)

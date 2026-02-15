@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { Word, UserWordSetting, LearningStatus, WordMemoryStatus } from '../types'
 
 interface WordState {
@@ -38,128 +39,9 @@ interface WordState {
   reset: () => void
 }
 
-export const useWordStore = create<WordState>((set, get) => ({
-  currentWords: [],
-  currentIndex: 0,
-  learningStatus: 'idle',
-  currentWordMemoryStatus: 'unknown',
-  showTranslation: false,
-  dailyProgress: {
-    learned: 0,
-    reviewed: 0,
-  },
-  settings: null,
-  studyStartTime: null,
-
-  setCurrentWords: words => {
-    set({
-      currentWords: words,
-      currentIndex: 0,
-      showTranslation: false,
-      currentWordMemoryStatus: 'unknown',
-    })
-  },
-
-  setCurrentIndex: index => {
-    const { currentWords } = get()
-    if (index >= 0 && index < currentWords.length) {
-      set({
-        currentIndex: index,
-        showTranslation: false,
-        currentWordMemoryStatus: 'unknown',
-      })
-    }
-  },
-
-  nextWord: () => {
-    const { currentIndex, currentWords } = get()
-    if (currentIndex < currentWords.length - 1) {
-      set({
-        currentIndex: currentIndex + 1,
-        showTranslation: false,
-        currentWordMemoryStatus: 'unknown',
-      })
-    } else {
-      // 所有单词学习完成
-      set({ learningStatus: 'completed' })
-    }
-  },
-
-  previousWord: () => {
-    const { currentIndex } = get()
-    if (currentIndex > 0) {
-      set({
-        currentIndex: currentIndex - 1,
-        showTranslation: false,
-        currentWordMemoryStatus: 'unknown',
-      })
-    }
-  },
-
-  setLearningStatus: status => {
-    set({ learningStatus: status })
-  },
-
-  setCurrentWordMemoryStatus: status => {
-    set({ currentWordMemoryStatus: status })
-  },
-
-  toggleTranslation: () => {
-    set(state => ({ showTranslation: !state.showTranslation }))
-  },
-
-  markWord: remembered => {
-    const { currentIndex, currentWords, learningStatus } = get()
-    const word = currentWords[currentIndex]
-
-    if (!word) return
-
-    // 更新记忆状态
-    set({
-      currentWordMemoryStatus: remembered ? 'remembered' : 'forgotten',
-      showTranslation: true,
-    })
-
-    // 更新进度
-    if (learningStatus === 'learning') {
-      get().updateDailyProgress('learned')
-    } else if (learningStatus === 'reviewing') {
-      get().updateDailyProgress('reviewed')
-    }
-  },
-
-  updateDailyProgress: type => {
-    set(state => ({
-      dailyProgress: {
-        ...state.dailyProgress,
-        [type]: state.dailyProgress[type] + 1,
-      },
-    }))
-  },
-
-  setSettings: settings => {
-    set({ settings })
-  },
-
-  updateSettings: partialSettings => {
-    set(state => ({
-      settings: state.settings ? { ...state.settings, ...partialSettings } : null,
-    }))
-  },
-
-  startStudy: () => {
-    set({
-      studyStartTime: new Date(),
-      learningStatus: 'idle',
-      dailyProgress: {
-        learned: 0,
-        reviewed: 0,
-      },
-    })
-  },
-
-  reset: () => {
-    set({
+export const useWordStore = create<WordState>()(
+  persist(
+    (set, get) => ({
       currentWords: [],
       currentIndex: 0,
       learningStatus: 'idle',
@@ -169,7 +51,136 @@ export const useWordStore = create<WordState>((set, get) => ({
         learned: 0,
         reviewed: 0,
       },
+      settings: null,
       studyStartTime: null,
-    })
-  },
-}))
+
+      setCurrentWords: words => {
+        set({
+          currentWords: words,
+          currentIndex: 0,
+          showTranslation: false,
+          currentWordMemoryStatus: 'unknown',
+        })
+      },
+
+      setCurrentIndex: index => {
+        const { currentWords } = get()
+        if (index >= 0 && index < currentWords.length) {
+          set({
+            currentIndex: index,
+            showTranslation: false,
+            currentWordMemoryStatus: 'unknown',
+          })
+        }
+      },
+
+      nextWord: () => {
+        const { currentIndex, currentWords } = get()
+        if (currentIndex < currentWords.length - 1) {
+          set({
+            currentIndex: currentIndex + 1,
+            showTranslation: false,
+            currentWordMemoryStatus: 'unknown',
+          })
+        } else {
+          // 所有单词学习完成
+          set({ learningStatus: 'completed' })
+        }
+      },
+
+      previousWord: () => {
+        const { currentIndex } = get()
+        if (currentIndex > 0) {
+          set({
+            currentIndex: currentIndex - 1,
+            showTranslation: false,
+            currentWordMemoryStatus: 'unknown',
+          })
+        }
+      },
+
+      setLearningStatus: status => {
+        set({ learningStatus: status })
+      },
+
+      setCurrentWordMemoryStatus: status => {
+        set({ currentWordMemoryStatus: status })
+      },
+
+      toggleTranslation: () => {
+        set(state => ({ showTranslation: !state.showTranslation }))
+      },
+
+      markWord: remembered => {
+        const { currentIndex, currentWords, learningStatus } = get()
+        const word = currentWords[currentIndex]
+
+        if (!word) return
+
+        // 更新记忆状态
+        set({
+          currentWordMemoryStatus: remembered ? 'remembered' : 'forgotten',
+          showTranslation: true,
+        })
+
+        // 更新进度
+        if (learningStatus === 'learning') {
+          get().updateDailyProgress('learned')
+        } else if (learningStatus === 'reviewing') {
+          get().updateDailyProgress('reviewed')
+        }
+      },
+
+      updateDailyProgress: type => {
+        set(state => ({
+          dailyProgress: {
+            ...state.dailyProgress,
+            [type]: state.dailyProgress[type] + 1,
+          },
+        }))
+      },
+
+      setSettings: settings => {
+        set({ settings })
+      },
+
+      updateSettings: partialSettings => {
+        set(state => ({
+          settings: state.settings ? { ...state.settings, ...partialSettings } : null,
+        }))
+      },
+
+      startStudy: () => {
+        set({
+          studyStartTime: new Date(),
+          learningStatus: 'idle',
+          dailyProgress: {
+            learned: 0,
+            reviewed: 0,
+          },
+        })
+      },
+
+      reset: () => {
+        set({
+          currentWords: [],
+          currentIndex: 0,
+          learningStatus: 'idle',
+          currentWordMemoryStatus: 'unknown',
+          showTranslation: false,
+          dailyProgress: {
+            learned: 0,
+            reviewed: 0,
+          },
+          studyStartTime: null,
+        })
+      },
+    }),
+    {
+      name: 'word-store',
+      partialize: state => ({
+        dailyProgress: state.dailyProgress,
+      }),
+    }
+  )
+)

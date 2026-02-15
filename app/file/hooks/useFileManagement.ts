@@ -22,6 +22,14 @@ interface UseFileManagementReturn {
   error: unknown
 }
 
+// SWR 缓存配置
+const swrOptions = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: true,
+  dedupingInterval: 2000,
+  errorRetryCount: 3,
+}
+
 export const useFileManagement = ({
   currentFolderId,
   searchQuery,
@@ -29,21 +37,27 @@ export const useFileManagement = ({
   sortDirection,
   currentView,
 }: UseFileManagementProps): UseFileManagementReturn => {
+  // 构建文件列表的 SWR key
+  const filesKey =
+    currentFolderId || searchQuery || sortField !== 'created_at' || sortDirection !== 'desc'
+      ? `/cloud/files?parent_id=${currentFolderId || ''}&search=${searchQuery}&sort_by=${sortField}&sort_direction=${sortDirection}`
+      : '/cloud/files'
+
   const {
     data: files,
     error: isErrorFiles,
     isLoading: isLoadingFiles,
     mutate: mutateFiles,
-  } = useSWR<CloudFile[]>(
-    `/cloud/files?parent_id=${currentFolderId || ''}&search=${searchQuery}&sort_by=${sortField}&sort_direction=${sortDirection}`,
-    get
-  )
+  } = useSWR<CloudFile[]>(filesKey, get, {
+    ...swrOptions,
+    keepPreviousData: true,
+  })
 
   const {
     data: folderTree,
     error: isErrorTree,
     isLoading: isLoadingTree,
-  } = useSWR<FolderNode[]>(currentView === 'tree' ? '/cloud/tree' : null, get)
+  } = useSWR<FolderNode[]>(currentView === 'tree' ? '/cloud/tree' : null, get, swrOptions)
 
   const isLoading = isLoadingFiles || isLoadingTree
   const error = isErrorFiles || isErrorTree

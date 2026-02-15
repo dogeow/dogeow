@@ -34,6 +34,7 @@ const VISUALIZER_TYPES: { type: VisualizerType; label: string }[] = [
   { type: 'bars6', label: '宽柱' },
   { type: 'particles', label: '星空' },
   { type: 'silk', label: '雨' },
+  { type: 'pulse', label: '脉冲' },
 ]
 
 export function FullscreenVisualizer({

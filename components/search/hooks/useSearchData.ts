@@ -1,36 +1,70 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { get } from '@/lib/api'
-import { searchLocalData } from '../utils/searchLocalData'
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react'
+import { performFullSearch } from '../api/searchApi'
 import type { SearchResult } from '../types'
 import { useTranslation } from '@/hooks/useTranslation'
 
+/**
+ * useSearchData hook 配置选项
+ */
 interface UseSearchDataOptions {
   isAuthenticated: boolean
   searchTerm: string
   activeCategory: string
+  /** 防抖延迟（毫秒） */
+  debounceMs?: number
 }
 
+/**
+ * useSearchData hook 返回值
+ */
+interface UseSearchDataResult {
+  results: SearchResult[]
+  loading: boolean
+  hasSearched: boolean
+  /** 手动触发搜索 */
+  performSearch: () => Promise<void>
+  /** 获取每个分类的结果数量 */
+  getCountByCategory: (category: string) => number
+}
+
+/**
+ * 搜索数据 hook
+ *
+ * @example
+ * ```tsx
+ * const { results, loading, hasSearched } = useSearchData({
+ *   isAuthenticated: !!token,
+ *   searchTerm: query,
+ *   activeCategory: 'all',
+ * })
+ * ```
+ */
 export function useSearchData({
   isAuthenticated,
   searchTerm,
   activeCategory,
-}: UseSearchDataOptions) {
+  debounceMs = 500,
+}: UseSearchDataOptions): UseSearchDataResult {
   const { t } = useTranslation()
   const [results, setResults] = useState<SearchResult[]>([])
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
-  // 添加上次搜索参数的引用，用于避免重复搜索
-  const lastSearchRef = useRef<{
-    searchTerm: string
-    activeCategory: string
-  }>({
+  // 使用 ref 存储上次的搜索参数
+  const lastSearchRef = useRef({
     searchTerm: '',
     activeCategory: 'all',
   })
 
+  // 使用 ref 存储 abort controller
+  const abortControllerRef = useRef<AbortController | null>(null)
+
+  // 实际的搜索函数
   const performSearch = useCallback(async () => {
-    if (!searchTerm.trim()) {
+    const trimmedTerm = searchTerm.trim()
+
+    // 空搜索词，清空结果
+    if (!trimmedTerm) {
       setResults([])
       setHasSearched(false)
       lastSearchRef.current = {
@@ -40,105 +74,94 @@ export function useSearchData({
       return
     }
 
-    // 检查是否与上次搜索参数相同，避免重复搜索
-    const currentSearchParams = {
-      searchTerm: searchTerm.trim(),
+    // 检查是否与上次搜索参数相同
+    const currentParams = {
+      searchTerm: trimmedTerm,
       activeCategory,
     }
 
     if (
-      lastSearchRef.current.searchTerm === currentSearchParams.searchTerm &&
-      lastSearchRef.current.activeCategory === currentSearchParams.activeCategory
+      lastSearchRef.current.searchTerm === currentParams.searchTerm &&
+      lastSearchRef.current.activeCategory === currentParams.activeCategory
     ) {
-      console.log('搜索参数未变化，跳过重复搜索')
       return
     }
 
-    // 更新上次搜索参数
-    lastSearchRef.current = currentSearchParams
+    // 取消之前的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
 
+    // 创建新的 abort controller
+    abortControllerRef.current = new AbortController()
+
+    // 更新上次搜索参数
+    lastSearchRef.current = currentParams
     setLoading(true)
 
     try {
-      const allResults: SearchResult[] = []
+      const searchResults = await performFullSearch({
+        query: trimmedTerm,
+        category: activeCategory,
+        isAuthenticated,
+        t,
+      })
 
-      // 搜索本地数据（游戏、导航等）
-      const localResults = searchLocalData(searchTerm, activeCategory, isAuthenticated, t)
-      allResults.push(...localResults)
-
-      // 搜索数据库中的物品（后端已经处理了权限控制）
-      if (activeCategory === 'all' || activeCategory === 'thing') {
-        interface SearchApiResponse {
-          results: Array<{
-            id: number
-            name: string
-            description?: string
-            is_public?: boolean
-            user_id?: number
-            thumbnail_url?: string | null
-            [key: string]: unknown
-          }>
-          user_authenticated: boolean
-        }
-
-        const queryParams = new URLSearchParams({
-          q: searchTerm,
-        })
-
-        try {
-          const response = await get<SearchApiResponse>(`/things/search?${queryParams}`)
-
-          if (response.results?.length) {
-            const thingResults = response.results.map(item => ({
-              id: item.id,
-              title: item.name,
-              content: item.description || '无描述',
-              url: `/thing/${item.id}`,
-              category: 'thing',
-              isPublic: item.is_public,
-              requireAuth: false, // 物品搜索不需要认证（后端已处理权限）
-              thumbnail_url: item.thumbnail_url || null,
-            }))
-
-            allResults.push(...thingResults)
-          }
-        } catch (error) {
-          console.error('物品搜索失败:', error)
-          // 如果是认证错误，不显示错误信息，只是不返回结果
-        }
-      }
-
-      setResults(allResults)
+      setResults(searchResults)
     } catch (error) {
+      // 忽略 abort 错误
+      if (error instanceof Error && error.name === 'AbortError') {
+        return
+      }
       console.error('搜索出错:', error)
     } finally {
       setLoading(false)
-      setHasSearched(true) // 标记已完成搜索
+      setHasSearched(true)
     }
   }, [searchTerm, activeCategory, isAuthenticated, t])
 
-  // 自动搜索（防抖）
+  // 防抖执行搜索
   useEffect(() => {
-    const delaySearch = setTimeout(() => {
-      if (searchTerm.trim()) {
-        performSearch()
-      } else {
-        setResults([])
-        setHasSearched(false)
-        lastSearchRef.current = {
-          searchTerm: '',
-          activeCategory,
-        }
-      }
-    }, 500)
+    const trimmedTerm = searchTerm.trim()
 
-    return () => clearTimeout(delaySearch)
-  }, [searchTerm, activeCategory, performSearch])
+    // 空搜索词时立即清空
+    if (!trimmedTerm) {
+      setResults([])
+      setHasSearched(false)
+      lastSearchRef.current = {
+        searchTerm: '',
+        activeCategory,
+      }
+      return
+    }
+
+    const timer = setTimeout(() => {
+      performSearch()
+    }, debounceMs)
+
+    return () => clearTimeout(timer)
+  }, [searchTerm, activeCategory, debounceMs, performSearch])
+
+  // 获取每个分类的结果数量
+  const getCountByCategory = useCallback(
+    (category: string) => {
+      if (!searchTerm.trim()) return 0
+      return results.filter(item => category === 'all' || item.category === category).length
+    },
+    [searchTerm, results]
+  )
+
+  // 按分类过滤结果
+  const filteredResults = useMemo(
+    () => results.filter(item => activeCategory === 'all' || item.category === activeCategory),
+    [results, activeCategory]
+  )
 
   return {
-    results,
+    results: filteredResults,
     loading,
     hasSearched,
     performSearch,
+    getCountByCategory,
   }
 }

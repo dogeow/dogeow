@@ -71,19 +71,7 @@ function deepEqual(a: unknown, b: unknown): boolean {
  * 检查数据是否有变化
  */
 export function hasDataChanged<T>(current: T, initial: T): boolean {
-  const hasChanges = !deepEqual(current, initial)
-
-  console.log('数据变化详细检查:', {
-    hasChanges,
-    current,
-    initial,
-    currentFormData: (current as Record<string, unknown>)?.formData,
-    initialFormData: (initial as Record<string, unknown>)?.formData,
-    currentTags: (current as Record<string, unknown>)?.selectedTags,
-    initialTags: (initial as Record<string, unknown>)?.selectedTags,
-  })
-
-  return hasChanges
+  return !deepEqual(current, initial)
 }
 
 /**

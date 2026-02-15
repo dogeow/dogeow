@@ -1,5 +1,6 @@
 import useSWR from 'swr'
 import useSWRInfinite from 'swr/infinite'
+import { format } from 'date-fns'
 import { get, post, put } from '@/lib/api'
 import type {
   Word,
@@ -12,27 +13,31 @@ import type {
   RangeCalendarData,
 } from '../types'
 
-// Fetcher function - 处理 Laravel Resource Collection 返回格式
+/**
+ * 处理 Laravel Resource Collection 返回格式
+ * Laravel Resource 返回格式是 {data: [...]}
+ * 如果是对象且有 data 属性且是数组，返回 data
+ * 如果是单个资源对象，直接返回 data
+ * 如果直接是数组，直接返回
+ */
+function parseApiResponse<T>(response: unknown): T {
+  if (response && typeof response === 'object' && 'data' in response) {
+    if (Array.isArray((response as { data: unknown }).data)) {
+      return (response as { data: T }).data
+    }
+    return (response as { data: T }).data
+  }
+  if (Array.isArray(response)) {
+    return response as T
+  }
+  return response as T
+}
+
+// Fetcher function - 使用通用的数据解析
 const fetcher = async <T>(url: string): Promise<T> => {
   try {
-    const response = await get<any>(url)
-
-    // Laravel Resource Collection 返回格式是 {data: [...]}
-    // 如果是对象且有 data 属性且是数组，返回 data
-    if (response && typeof response === 'object' && 'data' in response) {
-      if (Array.isArray(response.data)) {
-        return response.data as T
-      }
-      // 如果是单个资源对象，直接返回 data
-      return response.data as T
-    }
-
-    // 如果直接是数组，直接返回
-    if (Array.isArray(response)) {
-      return response as T
-    }
-
-    return response as T
+    const response = await get<unknown>(url)
+    return parseApiResponse<T>(response)
   } catch (error) {
     console.error('Word API 请求失败:', error)
     throw error
@@ -54,10 +59,11 @@ export const useBookWords = (
 ) =>
   useSWR<{ data: Word[]; meta: { current_page: number; last_page: number; total: number } }>(
     bookId ? `/word/books/${bookId}/words?page=${page}&per_page=${perPage}&filter=${filter}` : null,
-    async (url: string) => {
-      const response = await get<any>(url)
-      return response
-    }
+    async (url: string) =>
+      get<unknown>(url) as Promise<{
+        data: Word[]
+        meta: { current_page: number; last_page: number; total: number }
+      }>
   )
 
 // 无限滚动 hook（keyword 为空时不传，避免影响缓存 key 一致性）
@@ -81,10 +87,14 @@ export const useBookWordsInfinite = (
   const { data, error, isLoading, isValidating, size, setSize } = useSWRInfinite<{
     data: Word[]
     meta: { current_page: number; last_page: number; total: number }
-  }>(getKey, async (url: string) => {
-    const response = await get<any>(url)
-    return response
-  })
+  }>(
+    getKey,
+    async (url: string) =>
+      get<unknown>(url) as Promise<{
+        data: Word[]
+        meta: { current_page: number; last_page: number; total: number }
+      }>
+  )
 
   const words = data ? data.flatMap(page => page.data) : []
   const isLoadingMore = isLoading || (size > 0 && data && typeof data[size - 1] === 'undefined')
@@ -146,11 +156,7 @@ export const markWordAsSimple = async (wordId: number) => {
 
 /** 获取用户本地日期 YYYY-MM-DD，用于打卡避免服务端 UTC 导致跨日显示错误 */
 function getLocalDateString(): string {
-  const d = new Date()
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
+  return format(new Date(), 'yyyy-MM-dd')
 }
 
 export const checkIn = async () => {

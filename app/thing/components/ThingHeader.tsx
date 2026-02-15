@@ -1,6 +1,4 @@
-'use client'
-
-import { useState, useCallback, useEffect } from 'react'
+import { memo, useState, useCallback, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SlidersHorizontal, LayoutList, Grid, X, ChevronDownIcon } from 'lucide-react'
@@ -24,7 +22,7 @@ interface ThingHeaderProps {
   onViewModeChange: (viewMode: ViewMode) => void
 }
 
-export default function ThingHeader({
+function ThingHeader({
   categories,
   tags,
   areas,
@@ -36,39 +34,45 @@ export default function ThingHeader({
   onApplyFilters,
   onViewModeChange,
 }: ThingHeaderProps) {
-  // 分类选择状态
-  const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(undefined)
-  const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [tagMenuOpen, setTagMenuOpen] = useState(false)
-  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
-
-  // 初始化分类选择状态
-  useEffect(() => {
+  // 从 filters 派生分类选择状态
+  const derivedCategory = useMemo(() => {
     if (filters.category_id && filters.category_id !== 'all') {
       const idNum = Number(filters.category_id)
       const category = categories.find(cat => cat.id === idNum)
       if (category) {
-        setSelectedCategory({ type: category.parent_id ? 'child' : 'parent', id: idNum })
+        return { type: category.parent_id ? 'child' : 'parent', id: idNum } as CategorySelection
       }
-    } else {
-      setSelectedCategory(undefined)
     }
+    return undefined
   }, [filters.category_id, categories])
 
-  // 同步filters到本地状态（同步标签）
-  useEffect(() => {
+  // 从 filters 派生标签选择状态
+  const derivedTags = useMemo(() => {
     if (filters.tags) {
-      const tagsArray = Array.isArray(filters.tags)
+      return Array.isArray(filters.tags)
         ? filters.tags.map(t => String(t))
         : String(filters.tags)
             .split(',')
             .filter(tag => tag.trim() !== '')
-      setSelectedTags(tagsArray)
-    } else {
-      setSelectedTags([])
     }
+    return [] as string[]
   }, [filters.tags])
+
+  // 分类选择状态 - 使用派生值初始化
+  const [selectedCategory, setSelectedCategory] = useState<CategorySelection>(derivedCategory)
+  const [selectedTags, setSelectedTags] = useState<string[]>(derivedTags)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [tagMenuOpen, setTagMenuOpen] = useState(false)
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
+
+  // 当派生值变化时更新状态
+  useEffect(() => {
+    setSelectedCategory(derivedCategory)
+  }, [derivedCategory])
+
+  useEffect(() => {
+    setSelectedTags(derivedTags)
+  }, [derivedTags])
 
   // 处理点击外部关闭菜单
   useEffect(() => {
@@ -106,8 +110,6 @@ export default function ThingHeader({
       fullPath?: string,
       shouldClosePopup?: boolean
     ) => {
-      console.log('handleCategorySelect 被调用:', { type, id, shouldClosePopup, filters })
-
       if (id === null) {
         // 未分类
         setSelectedCategory(undefined)
@@ -127,10 +129,7 @@ export default function ThingHeader({
 
       // 只有当 shouldClosePopup 为 true 时才关闭弹窗
       if (shouldClosePopup) {
-        console.log('关闭分类菜单')
         setCategoryMenuOpen(false)
-      } else {
-        console.log('保持分类菜单打开')
       }
     },
     [filters, onApplyFilters]
@@ -326,3 +325,5 @@ export default function ThingHeader({
     </div>
   )
 }
+
+export default memo(ThingHeader)

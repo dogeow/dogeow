@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { BackButton } from '@/components/ui/back-button'
 import { MainView } from './MainView'
 import { BackgroundView } from './BackgroundView'
@@ -28,6 +28,7 @@ interface SettingsContentProps {
   handleRemoveCustomTheme: (id: string) => void
   handleToggleFollowSystem: (checked: boolean) => void
   handleToggleProjectCovers: (checked: boolean) => void
+  onClose?: () => void
 }
 
 export function SettingsContent({
@@ -47,7 +48,16 @@ export function SettingsContent({
   handleRemoveCustomTheme,
   handleToggleFollowSystem,
   handleToggleProjectCovers,
+  onClose,
 }: SettingsContentProps) {
+  const handleBack = useCallback(() => {
+    if (onClose) {
+      onClose()
+    } else {
+      toggleDisplayMode('apps')
+    }
+  }, [onClose, toggleDisplayMode])
+
   switch (currentView) {
     case 'background':
       return (
@@ -79,7 +89,7 @@ export function SettingsContent({
       return (
         <>
           {/* 返回按钮 */}
-          <BackButton onClick={() => toggleDisplayMode('apps')} className="shrink-0" />
+          <BackButton onClick={handleBack} className="shrink-0" />
 
           <SettingsDivider />
 

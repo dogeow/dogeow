@@ -4,7 +4,7 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { MusicPlayer } from './MusicPlayer'
 import { SettingsPanel, CustomBackground } from './SettingsPanel'
 import { useRouter, usePathname } from 'next/navigation'
-import { AuthPanel } from '@/components/launcher/AuthPanel'
+import { AuthPanel, AuthDialog } from '@/components/launcher/AuthPanel'
 import useAuthStore from '@/stores/authStore'
 import { SearchDialog } from '@/components/search/SearchDialog'
 import { useAudioManager } from '@/hooks/useAudioManager'
@@ -19,11 +19,14 @@ import { useMediaKeys } from './hooks/useMediaKeys'
 import { useMediaSession } from './hooks/useMediaSession'
 import { AudioVisualizer } from './music/AudioVisualizer'
 import { FullscreenVisualizer } from './music/FullscreenVisualizer'
+import { IpadOSSettingsDialog } from './settings/IpadOSSettingsDialog'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
 export function AppLauncher() {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false)
+  const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated } = useAuthStore()
@@ -70,6 +73,18 @@ export function AppLauncher() {
   // 切换显示模式
   const toggleDisplayMode = useCallback(
     (mode: DisplayMode) => {
+      // 设置单独使用对话框，不再切换 displayMode
+      if (mode === 'settings') {
+        setIsSettingsDialogOpen(true)
+        return
+      }
+
+      // 登录使用对话框
+      if (mode === 'auth') {
+        setIsAuthDialogOpen(true)
+        return
+      }
+
       setDisplayMode(mode)
 
       // 当切换到音乐模式时，加载音频列表并初始化音频源
@@ -167,10 +182,6 @@ export function AppLauncher() {
           setCustomBackgrounds,
         },
       },
-      auth: {
-        component: AuthPanel,
-        props: { toggleDisplayMode },
-      },
     }),
     [
       isPlaying,
@@ -210,24 +221,6 @@ export function AppLauncher() {
         )
       }
 
-      case 'settings': {
-        const { component: Component, props } = contentConfig.settings
-        return (
-          <ViewWrapper>
-            <Component {...props} />
-          </ViewWrapper>
-        )
-      }
-
-      case 'auth': {
-        const { component: Component, props } = contentConfig.auth
-        return (
-          <ViewWrapper>
-            <Component {...props} />
-          </ViewWrapper>
-        )
-      }
-
       case 'apps':
         return (
           <AppsView
@@ -252,11 +245,22 @@ export function AppLauncher() {
   return (
     <>
       <AiDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
+      <AuthDialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} />
       <SearchDialog
         open={searchManager.isSearchDialogOpen}
         onOpenChange={searchManager.setIsSearchDialogOpen}
         initialSearchTerm={searchManager.searchTerm}
         currentRoute={!searchManager.isHomePage ? pathname : undefined}
+      />
+
+      {/* iPadOS 风格设置对话框 */}
+      <IpadOSSettingsDialog
+        open={isSettingsDialogOpen}
+        onOpenChange={setIsSettingsDialogOpen}
+        backgroundImage={backgroundImage}
+        setBackgroundImage={setBackgroundImage}
+        customBackgrounds={customBackgrounds}
+        setCustomBackgrounds={setCustomBackgrounds}
       />
 
       {/* 全屏音频可视化 */}

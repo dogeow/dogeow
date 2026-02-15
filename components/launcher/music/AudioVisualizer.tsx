@@ -11,6 +11,7 @@ export type VisualizerType =
   | 'spectrum'
   | 'particles'
   | 'silk'
+  | 'pulse'
 
 interface AudioVisualizerProps {
   analyserNode: AnalyserNode | null
@@ -211,6 +212,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number | null>(null)
   const dataArrayRef = useRef<Uint8Array | null>(null)
+  const prevTypeRef = useRef<VisualizerType>(type)
   const waveformHistoryRef = useRef<number[][]>([]) // 存储历史波形数据
   const maxHistoryLength = 200 // 最多保留 200 帧历史数据
 
@@ -522,38 +524,93 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     []
   )
 
+  // 频谱柱子平滑过渡缓存
+  const spectrumSmoothedRef = useRef<Float32Array | null>(null)
+
   // 绘制频谱图（类似音频编辑器的频谱显示）
   const drawSpectrum = useCallback(
     (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
       ctx.clearRect(0, 0, width, height)
       const barCountSpectrum = 64
-      const primaryColor = getPrimaryColor()
+      const gap = 2 // 柱子之间的间距
+      const totalGap = gap * (barCountSpectrum - 1)
+      const availableWidth = Math.max(0, width - totalGap)
 
-      // 以整数像素分配宽度，避免子像素缝隙
-      const baseW = Math.floor(width / barCountSpectrum)
-      let remainder = width - baseW * barCountSpectrum
+      // 整数像素分配宽度
+      const baseW = Math.floor(availableWidth / barCountSpectrum)
+      let remainder = availableWidth - baseW * barCountSpectrum
       const widths: number[] = new Array(barCountSpectrum)
         .fill(baseW)
         .map(() => (remainder-- > 0 ? baseW + 1 : baseW))
 
+      // 初始化平滑数据
+      if (!spectrumSmoothedRef.current || spectrumSmoothedRef.current.length !== barCountSpectrum) {
+        spectrumSmoothedRef.current = new Float32Array(barCountSpectrum)
+      }
+      const smoothed = spectrumSmoothedRef.current
+
+      // 平滑过渡系数：值越小拖尾越长
+      const smoothUp = 0.35
+      const smoothDown = 0.12
+
       let x = 0
       for (let i = 0; i < barCountSpectrum; i++) {
         const dataIndex = Math.floor((i / barCountSpectrum) * dataArray.length)
-        const value = Math.max(0, Math.min(1, dataArray[dataIndex] / 255))
+        const rawValue = Math.max(0, Math.min(1, dataArray[dataIndex] / 255))
+
+        // 平滑处理
+        const prev = smoothed[i]
+        smoothed[i] =
+          rawValue > prev
+            ? prev + (rawValue - prev) * smoothUp
+            : prev + (rawValue - prev) * smoothDown
+        const value = smoothed[i]
 
         const w = Math.max(1, widths[i])
-        const h = Math.round(value * height)
-        const y = Math.max(0, height - h)
+        const h = Math.max(1, Math.round(value * height * 0.92))
+        const y = height - h
+        const radius = Math.min(3, w / 2)
 
-        let fillColor = primaryColor
-        if (primaryColor.startsWith('hsl')) {
-          const baseColor = primaryColor.replace(')', '')
-          fillColor = `${baseColor} / ${0.4 + value * 0.6})`
+        // 渐变色：从底部到顶部，颜色随柱子位置变化
+        const hue = (i / barCountSpectrum) * 120 + 200 // 蓝→青→绿色谱
+        const gradient = ctx.createLinearGradient(x, y, x, height)
+        gradient.addColorStop(0, `hsla(${hue}, 80%, 65%, ${0.7 + value * 0.3})`)
+        gradient.addColorStop(0.5, `hsla(${hue + 20}, 70%, 50%, ${0.6 + value * 0.4})`)
+        gradient.addColorStop(1, `hsla(${hue + 40}, 60%, 35%, ${0.5 + value * 0.3})`)
+        ctx.fillStyle = gradient
+
+        // 绘制带圆角的柱子
+        ctx.beginPath()
+        if ((ctx as any).roundRect) {
+          ;(ctx as any).roundRect(x, y, w, h, [radius, radius, 0, 0])
+        } else {
+          ctx.moveTo(x + radius, y)
+          ctx.lineTo(x + w - radius, y)
+          ctx.quadraticCurveTo(x + w, y, x + w, y + radius)
+          ctx.lineTo(x + w, y + h)
+          ctx.lineTo(x, y + h)
+          ctx.lineTo(x, y + radius)
+          ctx.quadraticCurveTo(x, y, x + radius, y)
+        }
+        ctx.fill()
+
+        // 顶部高光效果
+        if (h > 4) {
+          ctx.fillStyle = `hsla(${hue}, 90%, 80%, ${0.3 + value * 0.4})`
+          ctx.fillRect(x + 1, y, w - 2, Math.min(3, h * 0.15))
         }
 
-        ctx.fillStyle = fillColor
-        ctx.fillRect(x, y, w, h)
-        x += w
+        // 底部倒影（半透明镜像）
+        const reflectH = Math.min(h * 0.25, 30)
+        if (reflectH > 2) {
+          const reflectGrad = ctx.createLinearGradient(x, height, x, height + reflectH)
+          reflectGrad.addColorStop(0, `hsla(${hue}, 60%, 50%, ${0.15 * value})`)
+          reflectGrad.addColorStop(1, `hsla(${hue}, 60%, 50%, 0)`)
+          ctx.fillStyle = reflectGrad
+          ctx.fillRect(x, height, w, reflectH)
+        }
+
+        x += w + gap
       }
     },
     []
@@ -739,6 +796,129 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     },
     []
   )
+
+  // 光环脉冲系统状态
+  const pulseRingsRef = useRef<
+    Array<{
+      radius: number
+      maxRadius: number
+      alpha: number
+      hue: number
+      lineWidth: number
+      speed: number
+    }>
+  >([])
+  const pulseSmoothedBassRef = useRef(0)
+  const pulseSmoothedMidRef = useRef(0)
+  const pulseSmoothedHighRef = useRef(0)
+
+  // 绘制光环脉冲效果
+  const drawPulse = useCallback(
+    (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
+      // 半透明清除，产生拖尾
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'
+      ctx.fillRect(0, 0, width, height)
+
+      const cx = width / 2
+      const cy = height / 2
+      const maxR = Math.sqrt(cx * cx + cy * cy) * 1.1
+      const rings = pulseRingsRef.current
+
+      // 频段分析
+      const len = dataArray.length
+      const bassSlice = dataArray.slice(0, Math.floor(len * 0.1))
+      const midSlice = dataArray.slice(Math.floor(len * 0.1), Math.floor(len * 0.5))
+      const highSlice = dataArray.slice(Math.floor(len * 0.5))
+
+      const bassRaw = bassSlice.reduce((s, v) => s + v, 0) / bassSlice.length / 255
+      const midRaw = midSlice.reduce((s, v) => s + v, 0) / midSlice.length / 255
+      const highRaw = highSlice.reduce((s, v) => s + v, 0) / highSlice.length / 255
+
+      // 平滑
+      pulseSmoothedBassRef.current += (bassRaw - pulseSmoothedBassRef.current) * 0.25
+      pulseSmoothedMidRef.current += (midRaw - pulseSmoothedMidRef.current) * 0.2
+      pulseSmoothedHighRef.current += (highRaw - pulseSmoothedHighRef.current) * 0.2
+
+      const bass = pulseSmoothedBassRef.current
+      const mid = pulseSmoothedMidRef.current
+      const high = pulseSmoothedHighRef.current
+      const avg = (bass + mid + high) / 3
+
+      // 根据低频节拍生成新环
+      const beatThreshold = 0.35
+      const spawnChance = bass > beatThreshold ? 0.6 + bass * 0.4 : 0.05 + avg * 0.15
+      if (Math.random() < spawnChance && rings.length < 25) {
+        const hueBase = 280 + mid * 80 // 紫→粉色域
+        rings.push({
+          radius: 10 + bass * 30,
+          maxRadius: maxR,
+          alpha: 0.6 + bass * 0.4,
+          hue: hueBase + Math.random() * 40 - 20,
+          lineWidth: 1.5 + bass * 4,
+          speed: 2 + bass * 6 + Math.random() * 2,
+        })
+      }
+
+      // 中心呼吸光晕
+      const breathR = 40 + bass * 120 + Math.sin(performance.now() / 800) * 15
+      const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, breathR)
+      const glowHue = 280 + mid * 60
+      glowGrad.addColorStop(0, `hsla(${glowHue}, 80%, 70%, ${0.15 + avg * 0.25})`)
+      glowGrad.addColorStop(0.5, `hsla(${glowHue + 20}, 70%, 55%, ${0.08 + avg * 0.12})`)
+      glowGrad.addColorStop(1, `hsla(${glowHue + 40}, 60%, 40%, 0)`)
+      ctx.fillStyle = glowGrad
+      ctx.fillRect(cx - breathR, cy - breathR, breathR * 2, breathR * 2)
+
+      // 更新和绘制圆环
+      for (let i = rings.length - 1; i >= 0; i--) {
+        const ring = rings[i]
+        ring.radius += ring.speed
+        // 随扩散变淡变细
+        const life = 1 - ring.radius / ring.maxRadius
+        ring.alpha = Math.max(0, life * (0.5 + bass * 0.5))
+        ring.lineWidth = Math.max(0.3, life * (1.5 + bass * 3))
+
+        if (ring.alpha <= 0.01 || ring.radius >= ring.maxRadius) {
+          rings.splice(i, 1)
+          continue
+        }
+
+        // 主圆环
+        ctx.beginPath()
+        ctx.arc(cx, cy, ring.radius, 0, Math.PI * 2)
+        ctx.strokeStyle = `hsla(${ring.hue}, 75%, 65%, ${ring.alpha})`
+        ctx.lineWidth = ring.lineWidth
+        ctx.stroke()
+
+        // 外层辉光（更粗更透明）
+        if (ring.alpha > 0.1) {
+          ctx.beginPath()
+          ctx.arc(cx, cy, ring.radius, 0, Math.PI * 2)
+          ctx.strokeStyle = `hsla(${ring.hue}, 60%, 70%, ${ring.alpha * 0.3})`
+          ctx.lineWidth = ring.lineWidth * 3
+          ctx.stroke()
+        }
+      }
+
+      // 高频驱动的微粒点缀（围绕中心散布）
+      const dotCount = Math.floor(high * 40)
+      for (let i = 0; i < dotCount; i++) {
+        const angle = Math.random() * Math.PI * 2
+        const dist = 50 + Math.random() * (maxR * 0.5) * avg
+        const px = cx + Math.cos(angle) * dist
+        const py = cy + Math.sin(angle) * dist
+        const dotR = 0.5 + Math.random() * 1.5
+        const dotAlpha = 0.2 + Math.random() * 0.4 * high
+
+        ctx.beginPath()
+        ctx.arc(px, py, dotR, 0, Math.PI * 2)
+        ctx.fillStyle = `hsla(${280 + Math.random() * 80}, 70%, 75%, ${dotAlpha})`
+        ctx.fill()
+      }
+    },
+    []
+  )
+
   // 启动/停止动画
   useEffect(() => {
     // 绘制循环函数
@@ -771,6 +951,12 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       // 获取频率数据
       analyserNode.getByteFrequencyData(dataArray as any)
 
+      // 切换效果类型时，清空画布残留（脉冲/星空等拖尾效果会留下不透明残留）
+      if (prevTypeRef.current !== type) {
+        ctx.clearRect(0, 0, width, height)
+        prevTypeRef.current = type
+      }
+
       // 根据类型绘制
       switch (type) {
         case 'bars':
@@ -795,6 +981,9 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
           break
         case 'silk':
           drawSilk(ctx, dataArray, width, height)
+          break
+        case 'pulse':
+          drawPulse(ctx, dataArray, width, height)
           break
       }
 
@@ -830,6 +1019,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     drawWaveformHistory,
     drawParticles,
     drawSilk,
+    drawPulse,
   ])
 
   return (

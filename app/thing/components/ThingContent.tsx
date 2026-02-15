@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Pagination,
@@ -38,7 +39,7 @@ interface ThingContentProps {
   onClearFilters: () => void
 }
 
-export default function ThingContent({
+function ThingContent({
   items,
   loading,
   error,
@@ -54,18 +55,6 @@ export default function ThingContent({
   onClearFilters,
 }: ThingContentProps) {
   const totalPages = meta?.last_page || 1
-
-  // 添加调试日志
-  console.log('ThingContent 状态:', {
-    items: items.length,
-    loading,
-    error,
-    meta: meta
-      ? { current_page: meta.current_page, total: meta.total, last_page: meta.last_page }
-      : null,
-    hasActiveFilters,
-    searchTerm,
-  })
 
   // 渲染加载状态
   const renderLoading = () => (
@@ -206,23 +195,21 @@ export default function ThingContent({
   // 条件渲染内容
   // 先处理错误，避免被加载骨架覆盖
   if (error) {
-    console.log('ThingContent: 显示错误状态')
     return renderError()
   }
 
   // 默认显示骨架屏（loading 状态）
   if (loading) {
-    console.log('ThingContent: 显示加载状态')
     return renderLoading()
   }
 
   // 只有当 API 返回成功（有 meta）且 items 为空时，才显示空状态
   if (meta && items.length === 0) {
-    console.log('ThingContent: 显示空状态 (API 返回为空)')
     return renderEmpty()
   }
 
   // 有数据时显示物品列表
-  console.log('ThingContent: 显示物品列表')
   return renderItems()
 }
+
+export default memo(ThingContent)

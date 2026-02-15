@@ -44,9 +44,6 @@ export default function CreatableCategorySelect({
   // 判断当前输入是否已存在
   const exists = filtered.some(cat => cat.name === inputValue.trim())
 
-  // 调试：渲染前打印
-  console.log('filtered:', filtered, 'inputValue:', inputValue, 'exists:', exists)
-
   // 选中项的显示文本
   const selectedLabel = useMemo(() => {
     if (allowNoneOption && (value === 'none' || value === undefined || value === null))
@@ -57,7 +54,6 @@ export default function CreatableCategorySelect({
 
   // 新增分类（此处仅回调，实际应由父组件处理 API）
   const handleCreate = async () => {
-    console.log('handleCreate 被调用，inputValue:', inputValue, 'exists:', exists)
     if (!inputValue.trim() || exists) return
     setCreating(true)
     if (onCreateCategory) {
@@ -145,11 +141,9 @@ export default function CreatableCategorySelect({
                 <CommandItem
                   value={inputValue.trim()}
                   onSelect={() => {
-                    console.log('CommandItem onSelect 触发，准备创建分类')
                     handleCreate()
                   }}
                   onClick={() => {
-                    console.log('CommandItem onClick 触发，准备创建分类')
                     handleCreate()
                   }}
                 >

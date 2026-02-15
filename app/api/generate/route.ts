@@ -18,6 +18,7 @@ interface GenerateRequestBody {
   messages?: ChatMessage[]
   useChat?: boolean // 是否使用 chat 模式
   model?: string // Ollama 模型名称
+  provider?: AIProvider // AI 提供商
 }
 
 // GitHub Models SSE 响应片段
@@ -56,6 +57,14 @@ const DEFAULT_MODEL = process.env.OLLAMA_MODEL ?? 'qwen2.5:0.5b'
 const GITHUB_MODELS_URL = 'https://models.github.ai/inference/chat/completions'
 const GITHUB_PAT = process.env.GITHUB_PAT ?? ''
 const GITHUB_MODEL = 'openai/gpt-5-mini'
+
+// MiniMax (Anthropic 兼容) 配置
+const ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL ?? 'https://api.minimaxi.com/anthropic'
+const ANTHROPIC_AUTH_TOKEN = process.env.ANTHROPIC_AUTH_TOKEN ?? ''
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? 'MiniMax-M2.5-highspeed'
+
+// AI 提供商类型
+type AIProvider = 'github' | 'minimax' | 'ollama'
 
 // embedding 模型仅用于检索，不能用于 Chat/Generate API，需回退为对话模型
 const EMBEDDING_MODEL_PREFIXES = ['qwen3-embedding', 'embeddinggemma', 'nomic-embed-text']
@@ -142,6 +151,190 @@ const callGitHubModelsAPI = async (messages: ChatMessage[]): Promise<Response> =
     throw new Error(`GitHub Models API (${res.status}): ${detail}`.slice(0, 500))
   }
   return res
+}
+
+// MiniMax (Anthropic 兼容) 响应类型
+interface MiniMaxChunk {
+  type: string
+  index?: number
+  delta?: { type: string; text?: string }
+  usage?: { input_tokens: number; output_tokens: number }
+  message?: { role: string; content: string }
+}
+
+// 调用 MiniMax (Anthropic 兼容) API
+const callMiniMaxAPI = async (messages: ChatMessage[]): Promise<Response> => {
+  if (!ANTHROPIC_AUTH_TOKEN) {
+    throw new Error('MiniMax Token 未配置，请设置 ANTHROPIC_AUTH_TOKEN 环境变量')
+  }
+
+  console.log('[Generate API] MiniMax 配置:', {
+    baseUrl: ANTHROPIC_BASE_URL,
+    model: ANTHROPIC_MODEL,
+    fullUrl: `${ANTHROPIC_BASE_URL}/v1/messages`,
+    tokenPrefix: ANTHROPIC_AUTH_TOKEN.substring(0, 10) + '...',
+  })
+
+  // 转换消息格式为 Anthropic 格式
+  const anthropicMessages = messages
+    .filter(m => m.role !== 'system')
+    .map(m => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.content,
+    }))
+
+  // 从消息中提取 system prompt
+  const systemMessage =
+    messages.find(m => m.role === 'system')?.content ?? '你是一个有用的AI助理，请用中文回答问题。'
+
+  const res = await fetch(`${ANTHROPIC_BASE_URL}/v1/messages`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      Authorization: `Bearer ${ANTHROPIC_AUTH_TOKEN}`,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      messages: anthropicMessages,
+      system: systemMessage,
+      stream: true,
+      max_tokens: 4096,
+    }),
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    let detail = text
+    try {
+      const data = text ? JSON.parse(text) : null
+      if (data?.error?.message) detail = data.error.message
+      else if (data?.error)
+        detail = typeof data.error === 'string' ? data.error : JSON.stringify(data.error)
+    } catch {
+      // 非 JSON 时保留原始 text
+    }
+    console.error('[MiniMax API Error]', {
+      status: res.status,
+      detail,
+      model: ANTHROPIC_MODEL,
+      fullUrl: `${ANTHROPIC_BASE_URL}/v1/messages`,
+      responseText: text,
+    })
+    throw new Error(`MiniMax API (${res.status}): ${detail}`.slice(0, 500))
+  }
+  return res
+}
+
+// 将 MiniMax SSE 流转换为与 Ollama 相同的输出格式
+function createMiniMaxStreamResponse(minimaxResponse: Response): Response {
+  const encoder = new TextEncoder()
+  const decoder = new TextDecoder()
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = minimaxResponse.body?.getReader()
+      if (!reader) {
+        controller.error(new Error('无法获取响应流'))
+        return
+      }
+
+      let buffer = ''
+      let totalTokens = 0
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            const dataStr = line.slice(6)
+            if (dataStr === '[DONE]') {
+              controller.enqueue(
+                encoder.encode(
+                  `d:${JSON.stringify({
+                    finishReason: 'stop',
+                    usage: {
+                      promptTokens: 0,
+                      completionTokens: totalTokens,
+                      totalTokens: totalTokens,
+                    },
+                  })}\n`
+                )
+              )
+              controller.close()
+              return
+            }
+            try {
+              const data: MiniMaxChunk = JSON.parse(dataStr)
+              if (data.type === 'content_block_delta' && data.delta?.type === 'text_delta') {
+                const content = data.delta.text
+                if (content) {
+                  const escaped = escapeJsonString(content)
+                  controller.enqueue(encoder.encode(`0:"${escaped}"\n`))
+                  totalTokens += Math.ceil(content.length / 4)
+                }
+              }
+              if (data.type === 'message_stop') {
+                controller.enqueue(
+                  encoder.encode(
+                    `d:${JSON.stringify({
+                      finishReason: 'stop',
+                      usage: {
+                        promptTokens: data.usage?.input_tokens ?? 0,
+                        completionTokens: data.usage?.output_tokens ?? totalTokens,
+                        totalTokens:
+                          (data.usage?.input_tokens ?? 0) +
+                          (data.usage?.output_tokens ?? totalTokens),
+                      },
+                    })}\n`
+                  )
+                )
+                controller.close()
+                return
+              }
+            } catch {
+              // 忽略单行解析错误
+            }
+          }
+        }
+
+        controller.enqueue(
+          encoder.encode(
+            `d:${JSON.stringify({
+              finishReason: 'stop',
+              usage: {
+                promptTokens: 0,
+                completionTokens: totalTokens,
+                totalTokens: totalTokens,
+              },
+            })}\n`
+          )
+        )
+        controller.close()
+      } catch (e) {
+        console.error('MiniMax 流处理错误:', e)
+        controller.error(e)
+      } finally {
+        reader.releaseLock()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'x-vercel-ai-data-stream': 'v1',
+    },
+  })
 }
 
 // 将 GitHub SSE 流转换为与 Ollama 相同的输出格式（0:"content"\n, d:{...}\n）
@@ -355,11 +548,37 @@ function createStreamResponse(
 
 // 根据环境变量决定使用哪个 AI 服务（优先使用 GitHub Models）
 const useGitHub = !!GITHUB_PAT
+const useMiniMax = !!ANTHROPIC_AUTH_TOKEN
+
+// 确定实际使用的 AI 提供商
+const getAIProvider = (requestedProvider?: AIProvider): AIProvider => {
+  if (requestedProvider === 'github' && GITHUB_PAT) return 'github'
+  if (requestedProvider === 'minimax' && ANTHROPIC_AUTH_TOKEN) return 'minimax'
+  if (requestedProvider === 'ollama') return 'ollama'
+  // 默认优先级：GitHub > MiniMax > Ollama
+  if (GITHUB_PAT) return 'github'
+  if (ANTHROPIC_AUTH_TOKEN) return 'minimax'
+  return 'ollama'
+}
 
 export async function POST(request: NextRequest) {
+  // 只读取一次 body
+  let body: GenerateRequestBody
   try {
-    const body = (await request.json()) as GenerateRequestBody
-    const { option, command, text = '', messages, useChat = false, model } = body
+    body = (await request.json()) as GenerateRequestBody
+  } catch {
+    return NextResponse.json({ error: '无效的请求体' }, { status: 400 })
+  }
+
+  const { option, command, text = '', messages, useChat = false, model, provider } = body
+
+  try {
+    // 调试日志
+    console.log('[Generate API] 接收到的请求:', { provider, model, useChat })
+
+    // 确定实际使用的 AI 提供商
+    const actualProvider = getAIProvider(provider)
+    console.log('[Generate API] 实际使用的 AI 提供商:', actualProvider)
 
     // 如果使用 chat 模式且有 messages，使用连续对话
     if (useChat && messages && messages.length > 0) {
@@ -375,16 +594,23 @@ export async function POST(request: NextRequest) {
 
       const promptTokens = Math.ceil(chatMessages.reduce((acc, m) => acc + m.content.length, 0) / 4)
 
-      if (useGitHub) {
+      // 根据 AI 提供商调用不同的 API
+      if (actualProvider === 'github') {
         const githubResponse = await callGitHubModelsAPI(chatMessages)
         return createGitHubStreamResponse(githubResponse, promptTokens)
       }
 
+      if (actualProvider === 'minimax') {
+        const minimaxResponse = await callMiniMaxAPI(chatMessages)
+        return createMiniMaxStreamResponse(minimaxResponse)
+      }
+
+      // 默认使用 Ollama
       const ollamaResponse = await callOllamaChatAPI(chatMessages, model)
       return createStreamResponse(ollamaResponse, '', promptTokens)
     }
 
-    // 兼容旧模式：单次生成
+    // 兼容旧模式：单次生成（仅支持 Ollama）
     if (!option || !text.trim()) {
       return NextResponse.json({ error: '缺少必要参数：option 和 text' }, { status: 400 })
     }
@@ -395,9 +621,14 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     console.error('AI API错误:', error)
     const isNetworkOrFetch = error instanceof Error && (error.message?.includes('fetch') ?? false)
-    const fallbackMessage = useGitHub
-      ? 'AI 服务暂时不可用，请检查后端 GITHUB_PAT 环境变量及网络'
-      : 'AI 服务暂时不可用，请确保 Ollama 服务正在运行'
+    // 从请求体中提取 provider，如果不存在则使用默认值
+    const actualProvider = getAIProvider(provider ?? undefined)
+    const fallbackMessage =
+      actualProvider === 'github'
+        ? 'AI 服务暂时不可用，请检查后端 GITHUB_PAT 环境变量及网络'
+        : actualProvider === 'minimax'
+          ? 'AI 服务暂时不可用，请检查后端 ANTHROPIC_AUTH_TOKEN 环境变量及网络'
+          : 'AI 服务暂时不可用，请确保 Ollama 服务正在运行'
     const errorMessage =
       error instanceof Error
         ? isNetworkOrFetch

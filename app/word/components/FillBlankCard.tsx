@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { CheckCircle, XCircle, Volume2 } from 'lucide-react'
 import { Word } from '../types'
 import { toast } from 'sonner'
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis'
 
 interface FillBlankCardProps {
   word: Word
@@ -17,6 +18,8 @@ export function FillBlankCard({ word, onNext }: FillBlankCardProps) {
   const [userInput, setUserInput] = useState('')
   const [showResult, setShowResult] = useState(false)
   const [isCorrect, setIsCorrect] = useState(false)
+
+  const { speakWord } = useSpeechSynthesis()
 
   // 随机选择一个例句
   const [selectedExample] = useState(() => {
@@ -68,20 +71,6 @@ export function FillBlankCard({ word, onNext }: FillBlankCardProps) {
     }
   }
 
-  const speak = (text: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-
-    try {
-      speechSynthesis.cancel()
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'en-US'
-      utterance.rate = 0.85
-      speechSynthesis.speak(utterance)
-    } catch (error) {
-      console.error('发音失败:', error)
-    }
-  }
-
   if (!selectedExample) {
     return (
       <Card className="w-full">
@@ -107,7 +96,7 @@ export function FillBlankCard({ word, onNext }: FillBlankCardProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => speak(word.content)}
+                onClick={() => speakWord(word.content)}
                 className="h-6 w-6 p-0"
                 aria-label="发音"
               >

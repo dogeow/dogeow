@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Globe } from 'lucide-react'
@@ -56,11 +56,6 @@ export default function ItemCardImage({
     return null
   }, [initialPrimaryImage, images])
 
-  // 重置错误状态当图片变化时
-  useEffect(() => {
-    setImageError(false)
-  }, [primaryImage])
-
   const imageSrc = primaryImage?.thumbnail_url || primaryImage?.url
 
   // 根据size动态设置sizes属性
@@ -93,8 +88,11 @@ export default function ItemCardImage({
 
   const shouldUseUnoptimized = imageSrc?.startsWith('http') ?? false
 
+  // 使用 key 来强制在图片变化时重新渲染，重置状态
+  const imageKey = primaryImage?.id || primaryImage?.path || 'no-image'
+
   return (
-    <div className={containerClassName} style={containerStyle}>
+    <div key={imageKey} className={containerClassName} style={containerStyle}>
       {imageSrc && !imageError ? (
         <Image
           src={imageSrc}

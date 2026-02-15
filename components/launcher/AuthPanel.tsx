@@ -8,9 +8,97 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { LoginForm } from './auth/LoginForm'
 import { ProfileView } from './auth/ProfileView'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
 
 type DisplayMode = 'music' | 'apps' | 'settings'
 
+interface AuthDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}
+
+export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmingLogout, setConfirmingLogout] = useState(false)
+  const { login, loading, isAuthenticated, user, logout } = useAuthStore()
+  const router = useRouter()
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    try {
+      await login(email, password)
+      toast.success('登录成功', {
+        description: `欢迎回来，${email}`,
+      })
+      onOpenChange(false)
+    } catch (err) {
+      toast.error('登录失败', {
+        description: err instanceof Error ? err.message : '登录失败，请检查邮箱和密码',
+      })
+    }
+  }
+
+  const handleLogoutStart = () => {
+    setConfirmingLogout(true)
+  }
+
+  const handleLogoutConfirm = () => {
+    logout()
+    toast.success('已退出登录')
+    setConfirmingLogout(false)
+    onOpenChange(false)
+  }
+
+  const handleLogoutCancel = () => {
+    setConfirmingLogout(false)
+  }
+
+  const handleGoToDashboard = () => {
+    router.push('/dashboard')
+    onOpenChange(false)
+  }
+
+  // 渲染登录视图
+  const renderLoginView = () => (
+    <LoginForm
+      email={email}
+      password={password}
+      loading={loading}
+      onEmailChange={setEmail}
+      onPasswordChange={setPassword}
+      onSubmit={handleSubmit}
+    />
+  )
+
+  // 渲染个人信息视图
+  const renderProfileView = () => (
+    <ProfileView
+      userName={user?.name || ''}
+      confirmingLogout={confirmingLogout}
+      onGoToDashboard={handleGoToDashboard}
+      onLogoutStart={handleLogoutStart}
+      onLogoutConfirm={handleLogoutConfirm}
+      onLogoutCancel={handleLogoutCancel}
+    />
+  )
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="min-h-[300px] w-[90%] max-w-md overflow-hidden p-0">
+        <div className="p-6">
+          <h2 className="mb-6 text-center text-xl font-semibold">
+            {isAuthenticated && user ? '个人资料' : '登录'}
+          </h2>
+          {isAuthenticated && user ? renderProfileView() : renderLoginView()}
+        </div>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// 保留旧的 AuthPanel 以保持兼容性
 export interface AuthPanelProps {
   toggleDisplayMode: (mode: DisplayMode) => void
 }

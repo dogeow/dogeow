@@ -24,7 +24,6 @@ export function ImageSizeControl({ initialSize, maxSize, onSizeChange }: ImageSi
 
   const getCalculatedSize = useCallback(
     (preset: string, containerWidth: number): number => {
-      console.log('Calculating size for preset:', preset, 'container width:', containerWidth)
       let columns
       switch (preset) {
         case 'xs':
@@ -48,7 +47,6 @@ export function ImageSizeControl({ initialSize, maxSize, onSizeChange }: ImageSi
       const gap = 8
       const newSize = ensureEven((containerWidth - (columns - 1) * gap) / columns)
       const finalSize = Math.max(60, Math.min(newSize, maxSize))
-      console.log('Calculated size:', finalSize, 'for columns:', columns)
       return finalSize
     },
     [initialSize, maxSize]
@@ -78,10 +76,8 @@ export function ImageSizeControl({ initialSize, maxSize, onSizeChange }: ImageSi
   }, [currentSizePreset, getCalculatedSize, onSizeChange])
 
   const handlePresetClick = (preset: string) => {
-    console.log('Preset clicked:', preset)
     if (containerRef.current) {
       const newSize = getCalculatedSize(preset, containerRef.current.offsetWidth)
-      console.log('Preset - new size:', newSize)
       setImageSize(newSize)
       onSizeChange(newSize)
       setCurrentSizePreset(preset)

@@ -1,5 +1,5 @@
 import React from 'react'
-import { Send, Square, Cpu, Sparkles, BookOpen } from 'lucide-react'
+import { Send, Square, Cpu, Sparkles, BookOpen, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -11,6 +11,9 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/helpers'
 
+// AI 提供商类型
+type AIProvider = 'github' | 'minimax' | 'ollama'
+
 interface ChatInputProps {
   prompt: string
   onPromptChange: (value: string) => void
@@ -19,6 +22,8 @@ interface ChatInputProps {
   isLoading: boolean
   model?: string
   onModelChange?: (value: string) => void
+  provider?: AIProvider
+  onProviderChange?: (value: AIProvider) => void
   chatMode?: 'ai' | 'knowledge'
   onChatModeChange?: (value: 'ai' | 'knowledge') => void
   variant?: 'dialog' | 'page'
@@ -34,6 +39,8 @@ export const ChatInput = React.memo<ChatInputProps>(
     isLoading,
     model,
     onModelChange,
+    provider,
+    onProviderChange,
     chatMode,
     onChatModeChange,
     variant = 'page',
@@ -62,7 +69,76 @@ export const ChatInput = React.memo<ChatInputProps>(
               rows={1}
             />
             <div className="flex gap-2">
-              {model && onModelChange && (
+              {provider && onProviderChange && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="border-border h-12 w-12 border-2 transition-all"
+                      disabled={isLoading}
+                    >
+                      <Globe
+                        className={cn(
+                          'h-5 w-5',
+                          provider === 'github'
+                            ? 'text-green-600'
+                            : provider === 'minimax'
+                              ? 'text-orange-500'
+                              : 'text-primary'
+                        )}
+                      />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuRadioGroup
+                      value={provider}
+                      onValueChange={v => onProviderChange(v as AIProvider)}
+                    >
+                      <DropdownMenuRadioItem
+                        value="ollama"
+                        className={cn(
+                          'cursor-pointer',
+                          provider === 'ollama' &&
+                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>Ollama</span>
+                          <span className="text-muted-foreground text-xs">本地模型</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="github"
+                        className={cn(
+                          'cursor-pointer',
+                          provider === 'github' &&
+                            'relative z-10 bg-green-500/10 font-medium ring-2 ring-green-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>GitHub</span>
+                          <span className="text-muted-foreground text-xs">GPT-5 Mini</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="minimax"
+                        className={cn(
+                          'cursor-pointer',
+                          provider === 'minimax' &&
+                            'relative z-10 bg-orange-500/10 font-medium ring-2 ring-orange-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>MiniMax</span>
+                          <span className="text-muted-foreground text-xs">M2.5</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {model && onModelChange && provider === 'ollama' && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -168,7 +244,76 @@ export const ChatInput = React.memo<ChatInputProps>(
               rows={1}
             />
             <div className="flex gap-2">
-              {model && onModelChange && (
+              {provider && onProviderChange && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="border-border h-12 w-12 border-2 transition-all"
+                      disabled={isLoading}
+                    >
+                      <Globe
+                        className={cn(
+                          'h-5 w-5',
+                          provider === 'github'
+                            ? 'text-green-600'
+                            : provider === 'minimax'
+                              ? 'text-orange-500'
+                              : 'text-primary'
+                        )}
+                      />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuRadioGroup
+                      value={provider}
+                      onValueChange={v => onProviderChange(v as AIProvider)}
+                    >
+                      <DropdownMenuRadioItem
+                        value="ollama"
+                        className={cn(
+                          'cursor-pointer',
+                          provider === 'ollama' &&
+                            'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>Ollama</span>
+                          <span className="text-muted-foreground text-xs">本地模型</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="github"
+                        className={cn(
+                          'cursor-pointer',
+                          provider === 'github' &&
+                            'relative z-10 bg-green-500/10 font-medium ring-2 ring-green-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>GitHub</span>
+                          <span className="text-muted-foreground text-xs">GPT-5 Mini</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="minimax"
+                        className={cn(
+                          'cursor-pointer',
+                          provider === 'minimax' &&
+                            'relative z-10 bg-orange-500/10 font-medium ring-2 ring-orange-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>MiniMax</span>
+                          <span className="text-muted-foreground text-xs">M2.5</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {model && onModelChange && provider === 'ollama' && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button

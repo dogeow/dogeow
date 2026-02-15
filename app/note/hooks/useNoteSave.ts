@@ -1,16 +1,9 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 import { apiRequest } from '@/lib/api'
 import { normalizeNote } from '../utils/api'
-
-interface Note {
-  id: number
-  title: string
-  content: string
-  content_markdown: string
-  is_draft: boolean
-}
+import type { Note, NoteFormData } from '../types/note'
 
 interface UseNoteSaveOptions {
   noteId?: number

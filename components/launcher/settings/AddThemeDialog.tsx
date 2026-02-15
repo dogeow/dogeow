@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -40,7 +39,7 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="shrink-0">
+        <div className="shrink-0">
           <Button
             variant="ghost"
             className={cn(
@@ -51,7 +50,7 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
           >
             <Plus className="text-primary/70 h-5 w-5" />
           </Button>
-        </motion.div>
+        </div>
       </DialogTrigger>
 
       <DialogContent className="max-w-[80%]">

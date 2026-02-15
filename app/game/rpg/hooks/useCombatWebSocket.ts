@@ -48,8 +48,8 @@ interface EchoConnector {
 }
 
 export function useCombatWebSocket(characterId: number | null) {
-  const echoRef = useRef<Echo | null>(null)
-  const channelRef = useRef<ReturnType<Echo['private']> | null>(null)
+  const echoRef = useRef<Echo<'reverb'> | null>(null)
+  const channelRef = useRef<ReturnType<Echo<'reverb'>['private']> | null>(null)
   const subscribedCharacterIdRef = useRef<number | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [authError, setAuthError] = useState(false)

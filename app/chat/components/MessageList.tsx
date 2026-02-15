@@ -164,11 +164,7 @@ function MessageListContent({
   const stableLoadMessages = useCallback((id: number) => loadMessages(id), [loadMessages])
 
   const handleReact = useCallback((messageId: number, emoji: string) => {
-    // TODO: Implement actual reaction functionality
-    if (process.env.NODE_ENV === 'development') {
-      // 可以根据需要打开调试日志
-      console.log('React to message', messageId, 'with', emoji)
-    }
+    // Reaction functionality placeholder
   }, [])
 
   const getScrollContainer = useCallback(() => {
@@ -202,20 +198,6 @@ function MessageListContent({
     }
     return groups
   }, [filteredMessages])
-
-  // Debug log
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔥 MessageList: Messages changed for room', roomId, {
-        count: filteredMessages.length,
-        messages: filteredMessages.map(m => ({
-          id: m.id,
-          message: m.message.substring(0, 50),
-          user: m.user.name,
-        })),
-      })
-    }
-  }, [filteredMessages, roomId])
 
   useEffect(() => {
     if (roomId) {

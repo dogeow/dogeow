@@ -42,10 +42,6 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
 }) => {
   const { categories, createCategory, fetchCategories } = useItemStore()
 
-  // 当前选择的主分类和子分类
-  const [selectedParentId, setSelectedParentId] = useState<string>('')
-  const [selectedChildId, setSelectedChildId] = useState<string>('')
-
   // 初始化分类数据
   useEffect(() => {
     if (categories.length === 0) {
@@ -81,6 +77,34 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
     return parentCategories
   }, [categories])
 
+  // 从 selectedCategory 派生当前应该选择的值
+  const derivedParentId = useMemo(() => {
+    if (selectedCategory) {
+      if (selectedCategory.type === 'parent') {
+        return selectedCategory.id.toString()
+      } else if (selectedCategory.type === 'child') {
+        const child = categoryTree
+          .flatMap(p => p.children || [])
+          .find(c => c.id === selectedCategory.id)
+        return child?.parent_id?.toString() || 'none'
+      }
+    }
+    return 'none'
+  }, [selectedCategory, categoryTree])
+
+  const derivedChildId = useMemo(() => {
+    if (selectedCategory && selectedCategory.type === 'child') {
+      return selectedCategory.id.toString()
+    }
+    return ''
+  }, [selectedCategory])
+
+  // 本地状态用于用户交互 - 使用派生值初始化
+  // 注意：初始值从 selectedCategory 派生，之后由用户交互控制
+  // 如果父组件需要更新选择，需要通过改变 key 来重新初始化组件
+  const [localParentId, setLocalParentId] = useState<string>(derivedParentId)
+  const [localChildId, setLocalChildId] = useState<string>(derivedChildId)
+
   // 主分类选项
   const parentOptions = useMemo(
     () => [
@@ -95,34 +119,29 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
 
   // 根据选择的主分类获取子分类选项
   const childOptions = useMemo(() => {
-    if (!selectedParentId || selectedParentId === 'none') return []
+    if (!localParentId || localParentId === 'none') return []
 
-    const parent = categoryTree.find(p => p.id.toString() === selectedParentId)
+    const parent = categoryTree.find(p => p.id.toString() === localParentId)
     return (
       parent?.children?.map(child => ({
         value: child.id.toString(),
         label: child.name,
       })) || []
     )
-  }, [selectedParentId, categoryTree])
+  }, [localParentId, categoryTree])
 
   // 处理主分类选择
   const handleParentSelect = useCallback(
     (parentId: string) => {
-      console.log('handleParentSelect 被调用:', parentId)
       setSelectedParentId(parentId)
-      setSelectedChildId('') // 清空子分类选择
+      setSelectedChildId('')
 
       if (parentId === 'none') {
-        console.log('选择未分类，调用 onSelect')
-        onSelect('parent', null, '未分类', true) // 选择未分类时关闭弹窗
+        onSelect('parent', null, '未分类', true)
       } else if (parentId) {
         const parent = categoryTree.find(p => p.id.toString() === parentId)
         if (parent) {
-          console.log('找到父分类:', parent.name, '子分类数量:', parent.children?.length || 0)
-          // 选择父分类时搜索但不关闭弹窗
-          console.log('选择父分类，立即调用 onSelect 但不关闭弹窗')
-          onSelect('parent', parent.id, parent.name, false) // false 表示不关闭弹窗
+          onSelect('parent', parent.id, parent.name, false)
         }
       }
     },
@@ -132,19 +151,17 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   // 处理子分类选择
   const handleChildSelect = useCallback(
     (childId: string) => {
-      console.log('handleChildSelect 被调用:', childId)
       setSelectedChildId(childId)
 
       if (childId) {
-        const parent = categoryTree.find(p => p.id.toString() === selectedParentId)
+        const parent = categoryTree.find(p => p.id.toString() === localParentId)
         const child = parent?.children?.find(c => c.id.toString() === childId)
         if (child && parent) {
-          console.log('选择子分类，调用 onSelect:', child.name)
-          onSelect('child', child.id, `${parent.name} / ${child.name}`, true) // 选择子分类时关闭弹窗
+          onSelect('child', child.id, `${parent.name} / ${child.name}`, true)
         }
       }
     },
-    [categoryTree, selectedParentId, onSelect]
+    [categoryTree, localParentId, onSelect]
   )
 
   // 处理创建主分类
@@ -170,7 +187,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   // 处理创建子分类
   const handleCreateChild = useCallback(
     async (categoryName: string) => {
-      if (!selectedParentId || selectedParentId === 'none') {
+      if (!localParentId || localParentId === 'none') {
         toast.error('请先选择主分类')
         return
       }
@@ -178,10 +195,10 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
       try {
         const newCategory = await createCategory({
           name: categoryName,
-          parent_id: Number(selectedParentId),
+          parent_id: Number(localParentId),
         })
 
-        const parent = categoryTree.find(p => p.id.toString() === selectedParentId)
+        const parent = categoryTree.find(p => p.id.toString() === localParentId)
         toast.success(`已创建子分类 "${categoryName}"`)
         setSelectedChildId(newCategory.id.toString())
 
@@ -193,7 +210,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
         toast.error('创建子分类失败：' + (error instanceof Error ? error.message : '未知错误'))
       }
     },
-    [createCategory, selectedParentId, categoryTree, onSelect]
+    [createCategory, localParentId, categoryTree, onSelect]
   )
 
   // 根据当前选择更新下拉框状态
@@ -225,7 +242,7 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
         <Label className="text-muted-foreground text-xs font-normal">主分类</Label>
         <Combobox
           options={parentOptions}
-          value={selectedParentId}
+          value={localParentId}
           onChange={handleParentSelect}
           onCreateOption={handleCreateParent}
           placeholder="选择或创建主分类"
@@ -236,12 +253,12 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
       </div>
 
       {/* 子分类选择 */}
-      {selectedParentId && selectedParentId !== 'none' && (
+      {localParentId && localParentId !== 'none' && (
         <div className="space-y-2">
           <Label className="text-muted-foreground text-xs font-normal">子分类（可选）</Label>
           <Combobox
             options={childOptions}
-            value={selectedChildId}
+            value={localChildId}
             onChange={handleChildSelect}
             onCreateOption={handleCreateChild}
             placeholder="选择或创建子分类"

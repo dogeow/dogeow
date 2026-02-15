@@ -3,6 +3,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { AI_SYSTEM_PROMPT, type ChatMessage } from '../types'
 
+// AI 提供商类型
+type AIProvider = 'github' | 'minimax' | 'ollama'
+
 interface UseAiChatOptions {
   open?: boolean
 }
@@ -17,6 +20,8 @@ interface UseAiChatReturn {
   isLoading: boolean
   model: string
   setModel: (value: string) => void
+  provider: AIProvider
+  setProvider: (value: AIProvider) => void
   stop: () => void
   handleSend: () => void
   handleClear: () => void
@@ -37,6 +42,17 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
       return saved || 'qwen2.5:0.5b'
     }
     return 'qwen2.5:0.5b'
+  })
+
+  // AI 提供商状态
+  const [provider, setProvider] = useState<AIProvider>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('ai_provider')
+      if (saved === 'github' || saved === 'minimax' || saved === 'ollama') {
+        return saved
+      }
+    }
+    return 'ollama'
   })
 
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -113,6 +129,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
           useChat: true,
           messages: chatMessages,
           model,
+          provider,
         }),
         signal: abortController.signal,
       })
@@ -213,7 +230,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
       const errorMessage =
         error instanceof Error
           ? error.message.includes('fetch')
-            ? 'AI服务暂时不可用，请确保Ollama服务正在运行'
+            ? 'AI服务暂时不可用，请检查网络连接或配置'
             : error.message
           : 'AI服务发生未知错误'
 
@@ -230,7 +247,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     } finally {
       abortControllerRef.current = null
     }
-  }, [prompt, messages, isLoading, model])
+  }, [prompt, messages, isLoading, model, provider])
 
   // 当 model 改变时保存到 localStorage
   useEffect(() => {
@@ -238,6 +255,13 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
       localStorage.setItem('ollama_model', model)
     }
   }, [model])
+
+  // 当 provider 改变时保存到 localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ai_provider', provider)
+    }
+  }, [provider])
 
   return {
     prompt,
@@ -249,6 +273,8 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     isLoading,
     model,
     setModel,
+    provider,
+    setProvider,
     stop,
     handleSend,
     handleClear,

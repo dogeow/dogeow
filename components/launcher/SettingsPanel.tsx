@@ -18,6 +18,7 @@ interface SettingsPanelProps {
   setBackgroundImage: (url: string) => void
   customBackgrounds: CustomBackground[]
   setCustomBackgrounds: React.Dispatch<React.SetStateAction<CustomBackground[]>>
+  onClose?: () => void
 }
 
 export function SettingsPanel({
@@ -26,6 +27,7 @@ export function SettingsPanel({
   setBackgroundImage,
   customBackgrounds,
   setCustomBackgrounds,
+  onClose,
 }: SettingsPanelProps) {
   const {
     currentView,
@@ -49,7 +51,7 @@ export function SettingsPanel({
   })
 
   return (
-    <div className="scrollbar-none flex h-full w-full items-center space-x-3 overflow-x-auto">
+    <div className="flex h-full w-full flex-col">
       <SettingsContent
         currentView={currentView}
         setCurrentView={setCurrentView}
@@ -67,6 +69,7 @@ export function SettingsPanel({
         handleRemoveCustomTheme={handleRemoveCustomTheme}
         handleToggleFollowSystem={handleToggleFollowSystem}
         handleToggleProjectCovers={handleToggleProjectCovers}
+        onClose={onClose}
       />
     </div>
   )

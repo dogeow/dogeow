@@ -22,13 +22,11 @@ export function useThingFilters(): UseThingFiltersReturn {
 
   // 当持久化的筛选条件变化时，更新本地状态
   useEffect(() => {
-    console.log('useThingFilters: 持久化筛选条件更新:', savedFilters)
     setFilters(savedFilters)
   }, [savedFilters])
 
   const updateFilters = useCallback(
     (newFilters: Record<string, unknown>) => {
-      console.log('useThingFilters: 更新筛选条件:', newFilters)
       const updatedFilters = { ...filters, ...newFilters }
       setFilters(updatedFilters)
       // 保存到持久化 store
@@ -38,7 +36,6 @@ export function useThingFilters(): UseThingFiltersReturn {
   )
 
   const clearFilters = useCallback(() => {
-    console.log('useThingFilters: 清除筛选条件')
     setFilters({})
     setCurrentPage(1)
     // 清除持久化的筛选条件

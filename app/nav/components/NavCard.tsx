@@ -1,32 +1,35 @@
 'use client'
 
 import Image from 'next/image'
-// import { useState } from 'react'; // No longer needed for confirmOpen, loading
 import { Card, CardContent } from '@/components/ui/card'
 import { NavItem } from '@/app/nav/types'
 import { useNavStore } from '@/app/nav/stores/navStore'
 import { AlertTriangleIcon } from 'lucide-react'
-// import { useRouter } from 'next/navigation'; // Moved to NavCardActions
-// import {
-//   DropdownMenu,
-//   DropdownMenuContent,
-//   DropdownMenuItem,
-//   DropdownMenuTrigger,
-// } from "@/components/ui/dropdown-menu" // Moved to NavCardActions
-// import { DeleteConfirmationDialog } from "@/components/ui/DeleteConfirmationDialog" // Moved to NavCardActions
-// import { Button } from '@/components/ui/button'; // Button for dropdown trigger moved
-// import { toast } from 'sonner'; // Toast for delete moved to NavCardActions
 import NavCardActions from './NavCardActions'
 
 interface NavCardProps {
   item: NavItem
+  highlight?: string
 }
 
-export function NavCard({ item }: NavCardProps) {
-  // const router = useRouter(); // Moved to NavCardActions
+export function NavCard({ item, highlight }: NavCardProps) {
   const { recordClick, deleteItem } = useNavStore()
-  // const [confirmOpen, setConfirmOpen] = useState(false); // Moved to NavCardActions
-  // const [loading, setLoading] = useState(false); // Moved to NavCardActions
+
+  // 高亮文本
+  const highlightText = (text: string, highlight?: string) => {
+    if (!highlight) return text
+
+    const parts = text.split(new RegExp(`(${highlight})`, 'gi'))
+    return parts.map((part, i) =>
+      part.toLowerCase() === highlight.toLowerCase() ? (
+        <mark key={i} className="bg-yellow-200 text-inherit">
+          {part}
+        </mark>
+      ) : (
+        part
+      )
+    )
+  }
 
   // 记录点击
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -55,15 +58,9 @@ export function NavCard({ item }: NavCardProps) {
   // Edit and delete handlers are now in NavCardActions
 
   return (
-    // DeleteConfirmationDialog is now inside NavCardActions, so the fragment <> might not be needed
-    // if NavCardActions doesn't require being at the same level for a dialog portal.
-    // For now, keeping it, but it might be removable.
-    // Update: NavCardActions returns a fragment, so this outer fragment is fine.
     <>
       <Card className="overflow-hidden py-1 transition-shadow hover:shadow-md">
         <CardContent className="relative flex items-center p-3">
-          {' '}
-          {/* Added items-center for vertical alignment */}
           <div className="mr-3 flex-shrink-0">
             <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-md">
               {item.icon ? (
@@ -87,10 +84,12 @@ export function NavCard({ item }: NavCardProps) {
               onClick={handleClick}
               className="block"
             >
-              <h3 className="truncate text-base font-medium">{item.name}</h3>
+              <h3 className="truncate text-base font-medium">
+                {highlightText(item.name, highlight)}
+              </h3>
               {item.description && (
                 <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
-                  {item.description}
+                  {highlightText(item.description, highlight)}
                 </p>
               )}
             </a>
@@ -100,8 +99,6 @@ export function NavCard({ item }: NavCardProps) {
           </div>
         </CardContent>
       </Card>
-
-      {/* DeleteConfirmationDialog is now rendered by NavCardActions */}
     </>
   )
 }

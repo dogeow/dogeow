@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { memo } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Clock, Calendar } from 'lucide-react'
 import { useCopyFeedback } from './time-converter/hooks/useCopyFeedback'
@@ -10,9 +10,14 @@ import { CurrentTimeDisplay } from './time-converter/components/CurrentTimeDispl
 import { TimestampToDateTab } from './time-converter/components/TimestampToDateTab'
 import { DateToTimestampTab } from './time-converter/components/DateToTimestampTab'
 
-const TimeConverter = () => {
+// 提取 props 类型
+interface TimeConverterProps {
+  // 可以扩展 props 用于外部控制
+}
+
+const TimeConverterContent: React.FC<TimeConverterProps> = () => {
   const { currentTimestamp, currentDateTime } = useCurrentTime()
-  const { copyStates, copyToClipboard } = useCopyFeedback()
+  const { copyStates, copyToClipboard, cleanup } = useCopyFeedback()
   const {
     timestamp,
     setTimestamp,
@@ -27,6 +32,11 @@ const TimeConverter = () => {
     useCurrentTimestamp,
     useCurrentDateTime,
   } = useTimeConversion()
+
+  // 组件卸载时清理
+  React.useEffect(() => {
+    return () => cleanup()
+  }, [cleanup])
 
   return (
     <div className="space-y-6">
@@ -78,5 +88,10 @@ const TimeConverter = () => {
     </div>
   )
 }
+
+// 使用 memo 包装，避免父组件重渲染导致不必要更新
+const TimeConverter = memo<TimeConverterProps>(TimeConverterContent, () => true)
+
+TimeConverter.displayName = 'TimeConverter'
 
 export default TimeConverter

@@ -16,6 +16,7 @@ import { markWord, markWordAsSimple } from '../hooks/useWord'
 import { WordAIDialog } from './WordAIDialog'
 import { EditWordDialog } from './EditWordDialog'
 import { toast } from 'sonner'
+import { useSpeechSynthesis } from '@/hooks/useSpeechSynthesis'
 
 interface WordCardProps {
   word: Word
@@ -26,94 +27,27 @@ export function WordCard({ word, onNext }: WordCardProps) {
   const { showTranslation, toggleTranslation, updateDailyProgress, learningStatus } = useWordStore()
   const [isMarking, setIsMarking] = useState(false)
   const [isMarkingSimple, setIsMarkingSimple] = useState(false)
-  const [voicesLoaded, setVoicesLoaded] = useState(false)
   const [showAIDialog, setShowAIDialog] = useState(false)
   const [showEditDialog, setShowEditDialog] = useState(false)
 
-  // 发音函数
-  const speak = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-
-    try {
-      speechSynthesis.cancel()
-
-      const utterance = new SpeechSynthesisUtterance(text)
-      utterance.lang = 'en-US'
-      utterance.rate = 0.85
-      utterance.pitch = 1
-      utterance.volume = 1
-
-      // 获取语音列表
-      const voices = speechSynthesis.getVoices()
-
-      // 优先选择高质量的英语声音
-      const preferredVoices = [
-        'Samantha',
-        'Alex',
-        'Daniel',
-        'Karen', // macOS
-        'Google US English',
-        'Google UK English',
-        'Microsoft Zira',
-        'Microsoft David',
-      ]
-
-      let selectedVoice = null
-      for (const name of preferredVoices) {
-        selectedVoice = voices.find(v => v.name.includes(name))
-        if (selectedVoice) break
-      }
-
-      // 退而求其次，找任何英语声音
-      if (!selectedVoice) {
-        selectedVoice = voices.find(v => v.lang.startsWith('en'))
-      }
-
-      if (selectedVoice) {
-        utterance.voice = selectedVoice
-      }
-
-      speechSynthesis.speak(utterance)
-    } catch (error) {
-      console.error('发音失败:', error)
-    }
-  }, [])
-
-  // 加载语音列表
-  useEffect(() => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return
-
-    const loadVoices = () => {
-      const voices = speechSynthesis.getVoices()
-      if (voices.length > 0) {
-        setVoicesLoaded(true)
-      }
-    }
-
-    loadVoices()
-    speechSynthesis.onvoiceschanged = loadVoices
-
-    return () => {
-      speechSynthesis.onvoiceschanged = null
-    }
-  }, [])
+  const { speak, speakWord, cancel, voicesLoaded } = useSpeechSynthesis()
 
   // 自动发音
   useEffect(() => {
     if (!voicesLoaded) return
 
     const timer = setTimeout(() => {
-      speak(word.content)
+      speakWord(word.content)
     }, 200)
 
     return () => {
       clearTimeout(timer)
-      speechSynthesis.cancel()
+      cancel()
     }
-  }, [word.content, voicesLoaded, speak])
+  }, [word.content, voicesLoaded, speakWord, cancel])
 
   const handlePronounce = () => {
-    speak(word.content)
+    speakWord(word.content)
   }
 
   const handleMarkAndNext = async (remembered: boolean) => {
