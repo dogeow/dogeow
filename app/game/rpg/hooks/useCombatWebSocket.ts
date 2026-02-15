@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { createEchoInstance } from '@/lib/websocket'
 import toast from 'react-hot-toast'
+import type Echo from 'laravel-echo'
+import type { GameCharacter, GameItem } from '../types'
 
 interface CombatUpdateData {
   victory: boolean
@@ -14,21 +16,40 @@ interface CombatUpdateData {
   experience_gained: number
   copper_gained: number
   loot?: {
-    item?: any
+    item?: GameItem
     copper: number
   }
-  character: any
+  character: GameCharacter
   combat_log_id: number
 }
 
 interface LootDroppedData {
-  item?: any
+  item?: GameItem
   copper: number
 }
 
+interface LevelUpData {
+  level: number
+  character: GameCharacter
+}
+
+interface PusherConnection {
+  state: string
+  bind: (event: string, callback: (data?: unknown) => void) => void
+  unbind: (event: string, callback?: (data?: unknown) => void) => void
+}
+
+interface PusherConnector {
+  connection: PusherConnection
+}
+
+interface EchoConnector {
+  pusher?: PusherConnector
+}
+
 export function useCombatWebSocket(characterId: number | null) {
-  const echoRef = useRef<any>(null)
-  const channelRef = useRef<any>(null)
+  const echoRef = useRef<Echo | null>(null)
+  const channelRef = useRef<ReturnType<Echo['private']> | null>(null)
   const subscribedCharacterIdRef = useRef<number | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [authError, setAuthError] = useState(false)
@@ -68,7 +89,7 @@ export function useCombatWebSocket(characterId: number | null) {
 
     // 检查 Echo 连接状态
     try {
-      const connector = echo.connector as any
+      const connector = echo.connector as EchoConnector
       if (connector?.pusher?.connection) {
         const connection = connector.pusher.connection
 
@@ -79,7 +100,7 @@ export function useCombatWebSocket(characterId: number | null) {
           setAuthError(false)
         }
 
-        const handleError = (error: any) => {
+        const handleError = (error: unknown) => {
           console.error('WebSocket: 连接错误', error)
           setIsConnected(false)
           setAuthError(true)
@@ -115,7 +136,7 @@ export function useCombatWebSocket(characterId: number | null) {
     // 我们通过检查 Pusher 的连接状态来判断认证是否成功
     setTimeout(() => {
       try {
-        const connector = echo.connector as any
+        const connector = echo.connector as EchoConnector
         const state = connector?.pusher?.connection?.state
         if (state !== 'connected' && state !== 'connecting') {
           console.warn(`WebSocket: 订阅频道可能失败，当前状态: ${state}`)
@@ -141,7 +162,7 @@ export function useCombatWebSocket(characterId: number | null) {
     })
 
     // 监听升级事件
-    channel.listen('.level.up', (data: { level: number; character: any }) => {
+    channel.listen('.level.up', (data: LevelUpData) => {
       console.log('🎉 Level up:', data)
       useGameStore.getState().handleLevelUp(data)
     })

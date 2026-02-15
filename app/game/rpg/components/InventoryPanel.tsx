@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import Image from 'next/image'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useGameStore } from '../stores/gameStore'
@@ -13,39 +13,19 @@ import {
   EquipmentSlot,
   STAT_NAMES,
 } from '../types'
+import {
+  getItemIconFallback,
+  getItemDisplayName,
+  isEquippable,
+  isPotion,
+  stackItems,
+  itemMatchesCategory,
+} from '../utils/itemUtils'
 
-// 物品类型图标映射
-const ITEM_ICONS: Record<string, string> = {
-  weapon: '⚔️',
-  helmet: '🪖',
-  armor: '👕', // 衣服/盔甲
-  gloves: '🧤',
-  boots: '👢',
-  belt: '🥋',
-  ring: '💍',
-  amulet: '📿',
-  potion: '🧪',
-  gem: '💎',
-}
-
-/** 背包固定格位数（与后端 InventoryController::INVENTORY_SIZE 一致） */
+// 背包固定格位数（与后端 InventoryController::INVENTORY_SIZE 一致）
 const INVENTORY_SLOTS = 100
 /** 仓库固定格位数（与后端 InventoryController::STORAGE_SIZE 一致） */
 const WAREHOUSE_SLOTS = 100
-
-// 物品类型中文名（用于无 name 时的回退）
-const ITEM_TYPE_NAMES: Record<string, string> = {
-  weapon: '武器',
-  helmet: '头盔',
-  armor: '盔甲',
-  gloves: '手套',
-  boots: '靴子',
-  belt: '腰带',
-  ring: '戒指',
-  amulet: '护身符',
-  potion: '药水',
-  gem: '宝石',
-}
 
 // 背包分类 tabs：emoji + 对应物品 type（不显示「全部」按钮，再次点击当前分类即取消选择 = 显示全部）
 const INVENTORY_CATEGORIES = [
@@ -60,34 +40,6 @@ const INVENTORY_CATEGORIES = [
   { id: 'potion', emoji: '🧪', label: '药水', types: ['potion'] },
   { id: 'gem', emoji: '💎', label: '宝石', types: ['gem'] },
 ] as const
-
-function itemMatchesCategory(item: GameItem, types: readonly string[] | null): boolean {
-  if (!types) return true
-  const t = item.definition?.type ?? ''
-  return types.includes(t)
-}
-
-// 获取物品显示名称：优先 definition.name，否则用品质+类型
-function getItemDisplayName(item: GameItem): string {
-  const name = item.definition?.name?.trim()
-  if (name) return name
-  const typeName = ITEM_TYPE_NAMES[item.definition?.type ?? ''] ?? item.definition?.type ?? '物品'
-  return `${QUALITY_NAMES[item.quality]} ${typeName}`
-}
-
-// 获取物品图标回退：药水按 sub_type 区分 HP❤️/MP💙，其余按 type 或 definition.icon，最后 📦
-function getItemIconFallback(item: GameItem): string {
-  const def = item.definition
-  if (!def) return '📦'
-  if (def.type === 'potion') {
-    if (def.sub_type === 'hp') return '❤️'
-    if (def.sub_type === 'mp') return '💙'
-  }
-  const typeIcon = ITEM_ICONS[def.type]
-  if (typeIcon) return typeIcon
-  if (def.icon && !def.icon.includes('.')) return def.icon
-  return '📦'
-}
 
 /** 物品图标：优先 /game/rpg/items/item_{definition_id}.png（按 game_item_definitions 生成），加载失败则用 emoji */
 function ItemIcon({ item, className }: { item: GameItem; className?: string }) {
@@ -113,35 +65,6 @@ function ItemIcon({ item, className }: { item: GameItem; className?: string }) {
       )}
     </span>
   )
-}
-
-// 物品堆叠函数 - 相同属性的物品可以堆叠
-interface StackedItem extends GameItem {
-  quantity: number
-}
-
-function stackItems(items: GameItem[]): StackedItem[] {
-  const stacks = new Map<string, StackedItem>()
-
-  items.forEach(item => {
-    const defId = item.definition?.id ?? item.definition_id ?? 'unknown'
-    const statsKey = item.stats
-      ? JSON.stringify(Object.entries(item.stats).sort(([a], [b]) => a.localeCompare(b)))
-      : ''
-    const affixesKey = item.affixes
-      ? JSON.stringify(item.affixes.map(a => JSON.stringify(a)).sort())
-      : ''
-    const key = `${defId}-${statsKey}-${affixesKey}`
-
-    const existing = stacks.get(key)
-    if (existing) {
-      existing.quantity++
-    } else {
-      stacks.set(key, { ...item, quantity: 1 })
-    }
-  })
-
-  return Array.from(stacks.values())
 }
 
 export function InventoryPanel() {
@@ -513,42 +436,5 @@ function EmptySlot() {
       className="border-border bg-card flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 border-dashed"
       aria-hidden
     />
-  )
-}
-
-function ItemSlot({
-  item,
-  quantity,
-  selected,
-  onClick,
-}: {
-  item: GameItem
-  quantity?: number
-  selected: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 text-lg shadow-sm transition-all hover:shadow-md ${
-        selected
-          ? 'border-yellow-500 ring-2 ring-yellow-500/50 dark:border-yellow-400 dark:ring-yellow-400/50'
-          : 'border-border'
-      }`}
-      style={{
-        background: selected
-          ? `${QUALITY_COLORS[item.quality]}20`
-          : `linear-gradient(135deg, ${QUALITY_COLORS[item.quality]}15 0%, ${QUALITY_COLORS[item.quality]}08 100%)`,
-        borderColor: selected ? undefined : QUALITY_COLORS[item.quality],
-      }}
-      title={getItemDisplayName(item)}
-    >
-      <ItemIcon item={item} className="drop-shadow-sm" />
-      {quantity && quantity > 1 && (
-        <span className="bg-foreground text-background absolute right-0 bottom-0 flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-bold">
-          {quantity}
-        </span>
-      )}
-    </button>
   )
 }

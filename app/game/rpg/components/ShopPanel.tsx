@@ -5,47 +5,11 @@ import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { useGameStore } from '../stores/gameStore'
 import { CopperDisplay } from './CopperDisplay'
-import { ShopItem, STAT_NAMES, ItemType, formatCopper } from '../types'
+import { ShopItem, STAT_NAMES, formatCopper } from '../types'
+import { getShopItemIcon, ITEM_TYPE_NAMES } from '../utils/itemUtils'
 
 /** 商店固定格位数（与仓库相同的表格形式展示） */
 const SHOP_SLOTS = 60
-
-// 物品类型图标映射
-const ITEM_ICONS: Record<ItemType, string> = {
-  weapon: '⚔️',
-  helmet: '🪖',
-  armor: '👕',
-  gloves: '🧤',
-  boots: '👢',
-  belt: '🥋',
-  ring: '💍',
-  amulet: '📿',
-  potion: '🧪',
-  gem: '💎',
-}
-
-// 物品类型名称
-const ITEM_TYPE_NAMES: Record<ItemType, string> = {
-  weapon: '武器',
-  helmet: '头盔',
-  armor: '盔甲',
-  gloves: '手套',
-  boots: '靴子',
-  belt: '腰带',
-  ring: '戒指',
-  amulet: '护身符',
-  potion: '药品',
-  gem: '宝石',
-}
-
-/** 获取物品图标：药水按 sub_type 区分 HP❤️/MP💙 */
-const getItemIcon = (type: ItemType, subType?: string): string => {
-  if (type === 'potion') {
-    if (subType === 'hp') return '❤️'
-    if (subType === 'mp') return '💙'
-  }
-  return ITEM_ICONS[type] ?? '📦'
-}
 
 export function ShopPanel() {
   const { shopItems, character, buyItem, fetchShopItems, isLoading, shopNextRefreshAt } =
@@ -122,7 +86,7 @@ export function ShopPanel() {
                   title={`${item.name} - ${formatCopper(item.buy_price, 1)}`}
                 >
                   <span className="flex min-h-0 flex-1 items-center justify-center text-lg">
-                    {getItemIcon(item.type, item.sub_type)}
+                    {getShopItemIcon(item.type, item.sub_type)}
                   </span>
                   <span className="border-border/50 bg-muted/80 flex shrink-0 items-center justify-center overflow-hidden rounded-b-[calc(0.2rem-2px)] border-t px-1.5 py-1">
                     <CopperDisplay copper={item.buy_price} size="xs" nowrap maxParts={1} />
