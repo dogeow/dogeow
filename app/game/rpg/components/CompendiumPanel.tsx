@@ -47,6 +47,7 @@ export function CompendiumPanel() {
   const [monsterFilter, setMonsterFilter] = useState<string>('all')
   const [selectedItem, setSelectedItem] = useState<CompendiumItem | null>(null)
   const [selectedMonster, setSelectedMonster] = useState<CompendiumMonster | null>(null)
+  const [viewingImage, setViewingImage] = useState<string | null>(null)
 
   // 加载数据
   useMemo(() => {
@@ -84,6 +85,10 @@ export function CompendiumPanel() {
   const handleMonsterDialogClose = () => {
     setSelectedMonster(null)
     clearCompendiumMonsterDrops()
+  }
+
+  const handleEventStopPropagation = (e: React.MouseEvent) => {
+    e.stopPropagation()
   }
 
   return (
@@ -133,48 +138,103 @@ export function CompendiumPanel() {
           </div>
 
           {/* 物品列表 */}
-          <div className="grid grid-cols-6 gap-2 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12">
+          <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
             {filteredItems.map(item => (
               <button
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className={`relative flex h-10 w-10 items-center justify-center rounded border-2 text-lg shadow-sm transition-all hover:shadow-md ${
+                className={`flex flex-col items-center rounded-lg border-2 p-2 transition-all hover:shadow-md ${
                   selectedItem?.id === item.id
-                    ? 'border-yellow-500 ring-2 ring-yellow-500/50'
-                    : 'border-border'
+                    ? 'bg-muted border-yellow-500 ring-2 ring-yellow-500/50'
+                    : 'border-border bg-card'
                 }`}
                 style={{
                   borderColor: selectedItem?.id === item.id ? undefined : '#4b5563',
                 }}
                 title={item.name}
               >
-                <ItemIcon item={item} className="drop-shadow-sm" />
+                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+                  <ItemIcon item={item} className="drop-shadow-sm" />
+                </span>
+                <span className="mt-1 w-full truncate text-center text-xs">{item.name}</span>
+                <span className="text-muted-foreground text-[10px]">Lv.{item.required_level}</span>
               </button>
             ))}
           </div>
 
           {/* 物品详情 Dialog */}
           <Dialog open={!!selectedItem} onOpenChange={open => !open && setSelectedItem(null)}>
-            <DialogContent className="max-w-sm">
-              <DialogHeader>
-                <DialogTitle className="text-center">{selectedItem?.name}</DialogTitle>
-              </DialogHeader>
+            <DialogContent className="max-w-md">
               {selectedItem && (
-                <div className="flex flex-col items-center">
-                  <ItemTipIcon item={selectedItem} />
-                  <p className="text-muted-foreground mt-2 text-sm">{selectedItem.type}</p>
-                  <div className="mt-3 space-y-1 text-sm">
-                    {Object.entries(selectedItem.base_stats || {}).map(([stat, value]) => (
-                      <p key={stat} className="text-green-600 dark:text-green-400">
-                        +{value} {STAT_NAMES[stat] || stat}
+                <div className="flex gap-4">
+                  {/* 左侧图片 */}
+                  <button
+                    type="button"
+                    className="relative h-[200px] w-[200px] shrink-0 cursor-zoom-in"
+                    onClick={e => {
+                      e.stopPropagation()
+                      setViewingImage(`/game/rpg/items/item_${selectedItem.id}_origin.png`)
+                    }}
+                  >
+                    <span className="absolute inset-0">
+                      <ImageWithFallback
+                        src={`/game/rpg/items/item_${selectedItem.id}_origin.png`}
+                        fallback={getItemIconFallback({ definition: selectedItem } as any)}
+                      />
+                    </span>
+                  </button>
+                  {/* 右侧信息 */}
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <h3 className="text-lg font-bold">{selectedItem.name}</h3>
+                      <p className="text-muted-foreground text-sm">{selectedItem.type}</p>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      {Object.entries(selectedItem.base_stats || {}).map(([stat, value]) => (
+                        <p key={stat} className="text-green-600 dark:text-green-400">
+                          +{value} {STAT_NAMES[stat] || stat}
+                        </p>
+                      ))}
+                      <p className="text-muted-foreground">
+                        需求等级: {selectedItem.required_level}
                       </p>
-                    ))}
-                    <p className="text-muted-foreground">需求等级: {selectedItem.required_level}</p>
+                    </div>
                   </div>
                 </div>
               )}
             </DialogContent>
           </Dialog>
+        </div>
+      )}
+
+      {/* 查看大图（物品/怪物共用） */}
+      {viewingImage && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90"
+          onClick={e => {
+            e.stopPropagation()
+            setViewingImage(null)
+          }}
+        >
+          <div className="relative max-h-[90vh] max-w-[90vw]" onClick={e => e.stopPropagation()}>
+            <Image
+              src={viewingImage}
+              alt=""
+              width={800}
+              height={800}
+              className="max-h-[90vh] w-auto object-contain"
+            />
+            <button
+              type="button"
+              className="absolute -top-10 -right-10 cursor-pointer text-3xl text-white"
+              onClick={e => {
+                e.stopPropagation()
+                setViewingImage(null)
+              }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
       )}
 
@@ -228,14 +288,23 @@ export function CompendiumPanel() {
                   {/* 顶部：图片 + 属性 */}
                   <div className="flex gap-4">
                     {/* 左侧图片 */}
-                    <div className="relative h-[200px] w-[200px] shrink-0">
+                    <button
+                      type="button"
+                      className="relative h-[200px] w-[200px] shrink-0 cursor-zoom-in"
+                      onClick={e => {
+                        e.stopPropagation()
+                        setViewingImage(
+                          `/game/rpg/monsters/monster_${selectedMonster?.id}_origin.png`
+                        )
+                      }}
+                    >
                       <Image
                         src={`/game/rpg/monsters/monster_${selectedMonster?.id}_origin.png`}
                         alt=""
                         fill
                         className="object-contain"
                       />
-                    </div>
+                    </button>
                     {/* 右侧属性 */}
                     <div className="flex-1 space-y-3">
                       <div>
@@ -283,6 +352,23 @@ export function CompendiumPanel() {
   )
 }
 
+/** 带 fallback 的图片组件 */
+function ImageWithFallback({ src, fallback }: { src: string; fallback: string }) {
+  const [useImg, setUseImg] = useState(true)
+  return (
+    <>
+      {useImg && (
+        <Image src={src} alt="" fill className="object-contain" onError={() => setUseImg(false)} />
+      )}
+      {!useImg && (
+        <span className="absolute inset-0 flex items-center justify-center text-6xl">
+          {fallback}
+        </span>
+      )}
+    </>
+  )
+}
+
 /** 物品小图标 */
 function ItemIcon({ item, className }: { item: CompendiumItem; className?: string }) {
   const definitionId = item.id
@@ -310,13 +396,16 @@ function ItemIcon({ item, className }: { item: CompendiumItem; className?: strin
 }
 
 /** 物品 tip 大图标 */
-function ItemTipIcon({ item }: { item: CompendiumItem }) {
+function ItemTipIcon({ item, onClick }: { item: CompendiumItem; onClick?: () => void }) {
   const definitionId = item.id
   const fallback = getItemIconFallback({ definition: item } as any)
   const [useImg, setUseImg] = useState(definitionId != null)
   const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
   return (
-    <span className="bg-muted relative inline-flex h-[80px] w-[80px] shrink-0 items-center justify-center rounded-lg border-2 border-gray-400 shadow-sm">
+    <span
+      className={`bg-muted relative inline-flex h-[80px] w-[80px] shrink-0 items-center justify-center rounded-lg border-2 border-gray-400 shadow-sm ${onClick ? 'cursor-zoom-in' : ''}`}
+      onClick={onClick}
+    >
       {useImg && src ? (
         <Image
           src={src}

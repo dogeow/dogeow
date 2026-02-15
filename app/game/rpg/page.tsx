@@ -110,7 +110,7 @@ export default function RPGGame() {
         // 只启动一次interval
         combatIntervalRef.current = setInterval(async () => {
           await executeCombatRef.current()
-        }, 3000)
+        }, 4000)
       }
     } else {
       if (combatIntervalRef.current) {
