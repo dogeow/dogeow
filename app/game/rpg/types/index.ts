@@ -103,6 +103,7 @@ export interface GameItem {
   is_in_storage: boolean
   quantity: number
   slot_index: number | null
+  sell_price?: number
 }
 
 export interface Equipment {
@@ -324,13 +325,13 @@ export const STAT_NAMES: Record<string, string> = {
   all_stats: '全属性',
 }
 
-/** 基础属性对战斗属性的影响说明（与后端 GameCharacter 计算公式一致） */
+/** 基础属性对战斗属性的影响说明（暗黑2风格：各职业通用） */
 export const STAT_DESCRIPTIONS: Record<'strength' | 'dexterity' | 'vitality' | 'energy', string> = {
-  strength: '战士主属性。攻击力 = 力量×2；部分装备有力量需求。',
+  strength: '战士/游侠主属性。物理攻击力 = 力量×2；部分装备有力量需求。',
   dexterity:
-    '游侠主属性。攻击力 = 敏捷×2；参与防御；暴击率每点+1%（上限10%）；部分装备有敏捷需求。',
-  vitality: '最大生命每点+5；参与防御计算。',
-  energy: '法师主属性。攻击力 = 能量×2；最大法力每点+3；部分装备有能量需求。',
+    '暴击率每点+1%（上限10%）；格挡率；命中率。游侠主属性，物理攻击 = 敏捷×2。部分装备有敏捷需求。',
+  vitality: '最大生命每点+5；防御力每点+0.5。所有职业共用。',
+  energy: '法师主属性。法术攻击力 = 精力×2；最大法力每点+3；部分装备有精力需求。',
 }
 
 // 商店物品

@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useGameStore } from '../stores/gameStore'
+import { CopperDisplay } from './CopperDisplay'
 import {
   GameItem,
   QUALITY_COLORS,
@@ -303,8 +304,9 @@ export function InventoryPanel() {
                   <PopoverContent
                     className="w-48 max-w-[85vw] p-2.5 sm:w-56 sm:p-3"
                     side="right"
-                    align="start"
+                    align="center"
                     sideOffset={8}
+                    collisionPadding={8}
                   >
                     <div className="min-w-0 space-y-2">
                       <div className="flex items-start justify-between gap-2">
@@ -334,6 +336,11 @@ export function InventoryPanel() {
                         <p className="text-muted-foreground">
                           需求等级: {cell.item.definition?.required_level ?? '—'}
                         </p>
+                        {cell.item.sell_price != null && cell.item.sell_price > 0 && (
+                          <p className="text-yellow-600 dark:text-yellow-400">
+                            卖出: <CopperDisplay copper={cell.item.sell_price} size="xs" nowrap />
+                          </p>
+                        )}
                       </div>
                       <div className="flex flex-wrap gap-1.5 pt-1">
                         {cell.source === 'inventory' && cell.item.definition?.type === 'potion' && (
@@ -361,7 +368,7 @@ export function InventoryPanel() {
                           disabled={isLoading}
                           className="rounded bg-blue-600 px-2.5 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
                         >
-                          {cell.source === 'storage' ? '放入背包' : '存入仓库'}
+                          {cell.source === 'storage' ? '取' : '存'}
                         </button>
                         {cell.source === 'inventory' && (
                           <button
