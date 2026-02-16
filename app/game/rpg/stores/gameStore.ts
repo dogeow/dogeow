@@ -132,6 +132,7 @@ interface GameState {
 
   // 商店操作
   fetchShopItems: () => Promise<void>
+  refreshShopItems: () => Promise<void>
   buyItem: (itemId: number, quantity?: number) => Promise<void>
   sellItemToShop: (itemId: number, quantity?: number) => Promise<void>
 
@@ -1127,6 +1128,31 @@ const store: StateCreator<GameState> = (set, get) => ({
     }
   },
 
+  refreshShopItems: async () => {
+    const selectedId = get().selectedCharacterId
+    if (!selectedId) return
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const response = (await post('/rpg/shop/refresh', {
+        character_id: selectedId,
+      })) as {
+        items: ShopItem[]
+        player_copper: number
+        next_refresh_at?: number
+      }
+      set(state => ({
+        ...state,
+        shopItems: response.items ?? [],
+        shopNextRefreshAt: response.next_refresh_at ?? null,
+        character: state.character ? { ...state.character, copper: response.player_copper } : null,
+        isLoading: false,
+      }))
+    } catch (error) {
+      console.error('[GameStore] Refresh shop error:', error)
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
   buyItem: async (itemId: number, quantity = 1) => {
     set(state => ({ ...state, isLoading: true, error: null }))
     try {
@@ -1223,7 +1249,6 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   fetchCompendiumMonsterDrops: async (monsterId: number) => {
-    // 不设置全局 isLoading，避免影响战斗界面
     try {
       const response = (await apiGet(
         `/rpg/compendium/monsters/${monsterId}/drops`

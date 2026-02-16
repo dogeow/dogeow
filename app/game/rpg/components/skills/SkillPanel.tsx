@@ -218,6 +218,8 @@ function LearnSkillModal({
   onConfirm: () => void
   loading: boolean
 }) {
+  const cost = skill.skill_points_cost ?? 1
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="bg-card border-border w-full max-w-sm rounded-lg border p-4 sm:p-6">
@@ -227,7 +229,10 @@ function LearnSkillModal({
           <span className="text-primary dark:text-primary mx-1">{skill.name}</span>
           吗？
         </p>
-        <p className="text-muted-foreground mb-4 text-xs sm:text-sm">将消耗1技能点</p>
+        <p className="text-muted-foreground mb-4 text-xs sm:text-sm">
+          将消耗 <span className="font-medium text-yellow-600 dark:text-yellow-400">{cost}</span>{' '}
+          技能点
+        </p>
         <div className="flex justify-end gap-2">
           <button
             onClick={onCancel}
@@ -261,6 +266,7 @@ function SkillCard({
   const isLearned = skill.is_learned
   const skillName = skill.name || '未知技能'
   const skillDescription = skill.description ?? ''
+  const skillPointsCost = skill.skill_points_cost ?? 1
 
   const cardClass = (() => {
     if (isSelected)
@@ -279,7 +285,11 @@ function SkillCard({
         <div className="flex items-center justify-between">
           <span className="text-foreground text-sm font-medium sm:text-base">{skillName}</span>
           <div className="flex items-center gap-2">
-            {!isLearned && <span className="text-primary dark:text-primary text-xs">未学习</span>}
+            {!isLearned && (
+              <span className="text-xs text-yellow-600 dark:text-yellow-400">
+                {skillPointsCost}点
+              </span>
+            )}
             <span className="text-muted-foreground text-xs">
               {skill.type === 'active' ? '主动' : '被动'}
             </span>

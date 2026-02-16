@@ -127,6 +127,9 @@ export interface Equipment {
   item: GameItem | null
 }
 
+/** 技能目标类型：single=单体，all=群体(AOE) */
+export type SkillTargetType = 'single' | 'all'
+
 export interface SkillDefinition {
   id: number
   name: string
@@ -141,6 +144,9 @@ export interface SkillDefinition {
   cooldown: number
   icon?: string
   effects?: Record<string, unknown>
+  /** 单体(single) 或 群体(all) */
+  target_type?: SkillTargetType
+  skill_points_cost?: number
 }
 
 /** 技能列表项：定义 + 是否已学；已学时含 character_skill_id、level、slot_index */

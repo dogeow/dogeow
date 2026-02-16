@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Image from 'next/image'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
-import { useGameStore } from '../../stores/gameStore'
+import { useMonsterDrops } from '../../hooks/useMonsterDrops'
 import type { CombatMonster } from '../../types'
 
 type MonsterWithMeta = CombatMonster & { damage_taken?: number }
@@ -15,22 +15,7 @@ interface MonsterInfoDialogProps {
 
 export function MonsterInfoDialog({ monster, onClose }: MonsterInfoDialogProps) {
   const [viewingImage, setViewingImage] = useState<string | null>(null)
-  const compendiumMonsterDrops = useGameStore(state => state.compendiumMonsterDrops)
-  const fetchCompendiumMonsterDrops = useGameStore(state => state.fetchCompendiumMonsterDrops)
-  const clearCompendiumMonsterDrops = useGameStore(state => state.clearCompendiumMonsterDrops)
-
-  useEffect(() => {
-    if (monster?.id) {
-      fetchCompendiumMonsterDrops(monster.id)
-    }
-  }, [monster?.id, fetchCompendiumMonsterDrops])
-
-  // 只在 monster 变为 null 时清理
-  useEffect(() => {
-    if (!monster) {
-      clearCompendiumMonsterDrops()
-    }
-  }, [monster, clearCompendiumMonsterDrops])
+  const { data: compendiumMonsterDrops, isLoading } = useMonsterDrops(monster?.id)
 
   if (!monster) return null
 
@@ -106,9 +91,13 @@ export function MonsterInfoDialog({ monster, onClose }: MonsterInfoDialogProps) 
                 )}
               </div>
             </div>
-          ) : (
+          ) : isLoading ? (
             <div className="flex items-center justify-center py-8">
               <p className="text-muted-foreground">加载中...</p>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-8">
+              <p className="text-muted-foreground">加载失败</p>
             </div>
           )}
         </DialogContent>

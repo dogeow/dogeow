@@ -60,6 +60,27 @@ export function CombatPanel() {
   const effectiveAct = actOrder.includes(dropdownAct) ? dropdownAct : (actOrder[0] ?? 1)
   const displayActMaps = mapsByAct[effectiveAct] ?? []
 
+  // 刚注册角色进入战斗界面时，若无当前地图则默认进入第一张地图（按幕数、等级、id 排序）
+  useEffect(() => {
+    if (!character || currentMap) return
+    let cancelled = false
+    const ensureFirstMap = async () => {
+      if (maps.length === 0) await fetchMaps()
+      if (cancelled) return
+      const state = useGameStore.getState()
+      if (state.currentMap || state.maps.length === 0) return
+      const sorted = [...state.maps].sort(
+        (a, b) => (a.act !== b.act ? a.act - b.act : 0) || a.min_level - b.min_level || a.id - b.id
+      )
+      const first = sorted[0]
+      if (first) await enterMap(first.id)
+    }
+    ensureFirstMap()
+    return () => {
+      cancelled = true
+    }
+  }, [character, currentMap, maps.length, fetchMaps, enterMap])
+
   useEffect(() => {
     if (mapDropdownOpen && maps.length === 0) fetchMaps()
   }, [mapDropdownOpen, maps.length, fetchMaps])

@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useGameStore } from '../../stores/gameStore'
+import { useMonsterDrops } from '../../hooks/useMonsterDrops'
 import { CompendiumItem, CompendiumMonster, ItemType, STAT_NAMES } from '../../types'
 import { getItemIconFallback } from '../../utils/itemUtils'
 
@@ -32,15 +33,8 @@ const MONSTER_TYPES = [
 ] as const
 
 export function CompendiumPanel() {
-  const {
-    compendiumItems,
-    compendiumMonsters,
-    compendiumMonsterDrops,
-    fetchCompendiumItems,
-    fetchCompendiumMonsters,
-    fetchCompendiumMonsterDrops,
-    clearCompendiumMonsterDrops,
-  } = useGameStore()
+  const { compendiumItems, compendiumMonsters, fetchCompendiumItems, fetchCompendiumMonsters } =
+    useGameStore()
 
   const [activeTab, setActiveTab] = useState<CompendiumTab>('items')
   const [itemCategory, setItemCategory] = useState<string>('all')
@@ -48,6 +42,11 @@ export function CompendiumPanel() {
   const [selectedItem, setSelectedItem] = useState<CompendiumItem | null>(null)
   const [selectedMonster, setSelectedMonster] = useState<CompendiumMonster | null>(null)
   const [viewingImage, setViewingImage] = useState<string | null>(null)
+
+  // 使用 SWR hook 获取怪物掉落数据
+  const { data: compendiumMonsterDrops, isLoading: dropsLoading } = useMonsterDrops(
+    selectedMonster?.id
+  )
 
   // 加载数据
   useMemo(() => {
@@ -79,12 +78,10 @@ export function CompendiumPanel() {
 
   const handleMonsterClick = (monster: CompendiumMonster) => {
     setSelectedMonster(monster)
-    fetchCompendiumMonsterDrops(monster.id)
   }
 
   const handleMonsterDialogClose = () => {
     setSelectedMonster(null)
-    clearCompendiumMonsterDrops()
   }
 
   const handleEventStopPropagation = (e: React.MouseEvent) => {
@@ -283,7 +280,7 @@ export function CompendiumPanel() {
             onOpenChange={open => !open && handleMonsterDialogClose()}
           >
             <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto">
-              {compendiumMonsterDrops && (
+              {compendiumMonsterDrops ? (
                 <div className="space-y-4">
                   {/* 顶部：图片 + 属性 */}
                   <div className="flex gap-4">
@@ -332,14 +329,7 @@ export function CompendiumPanel() {
                         <span className="text-muted-foreground text-xs">
                           装备: {compendiumMonsterDrops.drop_rates.item}% | 金币:{' '}
                           {compendiumMonsterDrops.drop_rates.gold}% | 药水:{' '}
-                          {compendiumMonsterDrops.drop_rates.potion}% | 无:{' '}
-                          {(
-                            100 -
-                            compendiumMonsterDrops.drop_rates.item -
-                            compendiumMonsterDrops.drop_rates.gold -
-                            compendiumMonsterDrops.drop_rates.potion
-                          ).toFixed(1)}
-                          %
+                          {compendiumMonsterDrops.drop_rates.potion}%
                         </span>
                       )}
                     </div>
@@ -361,6 +351,14 @@ export function CompendiumPanel() {
                       <p className="text-muted-foreground text-sm">暂无物品掉落数据</p>
                     )}
                   </div>
+                </div>
+              ) : dropsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-muted-foreground">加载中...</p>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-muted-foreground">加载失败</p>
                 </div>
               )}
             </DialogContent>

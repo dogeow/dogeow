@@ -3,28 +3,33 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import { RefreshCw } from 'lucide-react'
 import { useGameStore } from '../../stores/gameStore'
 import { CopperDisplay } from '../shared/CopperDisplay'
 import { ShopItem, STAT_NAMES, formatCopper } from '../../types'
 import { getShopItemIcon, ITEM_TYPE_NAMES } from '../../utils/itemUtils'
 
-/** 商店固定格位数（与仓库相同的表格形式展示） */
-const SHOP_SLOTS = 60
+/** 强制刷新费用：1 银 = 100 铜 */
+const SHOP_REFRESH_COST_COPPER = 100
 
 export function ShopPanel() {
-  const { shopItems, character, buyItem, fetchShopItems, isLoading, shopNextRefreshAt } =
-    useGameStore()
+  const {
+    shopItems,
+    character,
+    buyItem,
+    fetchShopItems,
+    refreshShopItems,
+    isLoading,
+    shopNextRefreshAt,
+  } = useGameStore()
   const [selectedShopItem, setSelectedShopItem] = useState<ShopItem | null>(null)
   const [buyQuantity, setBuyQuantity] = useState(1)
+
+  const canAffordRefresh = character != null && character.copper >= SHOP_REFRESH_COST_COPPER
 
   useEffect(() => {
     fetchShopItems()
   }, [fetchShopItems])
-
-  const shopSlots = useMemo(
-    () => Array.from({ length: SHOP_SLOTS }, (_, i) => shopItems[i] ?? null),
-    [shopItems]
-  )
 
   const totalBuyPrice = useMemo(
     () => (selectedShopItem ? selectedShopItem.buy_price * buyQuantity : 0),
@@ -60,42 +65,47 @@ export function ShopPanel() {
         <div className="text-foreground mb-2 flex flex-wrap items-baseline justify-between gap-1.5 sm:mb-3">
           <h4 className="text-sm font-medium">
             商店物品
-            <span className="text-muted-foreground ml-1.5 text-xs">
-              ({shopItems.length}/{SHOP_SLOTS})
-            </span>
+            <span className="text-muted-foreground ml-1.5 text-xs">({shopItems.length})</span>
           </h4>
-          {shopNextRefreshAt != null && (
-            <span className="text-muted-foreground text-[10px] sm:text-xs">
-              下次刷新：{format(shopNextRefreshAt * 1000, 'HH:mm', { locale: zhCN })}
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {shopNextRefreshAt != null && (
+              <span className="text-muted-foreground text-[10px] sm:text-xs">
+                下次刷新：{format(shopNextRefreshAt * 1000, 'HH:mm', { locale: zhCN })}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => refreshShopItems()}
+              disabled={isLoading || !canAffordRefresh}
+              className="text-muted-foreground hover:text-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors disabled:opacity-50"
+              title={canAffordRefresh ? '强制刷新 (1银)' : '货币不足，需要1银币'}
+            >
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
         </div>
         <div className="flex min-h-0 justify-center overflow-auto p-0.5">
           <div className="grid w-max max-w-full grid-cols-[repeat(5,3.25rem)] gap-2.5 sm:grid-cols-[repeat(6,3.25rem)] sm:gap-3">
-            {shopSlots.map((item, index) =>
-              item ? (
-                <button
-                  key={item.id}
-                  onClick={() => handleSelectShopItem(item)}
-                  className={`flex h-14 w-14 shrink-0 flex-col rounded border-2 transition-all hover:scale-105 ${
-                    selectedShopItem?.id === item.id
-                      ? 'border-green-500 bg-green-500/20 shadow-lg shadow-green-500/50 dark:border-green-400 dark:bg-green-400/20'
-                      : 'border-border bg-muted/50 hover:border-muted-foreground/30 hover:bg-muted'
-                  } ${item.required_level > (character?.level || 0) ? 'opacity-40' : ''}`}
-                  disabled={isLoading}
-                  title={`${item.name} - ${formatCopper(item.buy_price, 1)}`}
-                >
-                  <span className="flex min-h-0 flex-1 items-center justify-center text-lg">
-                    {getShopItemIcon(item.type, item.sub_type)}
-                  </span>
-                  <span className="border-border/50 bg-muted/80 flex shrink-0 items-center justify-center overflow-hidden rounded-b-[calc(0.2rem-2px)] border-t px-1.5 py-1">
-                    <CopperDisplay copper={item.buy_price} size="xs" nowrap maxParts={1} />
-                  </span>
-                </button>
-              ) : (
-                <EmptySlot key={`empty-${index}`} />
-              )
-            )}
+            {shopItems.map(item => (
+              <button
+                key={item.id}
+                onClick={() => handleSelectShopItem(item)}
+                className={`flex h-14 w-14 shrink-0 flex-col rounded border-2 transition-all hover:scale-105 ${
+                  selectedShopItem?.id === item.id
+                    ? 'border-green-500 bg-green-500/20 shadow-lg shadow-green-500/50 dark:border-green-400 dark:bg-green-400/20'
+                    : 'border-border bg-muted/50 hover:border-muted-foreground/30 hover:bg-muted'
+                }`}
+                disabled={isLoading}
+                title={`${item.name} - ${formatCopper(item.buy_price, 1)}`}
+              >
+                <span className="flex min-h-0 flex-1 items-center justify-center text-lg">
+                  {getShopItemIcon(item.type, item.sub_type)}
+                </span>
+                <span className="border-border/50 bg-muted/80 flex shrink-0 items-center justify-center overflow-hidden rounded-b-[calc(0.2rem-2px)] border-t px-1.5 py-1">
+                  <CopperDisplay copper={item.buy_price} size="xs" nowrap maxParts={1} />
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       </div>
@@ -247,18 +257,5 @@ function ItemDetailModal({
         </div>
       </div>
     </div>
-  )
-}
-
-function EmptySlot() {
-  return (
-    <div
-      className="border-border bg-muted/50 flex h-14 w-14 shrink-0 items-center justify-center rounded border-2 border-dashed"
-      style={{
-        backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.03) 1px, transparent 1px)',
-        backgroundSize: '8px 8px',
-      }}
-      aria-hidden
-    />
   )
 }

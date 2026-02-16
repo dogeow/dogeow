@@ -1,5 +1,15 @@
 {
   "permissions": {
-    "allow": ["Bash(npm run type-check)", "Bash(find:*)"]
+    "allow": [
+      "Bash(npm run type-check)",
+      "Bash(find:*)",
+      "Bash(vendor/bin/pint:*)",
+      "Bash(php artisan make:migration:*)",
+      "Bash(php artisan migrate:*)",
+      "Bash(php artisan tinker:*)",
+      "Bash(php artisan migrate:refresh:*)",
+      "Bash(php artisan migrate:status:*)",
+      "Bash(php artisan db:table:*)"
+    ]
   }
 }
