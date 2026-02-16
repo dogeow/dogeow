@@ -137,11 +137,11 @@ export function MonsterGroup({
               className={`relative flex cursor-pointer flex-col items-center gap-0.5 transition-opacity hover:opacity-80 ${isNew ? styles['monster-appear'] : ''} ${isDead ? styles['monster-death'] : ''}`}
               title={`点击查看 ${m.name} 详情`}
             >
-              {/* 技能图标 - 显示在被命中的怪物上方 */}
+              {/* 技能图标 - 显示在被命中的怪物图片上 */}
               {skillIcon && (
-                <span className="absolute -top-10 z-10 h-7 w-7 animate-bounce rounded bg-blue-500/90 p-0.5 sm:-top-12 sm:h-8 sm:w-8">
+                <span className="absolute top-1/2 left-1/2 z-20 h-10 w-10 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-lg bg-blue-500/90 p-1 shadow-lg sm:h-12 sm:w-12">
                   {skillIcon.icon && skillIcon.icon.length <= 4 ? (
-                    <span className="flex h-full w-full items-center justify-center text-xs text-white sm:text-sm">
+                    <span className="flex h-full w-full items-center justify-center text-base font-bold text-white sm:text-lg">
                       {skillIcon.icon}
                     </span>
                   ) : (
@@ -150,7 +150,7 @@ export function MonsterGroup({
                       alt={skillIcon.name}
                       fill
                       className="rounded object-cover"
-                      sizes="32px"
+                      sizes="48px"
                     />
                   )}
                 </span>
