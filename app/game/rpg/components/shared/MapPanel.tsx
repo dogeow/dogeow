@@ -68,10 +68,14 @@ const MapDetailDialog = ({
   const progress = mapProgress[map.id]
   const hasTeleport = progress?.teleport_unlocked || false
   const isCurrentMap = currentMap?.id === map.id
-  const canEnter = !!character && character.level >= map.min_level
   const canTeleport = hasTeleport && !isCurrentMap
-  const canShowEnter = canEnter && !isCurrentMap
+  const canShowEnter = !isCurrentMap
   const disabledTeleport = isLoading || !character
+
+  // 计算怪物等级范围
+  const monsterLevels = map.monsters?.map(m => m.level) ?? []
+  const minMonsterLevel = monsterLevels.length > 0 ? Math.min(...monsterLevels) : map.min_level
+  const maxMonsterLevel = monsterLevels.length > 0 ? Math.max(...monsterLevels) : map.max_level
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -80,9 +84,9 @@ const MapDetailDialog = ({
           <h4 className="text-foreground mb-2 text-lg font-bold sm:text-xl">{map.name}</h4>
           <p className="text-muted-foreground mb-4 text-sm sm:text-base">{map.description}</p>
           <div className="bg-muted/50 mb-4 rounded-lg p-2 sm:p-3">
-            <p className="text-muted-foreground text-xs sm:text-sm">等级范围</p>
+            <p className="text-muted-foreground text-xs sm:text-sm">怪物等级</p>
             <p className="text-foreground text-sm font-bold sm:text-base">
-              Lv.{map.min_level}-{map.max_level}
+              Lv.{minMonsterLevel}-{maxMonsterLevel}
             </p>
           </div>
           {map.monsters?.length ? (
@@ -130,9 +134,6 @@ const MapDetailDialog = ({
               >
                 传送
               </button>
-            )}
-            {!canEnter && (
-              <p className="text-sm text-red-600 dark:text-red-400">需要等级 {map.min_level}</p>
             )}
           </div>
           <button
@@ -218,7 +219,13 @@ export function MapPanel() {
                   const progress = mapProgress[map.id]
                   const hasTeleport = progress?.teleport_unlocked || false
                   const isCurrentMap = currentMap?.id === map.id
-                  const canEnter = !!character && character.level >= map.min_level
+
+                  // 计算怪物等级范围
+                  const monsterLevels = map.monsters?.map(m => m.level) ?? []
+                  const minMonsterLevel =
+                    monsterLevels.length > 0 ? Math.min(...monsterLevels) : map.min_level
+                  const maxMonsterLevel =
+                    monsterLevels.length > 0 ? Math.max(...monsterLevels) : map.max_level
 
                   return (
                     <div
@@ -226,15 +233,12 @@ export function MapPanel() {
                       className={`relative min-w-full flex-1 cursor-pointer overflow-hidden rounded-lg border-2 transition-all sm:min-w-[calc(50%-0.375rem)] lg:min-w-[calc(33.333%-0.5rem)] ${
                         isCurrentMap
                           ? 'border-green-500'
-                          : canEnter
-                            ? 'border-border hover:border-blue-500 dark:hover:border-blue-400'
-                            : 'border-border opacity-60'
+                          : 'border-border hover:border-blue-500 dark:hover:border-blue-400'
                       }`}
                       style={getMapBackgroundStyle(map)}
                       onClick={() => setSelectedMap(map)}
                       tabIndex={0}
                       role="button"
-                      aria-disabled={!canEnter && !isCurrentMap}
                     >
                       <div className="bg-black/40 p-3 sm:p-4">
                         <div className="mb-2 flex items-start justify-between">
@@ -252,14 +256,9 @@ export function MapPanel() {
                         </p>
                         <div className="mb-1.5 flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">
-                            Lv.{map.min_level}-{map.max_level}
+                            怪物 Lv.{minMonsterLevel}-{maxMonsterLevel}
                           </span>
                           <div className="flex gap-1">
-                            {canEnter && (
-                              <span className="text-green-600 dark:text-green-400" title="可进入">
-                                ✓
-                              </span>
-                            )}
                             {hasTeleport && (
                               <span
                                 className="text-blue-600 dark:text-blue-400"

@@ -1,7 +1,8 @@
 'use client'
 
-import { type CombatMonster } from '../../types'
+import { type CombatMonster, type SkillUsedEntry } from '../../types'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
 import { MonsterIcon } from './MonsterIcon'
 import { MonsterInfoDialog } from './MonsterInfoDialog'
 import styles from '../../rpg.module.css'
@@ -9,7 +10,15 @@ import styles from '../../rpg.module.css'
 type MonsterWithMeta = CombatMonster & { damage_taken?: number }
 
 /** 显示多只怪物（固定5个位置，支持 null 占位） */
-export function MonsterGroup({ monsters }: { monsters: (MonsterWithMeta | null)[] }) {
+export function MonsterGroup({
+  monsters,
+  skillUsed,
+  skillTargetPositions,
+}: {
+  monsters: (MonsterWithMeta | null)[]
+  skillUsed?: SkillUsedEntry | null
+  skillTargetPositions?: number[]
+}) {
   const prevMonstersRef = useRef<MonsterWithMeta[]>([])
   const [damageTexts, setDamageTexts] = useState<Record<string, number>>({})
   // 上一帧的怪物 keys，用于渲染时计算 newMonsters（ref 不能在 render 中读取）
@@ -18,6 +27,28 @@ export function MonsterGroup({ monsters }: { monsters: (MonsterWithMeta | null)[
   const [selectedMonster, setSelectedMonster] = useState<MonsterWithMeta | null>(null)
   // 记录死亡的怪物，用于触发动画
   const [deadMonsters, setDeadMonsters] = useState<Set<string>>(new Set())
+  // 技能图标显示状态：position -> skill info
+  const [skillIcons, setSkillIcons] = useState<
+    Record<number, { skillId: number; icon: string | null; name: string }>
+  >({})
+
+  // 当有新技能使用时，在目标怪物上显示技能图标（queueMicrotask 避免 effect 内同步 setState）
+  useEffect(() => {
+    if (skillUsed && skillTargetPositions && skillTargetPositions.length > 0) {
+      const newIcons: Record<number, { skillId: number; icon: string | null; name: string }> = {}
+      skillTargetPositions.forEach(pos => {
+        newIcons[pos] = {
+          skillId: skillUsed.skill_id,
+          icon: skillUsed.icon ?? null,
+          name: skillUsed.name,
+        }
+      })
+      queueMicrotask(() => setSkillIcons(newIcons))
+      // 1.5秒后清除技能图标
+      const timer = setTimeout(() => setSkillIcons({}), 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [skillUsed, skillTargetPositions])
 
   const handleMonsterClick = (m: MonsterWithMeta) => {
     setSelectedMonster(m)
@@ -96,6 +127,7 @@ export function MonsterGroup({ monsters }: { monsters: (MonsterWithMeta | null)[
           const damage = damageTexts[`${m.id}-${m.level}`]
           const monsterKey = `${m.id}-${m.level}`
           const isDead = (m.hp ?? 0) <= 0 && deadMonsters.has(monsterKey)
+          const skillIcon = skillIcons[pos]
 
           return (
             <button
@@ -105,6 +137,24 @@ export function MonsterGroup({ monsters }: { monsters: (MonsterWithMeta | null)[
               className={`relative flex cursor-pointer flex-col items-center gap-0.5 transition-opacity hover:opacity-80 ${isNew ? styles['monster-appear'] : ''} ${isDead ? styles['monster-death'] : ''}`}
               title={`点击查看 ${m.name} 详情`}
             >
+              {/* 技能图标 - 显示在被命中的怪物上方 */}
+              {skillIcon && (
+                <span className="absolute -top-10 z-10 h-7 w-7 animate-bounce rounded bg-blue-500/90 p-0.5 sm:-top-12 sm:h-8 sm:w-8">
+                  {skillIcon.icon && skillIcon.icon.length <= 4 ? (
+                    <span className="flex h-full w-full items-center justify-center text-xs text-white sm:text-sm">
+                      {skillIcon.icon}
+                    </span>
+                  ) : (
+                    <Image
+                      src={`/game/rpg/skills/skill_${skillIcon.skillId}.png`}
+                      alt={skillIcon.name}
+                      fill
+                      className="rounded object-cover"
+                      sizes="32px"
+                    />
+                  )}
+                </span>
+              )}
               {damage !== undefined && damage > 0 && (
                 <span className="absolute -top-5 text-xs font-bold text-red-500 sm:text-sm">
                   -{damage}

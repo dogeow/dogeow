@@ -17,7 +17,7 @@ import {
   ChevronUp,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 import { cn } from '@/lib/helpers'
 import { CloudFile, SortField } from '../../types'
 import useFileStore from '../../store/useFileStore'

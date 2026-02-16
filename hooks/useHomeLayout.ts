@@ -3,7 +3,7 @@ import useSWR from 'swr'
 import { get, put } from '@/lib/api'
 import { useHomeLayoutStore, type TileConfig, type TileSize } from '@/stores/homeLayoutStore'
 import { useLoginTrigger } from '@/hooks/useLoginTrigger'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 
 interface HomeLayoutResponse {
   id: number

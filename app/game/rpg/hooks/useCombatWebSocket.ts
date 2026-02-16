@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { createEchoInstance } from '@/lib/websocket'
-import toast from 'react-hot-toast'
+import { toast } from 'sonner'
 import type Echo from 'laravel-echo'
 import type { GameCharacter, GameItem } from '../types'
 

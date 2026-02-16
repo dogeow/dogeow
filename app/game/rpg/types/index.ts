@@ -209,7 +209,8 @@ export interface SkillUsedEntry {
   skill_id: number
   name: string
   icon?: string | null
-  use_count: number
+  target_type?: 'single' | 'all'
+  use_count?: number
 }
 
 export interface CombatResult {
@@ -241,6 +242,9 @@ export interface CombatResult {
     item_lost_reason?: string
   }
   skills_used?: SkillUsedEntry[]
+  skill_target_positions?: number[] // 技能命中的怪物位置 (0-4)
+  /** 自动使用药水记录 */
+  potion_used?: Record<string, { name: string; restored: number }>
   character: GameCharacter
   /** 仅当本场战斗结束（胜利/失败）时存在 */
   combat_log_id?: number
@@ -268,6 +272,8 @@ export interface CombatLog {
   copper_gained: number
   duration_seconds: number
   skills_used?: SkillUsedEntry[]
+  /** 自动使用药水记录 */
+  potion_used?: Record<string, { name: string; restored: number }>
   created_at: string
 }
 

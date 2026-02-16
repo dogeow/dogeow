@@ -570,12 +570,25 @@ const store: StateCreator<GameState> = (set, get) => ({
         skills: SkillWithLearnedState[]
         skill_points: number
       }
+      const skills = response.skills ?? []
+
+      // 获取所有已学习的主动技能 ID，用于默认启用
+      const learnedActiveSkillIds = skills
+        .filter(s => s.is_learned && s.type === 'active')
+        .map(s => s.id)
+
+      // 获取当前已启用的技能 ID，如果是首次加载则默认启用所有主动技能
+      const currentEnabledIds = get().enabledSkillIds
+      const enabledSkillIds =
+        currentEnabledIds.length > 0 ? currentEnabledIds : learnedActiveSkillIds
+
       set(state => ({
         ...state,
-        skills: response.skills ?? [],
+        skills,
         character: state.character
           ? { ...state.character, skill_points: response.skill_points }
           : null,
+        enabledSkillIds,
         isLoading: false,
       }))
     } catch (error) {
@@ -617,12 +630,19 @@ const store: StateCreator<GameState> = (set, get) => ({
               }
             : s
         )
+        // 查找刚学习的技能，如果是主动技能则自动启用
+        const learnedSkill = state.skills.find(s => s.id === cs.skill_id)
+        const isNewActiveSkill = learnedSkill && learnedSkill.type === 'active'
+        const newEnabledSkillIds = isNewActiveSkill
+          ? [...state.enabledSkillIds, cs.skill_id]
+          : state.enabledSkillIds
         return {
           ...state,
           skills: nextSkills,
           character: state.character
             ? { ...state.character, skill_points: response.skill_points }
             : null,
+          enabledSkillIds: newEnabledSkillIds,
           isLoading: false,
         }
       })
@@ -710,13 +730,17 @@ const store: StateCreator<GameState> = (set, get) => ({
       soundManager.play('skill_use')
       const maps = get().maps
       const currentMap = maps.find(m => m.id === mapId) || null
+      const char = response.character
       set(state => ({
         ...state,
         currentMap,
-        character: response.character,
+        character: char,
         isFighting: true, // 后端已自动开始战斗
         shouldAutoCombat: true,
         isLoading: false,
+        // 复活时后端只恢复基础生命/法力，用返回的 character 更新当前 HP/MP 显示
+        currentHp: char?.current_hp ?? state.currentHp,
+        currentMana: char?.current_mana ?? state.currentMana,
       }))
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
@@ -808,26 +832,13 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   stopCombat: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
-    try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        console.warn('[GameStore] stopCombat - no character selected')
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
-      await (post as any)('/rpg/combat/stop', { character_id: selectedId })
-      set(state => ({ ...state, enabledSkillIds: [] }))
-      set(state => ({
-        ...state,
-        isFighting: false,
-        shouldAutoCombat: false, // 停止战斗时同时关闭自动战斗
-        character: state.character ? { ...state.character, is_fighting: false } : null,
-        isLoading: false,
-      }))
-    } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
-    }
+    set(state => ({
+      ...state,
+      enabledSkillIds: [],
+      isFighting: false,
+      shouldAutoCombat: false,
+      character: state.character ? { ...state.character, is_fighting: false } : null,
+    }))
   },
 
   executeCombat: async () => {
@@ -848,6 +859,10 @@ const store: StateCreator<GameState> = (set, get) => ({
       console.log('[GameStore] Combat execute response:', response)
       console.log('[GameStore] response.character?.current_hp:', response.character?.current_hp)
       console.log('[GameStore] response.character?.current_mana:', response.character?.current_mana)
+
+      // 药水被使用后需要刷新背包
+      const usedPotion = response.potion_used && Object.keys(response.potion_used).length > 0
+
       set(state => {
         // 使用 combat_log_id 或 id 去重，避免同一日志被多次添加
         const existingLogIds = new Set<number>(
@@ -923,6 +938,16 @@ const store: StateCreator<GameState> = (set, get) => ({
           }),
         }
       })
+
+      // 检测到使用药水时刷新背包（药水被消耗了）
+      if (usedPotion) {
+        await get().fetchInventory()
+      }
+
+      // 战败时播放音效（弹窗由 CombatPanel 组件处理）
+      if (response.auto_stopped) {
+        soundManager.play('combat_defeat')
+      }
     } catch (error) {
       console.error('[GameStore] Execute combat error:', error)
 
@@ -931,6 +956,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         const errorData = error.data as { auto_stopped?: boolean; current_hp?: number } | undefined
         if (errorData?.auto_stopped) {
           console.log('[GameStore] Combat auto-stopped due to low HP')
+          soundManager.play('combat_defeat')
           set(state => ({
             ...state,
             isFighting: false,
@@ -1009,11 +1035,15 @@ const store: StateCreator<GameState> = (set, get) => ({
       if (data.copper_gained > 0) {
         soundManager.play('gold')
       }
-    } else if (data.defeat) {
+    } else if (data.defeat || data.auto_stopped) {
       soundManager.play('combat_defeat')
     } else {
       soundManager.play('combat_hit')
     }
+
+    // 药水被使用后需要刷新背包
+    const usedPotion = data.potion_used && Object.keys(data.potion_used).length > 0
+
     set(state => {
       // 优先使用顶层字段，其次使用 character 对象中的字段
       // 只有当值存在时才更新（避免用 null 覆盖正确的值）
@@ -1058,9 +1088,12 @@ const store: StateCreator<GameState> = (set, get) => ({
         // 只有当新值存在且不为 undefined 时才更新
         ...(newCurrentHp !== undefined && { currentHp: newCurrentHp }),
         ...(newCurrentMana !== undefined && { currentMana: newCurrentMana }),
-        inventory: data.loot?.item
-          ? [...state.inventory, data.loot.item as GameItem]
-          : state.inventory,
+        // 使用药水时背包会在后面刷新
+        inventory: usedPotion
+          ? state.inventory
+          : data.loot?.item
+            ? [...state.inventory, data.loot.item as GameItem]
+            : state.inventory,
         // 战败时自动停止战斗
         ...(data.auto_stopped && {
           isFighting: false,
@@ -1068,6 +1101,11 @@ const store: StateCreator<GameState> = (set, get) => ({
         }),
       }
     })
+
+    // 检测到使用药水时刷新背包（药水被消耗了），使用 Promise.resolve().then 异步执行
+    if (usedPotion) {
+      Promise.resolve().then(() => get().fetchInventory())
+    }
   },
 
   handleLootDropped: data => {
@@ -1276,6 +1314,11 @@ export const useGameStore = create<GameState>()(
       selectedCharacterId: state.selectedCharacterId,
       activeTab: state.activeTab,
     }),
-    skipHydration: false,
+    skipHydration: true, // 跳过自动 hydration，手动控制
   })
 )
+
+// 手动触发 hydration
+if (typeof window !== 'undefined') {
+  useGameStore.persist.rehydrate()
+}

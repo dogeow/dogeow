@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 import { apiRequest } from '@/lib/api'
 import { getFileStorageUrl } from '@/app/file/services/api'
 import { PREVIEW_TYPES, type PreviewType } from '../utils/previewTypes'

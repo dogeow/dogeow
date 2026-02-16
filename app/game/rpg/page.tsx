@@ -250,8 +250,11 @@ export default function RPGGame() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             {character && combatStats && (
               <div className="flex w-full items-center gap-2 text-xs sm:gap-3 sm:text-sm">
-                {/* 左侧：货币 */}
+                {/* 左侧：等级、货币 */}
                 <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-muted-foreground shrink-0 text-xs sm:text-sm">
+                    Lv.{character.level}
+                  </span>
                   <span className="text-yellow-600 dark:text-yellow-400">
                     <CopperDisplay copper={character.copper} size="sm" />
                   </span>

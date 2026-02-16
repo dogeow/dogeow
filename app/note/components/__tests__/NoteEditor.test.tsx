@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import NoteEditor from '../NoteEditor'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 
 // Mock dependencies
-vi.mock('react-hot-toast', () => ({
+vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),

@@ -1,9 +1,9 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
 import { useVoiceInput } from '../useVoiceInput'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 
 // Mock toast
-jest.mock('react-hot-toast')
+jest.mock('sonner')
 
 // Mock SpeechRecognition API
 class MockSpeechRecognition {

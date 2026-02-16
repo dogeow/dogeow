@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useCallback } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 import { Loader2, AlertCircle, FolderOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import GridView from './views/GridView'

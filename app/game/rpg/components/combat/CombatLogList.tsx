@@ -41,7 +41,15 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
               <span className="text-cyan-600 dark:text-cyan-400">
                 释放:{' '}
                 {log.skills_used
-                  .map(s => (s.use_count > 1 ? `${s.name}×${s.use_count}` : s.name))
+                  .map(s => ((s.use_count ?? 1) > 1 ? `${s.name}×${s.use_count}` : s.name))
+                  .join(' ')}
+              </span>
+            )}
+            {log.potion_used && Object.keys(log.potion_used).length > 0 && (
+              <span className="text-pink-600 dark:text-pink-400">
+                药水:{' '}
+                {Object.entries(log.potion_used)
+                  .map(([type, data]) => `${data.name}(+${data.restored})`)
                   .join(' ')}
               </span>
             )}

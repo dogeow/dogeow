@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 
 // 检查浏览器是否支持语音识别
 const isSpeechRecognitionSupported = () => {

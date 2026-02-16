@@ -1,6 +1,6 @@
 'use client'
 
-import { type CombatMonster } from '../../types'
+import { type CombatMonster, type SkillUsedEntry } from '../../types'
 import { useEffect, useRef, useState } from 'react'
 import { MonsterIcon } from './MonsterIcon'
 import { MonsterGroup } from './MonsterGroup'
@@ -20,6 +20,8 @@ export function BattleArena({
   isFighting,
   isLoading,
   onCombatToggle,
+  skillUsed,
+  skillTargetPositions,
 }: {
   character: { name: string; class: string; level: number } | null
   combatStats: { max_hp: number; max_mana: number } | null
@@ -32,6 +34,8 @@ export function BattleArena({
   isFighting: boolean
   isLoading: boolean
   onCombatToggle: () => void
+  skillUsed?: SkillUsedEntry | null
+  skillTargetPositions?: number[]
 }) {
   const finalMonsterHp = monster?.hp ?? 0
   const maxHp = monster?.max_hp ?? 0
@@ -77,7 +81,11 @@ export function BattleArena({
       {/* 上侧：怪物（支持多只），仅在非加载且已有战斗结果时显示，避免点击后未发请求时显示静态/旧数据 */}
       <div className="flex flex-1 flex-col items-center gap-2 p-3 sm:p-4">
         {!isLoading && isFighting && monsters && monsters.length > 0 ? (
-          <MonsterGroup monsters={monsters} />
+          <MonsterGroup
+            monsters={monsters}
+            skillUsed={skillUsed}
+            skillTargetPositions={skillTargetPositions}
+          />
         ) : !isLoading && isFighting && monster ? (
           <div className={isMonsterDead ? styles['monster-death'] : ''}>
             <MonsterIcon key={monsterId} monsterId={monsterId} name={monster.name} size="lg" />

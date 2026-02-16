@@ -6,6 +6,7 @@ import {
   type CombatMonster,
   type CombatResult,
   type SkillUsedEntry,
+  type GameItem,
 } from '../../types'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CharacterSkill, SkillWithLearnedState } from '../../types'
@@ -16,6 +17,7 @@ import { BattleSkillBar } from './BattleSkillBar'
 import { CombatLogList } from './CombatLogList'
 import { getActName } from '../../utils/combat'
 import { MapCardMonsterAvatar } from './MapCardMonsterAvatar'
+import { LogIn, Heart, Droplet } from 'lucide-react'
 
 export function CombatPanel() {
   const currentMap = useGameStore(state => state.currentMap)
@@ -23,6 +25,7 @@ export function CombatPanel() {
   const mapProgress = useGameStore(state => state.mapProgress)
   const enterMap = useGameStore(state => state.enterMap)
   const fetchMaps = useGameStore(state => state.fetchMaps)
+  const teleportToMap = useGameStore(state => state.teleportToMap)
   const startCombat = useGameStore(state => state.startCombat)
   const isFighting = useGameStore(state => state.isFighting)
   const setShouldAutoCombat = useGameStore(state => state.setShouldAutoCombat)
@@ -37,10 +40,25 @@ export function CombatPanel() {
   const currentMana = useGameStore(state => state.currentMana)
   const enabledSkillIds = useGameStore(state => state.enabledSkillIds)
   const toggleEnabledSkill = useGameStore(state => state.toggleEnabledSkill)
+  const inventory = useGameStore(state => state.inventory)
+  const consumePotion = useGameStore(state => state.consumePotion)
 
   const [mapDropdownOpen, setMapDropdownOpen] = useState(false)
   const [dropdownAct, setDropdownAct] = useState(1)
   const mapDropdownRef = useRef<HTMLDivElement>(null)
+  const [showDeathDialog, setShowDeathDialog] = useState(false)
+  const lastAutoStoppedRef = useRef<boolean | undefined>(undefined)
+
+  // 监听战斗结果，检测角色死亡
+  useEffect(() => {
+    if (combatResult?.auto_stopped && lastAutoStoppedRef.current !== combatResult.auto_stopped) {
+      lastAutoStoppedRef.current = combatResult.auto_stopped
+      // 使用 queueMicrotask 延迟 setState，避免 effect 中同步调用
+      queueMicrotask(() => {
+        setShowDeathDialog(true)
+      })
+    }
+  }, [combatResult?.auto_stopped])
 
   const mapsByAct = useMemo(() => {
     const actMaps: Record<number, MapDefinition[]> = {}
@@ -228,24 +246,27 @@ export function CombatPanel() {
               <div className="flex-1 overflow-y-auto p-2">
                 {displayActMaps.map(map => {
                   const isCurrentMap = currentMap?.id === map.id
-                  const canEnter = !!character && character.level >= map.min_level
+
+                  // 计算怪物等级范围
+                  const monsterLevels = map.monsters?.map(m => m.level) ?? []
+                  const minMonsterLevel =
+                    monsterLevels.length > 0 ? Math.min(...monsterLevels) : map.min_level
+                  const maxMonsterLevel =
+                    monsterLevels.length > 0 ? Math.max(...monsterLevels) : map.max_level
+
                   return (
                     <button
                       key={map.id}
                       type="button"
                       onClick={() => {
-                        if (canEnter) {
+                        if (!isCurrentMap) {
                           handleSelectMap(map.id)
                           setMapDropdownOpen(false)
                         }
                       }}
-                      disabled={!canEnter}
+                      disabled={isCurrentMap}
                       className={`mb-2 flex w-full items-center gap-3 rounded-lg p-2 text-left transition-all ${
-                        isCurrentMap
-                          ? 'ring-primary ring-2'
-                          : canEnter
-                            ? 'hover:bg-white/10'
-                            : 'opacity-50'
+                        isCurrentMap ? 'ring-primary ring-2' : 'hover:bg-white/10'
                       }`}
                       style={getMapBackgroundStyle(map, { fill: true })}
                     >
@@ -255,7 +276,7 @@ export function CombatPanel() {
                           {isCurrentMap && <span className="text-primary text-xs">(当前)</span>}
                         </div>
                         <div className="text-xs text-gray-400">
-                          Lv.{map.min_level}-{map.max_level}
+                          怪物 Lv.{minMonsterLevel}-{maxMonsterLevel}
                         </div>
                         {map.monsters?.length ? (
                           <div className="mt-1 flex gap-1">
@@ -265,6 +286,12 @@ export function CombatPanel() {
                           </div>
                         ) : null}
                       </div>
+                      {/* 进入按钮 */}
+                      {!isCurrentMap && (
+                        <div className="flex shrink-0 items-center justify-center rounded-full bg-green-600/80 p-2 hover:bg-green-500">
+                          <LogIn className="h-4 w-4 text-white" />
+                        </div>
+                      )}
                     </button>
                   )
                 })}
@@ -307,27 +334,52 @@ export function CombatPanel() {
                   isFighting={isFighting}
                   isLoading={isLoading}
                   onCombatToggle={isFighting ? handleStopCombat : handleStartCombat}
+                  skillUsed={combatResult?.skills_used?.[0]}
+                  skillTargetPositions={combatResult?.skill_target_positions}
                 />
               </div>
             </div>
           </div>
         )}
-        {/* 战斗中的技能栏：图标 + CD 冷却动画 */}
-        {isFighting && activeSkills.length > 0 && (
+        {/* 技能和药品栏（有地图时显示，死亡后不隐藏） */}
+        {currentMap && (
           <div className="mt-3 overflow-visible pt-3">
-            <p className="text-muted-foreground mb-2 text-xs font-medium sm:text-sm">
-              技能（点击启用，自动战斗时使用）
-            </p>
-            <div className="overflow-visible">
-              <BattleSkillBar
-                activeSkills={activeSkills}
-                skillsUsed={combatResult?.skills_used}
-                cooldownSecondsBySkillId={cooldownSecondsBySkillId}
-                skillCooldownEnd={skillCooldownEnd}
-                now={now}
-                enabledSkillIds={enabledSkillIds}
-                onSkillToggle={toggleEnabledSkill}
-              />
+            <div className="flex items-start justify-between gap-4">
+              {/* 技能栏（左侧） */}
+              {activeSkills.length > 0 && (
+                <div className="min-w-0 flex-1">
+                  <p className="text-muted-foreground mb-2 text-xs font-medium sm:text-sm">技能</p>
+                  <div className="overflow-visible">
+                    <BattleSkillBar
+                      activeSkills={activeSkills}
+                      skillsUsed={combatResult?.skills_used}
+                      cooldownSecondsBySkillId={cooldownSecondsBySkillId}
+                      skillCooldownEnd={skillCooldownEnd}
+                      now={now}
+                      enabledSkillIds={enabledSkillIds}
+                      onSkillToggle={toggleEnabledSkill}
+                    />
+                  </div>
+                </div>
+              )}
+              {/* 药品栏（右侧） */}
+              <div className="shrink-0">
+                <p className="text-muted-foreground mb-2 text-xs font-medium sm:text-sm">药品</p>
+                <div className="flex gap-2">
+                  <PotionButton
+                    type="hp"
+                    inventory={inventory}
+                    onUse={consumePotion}
+                    disabled={isLoading}
+                  />
+                  <PotionButton
+                    type="mp"
+                    inventory={inventory}
+                    onUse={consumePotion}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -340,6 +392,107 @@ export function CombatPanel() {
           <CombatLogList logs={combatLogs} />
         </div>
       </div>
+
+      {/* 死亡弹窗 */}
+      {showDeathDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="border-border bg-card w-full max-w-sm rounded-lg border p-6 text-center shadow-xl">
+            <div className="mb-4 text-5xl">💀</div>
+            <h3 className="text-foreground mb-2 text-xl font-bold">角色已死亡</h3>
+            <p className="text-muted-foreground mb-6">你的角色在战斗中不幸阵亡，战斗已自动停止。</p>
+            <div className="space-y-3">
+              <button
+                onClick={async () => {
+                  // 复活：切换到第一个地图（新手营地）
+                  if (maps.length === 0) {
+                    await fetchMaps()
+                  }
+                  // 获取排序后的第一个地图
+                  const sorted = [...maps].sort(
+                    (a, b) =>
+                      (a.act !== b.act ? a.act - b.act : 0) ||
+                      a.min_level - b.min_level ||
+                      a.id - b.id
+                  )
+                  const firstMap = sorted[0]
+                  if (firstMap) {
+                    await teleportToMap(firstMap.id)
+                  }
+                  setShowDeathDialog(false)
+                }}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-lg py-2.5 font-medium"
+              >
+                复活
+              </button>
+              <button
+                onClick={() => setShowDeathDialog(false)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-lg py-2.5 font-medium"
+              >
+                我知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  )
+}
+
+/** 药品按钮组件 */
+function PotionButton({
+  type,
+  inventory,
+  onUse,
+  disabled,
+}: {
+  type: 'hp' | 'mp'
+  inventory: GameItem[]
+  onUse: (itemId: number) => Promise<void>
+  disabled: boolean
+}) {
+  // 获取对应类型的药品，按恢复量排序（高级优先）
+  const potions = useMemo(() => {
+    const statKey = type === 'hp' ? 'max_hp' : 'max_mana'
+    return inventory
+      .filter(item => item.definition?.type === 'potion' && item.definition?.sub_type === type)
+      .sort((a, b) => {
+        const aRestore = a.definition?.base_stats?.[statKey] ?? 0
+        const bRestore = b.definition?.base_stats?.[statKey] ?? 0
+        return bRestore - aRestore
+      })
+  }, [inventory, type])
+
+  const bestPotion = potions[0]
+  const quantity = bestPotion?.quantity ?? 0
+  const restoreValue =
+    bestPotion?.definition?.base_stats?.[type === 'hp' ? 'max_hp' : 'max_mana'] ?? 0
+
+  const handleClick = useCallback(() => {
+    if (bestPotion && quantity > 0 && !disabled) {
+      onUse(bestPotion.id)
+    }
+  }, [bestPotion, quantity, disabled, onUse])
+
+  const Icon = type === 'hp' ? Heart : Droplet
+  const colorClass =
+    type === 'hp' ? 'text-red-500 dark:text-red-400' : 'text-blue-500 dark:text-blue-400'
+  const bgClass =
+    type === 'hp' ? 'bg-red-500/20 hover:bg-red-500/30' : 'bg-blue-500/20 hover:bg-blue-500/30'
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={disabled || quantity === 0}
+      className={`flex flex-col items-center gap-0.5 rounded-md p-2 transition-colors disabled:opacity-50 ${bgClass}`}
+      title={
+        bestPotion
+          ? `${bestPotion.definition?.name} (+${restoreValue})`
+          : `无${type === 'hp' ? '血' : '魔'}药`
+      }
+    >
+      <Icon className={`h-5 w-5 ${colorClass}`} />
+      <span className={`text-xs font-medium ${colorClass}`}>{quantity}</span>
+    </button>
   )
 }

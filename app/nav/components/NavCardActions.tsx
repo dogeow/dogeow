@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { MoreHorizontal, Pencil, Trash } from 'lucide-react'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 
 interface NavCardActionsProps {
   item: NavItem

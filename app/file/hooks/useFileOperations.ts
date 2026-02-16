@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 import { useSWRConfig } from 'swr'
 import useSWRMutation from 'swr/mutation'
 import { post, del, uploadFile, handleApiError } from '@/lib/api'

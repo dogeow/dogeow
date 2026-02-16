@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 import { useSWRConfig } from 'swr'
 import { del, put } from '@/lib/api'
 import { getFileDownloadUrl } from '../services/api'

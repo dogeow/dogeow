@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { toast } from 'react-hot-toast'
+import { toast } from 'sonner'
 import { useSWRConfig } from 'swr'
 import { put } from '@/lib/api'
 import useFileStore from '../store/useFileStore'
