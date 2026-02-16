@@ -499,12 +499,12 @@ export function InventoryPanel() {
                     disabled={isLoading || recyclingQuality === quality}
                     className="flex items-center gap-1 rounded px-2 py-1 text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
                     style={{
-                      backgroundColor: `${QUALITY_COLORS[quality]}20`,
-                      color: QUALITY_COLORS[quality],
-                      border: `1px solid ${QUALITY_COLORS[quality]}40`,
+                      backgroundColor: `${QUALITY_COLORS[quality as ItemQuality]}20`,
+                      color: QUALITY_COLORS[quality as ItemQuality],
+                      border: `1px solid ${QUALITY_COLORS[quality as ItemQuality]}40`,
                     }}
                   >
-                    <span>{QUALITY_NAMES[quality]}</span>
+                    <span>{QUALITY_NAMES[quality as ItemQuality]}</span>
                     <span className="opacity-70">({stats.count})</span>
                     <span className="text-yellow-400">{stats.totalPrice}</span>
                     {recyclingQuality === quality && <span className="ml-1 animate-spin">⏳</span>}
