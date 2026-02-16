@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MonsterIcon } from './MonsterIcon'
 import { MonsterGroup } from './MonsterGroup'
 import { VSSwords } from './VSSwords'
+import styles from '../../rpg.module.css'
 
 /** 战斗对阵：上侧怪物（支持多只），下侧用户，中间 VS 可点击开始/停止挂机 */
 export function BattleArena({
@@ -40,6 +41,8 @@ export function BattleArena({
 
   // 优先用「本回合开始前」血量，这样首帧就是从满血（或回合初）再动画到扣血后
   const effectiveMonsterHp = displayMonsterHp ?? monsterHpBeforeRound ?? finalMonsterHp
+  // 检测怪物死亡
+  const isMonsterDead = finalMonsterHp <= 0 && maxHp > 0
 
   useEffect(() => {
     if (monster == null || maxHp <= 0) {
@@ -76,7 +79,9 @@ export function BattleArena({
         {!isLoading && isFighting && monsters && monsters.length > 0 ? (
           <MonsterGroup monsters={monsters} />
         ) : !isLoading && isFighting && monster ? (
-          <MonsterIcon key={monsterId} monsterId={monsterId} name={monster.name} size="lg" />
+          <div className={isMonsterDead ? styles['monster-death'] : ''}>
+            <MonsterIcon key={monsterId} monsterId={monsterId} name={monster.name} size="lg" />
+          </div>
         ) : isFighting && isLoading ? (
           <div className="text-muted-foreground flex h-20 w-20 items-center justify-center text-xs sm:h-24 sm:w-24 sm:text-sm">
             加载中

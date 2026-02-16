@@ -9,7 +9,8 @@
       "Bash(php artisan tinker:*)",
       "Bash(php artisan migrate:refresh:*)",
       "Bash(php artisan migrate:status:*)",
-      "Bash(php artisan db:table:*)"
+      "Bash(php artisan db:table:*)",
+      "Bash(ls:*)"
     ]
   }
 }

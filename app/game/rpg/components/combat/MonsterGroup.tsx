@@ -16,6 +16,8 @@ export function MonsterGroup({ monsters }: { monsters: (MonsterWithMeta | null)[
   const [prevMonsterKeys, setPrevMonsterKeys] = useState<string[]>([])
   // 选中的怪物（用于弹窗显示）
   const [selectedMonster, setSelectedMonster] = useState<MonsterWithMeta | null>(null)
+  // 记录死亡的怪物，用于触发动画
+  const [deadMonsters, setDeadMonsters] = useState<Set<string>>(new Set())
 
   const handleMonsterClick = (m: MonsterWithMeta) => {
     setSelectedMonster(m)
@@ -58,6 +60,20 @@ export function MonsterGroup({ monsters }: { monsters: (MonsterWithMeta | null)[
       })
     }
 
+    // 检测怪物死亡：HP <= 0 时触发死亡动画
+    validMonsters.forEach(m => {
+      if ((m.hp ?? 0) <= 0) {
+        const key = `${m.id}-${m.level}`
+        setDeadMonsters(prev => {
+          if (!prev.has(key)) {
+            // 新死亡：添加到死亡集合，1.5秒后动画结束
+            return new Set([...prev, key])
+          }
+          return prev
+        })
+      }
+    })
+
     prevMonstersRef.current = validMonsters
     queueMicrotask(() => setPrevMonsterKeys(validMonsters.map(m => `${m.id}-${m.level}`)))
   }, [validMonsters])
@@ -78,13 +94,15 @@ export function MonsterGroup({ monsters }: { monsters: (MonsterWithMeta | null)[
           const key = `${m.id}-${pos}-${m.level}`
           const isNew = newMonsters.some(nm => nm.id === m.id && nm.level === m.level)
           const damage = damageTexts[`${m.id}-${m.level}`]
+          const monsterKey = `${m.id}-${m.level}`
+          const isDead = (m.hp ?? 0) <= 0 && deadMonsters.has(monsterKey)
 
           return (
             <button
               key={key}
               type="button"
               onClick={() => handleMonsterClick(m)}
-              className={`relative flex cursor-pointer flex-col items-center gap-0.5 transition-opacity hover:opacity-80 ${isNew ? styles['monster-appear'] : ''}`}
+              className={`relative flex cursor-pointer flex-col items-center gap-0.5 transition-opacity hover:opacity-80 ${isNew ? styles['monster-appear'] : ''} ${isDead ? styles['monster-death'] : ''}`}
               title={`点击查看 ${m.name} 详情`}
             >
               {damage !== undefined && damage > 0 && (

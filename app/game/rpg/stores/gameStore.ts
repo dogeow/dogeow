@@ -794,7 +794,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         set(state => ({ ...state, isLoading: false }))
         return
       }
-      await (post as any)('/rpg/combat/start', { character_id: selectedId })
+      // 后端 execute 会自动开始战斗，无需调用 start API
       soundManager.play('combat_start')
       set(state => ({
         ...state,
