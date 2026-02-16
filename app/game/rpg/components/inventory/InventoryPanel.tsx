@@ -12,6 +12,7 @@ import {
   SLOT_NAMES,
   EquipmentSlot,
   STAT_NAMES,
+  ItemQuality,
 } from '../../types'
 import {
   getItemIconFallback,
@@ -100,6 +101,7 @@ export function InventoryPanel() {
     equipment,
     equipItem,
     sellItem,
+    sellItemsByQuality,
     moveItem,
     consumePotion,
     isLoading,
@@ -109,6 +111,37 @@ export function InventoryPanel() {
   const [categoryId, setCategoryId] = useState<string>('')
   const [sellQuantity, setSellQuantity] = useState<number>(1)
   const [showSellConfirm, setShowSellConfirm] = useState(false)
+
+  // 品质回收相关状态
+  const [recyclingQuality, setRecyclingQuality] = useState<string | null>(null)
+
+  // 计算每个品质的装备数量和总价
+  const qualityStats = useMemo(() => {
+    const stats: Record<string, { count: number; totalPrice: number }> = {}
+    inventory.forEach(item => {
+      const type = item.definition?.type
+      // 只计算非药水、非宝石的装备
+      if (type !== 'potion' && type !== 'gem') {
+        const q = item.quality
+        if (!stats[q]) {
+          stats[q] = { count: 0, totalPrice: 0 }
+        }
+        stats[q].count++
+        stats[q].totalPrice += (item.sell_price ?? 0) * (item.quantity ?? 1)
+      }
+    })
+    return stats
+  }, [inventory])
+
+  // 处理品质回收
+  const handleRecycleQuality = async (quality: string) => {
+    setRecyclingQuality(quality)
+    try {
+      await sellItemsByQuality(quality)
+    } finally {
+      setRecyclingQuality(null)
+    }
+  }
 
   // 背包按 slot_index 放入对应格位，与后端格位一致（格位数由后端提供）
   const inventorySlots = useMemo(() => {
@@ -449,6 +482,41 @@ export function InventoryPanel() {
             )}
           </div>
         </div>
+
+        {/* 品质回收按钮 - 仅背包显示 */}
+        {!showStorage && (
+          <div className="border-border mt-3 border-t pt-3">
+            <div className="text-muted-foreground mb-1.5 text-xs">批量回收装备</div>
+            <div className="flex flex-wrap gap-1.5">
+              {['common', 'magic', 'rare', 'legendary', 'mythic'].map(quality => {
+                const stats = qualityStats[quality]
+                if (!stats || stats.count === 0) return null
+
+                return (
+                  <button
+                    key={quality}
+                    onClick={() => handleRecycleQuality(quality)}
+                    disabled={isLoading || recyclingQuality === quality}
+                    className="flex items-center gap-1 rounded px-2 py-1 text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
+                    style={{
+                      backgroundColor: `${QUALITY_COLORS[quality]}20`,
+                      color: QUALITY_COLORS[quality],
+                      border: `1px solid ${QUALITY_COLORS[quality]}40`,
+                    }}
+                  >
+                    <span>{QUALITY_NAMES[quality]}</span>
+                    <span className="opacity-70">({stats.count})</span>
+                    <span className="text-yellow-400">{stats.totalPrice}</span>
+                    {recyclingQuality === quality && <span className="ml-1 animate-spin">⏳</span>}
+                  </button>
+                )
+              })}
+              {Object.values(qualityStats).every(s => s.count === 0) && (
+                <span className="text-muted-foreground text-xs">无可回收装备</span>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

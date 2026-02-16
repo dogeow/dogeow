@@ -102,6 +102,7 @@ interface GameState {
   equipItem: (itemId: number) => Promise<void>
   unequipItem: (slot: EquipmentSlot) => Promise<void>
   sellItem: (itemId: number, quantity?: number) => Promise<void>
+  sellItemsByQuality: (quality: string) => Promise<{ count: number; total_price: number }>
   moveItem: (itemId: number, toStorage: boolean, slotIndex?: number) => Promise<void>
 
   // 技能操作
@@ -532,6 +533,35 @@ const store: StateCreator<GameState> = (set, get) => ({
       }))
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  sellItemsByQuality: async (quality: string) => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const selectedId = get().selectedCharacterId
+      if (!selectedId) {
+        set(state => ({ ...state, isLoading: false }))
+        return { count: 0, total_price: 0 }
+      }
+      const response = (await post('/rpg/inventory/sell-by-quality', {
+        quality,
+        character_id: selectedId,
+      })) as { count: number; total_price: number; copper: number }
+      soundManager.play('gold')
+      set(state => ({
+        ...state,
+        character: state.character ? { ...state.character, copper: response.copper } : null,
+        inventory: state.inventory.filter(
+          i =>
+            i.quality !== quality || i.definition?.type === 'potion' || i.definition?.type === 'gem'
+        ),
+        isLoading: false,
+      }))
+      return { count: response.count, total_price: response.total_price }
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      return { count: 0, total_price: 0 }
     }
   },
 
