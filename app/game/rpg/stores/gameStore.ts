@@ -1104,6 +1104,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         ...(data.auto_stopped && {
           isFighting: false,
           shouldAutoCombat: false,
+          enabledSkillIds: [],
         }),
       }
     })
