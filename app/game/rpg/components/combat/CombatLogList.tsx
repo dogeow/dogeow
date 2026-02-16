@@ -18,20 +18,31 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
             : 'id' in log && log.id
               ? `log-${log.id}`
               : `combat-log-${index}`
+        // 有经验或铜币视为怪物死亡（胜利），避免仅依赖后端 victory 字段漏传导致显示 ⚔️
+        const hasReward = (log.experience_gained ?? 0) > 0 || (log.copper_gained ?? 0) > 0
+        const isVictory = log.victory === true || (hasReward && !log.defeat)
         return (
           <div
             key={logKey}
             className="flex flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
           >
             <span
-              className={`font-semibold ${log.victory ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+              className={`font-semibold ${
+                isVictory
+                  ? 'text-green-600 dark:text-green-400'
+                  : log.defeat
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-orange-500 dark:text-orange-400'
+              }`}
             >
-              {log.victory ? '✓' : '✗'}
+              {isVictory ? '✓' : log.defeat ? '✗' : '⚔️'}
             </span>
             <span className="text-foreground">
               {log.monster?.name ?? '?'} Lv.{log.monster?.level ?? '?'}
             </span>
-            <span className="text-purple-500 dark:text-purple-400">+{log.experience_gained}</span>
+            {(log.experience_gained ?? 0) > 0 && (
+              <span className="text-purple-500 dark:text-purple-400">+{log.experience_gained}</span>
+            )}
             {(log.copper_gained ?? 0) > 0 && (
               <span className="inline-flex items-center text-yellow-600 dark:text-yellow-400">
                 +<CopperDisplay copper={log.copper_gained} size="sm" />
@@ -45,11 +56,19 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
                   .join(' ')}
               </span>
             )}
-            {log.potion_used && Object.keys(log.potion_used).length > 0 && (
+            {log.potion_used?.before && Object.keys(log.potion_used.before).length > 0 && (
               <span className="text-pink-600 dark:text-pink-400">
-                药水:{' '}
-                {Object.entries(log.potion_used)
-                  .map(([type, data]) => `${data.name}(+${data.restored})`)
+                开战药水:{' '}
+                {Object.entries(log.potion_used.before)
+                  .map(([, data]) => `${data.name}(+${data.restored})`)
+                  .join(' ')}
+              </span>
+            )}
+            {log.potion_used?.after && Object.keys(log.potion_used.after).length > 0 && (
+              <span className="text-rose-500 dark:text-rose-400">
+                战后药水:{' '}
+                {Object.entries(log.potion_used.after)
+                  .map(([, data]) => `${data.name}(+${data.restored})`)
                   .join(' ')}
               </span>
             )}

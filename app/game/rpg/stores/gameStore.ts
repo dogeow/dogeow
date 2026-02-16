@@ -861,7 +861,10 @@ const store: StateCreator<GameState> = (set, get) => ({
       console.log('[GameStore] response.character?.current_mana:', response.character?.current_mana)
 
       // 药水被使用后需要刷新背包
-      const usedPotion = response.potion_used && Object.keys(response.potion_used).length > 0
+      const usedPotion =
+        response.potion_used &&
+        ((response.potion_used.before && Object.keys(response.potion_used.before).length > 0) ||
+          (response.potion_used.after && Object.keys(response.potion_used.after).length > 0))
 
       set(state => {
         // 使用 combat_log_id 或 id 去重，避免同一日志被多次添加
@@ -1042,7 +1045,10 @@ const store: StateCreator<GameState> = (set, get) => ({
     }
 
     // 药水被使用后需要刷新背包
-    const usedPotion = data.potion_used && Object.keys(data.potion_used).length > 0
+    const usedPotion =
+      data.potion_used &&
+      ((data.potion_used.before && Object.keys(data.potion_used.before).length > 0) ||
+        (data.potion_used.after && Object.keys(data.potion_used.after).length > 0))
 
     set(state => {
       // 优先使用顶层字段，其次使用 character 对象中的字段

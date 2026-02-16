@@ -244,7 +244,10 @@ export interface CombatResult {
   skills_used?: SkillUsedEntry[]
   skill_target_positions?: number[] // 技能命中的怪物位置 (0-4)
   /** 自动使用药水记录 */
-  potion_used?: Record<string, { name: string; restored: number }>
+  potion_used?: {
+    before?: Record<string, { name: string; restored: number }>
+    after?: Record<string, { name: string; restored: number }>
+  }
   character: GameCharacter
   /** 仅当本场战斗结束（胜利/失败）时存在 */
   combat_log_id?: number
@@ -273,7 +276,10 @@ export interface CombatLog {
   duration_seconds: number
   skills_used?: SkillUsedEntry[]
   /** 自动使用药水记录 */
-  potion_used?: Record<string, { name: string; restored: number }>
+  potion_used?: {
+    before?: Record<string, { name: string; restored: number }>
+    after?: Record<string, { name: string; restored: number }>
+  }
   created_at: string
 }
 

@@ -358,6 +358,7 @@ export function CombatPanel() {
                       now={now}
                       enabledSkillIds={enabledSkillIds}
                       onSkillToggle={toggleEnabledSkill}
+                      disabled={showDeathDialog}
                     />
                   </div>
                 </div>

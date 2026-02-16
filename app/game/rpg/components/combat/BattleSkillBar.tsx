@@ -14,6 +14,7 @@ export function BattleSkillBar({
   now,
   enabledSkillIds,
   onSkillToggle,
+  disabled,
 }: {
   activeSkills: CharacterSkill[]
   skillsUsed: SkillUsedEntry[] | undefined
@@ -22,6 +23,7 @@ export function BattleSkillBar({
   now: number
   enabledSkillIds: number[]
   onSkillToggle: (skillId: number) => void
+  disabled?: boolean
 }) {
   if (activeSkills.length === 0) return null
   return (
@@ -33,7 +35,7 @@ export function BattleSkillBar({
         const remaining = Math.max(0, endAt - now)
         const progress = totalMs > 0 ? 1 - remaining / totalMs : 1
         const onCooldown = remaining > 0
-        const enabled = enabledSkillIds.includes(def.id)
+        const enabled = enabledSkillIds.includes(def.id) && !disabled
         const buttonContent = (
           <>
             <div className="relative">
