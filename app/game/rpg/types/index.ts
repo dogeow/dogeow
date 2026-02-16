@@ -385,6 +385,7 @@ export interface ShopItem {
   type: ItemType
   sub_type?: string
   base_stats: Record<string, number>
+  quality: ItemQuality
   required_level: number
   required_strength: number
   required_dexterity: number

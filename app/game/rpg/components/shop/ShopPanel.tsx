@@ -6,7 +6,7 @@ import { zhCN } from 'date-fns/locale'
 import { RefreshCw } from 'lucide-react'
 import { useGameStore } from '../../stores/gameStore'
 import { CopperDisplay } from '../shared/CopperDisplay'
-import { ShopItem, STAT_NAMES, formatCopper } from '../../types'
+import { ShopItem, QUALITY_COLORS, STAT_NAMES, formatCopper } from '../../types'
 import { getShopItemIcon, ITEM_TYPE_NAMES } from '../../utils/itemUtils'
 
 /** 强制刷新费用：1 银 = 100 铜 */
@@ -86,26 +86,36 @@ export function ShopPanel() {
         </div>
         <div className="flex min-h-0 justify-center overflow-auto p-0.5">
           <div className="grid w-max max-w-full grid-cols-[repeat(5,3.25rem)] gap-2.5 sm:grid-cols-[repeat(6,3.25rem)] sm:gap-3">
-            {shopItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => handleSelectShopItem(item)}
-                className={`flex h-14 w-14 shrink-0 flex-col rounded border-2 transition-all hover:scale-105 ${
-                  selectedShopItem?.id === item.id
-                    ? 'border-green-500 bg-green-500/20 shadow-lg shadow-green-500/50 dark:border-green-400 dark:bg-green-400/20'
-                    : 'border-border bg-muted/50 hover:border-muted-foreground/30 hover:bg-muted'
-                }`}
-                disabled={isLoading}
-                title={`${item.name} - ${formatCopper(item.buy_price, 1)}`}
-              >
-                <span className="flex min-h-0 flex-1 items-center justify-center text-lg">
-                  {getShopItemIcon(item.type, item.sub_type)}
-                </span>
-                <span className="border-border/50 bg-muted/80 flex shrink-0 items-center justify-center overflow-hidden rounded-b-[calc(0.2rem-2px)] border-t px-1.5 py-1">
-                  <CopperDisplay copper={item.buy_price} size="xs" nowrap maxParts={1} />
-                </span>
-              </button>
-            ))}
+            {shopItems.map(item => {
+              const isSelected = selectedShopItem?.id === item.id
+              const borderColor = isSelected
+                ? undefined
+                : item.quality
+                  ? QUALITY_COLORS[item.quality]
+                  : undefined
+
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handleSelectShopItem(item)}
+                  className={`flex h-14 w-14 shrink-0 flex-col rounded border-2 transition-all hover:scale-105 ${
+                    isSelected
+                      ? 'border-green-500 bg-green-500/20 shadow-lg shadow-green-500/50 dark:border-green-400 dark:bg-green-400/20'
+                      : 'bg-muted/50 hover:border-muted-foreground/30 hover:bg-muted'
+                  }`}
+                  style={borderColor ? { borderColor } : undefined}
+                  disabled={isLoading}
+                  title={`${item.name} - ${formatCopper(item.buy_price, 1)}`}
+                >
+                  <span className="flex min-h-0 flex-1 items-center justify-center text-lg">
+                    {getShopItemIcon(item.type, item.sub_type)}
+                  </span>
+                  <span className="border-border/50 bg-muted/80 flex shrink-0 items-center justify-center overflow-hidden rounded-b-[calc(0.2rem-2px)] border-t px-1.5 py-1">
+                    <CopperDisplay copper={item.buy_price} size="xs" nowrap maxParts={1} />
+                  </span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>

@@ -749,15 +749,18 @@ function EquipmentSlotComponent({
   onClick: () => void
   label?: string
 }) {
+  const borderColor = item ? QUALITY_COLORS[item.quality] : undefined
+
   return (
     <button
       onClick={onClick}
       disabled={!item}
       className={`relative flex h-12 w-12 items-center justify-center rounded border-2 text-xl shadow-sm transition-all ${
         item
-          ? 'border-border bg-secondary hover:border-primary cursor-pointer hover:shadow-md'
+          ? 'bg-secondary cursor-pointer hover:shadow-md'
           : 'border-border bg-card cursor-default border-dashed'
       }`}
+      style={borderColor ? { borderColor } : undefined}
       title={item ? getItemDisplayName(item) : label || SLOT_NAMES[slot]}
     >
       {item ? (
