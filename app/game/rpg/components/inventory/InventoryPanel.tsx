@@ -452,77 +452,176 @@ export function EquipmentGrid({
   equipment: Record<string, GameItem | null>
   onUnequip: (slot: EquipmentSlot) => void
 }) {
+  const [selectedSlot, setSelectedSlot] = useState<EquipmentSlot | null>(null)
+
+  // 获取当前选中的装备
+  const selectedItem = selectedSlot ? equipment[selectedSlot] : null
+
+  const handleUnequip = () => {
+    if (selectedSlot) {
+      onUnequip(selectedSlot)
+      setSelectedSlot(null)
+    }
+  }
+
   return (
-    <div className="mx-auto grid w-[280px] max-w-full grid-cols-3 gap-x-4 gap-y-3 sm:w-[320px] sm:gap-x-5 sm:gap-y-4">
-      <div className="h-12 w-12 shrink-0" aria-hidden />
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="helmet"
-          item={equipment.helmet}
-          onClick={() => equipment.helmet && onUnequip('helmet')}
-        />
+    <>
+      <div className="mx-auto grid w-[280px] max-w-full grid-cols-3 gap-x-4 gap-y-3 sm:w-[320px] sm:gap-x-5 sm:gap-y-4">
+        <div className="h-12 w-12 shrink-0" aria-hidden />
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="helmet"
+            item={equipment.helmet}
+            onClick={() => equipment.helmet && setSelectedSlot('helmet')}
+          />
+        </div>
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="amulet"
+            item={equipment.amulet}
+            onClick={() => equipment.amulet && setSelectedSlot('amulet')}
+          />
+        </div>
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="weapon"
+            item={equipment.weapon}
+            onClick={() => equipment.weapon && setSelectedSlot('weapon')}
+          />
+        </div>
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="armor"
+            item={equipment.armor}
+            onClick={() => equipment.armor && setSelectedSlot('armor')}
+          />
+        </div>
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="gloves"
+            item={equipment.gloves}
+            onClick={() => equipment.gloves && setSelectedSlot('gloves')}
+          />
+        </div>
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="ring1"
+            item={equipment.ring1}
+            onClick={() => equipment.ring1 && setSelectedSlot('ring1')}
+            label="戒指1"
+          />
+        </div>
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="belt"
+            item={equipment.belt}
+            onClick={() => equipment.belt && setSelectedSlot('belt')}
+          />
+        </div>
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="ring2"
+            item={equipment.ring2}
+            onClick={() => equipment.ring2 && setSelectedSlot('ring2')}
+            label="戒指2"
+          />
+        </div>
+        <div className="h-12 w-12 shrink-0" aria-hidden />
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="boots"
+            item={equipment.boots}
+            onClick={() => equipment.boots && setSelectedSlot('boots')}
+          />
+        </div>
+        <div className="h-12 w-12 shrink-0" aria-hidden />
       </div>
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="amulet"
-          item={equipment.amulet}
-          onClick={() => equipment.amulet && onUnequip('amulet')}
-        />
-      </div>
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="weapon"
-          item={equipment.weapon}
-          onClick={() => equipment.weapon && onUnequip('weapon')}
-        />
-      </div>
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="armor"
-          item={equipment.armor}
-          onClick={() => equipment.armor && onUnequip('armor')}
-        />
-      </div>
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="gloves"
-          item={equipment.gloves}
-          onClick={() => equipment.gloves && onUnequip('gloves')}
-        />
-      </div>
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="ring1"
-          item={equipment.ring1}
-          onClick={() => equipment.ring1 && onUnequip('ring1')}
-          label="戒指1"
-        />
-      </div>
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="belt"
-          item={equipment.belt}
-          onClick={() => equipment.belt && onUnequip('belt')}
-        />
-      </div>
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="ring2"
-          item={equipment.ring2}
-          onClick={() => equipment.ring2 && onUnequip('ring2')}
-          label="戒指2"
-        />
-      </div>
-      <div className="h-12 w-12 shrink-0" aria-hidden />
-      <div className="flex justify-center">
-        <EquipmentSlotComponent
-          slot="boots"
-          item={equipment.boots}
-          onClick={() => equipment.boots && onUnequip('boots')}
-        />
-      </div>
-      <div className="h-12 w-12 shrink-0" aria-hidden />
-    </div>
+
+      {/* 装备详情弹出框 - 使用固定定位 */}
+      {selectedItem && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          onClick={() => setSelectedSlot(null)}
+        >
+          <div
+            className="bg-card border-border max-w-[85vw] rounded-lg border shadow-xl"
+            onClick={e => e.stopPropagation()}
+            style={{ width: '320px' }}
+          >
+            <div className="flex flex-col">
+              {/* 头部：图片在左，属性在右 */}
+              <div
+                className="relative flex gap-3 p-3"
+                style={{
+                  background: `linear-gradient(135deg, ${QUALITY_COLORS[selectedItem.quality]}20 0%, ${QUALITY_COLORS[selectedItem.quality]}10 100%)`,
+                  borderBottom: `1px solid ${QUALITY_COLORS[selectedItem.quality]}30`,
+                }}
+              >
+                {/* 物品图片 */}
+                <ItemTipIcon item={selectedItem} className="shrink-0 drop-shadow-lg" />
+                {/* 物品名称和属性 */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h5
+                        className="min-w-0 text-sm leading-tight font-bold break-words sm:text-base"
+                        style={{ color: QUALITY_COLORS[selectedItem.quality] }}
+                      >
+                        {getItemDisplayName(selectedItem)}
+                      </h5>
+                      <span
+                        className="text-xs"
+                        style={{ color: QUALITY_COLORS[selectedItem.quality] }}
+                      >
+                        {QUALITY_NAMES[selectedItem.quality]}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setSelectedSlot(null)}
+                      className="text-muted-foreground hover:text-foreground ml-1 shrink-0 p-1"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  {/* 属性信息 */}
+                  <div className="mt-1 space-y-0.5 text-xs">
+                    {Object.entries(selectedItem.stats || {}).map(([stat, value]) => (
+                      <p key={stat} className="text-green-600 dark:text-green-400">
+                        +{value} {STAT_NAMES[stat] || stat}
+                      </p>
+                    ))}
+                    {selectedItem.affixes?.map((affix, i) => (
+                      <p key={i} className="text-blue-600 dark:text-blue-400">
+                        {Object.entries(affix)
+                          .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
+                          .join(', ')}
+                      </p>
+                    ))}
+                    <p className="text-muted-foreground">
+                      需求等级: {selectedItem.definition?.required_level ?? '—'}
+                    </p>
+                    {selectedItem.sell_price != null && selectedItem.sell_price > 0 && (
+                      <p className="text-yellow-600 dark:text-yellow-400">
+                        卖出: <CopperDisplay copper={selectedItem.sell_price} size="xs" nowrap />
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {/* 操作按钮 */}
+              <div className="border-border bg-muted/30 flex flex-wrap gap-1.5 border-t p-2.5">
+                <button
+                  onClick={handleUnequip}
+                  className="rounded bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700"
+                >
+                  卸下
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -546,7 +645,7 @@ function EquipmentSlotComponent({
           ? 'border-border bg-secondary hover:border-primary cursor-pointer hover:shadow-md'
           : 'border-border bg-card cursor-default border-dashed'
       }`}
-      title={item ? `${getItemDisplayName(item)} (点击卸下)` : label || SLOT_NAMES[slot]}
+      title={item ? getItemDisplayName(item) : label || SLOT_NAMES[slot]}
     >
       {item ? (
         <ItemIcon item={item} className="drop-shadow-sm" />
