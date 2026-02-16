@@ -103,6 +103,7 @@ export function InventoryPanel() {
     sellItem,
     sellItemsByQuality,
     moveItem,
+    sortInventory,
     consumePotion,
     isLoading,
   } = useGameStore()
@@ -288,6 +289,40 @@ export function InventoryPanel() {
                 <span className="hidden sm:inline">{cat.label}</span>
               </button>
             ))}
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="bg-muted text-muted-foreground hover:bg-muted/80 flex items-center gap-1 rounded px-2 py-1.5 text-sm transition-colors"
+                  title="排序"
+                >
+                  <span>排序</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-24 p-1" align="end">
+                <button
+                  type="button"
+                  onClick={() => sortInventory('default')}
+                  className="hover:bg-muted flex w-full items-center rounded px-2 py-1.5 text-left text-sm"
+                >
+                  默认
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sortInventory('quality')}
+                  className="hover:bg-muted flex w-full items-center rounded px-2 py-1.5 text-left text-sm"
+                >
+                  品质
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sortInventory('price')}
+                  className="hover:bg-muted flex w-full items-center rounded px-2 py-1.5 text-left text-sm"
+                >
+                  价格
+                </button>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 

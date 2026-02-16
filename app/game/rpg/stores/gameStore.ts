@@ -104,6 +104,7 @@ interface GameState {
   sellItem: (itemId: number, quantity?: number) => Promise<void>
   sellItemsByQuality: (quality: string) => Promise<{ count: number; total_price: number }>
   moveItem: (itemId: number, toStorage: boolean, slotIndex?: number) => Promise<void>
+  sortInventory: (sortBy: 'quality' | 'price' | 'default') => Promise<void>
 
   // 技能操作
   fetchSkills: () => Promise<void>
@@ -577,6 +578,25 @@ const store: StateCreator<GameState> = (set, get) => ({
         item_id: itemId,
         to_storage: toStorage,
         slot_index: slotIndex,
+        character_id: selectedId,
+      })
+      // 重新获取背包
+      get().fetchInventory()
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  sortInventory: async sortBy => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const selectedId = get().selectedCharacterId
+      if (!selectedId) {
+        set(state => ({ ...state, isLoading: false }))
+        return
+      }
+      await post('/rpg/inventory/sort', {
+        sort_by: sortBy,
         character_id: selectedId,
       })
       // 重新获取背包
