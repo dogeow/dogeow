@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { useGameStore } from '../stores/gameStore'
+import { useGameStore } from '../../stores/gameStore'
 import { CreateCharacter } from './CreateCharacter'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import {

@@ -785,7 +785,7 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   startCombat: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    set(state => ({ ...state, isLoading: true, error: null, combatResult: null }))
     try {
       const selectedId = get().selectedCharacterId
       if (!selectedId) {
@@ -848,11 +848,35 @@ const store: StateCreator<GameState> = (set, get) => ({
       console.log('[GameStore] response.character?.current_hp:', response.character?.current_hp)
       console.log('[GameStore] response.character?.current_mana:', response.character?.current_mana)
       set(state => {
+        // 使用 combat_log_id 或 id 去重，避免同一日志被多次添加
+        const existingLogIds = new Set<number>(
+          state.combatLogs
+            .map(l => {
+              if ('combat_log_id' in l && typeof l.combat_log_id === 'number')
+                return l.combat_log_id
+              if ('id' in l && typeof l.id === 'number') return l.id
+              return null
+            })
+            .filter((id): id is number => id != null)
+        )
+        const responseLogId =
+          'combat_log_id' in response && typeof response.combat_log_id === 'number'
+            ? response.combat_log_id
+            : 'id' in response && typeof response.id === 'number'
+              ? response.id
+              : null
+
         const newLogs =
-          response.combat_log_id != null
+          responseLogId != null && !existingLogIds.has(responseLogId)
             ? [response, ...state.combatLogs].slice(0, 100)
             : state.combatLogs
-        console.log('[GameStore] Updated combatLogs:', newLogs)
+
+        console.log(
+          '[GameStore] executeCombat - combat_log_id:',
+          responseLogId,
+          'new logs count:',
+          newLogs.length
+        )
 
         // 总是更新 currentHp 和 currentMana（使用新值或保持旧值）
         const newCurrentHp = response.character?.current_hp ?? state.currentHp
@@ -996,10 +1020,39 @@ const store: StateCreator<GameState> = (set, get) => ({
       const newCurrentMana = data.current_mana ?? data.character?.current_mana ?? state.currentMana
       console.log('[GameStore] handleCombatUpdate setting currentHp to:', newCurrentHp)
       console.log('[GameStore] handleCombatUpdate setting currentMana to:', newCurrentMana)
+
+      // 使用 combat_log_id 或 id 去重，避免同一日志被多次添加
+      const existingLogIds = new Set<number>(
+        state.combatLogs
+          .map(l => {
+            if ('combat_log_id' in l && typeof l.combat_log_id === 'number') return l.combat_log_id
+            if ('id' in l && typeof l.id === 'number') return l.id
+            return null
+          })
+          .filter((id): id is number => id != null)
+      )
+      const dataLogId =
+        'combat_log_id' in data && typeof data.combat_log_id === 'number'
+          ? data.combat_log_id
+          : 'id' in data && typeof data.id === 'number'
+            ? data.id
+            : null
+
+      const newLogs =
+        dataLogId != null && !existingLogIds.has(dataLogId)
+          ? [data, ...state.combatLogs].slice(0, 100)
+          : state.combatLogs
+
+      console.log(
+        '[GameStore] handleCombatUpdate - combat_log_id:',
+        dataLogId,
+        'new logs count:',
+        newLogs.length
+      )
+
       return {
         combatResult: data,
-        combatLogs:
-          data.combat_log_id != null ? [data, ...state.combatLogs].slice(0, 100) : state.combatLogs,
+        combatLogs: newLogs,
         character: data.character,
         // 只有当新值存在且不为 undefined 时才更新
         ...(newCurrentHp !== undefined && { currentHp: newCurrentHp }),
@@ -1170,7 +1223,7 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   fetchCompendiumMonsterDrops: async (monsterId: number) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    // 不设置全局 isLoading，避免影响战斗界面
     try {
       const response = (await apiGet(
         `/rpg/compendium/monsters/${monsterId}/drops`
@@ -1178,11 +1231,10 @@ const store: StateCreator<GameState> = (set, get) => ({
       set(state => ({
         ...state,
         compendiumMonsterDrops: response,
-        isLoading: false,
       }))
     } catch (error) {
       console.error('[GameStore] Fetch compendium monster drops error:', error)
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      set(state => ({ ...state, error: (error as Error).message }))
     }
   },
 

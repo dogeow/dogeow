@@ -2,15 +2,15 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { useGameStore } from '../stores/gameStore'
-import { EquipmentGrid } from './InventoryPanel'
+import { useGameStore } from '../../stores/gameStore'
+import { EquipmentGrid } from '../inventory/InventoryPanel'
 import {
   CLASS_NAMES,
   STAT_DESCRIPTIONS,
   STAT_NAMES,
   CharacterClass,
   type StatBreakdownItem,
-} from '../types'
+} from '../../types'
 
 const CHARACTER_STATS = ['strength', 'dexterity', 'vitality', 'energy'] as const
 

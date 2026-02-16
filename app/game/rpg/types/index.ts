@@ -71,6 +71,21 @@ export interface StatBreakdownItem {
   total: number
 }
 
+/** 战斗中怪物信息 */
+export interface CombatMonster {
+  id: number
+  name: string
+  type: MonsterType
+  level: number
+  hp: number
+  max_hp: number
+  attack?: number
+  defense?: number
+  experience?: number
+  /** 怪物在战斗阵列中的位置 (0-4) */
+  position?: number
+}
+
 export interface CombatStatsBreakdown {
   attack: StatBreakdownItem
   defense: StatBreakdownItem
@@ -196,6 +211,8 @@ export interface CombatResult {
   defeat?: boolean
   auto_stopped?: boolean
   monster_id?: number
+  /** 多怪物数组 */
+  monsters?: CombatMonster[]
   monster: {
     name: string
     type: MonsterType
@@ -394,6 +411,9 @@ export interface CompendiumItem {
   required_energy: number
   icon?: string
   description?: string
+  drop_rate?: number
+  weight?: number
+  quality?: string
 }
 
 export interface CompendiumMonster {
@@ -416,6 +436,11 @@ export interface CompendiumMonster {
 export interface CompendiumMonsterDrops {
   monster: CompendiumMonster
   drop_table: Record<string, unknown>
+  drop_rates: {
+    item: number
+    gold: number
+    potion: number
+  }
   possible_items: CompendiumItem[]
 }
 

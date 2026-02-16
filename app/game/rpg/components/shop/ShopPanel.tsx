@@ -3,10 +3,10 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { useGameStore } from '../stores/gameStore'
-import { CopperDisplay } from './CopperDisplay'
-import { ShopItem, STAT_NAMES, formatCopper } from '../types'
-import { getShopItemIcon, ITEM_TYPE_NAMES } from '../utils/itemUtils'
+import { useGameStore } from '../../stores/gameStore'
+import { CopperDisplay } from '../shared/CopperDisplay'
+import { ShopItem, STAT_NAMES, formatCopper } from '../../types'
+import { getShopItemIcon, ITEM_TYPE_NAMES } from '../../utils/itemUtils'
 
 /** 商店固定格位数（与仓库相同的表格形式展示） */
 const SHOP_SLOTS = 60

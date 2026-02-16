@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useGameStore } from '../stores/gameStore'
+import { useGameStore } from '../../stores/gameStore'
 import { post } from '@/lib/api'
 
 interface PotionSettings {

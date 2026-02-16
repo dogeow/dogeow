@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback, useState, memo } from 'react'
-import { soundManager } from '../utils/soundManager'
-import { useGameStore } from '../stores/gameStore'
+import { soundManager } from '../../utils/soundManager'
+import { useGameStore } from '../../stores/gameStore'
 
 interface SoundSettingsProps {
   onLogout?: () => void

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback, memo } from 'react'
-import { useGameStore } from '../stores/gameStore'
+import { useGameStore } from '../../stores/gameStore'
 
 interface CreateCharacterProps {
   onCreateSuccess?: () => void

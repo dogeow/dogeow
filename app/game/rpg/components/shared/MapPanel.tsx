@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useMemo, useCallback } from 'react'
-import { useGameStore } from '../stores/gameStore'
-import { MapDefinition, MonsterDefinition } from '../types'
-import { getMapBackgroundStyle } from '../utils/mapBackground'
+import { useGameStore } from '../../stores/gameStore'
+import { MapDefinition, MonsterDefinition } from '../../types'
+import { getMapBackgroundStyle } from '../../utils/mapBackground'
 
 const CN_DIGITS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九']
 

@@ -3,8 +3,8 @@
 import { useState, useMemo, useCallback, memo } from 'react'
 import Image from 'next/image'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { useGameStore } from '../stores/gameStore'
-import { CopperDisplay } from './CopperDisplay'
+import { useGameStore } from '../../stores/gameStore'
+import { CopperDisplay } from '../shared/CopperDisplay'
 import {
   GameItem,
   QUALITY_COLORS,
@@ -12,7 +12,7 @@ import {
   SLOT_NAMES,
   EquipmentSlot,
   STAT_NAMES,
-} from '../types'
+} from '../../types'
 import {
   getItemIconFallback,
   getItemDisplayName,
@@ -22,7 +22,7 @@ import {
   itemMatchesCategory,
   getEquipmentSlot,
   getItemTotalStats,
-} from '../utils/itemUtils'
+} from '../../utils/itemUtils'
 
 // 背包分类 tabs：emoji + 对应物品 type（不显示「全部」按钮，再次点击当前分类即取消选择 = 显示全部）
 const INVENTORY_CATEGORIES = [

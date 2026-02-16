@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { useGameStore } from '../stores/gameStore'
-import { formatCopper } from '../types'
+import { useGameStore } from '../../stores/gameStore'
+import { formatCopper } from '../../types'
 
 interface FloatingText {
   id: number
@@ -42,15 +42,28 @@ export function FloatingTextOverlay() {
     processedResultRef.current = combatResult
 
     const newTexts: FloatingText[] = []
+    const hasMultipleMonsters = combatResult.monsters && combatResult.monsters.length > 1
 
-    // 伤害数字
+    // 怪物受到的伤害 - 显示在战斗区域上方（怪物位置）
     if (combatResult.damage_dealt > 0) {
       newTexts.push({
         id: generateId(),
         text: `-${combatResult.damage_dealt}`,
-        x: Math.random() * 60 + 20,
-        y: Math.random() * 20 + 30,
+        x: Math.random() * 40 + 30,
+        y: Math.random() * 10 + 15,
         color: '#ef4444',
+        type: 'damage',
+      })
+    }
+
+    // 角色受到的伤害 - 显示在战斗区域下方（角色位置）
+    if (combatResult.damage_taken > 0) {
+      newTexts.push({
+        id: generateId(),
+        text: `-${combatResult.damage_taken}`,
+        x: Math.random() * 40 + 30,
+        y: Math.random() * 10 + 65,
+        color: '#f97316',
         type: 'damage',
       })
     }

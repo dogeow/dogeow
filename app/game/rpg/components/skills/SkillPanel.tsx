@@ -2,8 +2,8 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import Image from 'next/image'
-import { useGameStore } from '../stores/gameStore'
-import type { SkillWithLearnedState } from '../types'
+import { useGameStore } from '../../stores/gameStore'
+import type { SkillWithLearnedState } from '../../types'
 
 /** 技能图标：优先 /game/rpg/skills/skill_{id}.png，加载失败则用 emoji/首字 */
 function SkillIcon({
@@ -262,16 +262,17 @@ function SkillCard({
   const skillName = skill.name || '未知技能'
   const skillDescription = skill.description ?? ''
 
+  const cardClass = (() => {
+    if (isSelected)
+      return 'border-primary bg-primary/30 dark:border-primary dark:bg-primary/20 border'
+    if (isLearned) return 'bg-muted/50 hover:bg-muted'
+    return 'bg-muted/30 hover:bg-muted/50'
+  })()
+
   return (
     <button
       onClick={onClick}
-      className={`flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-all sm:p-3 ${
-        isSelected
-          ? 'border-primary bg-primary/30 dark:border-primary dark:bg-primary/20 border'
-          : isLearned
-            ? 'bg-muted/50 hover:bg-muted'
-            : 'bg-muted/30 hover:bg-muted/50'
-      }`}
+      className={`flex w-full items-start gap-3 rounded-lg p-2.5 text-left transition-all sm:p-3 ${cardClass}`}
     >
       <SkillIcon skillId={skill.id} icon={skill.icon} name={skillName} />
       <div className="min-w-0 flex-1">

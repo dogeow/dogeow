@@ -3,9 +3,9 @@
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useGameStore } from '../stores/gameStore'
-import { CompendiumItem, CompendiumMonster, ItemType, STAT_NAMES } from '../types'
-import { getItemIconFallback } from '../utils/itemUtils'
+import { useGameStore } from '../../stores/gameStore'
+import { CompendiumItem, CompendiumMonster, ItemType, STAT_NAMES } from '../../types'
+import { getItemIconFallback } from '../../utils/itemUtils'
 
 type CompendiumTab = 'items' | 'monsters'
 
