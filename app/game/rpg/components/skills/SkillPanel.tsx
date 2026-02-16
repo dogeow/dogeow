@@ -136,6 +136,7 @@ function SkillDetailPanel({ selectedSkill }: { selectedSkill: SkillWithLearnedSt
   const maxLevel = selectedSkill.max_level
   const type = selectedSkill.type
   const cooldown = selectedSkill.cooldown
+  const targetType = selectedSkill.target_type
 
   let damage: number | null = null
   let manaCost: number | null = null
@@ -144,6 +145,8 @@ function SkillDetailPanel({ selectedSkill }: { selectedSkill: SkillWithLearnedSt
     damage = selectedSkill.base_damage + selectedSkill.damage_per_level * (effectiveLevel - 1)
     manaCost = selectedSkill.mana_cost + selectedSkill.mana_cost_per_level * (effectiveLevel - 1)
   }
+
+  const targetTypeText = targetType === 'all' ? '群体' : '单体'
 
   return (
     <div className="bg-card border-border rounded-lg border p-3 sm:p-4">
@@ -172,6 +175,11 @@ function SkillDetailPanel({ selectedSkill }: { selectedSkill: SkillWithLearnedSt
               label="法力消耗"
               value={manaCost!}
               valueClass="text-blue-500 dark:text-blue-400"
+            />
+            <SkillAttr
+              label="攻击范围"
+              value={targetTypeText}
+              valueClass="text-purple-500 dark:text-purple-400"
             />
           </>
         )}
@@ -267,6 +275,8 @@ function SkillCard({
   const skillName = skill.name || '未知技能'
   const skillDescription = skill.description ?? ''
   const skillPointsCost = skill.skill_points_cost ?? 1
+  const isPassive = skill.type === 'passive'
+  const targetTypeText = skill.target_type === 'all' ? '群体' : '单体'
 
   const cardClass = (() => {
     if (isSelected)
@@ -284,18 +294,19 @@ function SkillCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between">
           <span className="text-foreground text-sm font-medium sm:text-base">{skillName}</span>
-          <div className="flex items-center gap-2">
-            {!isLearned && (
-              <span className="text-xs text-yellow-600 dark:text-yellow-400">
-                {skillPointsCost}点
-              </span>
-            )}
-            <span className="text-muted-foreground text-xs">
-              {skill.type === 'active' ? '主动' : '被动'}
+          {!isLearned && (
+            <span className="text-xs text-yellow-600 dark:text-yellow-400">
+              {skillPointsCost}点
             </span>
-          </div>
+          )}
         </div>
         <p className="text-muted-foreground mt-1 text-xs">{skillDescription}</p>
+      </div>
+      <div className="flex flex-col items-end gap-1">
+        <span className="text-muted-foreground text-xs">{isPassive ? '被动' : '主动'}</span>
+        {!isPassive && (
+          <span className="text-xs text-purple-500 dark:text-purple-400">{targetTypeText}</span>
+        )}
       </div>
     </button>
   )
