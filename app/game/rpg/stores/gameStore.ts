@@ -20,6 +20,8 @@ import {
   CompendiumItem,
   CompendiumMonster,
   CompendiumMonsterDrops,
+  OfflineRewardsInfo,
+  ClaimOfflineRewardsResult,
 } from '../types'
 import { apiGet, post, put, del, ApiRequestError } from '@/lib/api'
 import { soundManager } from '../utils/soundManager'
@@ -75,6 +77,9 @@ interface GameState {
   compendiumMonsters: CompendiumMonster[]
   compendiumMonsterDrops: CompendiumMonsterDrops | null
 
+  // 离线奖励状态
+  offlineRewards: OfflineRewardsInfo | null
+
   // Actions
   setActiveTab: (
     tab:
@@ -96,6 +101,10 @@ interface GameState {
   setDifficulty: (difficultyTier: number) => Promise<void>
   setDifficultyForCharacter: (characterId: number, difficultyTier: number) => Promise<void>
   setCharacter: (updater: (prev: GameCharacter | null) => GameCharacter | null) => void
+
+  // 离线奖励
+  checkOfflineRewards: () => Promise<void>
+  claimOfflineRewards: () => Promise<ClaimOfflineRewardsResult>
 
   // 背包操作
   fetchInventory: () => Promise<void>
@@ -181,6 +190,7 @@ const initialState = {
   compendiumItems: [],
   compendiumMonsters: [],
   compendiumMonsterDrops: null,
+  offlineRewards: null,
 }
 
 const store: StateCreator<GameState> = (set, get) => ({
@@ -217,6 +227,8 @@ const store: StateCreator<GameState> = (set, get) => ({
       console.log('[GameStore] Selecting character:', characterId)
       // 设置选中的角色ID
       set(state => ({ ...state, selectedCharacterId: characterId }))
+      // 更新在线时间
+      await post('/rpg/character/online', { character_id: characterId })
       // 获取该角色的详细信息
       await get().fetchCharacter()
     } catch (error) {
@@ -603,6 +615,47 @@ const store: StateCreator<GameState> = (set, get) => ({
       get().fetchInventory()
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  // 离线奖励
+  checkOfflineRewards: async () => {
+    try {
+      const selectedId = get().selectedCharacterId
+      if (!selectedId) return
+
+      const response = (await apiGet(
+        `/rpg/character/offline-rewards?character_id=${selectedId}`
+      )) as OfflineRewardsInfo
+      set(state => ({ ...state, offlineRewards: response }))
+    } catch (error) {
+      console.error('[GameStore] checkOfflineRewards error:', error)
+    }
+  },
+
+  claimOfflineRewards: async () => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const selectedId = get().selectedCharacterId
+      if (!selectedId) {
+        set(state => ({ ...state, isLoading: false }))
+        return { experience: 0, copper: 0, level_up: false, new_level: 0 }
+      }
+
+      const response = (await post('/rpg/character/offline-rewards', {
+        character_id: selectedId,
+      })) as ClaimOfflineRewardsResult
+
+      // 重新获取角色信息
+      await get().fetchCharacter()
+
+      // 清空离线奖励状态
+      set(state => ({ ...state, offlineRewards: null, isLoading: false }))
+
+      return response
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      return { experience: 0, copper: 0, level_up: false, new_level: 0 }
     }
   },
 

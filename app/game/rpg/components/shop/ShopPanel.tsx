@@ -202,36 +202,38 @@ function ItemDetailModal({
 
           {/* 数量选择和购买 */}
           <div className="border-border space-y-3 border-t pt-2">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">数量:</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setBuyQuantity(Math.max(1, buyQuantity - 1))}
-                  className="bg-muted text-foreground hover:bg-secondary h-8 w-8 rounded transition-colors"
-                  disabled={isLoading || buyQuantity <= 1}
-                >
-                  -
-                </button>
-                <input
-                  type="number"
-                  value={buyQuantity}
-                  onChange={e =>
-                    setBuyQuantity(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))
-                  }
-                  className="border-input bg-muted text-foreground w-16 rounded border px-2 py-1 text-center text-sm disabled:opacity-50"
-                  min="1"
-                  max="99"
-                  disabled={isLoading}
-                />
-                <button
-                  onClick={() => setBuyQuantity(Math.min(99, buyQuantity + 1))}
-                  className="bg-muted text-foreground hover:bg-secondary h-8 w-8 rounded transition-colors"
-                  disabled={isLoading || buyQuantity >= 99}
-                >
-                  +
-                </button>
+            {item.type === 'potion' && (
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground text-sm">数量:</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setBuyQuantity(Math.max(1, buyQuantity - 1))}
+                    className="bg-muted text-foreground hover:bg-secondary h-8 w-8 rounded transition-colors"
+                    disabled={isLoading || buyQuantity <= 1}
+                  >
+                    -
+                  </button>
+                  <input
+                    type="number"
+                    value={buyQuantity}
+                    onChange={e =>
+                      setBuyQuantity(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))
+                    }
+                    className="border-input bg-muted text-foreground w-16 rounded border px-2 py-1 text-center text-sm disabled:opacity-50"
+                    min="1"
+                    max="99"
+                    disabled={isLoading}
+                  />
+                  <button
+                    onClick={() => setBuyQuantity(Math.min(99, buyQuantity + 1))}
+                    className="bg-muted text-foreground hover:bg-secondary h-8 w-8 rounded transition-colors"
+                    disabled={isLoading || buyQuantity >= 99}
+                  >
+                    +
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex items-center justify-between text-sm">
               <span className="text-foreground font-medium">总价:</span>

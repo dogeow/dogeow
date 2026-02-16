@@ -470,6 +470,23 @@ export interface CompendiumMonstersResponse {
   monsters: CompendiumMonster[]
 }
 
+/** 离线奖励信息 */
+export interface OfflineRewardsInfo {
+  available: boolean
+  offline_seconds: number
+  experience: number
+  copper: number
+  level_up: boolean
+}
+
+/** 领取离线奖励结果 */
+export interface ClaimOfflineRewardsResult {
+  experience: number
+  copper: number
+  level_up: boolean
+  new_level: number
+}
+
 /** 货币：1金=100银=10000铜。maxParts=1 时只显示一种（金/银/铜取最高位），否则最多两种 */
 export function formatCopper(copper: number, maxParts: number = 2): string {
   const g = Math.floor(copper / 10000)

@@ -17,6 +17,8 @@ import { useCombatWebSocket } from './hooks/useCombatWebSocket'
 import useAuthStore from '@/stores/authStore'
 import { CopperDisplay } from './components/shared/CopperDisplay'
 import { CircularProgress } from './components/shared/CircularProgress'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { toast } from 'sonner'
 
 import './rpg.module.css'
 
@@ -50,11 +52,15 @@ export default function RPGGame() {
     combatStats,
     combatResult,
     experienceTable,
+    offlineRewards,
+    checkOfflineRewards,
+    claimOfflineRewards,
   } = useGameStore()
 
   const { isAuthenticated, loading: authLoading } = useAuthStore()
   const [showCreateView, setShowCreateView] = useState(false)
   const [initialFetchDone, setInitialFetchDone] = useState(false)
+  const [showOfflineRewardsDialog, setShowOfflineRewardsDialog] = useState(false)
   // 视图由数据派生，避免在 effect 中 setState；首次拉取完成前固定为 select 避免闪屏
   let resolvedView: GameView
   if (!initialFetchDone) {
@@ -86,6 +92,17 @@ export default function RPGGame() {
 
   // 战斗WebSocket注册
   useCombatWebSocket(character?.id ?? null)
+
+  // 检查离线奖励
+  useEffect(() => {
+    if (character && selectedCharacterId) {
+      checkOfflineRewards().then(() => {
+        if (offlineRewards?.available) {
+          setShowOfflineRewardsDialog(true)
+        }
+      })
+    }
+  }, [character?.id])
 
   // 自动挂机战斗逻辑，维护自动刷怪定时器
   useEffect(() => {
@@ -240,6 +257,55 @@ export default function RPGGame() {
   return (
     <div className="bg-background text-foreground flex min-h-screen flex-col">
       <FloatingTextOverlay />
+
+      {/* 离线奖励弹窗 */}
+      <Dialog
+        open={showOfflineRewardsDialog}
+        onOpenChange={open => !open && setShowOfflineRewardsDialog(false)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>离线奖励</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center">
+              <p className="text-muted-foreground text-sm">
+                离线 {Math.floor((offlineRewards?.offline_seconds ?? 0) / 3600)} 小时{' '}
+                {Math.floor(((offlineRewards?.offline_seconds ?? 0) % 3600) / 60)} 分钟
+              </p>
+            </div>
+            <div className="flex justify-center gap-8">
+              <div className="text-center">
+                <p className="text-muted-foreground text-xs">经验</p>
+                <p className="text-lg font-bold text-blue-500">
+                  +{offlineRewards?.experience.toLocaleString() ?? 0}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-muted-foreground text-xs">铜币</p>
+                <p className="text-lg font-bold text-yellow-500">
+                  +{offlineRewards?.copper.toLocaleString() ?? 0}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                const result = await claimOfflineRewards()
+                setShowOfflineRewardsDialog(false)
+                if (result.level_up) {
+                  toast.success(`升级到了 ${result.new_level} 级！`)
+                } else {
+                  toast.success('离线奖励已领取')
+                }
+              }}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-lg py-2.5 text-sm font-medium transition-colors"
+            >
+              领取奖励
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 顶部状态栏 */}
       <header
