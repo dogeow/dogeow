@@ -270,11 +270,8 @@ export function InventoryPanel() {
                   }}
                 >
                   <PopoverTrigger asChild>
-                    <button
-                      onClick={() =>
-                        setSelectedItem(prev => (prev?.id === cell.item?.id ? null : cell.item))
-                      }
-                      className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 text-lg shadow-sm transition-all hover:shadow-md ${
+                    <div
+                      className={`relative flex h-14 w-10 shrink-0 flex-col items-center rounded border-2 shadow-sm transition-all hover:shadow-md ${
                         selectedItem?.id === cell.item.id
                           ? 'border-yellow-500 ring-2 ring-yellow-500/50 dark:border-yellow-400 dark:ring-yellow-400/50'
                           : 'border-border'
@@ -291,13 +288,26 @@ export function InventoryPanel() {
                       }}
                       title={getItemDisplayName(cell.item)}
                     >
-                      <ItemIcon item={cell.item} className="drop-shadow-sm" />
-                      {cell.item.quantity > 1 && (
-                        <span className="absolute -right-0.5 -bottom-0.5 flex h-4 w-4 items-center justify-center rounded bg-black/70 text-[10px] font-bold text-white">
-                          {cell.item.quantity}
+                      <button
+                        onClick={() =>
+                          setSelectedItem(prev => (prev?.id === cell.item?.id ? null : cell.item))
+                        }
+                        className="flex h-10 w-full items-center justify-center text-lg"
+                      >
+                        <ItemIcon item={cell.item} className="drop-shadow-sm" />
+                        {cell.item.quantity > 1 && (
+                          <span className="absolute top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded bg-black/70 text-[10px] font-bold text-white">
+                            {cell.item.quantity}
+                          </span>
+                        )}
+                      </button>
+                      {/* 价格显示 */}
+                      <div className="absolute -bottom-0.5 flex w-full items-center justify-center">
+                        <span className="rounded bg-black/70 px-1 text-[9px] font-medium text-yellow-400">
+                          {(cell.item.sell_price ?? 0) * (cell.item.quantity ?? 1)}
                         </span>
-                      )}
-                    </button>
+                      </div>
+                    </div>
                   </PopoverTrigger>
                   <PopoverContent
                     className={`${isEquippable(cell.item) && cell.source === 'inventory' && hasEquippedItem(cell.item) ? 'w-[380px]' : 'w-[280px]'} max-w-[85vw] p-0`}
