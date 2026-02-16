@@ -272,23 +272,96 @@ export function InventoryPanel() {
               {storage.length}/{storageSize}
             </span>
           </button>
-          <div className="ml-auto flex flex-wrap items-center gap-1.5 sm:gap-2">
-            {INVENTORY_CATEGORIES.map(cat => (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategoryId(prev => (prev === cat.id ? '' : cat.id))}
-                className={`rounded px-2 py-1.5 text-sm transition-colors ${
-                  categoryId === cat.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                }`}
-                title={cat.label}
-              >
-                <span className="mr-0.5">{cat.emoji}</span>
-                <span className="hidden sm:inline">{cat.label}</span>
-              </button>
-            ))}
+          <div className="ml-auto flex items-center gap-1.5 sm:gap-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={`rounded px-2 py-1.5 text-sm transition-colors ${
+                    categoryId
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                  }`}
+                  title="筛选"
+                >
+                  <span>筛选</span>
+                  {categoryId && (
+                    <span className="ml-1 text-xs">
+                      {INVENTORY_CATEGORIES.find(c => c.id === categoryId)?.emoji}
+                    </span>
+                  )}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-32 p-1" align="end">
+                <button
+                  type="button"
+                  onClick={() => setCategoryId('')}
+                  className={`hover:bg-muted flex w-full items-center rounded px-2 py-1.5 text-left text-sm ${
+                    !categoryId ? 'bg-muted font-medium' : ''
+                  }`}
+                >
+                  全部
+                </button>
+                {INVENTORY_CATEGORIES.map(cat => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryId(cat.id)}
+                    className={`hover:bg-muted flex w-full items-center rounded px-2 py-1.5 text-left text-sm ${
+                      categoryId === cat.id ? 'bg-muted font-medium' : ''
+                    }`}
+                  >
+                    <span className="mr-2">{cat.emoji}</span>
+                    {cat.label}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
+            {/* 批量回收 - 仅背包显示 */}
+            {!showStorage && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="bg-muted text-muted-foreground hover:bg-muted/80 flex items-center gap-1 rounded px-2 py-1.5 text-sm transition-colors"
+                    title="回收"
+                  >
+                    <span>回收</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-40 p-1" align="end">
+                  <div className="text-muted-foreground mb-1 px-2 text-xs">批量回收装备</div>
+                  {['common', 'magic', 'rare', 'legendary', 'mythic'].map(quality => {
+                    const stats = qualityStats[quality]
+                    if (!stats || stats.count === 0) return null
+
+                    return (
+                      <button
+                        key={quality}
+                        type="button"
+                        onClick={() => handleRecycleQuality(quality)}
+                        disabled={isLoading || recyclingQuality === quality}
+                        className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm transition-opacity hover:opacity-80 disabled:opacity-50"
+                        style={{
+                          backgroundColor: `${QUALITY_COLORS[quality as ItemQuality]}20`,
+                          color: QUALITY_COLORS[quality as ItemQuality],
+                        }}
+                      >
+                        <span>{QUALITY_NAMES[quality as ItemQuality]}</span>
+                        <div className="flex items-center gap-1 text-xs">
+                          <span className="opacity-70">({stats.count})</span>
+                          <span className="text-yellow-400">{stats.totalPrice}</span>
+                          {recyclingQuality === quality && <span className="animate-spin">⏳</span>}
+                        </div>
+                      </button>
+                    )
+                  })}
+                  {Object.values(qualityStats).every(s => s.count === 0) && (
+                    <div className="text-muted-foreground px-2 py-1 text-xs">无可回收装备</div>
+                  )}
+                </PopoverContent>
+              </Popover>
+            )}
             <Popover>
               <PopoverTrigger asChild>
                 <button
@@ -517,41 +590,6 @@ export function InventoryPanel() {
             )}
           </div>
         </div>
-
-        {/* 品质回收按钮 - 仅背包显示 */}
-        {!showStorage && (
-          <div className="border-border mt-3 border-t pt-3">
-            <div className="text-muted-foreground mb-1.5 text-xs">批量回收装备</div>
-            <div className="flex flex-wrap gap-1.5">
-              {['common', 'magic', 'rare', 'legendary', 'mythic'].map(quality => {
-                const stats = qualityStats[quality]
-                if (!stats || stats.count === 0) return null
-
-                return (
-                  <button
-                    key={quality}
-                    onClick={() => handleRecycleQuality(quality)}
-                    disabled={isLoading || recyclingQuality === quality}
-                    className="flex items-center gap-1 rounded px-2 py-1 text-xs transition-opacity hover:opacity-80 disabled:opacity-50"
-                    style={{
-                      backgroundColor: `${QUALITY_COLORS[quality as ItemQuality]}20`,
-                      color: QUALITY_COLORS[quality as ItemQuality],
-                      border: `1px solid ${QUALITY_COLORS[quality as ItemQuality]}40`,
-                    }}
-                  >
-                    <span>{QUALITY_NAMES[quality as ItemQuality]}</span>
-                    <span className="opacity-70">({stats.count})</span>
-                    <span className="text-yellow-400">{stats.totalPrice}</span>
-                    {recyclingQuality === quality && <span className="ml-1 animate-spin">⏳</span>}
-                  </button>
-                )
-              })}
-              {Object.values(qualityStats).every(s => s.count === 0) && (
-                <span className="text-muted-foreground text-xs">无可回收装备</span>
-              )}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
