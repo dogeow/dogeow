@@ -64,9 +64,10 @@ export function SkillPanel() {
 
   return (
     <div className="space-y-3 sm:space-y-4">
+      {/* 技能点 */}
       {character != null && (
-        <div className="bg-muted/50 text-foreground flex items-center justify-between rounded-lg px-3 py-2 sm:px-4 sm:py-2.5">
-          <span className="text-sm font-medium sm:text-base">技能点</span>
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-muted-foreground text-sm sm:text-base">技能点</span>
           <span className="text-primary dark:text-primary text-lg font-bold sm:text-xl">
             {character.skill_points}
           </span>

@@ -211,7 +211,7 @@ export function CombatPanel() {
     <div className="space-y-3 sm:space-y-4">
       {/* 地图选择器 */}
       {currentMap && (
-        <div className="relative" ref={mapDropdownRef}>
+        <div className="relative w-full" ref={mapDropdownRef}>
           <div className="flex items-center justify-between rounded-lg bg-black/70 px-3 py-2">
             <button
               type="button"
@@ -224,9 +224,9 @@ export function CombatPanel() {
           </div>
           {/* 下拉内容 */}
           {mapDropdownOpen && (
-            <div className="absolute top-full left-0 z-20 mt-1 flex h-64 w-80 rounded-lg bg-black/90">
+            <div className="absolute top-full right-0 left-0 z-20 mt-1 flex max-h-[70vh] min-h-64 w-full rounded-lg bg-black/90">
               {/* 左侧：幕数列表 */}
-              <div className="flex w-16 flex-col overflow-y-auto border-r border-white/10">
+              <div className="flex w-16 shrink-0 flex-col overflow-y-auto border-r border-white/10">
                 {actOrder.map(actNum => (
                   <button
                     key={actNum}
@@ -341,45 +341,22 @@ export function CombatPanel() {
             </div>
           </div>
         )}
-        {/* 技能和药品栏（有地图时显示，死亡后不隐藏） */}
-        {currentMap && (
+        {/* 技能栏（有地图时显示） */}
+        {currentMap && activeSkills.length > 0 && (
           <div className="mt-3 overflow-visible pt-3">
-            <div className="flex items-start justify-between gap-4">
-              {/* 技能栏（左侧） */}
-              {activeSkills.length > 0 && (
-                <div className="min-w-0 flex-1">
-                  <p className="text-muted-foreground mb-2 text-xs font-medium sm:text-sm">技能</p>
-                  <div className="overflow-visible">
-                    <BattleSkillBar
-                      activeSkills={activeSkills}
-                      skillsUsed={combatResult?.skills_used}
-                      cooldownSecondsBySkillId={cooldownSecondsBySkillId}
-                      skillCooldownEnd={skillCooldownEnd}
-                      now={now}
-                      enabledSkillIds={enabledSkillIds}
-                      onSkillToggle={toggleEnabledSkill}
-                      disabled={showDeathDialog}
-                    />
-                  </div>
-                </div>
-              )}
-              {/* 药品栏（右侧） */}
-              <div className="shrink-0">
-                <p className="text-muted-foreground mb-2 text-xs font-medium sm:text-sm">药品</p>
-                <div className="flex gap-2">
-                  <PotionButton
-                    type="hp"
-                    inventory={inventory}
-                    onUse={consumePotion}
-                    disabled={isLoading}
-                  />
-                  <PotionButton
-                    type="mp"
-                    inventory={inventory}
-                    onUse={consumePotion}
-                    disabled={isLoading}
-                  />
-                </div>
+            <div className="min-w-0">
+              <p className="text-muted-foreground mb-2 text-xs font-medium sm:text-sm">技能</p>
+              <div className="overflow-visible">
+                <BattleSkillBar
+                  activeSkills={activeSkills}
+                  skillsUsed={combatResult?.skills_used}
+                  cooldownSecondsBySkillId={cooldownSecondsBySkillId}
+                  skillCooldownEnd={skillCooldownEnd}
+                  now={now}
+                  enabledSkillIds={enabledSkillIds}
+                  onSkillToggle={toggleEnabledSkill}
+                  disabled={showDeathDialog}
+                />
               </div>
             </div>
           </div>

@@ -89,39 +89,51 @@ export function CharacterPanel() {
       {combatStats && (
         <PanelCard>
           <h4 className="text-foreground mb-3 text-base font-medium sm:text-lg">战斗属性</h4>
-          <div className="flex flex-wrap gap-2 sm:gap-3">
-            <StatBarWithBreakdown
-              label="攻击力"
-              value={combatStats.attack}
-              icon="⚔️"
-              color="orange"
-              breakdown={statsBreakdown?.attack}
-              format="number"
-            />
-            <StatBarWithBreakdown
-              label="防御力"
-              value={combatStats.defense}
-              icon="🛡️"
-              color="gray"
-              breakdown={statsBreakdown?.defense}
-              format="number"
-            />
-            <StatBarWithBreakdown
-              label="暴击率"
-              value={`${(combatStats.crit_rate * 100).toFixed(1)}%`}
-              icon="💥"
-              color="yellow"
-              breakdown={statsBreakdown?.crit_rate}
-              format="percent"
-            />
-            <StatBarWithBreakdown
-              label="暴击伤害"
-              value={`${(combatStats.crit_damage * 100).toFixed(0)}%`}
-              icon="🔥"
-              color="red"
-              breakdown={statsBreakdown?.crit_damage}
-              format="percent"
-            />
+          <div className="space-y-2 sm:space-y-3">
+            <div className="flex gap-2 sm:gap-3">
+              <div className="flex-1">
+                <StatBarWithBreakdown
+                  label="攻击力"
+                  value={combatStats.attack}
+                  icon="⚔️"
+                  color="orange"
+                  breakdown={statsBreakdown?.attack}
+                  format="number"
+                />
+              </div>
+              <div className="flex-1">
+                <StatBarWithBreakdown
+                  label="防御力"
+                  value={combatStats.defense}
+                  icon="🛡️"
+                  color="gray"
+                  breakdown={statsBreakdown?.defense}
+                  format="number"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 sm:gap-3">
+              <div className="flex-1">
+                <StatBarWithBreakdown
+                  label="暴击率"
+                  value={`${(combatStats.crit_rate * 100).toFixed(1)}%`}
+                  icon="💥"
+                  color="yellow"
+                  breakdown={statsBreakdown?.crit_rate}
+                  format="percent"
+                />
+              </div>
+              <div className="flex-1">
+                <StatBarWithBreakdown
+                  label="暴击伤害"
+                  value={`${(combatStats.crit_damage * 100).toFixed(0)}%`}
+                  icon="🔥"
+                  color="red"
+                  breakdown={statsBreakdown?.crit_damage}
+                  format="percent"
+                />
+              </div>
+            </div>
           </div>
         </PanelCard>
       )}

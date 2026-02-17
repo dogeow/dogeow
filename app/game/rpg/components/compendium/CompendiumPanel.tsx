@@ -161,19 +161,19 @@ export function CompendiumPanel() {
 
           {/* 物品详情 Dialog */}
           <Dialog open={!!selectedItem} onOpenChange={open => !open && setSelectedItem(null)}>
-            <DialogContent className="max-w-md">
+            <DialogContent className="bg-card max-w-md">
               {selectedItem && (
                 <div className="flex gap-4">
                   {/* 左侧图片 */}
                   <button
                     type="button"
-                    className="relative h-[200px] w-[200px] shrink-0 cursor-zoom-in"
+                    className="border-border bg-muted relative flex h-[200px] w-[200px] shrink-0 cursor-zoom-in items-center justify-center rounded-lg border-2"
                     onClick={e => {
                       e.stopPropagation()
                       setViewingImage(`/game/rpg/items/item_${selectedItem.id}_origin.png`)
                     }}
                   >
-                    <span className="absolute inset-0">
+                    <span className="absolute inset-0 rounded-md p-2">
                       <ImageWithFallback
                         src={`/game/rpg/items/item_${selectedItem.id}_origin.png`}
                         fallback={getItemIconFallback({ definition: selectedItem } as any)}
@@ -279,7 +279,7 @@ export function CompendiumPanel() {
             open={!!selectedMonster}
             onOpenChange={open => !open && handleMonsterDialogClose()}
           >
-            <DialogContent className="max-h-[80vh] max-w-md overflow-y-auto">
+            <DialogContent className="bg-card max-h-[80vh] max-w-md overflow-y-auto">
               {compendiumMonsterDrops ? (
                 <div className="space-y-4">
                   {/* 顶部：图片 + 属性 */}

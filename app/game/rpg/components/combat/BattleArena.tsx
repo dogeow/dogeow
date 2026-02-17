@@ -47,6 +47,9 @@ export function BattleArena({
   const effectiveMonsterHp = displayMonsterHp ?? monsterHpBeforeRound ?? finalMonsterHp
   // 检测怪物死亡
   const isMonsterDead = finalMonsterHp <= 0 && maxHp > 0
+  // 检测角色死亡
+  const maxCharacterHp = combatStats?.max_hp ?? 0
+  const isCharacterDead = (currentHp ?? 0) <= 0 && maxCharacterHp > 0
 
   useEffect(() => {
     if (monster == null || maxHp <= 0) {
@@ -127,7 +130,12 @@ export function BattleArena({
       </div>
 
       {/* VS 双剑：点击开始/停止挂机，战斗中播放交击动画 */}
-      <VSSwords isFighting={isFighting} isLoading={isLoading} onToggle={onCombatToggle} />
+      <VSSwords
+        isFighting={isFighting}
+        isLoading={isLoading}
+        isDead={isCharacterDead}
+        onToggle={onCombatToggle}
+      />
 
       {/* 下侧：用户 */}
       <div className="flex flex-col items-center gap-2 p-3 sm:p-4">

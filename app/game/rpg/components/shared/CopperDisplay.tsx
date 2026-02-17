@@ -12,7 +12,7 @@ function parseCopper(copper: number) {
 
 const SIZE_CLASS = {
   xs: { icon: 'h-2.5 w-2.5', text: 'text-[9px]' },
-  sm: { icon: 'h-3 w-3', text: 'text-xs' },
+  sm: { icon: 'h-3 w-3', text: 'text-xs sm:text-sm' },
   md: { icon: 'h-3.5 w-3.5', text: 'text-sm' },
 } as const
 

@@ -24,73 +24,19 @@ import {
   getEquipmentSlot,
   getItemTotalStats,
 } from '../../utils/itemUtils'
+import { ItemIcon, ItemTipIcon, ItemDetailContent, FullComparePanel } from '@/components/game'
 
 // 背包分类 tabs：emoji + 对应物品 type（不显示「全部」按钮，再次点击当前分类即取消选择 = 显示全部）
 const INVENTORY_CATEGORIES = [
   { id: 'weapon', emoji: '⚔️', label: '武器', types: ['weapon'] },
-  {
-    id: 'armor',
-    emoji: '🛡️',
-    label: '防具',
-    types: ['helmet', 'armor', 'gloves', 'boots', 'belt'],
-  },
-  { id: 'accessory', emoji: '💍', label: '饰品', types: ['ring', 'amulet'] },
+  { id: 'armor', emoji: '🛡️', label: '防具', types: ['helmet', 'armor', 'belt'] },
+  { id: 'gloves', emoji: '🧤', label: '手套', types: ['gloves'] },
+  { id: 'boots', emoji: '👢', label: '靴子', types: ['boots'] },
+  { id: 'accessory', emoji: '💍', label: '饰品', types: ['ring'] },
+  { id: 'amulet', emoji: '📿', label: '护身符', types: ['amulet'] },
   { id: 'potion', emoji: '🧪', label: '药水', types: ['potion'] },
   { id: 'gem', emoji: '💎', label: '宝石', types: ['gem'] },
 ] as const
-
-/** 物品图标：优先 /game/rpg/items/item_{definition_id}.png（按 game_item_definitions 生成），加载失败则用 emoji */
-function ItemIcon({ item, className }: { item: GameItem; className?: string }) {
-  const definitionId = item.definition?.id
-  const fallback = getItemIconFallback(item)
-  const [useImg, setUseImg] = useState(definitionId != null)
-  const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
-  return (
-    <span
-      className={`relative inline-flex h-full w-full items-center justify-center ${className ?? ''}`}
-    >
-      {useImg && src ? (
-        <Image
-          src={src}
-          alt=""
-          fill
-          className="object-contain"
-          sizes="48px"
-          onError={() => setUseImg(false)}
-        />
-      ) : (
-        <span className="drop-shadow-sm">{fallback}</span>
-      )}
-    </span>
-  )
-}
-
-/** 物品 tip 中的大图标 */
-function ItemTipIcon({ item, className }: { item: GameItem; className?: string }) {
-  const definitionId = item.definition?.id
-  const fallback = getItemIconFallback(item)
-  const [useImg, setUseImg] = useState(definitionId != null)
-  const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
-  return (
-    <span
-      className={`relative inline-flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-lg border-2 shadow-sm ${className ?? ''}`}
-      style={{ borderColor: QUALITY_COLORS[item.quality] }}
-    >
-      {useImg && src ? (
-        <Image
-          src={src}
-          alt=""
-          fill
-          className="rounded-md object-contain p-1"
-          sizes="100px"
-          onError={() => setUseImg(false)}
-        />
-      ) : (
-        <span className="text-5xl drop-shadow-sm">{fallback}</span>
-      )}
-    </span>
-  )
-}
 
 export function InventoryPanel() {
   const {
@@ -115,6 +61,7 @@ export function InventoryPanel() {
 
   // 品质回收相关状态
   const [recyclingQuality, setRecyclingQuality] = useState<string | null>(null)
+  const [sortOpen, setSortOpen] = useState(false)
 
   // 计算每个品质的装备数量和总价
   const qualityStats = useMemo(() => {
@@ -329,40 +276,40 @@ export function InventoryPanel() {
                     <span>回收</span>
                   </button>
                 </PopoverTrigger>
-                <PopoverContent className="w-40 p-1" align="end">
-                  <div className="text-muted-foreground mb-1 px-2 text-xs">批量回收装备</div>
+                <PopoverContent className="w-48 space-y-1 p-2" align="end">
                   {['common', 'magic', 'rare', 'legendary', 'mythic'].map(quality => {
-                    const stats = qualityStats[quality]
-                    if (!stats || stats.count === 0) return null
+                    const stats = qualityStats[quality] || { count: 0, totalPrice: 0 }
+                    const isDisabled = stats.count === 0
 
                     return (
                       <button
                         key={quality}
                         type="button"
                         onClick={() => handleRecycleQuality(quality)}
-                        disabled={isLoading || recyclingQuality === quality}
-                        className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm transition-opacity hover:opacity-80 disabled:opacity-50"
+                        disabled={isLoading || recyclingQuality === quality || isDisabled}
+                        className="flex w-full items-center justify-between rounded px-2 py-2 text-left text-sm transition-opacity hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-50"
                         style={{
-                          backgroundColor: `${QUALITY_COLORS[quality as ItemQuality]}20`,
-                          color: QUALITY_COLORS[quality as ItemQuality],
+                          backgroundColor: `${QUALITY_COLORS[quality as ItemQuality]}${isDisabled ? '10' : '20'}`,
+                          color: isDisabled
+                            ? `${QUALITY_COLORS[quality as ItemQuality]}60`
+                            : QUALITY_COLORS[quality as ItemQuality],
                         }}
                       >
-                        <span>{QUALITY_NAMES[quality as ItemQuality]}</span>
-                        <div className="flex items-center gap-1 text-xs">
-                          <span className="opacity-70">({stats.count})</span>
-                          <span className="text-yellow-400">{stats.totalPrice}</span>
+                        <span>
+                          {QUALITY_NAMES[quality as ItemQuality]}
+                          <span className="ml-1 text-xs opacity-70">×{stats.count}</span>
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <CopperDisplay copper={stats.totalPrice} size="xs" />
                           {recyclingQuality === quality && <span className="animate-spin">⏳</span>}
-                        </div>
+                        </span>
                       </button>
                     )
                   })}
-                  {Object.values(qualityStats).every(s => s.count === 0) && (
-                    <div className="text-muted-foreground px-2 py-1 text-xs">无可回收装备</div>
-                  )}
                 </PopoverContent>
               </Popover>
             )}
-            <Popover>
+            <Popover open={sortOpen} onOpenChange={setSortOpen}>
               <PopoverTrigger asChild>
                 <button
                   type="button"
@@ -375,21 +322,30 @@ export function InventoryPanel() {
               <PopoverContent className="w-24 p-1" align="end">
                 <button
                   type="button"
-                  onClick={() => sortInventory('default')}
+                  onClick={() => {
+                    sortInventory('default')
+                    setSortOpen(false)
+                  }}
                   className="hover:bg-muted flex w-full items-center rounded px-2 py-1.5 text-left text-sm"
                 >
                   默认
                 </button>
                 <button
                   type="button"
-                  onClick={() => sortInventory('quality')}
+                  onClick={() => {
+                    sortInventory('quality')
+                    setSortOpen(false)
+                  }}
                   className="hover:bg-muted flex w-full items-center rounded px-2 py-1.5 text-left text-sm"
                 >
                   品质
                 </button>
                 <button
                   type="button"
-                  onClick={() => sortInventory('price')}
+                  onClick={() => {
+                    sortInventory('price')
+                    setSortOpen(false)
+                  }}
                   className="hover:bg-muted flex w-full items-center rounded px-2 py-1.5 text-left text-sm"
                 >
                   价格
@@ -451,136 +407,144 @@ export function InventoryPanel() {
                     </div>
                   </PopoverTrigger>
                   <PopoverContent
-                    className={`${isEquippable(cell.item) && cell.source === 'inventory' && hasEquippedItem(cell.item) ? 'w-[380px]' : 'w-[280px]'} max-w-[85vw] p-0`}
+                    className={`${isEquippable(cell.item) && cell.source === 'inventory' && hasEquippedItem(cell.item) ? 'w-[420px]' : 'w-[280px]'} max-w-[85vw] p-0`}
                     side="bottom"
                     align="center"
                     sideOffset={8}
                     collisionPadding={12}
                   >
-                    <div className="flex">
-                      {/* 对比面板 - 左边 */}
+                    <div className="flex flex-col">
+                      {/* 对比面板 - 有对比时显示 */}
                       {isEquippable(cell.item) &&
                         cell.source === 'inventory' &&
                         hasEquippedItem(cell.item) && (
-                          <EquipmentComparePanel
+                          <FullComparePanel
                             newItem={cell.item}
                             equippedItem={getEquippedItem(cell.item)!}
+                            actions={['equip', 'store', 'sell']}
+                            onAction={action => {
+                              if (action === 'equip') handleEquip()
+                              else if (action === 'store') handleMove(true)
+                              else if (action === 'sell') handleSell()
+                            }}
                           />
                         )}
-                      {/* 物品详情 - 右边 */}
-                      <div className="flex flex-1 flex-col">
-                        {/* 头部：图片在左，属性在右 */}
-                        <div
-                          className="relative flex gap-3 p-3"
-                          style={{
-                            background: `linear-gradient(135deg, ${QUALITY_COLORS[cell.item.quality]}20 0%, ${QUALITY_COLORS[cell.item.quality]}10 100%)`,
-                            borderBottom: `1px solid ${QUALITY_COLORS[cell.item.quality]}30`,
-                          }}
-                        >
-                          {/* 物品图片 */}
-                          <ItemTipIcon item={cell.item} className="shrink-0 drop-shadow-lg" />
-                          {/* 物品名称和属性 */}
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <h5
-                                  className="min-w-0 text-sm leading-tight font-bold break-words sm:text-base"
-                                  style={{ color: QUALITY_COLORS[cell.item.quality] }}
+                      {/* 物品详情 - 无对比时 */}
+                      {!hasEquippedItem(cell.item) && (
+                        <div className="flex flex-1 flex-col">
+                          {/* 头部：图片在左，属性在右 */}
+                          <div
+                            className="relative flex gap-3 p-3"
+                            style={{
+                              background: `linear-gradient(135deg, ${QUALITY_COLORS[cell.item.quality]}20 0%, ${QUALITY_COLORS[cell.item.quality]}10 100%)`,
+                              borderBottom: `1px solid ${QUALITY_COLORS[cell.item.quality]}30`,
+                            }}
+                          >
+                            {/* 物品图片 */}
+                            <ItemTipIcon item={cell.item} className="shrink-0 drop-shadow-lg" />
+                            {/* 物品名称和属性 */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <h5
+                                    className="min-w-0 text-sm leading-tight font-bold break-words sm:text-base"
+                                    style={{ color: QUALITY_COLORS[cell.item.quality] }}
+                                  >
+                                    {getItemDisplayName(cell.item)}
+                                  </h5>
+                                  <span
+                                    className="text-xs"
+                                    style={{ color: QUALITY_COLORS[cell.item.quality] }}
+                                  >
+                                    {QUALITY_NAMES[cell.item.quality]}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => setSelectedItem(null)}
+                                  className="text-muted-foreground hover:text-foreground ml-1 shrink-0 p-1"
                                 >
-                                  {getItemDisplayName(cell.item)}
-                                </h5>
-                                <span
-                                  className="text-xs"
-                                  style={{ color: QUALITY_COLORS[cell.item.quality] }}
-                                >
-                                  {QUALITY_NAMES[cell.item.quality]}
-                                </span>
+                                  ✕
+                                </button>
                               </div>
-                              <button
-                                onClick={() => setSelectedItem(null)}
-                                className="text-muted-foreground hover:text-foreground ml-1 shrink-0 p-1"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                            {/* 属性信息 */}
-                            <div className="mt-1 space-y-0.5 text-xs">
-                              {Object.entries(cell.item.stats || {}).map(([stat, value]) => (
-                                <p key={stat} className="text-green-600 dark:text-green-400">
-                                  +{value} {STAT_NAMES[stat] || stat}
+                              {/* 属性信息 */}
+                              <div className="mt-1 space-y-0.5 text-xs">
+                                {Object.entries(cell.item.stats || {}).map(([stat, value]) => (
+                                  <p key={stat} className="text-green-600 dark:text-green-400">
+                                    +{value} {STAT_NAMES[stat] || stat}
+                                  </p>
+                                ))}
+                                {cell.item.affixes?.map((affix, i) => (
+                                  <p key={i} className="text-blue-600 dark:text-blue-400">
+                                    {Object.entries(affix)
+                                      .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
+                                      .join(', ')}
+                                  </p>
+                                ))}
+                                <p className="text-muted-foreground">
+                                  需求等级: {cell.item.definition?.required_level ?? '—'}
                                 </p>
-                              ))}
-                              {cell.item.affixes?.map((affix, i) => (
-                                <p key={i} className="text-blue-600 dark:text-blue-400">
-                                  {Object.entries(affix)
-                                    .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
-                                    .join(', ')}
-                                </p>
-                              ))}
-                              <p className="text-muted-foreground">
-                                需求等级: {cell.item.definition?.required_level ?? '—'}
-                              </p>
-                              {cell.item.definition?.buy_price != null &&
-                                cell.item.definition.buy_price > 0 && (
-                                  <p className="text-purple-600 dark:text-purple-400">
-                                    售价:{' '}
-                                    <CopperDisplay
-                                      copper={cell.item.definition.buy_price}
-                                      size="xs"
-                                      nowrap
-                                    />
+                                {cell.item.definition?.buy_price != null &&
+                                  cell.item.definition.buy_price > 0 && (
+                                    <p className="text-purple-600 dark:text-purple-400">
+                                      售价:{' '}
+                                      <CopperDisplay
+                                        copper={cell.item.definition.buy_price}
+                                        size="xs"
+                                        nowrap
+                                      />
+                                    </p>
+                                  )}
+                                {cell.item.sell_price != null && cell.item.sell_price > 0 && (
+                                  <p className="text-yellow-600 dark:text-yellow-400">
+                                    卖出:{' '}
+                                    <CopperDisplay copper={cell.item.sell_price} size="xs" nowrap />
                                   </p>
                                 )}
-                              {cell.item.sell_price != null && cell.item.sell_price > 0 && (
-                                <p className="text-yellow-600 dark:text-yellow-400">
-                                  卖出:{' '}
-                                  <CopperDisplay copper={cell.item.sell_price} size="xs" nowrap />
-                                </p>
-                              )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        {/* 操作按钮 */}
-                        <div className="border-border bg-muted/30 flex flex-wrap gap-1.5 border-t p-2.5">
-                          {cell.source === 'inventory' &&
-                            cell.item.definition?.type === 'potion' && (
-                              <button
-                                onClick={handleUsePotion}
-                                disabled={isLoading}
-                                className="rounded bg-violet-600 px-3 py-1.5 text-xs text-white hover:bg-violet-700 disabled:opacity-50"
-                              >
-                                使用
-                              </button>
-                            )}
-                          {cell.source === 'inventory' &&
-                            cell.item.definition?.type !== 'potion' &&
-                            cell.item.definition?.type !== 'gem' && (
-                              <button
-                                onClick={handleEquip}
-                                disabled={isLoading}
-                                className="rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
-                              >
-                                装备
-                              </button>
-                            )}
-                          <button
-                            onClick={() => handleMove(cell.source === 'inventory')}
-                            disabled={isLoading}
-                            className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
-                          >
-                            {cell.source === 'storage' ? '取回' : '存入'}
-                          </button>
-                          {cell.source === 'inventory' && (
+                          {/* 操作按钮 */}
+                          <div className="border-border bg-muted/30 flex flex-wrap gap-1.5 border-t p-2.5">
+                            {cell.source === 'inventory' &&
+                              cell.item.definition?.type === 'potion' && (
+                                <button
+                                  onClick={handleUsePotion}
+                                  disabled={isLoading}
+                                  className="rounded bg-violet-600 px-3 py-1.5 text-xs text-white hover:bg-violet-700 disabled:opacity-50"
+                                >
+                                  使用
+                                </button>
+                              )}
+                            {cell.source === 'inventory' &&
+                              cell.item.definition?.type !== 'potion' &&
+                              cell.item.definition?.type !== 'gem' && (
+                                <button
+                                  onClick={handleEquip}
+                                  disabled={isLoading}
+                                  className="rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
+                                >
+                                  装备
+                                </button>
+                              )}
                             <button
-                              onClick={handleSell}
+                              onClick={() => handleMove(cell.source === 'inventory')}
                               disabled={isLoading}
-                              className="rounded bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700 disabled:opacity-50"
+                              className="rounded bg-blue-600 px-3 py-1.5 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
                             >
-                              出售
+                              {cell.source === 'storage' ? '取回' : '存入'}
                             </button>
-                          )}
+                            {cell.source === 'inventory' && (
+                              <button
+                                onClick={handleSell}
+                                disabled={isLoading}
+                                className="rounded bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700 disabled:opacity-50"
+                              >
+                                出售
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </PopoverContent>
                 </Popover>
@@ -816,86 +780,5 @@ function EmptySlot() {
       className="border-border bg-card flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 border-dashed"
       aria-hidden
     />
-  )
-}
-
-/** 装备对比面板 - 显示在tip的左边 */
-function EquipmentComparePanel({
-  newItem,
-  equippedItem,
-}: {
-  newItem: GameItem
-  equippedItem: GameItem
-}) {
-  const newStats = getItemTotalStats(newItem)
-  const equippedStats = getItemTotalStats(equippedItem)
-
-  // 合并所有属性键
-  const allStatKeys = Array.from(new Set([...Object.keys(newStats), ...Object.keys(equippedStats)]))
-
-  return (
-    <div className="border-border bg-muted/20 flex w-[100px] shrink-0 flex-col border-r">
-      <div
-        className="p-2 text-center text-xs font-medium"
-        style={{
-          background: `linear-gradient(135deg, ${QUALITY_COLORS[equippedItem.quality]}20 0%, ${QUALITY_COLORS[equippedItem.quality]}10 100%)`,
-          borderBottom: `1px solid ${QUALITY_COLORS[equippedItem.quality]}30`,
-        }}
-      >
-        当前装备
-      </div>
-      <div className="p-2">
-        {/* 已装备物品图标 */}
-        <div className="mb-1 flex justify-center">
-          <div
-            className="relative flex h-9 w-9 items-center justify-center rounded border-2"
-            style={{ borderColor: QUALITY_COLORS[equippedItem.quality] }}
-          >
-            <ItemIcon item={equippedItem} className="drop-shadow-sm" />
-          </div>
-        </div>
-        {/* 已装备物品名称 */}
-        <div className="mb-1 text-center">
-          <span
-            className="text-sm font-bold"
-            style={{ color: QUALITY_COLORS[equippedItem.quality] }}
-          >
-            {getItemDisplayName(equippedItem)}
-          </span>
-        </div>
-        {/* 对比属性 - 只显示不同的属性 */}
-        <div className="space-y-1 text-xs">
-          {allStatKeys
-            .filter(stat => {
-              const newValue = newStats[stat] || 0
-              const equippedValue = equippedStats[stat] || 0
-              return newValue !== equippedValue
-            })
-            .map(stat => {
-              const newValue = newStats[stat] || 0
-              const equippedValue = equippedStats[stat] || 0
-              const diff = newValue - equippedValue
-              return (
-                <div key={stat} className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{STAT_NAMES[stat] || stat}</span>
-                  <span className="font-medium">
-                    {diff > 0 ? (
-                      <span className="text-green-500">+{diff}</span>
-                    ) : (
-                      <span className="text-red-500">{diff}</span>
-                    )}
-                  </span>
-                </div>
-              )
-            })}
-        </div>
-        {/* 当前装备价格 */}
-        {equippedItem.sell_price != null && equippedItem.sell_price > 0 && (
-          <div className="mt-1 text-center text-xs text-yellow-600 dark:text-yellow-400">
-            卖出: <CopperDisplay copper={equippedItem.sell_price} size="xs" nowrap />
-          </div>
-        )}
-      </div>
-    </div>
   )
 }

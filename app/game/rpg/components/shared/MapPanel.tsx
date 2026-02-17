@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { MapDefinition, MonsterDefinition } from '../../types'
 import { getMapBackgroundStyle } from '../../utils/mapBackground'
+import { MonsterInfoDialog } from '../combat/MonsterInfoDialog'
 
 const CN_DIGITS = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九']
 
@@ -13,19 +14,27 @@ const MONSTER_TYPE_LABEL: Record<string, string> = {
   boss: 'Boss',
 }
 
-const MonsterList = ({ monsters }: { monsters: MonsterDefinition[] }) => {
+const MonsterList = ({
+  monsters,
+  onMonsterClick,
+}: {
+  monsters: MonsterDefinition[]
+  onMonsterClick: (monster: MonsterDefinition) => void
+}) => {
   if (!monsters?.length) return null
   return (
     <div className="text-muted-foreground flex flex-wrap items-center gap-1.5 text-xs">
       <span className="shrink-0">怪物:</span>
       {monsters.map(m => (
-        <span
+        <button
           key={m.id}
-          className="bg-muted rounded px-1.5 py-0.5"
+          type="button"
+          className="bg-muted hover:bg-muted/80 cursor-pointer rounded px-1.5 py-0.5 transition-colors"
           title={`${m.name} Lv.${m.level} (${MONSTER_TYPE_LABEL[m.type] ?? m.type})`}
+          onClick={() => onMonsterClick(m)}
         >
           {m.name}
-        </span>
+        </button>
       ))}
     </div>
   )
@@ -117,15 +126,6 @@ const MapDetailDialog = ({
             </div>
           ) : null}
           <div className="flex gap-2">
-            {canShowEnter && (
-              <button
-                onClick={() => onEnter(map.id)}
-                disabled={isLoading}
-                className="flex-1 rounded bg-green-600 py-2 text-white hover:bg-green-700 disabled:opacity-50"
-              >
-                进入地图
-              </button>
-            )}
             {canTeleport && (
               <button
                 onClick={() => onTeleport(map.id)}
@@ -153,6 +153,7 @@ export function MapPanel() {
     useGameStore()
 
   const [selectedMap, setSelectedMap] = useState<MapDefinition | null>(null)
+  const [selectedMonster, setSelectedMonster] = useState<MonsterDefinition | null>(null)
   const [activeAct, setActiveAct] = useState(1)
 
   const handleEnter = useCallback(
@@ -170,6 +171,22 @@ export function MapPanel() {
     },
     [teleportToMap]
   )
+
+  const handleMonsterClick = useCallback((monster: MonsterDefinition) => {
+    setSelectedMonster(monster)
+  }, [])
+
+  // 将 MonsterDefinition 转换为 MonsterInfoDialog 需要的 CombatMonster 格式
+  const monsterForDialog = selectedMonster
+    ? {
+        id: selectedMonster.id,
+        name: selectedMonster.name,
+        type: selectedMonster.type,
+        level: selectedMonster.level,
+        hp: selectedMonster.hp_base,
+        max_hp: selectedMonster.hp_base,
+      }
+    : null
 
   // 按章节分组
   const mapsByAct = useMemo(() => {
@@ -236,7 +253,7 @@ export function MapPanel() {
                           : 'border-border hover:border-blue-500 dark:hover:border-blue-400'
                       }`}
                       style={getMapBackgroundStyle(map)}
-                      onClick={() => setSelectedMap(map)}
+                      onClick={() => !isCurrentMap && enterMap(map.id)}
                       tabIndex={0}
                       role="button"
                     >
@@ -269,7 +286,12 @@ export function MapPanel() {
                             )}
                           </div>
                         </div>
-                        {!!map.monsters?.length && <MonsterList monsters={map.monsters} />}
+                        {!!map.monsters?.length && (
+                          <MonsterList
+                            monsters={map.monsters}
+                            onMonsterClick={handleMonsterClick}
+                          />
+                        )}
                       </div>
                     </div>
                   )
@@ -279,6 +301,11 @@ export function MapPanel() {
           )}
         </div>
       </div>
+
+      {/* 怪物信息弹窗 */}
+      {monsterForDialog && (
+        <MonsterInfoDialog monster={monsterForDialog} onClose={() => setSelectedMonster(null)} />
+      )}
 
       {/* 地图详情弹窗 */}
       {selectedMap && (

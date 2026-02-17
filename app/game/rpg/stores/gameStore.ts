@@ -946,7 +946,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         }),
       }).catch(() => {})
       // #endregion
-      await post('/rpg/combat/start', body)
+      const response = await post<{ message?: string }>('/rpg/combat/start', body)
       // #region agent log
       fetch('http://127.0.0.1:7242/ingest/ac3282d5-f86a-44d0-8cac-a78210bb3b66', {
         method: 'POST',
@@ -961,13 +961,25 @@ const store: StateCreator<GameState> = (set, get) => ({
         }),
       }).catch(() => {})
       // #endregion
-      soundManager.play('combat_start')
-      set(state => ({
-        ...state,
-        isFighting: true,
-        character: state.character ? { ...state.character, is_fighting: true } : null,
-        isLoading: false,
-      }))
+      // 如果是复活（角色已死亡），刷新角色数据
+      if (response.message?.includes('复活')) {
+        await get().fetchCharacter()
+        // 复活后开始战斗
+        set(state => ({
+          ...state,
+          isFighting: true,
+          character: state.character ? { ...state.character, is_fighting: true } : null,
+          isLoading: false,
+        }))
+      } else {
+        soundManager.play('combat_start')
+        set(state => ({
+          ...state,
+          isFighting: true,
+          character: state.character ? { ...state.character, is_fighting: true } : null,
+          isLoading: false,
+        }))
+      }
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }
