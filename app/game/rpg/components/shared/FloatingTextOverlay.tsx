@@ -42,33 +42,8 @@ export function FloatingTextOverlay() {
     processedResultRef.current = combatResult
 
     const newTexts: FloatingText[] = []
-    const hasMultipleMonsters = combatResult.monsters && combatResult.monsters.length > 1
 
-    // 怪物受到的伤害 - 显示在战斗区域上方（怪物位置）
-    if (combatResult.damage_dealt > 0) {
-      newTexts.push({
-        id: generateId(),
-        text: `-${combatResult.damage_dealt}`,
-        x: Math.random() * 40 + 30,
-        y: Math.random() * 10 + 15,
-        color: '#ef4444',
-        type: 'damage',
-      })
-    }
-
-    // 角色受到的伤害 - 显示在战斗区域下方（角色位置）
-    if (combatResult.damage_taken > 0) {
-      newTexts.push({
-        id: generateId(),
-        text: `-${combatResult.damage_taken}`,
-        x: Math.random() * 40 + 30,
-        y: Math.random() * 10 + 65,
-        color: '#f97316',
-        type: 'damage',
-      })
-    }
-
-    // 胜利信息
+    // 胜利信息 - 怪物头顶已有伤害显示，这里只显示胜利相关的信息
     if (combatResult.victory) {
       if (combatResult.copper_gained > 0) {
         newTexts.push({

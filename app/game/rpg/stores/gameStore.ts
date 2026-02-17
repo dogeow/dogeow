@@ -1127,7 +1127,8 @@ const store: StateCreator<GameState> = (set, get) => ({
     set(state => ({ ...state, shouldAutoCombat: should }))
   },
 
-  toggleEnabledSkill: (skillId: number) => {
+  toggleEnabledSkill: async (skillId: number) => {
+    const wasFighting = get().isFighting
     set(state => {
       const ids = state.enabledSkillIds
       const has = ids.includes(skillId)
@@ -1136,6 +1137,21 @@ const store: StateCreator<GameState> = (set, get) => ({
         enabledSkillIds: has ? ids.filter(id => id !== skillId) : [...ids, skillId],
       }
     })
+    // 战斗进行中时，同步更新后端技能配置
+    if (wasFighting) {
+      const selectedId = get().selectedCharacterId
+      const enabledIds = get().enabledSkillIds
+      if (selectedId) {
+        try {
+          await post('/rpg/combat/skills', {
+            character_id: selectedId,
+            skill_ids: enabledIds,
+          })
+        } catch (error) {
+          console.error('[GameStore] Failed to update combat skills:', error)
+        }
+      }
+    }
   },
 
   consumePotion: async (itemId: number) => {
@@ -1173,11 +1189,6 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   // WebSocket 事件处理
   handleCombatUpdate: data => {
-    console.log('[GameStore] handleCombatUpdate received:', data)
-    console.log('[GameStore] data.current_hp (top level):', data.current_hp)
-    console.log('[GameStore] data.current_mana (top level):', data.current_mana)
-    console.log('[GameStore] data.character?.current_hp:', data.character?.current_hp)
-    console.log('[GameStore] data.character?.current_mana:', data.character?.current_mana)
     if (data.victory) {
       soundManager.play('combat_victory')
       if (data.loot?.item) {

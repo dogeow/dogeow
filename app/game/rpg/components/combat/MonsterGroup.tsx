@@ -20,13 +20,17 @@ export function MonsterGroup({
   skillTargetPositions?: number[]
 }) {
   const prevMonstersRef = useRef<MonsterWithMeta[]>([])
+  // 存储上一次的 instance_id，用于检测新怪物
+  const prevInstanceIdsRef = useRef<Set<string>>(new Set())
+  // 存储当前新出现的怪物 instance_id（立即可用，不需要等待状态更新）
+  const newAppearingRef = useRef<Set<string>>(new Set())
   const [damageTexts, setDamageTexts] = useState<Record<string, number>>({})
-  // 上一帧的怪物 keys，用于渲染时计算 newMonsters（ref 不能在 render 中读取）
-  const [prevMonsterKeys, setPrevMonsterKeys] = useState<string[]>([])
   // 选中的怪物（用于弹窗显示）
   const [selectedMonster, setSelectedMonster] = useState<MonsterWithMeta | null>(null)
   // 记录死亡的怪物，用于触发动画
   const [deadMonsters, setDeadMonsters] = useState<Set<string>>(new Set())
+  // 记录需要显示出现动画的怪物 instance_id
+  const [appearingMonsters, setAppearingMonsters] = useState<Set<string>>(new Set())
   // 技能图标显示状态：position -> skill info
   const [skillIcons, setSkillIcons] = useState<
     Record<number, { skillId: number; icon: string | null; name: string }>
@@ -60,28 +64,63 @@ export function MonsterGroup({
     [monsters]
   )
 
-  // 上一帧 keys 的 Set，用于计算 newMonsters（所有 hooks 必须在 early return 之前）
-  const prevKeysSet = useMemo(() => new Set(prevMonsterKeys), [prevMonsterKeys])
-  const newMonsters = useMemo(
-    () => validMonsters.filter(m => !prevKeysSet.has(`${m.id}-${m.level}`)),
-    [validMonsters, prevKeysSet]
-  )
-
-  // 检测怪物掉血并显示伤害数字；下一帧的 prevMonsterKeys 用 queueMicrotask 延迟更新以避免 effect 内同步 setState
+  // 检测怪物掉血并显示伤害数字，以及检测新怪物
   useEffect(() => {
+    // 检测新怪物：通过比较 instance_id
+    const currentInstanceIds = new Set(validMonsters.map(m => m.instance_id).filter(Boolean))
+    const prevInstanceIds = prevInstanceIdsRef.current
+
+    // 找出新出现的怪物 instance_id
+    const newAppearing: string[] = []
+    currentInstanceIds.forEach(instanceId => {
+      if (instanceId && !prevInstanceIds.has(instanceId)) {
+        newAppearing.push(instanceId)
+      }
+    })
+
+    if (newAppearing.length > 0) {
+      console.log('[MonsterGroup] New monsters appearing:', newAppearing)
+      // 立即更新 ref，用于渲染时判断
+      newAppearingRef.current = new Set(newAppearing)
+      queueMicrotask(() => {
+        setAppearingMonsters(prev => {
+          const next = new Set(prev)
+          newAppearing.forEach(id => next.add(id))
+          return next
+        })
+      })
+      // 1.2秒后移除动画标记
+      setTimeout(() => {
+        setAppearingMonsters(prev => {
+          const next = new Set(prev)
+          newAppearing.forEach(id => next.delete(id))
+          return next
+        })
+        newAppearingRef.current.delete(newAppearing[0])
+      }, 1200)
+    }
+
+    // 更新上一次的 instance_id
+    prevInstanceIdsRef.current = currentInstanceIds
+
     if (prevMonstersRef.current.length === 0 || validMonsters.length === 0) {
       prevMonstersRef.current = validMonsters
-      const nextKeys = validMonsters.map(m => `${m.id}-${m.level}`)
-      queueMicrotask(() => setPrevMonsterKeys(nextKeys))
       return
     }
 
     const newDamage: Record<string, number> = {}
 
     validMonsters.forEach(m => {
-      const key = `${m.id}-${m.level}`
+      // 使用 position 作为 key 来区分同一波中的不同怪物实例
+      const key = `pos-${m.position}`
       const d = m.damage_taken
-      if (d != null && d > 0) newDamage[key] = d
+      // 新出现的怪物不显示伤害（等下一轮）- 使用 ref 立即判断
+      if (d != null && d > 0) {
+        const isNew = m.instance_id ? newAppearingRef.current.has(m.instance_id) : false
+        if (!isNew) {
+          newDamage[key] = d
+        }
+      }
     })
 
     if (Object.keys(newDamage).length > 0) {
@@ -94,7 +133,8 @@ export function MonsterGroup({
     // 检测怪物死亡：HP <= 0 时触发死亡动画
     validMonsters.forEach(m => {
       if ((m.hp ?? 0) <= 0) {
-        const key = `${m.id}-${m.level}`
+        // 使用 position 作为 key 来区分同一波中的不同怪物实例
+        const key = `pos-${m.position}`
         setDeadMonsters(prev => {
           if (!prev.has(key)) {
             // 新死亡：添加到死亡集合，1.5秒后动画结束
@@ -106,7 +146,6 @@ export function MonsterGroup({
     })
 
     prevMonstersRef.current = validMonsters
-    queueMicrotask(() => setPrevMonsterKeys(validMonsters.map(m => `${m.id}-${m.level}`)))
   }, [validMonsters])
 
   if (!monsters || monsters.length === 0) return null
@@ -123,15 +162,19 @@ export function MonsterGroup({
           }
 
           const key = `${m.id}-${pos}-${m.level}`
-          const isNew = newMonsters.some(nm => nm.id === m.id && nm.level === m.level)
-          const damage = damageTexts[`${m.id}-${m.level}`]
-          const monsterKey = `${m.id}-${m.level}`
+          // 使用后端提供的 is_new 字段判断是否是新的怪物
+          // 通过 appearingMonsters state 判断是否需要显示出现动画
+          const isNew = m.instance_id ? appearingMonsters.has(m.instance_id) : false
+          const damage = damageTexts[`pos-${m.position}`]
+          // 使用 position 作为 key 来区分同一波中的不同怪物实例
+          const monsterKey = `pos-${m.position}`
           const isDead = (m.hp ?? 0) <= 0 && deadMonsters.has(monsterKey)
           const skillIcon = skillIcons[pos]
 
+          // 使用 instance_id 作为 key，这样新怪物出现时会重新创建元素触发动画
           return (
             <button
-              key={key}
+              key={m.instance_id ?? monsterKey}
               type="button"
               onClick={() => handleMonsterClick(m)}
               className={`relative flex cursor-pointer flex-col items-center gap-0.5 transition-opacity hover:opacity-80 ${isNew ? styles['monster-appear'] : ''} ${isDead ? styles['monster-death'] : ''}`}

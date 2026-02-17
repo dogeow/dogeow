@@ -75,7 +75,7 @@
 }
 
 .monster-appear {
-  animation: monster-appear 0.6s ease-out forwards;
+  animation: monster-appear 1.2s ease-out forwards;
 }
 
 /* 怪物死亡动画：1.5秒慢慢淡出 */

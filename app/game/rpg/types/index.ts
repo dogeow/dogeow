@@ -74,6 +74,10 @@ export interface StatBreakdownItem {
 /** 战斗中怪物信息 */
 export interface CombatMonster {
   id: number
+  /** 怪物实例唯一ID，用于前端检测新怪物 */
+  instance_id?: string
+  /** 标记是否为新刷出的怪物，用于前端显示出现动画 */
+  is_new?: boolean
   name: string
   type: MonsterType
   level: number
@@ -120,6 +124,7 @@ export interface GameItem {
   quantity: number
   slot_index: number | null
   sell_price?: number
+  sockets?: number
 }
 
 export interface Equipment {
