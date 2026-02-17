@@ -144,59 +144,8 @@ export function CombatPanel() {
     () => learnedSkills.filter(s => s.skill?.type === 'active'),
     [learnedSkills]
   )
-  const cooldownSecondsBySkillId = useMemo(() => {
-    const m: Record<number, number> = {}
-    activeSkills.forEach(s => {
-      if (s.skill) m[s.skill.id] = s.skill.cooldown
-    })
-    return m
-  }, [activeSkills])
-
-  const [skillCooldownEnd, setSkillCooldownEnd] = useState<Record<number, number>>({})
-  const [now, setNow] = useState(0)
-
-  // 根据战斗结果刷新技能 CD 结束时间（后端 cooldown 单位为回合，前端按 1 回合=1 秒展示）
-  useEffect(() => {
-    const used = combatResult?.skills_used
-    if (!used?.length) return
-    const raf = requestAnimationFrame(() => {
-      setSkillCooldownEnd(prev => {
-        const next = { ...prev }
-        used.forEach((u: SkillUsedEntry) => {
-          const sec = cooldownSecondsBySkillId[u.skill_id] ?? 3
-          next[u.skill_id] = Date.now() + sec * 1000
-        })
-        return next
-      })
-    })
-    return () => cancelAnimationFrame(raf)
-  }, [combatResult?.combat_log_id, combatResult?.skills_used, cooldownSecondsBySkillId])
-
-  // 定时刷新以更新 CD 数字与遮罩，并在 CD 结束后清理
-  useEffect(() => {
-    const hasActive = Object.values(skillCooldownEnd).some(end => end > Date.now())
-    if (!hasActive) return
-    const raf = requestAnimationFrame(() => setNow(Date.now()))
-    const id = setInterval(() => {
-      const t = Date.now()
-      setNow(t)
-      setSkillCooldownEnd(prev => {
-        const next = { ...prev }
-        let changed = false
-        for (const k of Object.keys(next)) {
-          if (next[Number(k)] <= t) {
-            delete next[Number(k)]
-            changed = true
-          }
-        }
-        return changed ? next : prev
-      })
-    }, 200)
-    return () => {
-      cancelAnimationFrame(raf)
-      clearInterval(id)
-    }
-  }, [skillCooldownEnd])
+  // 技能冷却直接使用 combatResult 中的值
+  const skillCooldowns = combatResult?.skill_cooldowns ?? {}
 
   const handleStartCombat = async () => {
     await startCombat()
@@ -350,9 +299,7 @@ export function CombatPanel() {
                 <BattleSkillBar
                   activeSkills={activeSkills}
                   skillsUsed={combatResult?.skills_used}
-                  cooldownSecondsBySkillId={cooldownSecondsBySkillId}
-                  skillCooldownEnd={skillCooldownEnd}
-                  now={now}
+                  skillCooldowns={skillCooldowns}
                   enabledSkillIds={enabledSkillIds}
                   onSkillToggle={toggleEnabledSkill}
                   disabled={showDeathDialog}

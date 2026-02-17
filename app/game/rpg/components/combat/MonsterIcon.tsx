@@ -5,7 +5,7 @@ import { useState } from 'react'
 
 import { type MonsterType } from '../../types'
 
-/** 暗黑2风格的怪物类型边框颜色 */
+/** 怪物类型边框颜色 */
 const MONSTER_TYPE_BORDER_COLORS: Record<MonsterType, string> = {
   normal: 'border-gray-400',
   elite: 'border-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.9)]',

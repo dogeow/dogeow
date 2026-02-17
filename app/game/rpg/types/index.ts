@@ -76,8 +76,6 @@ export interface CombatMonster {
   id: number
   /** 怪物实例唯一ID，用于前端检测新怪物 */
   instance_id?: string
-  /** 标记是否为新刷出的怪物，用于前端显示出现动画 */
-  is_new?: boolean
   name: string
   type: MonsterType
   level: number
@@ -248,6 +246,8 @@ export interface CombatResult {
   }
   skills_used?: SkillUsedEntry[]
   skill_target_positions?: number[] // 技能命中的怪物位置 (0-4)
+  /** 技能冷却（回合数） */
+  skill_cooldowns?: Record<number, number>
   /** 自动使用药水记录 */
   potion_used?: {
     before?: Record<string, { name: string; restored: number }>
@@ -374,7 +374,7 @@ export const STAT_NAMES: Record<string, string> = {
   all_stats: '全属性',
 }
 
-/** 基础属性对战斗属性的影响说明（暗黑2风格：各职业通用） */
+/** 基础属性对战斗属性的影响说明（各职业通用） */
 export const STAT_DESCRIPTIONS: Record<'strength' | 'dexterity' | 'vitality' | 'energy', string> = {
   strength: '战士/游侠主属性。物理攻击力 = 力量×2；部分装备有力量需求。',
   dexterity:

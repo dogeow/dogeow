@@ -1,26 +1,21 @@
 'use client'
 
 import type { CharacterSkill, SkillUsedEntry } from '../../types'
-import { useMemo } from 'react'
 import { SkillIcon } from '../shared/SkillIcon'
 import styles from '../../rpg.module.css'
 
-/** 战斗技能栏：显示主动技能图标、CD 冷却、点击启用/关闭 */
+/** 战斗技能栏：显示主动技能图标、回合冷却、点击启用/关闭 */
 export function BattleSkillBar({
   activeSkills,
   skillsUsed,
-  cooldownSecondsBySkillId,
-  skillCooldownEnd,
-  now,
+  skillCooldowns,
   enabledSkillIds,
   onSkillToggle,
   disabled,
 }: {
   activeSkills: CharacterSkill[]
   skillsUsed: SkillUsedEntry[] | undefined
-  cooldownSecondsBySkillId: Record<number, number>
-  skillCooldownEnd: Record<number, number>
-  now: number
+  skillCooldowns: Record<number, number>
   enabledSkillIds: number[]
   onSkillToggle: (skillId: number) => void
   disabled?: boolean
@@ -30,11 +25,9 @@ export function BattleSkillBar({
     <div className="flex flex-wrap items-start gap-2">
       {activeSkills.map(cs => {
         const def = cs.skill
-        const endAt = skillCooldownEnd[def.id] ?? 0
-        const totalMs = (cooldownSecondsBySkillId[def.id] ?? def.cooldown) * 1000
-        const remaining = Math.max(0, endAt - now)
-        const progress = totalMs > 0 ? 1 - remaining / totalMs : 1
-        const onCooldown = remaining > 0
+        // 剩余冷却回合数
+        const remainingRounds = skillCooldowns[def.id] ?? 0
+        const onCooldown = remainingRounds > 0
         const enabled = enabledSkillIds.includes(def.id) && !disabled
         const buttonContent = (
           <>
@@ -45,12 +38,8 @@ export function BattleSkillBar({
                   className="absolute inset-0 flex items-center justify-center overflow-hidden rounded bg-black/50"
                   aria-hidden
                 >
-                  <div
-                    className="absolute inset-x-0 bottom-0 bg-black/70 transition-[height] duration-150"
-                    style={{ height: `${(1 - progress) * 100}%` }}
-                  />
                   <span className="relative z-10 text-xs font-bold text-white drop-shadow">
-                    {(remaining / 1000).toFixed(1)}
+                    {remainingRounds}
                   </span>
                 </div>
               )}
