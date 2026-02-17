@@ -67,7 +67,9 @@ export function MonsterGroup({
   // 检测怪物掉血并显示伤害数字，以及检测新怪物
   useEffect(() => {
     // 检测新怪物：通过比较 instance_id
-    const currentInstanceIds = new Set(validMonsters.map(m => m.instance_id).filter(Boolean))
+    const currentInstanceIds = new Set<string>(
+      validMonsters.map(m => m.instance_id).filter((id): id is string => Boolean(id))
+    )
     const prevInstanceIds = prevInstanceIdsRef.current
 
     // 找出新出现的怪物 instance_id
