@@ -45,7 +45,6 @@ export default function RPGGame() {
     currentMap,
     currentHp,
     currentMana,
-    executeCombat,
     startCombat,
     stopCombat,
     setShouldAutoCombat,
@@ -76,22 +75,18 @@ export default function RPGGame() {
   // 优化：所有ref初始化都适当注释
   const loadedCharacterIdRef = useRef<number | null>(null)
   const initializedRef = useRef(false)
-  const combatIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const executeCombatRef = useRef(executeCombat)
   const startCombatRef = useRef(startCombat)
   const stopCombatRef = useRef(stopCombat)
   const setShouldAutoCombatRef = useRef(setShouldAutoCombat)
 
-  // 每次函数变动都同步对应ref，避免闭包老状态
   useEffect(() => {
-    executeCombatRef.current = executeCombat
     startCombatRef.current = startCombat
     stopCombatRef.current = stopCombat
     setShouldAutoCombatRef.current = setShouldAutoCombat
-  }, [executeCombat, startCombat, stopCombat, setShouldAutoCombat])
+  }, [startCombat, stopCombat, setShouldAutoCombat])
 
-  // 战斗WebSocket注册
-  useCombatWebSocket(character?.id ?? null)
+  // 战斗WebSocket注册：character 未加载时用 selectedCharacterId 订阅，确保一开始就能收战斗推送
+  useCombatWebSocket(character?.id ?? selectedCharacterId ?? null)
 
   // 检查离线奖励
   useEffect(() => {
@@ -121,28 +116,7 @@ export default function RPGGame() {
       startCombatRef.current()
     }
 
-    // 维护间隔定时器
-    if (isFighting && currentMap && shouldAutoCombat) {
-      if (!combatIntervalRef.current) {
-        // 只启动一次interval
-        combatIntervalRef.current = setInterval(async () => {
-          await executeCombatRef.current()
-        }, 4000)
-      }
-    } else {
-      if (combatIntervalRef.current) {
-        clearInterval(combatIntervalRef.current)
-        combatIntervalRef.current = null
-      }
-    }
-
-    // 清理interval
-    return () => {
-      if (combatIntervalRef.current) {
-        clearInterval(combatIntervalRef.current)
-        combatIntervalRef.current = null
-      }
-    }
+    // 自动战斗由后端 start 接口启动，服务器每 3 秒执行一回合并通过 Reverb WebSocket 推送，无需前端定时器
   }, [isFighting, currentMap, shouldAutoCombat, combatResult, combatStats, currentHp])
 
   // 认证完成后拉取角色列表；.then 内 setState 为异步，不触发 set-state-in-effect 规则

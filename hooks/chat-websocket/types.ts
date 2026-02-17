@@ -3,12 +3,14 @@ import type { ConnectionStatus, ConnectionMonitor } from '@/lib/websocket'
 import type { OfflineState, QueuedMessage } from '@/lib/websocket/offline-manager'
 import type { ConnectionError } from '@/lib/websocket/error-handler'
 
+export type SendMessageResult = { success: true } | { success: false; errorMessage?: string }
+
 export interface UseChatWebSocketReturn {
   echo: Echo<'reverb'> | null
   connect: (roomId?: string) => Promise<boolean>
   disconnect: () => void
   joinRoom: (roomId: string, echoInstance?: Echo<'reverb'>) => void
-  sendMessage: (roomId: string, message: string) => Promise<boolean>
+  sendMessage: (roomId: string, message: string) => Promise<SendMessageResult>
   isConnected: boolean
   connectionStatus: ConnectionStatus
   connectionInfo: ConnectionMonitor

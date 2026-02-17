@@ -7,7 +7,10 @@ export interface MessageInputProps {
   } | null
   onCancelReply?: () => void
   className?: string
-  sendMessage: (roomId: string, message: string) => Promise<boolean>
+  sendMessage: (
+    roomId: string,
+    message: string
+  ) => Promise<{ success: true } | { success: false; errorMessage?: string }>
   isConnected: boolean
   scrollContainerRef?: React.RefObject<HTMLElement | null>
 }

@@ -285,10 +285,13 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
   )
 
   const sendMessage = useCallback(
-    async (roomId: string, message: string): Promise<boolean> => {
+    async (
+      roomId: string,
+      message: string
+    ): Promise<import('./chat-websocket/types').SendMessageResult> => {
       if (offlineState.isOffline || connectionInfo.status !== 'connected') {
         offlineManagerRef.current?.queueMessage(roomId, message)
-        return !!offlineManagerRef.current
+        return offlineManagerRef.current ? { success: true } : { success: false }
       }
 
       let echoToUse = echo
@@ -297,7 +300,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         echoToUse = getEchoInstance()
         if (!echoToUse) {
           offlineManagerRef.current?.queueMessage(roomId, message)
-          return !!offlineManagerRef.current
+          return offlineManagerRef.current ? { success: true } : { success: false }
         }
       }
 
@@ -305,7 +308,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
 
       if (result.success) {
         onMessageSentSuccess?.(result.data)
-        return true
+        return { success: true }
       }
 
       if (result.error) {
@@ -316,7 +319,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         onError?.(result.error)
       }
 
-      return false
+      return { success: false, errorMessage: result.error?.message }
     },
     [echo, offlineState.isOffline, connectionInfo.status, onError, onMessageSentSuccess]
   )

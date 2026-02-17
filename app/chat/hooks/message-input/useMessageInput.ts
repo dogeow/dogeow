@@ -178,9 +178,9 @@ export function useMessageInput({
         messageToSend = `@${replyingTo.user.name} ${messageToSend}`
       }
 
-      const success = await sendMessage(roomId.toString(), messageToSend)
+      const result = await sendMessage(roomId.toString(), messageToSend)
 
-      if (success) {
+      if (result.success) {
         setMessage('')
         adjustTextareaHeight()
         clearDraft()
@@ -195,7 +195,7 @@ export function useMessageInput({
           textareaRef.current?.focus()
         }, 100)
       } else {
-        toast.error(t('chat.failed_to_send', 'Failed to send message'))
+        toast.error(result.errorMessage ?? t('chat.failed_to_send', 'Failed to send message'))
       }
     } catch (error) {
       console.error('发送消息错误:', error)

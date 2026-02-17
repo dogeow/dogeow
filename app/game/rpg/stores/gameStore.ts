@@ -916,12 +916,43 @@ const store: StateCreator<GameState> = (set, get) => ({
     set(state => ({ ...state, isLoading: true, error: null, combatResult: null }))
     try {
       const selectedId = get().selectedCharacterId
+      const enabledIds = get().enabledSkillIds
       if (!selectedId) {
         console.warn('[GameStore] startCombat - no character selected')
         set(state => ({ ...state, isLoading: false }))
         return
       }
-      // 后端 execute 会自动开始战斗，无需调用 start API
+      const body: { character_id: number; skill_ids?: number[] } = { character_id: selectedId }
+      if (enabledIds.length > 0) body.skill_ids = enabledIds
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/ac3282d5-f86a-44d0-8cac-a78210bb3b66', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7eb03a' },
+        body: JSON.stringify({
+          sessionId: '7eb03a',
+          location: 'gameStore.ts:startCombat:before',
+          message: 'calling combat/start',
+          data: { characterId: selectedId, skillIds: body.skill_ids },
+          timestamp: Date.now(),
+          hypothesisId: 'H1',
+        }),
+      }).catch(() => {})
+      // #endregion
+      await post('/rpg/combat/start', body)
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/ac3282d5-f86a-44d0-8cac-a78210bb3b66', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7eb03a' },
+        body: JSON.stringify({
+          sessionId: '7eb03a',
+          location: 'gameStore.ts:startCombat:after',
+          message: 'combat/start success',
+          data: { characterId: selectedId },
+          timestamp: Date.now(),
+          hypothesisId: 'H1',
+        }),
+      }).catch(() => {})
+      // #endregion
       soundManager.play('combat_start')
       set(state => ({
         ...state,
@@ -935,13 +966,20 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   stopCombat: async () => {
-    set(state => ({
-      ...state,
-      enabledSkillIds: [],
-      isFighting: false,
-      shouldAutoCombat: false,
-      character: state.character ? { ...state.character, is_fighting: false } : null,
-    }))
+    try {
+      const selectedId = get().selectedCharacterId
+      if (selectedId) {
+        await post('/rpg/combat/stop', { character_id: selectedId })
+      }
+    } finally {
+      set(state => ({
+        ...state,
+        enabledSkillIds: [],
+        isFighting: false,
+        shouldAutoCombat: false,
+        character: state.character ? { ...state.character, is_fighting: false } : null,
+      }))
+    }
   },
 
   executeCombat: async () => {

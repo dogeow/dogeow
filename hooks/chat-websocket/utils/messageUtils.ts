@@ -42,8 +42,10 @@ export const sendMessageToServer = async (
         .clone()
         .json()
         .catch(() => null)
+      const errors = Array.isArray(errorPayload?.errors) ? errorPayload.errors : []
       const errorMessage =
-        typeof errorPayload?.message === 'string' ? errorPayload.message : response.statusText
+        errors[0] ??
+        (typeof errorPayload?.message === 'string' ? errorPayload.message : response.statusText)
 
       // 处理禁言错误
       if (response.status === 403) {
@@ -115,13 +117,16 @@ export const sendMessageToServer = async (
  */
 export const leaveRoomViaAPI = async (roomId: string): Promise<void> => {
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/rooms/${roomId}/leave`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${getAuthManager().getToken()}`,
-        'Content-Type': 'application/json',
-      },
-    })
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/chat/rooms/${roomId}/leave`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${getAuthManager().getToken()}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    )
 
     if (response.ok) {
       console.log('WebSocket: Successfully left room via API')

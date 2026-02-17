@@ -47,10 +47,13 @@ interface EchoConnector {
   pusher?: PusherConnector
 }
 
+const SUBSCRIBE_DEBOUNCE_MS = 150
+
 export function useCombatWebSocket(characterId: number | null) {
   const echoRef = useRef<Echo<'reverb'> | null>(null)
-  const channelRef = useRef<ReturnType<Echo<'reverb'>['private']> | null>(null)
+  const channelRef = useRef<ReturnType<Echo<'reverb'>['channel']> | null>(null)
   const subscribedCharacterIdRef = useRef<number | null>(null)
+  const subscribedAtRef = useRef<number>(0)
   const [isConnected, setIsConnected] = useState(false)
   const [authError, setAuthError] = useState(false)
 
@@ -87,17 +90,40 @@ export function useCombatWebSocket(characterId: number | null) {
 
     echoRef.current = echo
 
-    // 检查 Echo 连接状态
+    // 在连接就绪后订阅（与聊天室一致，避免连接未建立就 subscribe 被忽略）
+    let connectionCleanup: (() => void) | null = null
+
+    const doSubscribe = () => {
+      if (!echoRef.current) return
+      const ch = echoRef.current.channel(`game.${characterId}`)
+      channelRef.current = ch
+      subscribedAtRef.current = Date.now()
+      console.log('WebSocket: 已订阅频道 game.' + characterId)
+
+      ch.listen('.combat.update', (data: CombatUpdateData) => {
+        console.log('🎮 Combat update received:', data)
+        useGameStore.getState().handleCombatUpdate(data)
+      })
+      ch.listen('.loot.dropped', (data: LootDroppedData) => {
+        console.log('💎 Loot dropped:', data)
+        useGameStore.getState().handleLootDropped(data)
+      })
+      ch.listen('.level.up', (data: LevelUpData) => {
+        console.log('🎉 Level up:', data)
+        useGameStore.getState().handleLevelUp(data)
+      })
+      subscribedCharacterIdRef.current = characterId
+    }
+
     try {
       const connector = echo.connector as EchoConnector
-      if (connector?.pusher?.connection) {
-        const connection = connector.pusher.connection
-
-        // 监听连接状态
+      const connection = connector?.pusher?.connection
+      if (connection) {
         const handleConnected = () => {
           console.log('WebSocket: 已连接')
           setIsConnected(true)
           setAuthError(false)
+          doSubscribe()
         }
 
         const handleError = (error: unknown) => {
@@ -115,64 +141,28 @@ export function useCombatWebSocket(characterId: number | null) {
         connection.bind('connected', handleConnected)
         connection.bind('error', handleError)
         connection.bind('disconnected', handleDisconnected)
-
-        // 清理连接监听器
-        return () => {
+        connectionCleanup = () => {
           connection.unbind('connected', handleConnected)
           connection.unbind('error', handleError)
           connection.unbind('disconnected', handleDisconnected)
         }
+
+        if (connection.state === 'connected') {
+          doSubscribe()
+        }
+      } else {
+        doSubscribe()
       }
     } catch (error) {
       console.warn('WebSocket: 无法绑定连接事件', error)
+      doSubscribe()
     }
 
-    // 订阅私有频道
-    console.log(`WebSocket: 正在订阅频道 private-game.${characterId}`)
-    const channel = echo.private(`game.${characterId}`)
-    channelRef.current = channel
-
-    // Pusher 会自动处理认证，如果认证失败会触发连接错误事件
-    // 我们通过检查 Pusher 的连接状态来判断认证是否成功
-    setTimeout(() => {
-      try {
-        const connector = echo.connector as EchoConnector
-        const state = connector?.pusher?.connection?.state
-        if (state !== 'connected' && state !== 'connecting') {
-          console.warn(`WebSocket: 订阅频道可能失败，当前状态: ${state}`)
-          setAuthError(true)
-        } else {
-          console.log(`WebSocket: 频道 private-game.${characterId} 订阅成功`)
-        }
-      } catch (error) {
-        console.warn('WebSocket: 无法检查频道订阅状态', error)
-      }
-    }, 2000) // 2秒后检查连接状态
-
-    // 监听战斗更新事件
-    channel.listen('.combat.update', (data: CombatUpdateData) => {
-      console.log('🎮 Combat update received:', data)
-      useGameStore.getState().handleCombatUpdate(data)
-    })
-
-    // 监听掉落事件
-    channel.listen('.loot.dropped', (data: LootDroppedData) => {
-      console.log('💎 Loot dropped:', data)
-      useGameStore.getState().handleLootDropped(data)
-    })
-
-    // 监听升级事件
-    channel.listen('.level.up', (data: LevelUpData) => {
-      console.log('🎉 Level up:', data)
-      useGameStore.getState().handleLevelUp(data)
-    })
-
-    subscribedCharacterIdRef.current = characterId
-
-    // 清理函数
+    // 清理函数：避免 React Strict Mode 下刚订阅就被 cleanup 取消（150ms 内不真正 unsubscribe）
     return () => {
-      // 只有当前订阅的角色才清理
+      connectionCleanup?.()
       if (subscribedCharacterIdRef.current !== characterId) return
+      if (Date.now() - subscribedAtRef.current < SUBSCRIBE_DEBOUNCE_MS) return
 
       console.log('WebSocket: 清理连接')
       if (channelRef.current) {
