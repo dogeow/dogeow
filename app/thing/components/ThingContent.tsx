@@ -1,6 +1,6 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Pagination,
@@ -55,6 +55,25 @@ function ThingContent({
   onClearFilters,
 }: ThingContentProps) {
   const totalPages = meta?.last_page || 1
+
+  const handlePageClick = useCallback(
+    (page: number) => {
+      onPageChange(page)
+    },
+    [onPageChange]
+  )
+
+  const handlePreviousPage = useCallback(() => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1)
+    }
+  }, [currentPage, onPageChange])
+
+  const handleNextPage = useCallback(() => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1)
+    }
+  }, [currentPage, totalPages, onPageChange])
 
   // 渲染加载状态
   const renderLoading = () => (
@@ -139,7 +158,7 @@ function ThingContent({
           <PaginationContent>
             <PaginationItem>
               <PaginationPrevious
-                onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+                onClick={handlePreviousPage}
                 className={currentPage <= 1 ? 'pointer-events-none opacity-50' : ''}
                 size="icon"
               />
@@ -149,7 +168,7 @@ function ThingContent({
               <PaginationItem key={page}>
                 <PaginationLink
                   isActive={page === currentPage}
-                  onClick={() => onPageChange(page)}
+                  onClick={() => handlePageClick(page)}
                   size="icon"
                 >
                   {page}
@@ -159,7 +178,7 @@ function ThingContent({
 
             <PaginationItem>
               <PaginationNext
-                onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+                onClick={handleNextPage}
                 className={currentPage >= totalPages ? 'pointer-events-none opacity-50' : ''}
                 size="icon"
               />

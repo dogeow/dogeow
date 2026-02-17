@@ -5,6 +5,13 @@ import type { Category, Area, Room, Spot, Item } from '../types'
 // Fetcher function
 const fetcher = <T>(url: string): Promise<T> => apiRequest<T>(url)
 
+// SWR 默认缓存配置
+const swrOptions = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: true,
+  dedupingInterval: 5000,
+}
+
 // ==================== SWR Hooks ====================
 
 // 物品相关 hooks
@@ -23,32 +30,34 @@ export const useItems = (params?: Record<string, unknown>) => {
   }
 
   const queryString = buildQueryString(params)
-  return useSWR(`/things/items${queryString}`, fetcher)
+  return useSWR(`/things/items${queryString}`, fetcher, swrOptions)
 }
 
-export const useItem = (id: number) => useSWR<Item>(id ? `/things/items/${id}` : null, fetcher)
+export const useItem = (id: number) =>
+  useSWR<Item>(id ? `/things/items/${id}` : null, fetcher, swrOptions)
 
 // 分类相关 hooks
-export const useCategories = () => useSWR('/things/categories', fetcher)
+export const useCategories = () => useSWR('/things/categories', fetcher, swrOptions)
 
-export const useCategory = (id: number) => useSWR(id ? `/things/categories/${id}` : null, fetcher)
+export const useCategory = (id: number) =>
+  useSWR(id ? `/things/categories/${id}` : null, fetcher, swrOptions)
 
 // 位置相关 hooks
-export const useLocations = () => useSWR('/locations/tree', fetcher)
+export const useLocations = () => useSWR('/locations/tree', fetcher, swrOptions)
 
-export const useAreas = <T = unknown>() => useSWR<T>('/areas', fetcher)
+export const useAreas = <T = unknown>() => useSWR<T>('/areas', fetcher, swrOptions)
 
-export const useArea = (id?: number) => useSWR(id ? `/areas/${id}` : null, fetcher)
+export const useArea = (id?: number) => useSWR(id ? `/areas/${id}` : null, fetcher, swrOptions)
 
 export const useRooms = <T = unknown>(areaId?: number) =>
-  useSWR<T>(areaId ? `/areas/${areaId}/rooms` : '/rooms', fetcher)
+  useSWR<T>(areaId ? `/areas/${areaId}/rooms` : '/rooms', fetcher, swrOptions)
 
-export const useRoom = (id?: number) => useSWR(id ? `/rooms/${id}` : null, fetcher)
+export const useRoom = (id?: number) => useSWR(id ? `/rooms/${id}` : null, fetcher, swrOptions)
 
 export const useSpots = <T = unknown>(roomId?: number) =>
-  useSWR<T>(roomId ? `/rooms/${roomId}/spots` : '/spots', fetcher)
+  useSWR<T>(roomId ? `/rooms/${roomId}/spots` : '/spots', fetcher, swrOptions)
 
-export const useSpot = (id?: number) => useSWR(id ? `/spots/${id}` : null, fetcher)
+export const useSpot = (id?: number) => useSWR(id ? `/spots/${id}` : null, fetcher, swrOptions)
 
 // ==================== Mutation Functions ====================
 

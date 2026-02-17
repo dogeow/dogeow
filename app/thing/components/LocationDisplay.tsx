@@ -1,3 +1,4 @@
+import * as React from 'react'
 import { Spot } from '@/app/thing/types'
 import { MapPin } from 'lucide-react'
 
@@ -5,7 +6,7 @@ interface LocationDisplayProps {
   spot?: Spot | null
 }
 
-export function LocationDisplay({ spot }: LocationDisplayProps) {
+export const LocationDisplay = React.memo(function LocationDisplay({ spot }: LocationDisplayProps) {
   if (!spot) {
     return null
   }
@@ -37,4 +38,4 @@ export function LocationDisplay({ spot }: LocationDisplayProps) {
       <span>{fullLocationPath}</span>
     </div>
   )
-}
+})

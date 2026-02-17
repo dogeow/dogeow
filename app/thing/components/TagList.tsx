@@ -1,12 +1,13 @@
+import * as React from 'react'
 import { Tag } from '@/app/thing/types'
-import { isLightColor } from '@/lib/helpers/colorUtils' // Updated import path
-import { Badge } from '@/components/ui/badge' // Assuming Badge component is here
+import { isLightColor } from '@/lib/helpers/colorUtils'
+import { Badge } from '@/components/ui/badge'
 
 interface TagListProps {
   tags: Tag[]
 }
 
-export function TagList({ tags }: TagListProps) {
+export const TagList = React.memo(function TagList({ tags }: TagListProps) {
   return (
     <div className="flex flex-wrap gap-1">
       {tags.map(tag => {
@@ -22,4 +23,4 @@ export function TagList({ tags }: TagListProps) {
       })}
     </div>
   )
-}
+})

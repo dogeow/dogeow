@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { UsersIcon, MessageSquareIcon } from 'lucide-react'
 import { ChatRoomList, OnlineUsers } from './'
 import ConnectionStatusIndicator from './ConnectionStatusIndicator'
@@ -22,7 +23,16 @@ interface ChatSidebarProps {
   onReportUser?: () => void
 }
 
-export default function ChatSidebar({
+function arePropsEqual(prev: ChatSidebarProps, next: ChatSidebarProps) {
+  return (
+    prev.type === next.type &&
+    prev.currentRoom?.id === next.currentRoom?.id &&
+    prev.connectionInfo.status === next.connectionInfo.status &&
+    prev.offlineState.isOffline === next.offlineState.isOffline
+  )
+}
+
+function ChatSidebar({
   type,
   currentRoom,
   connectionInfo,
@@ -93,3 +103,5 @@ export default function ChatSidebar({
     </div>
   )
 }
+
+export default React.memo(ChatSidebar, arePropsEqual)

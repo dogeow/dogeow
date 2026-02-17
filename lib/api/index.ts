@@ -131,7 +131,9 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   try {
     return (await response.json()) as T
   } catch (error) {
-    console.error('解析JSON响应失败:', error)
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('解析JSON响应失败:', error)
+    }
     throw new Error('解析响应失败')
   }
 }
@@ -272,22 +274,9 @@ export async function apiRequest<T>(
   // 处理请求体
   if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
     requestOptions.body = isFormData ? data : JSON.stringify(data)
-
-    if (isFormData && process.env.NODE_ENV !== 'production') {
-      console.log('发送FormData请求:', endpoint)
-    }
   }
 
   try {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🚀 Making API request:', {
-        url,
-        method,
-        headers: { ...headers, Authorization: headers.Authorization ? '[HIDDEN]' : undefined },
-        hasData: !!data,
-      })
-    }
-
     const { controller, timeoutId, timeoutDuration } = createTimeoutController(isFormData)
     requestOptions.signal = controller.signal
 
@@ -302,15 +291,6 @@ export async function apiRequest<T>(
     const response = (await Promise.race([fetch(url, requestOptions), timeoutPromise])) as Response
 
     clearTimeout(timeoutId)
-
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📥 API response:', {
-        url,
-        status: response.status,
-        statusText: response.statusText,
-        contentType: response.headers.get('content-type'),
-      })
-    }
 
     return await handleResponse<T>(response)
   } catch (error) {
@@ -375,17 +355,7 @@ export async function apiRequest<T>(
 }
 
 // HTTP方法包装器
-export const apiGet = <T>(endpoint: string): Promise<T> => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🔗 API GET Request:', {
-      endpoint,
-      fullUrl: `${API_URL}/api/${endpoint.startsWith('/') ? endpoint.substring(1) : endpoint}`,
-      hasToken: !!useAuthStore.getState().token,
-      tokenPrefix: useAuthStore.getState().token?.substring(0, 10) + '...',
-    })
-  }
-  return apiRequest<T>(endpoint, 'GET')
-}
+export const apiGet = <T>(endpoint: string): Promise<T> => apiRequest<T>(endpoint, 'GET')
 
 export const get = <T>(endpoint: string): Promise<T> => apiGet<T>(endpoint)
 
@@ -406,9 +376,17 @@ export const uploadFile = <T>(endpoint: string, formData: FormData): Promise<T> 
 // SWR fetcher
 const fetcher = <T>(url: string): Promise<T> => get<T>(url)
 
+// SWR 默认配置选项
+const swrOptions = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: true,
+  dedupingInterval: 5000,
+  errorRetryCount: 3,
+}
+
 // 用户相关API
 export const fetchCurrentUser = () => get<User>('/user')
-export const useUser = () => useSWR<User>('/user', fetcher)
+export const useUser = () => useSWR<User>('/user', fetcher, swrOptions)
 
 // 创建变更函数
 export const createMutation = <T>(endpoint: string, method: string = 'POST') => {
