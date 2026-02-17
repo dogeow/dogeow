@@ -140,6 +140,14 @@ interface GameState {
   handleCombatUpdate: (data: any) => void
   handleLootDropped: (data: any) => void
   handleLevelUp: (data: any) => void
+  /** 从 WebSocket inventory.update 直接更新背包/仓库/装备，不再发 HTTP 请求 */
+  handleInventoryUpdate: (data: {
+    inventory?: GameItem[]
+    storage?: GameItem[]
+    equipment?: Record<string, GameItem | null>
+    inventory_size?: number
+    storage_size?: number
+  }) => void
 
   // 商店操作
   fetchShopItems: () => Promise<void>
@@ -1157,8 +1165,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         currentMana: response.current_mana,
         isLoading: false,
       }))
-      // 重新拉取背包，使堆叠数量减一或已删除与服务器一致（避免刷新后“药品又出现”）
-      await get().fetchInventory()
+      // 背包由 WebSocket inventory.update 推送更新
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }
@@ -1250,10 +1257,26 @@ const store: StateCreator<GameState> = (set, get) => ({
       }
     })
 
-    // 检测到使用药水时刷新背包（药水被消耗了），使用 Promise.resolve().then 异步执行
-    if (usedPotion) {
-      Promise.resolve().then(() => get().fetchInventory())
-    }
+    // 背包由 WebSocket inventory.update 推送，不再在此处请求 fetchInventory
+  },
+
+  handleInventoryUpdate: data => {
+    const inv = data.inventory ?? []
+    const item1385 = inv.find((i: { id?: number }) => i.id === 1385)
+    console.log('[GameStore] handleInventoryUpdate received', {
+      inventoryLength: inv.length,
+      item1385Quantity: item1385?.quantity,
+      item1385,
+    })
+    set(state => ({
+      ...state,
+      inventory: data.inventory ?? state.inventory,
+      storage: data.storage ?? state.storage,
+      equipment: data.equipment ?? state.equipment,
+      inventorySize:
+        typeof data.inventory_size === 'number' ? data.inventory_size : state.inventorySize,
+      storageSize: typeof data.storage_size === 'number' ? data.storage_size : state.storageSize,
+    }))
   },
 
   handleLootDropped: data => {
@@ -1364,8 +1387,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         character: state.character ? { ...state.character, copper: response.copper } : null,
         isLoading: false,
       }))
-      // 刷新背包
-      get().fetchInventory()
+      // 背包由 WebSocket inventory.update 推送
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }

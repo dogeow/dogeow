@@ -24,7 +24,10 @@ interface UseMessageInputHandlersParams {
   ) => { newMessage: string; newCursorPos: number } | void
   handleMentionNavigation: (key: string) => boolean
   handleSendMessage: () => void
-  sendMessage: (roomId: string, message: string) => Promise<boolean>
+  sendMessage: (
+    roomId: string,
+    message: string
+  ) => Promise<{ success: true } | { success: false; errorMessage?: string }>
   isConnected: boolean
   checkMuteStatus: () => boolean
   muteUntil: string | null

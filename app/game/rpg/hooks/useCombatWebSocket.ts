@@ -33,6 +33,14 @@ interface LevelUpData {
   character: GameCharacter
 }
 
+interface InventoryUpdateData {
+  inventory?: GameItem[]
+  storage?: GameItem[]
+  equipment?: Record<string, GameItem | null>
+  inventory_size?: number
+  storage_size?: number
+}
+
 interface PusherConnection {
   state: string
   bind: (event: string, callback: (data?: unknown) => void) => void
@@ -70,6 +78,7 @@ export function useCombatWebSocket(characterId: number | null) {
         channelRef.current.stopListening('.combat.update')
         channelRef.current.stopListening('.loot.dropped')
         channelRef.current.stopListening('.level.up')
+        channelRef.current.stopListening('.inventory.update')
         channelRef.current.unsubscribe()
       } catch (error) {
         console.warn('WebSocket: 清理之前的频道时出错', error)
@@ -111,6 +120,9 @@ export function useCombatWebSocket(characterId: number | null) {
       ch.listen('.level.up', (data: LevelUpData) => {
         console.log('🎉 Level up:', data)
         useGameStore.getState().handleLevelUp(data)
+      })
+      ch.listen('.inventory.update', (data: InventoryUpdateData) => {
+        useGameStore.getState().handleInventoryUpdate(data)
       })
       subscribedCharacterIdRef.current = characterId
     }
@@ -170,6 +182,7 @@ export function useCombatWebSocket(characterId: number | null) {
           channelRef.current.stopListening('.combat.update')
           channelRef.current.stopListening('.loot.dropped')
           channelRef.current.stopListening('.level.up')
+          channelRef.current.stopListening('.inventory.update')
           channelRef.current.unsubscribe()
         } catch (error) {
           console.warn('WebSocket: 清理频道时出错', error)

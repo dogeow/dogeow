@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useChatWebSocket } from './useChatWebSocket'
+import type { SendMessageResult } from './chat-websocket/types'
 import { getAuthManager } from '@/lib/websocket'
 import type {
   ChatRoom,
@@ -20,7 +21,7 @@ export interface UseChatRoomReturn {
 
   // Messages
   messages: ChatMessage[]
-  sendMessage: (message: string) => Promise<boolean>
+  sendMessage: (roomId: string, message: string) => Promise<SendMessageResult>
   loadMoreMessages: () => Promise<void>
   hasMoreMessages: boolean
 
@@ -352,12 +353,12 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
 
   // Send message
   const sendMessage = useCallback(
-    async (message: string): Promise<boolean> => {
-      if (!currentRoom || !message.trim()) return false
+    async (roomId: string, message: string): Promise<SendMessageResult> => {
+      if (!message.trim()) return { success: false }
 
-      return await wsSendMessage(currentRoom.id.toString(), message.trim())
+      return await wsSendMessage(roomId, message.trim())
     },
-    [currentRoom, wsSendMessage]
+    [wsSendMessage]
   )
 
   // Auto-load rooms on mount

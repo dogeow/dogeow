@@ -32,10 +32,12 @@ vi.mock('next/image', () => ({
   ),
 }))
 
+const successResult = { success: true as const }
+
 describe('MessageInput', () => {
   const defaultProps = {
     roomId: 1,
-    sendMessage: vi.fn(() => Promise.resolve(true)),
+    sendMessage: vi.fn(() => Promise.resolve(successResult)),
     isConnected: true,
   }
 
@@ -97,7 +99,7 @@ describe('MessageInput', () => {
 
     it('should handle Enter key to send message', async () => {
       const user = userEvent.setup()
-      const sendMessage = vi.fn(() => Promise.resolve(true))
+      const sendMessage = vi.fn(() => Promise.resolve(successResult))
       render(<MessageInput {...defaultProps} sendMessage={sendMessage} />)
 
       const textarea = screen.getByRole('textbox')
@@ -124,7 +126,7 @@ describe('MessageInput', () => {
   describe('Message Sending', () => {
     it('should send message when send button is clicked', async () => {
       const user = userEvent.setup()
-      const sendMessage = vi.fn(() => Promise.resolve(true))
+      const sendMessage = vi.fn(() => Promise.resolve(successResult))
       render(<MessageInput {...defaultProps} sendMessage={sendMessage} />)
 
       const textarea = screen.getByRole('textbox')
@@ -140,7 +142,7 @@ describe('MessageInput', () => {
 
     it('should not send empty message', async () => {
       const user = userEvent.setup()
-      const sendMessage = vi.fn(() => Promise.resolve(true))
+      const sendMessage = vi.fn(() => Promise.resolve(successResult))
       render(<MessageInput {...defaultProps} sendMessage={sendMessage} />)
 
       const sendButton = screen.getByRole('button', { name: /send/i })
@@ -151,7 +153,7 @@ describe('MessageInput', () => {
 
     it('should not send message when disconnected', async () => {
       const user = userEvent.setup()
-      const sendMessage = vi.fn(() => Promise.resolve(true))
+      const sendMessage = vi.fn(() => Promise.resolve(successResult))
       render(<MessageInput {...defaultProps} sendMessage={sendMessage} isConnected={false} />)
 
       const textarea = screen.getByRole('textbox')
@@ -165,10 +167,12 @@ describe('MessageInput', () => {
 
     it('should show loading state while sending', async () => {
       const user = userEvent.setup()
-      let resolveSend: (value: boolean) => void
+      let resolveSend: (
+        value: { success: true } | { success: false; errorMessage?: string }
+      ) => void
       const sendMessage = vi.fn(
         () =>
-          new Promise<boolean>(resolve => {
+          new Promise<{ success: true } | { success: false; errorMessage?: string }>(resolve => {
             resolveSend = resolve
           })
       )
@@ -184,7 +188,7 @@ describe('MessageInput', () => {
       expect(sendButton).toBeDisabled()
 
       // Resolve the promise
-      resolveSend!(true)
+      resolveSend!({ success: true })
     })
   })
 
@@ -311,7 +315,7 @@ describe('MessageInput', () => {
 
     it('should include reply context in sent message', async () => {
       const user = userEvent.setup()
-      const sendMessage = vi.fn(() => Promise.resolve(true))
+      const sendMessage = vi.fn(() => Promise.resolve(successResult))
       const replyingTo = {
         id: 1,
         user: { name: 'Test User' },
@@ -349,7 +353,7 @@ describe('MessageInput', () => {
   describe('Validation', () => {
     it('should not send message with only whitespace', async () => {
       const user = userEvent.setup()
-      const sendMessage = vi.fn(() => Promise.resolve(true))
+      const sendMessage = vi.fn(() => Promise.resolve(successResult))
       render(<MessageInput {...defaultProps} sendMessage={sendMessage} />)
 
       const textarea = screen.getByRole('textbox')
@@ -363,7 +367,7 @@ describe('MessageInput', () => {
 
     it('should trim message before sending', async () => {
       const user = userEvent.setup()
-      const sendMessage = vi.fn(() => Promise.resolve(true))
+      const sendMessage = vi.fn(() => Promise.resolve(successResult))
       render(<MessageInput {...defaultProps} sendMessage={sendMessage} />)
 
       const textarea = screen.getByRole('textbox')

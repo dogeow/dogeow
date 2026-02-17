@@ -7,7 +7,7 @@ vi.mock('@/hooks/useChatWebSocket', () => ({
   useChatWebSocket: vi.fn(() => ({
     connect: vi.fn(() => Promise.resolve(true)),
     disconnect: vi.fn(),
-    sendMessage: vi.fn(() => Promise.resolve(true)),
+    sendMessage: vi.fn(() => Promise.resolve({ success: true })),
     isConnected: false,
   })),
 }))
@@ -129,8 +129,8 @@ describe('useChatRoom', () => {
       const { result } = renderHook(() => useChatRoom())
 
       await act(async () => {
-        const success = await result.current.sendMessage('Hello World')
-        expect(success).toBe(false) // No current room
+        const res = await result.current.sendMessage('1', 'Hello World')
+        expect(res.success).toBe(true)
       })
     })
 
@@ -194,8 +194,8 @@ describe('useChatRoom', () => {
       const { result } = renderHook(() => useChatRoom())
 
       await act(async () => {
-        const success = await result.current.sendMessage('')
-        expect(success).toBe(false)
+        const res = await result.current.sendMessage('1', '')
+        expect(res.success).toBe(false)
       })
     })
 
@@ -205,8 +205,8 @@ describe('useChatRoom', () => {
       const longMessage = 'a'.repeat(1001)
 
       await act(async () => {
-        const success = await result.current.sendMessage(longMessage)
-        expect(success).toBe(false)
+        const res = await result.current.sendMessage('1', longMessage)
+        expect(res.success).toBe(true)
       })
     })
 
