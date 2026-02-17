@@ -203,7 +203,7 @@ export function MonsterGroup({
                   -{damage}
                 </span>
               )}
-              <MonsterIcon monsterId={m.id} name={m.name} size="md" />
+              <MonsterIcon monsterId={m.id} name={m.name} size="md" monsterType={m.type} />
               <div className="w-full max-w-[50px] sm:max-w-[60px]">
                 <div className="text-muted-foreground flex justify-between text-[8px] sm:text-[10px]">
                   <span>HP</span>

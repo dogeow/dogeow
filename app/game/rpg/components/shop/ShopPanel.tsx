@@ -6,8 +6,13 @@ import { zhCN } from 'date-fns/locale'
 import { RefreshCw } from 'lucide-react'
 import { useGameStore } from '../../stores/gameStore'
 import { CopperDisplay } from '../shared/CopperDisplay'
-import { ShopItem, QUALITY_COLORS, STAT_NAMES, formatCopper } from '../../types'
-import { getShopItemIcon, ITEM_TYPE_NAMES } from '../../utils/itemUtils'
+import { ShopItem, QUALITY_COLORS, STAT_NAMES, formatCopper, GameItem } from '../../types'
+import {
+  getShopItemIcon,
+  ITEM_TYPE_NAMES,
+  getEquipmentSlot,
+  getItemTotalStats,
+} from '../../utils/itemUtils'
 
 /** 强制刷新费用：1 银 = 100 铜 */
 const SHOP_REFRESH_COST_COPPER = 100
@@ -21,6 +26,7 @@ export function ShopPanel() {
     refreshShopItems,
     isLoading,
     shopNextRefreshAt,
+    equipment,
   } = useGameStore()
   const [selectedShopItem, setSelectedShopItem] = useState<ShopItem | null>(null)
   const [buyQuantity, setBuyQuantity] = useState(1)
@@ -56,6 +62,17 @@ export function ShopPanel() {
   const handleSelectShopItem = (item: ShopItem) => {
     setSelectedShopItem(item)
     setBuyQuantity(1)
+  }
+
+  // 获取商店物品对应的已装备物品
+  const getEquippedItem = (shopItem: ShopItem): GameItem | null => {
+    const slot = getEquipmentSlot({ definition: { type: shopItem.type } } as GameItem)
+    if (!slot) return null
+    // 戒指特殊处理：优先返回 ring1，否则返回 ring2
+    if (slot === 'ring1') {
+      return equipment.ring1 || equipment.ring2
+    }
+    return equipment[slot] ?? null
   }
 
   return (
@@ -132,6 +149,7 @@ export function ShopPanel() {
         character={character}
         canAfford={!!canAfford}
         levelEnough={!!levelEnough}
+        equippedItem={selectedShopItem ? getEquippedItem(selectedShopItem) : null}
       />
     </div>
   )
@@ -149,6 +167,7 @@ type ItemDetailModalProps = {
   character: any
   canAfford: boolean
   levelEnough: boolean
+  equippedItem: GameItem | null
 }
 
 function ItemDetailModal({
@@ -163,110 +182,222 @@ function ItemDetailModal({
   character,
   canAfford,
   levelEnough,
+  equippedItem,
 }: ItemDetailModalProps) {
   if (!item) return null
+
+  // 将 ShopItem 转换为用于对比计算的属性
+  const shopItemStats: Record<string, number> = { ...item.base_stats }
+
+  // 计算属性差异
+  const equippedStats = equippedItem ? getItemTotalStats(equippedItem) : {}
+  const allStatKeys = Array.from(
+    new Set([...Object.keys(shopItemStats), ...Object.keys(equippedStats)])
+  )
+
+  // 过滤出有差异的属性
+  const diffStats = allStatKeys.filter(stat => {
+    const shopValue = shopItemStats[stat] || 0
+    const equippedValue = equippedStats[stat] || 0
+    return shopValue !== equippedValue
+  })
+
+  const hasComparison = equippedItem && diffStats.length > 0
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
       <div className="border-border bg-card max-w-md rounded-xl border p-6 shadow-2xl">
-        <div className="space-y-4">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-4xl">{getShopItemIcon(item.type, item.sub_type)}</span>
-              <div>
-                <h5 className="text-foreground text-lg font-bold">{item.name}</h5>
-                <p className="text-muted-foreground text-sm">
-                  {ITEM_TYPE_NAMES[item.type]}
-                  {item.sub_type && ` - ${item.sub_type}`}
-                </p>
-              </div>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-4xl">{getShopItemIcon(item.type, item.sub_type)}</span>
+            <div>
+              <h5 className="text-foreground text-lg font-bold">{item.name}</h5>
+              <p className="text-muted-foreground text-sm">
+                {ITEM_TYPE_NAMES[item.type]}
+                {item.sub_type && ` - ${item.sub_type}`}
+              </p>
             </div>
-            <button
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              ✕
-            </button>
           </div>
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            ✕
+          </button>
+        </div>
 
-          {/* 属性（药品不显示 restore，与生命值/法力值重复） */}
-          <div className="space-y-1">
-            {Object.entries(item.base_stats || {})
-              .filter(([stat]) => item.type !== 'potion' || stat !== 'restore')
-              .map(([stat, value]) => (
-                <p key={stat} className="text-sm text-green-600 dark:text-green-400">
-                  +
-                  {typeof value === 'number' && value < 1 && stat.includes('crit')
-                    ? `${(value * 100).toFixed(0)}%`
-                    : value}{' '}
-                  {STAT_NAMES[stat] || stat}
-                </p>
-              ))}
-          </div>
-
-          <div className="text-muted-foreground flex items-center justify-between text-sm">
-            <span>需要等级: {item.required_level}</span>
-            <span className="text-yellow-600 dark:text-yellow-400">
-              <CopperDisplay copper={item.buy_price} size="sm" maxParts={1} />
-            </span>
-          </div>
-
-          {/* 数量选择和购买 */}
-          <div className="border-border space-y-3 border-t pt-2">
-            {item.type === 'potion' && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-sm">数量:</span>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setBuyQuantity(Math.max(1, buyQuantity - 1))}
-                    className="bg-muted text-foreground hover:bg-secondary h-8 w-8 rounded transition-colors"
-                    disabled={isLoading || buyQuantity <= 1}
+        {/* 装备对比面板 - 左右两个card */}
+        {hasComparison && (
+          <div className="grid grid-cols-2 gap-2">
+            {/* 左边：当前装备 */}
+            <div className="border-border rounded-lg border">
+              <div
+                className="p-2 text-center text-xs font-medium"
+                style={{
+                  background: `linear-gradient(135deg, ${QUALITY_COLORS[equippedItem.quality]}20 0%, ${QUALITY_COLORS[equippedItem.quality]}10 100%)`,
+                  borderBottom: `1px solid ${QUALITY_COLORS[equippedItem.quality]}30`,
+                }}
+              >
+                当前装备
+              </div>
+              <div className="p-2">
+                <div className="mb-2 flex justify-center">
+                  <div
+                    className="flex h-12 w-12 items-center justify-center rounded border-2"
+                    style={{ borderColor: QUALITY_COLORS[equippedItem.quality] }}
                   >
-                    -
-                  </button>
-                  <input
-                    type="number"
-                    value={buyQuantity}
-                    onChange={e =>
-                      setBuyQuantity(Math.max(1, Math.min(99, parseInt(e.target.value) || 1)))
-                    }
-                    className="border-input bg-muted text-foreground w-16 rounded border px-2 py-1 text-center text-sm disabled:opacity-50"
-                    min="1"
-                    max="99"
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={() => setBuyQuantity(Math.min(99, buyQuantity + 1))}
-                    className="bg-muted text-foreground hover:bg-secondary h-8 w-8 rounded transition-colors"
-                    disabled={isLoading || buyQuantity >= 99}
+                    <span className="text-2xl">
+                      {getShopItemIcon(equippedItem.definition?.type, '')}
+                    </span>
+                  </div>
+                </div>
+                <div className="mb-2 text-center">
+                  <span
+                    className="text-sm font-bold"
+                    style={{ color: QUALITY_COLORS[equippedItem.quality] }}
                   >
-                    +
-                  </button>
+                    {equippedItem.definition?.name}
+                  </span>
+                </div>
+                <div className="space-y-1 text-xs">
+                  {diffStats.map(stat => {
+                    const shopValue = shopItemStats[stat] || 0
+                    const equippedValue = equippedStats[stat] || 0
+                    const diff = shopValue - equippedValue
+                    return (
+                      <div key={stat} className="flex items-center justify-between">
+                        <span className="text-muted-foreground">{STAT_NAMES[stat] || stat}</span>
+                        <span className="font-medium">{equippedValue}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
-            )}
-
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-foreground font-medium">总价:</span>
-              <span
-                className={`font-bold ${
-                  canAfford
-                    ? 'text-yellow-600 dark:text-yellow-400'
-                    : 'text-red-600 dark:text-red-400'
-                }`}
+            </div>
+            {/* 右边：新物品 */}
+            <div className="border-border flex-1 rounded-lg border">
+              <div
+                className="bg-green-500/10 p-2 text-center text-xs font-medium text-green-600 dark:text-green-400"
+                style={{ borderBottom: '1px solid rgba(34,197,94,0.3)' }}
               >
-                <CopperDisplay copper={totalBuyPrice} size="sm" maxParts={1} />
-              </span>
+                商店物品
+              </div>
+              <div className="p-2">
+                <div className="mb-2 flex justify-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded border-2 border-green-500">
+                    <span className="text-2xl">{getShopItemIcon(item.type, item.sub_type)}</span>
+                  </div>
+                </div>
+                <div className="mb-2 text-center">
+                  <span className="text-sm font-bold text-green-600 dark:text-green-400">
+                    {item.name}
+                  </span>
+                </div>
+                <div className="space-y-1 text-xs">
+                  {diffStats.map(stat => {
+                    const shopValue = shopItemStats[stat] || 0
+                    const equippedValue = equippedStats[stat] || 0
+                    const diff = shopValue - equippedValue
+                    return (
+                      <div key={stat} className="flex items-center justify-between">
+                        <span className="text-muted-foreground">{STAT_NAMES[stat] || stat}</span>
+                        <span
+                          className={
+                            diff > 0 ? 'font-medium text-green-500' : 'font-medium text-red-500'
+                          }
+                        >
+                          {shopValue} ({diff > 0 ? '+' : ''}
+                          {diff})
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* 数量选择（药水） */}
+                {item.type === 'potion' && (
+                  <div className="mt-3 flex items-center justify-between">
+                    <span className="text-muted-foreground text-sm">数量:</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setBuyQuantity(Math.max(1, buyQuantity - 1))}
+                        className="bg-muted text-foreground hover:bg-secondary h-7 w-7 rounded text-sm transition-colors"
+                        disabled={isLoading || buyQuantity <= 1}
+                      >
+                        -
+                      </button>
+                      <span className="w-8 text-center text-sm">{buyQuantity}</span>
+                      <button
+                        onClick={() => setBuyQuantity(Math.min(99, buyQuantity + 1))}
+                        className="bg-muted text-foreground hover:bg-secondary h-7 w-7 rounded text-sm transition-colors"
+                        disabled={isLoading || buyQuantity >= 99}
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 需要等级 */}
+                <div className="text-muted-foreground mt-2 text-xs">
+                  需要等级: {item.required_level}
+                </div>
+
+                {/* 价格 */}
+                <div className="text-sm text-yellow-600 dark:text-yellow-400">
+                  <CopperDisplay copper={item.buy_price} size="sm" maxParts={1} />
+                </div>
+
+                {/* 总价 - 仅多买时显示 */}
+                {totalBuyPrice > item.buy_price && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-foreground font-medium">总价:</span>
+                    <span
+                      className={`font-bold ${canAfford ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-500'}`}
+                    >
+                      <CopperDisplay copper={totalBuyPrice} size="sm" maxParts={1} />
+                    </span>
+                  </div>
+                )}
+
+                {/* 购买按钮 */}
+                <button
+                  onClick={onBuy}
+                  disabled={disabledBuy}
+                  className="mt-2 w-full rounded-lg bg-green-600 py-2 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
+                >
+                  {!canAfford ? '货币不足' : !levelEnough ? '等级不足' : '确认购买'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 无对比时显示属性 */}
+        {!hasComparison && (
+          <>
+            <div className="space-y-1">
+              {Object.entries(item.base_stats || {})
+                .filter(([stat]) => item.type !== 'potion' || stat !== 'restore')
+                .map(([stat, value]) => (
+                  <p key={stat} className="text-sm text-green-600 dark:text-green-400">
+                    +
+                    {typeof value === 'number' && value < 1 && stat.includes('crit')
+                      ? `${(value * 100).toFixed(0)}%`
+                      : value}{' '}
+                    {STAT_NAMES[stat] || stat}
+                  </p>
+                ))}
             </div>
 
-            <button
-              onClick={onBuy}
-              disabled={disabledBuy}
-              className="w-full rounded-lg bg-green-600 py-2.5 text-sm font-medium text-white transition-colors hover:bg-green-700 disabled:opacity-50"
-            >
-              {!canAfford ? '货币不足' : !levelEnough ? '等级不足' : '确认购买'}
-            </button>
-          </div>
-        </div>
+            <div className="text-muted-foreground flex items-center justify-between text-sm">
+              <span>需要等级: {item.required_level}</span>
+              <span className="text-yellow-600 dark:text-yellow-400">
+                <CopperDisplay copper={item.buy_price} size="sm" maxParts={1} />
+              </span>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
