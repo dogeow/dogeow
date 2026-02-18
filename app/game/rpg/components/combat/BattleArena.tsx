@@ -87,7 +87,7 @@ export function BattleArena({
       <div className="flex flex-1 flex-col items-center gap-2 p-3 sm:p-4">
         {!isLoading && isFighting && hasValidMonsters ? (
           <MonsterGroup
-            monsters={monsters}
+            monsters={monsters ?? []}
             skillUsed={skillUsed}
             skillTargetPositions={skillTargetPositions}
           />
