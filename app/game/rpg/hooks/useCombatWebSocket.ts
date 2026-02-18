@@ -56,14 +56,72 @@ interface EchoConnector {
 }
 
 const SUBSCRIBE_DEBOUNCE_MS = 150
+const RECONNECT_INTERVAL_MS = 5000 // 重连间隔 5 秒
 
 export function useCombatWebSocket(characterId: number | null) {
   const echoRef = useRef<Echo<'reverb'> | null>(null)
   const channelRef = useRef<ReturnType<Echo<'reverb'>['channel']> | null>(null)
   const subscribedCharacterIdRef = useRef<number | null>(null)
   const subscribedAtRef = useRef<number>(0)
+  const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [authError, setAuthError] = useState(false)
+
+  // 清理重连定时器
+  const clearReconnectTimer = () => {
+    if (reconnectTimerRef.current) {
+      clearInterval(reconnectTimerRef.current)
+      reconnectTimerRef.current = null
+    }
+  }
+
+  // 重新订阅频道
+  const resubscribe = () => {
+    if (!characterId || !echoRef.current) return
+
+    console.log('WebSocket: 正在重新订阅...')
+    try {
+      // 先清理旧频道
+      if (channelRef.current) {
+        try {
+          channelRef.current.stopListening('.combat.update')
+          channelRef.current.stopListening('.loot.dropped')
+          channelRef.current.stopListening('.level.up')
+          channelRef.current.stopListening('.inventory.update')
+          channelRef.current.unsubscribe()
+        } catch (e) {
+          // 忽略清理错误
+        }
+      }
+
+      // 重新订阅
+      const ch = echoRef.current.channel(`game.${characterId}`)
+      channelRef.current = ch
+
+      ch.listen('.combat.update', (data: CombatUpdateData) => {
+        console.log('🎮 Combat update received:', data)
+        useGameStore.getState().handleCombatUpdate(data)
+      })
+      ch.listen('.loot.dropped', (data: LootDroppedData) => {
+        console.log('💎 Loot dropped:', data)
+        useGameStore.getState().handleLootDropped(data)
+      })
+      ch.listen('.level.up', (data: LevelUpData) => {
+        console.log('🎉 Level up:', data)
+        useGameStore.getState().handleLevelUp(data)
+      })
+      ch.listen('.inventory.update', (data: InventoryUpdateData) => {
+        useGameStore.getState().handleInventoryUpdate(data)
+      })
+
+      subscribedCharacterIdRef.current = characterId
+      console.log('WebSocket: 重新订阅成功')
+      setIsConnected(true)
+      clearReconnectTimer()
+    } catch (error) {
+      console.error('WebSocket: 重新订阅失败', error)
+    }
+  }
 
   useEffect(() => {
     // 如果没有角色ID，或者已经订阅了相同的角色，跳过
@@ -135,6 +193,7 @@ export function useCombatWebSocket(characterId: number | null) {
           console.log('WebSocket: 已连接')
           setIsConnected(true)
           setAuthError(false)
+          clearReconnectTimer() // 清除重连定时器
           doSubscribe()
         }
 
@@ -148,6 +207,14 @@ export function useCombatWebSocket(characterId: number | null) {
         const handleDisconnected = () => {
           console.log('WebSocket: 已断开')
           setIsConnected(false)
+          // 启动重连定时器
+          if (!reconnectTimerRef.current && characterId) {
+            console.log('WebSocket: 启动重连定时器')
+            reconnectTimerRef.current = setInterval(() => {
+              console.log('WebSocket: 尝试重新订阅...')
+              resubscribe()
+            }, RECONNECT_INTERVAL_MS)
+          }
         }
 
         connection.bind('connected', handleConnected)
@@ -172,6 +239,7 @@ export function useCombatWebSocket(characterId: number | null) {
 
     // 清理函数：避免 React Strict Mode 下刚订阅就被 cleanup 取消（150ms 内不真正 unsubscribe）
     return () => {
+      clearReconnectTimer() // 清除重连定时器
       connectionCleanup?.()
       if (subscribedCharacterIdRef.current !== characterId) return
       if (Date.now() - subscribedAtRef.current < SUBSCRIBE_DEBOUNCE_MS) return
