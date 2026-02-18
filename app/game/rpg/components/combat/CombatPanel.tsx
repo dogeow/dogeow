@@ -23,7 +23,6 @@ import { DIFFICULTY_OPTIONS, DIFFICULTY_COLORS } from '../character/CharacterSel
 export function CombatPanel() {
   const currentMap = useGameStore(state => state.currentMap)
   const maps = useGameStore(state => state.maps)
-  const mapProgress = useGameStore(state => state.mapProgress)
   const enterMap = useGameStore(state => state.enterMap)
   const fetchMaps = useGameStore(state => state.fetchMaps)
   const teleportToMap = useGameStore(state => state.teleportToMap)

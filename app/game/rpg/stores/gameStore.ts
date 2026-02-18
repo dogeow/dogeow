@@ -43,7 +43,6 @@ interface GameState {
   equipment: Record<string, GameItem | null>
   skills: SkillWithLearnedState[]
   maps: MapDefinition[]
-  mapProgress: Record<number, CharacterMap>
   currentMap: MapDefinition | null
 
   // 战斗状态
@@ -177,7 +176,6 @@ const initialState = {
   skills: [],
   availableSkills: [],
   maps: [],
-  mapProgress: {},
   currentMap: null,
   isFighting: false,
   shouldAutoCombat: false, // 是否应该自动战斗
@@ -313,7 +311,6 @@ const store: StateCreator<GameState> = (set, get) => ({
                 inventory: [],
                 equipment: {},
                 skills: [],
-                mapProgress: {},
                 currentMap: null,
                 combatResult: null,
                 combatLogs: [],
@@ -807,7 +804,6 @@ const store: StateCreator<GameState> = (set, get) => ({
       set(state => ({
         ...state,
         maps: response.maps || [],
-        mapProgress: response.progress || {},
         currentMap,
         isLoading: false,
       }))

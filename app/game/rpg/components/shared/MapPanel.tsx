@@ -57,7 +57,6 @@ const getActName = (actNum: number): string => `第${toChineseNum(actNum)}幕`
 
 const MapDetailDialog = ({
   map,
-  mapProgress,
   character,
   currentMap,
   isLoading,
@@ -66,7 +65,6 @@ const MapDetailDialog = ({
   onTeleport,
 }: {
   map: MapDefinition
-  mapProgress: Record<number, any>
   character: any
   currentMap: MapDefinition | null
   isLoading: boolean
@@ -74,11 +72,6 @@ const MapDetailDialog = ({
   onEnter: (id: number) => Promise<void>
   onTeleport: (id: number) => Promise<void>
 }) => {
-  const progress = mapProgress[map.id]
-  const hasTeleport = progress?.teleport_unlocked || false
-  const isCurrentMap = currentMap?.id === map.id
-  const canTeleport = hasTeleport && !isCurrentMap
-  const canShowEnter = !isCurrentMap
   const disabledTeleport = isLoading || !character
 
   // 计算怪物等级范围（仅从怪物定义取，无等级限制）
@@ -151,8 +144,7 @@ const MapDetailDialog = ({
 }
 
 export function MapPanel() {
-  const { character, maps, mapProgress, currentMap, enterMap, teleportToMap, isLoading } =
-    useGameStore()
+  const { character, maps, currentMap, enterMap, teleportToMap, isLoading } = useGameStore()
 
   const [selectedMap, setSelectedMap] = useState<MapDefinition | null>(null)
   const [selectedMonster, setSelectedMonster] = useState<MonsterDefinition | null>(null)
@@ -235,8 +227,6 @@ export function MapPanel() {
               </div>
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 {displayActMaps.map(map => {
-                  const progress = mapProgress[map.id]
-                  const hasTeleport = progress?.teleport_unlocked || false
                   const isCurrentMap = currentMap?.id === map.id
 
                   // 计算怪物等级范围（仅从怪物定义取，无等级限制）
@@ -280,14 +270,9 @@ export function MapPanel() {
                         <div className="mb-1.5 flex items-center justify-between text-xs">
                           <span className="text-muted-foreground">怪物 {levelText}</span>
                           <div className="flex gap-1">
-                            {hasTeleport && (
-                              <span
-                                className="text-blue-600 dark:text-blue-400"
-                                title="传送点已解锁"
-                              >
-                                🌀
-                              </span>
-                            )}
+                            <span className="text-blue-600 dark:text-blue-400" title="传送点已解锁">
+                              🌀
+                            </span>
                           </div>
                         </div>
                         {!!map.monsters?.length && (
@@ -315,7 +300,6 @@ export function MapPanel() {
       {selectedMap && (
         <MapDetailDialog
           map={selectedMap}
-          mapProgress={mapProgress}
           character={character}
           currentMap={currentMap}
           isLoading={isLoading}
