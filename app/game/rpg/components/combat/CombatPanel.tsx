@@ -90,7 +90,7 @@ export function CombatPanel() {
       const state = useGameStore.getState()
       if (state.currentMap || state.maps.length === 0) return
       const sorted = [...state.maps].sort(
-        (a, b) => (a.act !== b.act ? a.act - b.act : 0) || a.min_level - b.min_level || a.id - b.id
+        (a, b) => (a.act !== b.act ? a.act - b.act : 0) || a.id - b.id
       )
       const first = sorted[0]
       if (first) await enterMap(first.id)
@@ -220,12 +220,16 @@ export function CombatPanel() {
                 {displayActMaps.map(map => {
                   const isCurrentMap = currentMap?.id === map.id
 
-                  // 计算怪物等级范围
+                  // 计算怪物等级范围（仅从怪物定义取，无等级限制）
                   const monsterLevels = map.monsters?.map(m => m.level) ?? []
                   const minMonsterLevel =
-                    monsterLevels.length > 0 ? Math.min(...monsterLevels) : map.min_level
+                    monsterLevels.length > 0 ? Math.min(...monsterLevels) : null
                   const maxMonsterLevel =
-                    monsterLevels.length > 0 ? Math.max(...monsterLevels) : map.max_level
+                    monsterLevels.length > 0 ? Math.max(...monsterLevels) : null
+                  const levelText =
+                    minMonsterLevel != null && maxMonsterLevel != null
+                      ? `Lv.${minMonsterLevel}-${maxMonsterLevel}`
+                      : '—'
 
                   return (
                     <button
@@ -248,9 +252,7 @@ export function CombatPanel() {
                           <span className="font-medium text-white">{map.name}</span>
                           {isCurrentMap && <span className="text-primary text-xs">(当前)</span>}
                         </div>
-                        <div className="text-xs text-gray-400">
-                          怪物 Lv.{minMonsterLevel}-{maxMonsterLevel}
-                        </div>
+                        <div className="text-xs text-gray-400">怪物 {levelText}</div>
                         {map.monsters?.length ? (
                           <div className="mt-1 flex gap-1">
                             {map.monsters.slice(0, 4).map(m => (
@@ -365,10 +367,7 @@ export function CombatPanel() {
                   }
                   // 获取排序后的第一个地图
                   const sorted = [...maps].sort(
-                    (a, b) =>
-                      (a.act !== b.act ? a.act - b.act : 0) ||
-                      a.min_level - b.min_level ||
-                      a.id - b.id
+                    (a, b) => (a.act !== b.act ? a.act - b.act : 0) || a.id - b.id
                   )
                   const firstMap = sorted[0]
                   if (firstMap) {

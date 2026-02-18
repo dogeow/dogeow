@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, memo } from 'react'
+import { useState, useCallback } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useGameStore } from '../../stores/gameStore'
 
@@ -166,4 +166,4 @@ function CharacterForm({ onCreateSuccess, onBack }: CreateCharacterProps) {
   )
 }
 
-export const CreateCharacter = memo(CharacterForm)
+export const CreateCharacter = CharacterForm

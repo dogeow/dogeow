@@ -32,8 +32,7 @@ const INVENTORY_CATEGORIES = [
   { id: 'armor', emoji: '🛡️', label: '防具', types: ['helmet', 'armor', 'belt'] },
   { id: 'gloves', emoji: '🧤', label: '手套', types: ['gloves'] },
   { id: 'boots', emoji: '👢', label: '靴子', types: ['boots'] },
-  { id: 'accessory', emoji: '💍', label: '饰品', types: ['ring'] },
-  { id: 'amulet', emoji: '📿', label: '护身符', types: ['amulet'] },
+  { id: 'accessory', emoji: '💍', label: '饰品', types: ['ring', 'amulet'] },
   { id: 'potion', emoji: '🧪', label: '药水', types: ['potion'] },
   { id: 'gem', emoji: '💎', label: '宝石', types: ['gem'] },
 ] as const
@@ -906,13 +905,6 @@ export function EquipmentGrid({
             slot="helmet"
             item={equipment.helmet}
             onClick={() => equipment.helmet && setSelectedSlot('helmet')}
-          />
-        </div>
-        <div className="flex justify-center">
-          <EquipmentSlotComponent
-            slot="amulet"
-            item={equipment.amulet}
-            onClick={() => equipment.amulet && setSelectedSlot('amulet')}
           />
         </div>
         <div className="flex justify-center">

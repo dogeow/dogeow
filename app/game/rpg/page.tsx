@@ -60,7 +60,7 @@ export default function RPGGame() {
     resolvedView = 'select'
   } else if (showCreateView) {
     resolvedView = 'create'
-  } else if (!characters?.length) {
+  } else if (!characters?.length && !showCreateView) {
     resolvedView = 'create'
   } else {
     resolvedView = character ? 'game' : 'select'

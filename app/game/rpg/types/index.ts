@@ -13,15 +13,7 @@ export type ItemType =
   | 'amulet'
   | 'potion'
   | 'gem'
-export type EquipmentSlot =
-  | 'weapon'
-  | 'helmet'
-  | 'armor'
-  | 'gloves'
-  | 'boots'
-  | 'belt'
-  | 'ring'
-  | 'amulet'
+export type EquipmentSlot = 'weapon' | 'helmet' | 'armor' | 'gloves' | 'boots' | 'belt' | 'ring'
 export type SkillType = 'active' | 'passive'
 export type MonsterType = 'normal' | 'elite' | 'boss'
 
@@ -101,9 +93,6 @@ export interface ItemDefinition {
   sub_type?: string
   base_stats: Record<string, number>
   required_level: number
-  required_strength: number
-  required_dexterity: number
-  required_energy: number
   icon?: string
   description?: string
   buy_price?: number
@@ -143,6 +132,12 @@ export interface SkillDefinition {
   description?: string
   type: SkillType
   class_restriction: CharacterClass | 'all'
+  /** 技能分支/流派：fire火焰/ice冰霜/lightning闪电/warrior力量/ranger敏捷/passive被动 */
+  branch?: string
+  /** 技能层级：1基础/2中级/3高级 */
+  tier?: number
+  /** 前置技能ID（学习此技能需要先学习前置技能） */
+  prerequisite_skill_id?: number | null
   max_level: number
   base_damage: number
   damage_per_level: number
@@ -177,8 +172,6 @@ export interface MapDefinition {
   id: number
   name: string
   act: number
-  min_level: number
-  max_level: number
   monster_ids: number[]
   monsters?: MonsterDefinition[]
   background?: string
@@ -360,7 +353,6 @@ export const SLOT_NAMES: Record<EquipmentSlot, string> = {
   boots: '靴子',
   belt: '腰带',
   ring: '戒指',
-  amulet: '护身符',
 }
 
 export const STAT_NAMES: Record<string, string> = {
@@ -395,9 +387,6 @@ export interface ShopItem {
   base_stats: Record<string, number>
   quality: ItemQuality
   required_level: number
-  required_strength: number
-  required_dexterity: number
-  required_energy: number
   icon?: string
   description?: string
   buy_price: number
@@ -433,9 +422,6 @@ export interface CompendiumItem {
   sub_type?: string
   base_stats: Record<string, number>
   required_level: number
-  required_strength: number
-  required_dexterity: number
-  required_energy: number
   icon?: string
   description?: string
   drop_rate?: number

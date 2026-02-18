@@ -99,13 +99,18 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
         setIsDeleteMode(false)
         return
       }
+      // 关闭难度选择面板
+      if (openCharacterId != null) {
+        setOpenCharacterId(null)
+        return
+      }
       try {
         await selectCharacter(characterId)
       } catch (error) {
         console.error('选择角色失败:', error)
       }
     },
-    [selectCharacter, isDeleteMode]
+    [selectCharacter, isDeleteMode, openCharacterId]
   )
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -130,10 +135,17 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
     (character: Character) => {
       const classInfo = CLASS_INFO[character.class as keyof typeof CLASS_INFO]
       const difficultyTier = character.difficulty_tier ?? 0
+
+      const handleDeleteClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        setDeleteConfirmId(character.id)
+        setIsDeleteMode(false)
+      }
+
       return (
         <div
           key={character.id}
-          className={`relative flex min-h-[180px] max-w-[200px] flex-1 flex-col rounded-lg border-2 p-3 sm:min-h-[200px] ${classInfo.color} cursor-pointer transition-transform hover:scale-[1.02] ${isDeleteMode ? 'border-destructive hover:border-destructive' : ''}`}
+          className={`relative flex min-h-[180px] max-w-[200px] flex-1 flex-col rounded-lg border-2 p-3 sm:min-h-[200px] ${classInfo.color} cursor-pointer transition-transform hover:scale-[1.02]`}
           onClick={() => handleSelectCharacter(character.id)}
         >
           <div className="flex min-h-0 flex-1 flex-col items-center justify-between overflow-hidden text-center">
@@ -147,16 +159,26 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
                 <div className="text-sm text-yellow-600 dark:text-yellow-400">战斗中</div>
               )}
             </div>
-            <button
-              type="button"
-              onClick={e => {
-                e.stopPropagation()
-                setOpenCharacterId(character.id)
-              }}
-              className={`${DIFFICULTY_COLORS[difficultyTier] || 'bg-green-600'} w-full flex-shrink-0 rounded px-2 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90`}
-            >
-              {DIFFICULTY_OPTIONS.find(o => o.tier === difficultyTier)?.label ?? '普通'}
-            </button>
+            {isDeleteMode ? (
+              <button
+                type="button"
+                onClick={handleDeleteClick}
+                className="bg-destructive w-full flex-shrink-0 rounded px-2 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
+              >
+                删除
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation()
+                  setOpenCharacterId(character.id)
+                }}
+                className={`${DIFFICULTY_COLORS[difficultyTier] || 'bg-green-600'} w-full flex-shrink-0 rounded px-2 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90`}
+              >
+                {DIFFICULTY_OPTIONS.find(o => o.tier === difficultyTier)?.label ?? '普通'}
+              </button>
+            )}
           </div>
         </div>
       )
@@ -183,7 +205,7 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
           <h1 className="text-base font-bold">选择角色</h1>
           <div className="flex gap-2">
             <button
-              onClick={() => setIsDeleteMode(true)}
+              onClick={() => setIsDeleteMode(!isDeleteMode)}
               disabled={!characters || characters.length === 0}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg px-4 py-2 text-sm transition-colors disabled:opacity-50"
             >
@@ -197,13 +219,6 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
             </button>
           </div>
         </div>
-
-        {/* 删除模式提示 */}
-        {isDeleteMode && (
-          <div className="border-destructive bg-destructive/20 text-destructive mb-4 rounded-lg border p-3 text-sm">
-            点击要删除的角色
-          </div>
-        )}
 
         {/* 错误提示 */}
         {!!error && (

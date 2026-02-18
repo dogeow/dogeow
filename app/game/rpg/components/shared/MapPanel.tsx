@@ -81,10 +81,14 @@ const MapDetailDialog = ({
   const canShowEnter = !isCurrentMap
   const disabledTeleport = isLoading || !character
 
-  // 计算怪物等级范围
+  // 计算怪物等级范围（仅从怪物定义取，无等级限制）
   const monsterLevels = map.monsters?.map(m => m.level) ?? []
-  const minMonsterLevel = monsterLevels.length > 0 ? Math.min(...monsterLevels) : map.min_level
-  const maxMonsterLevel = monsterLevels.length > 0 ? Math.max(...monsterLevels) : map.max_level
+  const minMonsterLevel = monsterLevels.length > 0 ? Math.min(...monsterLevels) : null
+  const maxMonsterLevel = monsterLevels.length > 0 ? Math.max(...monsterLevels) : null
+  const levelText =
+    minMonsterLevel != null && maxMonsterLevel != null
+      ? `Lv.${minMonsterLevel}-${maxMonsterLevel}`
+      : '—'
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -94,9 +98,7 @@ const MapDetailDialog = ({
           <p className="text-muted-foreground mb-4 text-sm sm:text-base">{map.description}</p>
           <div className="bg-muted/50 mb-4 rounded-lg p-2 sm:p-3">
             <p className="text-muted-foreground text-xs sm:text-sm">怪物等级</p>
-            <p className="text-foreground text-sm font-bold sm:text-base">
-              Lv.{minMonsterLevel}-{maxMonsterLevel}
-            </p>
+            <p className="text-foreground text-sm font-bold sm:text-base">{levelText}</p>
           </div>
           {map.monsters?.length ? (
             <div className="mb-4">
@@ -237,12 +239,16 @@ export function MapPanel() {
                   const hasTeleport = progress?.teleport_unlocked || false
                   const isCurrentMap = currentMap?.id === map.id
 
-                  // 计算怪物等级范围
+                  // 计算怪物等级范围（仅从怪物定义取，无等级限制）
                   const monsterLevels = map.monsters?.map(m => m.level) ?? []
                   const minMonsterLevel =
-                    monsterLevels.length > 0 ? Math.min(...monsterLevels) : map.min_level
+                    monsterLevels.length > 0 ? Math.min(...monsterLevels) : null
                   const maxMonsterLevel =
-                    monsterLevels.length > 0 ? Math.max(...monsterLevels) : map.max_level
+                    monsterLevels.length > 0 ? Math.max(...monsterLevels) : null
+                  const levelText =
+                    minMonsterLevel != null && maxMonsterLevel != null
+                      ? `Lv.${minMonsterLevel}-${maxMonsterLevel}`
+                      : '—'
 
                   return (
                     <div
@@ -272,9 +278,7 @@ export function MapPanel() {
                           {map.description}
                         </p>
                         <div className="mb-1.5 flex items-center justify-between text-xs">
-                          <span className="text-muted-foreground">
-                            怪物 Lv.{minMonsterLevel}-{maxMonsterLevel}
-                          </span>
+                          <span className="text-muted-foreground">怪物 {levelText}</span>
                           <div className="flex gap-1">
                             {hasTeleport && (
                               <span
