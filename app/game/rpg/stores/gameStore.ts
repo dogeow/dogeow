@@ -922,7 +922,9 @@ const store: StateCreator<GameState> = (set, get) => ({
                 max_hp: response.current_combat_monster.max_hp,
               },
               monsterId: response.current_combat_monster.id,
-              monsters: response.current_combat_monsters ?? undefined,
+              monsters: response.current_combat_monsters
+                ? response.current_combat_monsters.filter((m): m is CombatMonster => m !== null)
+                : undefined,
             }
           : null
       set(state => ({
