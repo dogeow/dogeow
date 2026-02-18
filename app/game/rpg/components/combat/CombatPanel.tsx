@@ -18,7 +18,7 @@ import { CombatLogList } from './CombatLogList'
 import { getActName } from '../../utils/combat'
 import { MapCardMonsterAvatar } from './MapCardMonsterAvatar'
 import { LogIn, Heart, Droplet } from 'lucide-react'
-import { DIFFICULTY_OPTIONS } from '../character/CharacterSelect'
+import { DIFFICULTY_OPTIONS, DIFFICULTY_COLORS } from '../character/CharacterSelect'
 
 export function CombatPanel() {
   const currentMap = useGameStore(state => state.currentMap)
@@ -28,6 +28,7 @@ export function CombatPanel() {
   const fetchMaps = useGameStore(state => state.fetchMaps)
   const teleportToMap = useGameStore(state => state.teleportToMap)
   const startCombat = useGameStore(state => state.startCombat)
+  const revive = useGameStore(state => state.revive)
   const isFighting = useGameStore(state => state.isFighting)
   const setShouldAutoCombat = useGameStore(state => state.setShouldAutoCombat)
   const stopCombat = useGameStore(state => state.stopCombat)
@@ -145,12 +146,26 @@ export function CombatPanel() {
     () => learnedSkills.filter(s => s.skill?.type === 'active'),
     [learnedSkills]
   )
-  // 技能冷却直接使用 combatResult 中的值
-  const skillCooldowns = combatResult?.skill_cooldowns ?? {}
+  // skill_cooldowns 是技能冷却到期的回合号，需要减去当前回合数得到剩余冷却
+  const currentRound = combatResult?.rounds ?? 0
+  const skillCooldowns = useMemo(() => {
+    const cooldowns = combatResult?.skill_cooldowns ?? {}
+    const result: Record<number, number> = {}
+    for (const [skillId, endRound] of Object.entries(cooldowns)) {
+      const remaining = (endRound as number) - currentRound
+      result[Number(skillId)] = remaining > 0 ? remaining : 0
+    }
+    return result
+  }, [combatResult?.skill_cooldowns, currentRound])
 
   const handleStartCombat = async () => {
     await startCombat()
     setShouldAutoCombat(true)
+  }
+
+  // 角色死亡时，点击只是复活，不自动开始战斗
+  const handleRevive = async () => {
+    await revive()
   }
 
   const handleStopCombat = async () => {
@@ -170,7 +185,9 @@ export function CombatPanel() {
             >
               <span>{currentMap?.name ?? '选择地图'}</span>
               {character && character.difficulty_tier != null && character.difficulty_tier >= 0 && (
-                <span className="rounded bg-purple-600 px-1.5 py-0.5 text-xs">
+                <span
+                  className={`rounded ${DIFFICULTY_COLORS[character.difficulty_tier] || 'bg-green-600'} px-1.5 py-0.5 text-xs`}
+                >
                   {DIFFICULTY_OPTIONS.find(o => o.tier === character.difficulty_tier)?.label ??
                     '普通'}
                 </span>
@@ -289,9 +306,13 @@ export function CombatPanel() {
                   monsters={combatResult?.monsters}
                   isFighting={isFighting}
                   isLoading={isLoading}
-                  // 角色死亡时(isFighting可能是true但currentHp<=0)，点击应该开始战斗(复活)
+                  // 角色死亡时(isFighting可能是true但currentHp<=0)，点击只是复活，不自动开始战斗
                   onCombatToggle={
-                    isFighting && (currentHp ?? 0) > 0 ? handleStopCombat : handleStartCombat
+                    isFighting
+                      ? (currentHp ?? 0) > 0
+                        ? handleStopCombat
+                        : handleRevive
+                      : handleStartCombat
                   }
                   skillUsed={combatResult?.skills_used?.[0]}
                   skillTargetPositions={combatResult?.skill_target_positions}

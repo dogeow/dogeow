@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useCallback, memo } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { useGameStore } from '../../stores/gameStore'
 
 interface CreateCharacterProps {
   onCreateSuccess?: () => void
+  onBack?: () => void
 }
 
 const CLASS_OPTIONS = [
@@ -38,7 +40,7 @@ const classDict = Object.fromEntries(CLASS_OPTIONS.map(opt => [opt.key, opt])) a
   (typeof CLASS_OPTIONS)[number]
 >
 
-function CharacterForm({ onCreateSuccess }: CreateCharacterProps) {
+function CharacterForm({ onCreateSuccess, onBack }: CreateCharacterProps) {
   const { createCharacter, isLoading, error, fetchCharacters } = useGameStore()
   const [name, setName] = useState('')
   const [selectedClass, setSelectedClass] = useState<ClassKey>('warrior')
@@ -72,7 +74,22 @@ function CharacterForm({ onCreateSuccess }: CreateCharacterProps) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center p-4">
       <div className="bg-card border-border w-full max-w-md rounded-lg border p-6 shadow-xl">
-        <h2 className="text-foreground mb-6 text-center text-2xl font-bold">创建角色</h2>
+        <div className="mb-6 flex items-center gap-2">
+          {onBack ? (
+            <button
+              type="button"
+              onClick={onBack}
+              disabled={isLoading}
+              className="text-muted-foreground hover:text-foreground flex shrink-0 items-center gap-2 rounded-lg px-2 py-1.5 text-sm transition-colors disabled:opacity-50"
+              aria-label="返回选择角色"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              返回
+            </button>
+          ) : null}
+          <h2 className="text-foreground flex-1 text-center text-2xl font-bold">创建角色</h2>
+          {onBack ? <span className="w-14 shrink-0" aria-hidden /> : null}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>

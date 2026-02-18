@@ -177,7 +177,10 @@ export default function RPGGame() {
   if (resolvedView === 'create') {
     return (
       <div className="bg-background text-foreground min-h-screen">
-        <CreateCharacter onCreateSuccess={() => setShowCreateView(false)} />
+        <CreateCharacter
+          onCreateSuccess={() => setShowCreateView(false)}
+          onBack={() => setShowCreateView(false)}
+        />
       </div>
     )
   }

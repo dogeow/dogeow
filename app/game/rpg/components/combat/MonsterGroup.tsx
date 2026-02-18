@@ -66,6 +66,9 @@ export function MonsterGroup({
     [monsters]
   )
 
+  // 检查是否有有效怪物
+  const hasValidMonsters = validMonsters.length > 0
+
   // 检测怪物掉血并显示伤害数字，以及检测新怪物
   useEffect(() => {
     // 检测新怪物：通过比较 instance_id
@@ -160,7 +163,8 @@ export function MonsterGroup({
     prevMonstersRef.current = validMonsters
   }, [validMonsters])
 
-  if (!monsters || monsters.length === 0) return null
+  // 如果没有有效怪物则不渲染
+  if (!hasValidMonsters) return null
 
   return (
     <>

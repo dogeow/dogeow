@@ -32,9 +32,9 @@ interface CharacterSelectProps {
 }
 
 const CLASS_INFO = {
-  warrior: { name: '战士', icon: '⚔️', color: 'bg-red-500/20 border-red-500' },
-  mage: { name: '法师', icon: '🔮', color: 'bg-blue-500/20 border-blue-500' },
-  ranger: { name: '弓手', icon: '🏹', color: 'bg-green-500/20 border-green-500' },
+  warrior: { name: '战士', icon: '⚔️', color: '' },
+  mage: { name: '法师', icon: '🔮', color: '' },
+  ranger: { name: '弓手', icon: '🏹', color: '' },
 }
 
 export const DIFFICULTY_OPTIONS: { tier: number; label: string }[] = [
@@ -44,6 +44,19 @@ export const DIFFICULTY_OPTIONS: { tier: number; label: string }[] = [
   { tier: 3, label: '大师' },
   ...Array.from({ length: 6 }, (_, i) => ({ tier: i + 4, label: `痛苦${i + 1}` })),
 ]
+
+export const DIFFICULTY_COLORS: Record<number, string> = {
+  0: 'bg-green-600', // 普通 - 绿色
+  1: 'bg-blue-600', // 困难 - 蓝色
+  2: 'bg-yellow-600', // 高手 - 黄色
+  3: 'bg-orange-600', // 大师 - 橙色
+  4: 'bg-red-600', // 痛苦1 - 红色
+  5: 'bg-rose-700', // 痛苦2
+  6: 'bg-pink-700', // 痛苦3
+  7: 'bg-fuchsia-700', // 痛苦4
+  8: 'bg-purple-800', // 痛苦5
+  9: 'bg-violet-900', // 痛苦6
+}
 
 export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectProps) {
   const {
@@ -57,6 +70,7 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
 
   const [openCharacterId, setOpenCharacterId] = useState<number | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null)
+  const [isDeleteMode, setIsDeleteMode] = useState(false)
 
   const openCharacter = useMemo(
     () => characters?.find(c => c.id === openCharacterId),
@@ -80,13 +94,18 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
 
   const handleSelectCharacter = useCallback(
     async (characterId: number) => {
+      if (isDeleteMode) {
+        setDeleteConfirmId(characterId)
+        setIsDeleteMode(false)
+        return
+      }
       try {
         await selectCharacter(characterId)
       } catch (error) {
         console.error('选择角色失败:', error)
       }
     },
-    [selectCharacter]
+    [selectCharacter, isDeleteMode]
   )
 
   const handleDeleteConfirm = useCallback(async () => {
@@ -95,6 +114,7 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
     try {
       await deleteCharacter(id)
       setDeleteConfirmId(null)
+      setIsDeleteMode(false)
     } catch {
       // 错误已由 store 写入 error，对话框保持打开
     }
@@ -113,25 +133,19 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
       return (
         <div
           key={character.id}
-          className={`relative flex min-h-[180px] max-w-[200px] flex-1 flex-col rounded-lg border-2 p-3 sm:min-h-[200px] ${classInfo.color} cursor-pointer transition-transform hover:scale-[1.02]`}
+          className={`relative flex min-h-[180px] max-w-[200px] flex-1 flex-col rounded-lg border-2 p-3 sm:min-h-[200px] ${classInfo.color} cursor-pointer transition-transform hover:scale-[1.02] ${isDeleteMode ? 'border-destructive hover:border-destructive' : ''}`}
           onClick={() => handleSelectCharacter(character.id)}
         >
-          <button
-            type="button"
-            onClick={e => {
-              e.stopPropagation()
-              setDeleteConfirmId(character.id)
-            }}
-            className="text-muted-foreground hover:text-destructive absolute top-2 right-2 rounded p-1 transition-colors"
-            aria-label="删除角色"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
           <div className="flex min-h-0 flex-1 flex-col items-center justify-between overflow-hidden text-center">
             <div className="flex-shrink-0">
-              <div className="text-xl sm:text-2xl">{classInfo.icon}</div>
-              <h3 className="mt-1 truncate text-xs font-bold sm:text-sm">{character.name}</h3>
-              <p className="text-muted-foreground text-xs">{classInfo.name}</p>
+              <div className="text-sm">{classInfo.icon}</div>
+              <h3 className="mt-1 truncate text-sm font-bold">{character.name}</h3>
+              <p className="text-muted-foreground mt-1 text-sm">
+                {classInfo.name} · Lv.{character.level}
+              </p>
+              {character.is_fighting && (
+                <div className="text-sm text-yellow-600 dark:text-yellow-400">战斗中</div>
+              )}
             </div>
             <button
               type="button"
@@ -139,35 +153,15 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
                 e.stopPropagation()
                 setOpenCharacterId(character.id)
               }}
-              className="border-border bg-card text-foreground hover:bg-muted w-full flex-shrink-0 rounded border px-2 py-1.5 text-xs transition-colors"
+              className={`${DIFFICULTY_COLORS[difficultyTier] || 'bg-green-600'} w-full flex-shrink-0 rounded px-2 py-1.5 text-sm font-medium text-white transition-opacity hover:opacity-90`}
             >
               {DIFFICULTY_OPTIONS.find(o => o.tier === difficultyTier)?.label ?? '普通'}
             </button>
-            <div className="text-muted-foreground flex-shrink-0 text-xs">
-              <div>Lv.{character.level}</div>
-              {character.is_fighting && (
-                <div className="text-yellow-600 dark:text-yellow-400">战斗中</div>
-              )}
-            </div>
           </div>
         </div>
       )
     },
-    [handleSelectCharacter]
-  )
-
-  // 新角色按钮渲染
-  const renderCreateCharacterBtn = useCallback(
-    () => (
-      <div
-        onClick={onCreateCharacter}
-        className="border-border hover:border-primary hover:bg-muted/50 flex min-h-[180px] max-w-[200px] flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-3 transition-all sm:min-h-[200px]"
-      >
-        <div className="text-muted-foreground hover:text-foreground text-2xl sm:text-3xl">+</div>
-        <div className="text-muted-foreground hover:text-foreground mt-1 text-xs">创建新角色</div>
-      </div>
-    ),
-    [onCreateCharacter]
+    [handleSelectCharacter, isDeleteMode]
   )
 
   if (isLoading) {
@@ -175,25 +169,41 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
       <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="border-primary mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-t-transparent" />
-          <p className="text-muted-foreground">加载角色列表中...</p>
+          <p className="text-muted-foreground text-sm">加载角色列表中...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="bg-background text-foreground min-h-screen p-4">
+    <div className="min-h-screen p-4">
       <div className="mx-auto max-w-4xl">
         {/* 头部 */}
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">选择角色</h1>
-          <button
-            onClick={onBack}
-            className="bg-muted hover:bg-secondary rounded-lg px-4 py-2 transition-colors"
-          >
-            返回
-          </button>
+          <h1 className="text-base font-bold">选择角色</h1>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setIsDeleteMode(true)}
+              disabled={!characters || characters.length === 0}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg px-4 py-2 text-sm transition-colors disabled:opacity-50"
+            >
+              {isDeleteMode ? '取消删除' : '删除角色'}
+            </button>
+            <button
+              onClick={onCreateCharacter}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg px-4 py-2 text-sm transition-colors"
+            >
+              创建角色
+            </button>
+          </div>
         </div>
+
+        {/* 删除模式提示 */}
+        {isDeleteMode && (
+          <div className="border-destructive bg-destructive/20 text-destructive mb-4 rounded-lg border p-3 text-sm">
+            点击要删除的角色
+          </div>
+        )}
 
         {/* 错误提示 */}
         {!!error && (
@@ -206,9 +216,6 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
         {characters && characters.length > 0 ? (
           <div className="mx-auto flex max-w-2xl flex-wrap justify-center gap-4">
             {characters.map(renderCharacterCard)}
-
-            {/* 创建新角色按钮 */}
-            {characters.length < 3 && renderCreateCharacterBtn()}
           </div>
         ) : (
           <div className="py-12 text-center">
@@ -229,7 +236,12 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
       {/* 删除确认 */}
       <AlertDialog
         open={deleteConfirmId !== null}
-        onOpenChange={open => !open && setDeleteConfirmId(null)}
+        onOpenChange={open => {
+          if (!open) {
+            setDeleteConfirmId(null)
+            setIsDeleteMode(false)
+          }
+        }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -260,26 +272,26 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
       >
         <SheetContent side="bottom" className="border-border bg-card rounded-t-xl">
           <SheetHeader>
-            <SheetTitle className="text-foreground">选择难度</SheetTitle>
+            <SheetTitle className="text-foreground text-sm">选择难度</SheetTitle>
           </SheetHeader>
           <div className="max-h-[60vh] overflow-y-auto pb-8">
-            {DIFFICULTY_OPTIONS.map(({ tier, label }) => (
-              <button
-                key={tier}
-                type="button"
-                onClick={() => handleDifficultySelect(tier)}
-                className={`text-foreground flex w-full items-center justify-between rounded-lg px-4 py-3 text-left transition-colors ${
-                  tier === currentTier
-                    ? 'bg-green-500/20 text-green-600 dark:text-green-400'
-                    : 'hover:bg-muted'
-                }`}
-              >
-                <span>{label}</span>
-                {tier === currentTier && (
-                  <span className="text-green-600 dark:text-green-400">✓</span>
-                )}
-              </button>
-            ))}
+            {DIFFICULTY_OPTIONS.map(({ tier, label }) => {
+              const colorClass = DIFFICULTY_COLORS[tier] || 'bg-green-600'
+              const isSelected = tier === currentTier
+              return (
+                <button
+                  key={tier}
+                  type="button"
+                  onClick={() => handleDifficultySelect(tier)}
+                  className={`flex w-full items-center justify-between rounded-lg px-4 py-3 text-left transition-colors ${
+                    isSelected ? `${colorClass} text-white` : 'text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <span className={isSelected ? 'text-sm text-white' : 'text-sm'}>{label}</span>
+                  {isSelected && <span>✓</span>}
+                </button>
+              )
+            })}
           </div>
         </SheetContent>
       </Sheet>

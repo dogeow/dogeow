@@ -51,7 +51,10 @@ export function BattleSkillBar({
         )
         const btnClass = `hover:bg-muted/80 focus-visible:ring-ring relative flex flex-col items-center gap-0.5 rounded-md transition-[background-color] duration-150 focus:outline-none focus-visible:ring-2 outline-offset-0`
         return enabled ? (
-          <div key={cs.id} className={styles['skill-marquee-wrap']}>
+          <div
+            key={cs.id}
+            className={`${styles['skill-marquee-wrap']} ${disabled ? 'paused' : ''}`}
+          >
             <button
               type="button"
               className={`${styles['skill-marquee-btn']} bg-muted/50 ${btnClass}`}

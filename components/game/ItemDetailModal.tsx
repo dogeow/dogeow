@@ -5,6 +5,7 @@ import { ItemDetailContent } from './ItemDetailContent'
 import { FullComparePanel } from './ItemComparePanel'
 import { ItemActions, type ItemActionType } from './ItemActions'
 import { isEquippable, isPotion } from '@/app/game/rpg/utils/itemUtils'
+import { CopperDisplay } from '@/app/game/rpg/components/shared/CopperDisplay'
 
 interface BaseItemDetailModalProps {
   isOpen: boolean
@@ -179,15 +180,10 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
 
   const shopItem = item as ShopItem
 
-  // 调试日志
-  console.log('[ShopItemDetail] shopItem.type:', shopItem.type, 'shopItem.name:', shopItem.name)
-
   // 计算是否有可对比的装备
   // 商店物品中，只有装备类型（不是药水和宝石）才能对比
   const isEquippableType = shopItem.type !== 'potion' && shopItem.type !== 'gem'
   const hasEquipped = isEquippableType && equippedItem != null
-
-  const isPotionType = shopItem.type === 'potion'
 
   // 转换为 GameItem 用于对比计算
   const shopItemAsGameItem: GameItem = {
@@ -227,8 +223,8 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
 
       {/* 物品详情 - 右边（无对比时）或者购买按钮区域（有对比时） */}
       <div className="flex flex-1 flex-col">
-        {/* 数量选择（仅药水） */}
-        {isPotionType && setBuyQuantity && (
+        {/* 数量选择 */}
+        {setBuyQuantity && (
           <div className="flex items-center justify-between px-3 pt-2">
             <span className="text-muted-foreground text-sm">数量:</span>
             <div className="flex items-center gap-2">
@@ -265,14 +261,31 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
           </div>
         )}
 
-        {/* 总价 - 仅多买时显示 */}
-        {totalBuyPrice && totalBuyPrice > shopItem.buy_price && (
+        {/* 快捷数量按钮 */}
+        {setBuyQuantity && (
+          <div className="flex items-center justify-center gap-1 px-3 pt-1">
+            {[1, 10, 100].map(qty => (
+              <button
+                key={qty}
+                onClick={() => setBuyQuantity(qty)}
+                className={`rounded px-3 py-1 text-xs transition-colors ${
+                  buyQuantity === qty
+                    ? 'bg-green-600 text-white'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                {qty}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* 总价 */}
+        {totalBuyPrice != null && totalBuyPrice > 0 && (
           <div className="flex items-center justify-between px-3 pt-1">
             <span className="text-foreground text-sm font-medium">总价:</span>
-            <span
-              className={`text-sm font-bold ${canAfford ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-500'}`}
-            >
-              {totalBuyPrice} 铜
+            <span className={canAfford ? '' : 'text-red-500'}>
+              <CopperDisplay copper={totalBuyPrice} size="sm" />
             </span>
           </div>
         )}

@@ -160,7 +160,10 @@ export function CompendiumPanel() {
           </div>
 
           {/* 物品详情 Dialog */}
-          <Dialog open={!!selectedItem} onOpenChange={open => !open && setSelectedItem(null)}>
+          <Dialog
+            open={!!selectedItem && !viewingImage}
+            onOpenChange={open => !open && setSelectedItem(null)}
+          >
             <DialogContent className="bg-card max-w-md">
               {selectedItem && (
                 <div className="flex gap-4">
@@ -288,9 +291,9 @@ export function CompendiumPanel() {
             ))}
           </div>
 
-          {/* 怪物详情 Dialog */}
+          {/* 怪物详情 Dialog：查看大图时关闭，避免 Dialog 遮罩挡住大图层的关闭按钮 */}
           <Dialog
-            open={!!selectedMonster}
+            open={!!selectedMonster && !viewingImage}
             onOpenChange={open => !open && handleMonsterDialogClose()}
           >
             <DialogContent className="bg-card max-h-[80vh] max-w-md overflow-y-auto">

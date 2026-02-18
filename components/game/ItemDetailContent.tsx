@@ -1,5 +1,7 @@
 'use client'
 
+import { useState } from 'react'
+import Image from 'next/image'
 import type { GameItem, ItemQuality, ShopItem } from '@/app/game/rpg/types'
 import { QUALITY_COLORS, QUALITY_NAMES, STAT_NAMES } from '@/app/game/rpg/types'
 import { ItemTipIcon } from './ItemTipIcon'
@@ -10,6 +12,33 @@ import {
   ITEM_TYPE_NAMES,
 } from '@/app/game/rpg/utils/itemUtils'
 import { CopperDisplay } from '@/app/game/rpg/components/shared/CopperDisplay'
+
+/** 商店物品图标：优先使用图片，加载失败则用 emoji */
+function ShopItemIcon({ item, className }: { item: ShopItem; className?: string }) {
+  const definitionId = item.id
+  const fallback = getShopItemIcon(item.type, item.sub_type)
+  const [useImg, setUseImg] = useState(true)
+  const src = `/game/rpg/items/item_${definitionId}.png`
+
+  return (
+    <span
+      className={`relative inline-flex h-full w-full items-center justify-center ${className ?? ''}`}
+    >
+      {useImg ? (
+        <Image
+          src={src}
+          alt=""
+          fill
+          className="object-contain"
+          sizes="100px"
+          onError={() => setUseImg(false)}
+        />
+      ) : (
+        <span className="drop-shadow-sm">{fallback}</span>
+      )}
+    </span>
+  )
+}
 
 interface ItemDetailContentProps {
   item: GameItem | ShopItem
@@ -59,9 +88,7 @@ export function ItemDetailContent({ item, type }: ItemDetailContentProps) {
           className="relative flex h-[100px] w-[100px] shrink-0 items-center justify-center rounded-lg border-2 shadow-sm"
           style={{ borderColor: QUALITY_COLORS[quality as ItemQuality] }}
         >
-          <span className="text-5xl drop-shadow-sm">
-            {getShopItemIcon((item as ShopItem).type, (item as ShopItem).sub_type)}
-          </span>
+          <ShopItemIcon item={item as ShopItem} className="h-full w-full" />
         </span>
       ) : (
         <ItemTipIcon item={item as GameItem} className="shrink-0 drop-shadow-lg" />

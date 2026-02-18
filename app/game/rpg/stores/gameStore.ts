@@ -121,6 +121,7 @@ interface GameState {
   fetchCombatStatus: () => Promise<void>
   fetchCombatLogs: () => Promise<void>
   startCombat: () => Promise<void>
+  revive: () => Promise<void>
   stopCombat: () => Promise<void>
   executeCombat: () => Promise<void>
   setShouldAutoCombat: (should: boolean) => void // 设置是否应该自动战斗
@@ -1000,6 +1001,31 @@ const store: StateCreator<GameState> = (set, get) => ({
           isLoading: false,
         }))
       }
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  /** 复活角色，不自动开始战斗 */
+  revive: async () => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const selectedId = get().selectedCharacterId
+      if (!selectedId) {
+        set(state => ({ ...state, isLoading: false }))
+        return
+      }
+      await post('/rpg/combat/start', { character_id: selectedId })
+      // 刷新角色数据
+      await get().fetchCharacter()
+      // 复活后不自动开始战斗
+      set(state => ({
+        ...state,
+        isFighting: false,
+        shouldAutoCombat: false,
+        character: state.character ? { ...state.character, is_fighting: false } : null,
+        isLoading: false,
+      }))
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }

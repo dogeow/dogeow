@@ -41,16 +41,15 @@ const SHOP_REFRESH_COST_COPPER = 100
 
 /** 商店物品类型筛选选项 */
 const SHOP_TYPE_FILTERS: { id: string; label: string; types: ItemType[] }[] = [
-  { id: 'all', label: '全部', types: [] },
-  { id: 'weapon', label: '武器', types: ['weapon'] },
-  { id: 'helmet', label: '头盔', types: ['helmet'] },
-  { id: 'armor', label: '护甲', types: ['armor'] },
-  { id: 'gloves', label: '手套', types: ['gloves'] },
-  { id: 'boots', label: '鞋子', types: ['boots'] },
-  { id: 'belt', label: '腰带', types: ['belt'] },
-  { id: 'ring', label: '戒指', types: ['ring'] },
-  { id: 'potion', label: '药水', types: ['potion'] },
-  { id: 'gem', label: '宝石', types: ['gem'] },
+  { id: 'weapon', label: '⚔️', types: ['weapon'] },
+  { id: 'helmet', label: '🪖', types: ['helmet'] },
+  { id: 'armor', label: '🛡️', types: ['armor'] },
+  { id: 'gloves', label: '🧤', types: ['gloves'] },
+  { id: 'boots', label: '👢', types: ['boots'] },
+  { id: 'belt', label: '🥋', types: ['belt'] },
+  { id: 'ring', label: '💍', types: ['ring'] },
+  { id: 'potion', label: '🧪', types: ['potion'] },
+  { id: 'gem', label: '💎', types: ['gem'] },
 ]
 
 export function ShopPanel() {
@@ -67,7 +66,7 @@ export function ShopPanel() {
   const [selectedShopItem, setSelectedShopItem] = useState<ShopItem | null>(null)
   const [buyQuantity, setBuyQuantity] = useState(1)
   const [countdown, setCountdown] = useState<number | null>(null)
-  const [typeFilter, setTypeFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
 
   const canAffordRefresh = character != null && character.copper >= SHOP_REFRESH_COST_COPPER
 
@@ -96,11 +95,7 @@ export function ShopPanel() {
     fetchShopItems()
   }, [fetchShopItems])
 
-  const totalBuyPrice = useMemo(
-    () => (selectedShopItem ? selectedShopItem.buy_price * buyQuantity : 0),
-    [selectedShopItem, buyQuantity]
-  )
-
+  const totalBuyPrice = selectedShopItem ? selectedShopItem.buy_price * buyQuantity : 0
   const canAfford = character && selectedShopItem && character.copper >= totalBuyPrice
   const levelEnough =
     character && selectedShopItem ? character.level >= selectedShopItem.required_level : false
@@ -118,13 +113,14 @@ export function ShopPanel() {
     setBuyQuantity(1)
   }
 
-  // 根据类型筛选物品
+  // 根据类型筛选物品，并按价格倒序排列
   const filteredItems = useMemo(() => {
-    const filter = SHOP_TYPE_FILTERS.find(f => f.id === typeFilter)
-    if (!filter || filter.types.length === 0) {
-      return shopItems
+    if (!typeFilter) {
+      return [...shopItems].sort((a, b) => b.buy_price - a.buy_price)
     }
-    return shopItems.filter(item => filter.types.includes(item.type))
+    const filter = SHOP_TYPE_FILTERS.find(f => f.id === typeFilter)
+    const items = filter ? shopItems.filter(item => filter.types.includes(item.type)) : shopItems
+    return [...items].sort((a, b) => b.buy_price - a.buy_price)
   }, [shopItems, typeFilter])
 
   // 获取商店物品对应的已装备物品
@@ -163,7 +159,7 @@ export function ShopPanel() {
           {SHOP_TYPE_FILTERS.map(filter => (
             <button
               key={filter.id}
-              onClick={() => setTypeFilter(filter.id)}
+              onClick={() => setTypeFilter(typeFilter === filter.id ? null : filter.id)}
               className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
                 typeFilter === filter.id
                   ? 'bg-primary text-primary-foreground'

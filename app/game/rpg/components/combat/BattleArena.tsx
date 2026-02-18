@@ -79,11 +79,13 @@ export function BattleArena({
     ? Math.min(100, Math.max(0, ((currentMana ?? 0) / combatStats.max_mana) * 100))
     : 0
 
+  const hasValidMonsters = monsters?.some(m => m != null) ?? false
+
   return (
     <div className="flex flex-col items-stretch">
       {/* 上侧：怪物（支持多只），仅在非加载且已有战斗结果时显示，避免点击后未发请求时显示静态/旧数据 */}
       <div className="flex flex-1 flex-col items-center gap-2 p-3 sm:p-4">
-        {!isLoading && isFighting && monsters && monsters.length > 0 ? (
+        {!isLoading && isFighting && hasValidMonsters ? (
           <MonsterGroup
             monsters={monsters}
             skillUsed={skillUsed}
@@ -101,32 +103,27 @@ export function BattleArena({
           <div className="h-20 w-20 sm:h-24 sm:w-24" />
         )}
         {/* 单只怪物时显示大血条；仅在非加载且有怪物数据时显示 */}
-        {!isLoading &&
-          isFighting &&
-          (monsters == null || monsters.length === 0) &&
-          (monster || maxHp > 0) && (
-            <div className="w-full max-w-[140px] space-y-1 sm:max-w-[160px]">
-              <div className="text-muted-foreground flex justify-between text-[10px] sm:text-xs">
-                <span>HP</span>
-                <span>
-                  {effectiveMonsterHp} / {monster?.max_hp ?? maxHp}
-                </span>
-              </div>
-              <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
-                <div
-                  className="h-full rounded-full bg-red-600 transition-[width] duration-300"
-                  style={{
-                    width: `${(monster?.max_hp ?? maxHp) > 0 ? Math.min(100, Math.max(0, (effectiveMonsterHp / (monster?.max_hp ?? maxHp)) * 100)) : 0}%`,
-                  }}
-                />
-              </div>
+        {!isLoading && isFighting && !hasValidMonsters && (monster || maxHp > 0) && (
+          <div className="w-full max-w-[140px] space-y-1 sm:max-w-[160px]">
+            <div className="text-muted-foreground flex justify-between text-[10px] sm:text-xs">
+              <span>HP</span>
+              <span>
+                {effectiveMonsterHp} / {monster?.max_hp ?? maxHp}
+              </span>
             </div>
-          )}
-        {!isLoading &&
-          isFighting &&
-          (monsters == null || monsters.length === 0) &&
-          !monster &&
-          !monsterId && <div className="text-muted-foreground flex-1 text-xs">战斗中</div>}
+            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+              <div
+                className="h-full rounded-full bg-red-600 transition-[width] duration-300"
+                style={{
+                  width: `${(monster?.max_hp ?? maxHp) > 0 ? Math.min(100, Math.max(0, (effectiveMonsterHp / (monster?.max_hp ?? maxHp)) * 100)) : 0}%`,
+                }}
+              />
+            </div>
+          </div>
+        )}
+        {!isLoading && isFighting && !hasValidMonsters && !monster && !monsterId && (
+          <div className="text-muted-foreground flex-1 text-xs">战斗中</div>
+        )}
       </div>
 
       {/* VS 双剑：点击开始/停止挂机，战斗中播放交击动画 */}

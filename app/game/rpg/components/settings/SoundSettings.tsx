@@ -40,7 +40,7 @@ const SoundSettingsInner = ({ onLogout }: SoundSettingsProps) => {
       <h3 className="text-foreground mb-3 text-lg font-bold sm:mb-4">设置</h3>
       <div className="space-y-3 sm:space-y-4">
         <div className="space-y-3">
-          <h4 className="text-foreground text-base font-medium">音效设置</h4>
+          <h4 className="text-foreground text-sm font-medium">音效设置</h4>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">启用音效</span>
             <button

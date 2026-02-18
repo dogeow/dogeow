@@ -36,6 +36,11 @@
   vector-effect: non-scaling-stroke;
 }
 
+/* 死亡时暂停跑马灯动画 */
+.skill-marquee-wrap.paused .skill-marquee-border rect {
+  animation-play-state: paused;
+}
+
 .skill-marquee-wrap .skill-marquee-btn {
   position: relative;
   z-index: 1;
