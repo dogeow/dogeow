@@ -311,7 +311,7 @@ export default function RPGGame() {
           </div>
         )}
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-28 lg:pb-4">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-32 lg:pb-4">
           <div className="w-full min-w-0">
             {activeTab === 'character' && <CharacterPanel />}
             {activeTab === 'inventory' && <InventoryPanel />}
@@ -329,8 +329,8 @@ export default function RPGGame() {
         </div>
       </main>
 
-      {/* 手机端底部栏 */}
-      <nav className="safe-area-bottom border-border bg-card/95 fixed right-0 bottom-0 left-0 border-t backdrop-blur lg:hidden">
+      {/* 手机端底部栏：z-50 确保始终在内容之上，避免技能栏等挡住导航 */}
+      <nav className="safe-area-bottom border-border bg-card/95 fixed right-0 bottom-0 left-0 z-50 border-t backdrop-blur lg:hidden">
         <div className="flex justify-around">
           {tabs.map(tab => (
             <button
