@@ -97,10 +97,6 @@ interface GameState {
   setDifficultyForCharacter: (characterId: number, difficultyTier: number) => Promise<void>
   setCharacter: (updater: (prev: GameCharacter | null) => GameCharacter | null) => void
 
-  // 离线奖励
-  checkOfflineRewards: () => Promise<void>
-  claimOfflineRewards: () => Promise<ClaimOfflineRewardsResult>
-
   // 背包操作
   fetchInventory: () => Promise<void>
   equipItem: (itemId: number) => Promise<void>

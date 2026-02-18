@@ -245,7 +245,8 @@ export function InventoryPanel() {
   const GemSelectorDialog = () => {
     if (!showGemSelector || !selectedSocketItem) return null
 
-    const availableSocketCount = selectedSocketItem.sockets - (selectedSocketItem.gems?.length ?? 0)
+    const availableSocketCount =
+      (selectedSocketItem.sockets ?? 0) - (selectedSocketItem.gems?.length ?? 0)
 
     return (
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4">
@@ -266,7 +267,7 @@ export function InventoryPanel() {
                       selectedSocketItem.gems?.map(g => g.socket_index) ?? []
                     )
                     let emptyIndex = -1
-                    for (let i = 0; i < selectedSocketItem.sockets; i++) {
+                    for (let i = 0; i < (selectedSocketItem.sockets ?? 0); i++) {
                       if (!usedIndices.has(i)) {
                         emptyIndex = i
                         break
@@ -518,18 +519,20 @@ export function InventoryPanel() {
                             </span>
                           )}
                           {/* 凹槽圆形显示在右上角 */}
-                          {cell.item.sockets != null && cell.item.sockets > 0 && (
+                          {cell.item?.sockets != null && cell.item?.sockets > 0 && cell.item && (
                             <div className="absolute -top-1 -right-1 z-10 flex -space-x-1">
                               {Array.from({ length: cell.item.sockets }).map((_, idx) => (
                                 <span
                                   key={idx}
                                   className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border border-black/50 text-[6px] font-medium ${
-                                    cell.item.gems && idx < cell.item.gems.length
+                                    cell.item?.gems && idx < (cell.item?.gems?.length ?? 0)
                                       ? 'bg-cyan-500 text-white'
                                       : 'bg-gray-600 text-gray-300'
                                   }`}
                                 >
-                                  {cell.item.gems && idx < cell.item.gems.length ? '💎' : ''}
+                                  {cell.item?.gems && idx < (cell.item?.gems?.length ?? 0)
+                                    ? '💎'
+                                    : ''}
                                 </span>
                               ))}
                             </div>
@@ -577,19 +580,21 @@ export function InventoryPanel() {
                                     | 'socket'
                                     | 'unsocket'
                                   )[] = ['equip', 'store', 'sell']
-                                  if (canSocket(cell.item)) compareActions.push('socket')
-                                  if (canUnsocket(cell.item)) compareActions.push('unsocket')
+                                  if (cell.item && canSocket(cell.item))
+                                    compareActions.push('socket')
+                                  if (cell.item && canUnsocket(cell.item))
+                                    compareActions.push('unsocket')
                                   return (
                                     <FullComparePanel
                                       key={equippedRing.id}
-                                      newItem={cell.item}
+                                      newItem={cell.item!}
                                       equippedItem={equippedRing}
                                       actions={compareActions}
                                       onAction={action => {
                                         if (action === 'equip') handleEquip()
                                         else if (action === 'store') handleMove(true)
                                         else if (action === 'sell') handleSell()
-                                        else if (action === 'socket')
+                                        else if (action === 'socket' && cell.item)
                                           handleOpenGemSelector(cell.item)
                                         else if (action === 'unsocket') handleUnsocketGem(0)
                                       }}
@@ -607,8 +612,10 @@ export function InventoryPanel() {
                                     | 'socket'
                                     | 'unsocket'
                                   )[] = ['equip', 'store', 'sell']
-                                  if (canSocket(cell.item)) compareActions.push('socket')
-                                  if (canUnsocket(cell.item)) compareActions.push('unsocket')
+                                  if (cell.item && canSocket(cell.item))
+                                    compareActions.push('socket')
+                                  if (cell.item && canUnsocket(cell.item))
+                                    compareActions.push('unsocket')
                                   return (
                                     <FullComparePanel
                                       newItem={cell.item}
@@ -618,7 +625,7 @@ export function InventoryPanel() {
                                         if (action === 'equip') handleEquip()
                                         else if (action === 'store') handleMove(true)
                                         else if (action === 'sell') handleSell()
-                                        else if (action === 'socket')
+                                        else if (action === 'socket' && cell.item)
                                           handleOpenGemSelector(cell.item)
                                         else if (action === 'unsocket') handleUnsocketGem(0)
                                       }}
@@ -667,26 +674,30 @@ export function InventoryPanel() {
                                           </p>
                                         ))}
                                         {/* 凹槽圆形显示（未镶嵌的凹槽） */}
-                                        {cell.item.sockets != null && cell.item.sockets > 0 && (
-                                          <div className="flex -space-x-1">
-                                            {Array.from({ length: cell.item.sockets }).map(
-                                              (_, idx) => (
-                                                <span
-                                                  key={idx}
-                                                  className={`flex h-4 w-4 items-center justify-center rounded-full border text-[6px] ${
-                                                    cell.item.gems && idx < cell.item.gems.length
-                                                      ? 'border-cyan-400 bg-cyan-500 text-white'
-                                                      : 'border-gray-500 bg-gray-700 text-gray-400'
-                                                  }`}
-                                                >
-                                                  {cell.item.gems && idx < cell.item.gems.length
-                                                    ? '💎'
-                                                    : ''}
-                                                </span>
-                                              )
-                                            )}
-                                          </div>
-                                        )}
+                                        {cell.item?.sockets != null &&
+                                          cell.item?.sockets > 0 &&
+                                          cell.item && (
+                                            <div className="flex -space-x-1">
+                                              {Array.from({ length: cell.item.sockets }).map(
+                                                (_, idx) => (
+                                                  <span
+                                                    key={idx}
+                                                    className={`flex h-4 w-4 items-center justify-center rounded-full border text-[6px] ${
+                                                      cell.item?.gems &&
+                                                      idx < (cell.item?.gems?.length ?? 0)
+                                                        ? 'border-cyan-400 bg-cyan-500 text-white'
+                                                        : 'border-gray-500 bg-gray-700 text-gray-400'
+                                                    }`}
+                                                  >
+                                                    {cell.item?.gems &&
+                                                    idx < (cell.item?.gems?.length ?? 0)
+                                                      ? '💎'
+                                                      : ''}
+                                                  </span>
+                                                )
+                                              )}
+                                            </div>
+                                          )}
                                       </div>
                                     ) : null}
                                   </div>
@@ -769,9 +780,10 @@ export function InventoryPanel() {
                               {cell.source === 'inventory' &&
                                 cell.item.sockets != null &&
                                 cell.item.sockets > 0 &&
+                                cell.item &&
                                 canSocket(cell.item) && (
                                   <button
-                                    onClick={() => handleOpenGemSelector(cell.item)}
+                                    onClick={() => cell.item && handleOpenGemSelector(cell.item)}
                                     disabled={isLoading || gemsInInventory.length === 0}
                                     className="rounded bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-700 disabled:opacity-50"
                                   >
@@ -779,15 +791,17 @@ export function InventoryPanel() {
                                   </button>
                                 )}
                               {/* 取下按钮 - 背包中的普通装备有宝石 */}
-                              {cell.source === 'inventory' && canUnsocket(cell.item) && (
-                                <button
-                                  onClick={() => handleUnsocketGem(0)}
-                                  disabled={isLoading}
-                                  className="rounded bg-orange-600 px-3 py-1.5 text-xs text-white hover:bg-orange-700 disabled:opacity-50"
-                                >
-                                  取下
-                                </button>
-                              )}
+                              {cell.source === 'inventory' &&
+                                cell.item &&
+                                canUnsocket(cell.item) && (
+                                  <button
+                                    onClick={() => handleUnsocketGem(0)}
+                                    disabled={isLoading}
+                                    className="rounded bg-orange-600 px-3 py-1.5 text-xs text-white hover:bg-orange-700 disabled:opacity-50"
+                                  >
+                                    取下
+                                  </button>
+                                )}
                               <button
                                 onClick={() => handleMove(cell.source === 'inventory')}
                                 disabled={isLoading}

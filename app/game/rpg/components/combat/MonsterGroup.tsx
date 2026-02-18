@@ -131,8 +131,8 @@ export function MonsterGroup({
       })
       // 触发被攻击后退动画
       const hitPositions = validMonsters
-        .filter(m => m.damage_taken != null && m.damage_taken > 0)
-        .map(m => m.position)
+        .filter(m => m.damage_taken != null && m.damage_taken > 0 && m.position != null)
+        .map(m => m.position as number)
       if (hitPositions.length > 0) {
         queueMicrotask(() => {
           setHitMonsters(new Set(hitPositions))
@@ -182,7 +182,7 @@ export function MonsterGroup({
           const monsterKey = `pos-${m.position}`
           const isDead = (m.hp ?? 0) <= 0 && deadMonsters.has(monsterKey)
           const skillIcon = skillIcons[pos]
-          const isHit = hitMonsters.has(m.position)
+          const isHit = m.position != null && hitMonsters.has(m.position)
 
           // 使用 instance_id 作为 key，这样新怪物出现时会重新创建元素触发动画
           return (

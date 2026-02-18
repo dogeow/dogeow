@@ -94,19 +94,19 @@
   animation: monster-death 1.5s ease-out forwards;
 }
 
-/* 怪物被攻击后退动画：向右后方位移 */
+/* 怪物被攻击后退动画：向左后方位移 */
 @keyframes monster-hit {
   0% {
     transform: translateX(0);
   }
   20% {
-    transform: translateX(20px) rotate(5deg);
+    transform: translateX(-20px) rotate(-5deg);
   }
   40% {
-    transform: translateX(15px) rotate(3deg);
+    transform: translateX(-15px) rotate(-3deg);
   }
   60% {
-    transform: translateX(8px) rotate(1deg);
+    transform: translateX(-8px) rotate(-1deg);
   }
   100% {
     transform: translateX(0) rotate(0);
