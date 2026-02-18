@@ -66,10 +66,8 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
             : 'id' in log && log.id
               ? `log-${log.id}`
               : `combat-log-${index}`
-        // 有经验或铜币视为怪物死亡（胜利），避免仅依赖后端 victory 字段漏传导致显示 ⚔️
-        const hasReward = (log.experience_gained ?? 0) > 0 || (log.copper_gained ?? 0) > 0
+        // 没有回合概念，只显示战斗状态
         const isDefeat = 'defeat' in log && log.defeat
-        const isVictory = log.victory === true || (hasReward && !isDefeat)
 
         const hasPotionBefore =
           log.potion_used?.before && Object.keys(log.potion_used.before).length > 0
@@ -93,14 +91,12 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
             <div className="flex flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm">
               <span
                 className={`font-semibold ${
-                  isVictory
-                    ? 'text-green-600 dark:text-green-400'
-                    : isDefeat
-                      ? 'text-red-600 dark:text-red-400'
-                      : 'text-orange-500 dark:text-orange-400'
+                  isDefeat
+                    ? 'text-red-600 dark:text-red-400'
+                    : 'text-orange-500 dark:text-orange-400'
                 }`}
               >
-                {isVictory ? '✓' : isDefeat ? '💀' : '⚔️'}
+                {isDefeat ? '💀' : '⚔️'}
               </span>
               <span className="text-foreground">
                 {log.monster?.name ?? '?'} Lv.{log.monster?.level ?? '?'}

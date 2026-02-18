@@ -43,40 +43,6 @@ export function FloatingTextOverlay() {
 
     const newTexts: FloatingText[] = []
 
-    // 胜利信息 - 怪物头顶已有伤害显示，这里只显示胜利相关的信息
-    if (combatResult.victory) {
-      if (combatResult.copper_gained > 0) {
-        newTexts.push({
-          id: generateId(),
-          text: `+${formatCopper(combatResult.copper_gained)}`,
-          x: Math.random() * 40 + 30,
-          y: Math.random() * 20 + 40,
-          color: '#eab308',
-          type: 'gold',
-        })
-      }
-      if (combatResult.experience_gained > 0) {
-        newTexts.push({
-          id: generateId(),
-          text: `+${combatResult.experience_gained} 经验`,
-          x: Math.random() * 40 + 30,
-          y: Math.random() * 20 + 50,
-          color: '#22c55e',
-          type: 'exp',
-        })
-      }
-      if (combatResult.loot?.item) {
-        newTexts.push({
-          id: generateId(),
-          text: `获得 ${combatResult.loot.item.definition?.name || '物品'}`,
-          x: 50,
-          y: 60,
-          color: '#a855f7',
-          type: 'item',
-        })
-      }
-    }
-
     if (newTexts.length > 0) {
       // 微任务延迟，避免批量状态更新问题
       setTimeout(() => addFloatingTexts(newTexts), 0)

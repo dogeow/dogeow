@@ -1248,15 +1248,7 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   // WebSocket 事件处理
   handleCombatUpdate: data => {
-    if (data.victory) {
-      soundManager.play('combat_victory')
-      if (data.loot?.item) {
-        soundManager.play('item_drop')
-      }
-      if (data.copper_gained > 0) {
-        soundManager.play('gold')
-      }
-    } else if (data.defeat || data.auto_stopped) {
+    if (data.defeat || data.auto_stopped) {
       soundManager.play('combat_defeat')
     } else {
       soundManager.play('combat_hit')
