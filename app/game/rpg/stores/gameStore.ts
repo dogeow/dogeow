@@ -20,8 +20,6 @@ import {
   CompendiumItem,
   CompendiumMonster,
   CompendiumMonsterDrops,
-  OfflineRewardsInfo,
-  ClaimOfflineRewardsResult,
 } from '../types'
 import { apiGet, post, put, del, ApiRequestError } from '@/lib/api'
 import { soundManager } from '../utils/soundManager'
@@ -77,9 +75,6 @@ interface GameState {
   compendiumMonsters: CompendiumMonster[]
   compendiumMonsterDrops: CompendiumMonsterDrops | null
 
-  // 离线奖励状态
-  offlineRewards: OfflineRewardsInfo | null
-
   // Actions
   setActiveTab: (
     tab:
@@ -114,6 +109,8 @@ interface GameState {
   sellItemsByQuality: (quality: string) => Promise<{ count: number; total_price: number }>
   moveItem: (itemId: number, toStorage: boolean, slotIndex?: number) => Promise<void>
   sortInventory: (sortBy: 'quality' | 'price' | 'default') => Promise<void>
+  socketGem: (itemId: number, gemItemId: number, socketIndex: number) => Promise<void>
+  unsocketGem: (itemId: number, socketIndex: number) => Promise<void>
 
   // 技能操作
   fetchSkills: () => Promise<void>
@@ -198,7 +195,6 @@ const initialState = {
   compendiumItems: [],
   compendiumMonsters: [],
   compendiumMonsterDrops: null,
-  offlineRewards: null,
 }
 
 const store: StateCreator<GameState> = (set, get) => ({
@@ -532,6 +528,75 @@ const store: StateCreator<GameState> = (set, get) => ({
     }
   },
 
+  socketGem: async (itemId, gemItemId, socketIndex) => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const selectedId = get().selectedCharacterId
+      if (!selectedId) {
+        set(state => ({ ...state, isLoading: false }))
+        return
+      }
+      const response = (await post('/rpg/gems/socket', {
+        item_id: itemId,
+        gem_item_id: gemItemId,
+        socket_index: socketIndex,
+        character_id: selectedId,
+      })) as {
+        equipment: GameItem
+        message: string
+      }
+
+      // 更新背包中的装备
+      set(state => {
+        const newInventory = state.inventory.map(item =>
+          item.id === itemId ? response.equipment : item
+        )
+        // 移除已使用的宝石
+        const newInv = newInventory.filter(item => item.id !== gemItemId)
+        return {
+          ...state,
+          inventory: newInv,
+          isLoading: false,
+        }
+      })
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
+  unsocketGem: async (itemId, socketIndex) => {
+    set(state => ({ ...state, isLoading: true, error: null }))
+    try {
+      const selectedId = get().selectedCharacterId
+      if (!selectedId) {
+        set(state => ({ ...state, isLoading: false }))
+        return
+      }
+      const response = (await post('/rpg/gems/unsocket', {
+        item_id: itemId,
+        socket_index: socketIndex,
+        character_id: selectedId,
+      })) as {
+        equipment: GameItem
+        message: string
+      }
+
+      // 更新背包中的装备
+      set(state => {
+        const newInventory = state.inventory.map(item =>
+          item.id === itemId ? response.equipment : item
+        )
+        return {
+          ...state,
+          inventory: newInventory,
+          isLoading: false,
+        }
+      })
+    } catch (error) {
+      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+    }
+  },
+
   sellItem: async (itemId, quantity = 1) => {
     set(state => ({ ...state, isLoading: true, error: null }))
     try {
@@ -623,47 +688,6 @@ const store: StateCreator<GameState> = (set, get) => ({
       get().fetchInventory()
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
-    }
-  },
-
-  // 离线奖励
-  checkOfflineRewards: async () => {
-    try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) return
-
-      const response = (await apiGet(
-        `/rpg/character/offline-rewards?character_id=${selectedId}`
-      )) as OfflineRewardsInfo
-      set(state => ({ ...state, offlineRewards: response }))
-    } catch (error) {
-      console.error('[GameStore] checkOfflineRewards error:', error)
-    }
-  },
-
-  claimOfflineRewards: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
-    try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return { experience: 0, copper: 0, level_up: false, new_level: 0 }
-      }
-
-      const response = (await post('/rpg/character/offline-rewards', {
-        character_id: selectedId,
-      })) as ClaimOfflineRewardsResult
-
-      // 重新获取角色信息
-      await get().fetchCharacter()
-
-      // 清空离线奖励状态
-      set(state => ({ ...state, offlineRewards: null, isLoading: false }))
-
-      return response
-    } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
-      return { experience: 0, copper: 0, level_up: false, new_level: 0 }
     }
   },
 

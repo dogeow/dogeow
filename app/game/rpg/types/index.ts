@@ -20,8 +20,7 @@ export type EquipmentSlot =
   | 'gloves'
   | 'boots'
   | 'belt'
-  | 'ring1'
-  | 'ring2'
+  | 'ring'
   | 'amulet'
 export type SkillType = 'active' | 'passive'
 export type MonsterType = 'normal' | 'elite' | 'boss'
@@ -123,6 +122,11 @@ export interface GameItem {
   slot_index: number | null
   sell_price?: number
   sockets?: number
+  gems?: Array<{
+    id: number
+    socket_index: number
+    gemDefinition: ItemDefinition
+  }>
 }
 
 export interface Equipment {
@@ -355,8 +359,7 @@ export const SLOT_NAMES: Record<EquipmentSlot, string> = {
   gloves: '手套',
   boots: '靴子',
   belt: '腰带',
-  ring1: '戒指1',
-  ring2: '戒指2',
+  ring: '戒指',
   amulet: '护身符',
 }
 
@@ -474,23 +477,6 @@ export interface CompendiumItemsResponse {
 
 export interface CompendiumMonstersResponse {
   monsters: CompendiumMonster[]
-}
-
-/** 离线奖励信息 */
-export interface OfflineRewardsInfo {
-  available: boolean
-  offline_seconds: number
-  experience: number
-  copper: number
-  level_up: boolean
-}
-
-/** 领取离线奖励结果 */
-export interface ClaimOfflineRewardsResult {
-  experience: number
-  copper: number
-  level_up: boolean
-  new_level: number
 }
 
 /** 货币：1金=100银=10000铜。maxParts=1 时只显示一种（金/银/铜取最高位），否则最多两种 */

@@ -37,7 +37,7 @@ const CLASS_INFO = {
   ranger: { name: '弓手', icon: '🏹', color: 'bg-green-500/20 border-green-500' },
 }
 
-const DIFFICULTY_OPTIONS: { tier: number; label: string }[] = [
+export const DIFFICULTY_OPTIONS: { tier: number; label: string }[] = [
   { tier: 0, label: '普通' },
   { tier: 1, label: '困难' },
   { tier: 2, label: '高手' },
@@ -138,7 +138,6 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
               onClick={e => {
                 e.stopPropagation()
                 setOpenCharacterId(character.id)
-                handleSelectCharacter(character.id)
               }}
               className="border-border bg-card text-foreground hover:bg-muted w-full flex-shrink-0 rounded border px-2 py-1.5 text-xs transition-colors"
             >

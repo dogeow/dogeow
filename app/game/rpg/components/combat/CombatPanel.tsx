@@ -18,6 +18,7 @@ import { CombatLogList } from './CombatLogList'
 import { getActName } from '../../utils/combat'
 import { MapCardMonsterAvatar } from './MapCardMonsterAvatar'
 import { LogIn, Heart, Droplet } from 'lucide-react'
+import { DIFFICULTY_OPTIONS } from '../character/CharacterSelect'
 
 export function CombatPanel() {
   const currentMap = useGameStore(state => state.currentMap)
@@ -168,6 +169,12 @@ export function CombatPanel() {
               className="flex items-center gap-2 text-sm font-medium text-white"
             >
               <span>{currentMap?.name ?? '选择地图'}</span>
+              {character && character.difficulty_tier != null && character.difficulty_tier >= 0 && (
+                <span className="rounded bg-purple-600 px-1.5 py-0.5 text-xs">
+                  {DIFFICULTY_OPTIONS.find(o => o.tier === character.difficulty_tier)?.label ??
+                    '普通'}
+                </span>
+              )}
               <span className="text-xs">{mapDropdownOpen ? '▲' : '▼'}</span>
             </button>
           </div>
@@ -282,7 +289,10 @@ export function CombatPanel() {
                   monsters={combatResult?.monsters}
                   isFighting={isFighting}
                   isLoading={isLoading}
-                  onCombatToggle={isFighting ? handleStopCombat : handleStartCombat}
+                  // 角色死亡时(isFighting可能是true但currentHp<=0)，点击应该开始战斗(复活)
+                  onCombatToggle={
+                    isFighting && (currentHp ?? 0) > 0 ? handleStopCombat : handleStartCombat
+                  }
                   skillUsed={combatResult?.skills_used?.[0]}
                   skillTargetPositions={combatResult?.skill_target_positions}
                 />

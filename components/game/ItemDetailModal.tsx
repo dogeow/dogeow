@@ -179,6 +179,9 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
 
   const shopItem = item as ShopItem
 
+  // 调试日志
+  console.log('[ShopItemDetail] shopItem.type:', shopItem.type, 'shopItem.name:', shopItem.name)
+
   // 计算是否有可对比的装备
   // 商店物品中，只有装备类型（不是药水和宝石）才能对比
   const isEquippableType = shopItem.type !== 'potion' && shopItem.type !== 'gem'
@@ -236,7 +239,21 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
               >
                 -
               </button>
-              <span className="w-8 text-center text-sm">{buyQuantity}</span>
+              <input
+                type="number"
+                min={1}
+                max={99}
+                value={buyQuantity}
+                onChange={e => {
+                  const val = parseInt(e.target.value, 10)
+                  if (!isNaN(val) && val >= 1 && val <= 99) {
+                    setBuyQuantity(val)
+                  } else if (e.target.value === '') {
+                    setBuyQuantity(1)
+                  }
+                }}
+                className="bg-muted text-foreground hover:bg-secondary border-input h-7 w-12 rounded border px-2 text-center text-sm transition-colors"
+              />
               <button
                 onClick={() => setBuyQuantity(Math.min(99, buyQuantity + 1))}
                 className="bg-muted text-foreground hover:bg-secondary h-7 w-7 rounded text-sm transition-colors"

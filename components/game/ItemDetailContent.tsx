@@ -79,8 +79,6 @@ export function ItemDetailContent({ item, type }: ItemDetailContentProps) {
             </h5>
             <span className="text-xs" style={{ color: QUALITY_COLORS[quality as ItemQuality] }}>
               {QUALITY_NAMES[quality as ItemQuality]}
-              {typeName && ` - ${typeName}`}
-              {subType && typeName !== subType && ` - ${subType}`}
             </span>
           </div>
         </div>

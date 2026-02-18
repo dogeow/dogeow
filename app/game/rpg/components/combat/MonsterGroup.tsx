@@ -35,6 +35,8 @@ export function MonsterGroup({
   const [skillIcons, setSkillIcons] = useState<
     Record<number, { skillId: number; icon: string | null; name: string }>
   >({})
+  // 记录需要显示被攻击后退动画的怪物 position
+  const [hitMonsters, setHitMonsters] = useState<Set<number>>(new Set())
 
   // 当有新技能使用时，在目标怪物上显示技能图标（queueMicrotask 避免 effect 内同步 setState）
   useEffect(() => {
@@ -116,12 +118,9 @@ export function MonsterGroup({
       // 使用 position 作为 key 来区分同一波中的不同怪物实例
       const key = `pos-${m.position}`
       const d = m.damage_taken
-      // 新出现的怪物不显示伤害（等下一轮）- 使用 ref 立即判断
+      // 所有怪物都显示伤害，不管是否新出现
       if (d != null && d > 0) {
-        const isNew = m.instance_id ? newAppearingRef.current.has(m.instance_id) : false
-        if (!isNew) {
-          newDamage[key] = d
-        }
+        newDamage[key] = d
       }
     })
 
@@ -130,6 +129,17 @@ export function MonsterGroup({
         setDamageTexts(newDamage)
         setTimeout(() => setDamageTexts({}), 1500)
       })
+      // 触发被攻击后退动画
+      const hitPositions = validMonsters
+        .filter(m => m.damage_taken != null && m.damage_taken > 0)
+        .map(m => m.position)
+      if (hitPositions.length > 0) {
+        queueMicrotask(() => {
+          setHitMonsters(new Set(hitPositions))
+          // 300ms后清除动画状态
+          setTimeout(() => setHitMonsters(new Set()), 300)
+        })
+      }
     }
 
     // 检测怪物死亡：HP <= 0 时触发死亡动画
@@ -172,6 +182,7 @@ export function MonsterGroup({
           const monsterKey = `pos-${m.position}`
           const isDead = (m.hp ?? 0) <= 0 && deadMonsters.has(monsterKey)
           const skillIcon = skillIcons[pos]
+          const isHit = hitMonsters.has(m.position)
 
           // 使用 instance_id 作为 key，这样新怪物出现时会重新创建元素触发动画
           return (
@@ -179,7 +190,7 @@ export function MonsterGroup({
               key={m.instance_id ?? monsterKey}
               type="button"
               onClick={() => handleMonsterClick(m)}
-              className={`relative flex cursor-pointer flex-col items-center gap-0.5 transition-opacity hover:opacity-80 ${isNew ? styles['monster-appear'] : ''} ${isDead ? styles['monster-death'] : ''}`}
+              className={`relative flex cursor-pointer flex-col items-center gap-0.5 transition-opacity hover:opacity-80 ${isNew ? styles['monster-appear'] : ''} ${isDead ? styles['monster-death'] : ''} ${isHit ? styles['monster-hit'] : ''}`}
               title={`点击查看 ${m.name} 详情`}
             >
               {/* 技能图标 - 显示在被命中的怪物图片上 */}

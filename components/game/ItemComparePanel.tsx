@@ -270,11 +270,15 @@ export function FullComparePanel({
   const newItemPrice = newItem.definition?.buy_price ?? newItem.sell_price ?? 0
   const newItemRequiredLevel = newItem.definition?.required_level ?? 0
 
+  // 获取已装备物品的价格信息
+  const equippedItemBuyPrice = equippedItem.definition?.buy_price ?? 0
+  const equippedItemSellPrice = equippedItem.sell_price ?? 0
+
   return (
     <div className="border-border flex flex-col border-r">
       {/* 第一个div：左右装备+各自属性 */}
-      <div className="grid grid-cols-2">
-        {/* 左边：当前装备 */}
+      <div className="grid grid-cols-[2fr_3fr]">
+        {/* 左边：已装备物品 */}
         <div className="border-border flex flex-col border-r p-2">
           <div className="mb-1 flex justify-center">
             <div
@@ -301,7 +305,7 @@ export function FullComparePanel({
               </div>
             ))}
           </div>
-          {/* 等级需求+卖出价 - 底部 */}
+          {/* 等级需求+价格信息 - 底部 */}
           <div className="border-border/50 mt-2 space-y-0.5 border-t pt-1">
             {equippedItem.definition?.required_level != null &&
               equippedItem.definition.required_level > 0 && (
@@ -310,15 +314,21 @@ export function FullComparePanel({
                   <span>{equippedItem.definition.required_level}</span>
                 </div>
               )}
-            {equippedItem.sell_price != null && equippedItem.sell_price > 0 && (
+            {equippedItemSellPrice > 0 && (
               <div className="flex justify-between text-yellow-600 dark:text-yellow-400">
                 <span>卖出</span>
-                <span>{equippedItem.sell_price}</span>
+                <span>{equippedItemSellPrice}</span>
+              </div>
+            )}
+            {equippedItemBuyPrice > 0 && (
+              <div className="flex justify-between text-purple-600 dark:text-purple-400">
+                <span>买价</span>
+                <span>{equippedItemBuyPrice}</span>
               </div>
             )}
           </div>
         </div>
-        {/* 右边：新物品 */}
+        {/* 右边：背包物品 */}
         <div className="flex flex-col p-2">
           <div className="mb-1 flex justify-center">
             <div className="flex h-10 w-10 items-center justify-center rounded border-2 border-green-500">
@@ -373,7 +383,11 @@ export function FullComparePanel({
                         ? 'bg-red-600 hover:bg-red-700'
                         : action === 'store' || action === 'retrieve'
                           ? 'bg-blue-600 hover:bg-blue-700'
-                          : 'bg-red-600 hover:bg-red-700'
+                          : action === 'socket'
+                            ? 'bg-cyan-600 hover:bg-cyan-700'
+                            : action === 'unsocket'
+                              ? 'bg-orange-600 hover:bg-orange-700'
+                              : 'bg-red-600 hover:bg-red-700'
                 }`}
               >
                 {action === 'equip'
@@ -388,7 +402,11 @@ export function FullComparePanel({
                           ? '取回'
                           : action === 'sell'
                             ? '出售'
-                            : '购买'}
+                            : action === 'socket'
+                              ? '镶嵌'
+                              : action === 'unsocket'
+                                ? '取下'
+                                : '购买'}
               </button>
             ))}
           </div>

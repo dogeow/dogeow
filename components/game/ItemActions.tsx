@@ -1,6 +1,15 @@
 'use client'
 
-export type ItemActionType = 'equip' | 'use' | 'unequip' | 'store' | 'retrieve' | 'sell' | 'buy'
+export type ItemActionType =
+  | 'equip'
+  | 'use'
+  | 'unequip'
+  | 'store'
+  | 'retrieve'
+  | 'sell'
+  | 'buy'
+  | 'socket'
+  | 'unsocket'
 
 interface ItemActionsProps {
   actions: ItemActionType[]
@@ -16,6 +25,8 @@ const ACTION_LABELS: Record<ItemActionType, { label: string; color: string }> = 
   retrieve: { label: '取回', color: 'bg-blue-600 hover:bg-blue-700' },
   sell: { label: '出售', color: 'bg-red-600 hover:bg-red-700' },
   buy: { label: '确认购买', color: 'bg-green-600 hover:bg-green-700' },
+  socket: { label: '镶嵌', color: 'bg-cyan-600 hover:bg-cyan-700' },
+  unsocket: { label: '取下', color: 'bg-orange-600 hover:bg-orange-700' },
 }
 
 export function ItemActions({ actions, onAction, disabled = false }: ItemActionsProps) {

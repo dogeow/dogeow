@@ -1,15 +1,57 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import Image from 'next/image'
 import { RefreshCw } from 'lucide-react'
 import { useGameStore } from '../../stores/gameStore'
 import { CopperDisplay } from '../shared/CopperDisplay'
-import { ShopItem, QUALITY_COLORS, formatCopper, GameItem } from '../../types'
+import { ShopItem, QUALITY_COLORS, formatCopper, GameItem, ItemType } from '../../types'
 import { getShopItemIcon, getEquipmentSlot } from '../../utils/itemUtils'
 import { ItemDetailModal } from '@/components/game'
 
+/** 商店物品图标：优先使用图片，加载失败则用 emoji */
+function ShopItemIcon({ item, className }: { item: ShopItem; className?: string }) {
+  const definitionId = item.id
+  const fallback = getShopItemIcon(item.type, item.sub_type)
+  const [useImg, setUseImg] = useState(true)
+  const src = `/game/rpg/items/item_${definitionId}.png`
+
+  return (
+    <span
+      className={`relative inline-flex h-full w-full items-center justify-center ${className ?? ''}`}
+    >
+      {useImg ? (
+        <Image
+          src={src}
+          alt=""
+          fill
+          className="object-contain"
+          sizes="48px"
+          onError={() => setUseImg(false)}
+        />
+      ) : (
+        <span className="drop-shadow-sm">{fallback}</span>
+      )}
+    </span>
+  )
+}
+
 /** 强制刷新费用：1 银 = 100 铜 */
 const SHOP_REFRESH_COST_COPPER = 100
+
+/** 商店物品类型筛选选项 */
+const SHOP_TYPE_FILTERS: { id: string; label: string; types: ItemType[] }[] = [
+  { id: 'all', label: '全部', types: [] },
+  { id: 'weapon', label: '武器', types: ['weapon'] },
+  { id: 'helmet', label: '头盔', types: ['helmet'] },
+  { id: 'armor', label: '护甲', types: ['armor'] },
+  { id: 'gloves', label: '手套', types: ['gloves'] },
+  { id: 'boots', label: '鞋子', types: ['boots'] },
+  { id: 'belt', label: '腰带', types: ['belt'] },
+  { id: 'ring', label: '戒指', types: ['ring'] },
+  { id: 'potion', label: '药水', types: ['potion'] },
+  { id: 'gem', label: '宝石', types: ['gem'] },
+]
 
 export function ShopPanel() {
   const {
@@ -25,6 +67,7 @@ export function ShopPanel() {
   const [selectedShopItem, setSelectedShopItem] = useState<ShopItem | null>(null)
   const [buyQuantity, setBuyQuantity] = useState(1)
   const [countdown, setCountdown] = useState<number | null>(null)
+  const [typeFilter, setTypeFilter] = useState('all')
 
   const canAffordRefresh = character != null && character.copper >= SHOP_REFRESH_COST_COPPER
 
@@ -75,13 +118,22 @@ export function ShopPanel() {
     setBuyQuantity(1)
   }
 
+  // 根据类型筛选物品
+  const filteredItems = useMemo(() => {
+    const filter = SHOP_TYPE_FILTERS.find(f => f.id === typeFilter)
+    if (!filter || filter.types.length === 0) {
+      return shopItems
+    }
+    return shopItems.filter(item => filter.types.includes(item.type))
+  }, [shopItems, typeFilter])
+
   // 获取商店物品对应的已装备物品
   const getEquippedItem = (shopItem: ShopItem): GameItem | null => {
     const slot = getEquipmentSlot({ definition: { type: shopItem.type } } as GameItem)
     if (!slot) return null
-    // 戒指特殊处理：优先返回 ring1，否则返回 ring2
-    if (slot === 'ring1') {
-      return equipment.ring1 || equipment.ring2
+    // 戒指特殊处理：返回 ring
+    if (slot === 'ring') {
+      return equipment.ring
     }
     return equipment[slot] ?? null
   }
@@ -93,7 +145,9 @@ export function ShopPanel() {
         <div className="text-foreground mb-2 flex flex-wrap items-baseline justify-between gap-1.5 sm:mb-3">
           <h4 className="text-sm font-medium">
             商店物品
-            <span className="text-muted-foreground ml-1.5 text-xs">({shopItems.length})</span>
+            <span className="text-muted-foreground ml-1.5 text-xs">
+              ({filteredItems.length}/{shopItems.length})
+            </span>
           </h4>
           {countdown != null && (
             <span className="text-muted-foreground text-[10px] sm:text-xs">
@@ -103,9 +157,27 @@ export function ShopPanel() {
             </span>
           )}
         </div>
+
+        {/* 类型筛选标签 */}
+        <div className="mb-2 flex flex-wrap gap-1 sm:mb-3">
+          {SHOP_TYPE_FILTERS.map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setTypeFilter(filter.id)}
+              className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
+                typeFilter === filter.id
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+              }`}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+
         <div className="flex min-h-0 justify-center overflow-auto p-0.5">
           <div className="grid w-max max-w-full grid-cols-[repeat(5,3.25rem)] gap-2.5 sm:grid-cols-[repeat(6,3.25rem)] sm:gap-3">
-            {shopItems.map(item => {
+            {filteredItems.map(item => {
               const isSelected = selectedShopItem?.id === item.id
               const borderColor = isSelected
                 ? undefined
@@ -127,7 +199,7 @@ export function ShopPanel() {
                   title={`${item.name} - ${formatCopper(item.buy_price, 1)}`}
                 >
                   <span className="flex min-h-0 flex-1 items-center justify-center text-lg">
-                    {getShopItemIcon(item.type, item.sub_type)}
+                    <ShopItemIcon item={item} />
                   </span>
                   <span className="border-border/50 bg-muted/80 flex shrink-0 items-center justify-center overflow-hidden rounded-b-[calc(0.2rem-2px)] border-t px-1.5 py-1">
                     <CopperDisplay copper={item.buy_price} size="xs" nowrap maxParts={1} />
