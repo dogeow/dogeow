@@ -242,9 +242,7 @@ export function InventoryPanel() {
   }
 
   // 宝石选择弹窗
-  const GemSelectorDialog = () => {
-    if (!showGemSelector || !selectedSocketItem) return null
-
+  if (showGemSelector && selectedSocketItem) {
     const availableSocketCount =
       (selectedSocketItem.sockets ?? 0) - (selectedSocketItem.gems?.length ?? 0)
 
@@ -258,33 +256,32 @@ export function InventoryPanel() {
             <p className="text-muted-foreground py-4 text-center text-sm">背包中没有宝石</p>
           ) : (
             <div className="mb-4 grid grid-cols-4 gap-2">
-              {gemsInInventory.map(gem => (
-                <button
-                  key={gem.id}
-                  onClick={() => {
-                    // 找到第一个空插槽
-                    const usedIndices = new Set(
-                      selectedSocketItem.gems?.map(g => g.socket_index) ?? []
-                    )
-                    let emptyIndex = -1
-                    for (let i = 0; i < (selectedSocketItem.sockets ?? 0); i++) {
-                      if (!usedIndices.has(i)) {
-                        emptyIndex = i
-                        break
+              {gemsInInventory.map(gem => {
+                const usedIndices = new Set(selectedSocketItem.gems?.map(g => g.socket_index) ?? [])
+                let emptyIndex = -1
+                for (let i = 0; i < (selectedSocketItem.sockets ?? 0); i++) {
+                  if (!usedIndices.has(i)) {
+                    emptyIndex = i
+                    break
+                  }
+                }
+                return (
+                  <button
+                    key={gem.id}
+                    onClick={() => {
+                      if (emptyIndex >= 0) {
+                        handleSocketGem(gem, emptyIndex)
                       }
-                    }
-                    if (emptyIndex >= 0) {
-                      handleSocketGem(gem, emptyIndex)
-                    }
-                  }}
-                  disabled={availableSocketCount <= 0}
-                  className="bg-muted hover:bg-muted/80 flex aspect-square flex-col items-center justify-center rounded border p-1 disabled:opacity-50"
-                  title={gem.definition?.description ?? gem.definition?.name}
-                >
-                  <span className="text-lg">💎</span>
-                  <span className="text-[10px]">{gem.definition?.name}</span>
-                </button>
-              ))}
+                    }}
+                    disabled={availableSocketCount <= 0}
+                    className="bg-muted hover:bg-muted/80 flex aspect-square flex-col items-center justify-center rounded border p-1 disabled:opacity-50"
+                    title={gem.definition?.description ?? gem.definition?.name}
+                  >
+                    <span className="text-lg">💎</span>
+                    <span className="text-[10px]">{gem.definition?.name}</span>
+                  </button>
+                )
+              })}
             </div>
           )}
           <div className="flex justify-end">
@@ -667,11 +664,16 @@ export function InventoryPanel() {
                                     {(cell.item.gems?.length ?? 0) > 0 ||
                                     (cell.item.sockets != null && cell.item.sockets > 0) ? (
                                       <div className="mt-1 flex flex-wrap items-center gap-1">
-                                        {/* 已镶嵌的宝石名称 */}
+                                        {/* 已镶嵌的宝石名称 - 点击可取下 */}
                                         {cell.item.gems?.map((gem, idx) => (
-                                          <p key={idx} className="text-cyan-600 dark:text-cyan-400">
+                                          <button
+                                            key={idx}
+                                            onClick={() => handleUnsocketGem(gem.socket_index)}
+                                            disabled={isLoading}
+                                            className="text-cyan-600 hover:underline disabled:opacity-50 dark:text-cyan-400"
+                                          >
                                             💎 {gem.gemDefinition?.name || '宝石'}
-                                          </p>
+                                          </button>
                                         ))}
                                         {/* 凹槽圆形显示（未镶嵌的凹槽） */}
                                         {cell.item?.sockets != null &&
@@ -736,20 +738,17 @@ export function InventoryPanel() {
                                         />
                                       </p>
                                     )}
-                                  {(cell.item.sell_price != null && cell.item.sell_price > 0) ||
-                                  (cell.item.definition?.buy_price ?? 0) > 0 ? (
-                                    <p className="text-yellow-600 dark:text-yellow-400">
-                                      卖出:{' '}
-                                      <CopperDisplay
-                                        copper={
-                                          cell.item.sell_price ??
-                                          Math.floor((cell.item.definition?.buy_price ?? 0) / 2)
-                                        }
-                                        size="xs"
-                                        nowrap
-                                      />
-                                    </p>
-                                  ) : null}
+                                  <p className="text-yellow-600 dark:text-yellow-400">
+                                    卖出:{' '}
+                                    <CopperDisplay
+                                      copper={
+                                        cell.item.sell_price ??
+                                        Math.floor((cell.item.definition?.buy_price ?? 0) / 2)
+                                      }
+                                      size="xs"
+                                      nowrap
+                                    />
+                                  </p>
                                 </div>
                               </div>
                             </div>
@@ -844,10 +843,52 @@ export function EquipmentGrid({
   equipment: Record<string, GameItem | null>
   onUnequip: (slot: EquipmentSlot) => void
 }) {
+  const { socketGem, unsocketGem, inventory, isLoading } = useGameStore()
   const [selectedSlot, setSelectedSlot] = useState<EquipmentSlot | null>(null)
+  const [showGemSelector, setShowGemSelector] = useState(false)
+  const [selectedSocketItem, setSelectedSocketItem] = useState<GameItem | null>(null)
 
   // 获取当前选中的装备
   const selectedItem = selectedSlot ? equipment[selectedSlot] : null
+
+  // 获取背包中的宝石
+  const gemsInInventory = useMemo(() => {
+    return inventory.filter(item => item.definition?.type === 'gem')
+  }, [inventory])
+
+  // 判断装备是否可以镶嵌（有空插槽）
+  const canSocket = (item: GameItem): boolean => {
+    if (!item.sockets || item.sockets <= 0) return false
+    const gemCount = item.gems?.length ?? 0
+    return gemCount < item.sockets
+  }
+
+  // 判断装备是否可以取下宝石
+  const canUnsocket = (item: GameItem): boolean => {
+    return !!(item.gems && item.gems.length > 0)
+  }
+
+  // 打开宝石选择弹窗
+  const handleOpenGemSelector = (item: GameItem) => {
+    setSelectedSocketItem(item)
+    setShowGemSelector(true)
+  }
+
+  // 执行镶嵌
+  const handleSocketGem = async (gemItem: GameItem, socketIndex: number) => {
+    if (!selectedSocketItem) return
+    await socketGem(selectedSocketItem.id, gemItem.id, socketIndex)
+    setShowGemSelector(false)
+    setSelectedSocketItem(null)
+    setSelectedSlot(null)
+  }
+
+  // 执行取下宝石
+  const handleUnsocketGem = async (socketIndex: number) => {
+    if (!selectedItem) return
+    await unsocketGem(selectedItem.id, socketIndex)
+    setSelectedSlot(null)
+  }
 
   const handleUnequip = () => {
     if (selectedSlot) {
@@ -963,11 +1004,16 @@ export function EquipmentGrid({
                       {(selectedItem.gems?.length ?? 0) > 0 ||
                       (selectedItem.sockets != null && selectedItem.sockets > 0) ? (
                         <div className="mt-1 flex flex-wrap items-center gap-1">
-                          {/* 已镶嵌的宝石名称 */}
+                          {/* 已镶嵌的宝石名称 - 点击可取下 */}
                           {selectedItem.gems?.map((gem, idx) => (
-                            <p key={idx} className="text-cyan-600 dark:text-cyan-400">
+                            <button
+                              key={idx}
+                              onClick={() => handleUnsocketGem(gem.socket_index)}
+                              disabled={isLoading}
+                              className="text-cyan-600 hover:underline disabled:opacity-50 dark:text-cyan-400"
+                            >
                               💎 {gem.gemDefinition?.name || '宝石'}
-                            </p>
+                            </button>
                           ))}
                           {/* 凹槽圆形显示（未镶嵌的凹槽） */}
                           {selectedItem.sockets != null && selectedItem.sockets > 0 && (
@@ -1013,20 +1059,17 @@ export function EquipmentGrid({
                     <p className="text-muted-foreground">
                       需求等级: {selectedItem.definition?.required_level ?? '—'}
                     </p>
-                    {(selectedItem.sell_price != null && selectedItem.sell_price > 0) ||
-                    (selectedItem.definition?.buy_price ?? 0) > 0 ? (
-                      <p className="text-yellow-600 dark:text-yellow-400">
-                        卖出:{' '}
-                        <CopperDisplay
-                          copper={
-                            selectedItem.sell_price ??
-                            Math.floor((selectedItem.definition?.buy_price ?? 0) / 2)
-                          }
-                          size="xs"
-                          nowrap
-                        />
-                      </p>
-                    ) : null}
+                    <p className="text-yellow-600 dark:text-yellow-400">
+                      卖出:{' '}
+                      <CopperDisplay
+                        copper={
+                          selectedItem.sell_price ??
+                          Math.floor((selectedItem.definition?.buy_price ?? 0) / 2)
+                        }
+                        size="xs"
+                        nowrap
+                      />
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1034,10 +1077,50 @@ export function EquipmentGrid({
               <div className="border-border bg-muted/30 flex flex-wrap gap-1.5 border-t p-2.5">
                 <button
                   onClick={handleUnequip}
-                  className="rounded bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700"
+                  disabled={isLoading}
+                  className="rounded bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700 disabled:opacity-50"
                 >
                   卸下
                 </button>
+                {/* 镶嵌按钮 - 装备有凹槽且未满 */}
+                {selectedItem &&
+                  selectedItem.sockets != null &&
+                  selectedItem.sockets > 0 &&
+                  canSocket(selectedItem) && (
+                    <button
+                      onClick={() => handleOpenGemSelector(selectedItem)}
+                      disabled={isLoading || gemsInInventory.length === 0}
+                      className="rounded bg-cyan-600 px-3 py-1.5 text-xs text-white hover:bg-cyan-700 disabled:opacity-50"
+                    >
+                      镶嵌
+                    </button>
+                  )}
+                {/* 取下按钮 - 装备有宝石 */}
+                {selectedItem && canUnsocket(selectedItem) && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        disabled={isLoading}
+                        className="rounded bg-orange-600 px-3 py-1.5 text-xs text-white hover:bg-orange-700 disabled:opacity-50"
+                      >
+                        取下 ▾
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-32 p-1" align="start">
+                      {selectedItem.gems?.map((gem, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleUnsocketGem(gem.socket_index)}
+                          disabled={isLoading}
+                          className="hover:bg-muted flex w-full items-center gap-1 rounded px-2 py-1.5 text-left text-sm disabled:opacity-50"
+                        >
+                          <span>💎</span>
+                          <span>{gem.gemDefinition?.name || '宝石'}</span>
+                        </button>
+                      ))}
+                    </PopoverContent>
+                  </Popover>
+                )}
               </div>
             </div>
           </div>
@@ -1103,7 +1186,7 @@ function EquipmentSlotComponent({
 function EmptySlot() {
   return (
     <div
-      className="border-border bg-card flex h-10 w-10 shrink-0 items-center justify-center rounded border-2 border-dashed"
+      className="border-border bg-card flex h-14 w-12 shrink-0 items-center justify-center rounded border-2 border-dashed"
       aria-hidden
     />
   )

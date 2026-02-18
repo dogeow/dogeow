@@ -1018,11 +1018,12 @@ const store: StateCreator<GameState> = (set, get) => ({
       await post('/rpg/combat/start', { character_id: selectedId })
       // 刷新角色数据
       await get().fetchCharacter()
-      // 复活后不自动开始战斗
+      // 复活后不自动开始战斗，并清空上次战斗结果，避免继续显示怪物头像/HP
       set(state => ({
         ...state,
         isFighting: false,
         shouldAutoCombat: false,
+        combatResult: null,
         character: state.character ? { ...state.character, is_fighting: false } : null,
         isLoading: false,
       }))
@@ -1494,9 +1495,17 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   // 图鉴操作
   fetchCompendiumItems: async () => {
+    const selectedId = get().selectedCharacterId
+    console.log('[GameStore] fetchCompendiumItems - selectedId:', selectedId)
+    if (!selectedId) return
+
     set(state => ({ ...state, isLoading: true, error: null }))
     try {
-      const response = (await apiGet('/rpg/compendium/items')) as { items: CompendiumItem[] }
+      const response = (await apiGet(`/rpg/compendium/items?character_id=${selectedId}`)) as {
+        items: CompendiumItem[]
+        total: number
+        discovered_count: number
+      }
       set(state => ({
         ...state,
         compendiumItems: response.items || [],
@@ -1509,10 +1518,16 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   fetchCompendiumMonsters: async () => {
+    const selectedId = get().selectedCharacterId
+    console.log('[GameStore] fetchCompendiumMonsters - selectedId:', selectedId)
+    if (!selectedId) return
+
     set(state => ({ ...state, isLoading: true, error: null }))
     try {
-      const response = (await apiGet('/rpg/compendium/monsters')) as {
+      const response = (await apiGet(`/rpg/compendium/monsters?character_id=${selectedId}`)) as {
         monsters: CompendiumMonster[]
+        total: number
+        discovered_count: number
       }
       set(state => ({
         ...state,

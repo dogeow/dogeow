@@ -266,13 +266,15 @@ export function FullComparePanel({
     return newValue !== equippedValue
   })
 
-  // 获取新物品的价格和等级需求
-  const newItemPrice = newItem.definition?.buy_price ?? newItem.sell_price ?? 0
+  // 获取新物品的卖出价（与背包槽位一致：优先 sell_price，否则按 buy_price 一半）
+  const newItemSellPrice =
+    newItem.sell_price ?? Math.floor((newItem.definition?.buy_price ?? 0) / 2)
   const newItemRequiredLevel = newItem.definition?.required_level ?? 0
 
   // 获取已装备物品的价格信息
   const equippedItemBuyPrice = equippedItem.definition?.buy_price ?? 0
-  const equippedItemSellPrice = equippedItem.sell_price ?? 0
+  const equippedItemSellPrice =
+    equippedItem.sell_price ?? Math.floor((equippedItem.definition?.buy_price ?? 0) / 2)
 
   return (
     <div className="border-border flex flex-col border-r">
@@ -314,12 +316,10 @@ export function FullComparePanel({
                   <span>{equippedItem.definition.required_level}</span>
                 </div>
               )}
-            {equippedItemSellPrice > 0 && (
-              <div className="flex justify-between text-yellow-600 dark:text-yellow-400">
-                <span>卖出</span>
-                <span>{equippedItemSellPrice}</span>
-              </div>
-            )}
+            <div className="flex justify-between text-yellow-600 dark:text-yellow-400">
+              <span>卖出</span>
+              <CopperDisplay copper={equippedItemSellPrice} size="xs" nowrap />
+            </div>
             {equippedItemBuyPrice > 0 && (
               <div className="flex justify-between text-purple-600 dark:text-purple-400">
                 <span>买价</span>
@@ -357,12 +357,10 @@ export function FullComparePanel({
                 <span>{newItemRequiredLevel}</span>
               </div>
             )}
-            {newItemPrice > 0 && (
-              <div className="flex justify-between text-yellow-600 dark:text-yellow-400">
-                <span>{isShop ? '价格' : '售价'}</span>
-                <span>{newItemPrice}</span>
-              </div>
-            )}
+            <div className="flex justify-between text-yellow-600 dark:text-yellow-400">
+              <span>{isShop ? '价格' : '卖出'}</span>
+              <CopperDisplay copper={newItemSellPrice} size="xs" nowrap />
+            </div>
           </div>
         </div>
       </div>

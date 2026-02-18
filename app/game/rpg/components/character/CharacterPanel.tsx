@@ -142,9 +142,9 @@ export function CharacterPanel() {
       <PanelCard>
         <div className="mb-3 flex items-center justify-between">
           <h4 className="text-foreground text-base font-medium sm:text-lg">基础属性</h4>
-          {character.stat_points > 0 && (
+          {remainingPoints >= 0 && character.stat_points > 0 && (
             <span className="text-xs text-green-600 sm:text-sm dark:text-green-400">
-              可分配: {character.stat_points} 点
+              可分配: {remainingPoints} 点
             </span>
           )}
         </div>
@@ -235,7 +235,6 @@ function StatRow({
         </TooltipContent>
       </Tooltip>
       <div className="flex items-center gap-1.5 sm:gap-2">
-        <span className="text-foreground text-sm font-medium sm:text-base">{statValue}</span>
         {canAllocate && (
           <div className="flex items-center gap-1">
             <button
@@ -245,17 +244,24 @@ function StatRow({
             >
               -
             </button>
-            <span className="w-5 text-center text-xs text-green-600 sm:w-6 dark:text-green-400">
-              {allocatingValue > 0 ? `+${allocatingValue}` : ''}
+            <span
+              className={`min-w-[2rem] text-center text-sm font-medium sm:text-base ${
+                allocatingValue > 0 ? 'text-green-600 dark:text-green-400' : 'text-foreground'
+              }`}
+            >
+              {statValue + allocatingValue}
             </span>
             <button
               onClick={onIncrement}
               className="bg-muted text-foreground hover:bg-secondary h-6 w-6 rounded text-xs sm:text-sm"
-              aria-label={`增加${statName}`}
+              aria-label={`增加${statName}1点`}
             >
               +
             </button>
           </div>
+        )}
+        {!canAllocate && (
+          <span className="text-foreground text-sm font-medium sm:text-base">{statValue}</span>
         )}
       </div>
     </div>

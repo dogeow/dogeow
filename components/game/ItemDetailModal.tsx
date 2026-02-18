@@ -240,11 +240,11 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
               <input
                 type="number"
                 min={1}
-                max={99}
+                max={9999}
                 value={buyQuantity}
                 onChange={e => {
                   const val = parseInt(e.target.value, 10)
-                  if (!isNaN(val) && val >= 1 && val <= 99) {
+                  if (!isNaN(val) && val >= 1 && val <= 9999) {
                     setBuyQuantity(val)
                   } else if (e.target.value === '') {
                     setBuyQuantity(1)
@@ -253,9 +253,9 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
                 className="bg-muted text-foreground hover:bg-secondary border-input h-7 w-12 rounded border px-2 text-center text-sm transition-colors"
               />
               <button
-                onClick={() => setBuyQuantity(Math.min(99, buyQuantity + 1))}
+                onClick={() => setBuyQuantity(Math.min(9999, buyQuantity + 1))}
                 className="bg-muted text-foreground hover:bg-secondary h-7 w-7 rounded text-sm transition-colors"
-                disabled={buyQuantity >= 99}
+                disabled={buyQuantity >= 9999}
               >
                 +
               </button>

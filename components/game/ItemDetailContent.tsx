@@ -74,6 +74,14 @@ export function ItemDetailContent({ item, type }: ItemDetailContentProps) {
   // 获取买价（仅装备显示）
   const buyPrice = !isShopItem ? (item as GameItem).definition?.buy_price : undefined
 
+  // 格式化属性显示（暴击率等浮点精度兜底）
+  const formatStatValue = (val: number, statKey: string): string | number => {
+    if (statKey === 'crit_damage') return `${Math.round(val * 100)}%`
+    if (statKey === 'crit_rate' && Math.abs(val) < 1) return `${Number((val * 100).toFixed(1))}%`
+    if (typeof val === 'number' && !Number.isInteger(val)) return Number(val.toFixed(2))
+    return val
+  }
+
   return (
     <div
       className="relative flex gap-3 p-3"
@@ -117,25 +125,9 @@ export function ItemDetailContent({ item, type }: ItemDetailContentProps) {
             if (isShopItem && (item as ShopItem).type === 'potion' && stat === 'restore') {
               return null
             }
-            // 格式化显示数值
-            const formatValue = (v: number) => {
-              if (stat === 'crit_damage') {
-                // 暴击伤害：显示为百分比（如 50%）
-                return `${Math.round(v * 100)}%`
-              }
-              if (stat === 'crit_rate' && Math.abs(v) < 1) {
-                // 暴击率小于1时显示为百分比
-                return `${(v * 100).toFixed(0)}%`
-              }
-              // 处理其他浮点数精度问题
-              if (typeof v === 'number' && !Number.isInteger(v)) {
-                return Number(v.toFixed(2))
-              }
-              return v
-            }
             return (
               <p key={stat} className="text-green-600 dark:text-green-400">
-                +{formatValue(Number(value))} {STAT_NAMES[stat] || stat}
+                +{formatStatValue(Number(value), stat)} {STAT_NAMES[stat] || stat}
               </p>
             )
           })}
@@ -145,7 +137,11 @@ export function ItemDetailContent({ item, type }: ItemDetailContentProps) {
             (item as GameItem).affixes?.map((affix, i) => (
               <p key={i} className="text-blue-600 dark:text-blue-400">
                 {Object.entries(affix)
-                  .map(([k, v]) => `+${v} ${STAT_NAMES[k] || k}`)
+                  .map(([k, v]) => {
+                    const num = Number(v)
+                    const display = formatStatValue(num, k)
+                    return `+${display} ${STAT_NAMES[k] || k}`
+                  })
                   .join(', ')}
               </p>
             ))}

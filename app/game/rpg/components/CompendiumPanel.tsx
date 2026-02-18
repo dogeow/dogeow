@@ -49,6 +49,19 @@ export function CompendiumPanel() {
   const [selectedMonster, setSelectedMonster] = useState<CompendiumMonster | null>(null)
   const [viewingImage, setViewingImage] = useState<string | null>(null)
 
+  // 计算进度
+  const itemProgress = useMemo(() => {
+    const discovered = compendiumItems.filter(i => i.discovered).length
+    const total = compendiumItems.length
+    return { discovered, total, percent: total > 0 ? Math.round((discovered / total) * 100) : 0 }
+  }, [compendiumItems])
+
+  const monsterProgress = useMemo(() => {
+    const discovered = compendiumMonsters.filter(m => m.discovered).length
+    const total = compendiumMonsters.length
+    return { discovered, total, percent: total > 0 ? Math.round((discovered / total) * 100) : 0 }
+  }, [compendiumMonsters])
+
   // 加载数据
   useMemo(() => {
     if (activeTab === 'items' && compendiumItems.length === 0) {
@@ -117,6 +130,36 @@ export function CompendiumPanel() {
         </button>
       </div>
 
+      {/* 进度显示 */}
+      {activeTab === 'items' && (
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <span>物品收集:</span>
+          <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
+            <div
+              className="h-full bg-green-500 transition-all"
+              style={{ width: `${itemProgress.percent}%` }}
+            />
+          </div>
+          <span>
+            {itemProgress.discovered}/{itemProgress.total} ({itemProgress.percent}%)
+          </span>
+        </div>
+      )}
+      {activeTab === 'monsters' && (
+        <div className="text-muted-foreground flex items-center gap-2 text-xs">
+          <span>怪物收集:</span>
+          <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
+            <div
+              className="h-full bg-green-500 transition-all"
+              style={{ width: `${monsterProgress.percent}%` }}
+            />
+          </div>
+          <span>
+            {monsterProgress.discovered}/{monsterProgress.total} ({monsterProgress.percent}%)
+          </span>
+        </div>
+      )}
+
       {/* 物品图鉴 */}
       {activeTab === 'items' && (
         <div className="flex flex-col gap-4">
@@ -139,27 +182,43 @@ export function CompendiumPanel() {
 
           {/* 物品列表 */}
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
-            {filteredItems.map(item => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className={`flex flex-col items-center rounded-lg border-2 p-2 transition-all hover:shadow-md ${
-                  selectedItem?.id === item.id
-                    ? 'bg-muted border-yellow-500 ring-2 ring-yellow-500/50'
-                    : 'border-border bg-card'
-                }`}
-                style={{
-                  borderColor: selectedItem?.id === item.id ? undefined : '#4b5563',
-                }}
-                title={item.name}
-              >
-                <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
-                  <ItemIcon item={item} className="drop-shadow-sm" />
-                </span>
-                <span className="mt-1 w-full truncate text-center text-xs">{item.name}</span>
-                <span className="text-muted-foreground text-[10px]">Lv.{item.required_level}</span>
-              </button>
-            ))}
+            {filteredItems.map(item => {
+              const isDiscovered = item.discovered !== false
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedItem(item)}
+                  disabled={!isDiscovered}
+                  className={`flex flex-col items-center rounded-lg border-2 p-2 transition-all hover:shadow-md ${
+                    selectedItem?.id === item.id
+                      ? 'bg-muted border-yellow-500 ring-2 ring-yellow-500/50'
+                      : isDiscovered
+                        ? 'border-border bg-card'
+                        : 'border-border bg-card opacity-50'
+                  } ${!isDiscovered ? 'cursor-not-allowed' : ''}`}
+                  style={{
+                    borderColor: selectedItem?.id === item.id ? undefined : '#4b5563',
+                  }}
+                  title={isDiscovered ? item.name : '未发现'}
+                >
+                  <span className="relative flex h-10 w-10 shrink-0 items-center justify-center">
+                    {isDiscovered ? (
+                      <ItemIcon item={item} className="drop-shadow-sm" />
+                    ) : (
+                      <span className="text-2xl">❓</span>
+                    )}
+                  </span>
+                  <span
+                    className={`mt-1 w-full truncate text-center text-xs ${!isDiscovered ? 'text-muted-foreground' : ''}`}
+                  >
+                    {isDiscovered ? item.name : '???'}
+                  </span>
+                  <span className="text-muted-foreground text-[10px]">
+                    {isDiscovered ? `Lv.${item.required_level}` : 'Lv.?'}
+                  </span>
+                </button>
+              )
+            })}
           </div>
 
           {/* 物品详情 Dialog */}
@@ -260,21 +319,37 @@ export function CompendiumPanel() {
 
           {/* 怪物列表 */}
           <div className="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10">
-            {filteredMonsters.map(monster => (
-              <button
-                key={monster.id}
-                onClick={() => handleMonsterClick(monster)}
-                className={`flex flex-col items-center rounded-lg border-2 p-2 transition-all hover:shadow-md ${
-                  selectedMonster?.id === monster.id
-                    ? 'bg-muted border-yellow-500 ring-2 ring-yellow-500/50'
-                    : 'border-border bg-card'
-                }`}
-              >
-                <MonsterIcon monsterId={monster.id} className="h-10 w-10" />
-                <span className="mt-1 w-full truncate text-center text-xs">{monster.name}</span>
-                <span className="text-muted-foreground text-[10px]">Lv.{monster.level}</span>
-              </button>
-            ))}
+            {filteredMonsters.map(monster => {
+              const isDiscovered = monster.discovered !== false
+              return (
+                <button
+                  key={monster.id}
+                  onClick={() => isDiscovered && handleMonsterClick(monster)}
+                  disabled={!isDiscovered}
+                  className={`flex flex-col items-center rounded-lg border-2 p-2 transition-all hover:shadow-md ${
+                    selectedMonster?.id === monster.id
+                      ? 'bg-muted border-yellow-500 ring-2 ring-yellow-500/50'
+                      : isDiscovered
+                        ? 'border-border bg-card'
+                        : 'border-border bg-card opacity-50'
+                  } ${isDiscovered ? '' : 'cursor-not-allowed'}`}
+                >
+                  {isDiscovered ? (
+                    <MonsterIcon monsterId={monster.id} className="h-10 w-10" />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center text-2xl">❓</span>
+                  )}
+                  <span
+                    className={`mt-1 w-full truncate text-center text-xs ${!isDiscovered ? 'text-muted-foreground' : ''}`}
+                  >
+                    {isDiscovered ? monster.name : '???'}
+                  </span>
+                  <span className="text-muted-foreground text-[10px]">
+                    {isDiscovered ? `Lv.${monster.level}` : 'Lv.?'}
+                  </span>
+                </button>
+              )
+            })}
           </div>
 
           {/* 怪物详情 Dialog */}

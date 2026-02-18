@@ -441,6 +441,7 @@ export interface CompendiumItem {
   drop_rate?: number
   weight?: number
   quality?: string
+  discovered?: boolean
 }
 
 export interface CompendiumMonster {
@@ -458,6 +459,7 @@ export interface CompendiumMonster {
   experience_per_level: number
   drop_table: Record<string, unknown>
   icon?: string
+  discovered?: boolean
 }
 
 export interface CompendiumMonsterDrops {
@@ -473,10 +475,14 @@ export interface CompendiumMonsterDrops {
 
 export interface CompendiumItemsResponse {
   items: CompendiumItem[]
+  total: number
+  discovered_count: number
 }
 
 export interface CompendiumMonstersResponse {
   monsters: CompendiumMonster[]
+  total: number
+  discovered_count: number
 }
 
 /** 货币：1金=100银=10000铜。maxParts=1 时只显示一种（金/银/铜取最高位），否则最多两种 */
