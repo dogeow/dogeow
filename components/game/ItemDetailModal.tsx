@@ -183,6 +183,8 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
   // 计算是否有可对比的装备
   // 商店物品中，只有装备类型（不是药水和宝石）才能对比
   const isEquippableType = shopItem.type !== 'potion' && shopItem.type !== 'gem'
+  // 药水类型只显示快捷数量按钮，不显示输入框
+  const isPotion = shopItem.type === 'potion'
   const hasEquipped = isEquippableType && equippedItem != null
 
   // 转换为 GameItem 用于对比计算
@@ -223,8 +225,8 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
 
       {/* 物品详情 - 右边（无对比时）或者购买按钮区域（有对比时） */}
       <div className="flex flex-1 flex-col">
-        {/* 数量选择 */}
-        {setBuyQuantity && (
+        {/* 数量选择 - 药水只显示快捷按钮 */}
+        {setBuyQuantity && !isPotion && (
           <div className="flex items-center justify-between px-3 pt-2">
             <span className="text-muted-foreground text-sm">数量:</span>
             <div className="flex items-center gap-2">
@@ -261,10 +263,10 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
           </div>
         )}
 
-        {/* 快捷数量按钮 */}
+        {/* 快捷数量按钮 - 始终显示 */}
         {setBuyQuantity && (
           <div className="flex items-center justify-center gap-1 px-3 pt-1">
-            {[1, 10, 100].map(qty => (
+            {[1, 10, 100, 1000].map(qty => (
               <button
                 key={qty}
                 onClick={() => setBuyQuantity(qty)}
