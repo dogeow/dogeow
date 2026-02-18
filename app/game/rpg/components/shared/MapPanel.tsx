@@ -121,15 +121,13 @@ const MapDetailDialog = ({
             </div>
           ) : null}
           <div className="flex gap-2">
-            {canTeleport && (
-              <button
-                onClick={() => onTeleport(map.id)}
-                disabled={disabledTeleport}
-                className="flex-1 rounded bg-blue-600 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                传送
-              </button>
-            )}
+            <button
+              onClick={() => onTeleport(map.id)}
+              disabled={disabledTeleport}
+              className="flex-1 rounded bg-blue-600 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
+            >
+              传送
+            </button>
           </div>
           <button
             onClick={onClose}
