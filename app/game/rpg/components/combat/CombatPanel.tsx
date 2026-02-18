@@ -34,6 +34,7 @@ export function CombatPanel() {
   const isLoading = useGameStore(state => state.isLoading)
   const combatLogs = useGameStore(state => state.combatLogs)
   const combatResult = useGameStore(state => state.combatResult)
+  const currentCombatMonsterFromStatus = useGameStore(state => state.currentCombatMonsterFromStatus)
   const skills = useGameStore(state => state.skills)
   const character = useGameStore(state => state.character)
   const combatStats = useGameStore(state => state.combatStats)
@@ -301,10 +302,15 @@ export function CombatPanel() {
                   combatStats={combatStats}
                   currentHp={currentHp}
                   currentMana={currentMana}
-                  monster={combatResult?.monster ?? null}
-                  monsterId={combatResult?.monster_id ?? character?.combat_monster_id ?? undefined}
+                  monster={combatResult?.monster ?? currentCombatMonsterFromStatus?.monster ?? null}
+                  monsterId={
+                    combatResult?.monster_id ??
+                    currentCombatMonsterFromStatus?.monsterId ??
+                    character?.combat_monster_id ??
+                    undefined
+                  }
                   monsterHpBeforeRound={combatResult?.monster_hp_before_round}
-                  monsters={combatResult?.monsters}
+                  monsters={combatResult?.monsters ?? currentCombatMonsterFromStatus?.monsters}
                   isFighting={isFighting}
                   isLoading={isLoading}
                   // 角色死亡时(isFighting可能是true但currentHp<=0)，点击只是复活，不自动开始战斗

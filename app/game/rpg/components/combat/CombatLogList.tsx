@@ -67,7 +67,7 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
               ? `log-${log.id}`
               : `combat-log-${index}`
         // 没有回合概念，只显示战斗状态
-        const isDefeat = 'defeat' in log && log.defeat
+        const isVictory = 'victory' in log && log.victory === true
 
         const hasPotionBefore =
           log.potion_used?.before && Object.keys(log.potion_used.before).length > 0
@@ -91,16 +91,14 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
             <div className="flex flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm">
               <span
                 className={`font-semibold ${
-                  isDefeat
-                    ? 'text-red-600 dark:text-red-400'
+                  isVictory
+                    ? 'text-green-600 dark:text-green-400'
                     : 'text-orange-500 dark:text-orange-400'
                 }`}
               >
-                {isDefeat ? '💀' : '⚔️'}
+                {isVictory ? '✅' : '⚔️'}
               </span>
-              <span className="text-foreground">
-                {log.monster?.name ?? '?'} Lv.{log.monster?.level ?? '?'}
-              </span>
+              <span className="text-foreground">{log.monster?.name ?? '?'}</span>
               {(log.experience_gained ?? 0) > 0 && (
                 <span className="text-purple-500 dark:text-purple-400">
                   +{log.experience_gained}

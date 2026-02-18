@@ -7,14 +7,15 @@ import {
   GameCharacter,
   CombatStats,
   CombatStatsBreakdown,
+  CombatMonster,
+  CombatResult,
+  CombatLog,
   GameItem,
   CharacterSkill,
   SkillDefinition,
   SkillWithLearnedState,
   MapDefinition,
   CharacterMap,
-  CombatResult,
-  CombatLog,
   EquipmentSlot,
   ShopItem,
   CompendiumItem,
@@ -49,6 +50,12 @@ interface GameState {
   isFighting: boolean
   shouldAutoCombat: boolean // 是否应该自动战斗（不管在哪个标签页）
   combatResult: CombatResult | null
+  /** 刷新页面时由 combat/status 返回的当前怪物，用于在未收到 WebSocket 回合前显示怪物 */
+  currentCombatMonsterFromStatus: {
+    monster: { name: string; type: string; level: number; hp?: number; max_hp?: number }
+    monsterId: number
+    monsters?: CombatMonster[]
+  } | null
   combatLogs: (CombatResult | CombatLog)[]
 
   // UI状态
@@ -181,6 +188,7 @@ const initialState = {
   shouldAutoCombat: false, // 是否应该自动战斗
   enabledSkillIds: [] as number[], // 已启用的技能，可多选
   combatResult: null,
+  currentCombatMonsterFromStatus: null,
   combatLogs: [],
   isLoading: false,
   error: null,
@@ -892,8 +900,31 @@ const store: StateCreator<GameState> = (set, get) => ({
         current_hp: number
         current_mana: number
         last_combat_at: string | null
+        current_combat_monster?: {
+          id: number
+          name: string
+          type: string
+          level: number
+          hp: number
+          max_hp: number
+        }
+        current_combat_monsters?: (CombatMonster | null)[]
       }
       console.log('[GameStore] fetchCombatStatus - response:', response)
+      const fromStatus =
+        response.is_fighting && response.current_combat_monster
+          ? {
+              monster: {
+                name: response.current_combat_monster.name,
+                type: response.current_combat_monster.type,
+                level: response.current_combat_monster.level,
+                hp: response.current_combat_monster.hp,
+                max_hp: response.current_combat_monster.max_hp,
+              },
+              monsterId: response.current_combat_monster.id,
+              monsters: response.current_combat_monsters ?? undefined,
+            }
+          : null
       set(state => ({
         ...state,
         isFighting: response.is_fighting,
@@ -901,6 +932,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         combatStats: response.combat_stats,
         currentHp: response.current_hp,
         currentMana: response.current_mana,
+        currentCombatMonsterFromStatus: fromStatus,
       }))
     } catch (error) {
       console.error('[GameStore] Fetch combat status error:', error)
@@ -1004,7 +1036,16 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   /** 复活角色，不自动开始战斗 */
   revive: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    // 立即清空战斗结果和战斗状态，避免界面继续显示死亡前的怪物
+    set(state => ({
+      ...state,
+      isLoading: true,
+      error: null,
+      combatResult: null,
+      currentCombatMonsterFromStatus: null,
+      isFighting: false,
+      shouldAutoCombat: false,
+    }))
     try {
       const selectedId = get().selectedCharacterId
       if (!selectedId) {
@@ -1020,6 +1061,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         isFighting: false,
         shouldAutoCombat: false,
         combatResult: null,
+        currentCombatMonsterFromStatus: null,
         character: state.character ? { ...state.character, is_fighting: false } : null,
         isLoading: false,
       }))
@@ -1040,6 +1082,8 @@ const store: StateCreator<GameState> = (set, get) => ({
         enabledSkillIds: [],
         isFighting: false,
         shouldAutoCombat: false,
+        combatResult: null,
+        currentCombatMonsterFromStatus: null,
         character: state.character ? { ...state.character, is_fighting: false } : null,
       }))
     }
@@ -1244,6 +1288,9 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   // WebSocket 事件处理
   handleCombatUpdate: data => {
+    // 复活或停止战斗后可能仍会收到延迟的战斗推送，不再更新 combatResult，避免继续显示怪物
+    if (!get().isFighting) return
+
     if (data.defeat || data.auto_stopped) {
       soundManager.play('combat_defeat')
     } else {
