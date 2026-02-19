@@ -291,13 +291,20 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
               </div>
             )}
             {/* 战斗日志主体 - 可点击 */}
-            <button
-              type="button"
+            <div
+              role="button"
+              tabIndex={0}
               onClick={() => {
                 const id = getLogId(log, index)
                 if (id) setSelectedLogId(id)
               }}
-              className="hover:bg-muted/50 flex w-full flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  const id = getLogId(log, index)
+                  if (id) setSelectedLogId(id)
+                }
+              }}
+              className="hover:bg-muted/50 flex w-full cursor-pointer flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm"
             >
               <span
                 className={`font-semibold ${
@@ -346,7 +353,7 @@ export function CombatLogList({ logs }: { logs: (CombatResult | CombatLogType)[]
                   🧪 {log.loot.potion.definition.name}
                 </button>
               )}
-            </button>
+            </div>
             {/* 战后药水：单独一行 */}
             {hasPotionAfter && (
               <div className="flex flex-wrap items-center gap-1 rounded px-2 py-1 text-xs sm:gap-2 sm:px-3 sm:py-2 sm:text-sm">

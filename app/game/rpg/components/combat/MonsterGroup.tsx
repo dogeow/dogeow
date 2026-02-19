@@ -7,7 +7,7 @@ import { MonsterIcon } from './MonsterIcon'
 import { MonsterInfoDialog } from './MonsterInfoDialog'
 import styles from '../../rpg.module.css'
 
-type MonsterWithMeta = CombatMonster & { damage_taken?: number }
+type MonsterWithMeta = CombatMonster & { damage_taken?: number; was_attacked?: boolean }
 
 /** 显示多只怪物（固定5个位置，支持 null 占位） */
 export function MonsterGroup({
@@ -121,8 +121,8 @@ export function MonsterGroup({
       // 使用 position 作为 key 来区分同一波中的不同怪物实例
       const key = `pos-${m.position}`
       const d = m.damage_taken
-      // 只有被攻击的怪物才显示伤害数字（包括0点伤害）
-      if (d != null && m.was_attacked === true) {
+      // damage_taken >= 0 表示本回合被攻击了（包括0伤害），-1 表示未受攻击
+      if (d != null && d >= 0) {
         newDamage[key] = d
       }
     })
@@ -137,9 +137,9 @@ export function MonsterGroup({
         .filter(
           m =>
             m.damage_taken != null &&
+            m.damage_taken >= 0 &&
             m.damage_taken > 0 &&
-            m.position != null &&
-            m.was_attacked === true
+            m.position != null
         )
         .map(m => m.position as number)
       if (hitPositions.length > 0) {
