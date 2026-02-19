@@ -121,8 +121,8 @@ export function MonsterGroup({
       // 使用 position 作为 key 来区分同一波中的不同怪物实例
       const key = `pos-${m.position}`
       const d = m.damage_taken
-      // 所有怪物都显示伤害（包括0点伤害），不管是否新出现
-      if (d != null) {
+      // 只有被攻击的怪物才显示伤害数字（包括0点伤害）
+      if (d != null && m.was_attacked === true) {
         newDamage[key] = d
       }
     })
@@ -132,9 +132,15 @@ export function MonsterGroup({
         setDamageTexts(newDamage)
         setTimeout(() => setDamageTexts({}), 1500)
       })
-      // 触发被攻击后退动画（伤害大于0时）
+      // 触发被攻击后退动画（被攻击且伤害大于0时）
       const hitPositions = validMonsters
-        .filter(m => m.damage_taken != null && m.damage_taken > 0 && m.position != null)
+        .filter(
+          m =>
+            m.damage_taken != null &&
+            m.damage_taken > 0 &&
+            m.position != null &&
+            m.was_attacked === true
+        )
         .map(m => m.position as number)
       if (hitPositions.length > 0) {
         queueMicrotask(() => {

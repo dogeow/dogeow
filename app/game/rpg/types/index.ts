@@ -77,6 +77,8 @@ export interface CombatMonster {
   experience?: number
   /** 怪物在战斗阵列中的位置 (0-4) */
   position?: number
+  /** 本回合是否被攻击 */
+  was_attacked?: boolean
 }
 
 export interface CombatStatsBreakdown {
