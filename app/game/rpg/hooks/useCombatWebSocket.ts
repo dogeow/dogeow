@@ -5,9 +5,11 @@ import { useGameStore } from '../stores/gameStore'
 import { createEchoInstance } from '@/lib/websocket'
 import { toast } from 'sonner'
 import type Echo from 'laravel-echo'
-import type { GameCharacter, GameItem } from '../types'
+import type { CombatMonster, GameCharacter, GameItem } from '../types'
 
 interface CombatUpdateData {
+  type?: 'monsters_appear' // 怪物出现类型
+  monsters?: CombatMonster[] // 怪物数组（怪物出现时使用）
   victory: boolean
   monster: { name: string; type: string; level: number }
   damage_dealt: number
@@ -100,7 +102,13 @@ export function useCombatWebSocket(characterId: number | null) {
 
       ch.listen('.combat.update', (data: CombatUpdateData) => {
         console.log('🎮 Combat update received:', data)
-        useGameStore.getState().handleCombatUpdate(data)
+        // 如果是怪物出现消息，单独处理
+        if (data.type === 'monsters_appear') {
+          console.log('👹 Monsters appear:', data.monsters)
+          useGameStore.getState().handleMonstersAppear(data)
+        } else {
+          useGameStore.getState().handleCombatUpdate(data)
+        }
       })
       ch.listen('.loot.dropped', (data: LootDroppedData) => {
         console.log('💎 Loot dropped:', data)
@@ -169,7 +177,13 @@ export function useCombatWebSocket(characterId: number | null) {
 
       ch.listen('.combat.update', (data: CombatUpdateData) => {
         console.log('🎮 Combat update received:', data)
-        useGameStore.getState().handleCombatUpdate(data)
+        // 如果是怪物出现消息，单独处理
+        if (data.type === 'monsters_appear') {
+          console.log('👹 Monsters appear:', data.monsters)
+          useGameStore.getState().handleMonstersAppear(data)
+        } else {
+          useGameStore.getState().handleCombatUpdate(data)
+        }
       })
       ch.listen('.loot.dropped', (data: LootDroppedData) => {
         console.log('💎 Loot dropped:', data)

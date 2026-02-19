@@ -121,7 +121,7 @@ export function MonsterGroup({
       // 使用 position 作为 key 来区分同一波中的不同怪物实例
       const key = `pos-${m.position}`
       const d = m.damage_taken
-      // damage_taken >= 0 表示本回合被攻击了（包括0伤害），-1 表示未受攻击
+      // damage_taken >= 0 表示本回合被攻击了，-1 表示未受攻击
       if (d != null && d >= 0) {
         newDamage[key] = d
       }

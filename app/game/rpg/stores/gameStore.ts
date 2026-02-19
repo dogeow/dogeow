@@ -141,6 +141,7 @@ interface GameState {
   consumePotion: (itemId: number) => Promise<void> // 使用药品
 
   // WebSocket 事件处理
+  handleMonstersAppear: (data: any) => void // 怪物出现
   handleCombatUpdate: (data: any) => void
   handleLootDropped: (data: any) => void
   handleLevelUp: (data: any) => void
@@ -1327,6 +1328,26 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   // WebSocket 事件处理
+  // 处理怪物出现事件
+  handleMonstersAppear: data => {
+    console.log('[GameStore] handleMonstersAppear:', data)
+    if (!get().isFighting) return
+
+    const currentHp = data.character?.current_hp ?? get().currentHp
+    const currentMana = data.character?.current_mana ?? get().currentMana
+
+    set(state => ({
+      ...state,
+      currentCombatMonsterFromStatus: {
+        monster: { name: '', type: 'normal', level: 1 },
+        monsterId: 0,
+        monsters: data.monsters || [],
+      },
+      currentHp,
+      currentMana,
+    }))
+  },
+
   handleCombatUpdate: data => {
     // 复活或停止战斗后可能仍会收到延迟的战斗推送，不再更新 combatResult，避免继续显示怪物
     if (!get().isFighting) return
