@@ -22,6 +22,10 @@ import {
   CompendiumItem,
   CompendiumMonster,
   CompendiumMonsterDrops,
+  GameMonstersAppearEvent,
+  GameCombatUpdateEvent,
+  GameLootDroppedEvent,
+  GameLevelUpEvent,
 } from '../types'
 import { apiGet, post, put, del, ApiRequestError } from '@/lib/api'
 import { soundManager } from '../utils/soundManager'
@@ -141,10 +145,10 @@ interface GameState {
   consumePotion: (itemId: number) => Promise<void> // 使用药品
 
   // WebSocket 事件处理
-  handleMonstersAppear: (data: any) => void // 怪物出现
-  handleCombatUpdate: (data: any) => void
-  handleLootDropped: (data: any) => void
-  handleLevelUp: (data: any) => void
+  handleMonstersAppear: (data: unknown) => void // 怪物出现
+  handleCombatUpdate: (data: unknown) => void
+  handleLootDropped: (data: unknown) => void
+  handleLevelUp: (data: unknown) => void
   /** 从 WebSocket inventory.update 直接更新背包/仓库/装备，不再发 HTTP 请求 */
   handleInventoryUpdate: (data: {
     inventory?: GameItem[]
@@ -1330,18 +1334,19 @@ const store: StateCreator<GameState> = (set, get) => ({
   // WebSocket 事件处理
   // 处理怪物出现事件
   handleMonstersAppear: data => {
-    console.log('[GameStore] handleMonstersAppear:', data)
+    const typedData = data as GameMonstersAppearEvent
+    console.log('[GameStore] handleMonstersAppear:', typedData)
     if (!get().isFighting) return
 
-    const currentHp = data.character?.current_hp ?? get().currentHp
-    const currentMana = data.character?.current_mana ?? get().currentMana
+    const currentHp = typedData.character?.current_hp ?? get().currentHp
+    const currentMana = typedData.character?.current_mana ?? get().currentMana
 
     set(state => ({
       ...state,
       currentCombatMonsterFromStatus: {
         monster: { name: '', type: 'normal', level: 1 },
         monsterId: 0,
-        monsters: data.monsters || [],
+        monsters: typedData.monsters || [],
       },
       currentHp,
       currentMana,
@@ -1349,26 +1354,30 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   handleCombatUpdate: data => {
+    const typedData = data as GameCombatUpdateEvent
     // 复活或停止战斗后可能仍会收到延迟的战斗推送，不再更新 combatResult，避免继续显示怪物
     if (!get().isFighting) return
 
-    if (data.defeat || data.auto_stopped) {
+    if (typedData.defeat || typedData.auto_stopped) {
       soundManager.play('combat_defeat')
     } else {
       soundManager.play('combat_hit')
     }
 
     // 药水被使用后需要刷新背包
+    const potionUsed = typedData.potion_used
     const usedPotion =
-      data.potion_used &&
-      ((data.potion_used.before && Object.keys(data.potion_used.before).length > 0) ||
-        (data.potion_used.after && Object.keys(data.potion_used.after).length > 0))
+      potionUsed &&
+      ((potionUsed.before && Object.keys(potionUsed.before).length > 0) ||
+        (potionUsed.after && Object.keys(potionUsed.after).length > 0))
 
     set(state => {
       // 优先使用顶层字段，其次使用 character 对象中的字段
       // 只有当值存在时才更新（避免用 null 覆盖正确的值）
-      const newCurrentHp = data.current_hp ?? data.character?.current_hp ?? state.currentHp
-      const newCurrentMana = data.current_mana ?? data.character?.current_mana ?? state.currentMana
+      const newCurrentHp =
+        typedData.current_hp ?? typedData.character?.current_hp ?? state.currentHp
+      const newCurrentMana =
+        typedData.current_mana ?? typedData.character?.current_mana ?? state.currentMana
       console.log('[GameStore] handleCombatUpdate setting currentHp to:', newCurrentHp)
       console.log('[GameStore] handleCombatUpdate setting currentMana to:', newCurrentMana)
 
@@ -1384,14 +1393,14 @@ const store: StateCreator<GameState> = (set, get) => ({
       )
       // 优先使用 id 字段（从 API 返回的日志），其次使用 combat_log_id（WebSocket 推送的实时数据）
       const dataLogId =
-        'id' in data && typeof data.id === 'number'
-          ? data.id
-          : 'combat_log_id' in data && typeof data.combat_log_id === 'number'
-            ? data.combat_log_id
+        'id' in typedData && typeof typedData.id === 'number'
+          ? typedData.id
+          : 'combat_log_id' in typedData && typeof typedData.combat_log_id === 'number'
+            ? typedData.combat_log_id
             : null
 
       // 创建一个带正确 ID 的日志对象
-      const logWithId = dataLogId != null ? { ...data, id: dataLogId } : data
+      const logWithId = dataLogId != null ? { ...typedData, id: dataLogId } : typedData
 
       const newLogs =
         dataLogId != null && !existingLogIds.has(dataLogId)
@@ -1406,20 +1415,20 @@ const store: StateCreator<GameState> = (set, get) => ({
       )
 
       return {
-        combatResult: data,
+        combatResult: typedData,
         combatLogs: newLogs,
-        character: data.character,
+        character: typedData.character,
         // 只有当新值存在且不为 undefined 时才更新
         ...(newCurrentHp !== undefined && { currentHp: newCurrentHp }),
         ...(newCurrentMana !== undefined && { currentMana: newCurrentMana }),
         // 使用药水时背包会在后面刷新
         inventory: usedPotion
           ? state.inventory
-          : data.loot?.item
-            ? [...state.inventory, data.loot.item as GameItem]
+          : typedData.loot?.item
+            ? [...state.inventory, typedData.loot.item as GameItem]
             : state.inventory,
         // 战败时自动停止战斗
-        ...(data.auto_stopped && {
+        ...(typedData.auto_stopped && {
           isFighting: false,
           shouldAutoCombat: false,
           enabledSkillIds: [],
@@ -1450,27 +1459,31 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   handleLootDropped: data => {
+    const typedData = data as GameLootDroppedEvent
     soundManager.play('item_drop')
     set(state => ({
-      inventory: data.item ? [...state.inventory, data.item as GameItem] : state.inventory,
+      inventory: typedData.item
+        ? [...state.inventory, typedData.item as GameItem]
+        : state.inventory,
       character: state.character
         ? {
             ...state.character,
-            copper: (state.character.copper || 0) + (data.copper || 0),
-            current_hp: data.character?.current_hp ?? state.character.current_hp,
-            current_mana: data.character?.current_mana ?? state.character.current_mana,
+            copper: (state.character.copper || 0) + (typedData.copper || 0),
+            current_hp: typedData.character?.current_hp ?? state.character.current_hp,
+            current_mana: typedData.character?.current_mana ?? state.character.current_mana,
           }
         : null,
     }))
   },
 
   handleLevelUp: data => {
+    const typedData = data as GameLevelUpEvent
     soundManager.play('level_up')
     set(state => ({
       ...state,
-      character: data.character,
-      currentHp: data.character?.current_hp ?? state.currentHp,
-      currentMana: data.character?.current_mana ?? state.currentMana,
+      character: typedData.character,
+      currentHp: typedData.character?.current_hp ?? state.currentHp,
+      currentMana: typedData.character?.current_mana ?? state.currentMana,
     }))
   },
 

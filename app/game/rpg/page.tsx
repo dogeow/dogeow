@@ -13,6 +13,7 @@ import { CompendiumPanel } from './components/compendium/CompendiumPanel'
 import { SoundSettings } from './components/settings/SoundSettings'
 import { PotionSettings } from './components/settings/PotionSettings'
 import { FloatingTextOverlay } from './components/shared/FloatingTextOverlay'
+import { ErrorBoundary } from './components/shared/ErrorBoundary'
 import { useCombatWebSocket } from './hooks/useCombatWebSocket'
 import useAuthStore from '@/stores/authStore'
 import { CopperDisplay } from './components/shared/CopperDisplay'
@@ -313,18 +314,20 @@ export default function RPGGame() {
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pb-32 lg:pb-4">
           <div className="w-full min-w-0">
-            {activeTab === 'character' && <CharacterPanel />}
-            {activeTab === 'inventory' && <InventoryPanel />}
-            {activeTab === 'skills' && <SkillPanel />}
-            {activeTab === 'combat' && <CombatPanel />}
-            {activeTab === 'shop' && <ShopPanel />}
-            {activeTab === 'compendium' && <CompendiumPanel />}
-            {activeTab === 'settings' && (
-              <div className="space-y-4">
-                <PotionSettings />
-                <SoundSettings onLogout={handleLogout} />
-              </div>
-            )}
+            <ErrorBoundary>
+              {activeTab === 'character' && <CharacterPanel />}
+              {activeTab === 'inventory' && <InventoryPanel />}
+              {activeTab === 'skills' && <SkillPanel />}
+              {activeTab === 'combat' && <CombatPanel />}
+              {activeTab === 'shop' && <ShopPanel />}
+              {activeTab === 'compendium' && <CompendiumPanel />}
+              {activeTab === 'settings' && (
+                <div className="space-y-4">
+                  <PotionSettings />
+                  <SoundSettings onLogout={handleLogout} />
+                </div>
+              )}
+            </ErrorBoundary>
           </div>
         </div>
       </main>

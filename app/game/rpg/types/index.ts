@@ -545,3 +545,51 @@ export function formatCopper(copper: number, maxParts: number = 2): string {
   if (c > 0 || parts.length === 0) parts.push(`${c}铜`)
   return parts.slice(0, maxParts).join(' ')
 }
+
+// ============================================================================
+// WebSocket 事件类型
+// ============================================================================
+
+/** 怪物出现事件数据 */
+export interface GameMonstersAppearEvent {
+  type: 'monsters_appear'
+  monsters: CombatMonster[]
+  character: {
+    current_hp: number
+    current_mana: number
+  }
+}
+
+/** 战斗更新事件数据 */
+export interface GameCombatUpdateEvent extends CombatResult {
+  type?: string
+  current_hp?: number
+  current_mana?: number
+}
+
+/** 战利品掉落事件数据 */
+export interface GameLootDroppedEvent {
+  type: 'loot_dropped'
+  item?: GameItem
+  copper?: number
+  character?: {
+    current_hp?: number
+    current_mana?: number
+  }
+}
+
+/** 升级事件数据 */
+export interface GameLevelUpEvent {
+  type: 'level_up'
+  character: GameCharacter
+}
+
+/** 背包更新事件数据 */
+export interface GameInventoryUpdateEvent {
+  type: 'inventory_update'
+  inventory?: GameItem[]
+  storage?: GameItem[]
+  equipment?: Record<string, GameItem | null>
+  inventory_size?: number
+  storage_size?: number
+}

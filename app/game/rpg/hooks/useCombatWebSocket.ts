@@ -1,11 +1,19 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { createEchoInstance } from '@/lib/websocket'
 import { toast } from 'sonner'
 import type Echo from 'laravel-echo'
-import type { CombatMonster, GameCharacter, GameItem } from '../types'
+import type {
+  CombatMonster,
+  GameCharacter,
+  GameItem,
+  GameMonstersAppearEvent,
+  GameCombatUpdateEvent,
+  GameLootDroppedEvent,
+  GameLevelUpEvent,
+} from '../types'
 
 interface CombatUpdateData {
   type?: 'monsters_appear' // 怪物出现类型
@@ -78,7 +86,7 @@ export function useCombatWebSocket(characterId: number | null) {
   }
 
   // 重新订阅频道
-  const resubscribe = () => {
+  const resubscribe = useCallback(() => {
     if (!characterId || !echoRef.current) return
 
     console.log('WebSocket: 正在重新订阅...')
@@ -105,18 +113,18 @@ export function useCombatWebSocket(characterId: number | null) {
         // 如果是怪物出现消息，单独处理
         if (data.type === 'monsters_appear') {
           console.log('👹 Monsters appear:', data.monsters)
-          useGameStore.getState().handleMonstersAppear(data)
+          useGameStore.getState().handleMonstersAppear(data as unknown as GameMonstersAppearEvent)
         } else {
-          useGameStore.getState().handleCombatUpdate(data)
+          useGameStore.getState().handleCombatUpdate(data as unknown as GameCombatUpdateEvent)
         }
       })
       ch.listen('.loot.dropped', (data: LootDroppedData) => {
         console.log('💎 Loot dropped:', data)
-        useGameStore.getState().handleLootDropped(data)
+        useGameStore.getState().handleLootDropped(data as unknown as GameLootDroppedEvent)
       })
       ch.listen('.level.up', (data: LevelUpData) => {
         console.log('🎉 Level up:', data)
-        useGameStore.getState().handleLevelUp(data)
+        useGameStore.getState().handleLevelUp(data as unknown as GameLevelUpEvent)
       })
       ch.listen('.inventory.update', (data: InventoryUpdateData) => {
         useGameStore.getState().handleInventoryUpdate(data)
@@ -129,7 +137,7 @@ export function useCombatWebSocket(characterId: number | null) {
     } catch (error) {
       console.error('WebSocket: 重新订阅失败', error)
     }
-  }
+  }, [characterId])
 
   useEffect(() => {
     // 如果没有角色ID，或者已经订阅了相同的角色，跳过
@@ -180,18 +188,18 @@ export function useCombatWebSocket(characterId: number | null) {
         // 如果是怪物出现消息，单独处理
         if (data.type === 'monsters_appear') {
           console.log('👹 Monsters appear:', data.monsters)
-          useGameStore.getState().handleMonstersAppear(data)
+          useGameStore.getState().handleMonstersAppear(data as unknown as GameMonstersAppearEvent)
         } else {
-          useGameStore.getState().handleCombatUpdate(data)
+          useGameStore.getState().handleCombatUpdate(data as unknown as GameCombatUpdateEvent)
         }
       })
       ch.listen('.loot.dropped', (data: LootDroppedData) => {
         console.log('💎 Loot dropped:', data)
-        useGameStore.getState().handleLootDropped(data)
+        useGameStore.getState().handleLootDropped(data as unknown as GameLootDroppedEvent)
       })
       ch.listen('.level.up', (data: LevelUpData) => {
         console.log('🎉 Level up:', data)
-        useGameStore.getState().handleLevelUp(data)
+        useGameStore.getState().handleLevelUp(data as unknown as GameLevelUpEvent)
       })
       ch.listen('.inventory.update', (data: InventoryUpdateData) => {
         useGameStore.getState().handleInventoryUpdate(data)
@@ -274,7 +282,7 @@ export function useCombatWebSocket(characterId: number | null) {
       subscribedCharacterIdRef.current = null
       setIsConnected(false)
     }
-  }, [characterId])
+  }, [characterId, resubscribe])
 
   // 返回连接状态，供 UI 显示（可选）
   return { isConnected, authError }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react'
 import { useGameStore } from '../../stores/gameStore'
-import { MapDefinition, MonsterDefinition } from '../../types'
+import { GameCharacter, MapDefinition, MonsterDefinition } from '../../types'
 import { getMapBackgroundStyle } from '../../utils/mapBackground'
 import { MonsterInfoDialog } from '../combat/MonsterInfoDialog'
 
@@ -65,7 +65,7 @@ const MapDetailDialog = ({
   onTeleport,
 }: {
   map: MapDefinition
-  character: any
+  character: GameCharacter | null
   currentMap: MapDefinition | null
   isLoading: boolean
   onClose: () => void
