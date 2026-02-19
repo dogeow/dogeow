@@ -10,7 +10,20 @@
       "Bash(php artisan migrate:refresh:*)",
       "Bash(php artisan migrate:status:*)",
       "Bash(php artisan db:table:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(npm i:*)",
+      "Bash(npm ls baseline-browser-mapping)",
+      "Bash(npm view:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run lint)",
+      "Bash(npx next lint)",
+      "Bash(npx eslint:*)",
+      "Bash(BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA=true npx eslint . --max-warnings=999 2>&1:*)",
+      "Bash(BROWSERSLIST_IGNORE_OLD_DATA=true npx eslint:*)",
+      "Bash(node:*)",
+      "Bash(DEBUG=*)",
+      "Bash(BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA=true npx eslint:*)"
     ]
   }
 }
