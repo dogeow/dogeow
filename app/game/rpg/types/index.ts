@@ -285,6 +285,67 @@ export interface CombatLog {
   created_at: string
 }
 
+/** 战斗日志详情 */
+export interface CombatLogDetail {
+  id: number
+  map: {
+    id: number
+    name: string
+  }
+  monster: {
+    id: number
+    name: string
+  }
+  victory: boolean
+  damage_dealt: number
+  damage_taken: number
+  experience_gained: number
+  copper_gained: number
+  duration_seconds: number
+  skills_used: SkillUsedEntry[]
+  loot_dropped: Record<string, unknown> | null
+  potion_used: {
+    before?: Record<string, { name: string; restored: number }>
+    after?: Record<string, { name: string; restored: number }>
+  } | null
+  created_at: string
+  character: {
+    level: number
+    class: string
+    attack: number
+    defense: number
+    crit_rate: number
+    crit_damage: number
+  }
+  monster_stats: {
+    level: number
+    hp: number
+    max_hp: number
+    attack: number
+    defense: number
+    experience: number
+    copper: number
+  }
+  damage_detail: {
+    base_attack: number
+    skill_damage: number
+    crit_damage: number
+    aoe_damage: number
+    total: number
+    defense_reduction: number
+    counter_damage: number
+  }
+  battle: {
+    round: number
+    alive_count: number
+    killed_count: number
+  }
+  difficulty: {
+    tier: number
+    multiplier: number
+  }
+}
+
 // API响应类型
 export interface CharacterResponse {
   character: GameCharacter | null

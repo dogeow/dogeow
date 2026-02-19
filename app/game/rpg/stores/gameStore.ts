@@ -10,6 +10,7 @@ import {
   CombatMonster,
   CombatResult,
   CombatLog,
+  CombatLogDetail,
   GameItem,
   CharacterSkill,
   SkillDefinition,
@@ -57,6 +58,7 @@ interface GameState {
     monsters?: CombatMonster[]
   } | null
   combatLogs: (CombatResult | CombatLog)[]
+  combatLogDetail: CombatLogDetail | null // 选中的战斗日志详情
 
   // UI状态
   isLoading: boolean
@@ -126,6 +128,8 @@ interface GameState {
   // 战斗操作
   fetchCombatStatus: () => Promise<void>
   fetchCombatLogs: () => Promise<void>
+  fetchCombatLogDetail: (logId: number) => Promise<void>
+  clearCombatLogDetail: () => void
   startCombat: () => Promise<void>
   revive: () => Promise<void>
   stopCombat: () => Promise<void>
@@ -190,6 +194,7 @@ const initialState = {
   combatResult: null,
   currentCombatMonsterFromStatus: null,
   combatLogs: [],
+  combatLogDetail: null, // 选中的战斗日志详情
   isLoading: false,
   error: null,
   activeTab: 'character' as const,
@@ -971,6 +976,35 @@ const store: StateCreator<GameState> = (set, get) => ({
     }
   },
 
+  // 获取单条战斗日志详情
+  fetchCombatLogDetail: async (logId: number) => {
+    try {
+      const selectedId = get().selectedCharacterId
+      if (!selectedId) return
+      const params = `?character_id=${selectedId}`
+      console.log('[GameStore] Fetching combat log detail, logId:', logId)
+      const response = (await apiGet(`/rpg/combat/logs/${logId}${params}`)) as {
+        log: CombatLogDetail
+      }
+      console.log('[GameStore] Combat log detail response:', response)
+      console.log('[GameStore] Combat log detail log:', response.log)
+      set(state => ({
+        ...state,
+        combatLogDetail: response.log || null,
+      }))
+    } catch (error) {
+      console.error('[GameStore] Fetch combat log detail error:', error)
+    }
+  },
+
+  // 清除战斗日志详情
+  clearCombatLogDetail: () => {
+    set(state => ({
+      ...state,
+      combatLogDetail: null,
+    }))
+  },
+
   startCombat: async () => {
     set(state => ({ ...state, isLoading: true, error: null, combatResult: null }))
     try {
@@ -1128,16 +1162,20 @@ const store: StateCreator<GameState> = (set, get) => ({
             })
             .filter((id): id is number => id != null)
         )
+        // 优先使用 id 字段（从 API 返回的日志），其次使用 combat_log_id（WebSocket 推送的实时数据）
         const responseLogId =
-          'combat_log_id' in response && typeof response.combat_log_id === 'number'
-            ? response.combat_log_id
-            : 'id' in response && typeof response.id === 'number'
-              ? response.id
+          'id' in response && typeof response.id === 'number'
+            ? response.id
+            : 'combat_log_id' in response && typeof response.combat_log_id === 'number'
+              ? response.combat_log_id
               : null
+
+        // 创建一个带正确 ID 的日志对象
+        const logWithId = responseLogId != null ? { ...response, id: responseLogId } : response
 
         const newLogs =
           responseLogId != null && !existingLogIds.has(responseLogId)
-            ? [response, ...state.combatLogs].slice(0, 100)
+            ? [logWithId, ...state.combatLogs].slice(0, 100)
             : state.combatLogs
 
         console.log(
@@ -1323,16 +1361,20 @@ const store: StateCreator<GameState> = (set, get) => ({
           })
           .filter((id): id is number => id != null)
       )
+      // 优先使用 id 字段（从 API 返回的日志），其次使用 combat_log_id（WebSocket 推送的实时数据）
       const dataLogId =
-        'combat_log_id' in data && typeof data.combat_log_id === 'number'
-          ? data.combat_log_id
-          : 'id' in data && typeof data.id === 'number'
-            ? data.id
+        'id' in data && typeof data.id === 'number'
+          ? data.id
+          : 'combat_log_id' in data && typeof data.combat_log_id === 'number'
+            ? data.combat_log_id
             : null
+
+      // 创建一个带正确 ID 的日志对象
+      const logWithId = dataLogId != null ? { ...data, id: dataLogId } : data
 
       const newLogs =
         dataLogId != null && !existingLogIds.has(dataLogId)
-          ? [data, ...state.combatLogs].slice(0, 100)
+          ? [logWithId, ...state.combatLogs].slice(0, 100)
           : state.combatLogs
 
       console.log(
