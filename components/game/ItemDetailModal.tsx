@@ -260,10 +260,10 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
           </div>
         )}
 
-        {/* 快捷数量按钮 - 始终显示 */}
-        {setBuyQuantity && (
+        {/* 快捷数量按钮 - 仅药水显示 */}
+        {setBuyQuantity && isPotion && (
           <div className="flex items-center justify-center gap-1 px-3 pt-1">
-            {[1, 10, 100, 1000].map(qty => (
+            {[1, 10, 100].map(qty => (
               <button
                 key={qty}
                 onClick={() => setBuyQuantity(qty)}
