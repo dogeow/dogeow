@@ -154,21 +154,38 @@ export function ShopPanel() {
           )}
         </div>
 
-        {/* 类型筛选标签 */}
-        <div className="mb-2 flex flex-wrap gap-1 sm:mb-3">
-          {SHOP_TYPE_FILTERS.map(filter => (
-            <button
-              key={filter.id}
-              onClick={() => setTypeFilter(typeFilter === filter.id ? null : filter.id)}
-              className={`rounded-full px-2.5 py-0.5 text-xs transition-colors ${
-                typeFilter === filter.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
+        {/* 类型筛选标签 - 两行布局 */}
+        <div className="mb-2 flex flex-wrap gap-1.5 sm:mb-3">
+          <div className="flex flex-wrap gap-1.5">
+            {SHOP_TYPE_FILTERS.slice(0, 5).map(filter => (
+              <button
+                key={filter.id}
+                onClick={() => setTypeFilter(typeFilter === filter.id ? null : filter.id)}
+                className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                  typeFilter === filter.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {SHOP_TYPE_FILTERS.slice(5).map(filter => (
+              <button
+                key={filter.id}
+                onClick={() => setTypeFilter(typeFilter === filter.id ? null : filter.id)}
+                className={`rounded-md px-4 py-1.5 text-sm transition-colors ${
+                  typeFilter === filter.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="flex min-h-0 justify-center overflow-auto p-0.5">

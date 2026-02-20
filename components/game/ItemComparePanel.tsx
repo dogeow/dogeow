@@ -331,12 +331,18 @@ export function FullComparePanel({
         {/* 右边：背包物品 */}
         <div className="flex flex-col p-2">
           <div className="mb-1 flex justify-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded border-2 border-green-500">
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded border-2"
+              style={{ borderColor: QUALITY_COLORS[newItem.quality as ItemQuality] }}
+            >
               <ItemIcon item={newItem} className="drop-shadow-sm" />
             </div>
           </div>
           <div className="mb-2 text-center">
-            <span className="font-bold text-green-600 dark:text-green-400">
+            <span
+              className="font-bold"
+              style={{ color: QUALITY_COLORS[newItem.quality as ItemQuality] }}
+            >
               {getItemDisplayName(newItem)}
             </span>
           </div>
