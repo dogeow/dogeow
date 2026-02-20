@@ -54,10 +54,8 @@ export function MonsterGroup({
   const [selectedMonster, setSelectedMonster] = useState<MonsterWithMeta | null>(null)
   // 记录死亡的怪物，用于触发动画
   const [deadMonsters, setDeadMonsters] = useState<Set<string>>(new Set())
-  // 记录需要显示出现动画的怪物 instance_id（持久化）
-  const [appearingMonsters, setAppearingMonsters] = useState<Set<string>>(() =>
-    getAppearedMonsters()
-  )
+  // 记录需要显示出现动画的怪物 instance_id（仅当前会话使用，不从 sessionStorage 初始化）
+  const [appearingMonsters, setAppearingMonsters] = useState<Set<string>>(new Set())
   // 技能图标显示状态：position -> skill info
   const [skillIcons, setSkillIcons] = useState<
     Record<number, { skillId: number; icon: string | null; name: string }>
