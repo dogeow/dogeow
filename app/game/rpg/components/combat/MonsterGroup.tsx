@@ -45,7 +45,8 @@ export function MonsterGroup({
 }) {
   const prevMonstersRef = useRef<MonsterWithMeta[]>([])
   // 存储上一次的 instance_id，用于检测新怪物（持久化，避免切换导航后重新触发动画）
-  const prevInstanceIdsRef = useRef<Set<string>>(new Set())
+  // 初始化时从 sessionStorage 读取，避免组件重新挂载后丢失状态
+  const prevInstanceIdsRef = useRef<Set<string>>(getAppearedMonsters())
   // 存储当前新出现的怪物 instance_id（立即可用，不需要等待状态更新）
   const newAppearingRef = useRef<Set<string>>(new Set())
   const [damageTexts, setDamageTexts] = useState<Record<string, number>>({})

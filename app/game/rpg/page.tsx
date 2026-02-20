@@ -57,7 +57,7 @@ export default function RPGGame() {
   const [initialFetchDone, setInitialFetchDone] = useState(false)
 
   // 切换 tab 时重置滚动位置
-  const handleTabChange = (tabId: string) => {
+  const handleTabChange = (tabId: typeof activeTab) => {
     window.scrollTo(0, 0)
     setActiveTab(tabId)
   }
