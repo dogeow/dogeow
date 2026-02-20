@@ -9,6 +9,30 @@ import styles from '../../rpg.module.css'
 
 type MonsterWithMeta = CombatMonster & { damage_taken?: number; was_attacked?: boolean }
 
+// sessionStorage key，用于持久化已显示过动画的怪物 instance_id
+const APPEARED_MONSTERS_KEY = 'rpg_appeared_monsters'
+
+/** 获取已显示过动画的怪物 ID 集合 */
+function getAppearedMonsters(): Set<string> {
+  if (typeof window === 'undefined') return new Set()
+  try {
+    const stored = sessionStorage.getItem(APPEARED_MONSTERS_KEY)
+    return stored ? new Set(JSON.parse(stored)) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+/** 保存已显示过动画的怪物 ID */
+function saveAppearedMonsters(ids: Set<string>): void {
+  if (typeof window === 'undefined') return
+  try {
+    sessionStorage.setItem(APPEARED_MONSTERS_KEY, JSON.stringify([...ids]))
+  } catch {
+    // ignore
+  }
+}
+
 /** 显示多只怪物（固定5个位置，支持 null 占位） */
 export function MonsterGroup({
   monsters,
@@ -20,7 +44,7 @@ export function MonsterGroup({
   skillTargetPositions?: number[]
 }) {
   const prevMonstersRef = useRef<MonsterWithMeta[]>([])
-  // 存储上一次的 instance_id，用于检测新怪物
+  // 存储上一次的 instance_id，用于检测新怪物（持久化，避免切换导航后重新触发动画）
   const prevInstanceIdsRef = useRef<Set<string>>(new Set())
   // 存储当前新出现的怪物 instance_id（立即可用，不需要等待状态更新）
   const newAppearingRef = useRef<Set<string>>(new Set())
@@ -29,8 +53,10 @@ export function MonsterGroup({
   const [selectedMonster, setSelectedMonster] = useState<MonsterWithMeta | null>(null)
   // 记录死亡的怪物，用于触发动画
   const [deadMonsters, setDeadMonsters] = useState<Set<string>>(new Set())
-  // 记录需要显示出现动画的怪物 instance_id
-  const [appearingMonsters, setAppearingMonsters] = useState<Set<string>>(new Set())
+  // 记录需要显示出现动画的怪物 instance_id（持久化）
+  const [appearingMonsters, setAppearingMonsters] = useState<Set<string>>(() =>
+    getAppearedMonsters()
+  )
   // 技能图标显示状态：position -> skill info
   const [skillIcons, setSkillIcons] = useState<
     Record<number, { skillId: number; icon: string | null; name: string }>
@@ -77,10 +103,13 @@ export function MonsterGroup({
     )
     const prevInstanceIds = prevInstanceIdsRef.current
 
-    // 找出新出现的怪物 instance_id
+    // 获取已显示过动画的怪物（持久化）
+    const appearedMonsters = getAppearedMonsters()
+
+    // 找出新出现的怪物 instance_id（排除已显示过动画的）
     const newAppearing: string[] = []
     currentInstanceIds.forEach(instanceId => {
-      if (instanceId && !prevInstanceIds.has(instanceId)) {
+      if (instanceId && !prevInstanceIds.has(instanceId) && !appearedMonsters.has(instanceId)) {
         newAppearing.push(instanceId)
       }
     })
@@ -95,6 +124,10 @@ export function MonsterGroup({
           newAppearing.forEach(id => next.add(id))
           return next
         })
+        // 持久化保存已显示过动画的怪物 ID
+        const updatedAppeared = new Set(appearedMonsters)
+        newAppearing.forEach(id => updatedAppeared.add(id))
+        saveAppearedMonsters(updatedAppeared)
       })
       // 1.2秒后移除动画标记
       setTimeout(() => {
@@ -167,6 +200,15 @@ export function MonsterGroup({
     })
 
     prevMonstersRef.current = validMonsters
+  }, [validMonsters])
+
+  // 检测战斗结束（没有活着的怪物）时清除已显示动画的缓存
+  useEffect(() => {
+    const hasAliveMonsters = validMonsters.some(m => (m.hp ?? 0) > 0)
+    if (!hasAliveMonsters && validMonsters.length > 0) {
+      // 战斗结束，清除缓存
+      saveAppearedMonsters(new Set())
+    }
   }, [validMonsters])
 
   // 如果没有有效怪物则不渲染
