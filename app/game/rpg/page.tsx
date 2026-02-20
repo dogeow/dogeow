@@ -55,6 +55,12 @@ export default function RPGGame() {
   const { isAuthenticated, loading: authLoading } = useAuthStore()
   const [showCreateView, setShowCreateView] = useState(false)
   const [initialFetchDone, setInitialFetchDone] = useState(false)
+
+  // 切换 tab 时重置滚动位置
+  const handleTabChange = (tabId: string) => {
+    window.scrollTo(0, 0)
+    setActiveTab(tabId)
+  }
   // 视图由数据派生，避免在 effect 中 setState；首次拉取完成前固定为 select 避免闪屏
   let resolvedView: GameView
   if (!initialFetchDone) {
@@ -293,7 +299,7 @@ export default function RPGGame() {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                 activeTab === tab.id
                   ? 'bg-primary text-primary-foreground'
@@ -338,7 +344,7 @@ export default function RPGGame() {
           {tabs.map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex min-h-[64px] flex-1 flex-col items-center justify-center py-3 text-center transition-colors ${
                 activeTab === tab.id
                   ? 'bg-muted text-primary'
