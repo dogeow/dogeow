@@ -944,7 +944,14 @@ export function EquipmentGrid({
             label="戒指"
           />
         </div>
-        <div className="h-12 w-12 shrink-0" aria-hidden />
+        <div className="flex justify-center">
+          <EquipmentSlotComponent
+            slot="amulet"
+            item={equipment.amulet}
+            onClick={() => equipment.amulet && setSelectedSlot('amulet')}
+            label="护符"
+          />
+        </div>
         <div className="flex justify-center">
           <EquipmentSlotComponent
             slot="boots"
@@ -952,6 +959,7 @@ export function EquipmentGrid({
             onClick={() => equipment.boots && setSelectedSlot('boots')}
           />
         </div>
+        <div className="h-12 w-12 shrink-0" aria-hidden />
       </div>
 
       {/* 物品详情弹出框 - 使用固定定位 */}

@@ -123,7 +123,7 @@ export function isPotion(item: GameItem): boolean {
 }
 
 /**
- * 获取物品对应的装备槽位（戒指和护身符都返回 ring）
+ * 获取物品对应的装备槽位
  */
 export function getEquipmentSlot(item: GameItem): EquipmentSlot | null {
   const type = item.definition?.type
@@ -136,7 +136,7 @@ export function getEquipmentSlot(item: GameItem): EquipmentSlot | null {
     boots: 'boots',
     belt: 'belt',
     ring: 'ring',
-    amulet: 'ring',
+    amulet: 'amulet',
   }
   return slotMap[type] ?? null
 }

@@ -13,7 +13,15 @@ export type ItemType =
   | 'amulet'
   | 'potion'
   | 'gem'
-export type EquipmentSlot = 'weapon' | 'helmet' | 'armor' | 'gloves' | 'boots' | 'belt' | 'ring'
+export type EquipmentSlot =
+  | 'weapon'
+  | 'helmet'
+  | 'armor'
+  | 'gloves'
+  | 'boots'
+  | 'belt'
+  | 'ring'
+  | 'amulet'
 export type SkillType = 'active' | 'passive'
 export type MonsterType = 'normal' | 'elite' | 'boss'
 
@@ -416,6 +424,7 @@ export const SLOT_NAMES: Record<EquipmentSlot, string> = {
   boots: '靴子',
   belt: '腰带',
   ring: '戒指',
+  amulet: '护符',
 }
 
 export const STAT_NAMES: Record<string, string> = {
