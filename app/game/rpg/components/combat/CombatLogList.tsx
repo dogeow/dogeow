@@ -89,7 +89,11 @@ function CombatLogDetailDialog({ logId, onClose }: { logId: number; onClose: () 
         </button>
 
         <h3 className="text-foreground mb-4 flex items-center gap-2 text-lg font-bold">
-          {d.victory ? '✅ 胜利' : '⚔️ 战败'}
+          {d.victory
+            ? '✅ 胜利'
+            : d.experience_gained === 0 && d.copper_gained === 0
+              ? '⚔️ 战斗中'
+              : '💀 战败'}
           <span className="text-muted-foreground text-sm font-normal">
             {d.map?.name || '未知地图'}
           </span>

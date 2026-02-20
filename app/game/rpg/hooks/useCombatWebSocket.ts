@@ -223,7 +223,7 @@ export function useCombatWebSocket(characterId: number | null) {
           console.error('WebSocket: 连接错误', error)
           setIsConnected(false)
           setAuthError(true)
-          toast.error('WebSocket 连接失败，游戏功能正常，但实时更新可能受影响')
+          // 有重连机制，不需要显示错误提示
         }
 
         const handleDisconnected = () => {
