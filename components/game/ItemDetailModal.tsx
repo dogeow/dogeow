@@ -188,18 +188,20 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
   const hasEquipped = isEquippableType && equippedItem != null
 
   // 转换为 GameItem 用于对比计算
+  // 使用 shopItem.id 作为 definition_id，用于显示物品图片
   const shopItemAsGameItem: GameItem = {
     id: 0,
     character_id: 0,
-    definition_id: 0,
+    definition_id: shopItem.id,
     definition: {
-      id: 0,
+      id: shopItem.id,
       name: shopItem.name,
       type: shopItem.type,
       sub_type: shopItem.sub_type,
       base_stats: shopItem.base_stats,
       required_level: shopItem.required_level,
       buy_price: shopItem.buy_price,
+      icon: shopItem.icon,
     },
     quality: shopItem.quality,
     stats: shopItem.base_stats,
@@ -222,8 +224,8 @@ function ShopItemDetail(props: ShopItemDetailModalProps) {
 
       {/* 物品详情 - 右边（无对比时）或者购买按钮区域（有对比时） */}
       <div className="flex flex-1 flex-col">
-        {/* 数量选择 - 药水只显示快捷按钮 */}
-        {setBuyQuantity && !isPotion && (
+        {/* 数量选择 - 仅药水显示 */}
+        {setBuyQuantity && isPotion && (
           <div className="flex items-center justify-between px-3 pt-2">
             <span className="text-muted-foreground text-sm">数量:</span>
             <div className="flex items-center gap-2">
