@@ -76,7 +76,7 @@ describe('useLoginTrigger', () => {
 
       // Mock document methods
       const mockQuerySelector = vi.fn(() => null)
-      const mockQuerySelectorAll = vi.fn(() => [] as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      const mockQuerySelectorAll = vi.fn(() => [] as any)
       const mockGetElementById = vi.fn(() => null)
 
       // Store original methods
@@ -85,9 +85,9 @@ describe('useLoginTrigger', () => {
       const originalGetElementById = document.getElementById
 
       // Replace methods
-      document.querySelector = mockQuerySelector as any // eslint-disable-line @typescript-eslint/no-explicit-any
-      document.querySelectorAll = mockQuerySelectorAll as any // eslint-disable-line @typescript-eslint/no-explicit-any
-      document.getElementById = mockGetElementById as any // eslint-disable-line @typescript-eslint/no-explicit-any
+      document.querySelector = mockQuerySelector as any
+      document.querySelectorAll = mockQuerySelectorAll as any
+      document.getElementById = mockGetElementById as any
 
       try {
         const { result } = renderHook(() => useLoginTrigger())
@@ -188,13 +188,13 @@ describe('useLoginTrigger', () => {
 
       document.querySelector = vi.fn(() => {
         throw new Error('DOM error')
-      }) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+      }) as any
       document.querySelectorAll = vi.fn(() => {
         throw new Error('DOM error')
-      }) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+      }) as any
       document.getElementById = vi.fn(() => {
         throw new Error('DOM error')
-      }) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+      }) as any
 
       try {
         const { result } = renderHook(() => useLoginTrigger())

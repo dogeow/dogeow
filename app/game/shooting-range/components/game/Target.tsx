@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect, Suspense } from 'react'
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useRef, useState, useEffect, useLayoutEffect, Suspense } from 'react'
 import { useFrame, ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Explosion } from './Explosion'
@@ -33,7 +34,9 @@ export function Target({ position, hit, scale, onClick, id }: TargetProps) {
   )
 
   // 当hit状态改变时更新材质和触发爆炸
-  useEffect(() => {
+
+  // Using useLayoutEffect to sync with Three.js external system
+  useLayoutEffect(() => {
     if (hit && !startExplosion) {
       setStartExplosion(true)
 
@@ -51,9 +54,11 @@ export function Target({ position, hit, scale, onClick, id }: TargetProps) {
       playExplosionSound()
 
       // 0.2秒后开始消失动画
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         setDestroyed(true)
       }, 200)
+
+      return () => clearTimeout(timer)
     } else if (!hit) {
       setStartExplosion(false)
       setDestroyed(false)
@@ -66,7 +71,7 @@ export function Target({ position, hit, scale, onClick, id }: TargetProps) {
         })
       )
     }
-  }, [hit, id, startExplosion])
+  }, [hit, startExplosion])
 
   // 为mesh添加id信息，方便射线检测
   useEffect(() => {

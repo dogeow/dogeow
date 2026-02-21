@@ -406,7 +406,7 @@ describe('authStore', () => {
     const { result } = renderHook(() => useAuthStore())
 
     await act(async () => {
-      await result.current.setToken(undefined as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      await result.current.setToken(undefined as any)
     })
 
     expect(result.current.token).toBeUndefined()
@@ -534,7 +534,7 @@ describe('authStore', () => {
     const { result } = renderHook(() => useAuthStore())
 
     act(() => {
-      result.current.setUser(undefined as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      result.current.setUser(undefined as any)
     })
     expect(result.current.user).toBeUndefined()
     expect(result.current.isAuthenticated).toBe(false) // undefined is falsy
@@ -565,7 +565,7 @@ describe('authStore', () => {
     const { result } = renderHook(() => useAuthStore())
 
     act(() => {
-      useAuthStore.setState({ token: undefined as any }) // eslint-disable-line @typescript-eslint/no-explicit-any
+      useAuthStore.setState({ token: undefined as any })
     })
 
     expect(result.current.getToken()).toBeUndefined()
@@ -574,7 +574,7 @@ describe('authStore', () => {
   it('should test initializeAuth function directly', async () => {
     // Mock window to simulate browser environment
     const originalWindow = global.window
-    global.window = {} as any // eslint-disable-line @typescript-eslint/no-explicit-any
+    global.window = {} as any
 
     // Set up localStorage with token
     localStorage.setItem('auth-token', 'test-initialization-token')
@@ -600,7 +600,7 @@ describe('authStore', () => {
   it('should test initializeAuth function with no token', async () => {
     // Mock window to simulate browser environment
     const originalWindow = global.window
-    global.window = {} as any // eslint-disable-line @typescript-eslint/no-explicit-any
+    global.window = {} as any
 
     // Ensure localStorage is empty
     localStorage.removeItem('auth-token')

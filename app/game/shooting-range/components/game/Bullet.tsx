@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect } from 'react'
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useRef, useState, useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 
@@ -17,26 +18,18 @@ export function Bullet({ initialPosition, direction }: BulletProps) {
   const [position, setPosition] = useState(initialPosition)
   const [hit, setHit] = useState(false)
   const [lifetime, setLifetime] = useState(0)
+  const [trailPositions, setTrailPositions] = useState<THREE.Vector3[]>([])
   const speed = 100 // 子弹速度
 
-  // 创建拖尾效果
-  const trailPositions = useRef<THREE.Vector3[]>([])
-  const trailMaterial = useRef(
-    new THREE.LineBasicMaterial({
-      color: '#ff8800',
-      opacity: 0.6,
-      transparent: true,
-    })
-  )
+  // 初始化拖尾 - 使用useEffect同步外部Three.js系统
 
-  // 初始化拖尾
   useEffect(() => {
     // 创建拖尾点
     const points = []
     for (let i = 0; i < 10; i++) {
       points.push(initialPosition.clone())
     }
-    trailPositions.current = points
+    setTrailPositions(points)
   }, [initialPosition])
 
   // 子弹飞行动画
@@ -59,10 +52,22 @@ export function Bullet({ initialPosition, direction }: BulletProps) {
       bulletRef.current.position.copy(newPosition)
 
       // 更新拖尾
-      trailPositions.current.shift()
-      trailPositions.current.push(newPosition.clone())
+      setTrailPositions(prev => {
+        const newTrail = [...prev.slice(1), newPosition.clone()]
+        return newTrail
+      })
     }
   })
+
+  const trailMaterial = useMemo(
+    () =>
+      new THREE.LineBasicMaterial({
+        color: '#ff8800',
+        opacity: 0.6,
+        transparent: true,
+      }),
+    []
+  )
 
   return hit ? null : (
     <>
@@ -74,19 +79,19 @@ export function Bullet({ initialPosition, direction }: BulletProps) {
 
       {/* 子弹拖尾 */}
       <group>
-        {trailPositions.current && trailPositions.current.length > 1 && (
+        {trailPositions.length > 1 && (
           <line>
             <bufferGeometry
               attach="geometry"
               onUpdate={self => {
                 const positions = []
-                for (const pos of trailPositions.current) {
+                for (const pos of trailPositions) {
                   positions.push(pos.x, pos.y, pos.z)
                 }
                 self.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
               }}
             />
-            <primitive object={trailMaterial.current} attach="material" />
+            <primitive object={trailMaterial} attach="material" />
           </line>
         )}
       </group>

@@ -106,7 +106,7 @@ describe('useChatWebSocket', () => {
       }
 
       const { createEchoInstance } = await import('@/lib/websocket')
-      vi.mocked(createEchoInstance).mockResolvedValue(mockEcho as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      vi.mocked(createEchoInstance).mockResolvedValue(mockEcho as any)
 
       const { result } = renderHook(() => useChatWebSocket())
 
@@ -172,7 +172,7 @@ describe('useChatWebSocket', () => {
       const { result } = renderHook(() => useChatWebSocket())
 
       act(() => {
-        result.current.joinRoom('room-1', mockEcho as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        result.current.joinRoom('room-1', mockEcho as any)
       })
 
       expect(mockEcho.channel).toHaveBeenCalledWith('room-1')
@@ -193,7 +193,7 @@ describe('useChatWebSocket', () => {
       const { result } = renderHook(() => useChatWebSocket())
 
       act(() => {
-        result.current.joinRoom('room-1', mockEcho as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+        result.current.joinRoom('room-1', mockEcho as any)
       })
 
       expect(mockEcho.channel).toHaveBeenCalledWith('room-1')
@@ -214,7 +214,7 @@ describe('useChatWebSocket', () => {
       }
 
       const { createEchoInstance } = await import('@/lib/websocket')
-      vi.mocked(createEchoInstance).mockResolvedValue(mockEcho as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      vi.mocked(createEchoInstance).mockResolvedValue(mockEcho as any)
 
       const { result } = renderHook(() => useChatWebSocket())
 
@@ -246,7 +246,7 @@ describe('useChatWebSocket', () => {
       }
 
       const { default: OfflineManager } = await import('@/lib/websocket/offline-manager')
-      vi.mocked(OfflineManager).mockImplementation(() => mockOfflineManager as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      vi.mocked(OfflineManager).mockImplementation(() => mockOfflineManager as any)
 
       const { result } = renderHook(() => useChatWebSocket())
 
@@ -324,7 +324,7 @@ describe('useChatWebSocket', () => {
       }
 
       const { createEchoInstance } = await import('@/lib/websocket')
-      vi.mocked(createEchoInstance).mockResolvedValue(mockEcho as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      vi.mocked(createEchoInstance).mockResolvedValue(mockEcho as any)
 
       const { result } = renderHook(() => useChatWebSocket())
 
@@ -352,7 +352,7 @@ describe('useChatWebSocket', () => {
       }
 
       const { createEchoInstance } = await import('@/lib/websocket')
-      vi.mocked(createEchoInstance).mockResolvedValue(mockEcho as any) // eslint-disable-line @typescript-eslint/no-explicit-any
+      vi.mocked(createEchoInstance).mockResolvedValue(mockEcho as any)
 
       const { result } = renderHook(() =>
         useChatWebSocket({

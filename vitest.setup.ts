@@ -2,7 +2,7 @@ import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
 // Setup DOM environment for React testing
-const { JSDOM } = require('jsdom') // eslint-disable-line @typescript-eslint/no-require-imports
+const { JSDOM } = require('jsdom')
 const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
   url: 'http://localhost',
 })

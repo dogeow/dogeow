@@ -105,7 +105,7 @@ describe('useTileManagement', () => {
   describe('Tile Click Handling', () => {
     it('should handle click on public tile', () => {
       const mockPush = vi.fn()
-      const { useRouter } = require('next/navigation') // eslint-disable-line @typescript-eslint/no-require-imports
+      const { useRouter } = require('next/navigation')
       vi.mocked(useRouter).mockImplementation(() => ({ push: mockPush }))
 
       const { result } = renderHook(() => useTileManagement())
@@ -121,10 +121,10 @@ describe('useTileManagement', () => {
 
     it('should handle click on protected tile when authenticated', () => {
       const mockPush = vi.fn()
-      const { useRouter } = require('next/navigation') // eslint-disable-line @typescript-eslint/no-require-imports
+      const { useRouter } = require('next/navigation')
       vi.mocked(useRouter).mockImplementation(() => ({ push: mockPush }))
 
-      const { useLoginTrigger } = require('@/hooks/useLoginTrigger') // eslint-disable-line @typescript-eslint/no-require-imports
+      const { useLoginTrigger } = require('@/hooks/useLoginTrigger')
       vi.mocked(useLoginTrigger).mockReturnValue({
         requireLogin: vi.fn(callback => callback()),
         isAuthenticated: true,
@@ -143,7 +143,7 @@ describe('useTileManagement', () => {
 
     it('should require login for protected tile when not authenticated', () => {
       const mockRequireLogin = vi.fn()
-      const { useLoginTrigger } = require('@/hooks/useLoginTrigger') // eslint-disable-line @typescript-eslint/no-require-imports
+      const { useLoginTrigger } = require('@/hooks/useLoginTrigger')
       vi.mocked(useLoginTrigger).mockReturnValue({
         requireLogin: mockRequireLogin,
         isAuthenticated: false,
@@ -164,7 +164,7 @@ describe('useTileManagement', () => {
       const mockPush = vi.fn(() => {
         throw new Error('Navigation failed')
       })
-      const { useRouter } = require('next/navigation') // eslint-disable-line @typescript-eslint/no-require-imports
+      const { useRouter } = require('next/navigation')
       vi.mocked(useRouter).mockImplementation(() => ({ push: mockPush }))
 
       const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -185,7 +185,7 @@ describe('useTileManagement', () => {
 
   describe('Tile Status Updates', () => {
     it('should update tile status when authentication changes', () => {
-      const { useLoginTrigger } = require('@/hooks/useLoginTrigger') // eslint-disable-line @typescript-eslint/no-require-imports
+      const { useLoginTrigger } = require('@/hooks/useLoginTrigger')
 
       // First render with unauthenticated user
       vi.mocked(useLoginTrigger).mockReturnValue({
@@ -213,7 +213,7 @@ describe('useTileManagement', () => {
 
   describe('Edge Cases', () => {
     it('should handle tiles without needLogin property', () => {
-      const { useLoginTrigger } = require('@/hooks/useLoginTrigger') // eslint-disable-line @typescript-eslint/no-require-imports
+      const { useLoginTrigger } = require('@/hooks/useLoginTrigger')
       vi.mocked(useLoginTrigger).mockReturnValue({
         requireLogin: vi.fn(),
         isAuthenticated: false,
@@ -223,7 +223,7 @@ describe('useTileManagement', () => {
 
       // Create a tile without needLogin property
       const tileWithoutLogin = { ...result.current.tiles[0] }
-      delete (tileWithoutLogin as any).needLogin // eslint-disable-line @typescript-eslint/no-explicit-any
+      delete (tileWithoutLogin as any).needLogin
 
       const status = result.current.getTileStatus(tileWithoutLogin)
       expect(status.isProtected).toBe(false)
@@ -232,7 +232,7 @@ describe('useTileManagement', () => {
     })
 
     it('should handle tiles with null needLogin property', () => {
-      const { useLoginTrigger } = require('@/hooks/useLoginTrigger') // eslint-disable-line @typescript-eslint/no-require-imports
+      const { useLoginTrigger } = require('@/hooks/useLoginTrigger')
       vi.mocked(useLoginTrigger).mockReturnValue({
         requireLogin: vi.fn(),
         isAuthenticated: false,
@@ -241,7 +241,7 @@ describe('useTileManagement', () => {
       const { result } = renderHook(() => useTileManagement())
 
       // Create a tile with null needLogin property
-      const tileWithNullLogin = { ...result.current.tiles[0], needLogin: null as any } // eslint-disable-line @typescript-eslint/no-explicit-any
+      const tileWithNullLogin = { ...result.current.tiles[0], needLogin: null as any }
 
       const status = result.current.getTileStatus(tileWithNullLogin)
       expect(status.isProtected).toBe(false)
