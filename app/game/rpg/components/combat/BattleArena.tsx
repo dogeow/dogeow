@@ -86,7 +86,6 @@ export function BattleArena({
   const computedSkillEffect = useMemo(() => {
     if (!skillUsed) return null
 
-    const skillId = `${skillUsed.skill_id}-${skillUsed.round}`
     const skillName = skillUsed.name?.toLowerCase() || ''
 
     if (skillName.includes('流星') || skillName.includes('火雨') || skillName.includes('陨石')) {
@@ -116,16 +115,19 @@ export function BattleArena({
 
   // 技能特效状态
   const [activeSkillEffect, setActiveSkillEffect] = useState<SkillEffectType | null>(null)
-  const lastSkillUsedIdRef = useRef<string | null>(null)
+  const lastSkillUsedIdRef = useRef<number>(0)
+  const skillTriggerCountRef = useRef<number>(0)
 
   // 当 skillUsed 变化时触发特效
 
   useEffect(() => {
     if (skillUsed && computedSkillEffect) {
-      const skillId = `${skillUsed.skill_id}-${skillUsed.round}`
+      // 使用 skill_id 和递增计数器来区分每次技能释放
+      skillTriggerCountRef.current += 1
+      const uniqueSkillId = skillUsed.skill_id * 10000 + skillTriggerCountRef.current
 
-      if (lastSkillUsedIdRef.current !== skillId) {
-        lastSkillUsedIdRef.current = skillId
+      if (lastSkillUsedIdRef.current !== uniqueSkillId) {
+        lastSkillUsedIdRef.current = uniqueSkillId
         setActiveSkillEffect(computedSkillEffect)
       }
     }

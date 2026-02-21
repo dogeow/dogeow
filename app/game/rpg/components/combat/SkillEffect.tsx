@@ -1046,15 +1046,18 @@ export function SkillEffect({
   className = '',
 }: SkillEffectProps) {
   const [isActive, setIsActive] = useState(false)
-  const prevActiveRef = useRef(active)
+  const wasActiveRef = useRef(false)
+
+  // 检测 active 从 false 变为 true 的时刻
 
   useEffect(() => {
-    if (active && !prevActiveRef.current) {
+    if (active && !wasActiveRef.current) {
+      wasActiveRef.current = true
       setIsActive(true)
-    } else if (!active && prevActiveRef.current) {
+    } else if (!active && wasActiveRef.current) {
+      wasActiveRef.current = false
       setIsActive(false)
     }
-    prevActiveRef.current = active
   }, [active])
 
   const handleComplete = useCallback(() => {
