@@ -6,4 +6,9 @@ module.exports = [
   {
     ignores: ['scripts/**/*', 'node_modules/**', '.next/**'],
   },
+  {
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
 ]

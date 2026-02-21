@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useRef, useState, useEffect, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
@@ -69,35 +68,33 @@ export function Bullet({ initialPosition, direction }: BulletProps) {
     []
   )
 
-  return hit ? null : (
-    <>
-      {/* 子弹 */}
+  // 如果子弹已击中，不渲染
+  if (hit) return null
+
+  return (
+    <group>
+      {/* 子弹主体 */}
       <mesh ref={bulletRef} position={position}>
-        <capsuleGeometry args={[0.03, 0.15, 4, 8]} />
-        <meshStandardMaterial color="#ffff00" emissive="#ff8800" emissiveIntensity={0.5} />
+        <sphereGeometry args={[0.1, 8, 8]} />
+        <meshStandardMaterial color="#ffaa00" emissive="#ff8800" emissiveIntensity={0.5} />
       </mesh>
 
       {/* 子弹拖尾 */}
       <group>
         {trailPositions.length > 1 && (
           <line>
-            <bufferGeometry
-              attach="geometry"
-              onUpdate={self => {
-                const positions = []
-                for (const pos of trailPositions) {
-                  positions.push(pos.x, pos.y, pos.z)
-                }
-                self.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
-              }}
-            />
-            <primitive object={trailMaterial} attach="material" />
+            <bufferGeometry>
+              <bufferAttribute
+                attach="attributes-position"
+                count={trailPositions.length}
+                array={new Float32Array(trailPositions.flatMap(p => [p.x, p.y, p.z]))}
+                itemSize={3}
+              />
+            </bufferGeometry>
+            <lineBasicMaterial color="#ff8800" opacity={0.6} transparent />
           </line>
         )}
       </group>
-
-      {/* 子弹光效 */}
-      <pointLight position={position} color="#ff8800" intensity={0.5} distance={2} decay={1} />
-    </>
+    </group>
   )
 }

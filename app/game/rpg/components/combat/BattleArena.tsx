@@ -1,7 +1,7 @@
 'use client'
 
 import { type CombatMonster, type SkillUsedEntry } from '../../types'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { MonsterIcon } from './MonsterIcon'
 import { MonsterGroup } from './MonsterGroup'
 import { VSSwords } from './VSSwords'
@@ -82,64 +82,54 @@ export function BattleArena({
 
   const hasValidMonsters = monsters?.some(m => m != null) ?? false
 
-  // 技能特效状态
-  const [activeSkillEffect, setActiveSkillEffect] = useState<SkillEffectType | null>(null)
-  const [skillTargetPos, setSkillTargetPos] = useState<{ x: number; y: number }>({ x: 0.5, y: 0.3 })
-  const lastSkillUsedIdRef = useRef<string | null>(null)
+  // 根据 skillUsed 计算技能特效类型
+  const computedSkillEffect = useMemo(() => {
+    if (!skillUsed) return null
 
-  // 根据怪物位置索引计算目标位置
-  // 5个怪物位置从左到右平均分布，位置0在最左边，位置4在最右边
-  const getTargetPosition = (positions?: number[]) => {
-    if (!positions || positions.length === 0) {
+    const skillId = `${skillUsed.skill_id}-${skillUsed.round}`
+    const skillName = skillUsed.name?.toLowerCase() || ''
+
+    if (skillName.includes('流星') || skillName.includes('火雨') || skillName.includes('陨石')) {
+      return 'meteor-storm'
+    } else if (skillName.includes('火球') || skillName.includes('火')) {
+      return 'fireball'
+    } else if (skillName.includes('冰') || skillName.includes('箭')) {
+      return 'ice-arrow'
+    } else if (skillName.includes('黑洞') || skillName.includes('吸')) {
+      return 'blackhole'
+    } else if (skillName.includes('雷') || skillName.includes('电') || skillName.includes('闪电')) {
+      return 'lightning'
+    }
+
+    return null
+  }, [skillUsed])
+
+  // 根据怪物位置计算目标位置
+  const computedTargetPos = useMemo(() => {
+    if (!skillTargetPositions || skillTargetPositions.length === 0) {
       return { x: 0.5, y: 0.25 }
     }
-    const pos = positions[0]
-    // 直接用位置索引 * 0.2，位置0=0, 位置1=0.2, 位置2=0.4, 位置3=0.6, 位置4=0.8
-    // 然后加偏移量让它们居中分布
+    const pos = skillTargetPositions[0]
     const x = 0.1 + pos * 0.2
     return { x, y: 0.25 }
-  }
+  }, [skillTargetPositions])
 
-  // 根据 skillUsed 触发技能特效（只触发一次）
+  // 技能特效状态
+  const [activeSkillEffect, setActiveSkillEffect] = useState<SkillEffectType | null>(null)
+  const lastSkillUsedIdRef = useRef<string | null>(null)
+
+  // 当 skillUsed 变化时触发特效
+
   useEffect(() => {
-    if (skillUsed) {
-      // 用 skill_id + round 生成唯一 ID，避免重复触发
+    if (skillUsed && computedSkillEffect) {
       const skillId = `${skillUsed.skill_id}-${skillUsed.round}`
 
-      // 如果已经触发过这个技能，跳过
-      if (lastSkillUsedIdRef.current === skillId) {
-        return
-      }
-      lastSkillUsedIdRef.current = skillId
-
-      const skillName = skillUsed.name?.toLowerCase() || ''
-      let effectType: SkillEffectType | null = null
-
-      if (skillName.includes('流星') || skillName.includes('火雨') || skillName.includes('陨石')) {
-        effectType = 'meteor-storm'
-      } else if (skillName.includes('火球') || skillName.includes('火')) {
-        effectType = 'fireball'
-      } else if (skillName.includes('冰') || skillName.includes('箭')) {
-        effectType = 'ice-arrow'
-      } else if (skillName.includes('黑洞') || skillName.includes('吸')) {
-        effectType = 'blackhole'
-      } else if (
-        skillName.includes('雷') ||
-        skillName.includes('电') ||
-        skillName.includes('闪电')
-      ) {
-        effectType = 'lightning'
-      }
-
-      if (effectType) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setActiveSkillEffect(effectType)
-        // 根据怪物位置动态设置目标
-        const targetPos = getTargetPosition(skillTargetPositions)
-        setSkillTargetPos(targetPos)
+      if (lastSkillUsedIdRef.current !== skillId) {
+        lastSkillUsedIdRef.current = skillId
+        setActiveSkillEffect(computedSkillEffect)
       }
     }
-  }, [skillUsed, skillTargetPositions, hasValidMonsters, monsters])
+  }, [skillUsed, computedSkillEffect])
 
   const handleSkillComplete = () => {
     setActiveSkillEffect(null)
@@ -152,7 +142,7 @@ export function BattleArena({
         <SkillEffect
           type={activeSkillEffect}
           active={true}
-          targetPosition={skillTargetPos}
+          targetPosition={computedTargetPos}
           onComplete={handleSkillComplete}
           className="absolute inset-0 z-10"
         />

@@ -5,11 +5,9 @@ import { ItemDetailDialog } from '../ItemDetailDialog'
 import { Item } from '../../types'
 
 // Mock Next.js Image component
+
 vi.mock('next/image', () => ({
-  default: ({ src, alt }: any) => (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} data-testid="item-image" />
-  ),
+  default: ({ src, alt }: any) => <img src={src} alt={alt} data-testid="item-image" />,
 }))
 
 // Mock date utils

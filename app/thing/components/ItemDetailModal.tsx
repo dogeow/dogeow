@@ -342,20 +342,25 @@ export function ItemDetailModal({
   }, [formData, selectedTags, uploadedImages, mode, editLoading, item, open, triggerAutoSave])
 
   // 当初始数据设置时，更新 ref（在 initializeEditData 完成后）
+  const formDataRef = useRef(formData)
+  const selectedTagsRef = useRef(selectedTags)
+  const uploadedImagesRef = useRef(uploadedImages)
+  formDataRef.current = formData
+  selectedTagsRef.current = selectedTags
+  uploadedImagesRef.current = uploadedImages
+
   useEffect(() => {
     if (mode === 'edit' && !editLoading && item && formData.name) {
       const currentData: AutoSaveData = {
-        formData,
-        selectedTags,
-        uploadedImages: uploadedImages,
+        formData: formDataRef.current,
+        selectedTags: selectedTagsRef.current,
+        uploadedImages: uploadedImagesRef.current,
       }
       // 只在 ref 为空时设置，避免覆盖已设置的初始数据
       if (!initialDataRef.current) {
         initialDataRef.current = currentData
       }
     }
-    // formData, selectedTags, uploadedImages 通过 ref 访问，不需要放在依赖项中
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, editLoading, item, formData.name])
 
   // 区域变化时加载房间

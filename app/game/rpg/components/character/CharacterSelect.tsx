@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { CreateCharacter } from './CreateCharacter'
@@ -155,11 +156,11 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
           <div className="flex min-h-0 flex-1 flex-col items-center justify-between overflow-hidden text-center">
             <div className="flex-shrink-0">
               <div className="relative mx-auto mb-2 h-20 w-20 overflow-hidden rounded-full">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src={avatarUrl}
                   alt={`${character.name} avatar`}
-                  className="h-full w-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
               <h3 className="mt-1 truncate text-sm font-bold">{character.name}</h3>

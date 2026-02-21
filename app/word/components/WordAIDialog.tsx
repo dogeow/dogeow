@@ -176,11 +176,14 @@ export function WordAIDialog({ word, open, onOpenChange }: WordAIDialogProps) {
   }
 
   // 自动查询单词解释
+  const sendMessageRef = useRef(sendMessage)
+  sendMessageRef.current = sendMessage
+
   useEffect(() => {
     if (open && !autoQueryDone && !isLoading) {
       setAutoQueryDone(true)
       const prompt = `请详细解释英语单词 "${word.content}" 的含义、用法、词性、常见搭配和例句。请用中文回答。`
-      sendMessage(prompt)
+      sendMessageRef.current(prompt)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, autoQueryDone, isLoading])

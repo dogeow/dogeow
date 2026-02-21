@@ -108,13 +108,17 @@ function MeteorStormEffect({
     setTimeout(() => clearInterval(interval), 3000)
   }, [])
 
+  const hasActivatedRef = useRef(false)
+
   useEffect(() => {
-    if (active && !isActive) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (active && !hasActivatedRef.current) {
+      hasActivatedRef.current = true
       setIsActive(true)
       cast()
+    } else if (!active) {
+      hasActivatedRef.current = false
     }
-  }, [active, isActive, cast])
+  }, [active, cast])
 
   useEffect(() => {
     if (!isActive) return
@@ -324,13 +328,17 @@ function FireballEffect({
     })
   }, [])
 
+  const hasActivatedRef = useRef(false)
+
   useEffect(() => {
-    if (active && !isActive) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (active && !hasActivatedRef.current) {
+      hasActivatedRef.current = true
       setIsActive(true)
       cast()
+    } else if (!active) {
+      hasActivatedRef.current = false
     }
-  }, [active, isActive, cast])
+  }, [active, cast])
 
   useEffect(() => {
     if (!isActive) return
@@ -469,13 +477,17 @@ function IceArrowEffect({
     })
   }, [])
 
+  const hasActivatedRef = useRef(false)
+
   useEffect(() => {
-    if (active && !isActive) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (active && !hasActivatedRef.current) {
+      hasActivatedRef.current = true
       setIsActive(true)
       cast()
+    } else if (!active) {
+      hasActivatedRef.current = false
     }
-  }, [active, isActive, cast])
+  }, [active, cast])
 
   useEffect(() => {
     if (!isActive) return
@@ -652,16 +664,20 @@ function BlackholeEffect({
     }
   }, [])
 
+  const hasActivatedRef = useRef(false)
+
   useEffect(() => {
-    if (active && !isActive) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (active && !hasActivatedRef.current) {
+      hasActivatedRef.current = true
       setIsActive(true)
       cast()
       setTimeout(() => {
         if (blackholeRef.current) blackholeRef.current.active = false
       }, 3000)
+    } else if (!active) {
+      hasActivatedRef.current = false
     }
-  }, [active, isActive, cast])
+  }, [active, cast])
 
   useEffect(() => {
     if (!isActive) return
@@ -870,17 +886,21 @@ function LightningEffect({
     }, 150)
   }, [])
 
+  const hasActivatedRef = useRef(false)
+
   useEffect(() => {
-    if (active && !isActive) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (active && !hasActivatedRef.current) {
+      hasActivatedRef.current = true
       setIsActive(true)
       cast()
       // 2秒后再释放一次
       setTimeout(() => {
         cast()
       }, 2000)
+    } else if (!active) {
+      hasActivatedRef.current = false
     }
-  }, [active, isActive, cast])
+  }, [active, cast])
 
   useEffect(() => {
     if (!isActive) return
@@ -1026,12 +1046,15 @@ export function SkillEffect({
   className = '',
 }: SkillEffectProps) {
   const [isActive, setIsActive] = useState(false)
+  const prevActiveRef = useRef(active)
 
   useEffect(() => {
-    if (active) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (active && !prevActiveRef.current) {
       setIsActive(true)
+    } else if (!active && prevActiveRef.current) {
+      setIsActive(false)
     }
+    prevActiveRef.current = active
   }, [active])
 
   const handleComplete = useCallback(() => {

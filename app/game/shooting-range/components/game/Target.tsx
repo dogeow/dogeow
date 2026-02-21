@@ -1,5 +1,4 @@
-/* eslint-disable react-hooks/set-state-in-effect */
-import { useRef, useState, useEffect, useLayoutEffect, Suspense } from 'react'
+import { useRef, useState, useLayoutEffect, Suspense } from 'react'
 import { useFrame, ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Explosion } from './Explosion'
@@ -22,6 +21,9 @@ export function Target({ position, hit, scale, onClick, id }: TargetProps) {
   const [startExplosion, setStartExplosion] = useState(false)
   const [destroyed, setDestroyed] = useState(false)
 
+  // 使用 ref 跟踪爆炸状态以避免在 effect 中设置 state
+  const explosionTriggeredRef = useRef(false)
+
   // 目标的材质 - 修改为useState以确保状态变化时能够重新渲染
   const [targetMaterial, setTargetMaterial] = useState(
     () =>
@@ -37,7 +39,8 @@ export function Target({ position, hit, scale, onClick, id }: TargetProps) {
 
   // Using useLayoutEffect to sync with Three.js external system
   useLayoutEffect(() => {
-    if (hit && !startExplosion) {
+    if (hit && !explosionTriggeredRef.current) {
+      explosionTriggeredRef.current = true
       setStartExplosion(true)
 
       // 设置目标为红色表示被击中
@@ -60,6 +63,7 @@ export function Target({ position, hit, scale, onClick, id }: TargetProps) {
 
       return () => clearTimeout(timer)
     } else if (!hit) {
+      explosionTriggeredRef.current = false
       setStartExplosion(false)
       setDestroyed(false)
       setTargetMaterial(
@@ -71,7 +75,7 @@ export function Target({ position, hit, scale, onClick, id }: TargetProps) {
         })
       )
     }
-  }, [hit, startExplosion])
+  }, [hit])
 
   // 为mesh添加id信息，方便射线检测
   useEffect(() => {

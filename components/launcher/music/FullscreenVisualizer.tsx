@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, SkipBack, SkipForward, Play, Pause, Volume2, VolumeX, List } from 'lucide-react'
 import { AudioVisualizer, type VisualizerType } from './AudioVisualizer'
@@ -74,13 +74,16 @@ export function FullscreenVisualizer({
     setHideTimer(timer)
   }, [hideTimer])
 
+  // 使用 ref 存储 resetHideTimer 以避免循环依赖
+  const resetHideTimerRef = useRef(resetHideTimer)
+  resetHideTimerRef.current = resetHideTimer
+
   useEffect(() => {
-    resetHideTimer()
+    resetHideTimerRef.current()
     return () => {
       if (hideTimer) clearTimeout(hideTimer)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [hideTimer])
 
   // ESC 退出
   useEffect(() => {

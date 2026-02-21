@@ -133,6 +133,7 @@ function NavContent() {
 
   // 初始数据加载 - 使用 ref 确保只运行一次
   const initialLoadRef = useRef(false)
+  const initialFilterRef = useRef(initialFilter)
 
   useEffect(() => {
     if (initialLoadRef.current) return
@@ -140,10 +141,10 @@ function NavContent() {
 
     const fetchData = async () => {
       try {
-        await fetchCategories(initialFilter)
+        await fetchCategories(initialFilterRef.current)
         await fetchItems()
         const hasData = categories.length > 0 || items.length > 0
-        if (!initialFilter && !hasData) {
+        if (!initialFilterRef.current && !hasData) {
           applySampleData()
         }
       } catch (error) {
@@ -154,9 +155,7 @@ function NavContent() {
     }
 
     fetchData()
-    // Effect 仅在挂载时运行一次，不需要依赖项
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [fetchCategories, fetchItems, applySampleData, categories.length, items.length])
 
   // 分类点击处理
   const handleCategoryClick = async (catId: number | 'all') => {
