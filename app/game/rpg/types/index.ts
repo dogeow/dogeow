@@ -151,6 +151,8 @@ export interface SkillDefinition {
   prerequisite_skill_id?: number | null
   /** 前置技能效果键（根据 effect_key 判断前置条件） */
   prerequisite_effect_key?: string | null
+  /** 技能特效标识，用于前置条件判断 */
+  effect_key?: string | null
   max_level: number
   base_damage: number
   damage_per_level: number
