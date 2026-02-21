@@ -16,6 +16,8 @@ const CLASS_OPTIONS = [
     desc: '高生命值、高防御力，可以同时承受较多怪物的伤害',
     stats: '体力+3',
     icon: '⚔️',
+    maleImage: 'warrior-man',
+    femaleImage: 'warrior-female',
   },
   {
     key: 'mage',
@@ -23,6 +25,8 @@ const CLASS_OPTIONS = [
     desc: '多个群体伤害技能，但比较脆皮',
     stats: '能量+3',
     icon: '🔮',
+    maleImage: 'wizard-man',
+    femaleImage: 'wizard-female',
   },
   {
     key: 'ranger',
@@ -30,6 +34,8 @@ const CLASS_OPTIONS = [
     desc: '身手矫健，躲避率高、暴击高',
     stats: '敏捷+3',
     icon: '🏹',
+    maleImage: 'ranger-man',
+    femaleImage: 'ranger-female',
   },
 ] as const
 
@@ -44,6 +50,7 @@ function CharacterForm({ onCreateSuccess, onBack }: CreateCharacterProps) {
   const { createCharacter, isLoading, error, fetchCharacters } = useGameStore()
   const [name, setName] = useState('')
   const [selectedClass, setSelectedClass] = useState<ClassKey>('warrior')
+  const [gender, setGender] = useState<'male' | 'female'>('male')
 
   const handleSetName = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value)
@@ -59,14 +66,14 @@ function CharacterForm({ onCreateSuccess, onBack }: CreateCharacterProps) {
       const trimmed = name.trim()
       if (!trimmed) return
       try {
-        await createCharacter(trimmed, selectedClass)
+        await createCharacter(trimmed, selectedClass, gender)
         await fetchCharacters()
         onCreateSuccess?.()
       } catch (err) {
         // 错误会被全局 error 处理，保持简洁
       }
     },
-    [name, selectedClass, createCharacter, fetchCharacters, onCreateSuccess]
+    [name, selectedClass, gender, createCharacter, fetchCharacters, onCreateSuccess]
   )
 
   const info = classDict[selectedClass]
@@ -132,6 +139,38 @@ function CharacterForm({ onCreateSuccess, onBack }: CreateCharacterProps) {
                   <div className="text-foreground text-sm font-medium">{opt.title}</div>
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-foreground mb-2 block text-sm font-medium">选择性别</label>
+            <div className="flex gap-3" role="radiogroup" aria-label="性别">
+              <button
+                type="button"
+                onClick={() => setGender('male')}
+                aria-pressed={gender === 'male'}
+                className={`flex-1 rounded-lg border-2 p-3 transition-all ${
+                  gender === 'male'
+                    ? 'border-primary bg-primary/20'
+                    : 'border-border bg-muted hover:border-muted-foreground/30'
+                }`}
+              >
+                <div className="mb-1 text-2xl">♂️</div>
+                <div className="text-foreground text-sm font-medium">男性</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGender('female')}
+                aria-pressed={gender === 'female'}
+                className={`flex-1 rounded-lg border-2 p-3 transition-all ${
+                  gender === 'female'
+                    ? 'border-primary bg-primary/20'
+                    : 'border-border bg-muted hover:border-muted-foreground/30'
+                }`}
+              >
+                <div className="mb-1 text-2xl">♀️</div>
+                <div className="text-foreground text-sm font-medium">女性</div>
+              </button>
             </div>
           </div>
 

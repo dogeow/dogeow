@@ -19,6 +19,7 @@ interface Character {
   id: number
   name: string
   class: string
+  gender?: 'male' | 'female'
   level: number
   experience: number
   copper: number
@@ -32,9 +33,9 @@ interface CharacterSelectProps {
 }
 
 const CLASS_INFO = {
-  warrior: { name: '战士', icon: '⚔️', color: '' },
-  mage: { name: '法师', icon: '🔮', color: '' },
-  ranger: { name: '弓手', icon: '🏹', color: '' },
+  warrior: { name: '战士', icon: '⚔️', color: '', male: 'warrior-man', female: 'warrior-female' },
+  mage: { name: '法师', icon: '🔮', color: '', male: 'wizard-man', female: 'wizard-female' },
+  ranger: { name: '弓手', icon: '🏹', color: '', male: 'ranger-man', female: 'ranger-female' },
 }
 
 export const DIFFICULTY_OPTIONS: { tier: number; label: string }[] = [
@@ -135,6 +136,9 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
     (character: Character) => {
       const classInfo = CLASS_INFO[character.class as keyof typeof CLASS_INFO]
       const difficultyTier = character.difficulty_tier ?? 0
+      const gender = character.gender ?? 'male'
+      const avatarKey = gender === 'female' ? classInfo.female : classInfo.male
+      const avatarUrl = `/game/rpg/avatar/${avatarKey}.png`
 
       const handleDeleteClick = (e: React.MouseEvent) => {
         e.stopPropagation()
@@ -150,7 +154,14 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
         >
           <div className="flex min-h-0 flex-1 flex-col items-center justify-between overflow-hidden text-center">
             <div className="flex-shrink-0">
-              <div className="text-sm">{classInfo.icon}</div>
+              <div className="relative mx-auto mb-2 h-20 w-20 overflow-hidden rounded-full">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatarUrl}
+                  alt={`${character.name} avatar`}
+                  className="h-full w-full object-cover"
+                />
+              </div>
               <h3 className="mt-1 truncate text-sm font-bold">{character.name}</h3>
               <p className="text-muted-foreground mt-1 text-sm">
                 {classInfo.name} · Lv.{character.level}

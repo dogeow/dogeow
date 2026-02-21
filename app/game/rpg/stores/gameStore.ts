@@ -102,7 +102,11 @@ interface GameState {
   fetchCharacters: () => Promise<void>
   selectCharacter: (characterId: number) => Promise<void>
   fetchCharacter: () => Promise<void>
-  createCharacter: (name: string, characterClass: string) => Promise<void>
+  createCharacter: (
+    name: string,
+    characterClass: string,
+    gender?: 'male' | 'female'
+  ) => Promise<void>
   deleteCharacter: (characterId: number) => Promise<void>
   allocateStats: (stats: Record<string, number>) => Promise<void>
   setDifficulty: (difficultyTier: number) => Promise<void>
@@ -285,12 +289,13 @@ const store: StateCreator<GameState> = (set, get) => ({
     }
   },
 
-  createCharacter: async (name, characterClass) => {
+  createCharacter: async (name, characterClass, gender = 'male') => {
     set(state => ({ ...state, isLoading: true, error: null }))
     try {
       const response = (await post('/rpg/character', {
         name,
         class: characterClass,
+        gender,
       })) as {
         character: GameCharacter
         combat_stats: CombatStats

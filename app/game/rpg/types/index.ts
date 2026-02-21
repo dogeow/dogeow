@@ -30,6 +30,7 @@ export interface GameCharacter {
   user_id: number
   name: string
   class: CharacterClass
+  gender?: 'male' | 'female'
   level: number
   experience: number
   copper: number
