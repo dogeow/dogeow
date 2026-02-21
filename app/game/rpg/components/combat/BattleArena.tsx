@@ -91,14 +91,16 @@ export function BattleArena({
       'meteor-storm',
       'fireball',
       'ice-arrow',
+      'ice-age',
       'blackhole',
       'heal',
       'lightning',
+      'chain-lightning',
     ]
     return valid.includes(key as SkillEffectType) ? (key as SkillEffectType) : null
   }, [skillUsed])
 
-  // 根据怪物位置计算目标位置
+  // 根据怪物位置计算目标位置（单目标）
   const computedTargetPos = useMemo(() => {
     if (!skillTargetPositions || skillTargetPositions.length === 0) {
       return { x: 0.5, y: 0.25 }
@@ -106,6 +108,17 @@ export function BattleArena({
     const pos = skillTargetPositions[0]
     const x = 0.1 + pos * 0.2
     return { x, y: 0.25 }
+  }, [skillTargetPositions])
+
+  // 多目标位置（用于冰河世纪、连锁闪电等）
+  const computedTargetPositions = useMemo(() => {
+    if (!skillTargetPositions || skillTargetPositions.length === 0) {
+      return [{ x: 0.5, y: 0.25 }]
+    }
+    return skillTargetPositions.map(pos => ({
+      x: 0.1 + pos * 0.2,
+      y: 0.25,
+    }))
   }, [skillTargetPositions])
 
   // 技能特效状态
@@ -140,6 +153,11 @@ export function BattleArena({
           type={activeSkillEffect}
           active={true}
           targetPosition={computedTargetPos}
+          targetPositions={
+            activeSkillEffect === 'ice-age' || activeSkillEffect === 'chain-lightning'
+              ? computedTargetPositions
+              : undefined
+          }
           onComplete={handleSkillComplete}
           className="absolute inset-0 z-10"
         />

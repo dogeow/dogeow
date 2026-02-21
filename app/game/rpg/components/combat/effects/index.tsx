@@ -9,11 +9,13 @@ import { BlackholeEffect } from './BlackholeEffect'
 import { LightningEffect } from './LightningEffect'
 import { MeteorEffect } from './MeteorEffect'
 import { ChainLightningEffect } from './ChainLightningEffect'
+import { IceAgeEffect } from './IceAgeEffect'
 
 export type { SkillEffectType, SkillEffectProps } from './types'
 export { MeteorStormEffect } from './MeteorStormEffect'
 export { FireballEffect } from './FireballEffect'
 export { IceArrowEffect } from './IceArrowEffect'
+export { IceAgeEffect } from './IceAgeEffect'
 export { BlackholeEffect } from './BlackholeEffect'
 export { LightningEffect } from './LightningEffect'
 export { MeteorEffect } from './MeteorEffect'
@@ -58,6 +60,7 @@ export function SkillEffect({
       {type === 'meteor-storm' && <MeteorStormEffect {...effectProps} />}
       {type === 'fireball' && <FireballEffect {...effectProps} />}
       {type === 'ice-arrow' && <IceArrowEffect {...effectProps} />}
+      {type === 'ice-age' && <IceAgeEffect {...effectProps} />}
       {type === 'blackhole' && <BlackholeEffect {...effectProps} />}
       {type === 'lightning' && <LightningEffect {...effectProps} />}
       {type === 'meteor' && <MeteorEffect {...effectProps} />}

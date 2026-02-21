@@ -149,6 +149,8 @@ export interface SkillDefinition {
   tier?: number
   /** 前置技能ID（学习此技能需要先学习前置技能） */
   prerequisite_skill_id?: number | null
+  /** 前置技能效果键（根据 effect_key 判断前置条件） */
+  prerequisite_effect_key?: string | null
   max_level: number
   base_damage: number
   damage_per_level: number

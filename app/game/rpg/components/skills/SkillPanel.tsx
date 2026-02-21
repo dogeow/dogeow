@@ -269,27 +269,49 @@ export function SkillPanel() {
     (skill: SkillWithLearnedState): boolean => {
       if (skill.is_learned) return false
       if (!character || character.skill_points < (skill.skill_points_cost || 1)) return false
-      if (skill.prerequisite_skill_id && !learnedSkillIds.has(skill.prerequisite_skill_id)) {
+
+      // 优先使用 effect_key 判断前置条件
+      if (skill.prerequisite_effect_key) {
+        const learnedEffectKeys = skills
+          .filter(s => learnedSkillIds.has(s.id) && s.effect_key)
+          .map(s => s.effect_key as string)
+        if (!learnedEffectKeys.includes(skill.prerequisite_effect_key)) {
+          return false
+        }
+      } else if (skill.prerequisite_skill_id && !learnedSkillIds.has(skill.prerequisite_skill_id)) {
         return false
       }
       return true
     },
-    [character, learnedSkillIds]
+    [character, learnedSkillIds, skills]
   )
 
   const isSkillLocked = useCallback(
     (skill: SkillWithLearnedState): boolean => {
       if (skill.is_learned) return false
-      if (skill.prerequisite_skill_id && !learnedSkillIds.has(skill.prerequisite_skill_id)) {
+      // 优先使用 effect_key 判断前置条件
+      if (skill.prerequisite_effect_key) {
+        const learnedEffectKeys = skills
+          .filter(s => learnedSkillIds.has(s.id) && s.effect_key)
+          .map(s => s.effect_key as string)
+        if (!learnedEffectKeys.includes(skill.prerequisite_effect_key)) {
+          return true
+        }
+      } else if (skill.prerequisite_skill_id && !learnedSkillIds.has(skill.prerequisite_skill_id)) {
         return true
       }
       return false
     },
-    [learnedSkillIds]
+    [learnedSkillIds, skills]
   )
 
   const getPrerequisiteName = useCallback(
     (skill: SkillWithLearnedState): string | null => {
+      // 优先使用 effect_key
+      if (skill.prerequisite_effect_key) {
+        const prereq = skills.find(s => s.effect_key === skill.prerequisite_effect_key)
+        return prereq?.name || null
+      }
       if (!skill.prerequisite_skill_id) return null
       const prereq = skills.find(s => s.id === skill.prerequisite_skill_id)
       return prereq?.name || null

@@ -3,6 +3,7 @@ export type SkillEffectType =
   | 'meteor-storm'
   | 'fireball'
   | 'ice-arrow'
+  | 'ice-age'
   | 'blackhole'
   | 'heal'
   | 'lightning'
