@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { MonsterIcon } from './MonsterIcon'
 import { MonsterGroup } from './MonsterGroup'
 import { VSSwords } from './VSSwords'
-import { SkillEffect, type SkillEffectType } from './SkillEffect'
+import { SkillEffect, type SkillEffectType } from './effects'
 import styles from '../../rpg.module.css'
 
 /** 战斗对阵：上侧怪物（支持多只），下侧用户，中间 VS 可点击开始/停止挂机 */
@@ -47,7 +47,7 @@ export function BattleArena({
   // 优先用「本回合开始前」血量，这样首帧就是从满血（或回合初）再动画到扣血后
   const effectiveMonsterHp = displayMonsterHp ?? monsterHpBeforeRound ?? finalMonsterHp
   // 检测怪物死亡
-  const isMonsterDead = finalMonsterHp <= 0 && maxHp > 0
+  const isMonsterDead = finalMonsterHp <= 0
   // 检测角色死亡
   const maxCharacterHp = combatStats?.max_hp ?? 0
   const isCharacterDead = (currentHp ?? 0) <= 0 && maxCharacterHp > 0
@@ -82,25 +82,20 @@ export function BattleArena({
 
   const hasValidMonsters = monsters?.some(m => m != null) ?? false
 
-  // 根据 skillUsed 计算技能特效类型
-  const computedSkillEffect = useMemo(() => {
-    if (!skillUsed) return null
-
-    const skillName = skillUsed.name?.toLowerCase() || ''
-
-    if (skillName.includes('流星') || skillName.includes('火雨') || skillName.includes('陨石')) {
-      return 'meteor-storm'
-    } else if (skillName.includes('火球') || skillName.includes('火')) {
-      return 'fireball'
-    } else if (skillName.includes('冰') || skillName.includes('箭')) {
-      return 'ice-arrow'
-    } else if (skillName.includes('黑洞') || skillName.includes('吸')) {
-      return 'blackhole'
-    } else if (skillName.includes('雷') || skillName.includes('电') || skillName.includes('闪电')) {
-      return 'lightning'
-    }
-
-    return null
+  // 技能特效类型：直接使用后端返回的 effect_key
+  const computedSkillEffect = useMemo((): SkillEffectType | null => {
+    if (!skillUsed?.effect_key) return null
+    const key = skillUsed.effect_key
+    const valid: SkillEffectType[] = [
+      'meteor',
+      'meteor-storm',
+      'fireball',
+      'ice-arrow',
+      'blackhole',
+      'heal',
+      'lightning',
+    ]
+    return valid.includes(key as SkillEffectType) ? (key as SkillEffectType) : null
   }, [skillUsed])
 
   // 根据怪物位置计算目标位置
@@ -168,25 +163,6 @@ export function BattleArena({
           </div>
         ) : (
           <div className="h-20 w-20 sm:h-24 sm:w-24" />
-        )}
-        {/* 单只怪物时显示大血条；仅在非加载且有怪物数据时显示 */}
-        {!isLoading && isFighting && !hasValidMonsters && (monster || maxHp > 0) && (
-          <div className="w-full max-w-[140px] space-y-1 sm:max-w-[160px]">
-            <div className="text-muted-foreground flex justify-between text-[10px] sm:text-xs">
-              <span>HP</span>
-              <span>
-                {effectiveMonsterHp} / {monster?.max_hp ?? maxHp}
-              </span>
-            </div>
-            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
-              <div
-                className="h-full rounded-full bg-red-600 transition-[width] duration-300"
-                style={{
-                  width: `${(monster?.max_hp ?? maxHp) > 0 ? Math.min(100, Math.max(0, (effectiveMonsterHp / (monster?.max_hp ?? maxHp)) * 100)) : 0}%`,
-                }}
-              />
-            </div>
-          </div>
         )}
         {!isLoading && isFighting && !hasValidMonsters && !monster && !monsterId && (
           <div className="text-muted-foreground flex-1 text-xs">战斗中</div>

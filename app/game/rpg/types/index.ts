@@ -220,6 +220,8 @@ export interface SkillUsedEntry {
   skill_id: number
   name: string
   icon?: string | null
+  /** 前端技能特效标识，由后端配置 */
+  effect_key?: string | null
   target_type?: 'single' | 'all'
   use_count?: number
   round?: number
