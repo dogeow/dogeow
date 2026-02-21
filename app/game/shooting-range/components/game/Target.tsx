@@ -1,4 +1,4 @@
-import { useRef, useState, useLayoutEffect, Suspense } from 'react'
+import { useRef, useState, useLayoutEffect, useEffect, Suspense } from 'react'
 import { useFrame, ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { Explosion } from './Explosion'

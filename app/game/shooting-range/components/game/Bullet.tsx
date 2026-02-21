@@ -86,6 +86,7 @@ export function Bullet({ initialPosition, direction }: BulletProps) {
             <bufferGeometry>
               <bufferAttribute
                 attach="attributes-position"
+                args={[new Float32Array(trailPositions.flatMap(p => [p.x, p.y, p.z])), 3]}
                 count={trailPositions.length}
                 array={new Float32Array(trailPositions.flatMap(p => [p.x, p.y, p.z]))}
                 itemSize={3}
