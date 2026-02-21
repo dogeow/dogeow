@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>流星火雨技能特效演示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 50%, #2d1b3d 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #ff6b35;
+      text-shadow: 0 0 20px rgba(255, 107, 53, 0.8), 0 0 40px rgba(255, 107, 53, 0.4);
+      margin-bottom: 20px;
+      font-size: 2rem;
+      letter-spacing: 4px;
+    }
+
+    #gameCanvas {
+      border: 2px solid #ff6b35;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(255, 107, 53, 0.3), inset 0 0 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+
+    button {
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .btn-cast {
+      background: linear-gradient(135deg, #ff6b35, #ff8c42);
+      color: white;
+      box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+    }
+
+    .btn-cast:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(255, 107, 53, 0.6);
+    }
+
+    .btn-cast:active {
+      transform: translateY(0);
+    }
+
+    .info {
+      margin-top: 15px;
+      color: #aaa;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔥 流星火雨 🔥</h1>
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
+  <div class="controls">
+    <button class="btn-cast" onclick="castMeteorStorm()">释放技能</button>
+  </div>
+  <p class="info">点击按钮释放流星火雨技能</p>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 粒子系统
+    const meteors = [];
+    const explosions = [];
+    const groundFires = [];
+    const sparks = [];
+
+    // 技能状态
+    let skillActive = false;
+    let skillTimer = 0;
+
+    // 流星类
+    class Meteor {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = -50;
+        this.targetX = canvas.width / 2 + (Math.random() - 0.5) * 400;
+        this.targetY = canvas.height - 50 - Math.random() * 80;
+        this.speed = 8 + Math.random() * 6;
+        this.size = 8 + Math.random() * 12;
+        this.angle = Math.atan2(this.targetY - this.y, this.targetX - this.x);
+        this.trail = [];
+        this.color = `hsl(${15 + Math.random() * 25}, 100%, ${50 + Math.random() * 20}%)`;
+        this.alive = true;
+      }
+
+      update() {
+        // 添加拖尾
+        this.trail.push({ x: this.x, y: this.y, alpha: 1 });
+        if (this.trail.length > 8) this.trail.shift();
+        this.trail.forEach(t => t.alpha -= 0.07);
+
+        // 移动
+        this.x += Math.cos(this.angle) * this.speed;
+        this.y += Math.sin(this.angle) * this.speed;
+
+        // 检查是否到达目标
+        const dist = Math.hypot(this.x - this.targetX, this.y - this.targetY);
+        if (dist < 30 || this.y > canvas.height) {
+          this.alive = false;
+          // 创建爆炸效果
+          explosions.push(new Explosion(this.x, Math.min(this.y, canvas.height - 50)));
+          // 创建落地火焰区域
+          groundFires.push(new FireZone(this.x, canvas.height - 50));
+        }
+      }
+
+      draw() {
+        // 绘制拖尾
+        this.trail.forEach((t, i) => {
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, this.size * (i / this.trail.length) * 0.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 150, 50, ${t.alpha * 0.6})`;
+          ctx.fill();
+        });
+
+        // 绘制流星主体
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+        gradient.addColorStop(0, '#fff');
+        gradient.addColorStop(0.3, this.color);
+        gradient.addColorStop(1, 'transparent');
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // 核心亮光
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+      }
+    }
+
+    // 爆炸类
+    class Explosion {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = 40 + Math.random() * 20;
+        this.alpha = 1;
+        this.particles = [];
+
+        // 创建爆炸粒子
+        for (let i = 0; i < 10; i++) {
+          const angle = (Math.PI * 2 * i) / 20 + Math.random() * 0.3;
+          const speed = 2 + Math.random() * 4;
+          this.particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: 3 + Math.random() * 4,
+            alpha: 1,
+            color: `hsl(${10 + Math.random() * 30}, 100%, ${50 + Math.random() * 30}%)`
+          });
+        }
+      }
+
+      update() {
+        this.radius += 3;
+        this.alpha -= 0.08;
+
+        this.particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.1; // 重力
+          p.alpha -= 0.03;
+          p.size *= 0.95;
+        });
+
+        return this.alpha > 0;
+      }
+
+      draw() {
+        // 爆炸光环
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        gradient.addColorStop(0, `rgba(255, 200, 100, ${this.alpha * 0.8})`);
+        gradient.addColorStop(0.5, `rgba(255, 100, 50, ${this.alpha * 0.5})`);
+        gradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // 爆炸粒子
+        this.particles.forEach(p => {
+          if (p.alpha > 0) {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle = p.color.replace(')', `, ${p.alpha})`).replace('hsl', 'hsla');
+            ctx.fill();
+          }
+        });
+      }
+    }
+
+    // 火焰区域类（简化版）
+    class FireZone {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 25;
+        this.maxRadius = 50;
+        this.life = 1;
+        this.decay = 0.004;
+        this.intensity = 1;
+        this.embers = [];
+      }
+
+      update() {
+        this.life -= this.decay;
+        if (this.radius < this.maxRadius) this.radius += 0.3;
+        this.intensity = 0.7 + Math.random() * 0.3;
+
+        // 减少余烬产生
+        if (Math.random() < 0.15 && this.life > 0.3 && this.embers.length < 8) {
+          this.embers.push({
+            x: this.x + (Math.random() - 0.5) * this.radius,
+            y: this.y - 10,
+            vx: (Math.random() - 0.5) * 0.5,
+            vy: -0.5 - Math.random(),
+            size: 1.5 + Math.random() * 2,
+            life: 1,
+            decay: 0.025
+          });
+        }
+
+        for (let i = this.embers.length - 1; i >= 0; i--) {
+          const e = this.embers[i];
+          e.x += e.vx;
+          e.y += e.vy;
+          e.life -= e.decay;
+          if (e.life <= 0) this.embers.splice(i, 1);
+        }
+
+        return this.life > 0;
+      }
+
+      draw() {
+        const a = this.life * this.intensity;
+
+        // 地面光晕（简化）
+        const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        g.addColorStop(0, `rgba(255, 80, 10, ${a * 0.5})`);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y, this.radius * 1.2, this.radius * 0.3, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 简化的火焰形状（不用bezier）
+        for (let i = 0; i < 3; i++) {
+          const ox = (i - 1) * 15;
+          const h = (25 + i * 5) * a;
+          const w = (10 - i * 2) * a;
+
+          const grad = ctx.createLinearGradient(this.x + ox, this.y, this.x + ox, this.y - h);
+          grad.addColorStop(0, `rgba(255, ${100 - i * 20}, 20, ${a * 0.8})`);
+          grad.addColorStop(0.6, `rgba(255, 180, 50, ${a * 0.5})`);
+          grad.addColorStop(1, 'transparent');
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.moveTo(this.x + ox - w, this.y);
+          ctx.lineTo(this.x + ox, this.y - h);
+          ctx.lineTo(this.x + ox + w, this.y);
+          ctx.fill();
+        }
+
+        // 余烬
+        this.embers.forEach(e => {
+          ctx.fillStyle = `rgba(255, ${150 + e.life * 100}, 50, ${e.life})`;
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, e.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 核心
+        if (a > 0.4) {
+          ctx.fillStyle = `rgba(255, 255, 180, ${a * 0.6})`;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y - 8, 6, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // 爆炸类
+
+    // 火花类（增加氛围）
+    class Spark {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = canvas.height - Math.random() * 100;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = -Math.random() * 3 - 1;
+        this.size = 1 + Math.random() * 2;
+        this.life = 1;
+        this.decay = 0.02 + Math.random() * 0.02;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.05;
+        this.life -= this.decay;
+        return this.life > 0;
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 200, 100, ${this.life})`;
+        ctx.fill();
+      }
+    }
+
+    // 绘制背景
+    function drawBackground() {
+      // 渐变背景
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#0a0a1a');
+      gradient.addColorStop(0.5, '#1a0a2e');
+      gradient.addColorStop(1, '#2d1b3d');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 地面
+      ctx.fillStyle = '#1a0f0a';
+      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+
+      // 地面边缘发光
+      const groundGradient = ctx.createLinearGradient(0, canvas.height - 50, 0, canvas.height);
+      groundGradient.addColorStop(0, 'rgba(255, 100, 50, 0.3)');
+      groundGradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = groundGradient;
+      ctx.fillRect(0, canvas.height - 80, canvas.width, 30);
+
+      // 星星背景
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      for (let i = 0; i < 50; i++) {
+        const x = (i * 137.5) % canvas.width;
+        const y = (i * 73.3) % (canvas.height - 100);
+        const size = (i % 3) * 0.5 + 0.5;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // 释放流星火雨技能
+    function castMeteorStorm() {
+      skillActive = true;
+      skillTimer = 180; // 持续3秒（60fps * 3）
+
+      // 立即释放一批流星
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => {
+          meteors.push(new Meteor());
+        }, i * 120);
+      }
+
+      // 持续释放流星
+      const interval = setInterval(() => {
+        if (skillTimer > 0) {
+          meteors.push(new Meteor());
+        } else {
+          clearInterval(interval);
+        }
+      }, 200);
+    }
+
+    // 游戏主循环
+    function gameLoop() {
+      // 清空画布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 绘制背景
+      drawBackground();
+
+      // 更新技能计时器
+      if (skillTimer > 0) {
+        skillTimer--;
+      }
+
+      // 随机生成氛围火花
+      if (Math.random() < 0.03) {
+        sparks.push(new Spark());
+      }
+
+      // 更新和绘制流星
+      for (let i = meteors.length - 1; i >= 0; i--) {
+        meteors[i].update();
+        meteors[i].draw();
+        if (!meteors[i].alive) {
+          meteors.splice(i, 1);
+        }
+      }
+
+      // 更新和绘制爆炸
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        if (!explosions[i].update()) {
+          explosions.splice(i, 1);
+        } else {
+          explosions[i].draw();
+        }
+      }
+
+      // 更新和绘制地面火焰
+      for (let i = groundFires.length - 1; i >= 0; i--) {
+        if (!groundFires[i].update()) {
+          groundFires.splice(i, 1);
+        } else {
+          groundFires[i].draw();
+        }
+      }
+
+      // 更新和绘制火花
+      for (let i = sparks.length - 1; i >= 0; i--) {
+        if (!sparks[i].update()) {
+          sparks.splice(i, 1);
+        } else {
+          sparks[i].draw();
+        }
+      }
+
+      // 技能指示器
+      if (skillActive) {
+        ctx.fillStyle = `rgba(255, 100, 50, ${0.1 + Math.sin(Date.now() * 0.01) * 0.05})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 计时条
+        const progress = skillTimer / 180;
+        ctx.fillStyle = '#ff6b35';
+        ctx.fillRect(0, canvas.height - 5, canvas.width * progress, 5);
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // 启动游戏循环
+    gameLoop();
+
+    // 1秒后自动释放一次技能演示
+    setTimeout(() => {
+      castMeteorStorm();
+    }, 1000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>黑洞技能特效演示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(180deg, #0a0a1a 0%, #1a0a2e 50%, #0a0a1a 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #a855f7;
+      text-shadow: 0 0 20px rgba(168, 85, 247, 0.8);
+      margin-bottom: 20px;
+      font-size: 2rem;
+      letter-spacing: 4px;
+    }
+
+    #gameCanvas {
+      border: 2px solid #a855f7;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(168, 85, 247, 0.3);
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+
+    button {
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .btn-cast {
+      background: linear-gradient(135deg, #a855f7, #c084fc);
+      color: white;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+    }
+
+    .btn-cast:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(168, 85, 247, 0.6);
+    }
+
+    .info {
+      margin-top: 15px;
+      color: #aaa;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🕳️ 黑洞 🕳️</h1>
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
+  <div class="controls">
+    <button class="btn-cast" onclick="castBlackhole()">释放技能</button>
+  </div>
+  <p class="info">点击按钮释放黑洞技能</p>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 怪物图片
+    const monsterImg = new Image();
+    monsterImg.src = 'https://next.dogeow.com/80.png';
+
+    let blackhole = null;
+    let monster = null;
+    let debris = [];
+    let particles = [];
+    let imgLoaded = false;
+
+    // 图片加载完成后标记
+    monsterImg.onload = function() {
+      imgLoaded = true;
+    };
+    monsterImg.onerror = function() {
+      console.log('图片加载失败');
+    };
+
+    class Monster {
+      constructor() {
+        this.x = canvas.width * 0.7;
+        this.y = canvas.height - 100;
+        this.size = 60;
+        this.originalX = this.x;
+        this.originalY = this.y;
+        this.angle = 0;
+        this.sucked = false;
+        this.alpha = 1;
+        this.scale = 1;
+        this.vx = 0;
+        this.vy = 0;
+      }
+
+      update() {
+        if (!blackhole) return;
+
+        const dx = blackhole.x - this.x;
+        const dy = blackhole.y - this.y;
+        const dist = Math.hypot(dx, dy);
+
+        if (blackhole.active && dist > 30) {
+          // 简化的吸入逻辑 - 固定速度向黑洞移动
+          const speed = 3;
+          this.x += (dx / dist) * speed;
+          this.y += (dy / dist) * speed;
+
+          // 螺旋效果 - 添加切向移动
+          const tangentX = -dy / dist;
+          const tangentY = dx / dist;
+          this.x += tangentX * 2;
+          this.y += tangentY * 2;
+
+          // 旋转
+          this.angle += 0.15;
+
+          // 靠近黑洞时缩小
+          if (dist < 150) {
+            this.scale = Math.max(0.1, dist / 150);
+          }
+
+          // 被吸入后消失
+          if (dist < 30) {
+            this.sucked = true;
+            this.alpha = 0;
+            // 产生碎片
+            createDebris(this.x, this.y);
+          }
+        } else if (!blackhole.active) {
+          // 黑洞消失后慢慢恢复
+          const dx = this.originalX - this.x;
+          const dy = this.originalY - this.y;
+          this.x += dx * 0.05;
+          this.y += dy * 0.05;
+          this.scale = Math.min(1, this.scale + 0.02);
+          this.angle *= 0.9;
+        }
+      }
+
+      draw() {
+        if (this.alpha <= 0) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.scale(this.scale, this.scale);
+
+        // 怪物光晕
+        const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, this.size);
+        glow.addColorStop(0, 'rgba(255, 100, 100, 0.3)');
+        glow.addColorStop(1, 'transparent');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 绘制怪物（使用文字）
+        ctx.font = `${this.size}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        if (imgLoaded) {
+          ctx.drawImage(monsterImg, -this.size/2, -this.size/2, this.size, this.size);
+        }
+
+        ctx.restore();
+      }
+
+      reset() {
+        this.x = this.originalX;
+        this.y = this.originalY;
+        this.angle = 0;
+        this.sucked = false;
+        this.alpha = 1;
+        this.scale = 1;
+        this.vx = 0;
+        this.vy = 0;
+      }
+    }
+
+    class Blackhole {
+      constructor() {
+        this.x = canvas.width * 0.3;
+        this.y = canvas.height - 100;
+        this.radius = 0;
+        this.maxRadius = 80;
+        this.active = false;
+        this.angle = 0;
+        this.particles = [];
+        this.rings = [];
+      }
+
+      activate() {
+        this.active = true;
+        this.radius = 0;
+      }
+
+      deactivate() {
+        this.active = false;
+      }
+
+      update() {
+        this.angle += 0.05;
+
+        // 半径变化
+        if (this.active && this.radius < this.maxRadius) {
+          this.radius += 2;
+        } else if (!this.active && this.radius > 0) {
+          this.radius -= 3;
+        }
+
+        // 吸入粒子
+        if (this.active && Math.random() < 0.3) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = 150 + Math.random() * 100;
+          this.particles.push({
+            x: this.x + Math.cos(angle) * dist,
+            y: this.y + Math.sin(angle) * dist,
+            size: 2 + Math.random() * 3,
+            alpha: 1,
+            angle: angle,
+            dist: dist
+          });
+        }
+
+        // 更新粒子
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+          const p = this.particles[i];
+          p.dist -= 3;
+          p.angle += 0.1;
+          p.x = this.x + Math.cos(p.angle) * p.dist;
+          p.y = this.y + Math.sin(p.angle) * p.dist;
+          p.alpha -= 0.02;
+          if (p.alpha <= 0 || p.dist < 10) {
+            this.particles.splice(i, 1);
+          }
+        }
+
+        // 旋转环
+        if (this.active && this.rings.length < 3) {
+          this.rings.push({
+            radius: 30 + this.rings.length * 20,
+            angle: 0,
+            speed: 0.1 - this.rings.length * 0.02
+          });
+        }
+
+        this.rings.forEach(r => {
+          r.angle += r.speed;
+        });
+      }
+
+      draw() {
+        if (this.radius <= 0) return;
+
+        const a = this.active ? 1 : this.radius / this.maxRadius;
+
+        // 外部吸积盘
+        for (let i = 0; i < 3; i++) {
+          const ringRadius = this.radius * (1.2 + i * 0.3);
+          const ringA = a * (0.3 - i * 0.1);
+
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, ringRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(168, 85, 247, ${ringA})`;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+
+        // 旋转环
+        this.rings.forEach(r => {
+          ctx.save();
+          ctx.translate(this.x, this.y);
+          ctx.rotate(r.angle);
+          ctx.beginPath();
+          ctx.ellipse(0, 0, r.radius, r.radius * 0.3, 0, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(200, 150, 255, ${a * 0.5})`;
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.restore();
+        });
+
+        // 粒子
+        this.particles.forEach(p => {
+          ctx.fillStyle = `rgba(180, 120, 255, ${p.alpha})`;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 黑洞本体
+        const gradient = ctx.createRadialGradient(
+          this.x, this.y, 0,
+          this.x, this.y, this.radius
+        );
+        gradient.addColorStop(0, '#000');
+        gradient.addColorStop(0.5, '#1a0a2e');
+        gradient.addColorStop(0.8, 'rgba(88, 28, 135, 0.8)');
+        gradient.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 边缘光芒
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(168, 85, 247, ${a})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // 中心奇点
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function createDebris(x, y) {
+      for (let i = 0; i < 15; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 2 + Math.random() * 4;
+        debris.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          size: 3 + Math.random() * 8,
+          alpha: 1,
+          rotation: Math.random() * Math.PI * 2
+        });
+      }
+    }
+
+    function updateDebris() {
+      for (let i = debris.length - 1; i >= 0; i--) {
+        const d = debris[i];
+        d.x += d.vx;
+        d.y += d.vy;
+        d.alpha -= 0.02;
+        d.rotation += 0.1;
+        if (d.alpha <= 0) {
+          debris.splice(i, 1);
+        }
+      }
+    }
+
+    function drawDebris() {
+      debris.forEach(d => {
+        ctx.save();
+        ctx.translate(d.x, d.y);
+        ctx.rotate(d.rotation);
+        ctx.globalAlpha = d.alpha;
+        ctx.font = `${d.size}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        if (imgLoaded) {
+          ctx.drawImage(monsterImg, -this.size/2, -this.size/2, this.size, this.size);
+        }
+        ctx.restore();
+      });
+    }
+
+    function drawBackground() {
+      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, '#0a0a1a');
+      g.addColorStop(0.5, '#1a0a2e');
+      g.addColorStop(1, '#0a0a1a');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 星空
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      for (let i = 0; i < 50; i++) {
+        const x = (i * 137.5) % canvas.width;
+        const y = (i * 73.3) % canvas.height;
+        const size = (i % 3) * 0.5 + 0.5;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 地面
+      ctx.fillStyle = '#0f0a15';
+      ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+    }
+
+    function castBlackhole() {
+      if (!blackhole) {
+        blackhole = new Blackhole();
+        monster = new Monster();
+      }
+
+      if (!blackhole.active) {
+        blackhole.activate();
+        setTimeout(() => {
+          blackhole.deactivate();
+        }, 3000);
+      }
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+
+      // 更新和绘制黑洞
+      if (blackhole) {
+        blackhole.update();
+        blackhole.draw();
+      }
+
+      // 更新和绘制怪物
+      if (monster) {
+        monster.update();
+        monster.draw();
+      }
+
+      // 碎片
+      updateDebris();
+      drawDebris();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // 初始化黑洞和怪物
+    blackhole = new Blackhole();
+    monster = new Monster();
+
+    gameLoop();
+
+    setTimeout(() => {
+      castBlackhole();
+    }, 1000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小火球技能特效演示</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 50%, #16213e 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      overflow: hidden;
+    }
+
+    h1 {
+      color: #ff6b35;
+      text-shadow: 0 0 20px rgba(255, 107, 53, 0.8);
+      margin-bottom: 20px;
+      font-size: 2rem;
+      letter-spacing: 4px;
+    }
+
+    #gameCanvas {
+      border: 2px solid #ff6b35;
+      border-radius: 8px;
+      box-shadow: 0 0 30px rgba(255, 107, 53, 0.3);
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 15px;
+    }
+
+    button {
+      padding: 12px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .btn-cast {
+      background: linear-gradient(135deg, #ff6b35, #ff8c42);
+      color: white;
+      box-shadow: 0 4px 15px rgba(255, 107, 53, 0.4);
+    }
+
+    .btn-cast:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(255, 107, 53, 0.6);
+    }
+
+    .info {
+      margin-top: 15px;
+      color: #aaa;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔥 小火球 🔥</h1>
+  <canvas id="gameCanvas" width="800" height="500"></canvas>
+  <div class="controls">
+    <button class="btn-cast" onclick="castFireball()">释放技能</button>
+  </div>
+  <p class="info">点击按钮释放小火球技能</p>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const fireballs = [];
+    const explosions = [];
+
+    class Fireball {
+      constructor() {
+        // 从屏幕底部/近处飞向中心
+        this.startX = canvas.width * 0.2 + Math.random() * canvas.width * 0.6;
+        this.startY = canvas.height + 30;
+        this.x = this.startX;
+        this.y = this.startY;
+
+        // 目标：屏幕中心区域
+        this.targetX = canvas.width / 2 + (Math.random() - 0.5) * 200;
+        this.targetY = canvas.height / 2 + (Math.random() - 0.5) * 100;
+
+        // 计算角度
+        const dx = this.targetX - this.startX;
+        const dy = this.targetY - this.startY;
+        const dist = Math.hypot(dx, dy);
+        this.speed = 12;
+        this.vx = (dx / dist) * this.speed;
+        this.vy = (dy / dist) * this.speed;
+
+        this.size = 15 + Math.random() * 8;
+        this.trail = [];
+        this.alive = true;
+        this.hit = false;
+      }
+
+      update() {
+        // 拖尾
+        this.trail.push({ x: this.x, y: this.y, alpha: 1, size: this.size * 0.6 });
+        if (this.trail.length > 12) this.trail.shift();
+        this.trail.forEach(t => t.alpha -= 0.08);
+
+        // 移动
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // 检查是否击中目标
+        const dist = Math.hypot(this.x - this.targetX, this.y - this.targetY);
+        if (dist < 20 || this.y < 0) {
+          this.alive = false;
+          this.hit = true;
+          // 创建爆炸
+          explosions.push(new Explosion(this.x, this.y));
+        }
+
+        return this.alive;
+      }
+
+      draw() {
+        // 拖尾
+        this.trail.forEach((t, i) => {
+          const gradient = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, t.size * (i / this.trail.length));
+          gradient.addColorStop(0, `rgba(255, 150, 50, ${t.alpha * 0.7})`);
+          gradient.addColorStop(1, 'transparent');
+          ctx.fillStyle = gradient;
+          ctx.beginPath();
+          ctx.arc(t.x, t.y, t.size * (i / this.trail.length) * 0.8, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // 主体
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+        gradient.addColorStop(0, '#fff');
+        gradient.addColorStop(0.2, '#ffcc00');
+        gradient.addColorStop(0.5, '#ff6600');
+        gradient.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 核心
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    class Explosion {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = 60;
+        this.alpha = 1;
+        this.particles = [];
+
+        for (let i = 0; i < 12; i++) {
+          const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.3;
+          const speed = 2 + Math.random() * 3;
+          this.particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            size: 3 + Math.random() * 4,
+            alpha: 1,
+            color: Math.random() > 0.5 ? '#ff6600' : '#ffcc00'
+          });
+        }
+      }
+
+      update() {
+        this.radius += 4;
+        this.alpha -= 0.06;
+
+        this.particles.forEach(p => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.1;
+          p.alpha -= 0.04;
+          p.size *= 0.95;
+        });
+
+        return this.alpha > 0;
+      }
+
+      draw() {
+        // 光晕
+        const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        g.addColorStop(0, `rgba(255, 200, 100, ${this.alpha * 0.8})`);
+        g.addColorStop(0.5, `rgba(255, 100, 30, ${this.alpha * 0.5})`);
+        g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 粒子
+        this.particles.forEach(p => {
+          if (p.alpha > 0) {
+            ctx.fillStyle = p.color.replace(')', `, ${p.alpha})`);
+            ctx.globalAlpha = p.alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+        });
+      }
+    }
+
+    function drawBackground() {
+      const g = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      g.addColorStop(0, '#0a0a1a');
+      g.addColorStop(0.5, '#1a1a2e');
+      g.addColorStop(1, '#16213e');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // 目标区域标记（淡淡的）
+      ctx.strokeStyle = 'rgba(255, 100, 50, 0.15)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, 80, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    function castFireball() {
+      fireballs.push(new Fireball());
+    }
+
+    function gameLoop() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+
+      // 更新火球
+      for (let i = fireballs.length - 1; i >= 0; i--) {
+        fireballs[i].update();
+        fireballs[i].draw();
+        if (!fireballs[i].alive) {
+          fireballs.splice(i, 1);
+        }
+      }
+
+      // 更新爆炸
+      for (let i = explosions.length - 1; i >= 0; i--) {
+        if (!explosions[i].update()) {
+          explosions.splice(i, 1);
+        } else {
+          explosions[i].draw();
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+
+    // 自动演示
+    setTimeout(() => {
+      castFireball();
+    }, 500);
+
+    setInterval(() => {
+      if (Math.random() > 0.7) castFireball();
+    }, 800);
+  </script>
+</body>
+</html>

@@ -222,6 +222,7 @@ export interface SkillUsedEntry {
   icon?: string | null
   target_type?: 'single' | 'all'
   use_count?: number
+  round?: number
 }
 
 export interface CombatResult {

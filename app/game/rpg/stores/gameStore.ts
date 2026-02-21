@@ -1292,8 +1292,10 @@ const store: StateCreator<GameState> = (set, get) => ({
       const enabledIds = get().enabledSkillIds
       if (selectedId) {
         try {
+          // 传 skill_id 参数让后端识别是单个技能操作
           await post('/rpg/combat/skills', {
             character_id: selectedId,
+            skill_id: skillId,
             skill_ids: enabledIds,
           })
         } catch (error) {

@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MonsterIcon } from './MonsterIcon'
 import { MonsterGroup } from './MonsterGroup'
 import { VSSwords } from './VSSwords'
+import { SkillEffect, type SkillEffectType } from './SkillEffect'
 import styles from '../../rpg.module.css'
 
 /** 战斗对阵：上侧怪物（支持多只），下侧用户，中间 VS 可点击开始/停止挂机 */
@@ -81,8 +82,82 @@ export function BattleArena({
 
   const hasValidMonsters = monsters?.some(m => m != null) ?? false
 
+  // 技能特效状态
+  const [activeSkillEffect, setActiveSkillEffect] = useState<SkillEffectType | null>(null)
+  const [skillTargetPos, setSkillTargetPos] = useState<{ x: number; y: number }>({ x: 0.5, y: 0.3 })
+  const lastSkillUsedIdRef = useRef<string | null>(null)
+
+  // 根据怪物位置索引计算目标位置
+  // 5个怪物位置从左到右平均分布，位置0在最左边，位置4在最右边
+  const getTargetPosition = (positions?: number[]) => {
+    if (!positions || positions.length === 0) {
+      return { x: 0.5, y: 0.25 }
+    }
+    const pos = positions[0]
+    // 直接用位置索引 * 0.2，位置0=0, 位置1=0.2, 位置2=0.4, 位置3=0.6, 位置4=0.8
+    // 然后加偏移量让它们居中分布
+    const x = 0.1 + pos * 0.2
+    return { x, y: 0.25 }
+  }
+
+  // 根据 skillUsed 触发技能特效（只触发一次）
+  useEffect(() => {
+    if (skillUsed) {
+      // 用 skill_id + round 生成唯一 ID，避免重复触发
+      const skillId = `${skillUsed.skill_id}-${skillUsed.round}`
+
+      // 如果已经触发过这个技能，跳过
+      if (lastSkillUsedIdRef.current === skillId) {
+        return
+      }
+      lastSkillUsedIdRef.current = skillId
+
+      const skillName = skillUsed.name?.toLowerCase() || ''
+      let effectType: SkillEffectType | null = null
+
+      if (skillName.includes('流星') || skillName.includes('火雨') || skillName.includes('陨石')) {
+        effectType = 'meteor-storm'
+      } else if (skillName.includes('火球') || skillName.includes('火')) {
+        effectType = 'fireball'
+      } else if (skillName.includes('冰') || skillName.includes('箭')) {
+        effectType = 'ice-arrow'
+      } else if (skillName.includes('黑洞') || skillName.includes('吸')) {
+        effectType = 'blackhole'
+      } else if (
+        skillName.includes('雷') ||
+        skillName.includes('电') ||
+        skillName.includes('闪电')
+      ) {
+        effectType = 'lightning'
+      }
+
+      if (effectType) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setActiveSkillEffect(effectType)
+        // 根据怪物位置动态设置目标
+        const targetPos = getTargetPosition(skillTargetPositions)
+        setSkillTargetPos(targetPos)
+      }
+    }
+  }, [skillUsed, skillTargetPositions, hasValidMonsters, monsters])
+
+  const handleSkillComplete = () => {
+    setActiveSkillEffect(null)
+  }
+
   return (
-    <div className="flex flex-col items-stretch">
+    <div className="relative flex flex-col items-stretch">
+      {/* 技能特效层 */}
+      {activeSkillEffect && (
+        <SkillEffect
+          type={activeSkillEffect}
+          active={true}
+          targetPosition={skillTargetPos}
+          onComplete={handleSkillComplete}
+          className="absolute inset-0 z-10"
+        />
+      )}
+
       {/* 上侧：怪物（支持多只），仅在非加载且已有战斗结果时显示，避免点击后未发请求时显示静态/旧数据 */}
       <div className="flex flex-1 flex-col items-center gap-2 p-3 sm:p-4">
         {!isLoading && isFighting && hasValidMonsters ? (
