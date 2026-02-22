@@ -22,11 +22,13 @@ export function useJigsawStats(difficulty: number): JigsawStatsHook {
   })
 
   // 从 localStorage 加载统计数据
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(storageKey)
       if (saved) {
         const parsedStats = JSON.parse(saved)
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setStats(parsedStats)
       }
     } catch (error) {

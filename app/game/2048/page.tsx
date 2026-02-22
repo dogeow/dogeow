@@ -148,7 +148,7 @@ export default function Game2048() {
       up: moveUp,
       down: moveDown,
     }),
-    [moveLeft, moveRight, moveUp, moveDown]
+    []
   )
 
   const stopAutoRun = useCallback(() => {

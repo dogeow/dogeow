@@ -28,6 +28,7 @@ export function Bullet({ initialPosition, direction }: BulletProps) {
     for (let i = 0; i < 10; i++) {
       points.push(initialPosition.clone())
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTrailPositions(points)
   }, [initialPosition])
 

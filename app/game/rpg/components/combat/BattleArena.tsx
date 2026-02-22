@@ -166,12 +166,14 @@ export function BattleArena({
   const skillTriggerCountRef = useRef<number>(0)
 
   // 有技能时在 useLayoutEffect 里立即设为延迟显示，首帧重绘即传扣血前数据
+
   useLayoutEffect(() => {
     if (skillUsed && computedSkillEffect) {
       if (skillUsed !== lastSkillUsedRef.current) {
         lastSkillUsedRef.current = skillUsed
         skillAnimationCompletedRef.current = false
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowDamageAndHp(false)
       skillTriggerCountRef.current += 1
       const uniqueSkillId = skillUsed.skill_id * 10000 + skillTriggerCountRef.current

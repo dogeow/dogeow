@@ -149,6 +149,7 @@ const ReadonlyEditor = ({ content, className }: ReadonlyEditorProps) => {
 
   useEffect(() => {
     if (content) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInitialContent(content)
     }
   }, [content])

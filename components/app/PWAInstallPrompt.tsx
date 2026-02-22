@@ -20,6 +20,7 @@ export function PWAInstallPrompt() {
   useEffect(() => {
     // 检查是否已经安装
     if (window.matchMedia('(display-mode: standalone)').matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsInstalled(true)
       return
     }

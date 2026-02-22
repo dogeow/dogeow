@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 /**
  * 防抖 Hook
@@ -30,16 +30,9 @@ export function useDebounce<T>(value: T, delay: number): T {
  * @returns 防抖后的搜索查询和是否正在搜索的状态
  */
 export function useSearchDebounce(searchQuery: string, delay: number = 300, minLength: number = 1) {
-  const [isSearching, setIsSearching] = useState(false)
   const debouncedQuery = useDebounce(searchQuery, delay)
 
-  useEffect(() => {
-    if (searchQuery !== debouncedQuery) {
-      setIsSearching(true)
-    } else {
-      setIsSearching(false)
-    }
-  }, [searchQuery, debouncedQuery])
+  const isSearching = useMemo(() => searchQuery !== debouncedQuery, [searchQuery, debouncedQuery])
 
   // 只有当查询长度满足要求时才返回有效的搜索查询
   const effectiveQuery = debouncedQuery.length >= minLength ? debouncedQuery : ''

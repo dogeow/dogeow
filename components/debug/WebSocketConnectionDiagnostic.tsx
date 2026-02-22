@@ -18,6 +18,7 @@ export function WebSocketConnectionDiagnostic() {
       })
 
       // 获取初始状态
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setConnectionStatus(monitor.getStatus())
 
       return unsubscribe

@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react'
 import ItemCardImage from '../ItemCardImage'
 
 // Mock next/image
+/* eslint-disable @next/next/no-img-element */
 vi.mock('next/image', () => ({
   default: ({ src, alt, onError, ...props }: any) => (
     <img src={src} alt={alt} onError={onError} data-testid="next-image" {...props} />

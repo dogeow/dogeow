@@ -304,7 +304,7 @@ export default function MinesweeperGame() {
         return newBoard
       })
     },
-    [gameState, checkWinCondition, difficulty, timer]
+    [gameState, checkWinCondition]
   )
 
   // 点击格子
@@ -360,9 +360,7 @@ export default function MinesweeperGame() {
       calculateNeighbors,
       revealEmptyArea,
       config,
-      difficulty,
       checkWinCondition,
-      timer,
     ]
   )
 

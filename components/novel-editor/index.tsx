@@ -138,6 +138,7 @@ const TailwindAdvancedEditor = () => {
       window.localStorage.removeItem('novel-content')
       window.localStorage.removeItem('html-content')
       window.localStorage.removeItem('markdown')
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setInitialContent(emptyEditorContent)
     } else {
       // 其他页面：尝试从localStorage加载内容
@@ -147,6 +148,7 @@ const TailwindAdvancedEditor = () => {
           setInitialContent(JSON.parse(content))
         } catch (error) {
           console.warn('Failed to parse stored content, using empty:', error)
+
           setInitialContent(emptyEditorContent)
         }
       } else {

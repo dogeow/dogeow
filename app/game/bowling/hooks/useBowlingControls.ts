@@ -23,6 +23,7 @@ export function useBowlingControls() {
   } = useBowlingStore()
 
   // 实时更新瞄准角度（根据陀螺仪数据或默认角度）
+
   useEffect(() => {
     if (canThrow && !ballThrown && !showingResult) {
       let newAngle = 0
@@ -34,6 +35,7 @@ export function useBowlingControls() {
         newAngle = aimAngle
       }
 
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentAimAngle(newAngle)
 
       // 只有在陀螺仪可用时才更新store中的角度

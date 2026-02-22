@@ -23,8 +23,10 @@ export default function Target({ id, position, hit, scale, onClick }: TargetProp
   >([])
 
   // 处理爆炸效果
+
   useEffect(() => {
     if (hit && !exploding) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setExploding(true)
 
       // 创建爆炸粒子

@@ -32,23 +32,28 @@ export function useTetrisGame() {
   }))
 
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null)
-  const lastDropTime = useRef<number>(Date.now())
+  const lastDropTime = useRef<number>(0)
   const softDropRef = useRef<NodeJS.Timeout | null>(null)
   const [isSoftDropping, setIsSoftDropping] = useState(false)
 
   // 客户端挂载后初始化游戏
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setGameState(prev => ({
       ...prev,
       isClient: true,
       currentPiece: generateRandomTetromino(),
       nextPiece: generateRandomTetromino(),
     }))
+    lastDropTime.current = Date.now()
   }, [])
 
   // 确保 nextPiece 始终有值（仅在客户端）
+
   useEffect(() => {
     if (gameState.isClient && !gameState.nextPiece) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setGameState(prev => ({
         ...prev,
         nextPiece: generateRandomTetromino(),

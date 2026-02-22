@@ -45,6 +45,7 @@ export function IceArrowEffect({ active, onComplete, onHit, targetPosition }: Ef
     if (active && !hasActivatedRef.current) {
       hasActivatedRef.current = true
       hasCalledHitRef.current = false
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsActive(true)
       cast()
     } else if (!active) {

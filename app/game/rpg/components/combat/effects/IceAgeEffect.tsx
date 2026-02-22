@@ -70,6 +70,7 @@ export function IceAgeEffect({
     if (active && !hasActivatedRef.current) {
       hasActivatedRef.current = true
       puddlesRef.current = []
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsActive(true)
       cast()
     } else if (!active) {

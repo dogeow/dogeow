@@ -7,41 +7,42 @@ interface ExplosionProps {
   color: string
 }
 
+function generateRandomParticles(count: number) {
+  const temp = []
+  for (let i = 0; i < count; i++) {
+    // 随机方向
+    const direction = new THREE.Vector3(
+      (Math.random() - 0.5) * 2,
+      (Math.random() - 0.5) * 2,
+      (Math.random() - 0.5) * 2
+    ).normalize()
+
+    // 随机速度
+    const speed = Math.random() * 0.3 + 0.2
+
+    // 随机尺寸
+    const size = Math.random() * 0.2 + 0.1
+
+    temp.push({
+      direction,
+      speed,
+      size,
+      offset: [Math.random() * 0.2 - 0.1, Math.random() * 0.2 - 0.1, Math.random() * 0.2 - 0.1] as [
+        number,
+        number,
+        number,
+      ],
+    })
+  }
+  return temp
+}
+
 /**
  * 爆炸粒子效果组件
  */
 export function Explosion({ position, color }: ExplosionProps) {
   // 创建随机爆炸粒子
-  const particles = useMemo(() => {
-    const temp = []
-    const count = 15
-    for (let i = 0; i < count; i++) {
-      // 随机方向
-      const direction = new THREE.Vector3(
-        (Math.random() - 0.5) * 2,
-        (Math.random() - 0.5) * 2,
-        (Math.random() - 0.5) * 2
-      ).normalize()
-
-      // 随机速度
-      const speed = Math.random() * 0.3 + 0.2
-
-      // 随机尺寸
-      const size = Math.random() * 0.2 + 0.1
-
-      temp.push({
-        direction,
-        speed,
-        size,
-        offset: [
-          Math.random() * 0.2 - 0.1,
-          Math.random() * 0.2 - 0.1,
-          Math.random() * 0.2 - 0.1,
-        ] as [number, number, number],
-      })
-    }
-    return temp
-  }, [])
+  const particles = useMemo(() => generateRandomParticles(15), [])
 
   // 粒子状态
   const particleRefs = useRef<THREE.Mesh[]>([])

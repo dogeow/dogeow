@@ -38,9 +38,11 @@ export function Target({ position, hit, scale, onClick, id }: TargetProps) {
   // 当hit状态改变时更新材质和触发爆炸
 
   // Using useLayoutEffect to sync with Three.js external system
+
   useLayoutEffect(() => {
     if (hit && !explosionTriggeredRef.current) {
       explosionTriggeredRef.current = true
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStartExplosion(true)
 
       // 设置目标为红色表示被击中

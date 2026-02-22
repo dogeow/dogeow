@@ -131,6 +131,7 @@ export function ChainLightningEffect({
     if (active && !hasActivatedRef.current) {
       hasActivatedRef.current = true
       hasCompletedRef.current = false
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsActive(true)
       castChain()
     } else if (!active) {

@@ -141,7 +141,7 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
         }
       })
     }
-  }, [knowledgeSubtitle, chatMode])
+  }, [knowledgeSubtitle, chatMode, knowledgeInitialMessages])
 
   const activeChat = chatMode === 'knowledge' ? knowledgeChat : aiChat
   const {

@@ -40,6 +40,7 @@ export function LanguageDetectionPrompt({
   // 使用公共的国旗获取函数
 
   // 判断是否需要显示提示
+
   useEffect(() => {
     if (showOnFirstVisit && !isDismissed && detectedLanguage && lastDetectionTime) {
       const shouldShow = (): boolean => {
@@ -61,6 +62,7 @@ export function LanguageDetectionPrompt({
         }
         return true
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       if (shouldShow()) setIsVisible(true)
     }
   }, [

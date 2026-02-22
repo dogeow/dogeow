@@ -58,6 +58,7 @@ export function MeteorEffect({ active, onComplete, targetPosition }: EffectBaseP
   useEffect(() => {
     if (active && !hasActivatedRef.current) {
       hasActivatedRef.current = true
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsActive(true)
       cast()
     } else if (!active) {

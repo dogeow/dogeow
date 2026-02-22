@@ -20,6 +20,7 @@ export function BowlingGame() {
   const [showPermissionDialog, setShowPermissionDialog] = useState(false)
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMounted(true)
   }, [])
 

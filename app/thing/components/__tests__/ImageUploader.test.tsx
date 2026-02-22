@@ -22,6 +22,7 @@ vi.mock('@/lib/api', () => ({
   post: vi.fn(),
 }))
 
+/* eslint-disable @next/next/no-img-element */
 vi.mock('next/image', () => ({
   default: ({ src, alt, onClick }: any) => (
     <img src={src} alt={alt} onClick={onClick} data-testid="uploaded-image" />

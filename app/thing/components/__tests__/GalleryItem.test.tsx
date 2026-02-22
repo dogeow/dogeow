@@ -5,6 +5,7 @@ import { GalleryItem } from '../GalleryItem'
 import { Item } from '@/app/thing/types'
 
 // Mock next/image
+/* eslint-disable @next/next/no-img-element */
 vi.mock('next/image', () => ({
   default: ({ src, alt, ...props }: any) => (
     <img src={src} alt={alt} data-testid="next-image" {...props} />

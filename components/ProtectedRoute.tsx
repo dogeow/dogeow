@@ -18,7 +18,9 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const [isClient, setIsClient] = useState(false)
 
   // 确保组件只在客户端渲染，避免水合错误
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsClient(true)
   }, [])
 

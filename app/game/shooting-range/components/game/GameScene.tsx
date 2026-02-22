@@ -14,6 +14,23 @@ import {
 } from '../../utils/gameUtils'
 import { playShotSound, playHitSound } from '../../utils/audioUtils'
 
+function generateStars(count: number) {
+  const stars = []
+  for (let i = 0; i < count; i++) {
+    const x = (Math.random() - 0.5) * 180
+    const y = Math.random() * 40 + 10
+    const z = (Math.random() - 0.5) * 180
+    const size = Math.random() * 0.15 + 0.05
+    stars.push(
+      <mesh key={i} position={[x, y, z]}>
+        <sphereGeometry args={[size, 4, 4]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.7} />
+      </mesh>
+    )
+  }
+  return stars
+}
+
 interface TargetData {
   id: number
   position: [number, number, number]
@@ -91,6 +108,7 @@ export function GameScene({
   )
 
   // 初始化目标
+
   useEffect(() => {
     const newTargets: TargetData[] = []
 
@@ -108,6 +126,7 @@ export function GameScene({
       })
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTargets(newTargets)
   }, [settings.gameAreaSize, settings.targetCount, settings.targetSpeed])
 
@@ -555,22 +574,7 @@ export function GameScene({
       </mesh>
 
       {/* 星星 */}
-      {useMemo(() => {
-        const stars = []
-        for (let i = 0; i < 50; i++) {
-          const x = (Math.random() - 0.5) * 180
-          const y = Math.random() * 40 + 10
-          const z = (Math.random() - 0.5) * 180
-          const size = Math.random() * 0.15 + 0.05
-          stars.push(
-            <mesh key={i} position={[x, y, z]}>
-              <sphereGeometry args={[size, 4, 4]} />
-              <meshBasicMaterial color="#ffffff" transparent opacity={0.7} />
-            </mesh>
-          )
-        }
-        return stars
-      }, [])}
+      {useMemo(() => generateStars(50), [])}
 
       {/* 目标 */}
       {targets.map(target => (

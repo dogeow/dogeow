@@ -37,9 +37,11 @@ export function SkillEffect({
   useEffect(() => {
     if (active && !wasActiveRef.current) {
       wasActiveRef.current = true
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsActive(true)
     } else if (!active && wasActiveRef.current) {
       wasActiveRef.current = false
+
       setIsActive(false)
     }
   }, [active])

@@ -114,6 +114,7 @@ export function BowlingCanvas() {
   useEffect(() => {
     if (!gameState.ballThrown || !sceneRef.current?.ball) return
 
+    // eslint-disable-next-line react-hooks/immutability
     refs.ballThrownRef.current = true
     console.log('🎳 Three.js 投球！', { aimAngle, power })
 

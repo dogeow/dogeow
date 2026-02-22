@@ -98,8 +98,10 @@ export function MonsterGroup({
   const hasValidMonsters = validMonsters.length > 0
 
   // 技能动画期间不显示扣血/伤害/受击，并清空状态，避免先播一次、动画结束再播一次
+
   useEffect(() => {
     if (!showDamageAndHp) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDamageTexts({})
       setHitMonsters(new Set())
       return
