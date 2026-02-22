@@ -293,37 +293,41 @@ export function CombatPanel() {
                 <div className="absolute inset-0 rounded-lg bg-black/15" aria-hidden />
               )}
               <div className="relative flex h-full w-full items-center justify-center p-3 sm:p-4">
-                <BattleArena
-                  character={
-                    character
-                      ? { name: character.name, class: character.class, level: character.level }
-                      : null
-                  }
-                  combatStats={combatStats}
-                  currentHp={currentHp}
-                  currentMana={currentMana}
-                  monster={combatResult?.monster ?? currentCombatMonsterFromStatus?.monster ?? null}
-                  monsterId={
-                    combatResult?.monster_id ??
-                    currentCombatMonsterFromStatus?.monsterId ??
-                    character?.combat_monster_id ??
-                    undefined
-                  }
-                  monsterHpBeforeRound={combatResult?.monster_hp_before_round}
-                  monsters={combatResult?.monsters ?? currentCombatMonsterFromStatus?.monsters}
-                  isFighting={isFighting}
-                  isLoading={isLoading}
-                  // 角色死亡时(isFighting可能是true但currentHp<=0)，点击只是复活，不自动开始战斗
-                  onCombatToggle={
-                    isFighting
-                      ? (currentHp ?? 0) > 0
-                        ? handleStopCombat
-                        : handleRevive
-                      : handleStartCombat
-                  }
-                  skillUsed={combatResult?.skills_used?.[0]}
-                  skillTargetPositions={combatResult?.skill_target_positions}
-                />
+                <div className="absolute inset-0">
+                  <BattleArena
+                    character={
+                      character
+                        ? { name: character.name, class: character.class, level: character.level }
+                        : null
+                    }
+                    combatStats={combatStats}
+                    currentHp={currentHp}
+                    currentMana={currentMana}
+                    monster={
+                      combatResult?.monster ?? currentCombatMonsterFromStatus?.monster ?? null
+                    }
+                    monsterId={
+                      combatResult?.monster_id ??
+                      currentCombatMonsterFromStatus?.monsterId ??
+                      character?.combat_monster_id ??
+                      undefined
+                    }
+                    monsterHpBeforeRound={combatResult?.monster_hp_before_round}
+                    monsters={combatResult?.monsters ?? currentCombatMonsterFromStatus?.monsters}
+                    isFighting={isFighting}
+                    isLoading={isLoading}
+                    // 角色死亡时(isFighting可能是true但currentHp<=0)，点击只是复活，不自动开始战斗
+                    onCombatToggle={
+                      isFighting
+                        ? (currentHp ?? 0) > 0
+                          ? handleStopCombat
+                          : handleRevive
+                        : handleStartCombat
+                    }
+                    skillUsed={combatResult?.skills_used?.[0]}
+                    skillTargetPositions={combatResult?.skill_target_positions}
+                  />
+                </div>
               </div>
             </div>
           </div>

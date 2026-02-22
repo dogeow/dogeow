@@ -203,9 +203,12 @@ export function BattleArena({
     setActiveSkillEffect(null)
   }
 
+  // 冰河世纪作为「地面层」在怪物背后，其它技能在顶层
+  const effectLayerZ = activeSkillEffect === 'ice-age' ? 'z-0' : 'z-10'
+
   return (
-    <div className="relative flex flex-col items-stretch">
-      {/* 技能特效层 */}
+    <div className="absolute inset-0 isolate flex flex-col items-stretch">
+      {/* 技能特效层：冰河世纪在底层（地面冰面，延伸到怪物身后），其它技能在顶层 */}
       {activeSkillEffect && (
         <SkillEffect
           type={activeSkillEffect}
@@ -218,76 +221,79 @@ export function BattleArena({
           }
           onComplete={handleSkillComplete}
           onHit={handleHit}
-          className="absolute inset-0 z-10"
+          className={`absolute inset-0 ${effectLayerZ}`}
         />
       )}
 
-      {/* 上侧：怪物（支持多只），仅在非加载且已有战斗结果时显示，避免点击后未发请求时显示静态/旧数据 */}
-      <div className="flex flex-1 flex-col items-center gap-2 p-3 sm:p-4">
-        {!isLoading && isFighting && hasValidMonsters ? (
-          <MonsterGroup
-            monsters={displayMonsters}
-            skillUsed={skillUsed}
-            skillTargetPositions={skillTargetPositions}
-            showDamageAndHp={showDamageAndHp}
-          />
-        ) : !isLoading && isFighting && monster ? (
-          <div className={isMonsterDead ? styles['monster-death'] : ''}>
-            <MonsterIcon key={monsterId} monsterId={monsterId} name={monster.name} size="lg" />
-          </div>
-        ) : isFighting && isLoading ? (
-          <div className="text-muted-foreground flex h-20 w-20 items-center justify-center text-xs sm:h-24 sm:w-24 sm:text-sm">
-            加载中
-          </div>
-        ) : (
-          <div className="h-20 w-20 sm:h-24 sm:w-24" />
-        )}
-        {!isLoading && isFighting && !hasValidMonsters && !monster && !monsterId && (
-          <div className="text-muted-foreground flex-1 text-xs">战斗中</div>
-        )}
-      </div>
-
-      {/* VS 双剑：点击开始/停止挂机，战斗中播放交击动画 */}
-      <VSSwords
-        isFighting={isFighting}
-        isLoading={isLoading}
-        isDead={isCharacterDead}
-        onToggle={onCombatToggle}
-      />
-
-      {/* 下侧：用户 */}
-      <div className="flex flex-col items-center gap-2 p-3 sm:p-4">
-        <div className="bg-primary/20 text-primary flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-bold sm:h-16 sm:w-16 sm:text-2xl">
-          {character?.name?.charAt(0) ?? '?'}
+      {/* 内容层：怪物、VS、玩家叠在特效之上，形成立体场景 */}
+      <div className="relative z-10 flex flex-1 flex-col min-h-0">
+        {/* 上侧：怪物（支持多只），留出上方空间以便从天而降的技能有足够下落距离 */}
+        <div className="flex flex-1 flex-col items-center gap-2 p-3 pt-10 sm:p-4 sm:pt-12">
+          {!isLoading && isFighting && hasValidMonsters ? (
+            <MonsterGroup
+              monsters={displayMonsters}
+              skillUsed={skillUsed}
+              skillTargetPositions={skillTargetPositions}
+              showDamageAndHp={showDamageAndHp}
+            />
+          ) : !isLoading && isFighting && monster ? (
+            <div className={isMonsterDead ? styles['monster-death'] : ''}>
+              <MonsterIcon key={monsterId} monsterId={monsterId} name={monster.name} size="lg" />
+            </div>
+          ) : isFighting && isLoading ? (
+            <div className="text-muted-foreground flex h-20 w-20 items-center justify-center text-xs sm:h-24 sm:w-24 sm:text-sm">
+              加载中
+            </div>
+          ) : (
+            <div className="h-20 w-20 sm:h-24 sm:w-24" />
+          )}
+          {!isLoading && isFighting && !hasValidMonsters && !monster && !monsterId && (
+            <div className="text-muted-foreground flex-1 text-xs">战斗中</div>
+          )}
         </div>
-        {combatStats && (
-          <div className="w-full max-w-[140px] space-y-1 sm:max-w-[160px]">
-            <div className="text-muted-foreground flex justify-between text-[10px] sm:text-xs">
-              <span>HP</span>
-              <span>
-                {currentHp ?? 0} / {combatStats.max_hp}
-              </span>
-            </div>
-            <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
-              <div
-                className="h-full rounded-full bg-red-500 transition-[width] duration-300"
-                style={{ width: `${hpPercent}%` }}
-              />
-            </div>
-            <div className="text-muted-foreground flex justify-between text-[10px] sm:text-xs">
-              <span>MP</span>
-              <span>
-                {currentMana ?? 0} / {combatStats.max_mana}
-              </span>
-            </div>
-            <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
-              <div
-                className="h-full rounded-full bg-blue-500 transition-[width] duration-300"
-                style={{ width: `${manaPercent}%` }}
-              />
-            </div>
+
+        {/* VS 双剑：点击开始/停止挂机，战斗中播放交击动画 */}
+        <VSSwords
+          isFighting={isFighting}
+          isLoading={isLoading}
+          isDead={isCharacterDead}
+          onToggle={onCombatToggle}
+        />
+
+        {/* 下侧：用户 */}
+        <div className="flex flex-col items-center gap-2 p-3 sm:p-4">
+          <div className="bg-primary/20 text-primary flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-bold sm:h-16 sm:w-16 sm:text-2xl">
+            {character?.name?.charAt(0) ?? '?'}
           </div>
-        )}
+          {combatStats && (
+            <div className="w-full max-w-[140px] space-y-1 sm:max-w-[160px]">
+              <div className="text-muted-foreground flex justify-between text-[10px] sm:text-xs">
+                <span>HP</span>
+                <span>
+                  {currentHp ?? 0} / {combatStats.max_hp}
+                </span>
+              </div>
+              <div className="bg-muted h-2 w-full overflow-hidden rounded-full">
+                <div
+                  className="h-full rounded-full bg-red-500 transition-[width] duration-300"
+                  style={{ width: `${hpPercent}%` }}
+                />
+              </div>
+              <div className="text-muted-foreground flex justify-between text-[10px] sm:text-xs">
+                <span>MP</span>
+                <span>
+                  {currentMana ?? 0} / {combatStats.max_mana}
+                </span>
+              </div>
+              <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
+                <div
+                  className="h-full rounded-full bg-blue-500 transition-[width] duration-300"
+                  style={{ width: `${manaPercent}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
