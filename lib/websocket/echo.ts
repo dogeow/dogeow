@@ -93,7 +93,11 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     forceTLS: isHttps,
     enabledTransports: ['ws', 'wss'],
     disableStats: true,
-    authEndpoint: `${process.env.NEXT_PUBLIC_API_URL}/broadcasting/auth`,
+    // 使用当前 origin 支持 Tailscale 等外部访问
+    authEndpoint:
+      typeof window !== 'undefined'
+        ? `${window.location.origin.replace(':3000', ':8000')}/broadcasting/auth`
+        : `${process.env.NEXT_PUBLIC_API_URL}/broadcasting/auth`,
     auth: {
       headers: {
         Authorization: authToken ? `Bearer ${authToken}` : '',

@@ -6,7 +6,11 @@ import useAuthStore from '../../stores/authStore'
 import type { User, ApiError } from '@/app'
 import { toast } from 'sonner'
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000'
+// 在客户端自动使用当前 origin（支持 Tailscale 等外部访问）
+export const API_URL =
+  typeof window !== 'undefined'
+    ? window.location.origin.replace(':3000', ':8000')
+    : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000')
 
 // 自定义API错误类
 export class ApiRequestError extends Error {
