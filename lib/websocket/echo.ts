@@ -84,10 +84,24 @@ export function createEchoInstance(): Echo<'reverb'> | null {
       ? 443
       : 8080
 
+  // 自动判断 WebSocket 主机：本地访问用域名，其他用当前 host
+  const wsHost = (() => {
+    if (typeof window === 'undefined') {
+      return process.env.NEXT_PUBLIC_REVERB_HOST || 'ws.game.dogeow.com'
+    }
+    const currentHost = window.location.host
+    // localhost 或 127.0.0.1 使用默认域名
+    if (currentHost.includes('localhost') || currentHost.includes('127.0.0.1')) {
+      return process.env.NEXT_PUBLIC_REVERB_HOST || 'ws.game.dogeow.com'
+    }
+    // 其他情况（IP/Tailscale）使用当前 host
+    return currentHost.split(':')[0]
+  })()
+
   const config = {
     broadcaster: 'reverb',
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'jnwliwk8ulk32jkwqcy7',
-    wsHost: process.env.NEXT_PUBLIC_REVERB_HOST || 'ws.game.dogeow.com',
+    wsHost,
     wsPort: isHttps ? (port === 443 ? undefined : port) : port,
     wssPort: isHttps ? (port === 443 ? undefined : port) : port,
     forceTLS: isHttps,
