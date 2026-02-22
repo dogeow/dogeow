@@ -89,7 +89,9 @@ export function BattleArena({
     if (showDamageAndHp || list.length === 0) return list
     return list.map(m => {
       if (m == null) return m
-      const taken = (m as CombatMonster & { damage_taken?: number }).damage_taken ?? 0
+      const rawTaken = (m as CombatMonster & { damage_taken?: number }).damage_taken ?? 0
+      // 后端用 -1 表示未受击，只有 >=0 才是实际受到的伤害，用于还原扣血前血量
+      const taken = rawTaken >= 0 ? rawTaken : 0
       const beforeHp = Math.min(m.max_hp ?? 99999, (m.hp ?? 0) + taken)
       return { ...m, hp: beforeHp, damage_taken: undefined } as typeof m
     })
