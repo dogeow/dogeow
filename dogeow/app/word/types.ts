@@ -122,9 +122,7 @@ export type LearningStatus = 'idle' | 'learning' | 'reviewing' | 'completed'
 export type WordMemoryStatus = 'unknown' | 'remembered' | 'forgotten'
 
 /** 将 API 返回的单词数据统一转为 Word[]（兼容直接数组或 { data: Word[] }） */
-export function normalizeWordsResponse(
-  words: Word[] | { data?: Word[] } | undefined
-): Word[] {
+export function normalizeWordsResponse(words: Word[] | { data?: Word[] } | undefined): Word[] {
   if (!words) return []
   if (Array.isArray(words)) return words
   return words.data ?? []

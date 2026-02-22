@@ -23,7 +23,12 @@ interface SpeechRecognitionInstance {
 }
 interface SpeechRecognitionResultEvent {
   resultIndex: number
-  results: ArrayLike<{ isFinal: boolean; length: number; 0: { transcript: string }; [i: number]: { transcript: string } }>
+  results: ArrayLike<{
+    isFinal: boolean
+    length: number
+    0: { transcript: string }
+    [i: number]: { transcript: string }
+  }>
 }
 interface SpeechRecognitionErrorEvent {
   error: string

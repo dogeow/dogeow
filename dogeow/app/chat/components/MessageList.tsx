@@ -212,8 +212,7 @@ function MessageListContent({
             status: errObj.status ?? 'No status',
             code: errObj.code ?? 'No code',
           })
-        }
-        else errMsg = String(error)
+        } else errMsg = String(error)
         console.error('Failed to load messages:', errMsg)
       })
     }

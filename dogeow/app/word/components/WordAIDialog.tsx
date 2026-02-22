@@ -114,7 +114,8 @@ export function WordAIDialog({ word, open, onOpenChange }: WordAIDialogProps) {
           let message = 'AI 请求失败'
           try {
             const data = text ? JSON.parse(text) : {}
-            if (typeof (data as { error?: string })?.error === 'string') message = (data as { error: string }).error
+            if (typeof (data as { error?: string })?.error === 'string')
+              message = (data as { error: string }).error
           } catch {
             if (text.trim()) message = text.trim()
           }

@@ -485,9 +485,7 @@ export function InventoryPanel() {
                     <PopoverTrigger asChild>
                       <div
                         className={`relative flex h-14 w-12 shrink-0 flex-col items-center rounded border-2 shadow-sm transition-all hover:shadow-md ${
-                          selectedItem?.id === cell.item.id
-                            ? ''
-                            : 'border-border'
+                          selectedItem?.id === cell.item.id ? '' : 'border-border'
                         }`}
                         style={{
                           background:
