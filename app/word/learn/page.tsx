@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { CheckCircle2, BookX, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { PageContainer } from '@/components/layout'
+import { normalizeWordsResponse } from '../types'
 
 export default function LearnPage() {
   const router = useRouter()
@@ -37,8 +38,7 @@ export default function LearnPage() {
     // 只有选择了单词书才处理单词数据
     if (!hasSelectedBook || !words) return
 
-    // 处理 API 返回的数据格式
-    const wordsArray = Array.isArray(words) ? words : (words as any)?.data || []
+    const wordsArray = normalizeWordsResponse(words)
 
     if (wordsArray.length > 0) {
       setCurrentWords(wordsArray)
@@ -158,8 +158,7 @@ export default function LearnPage() {
     )
   }
 
-  // 处理 API 返回的数据格式
-  const wordsArray = Array.isArray(words) ? words : (words as any)?.data || []
+  const wordsArray = normalizeWordsResponse(words)
 
   // 今天没有新单词了（已选择单词书但单词学完了或单词书为空）
   if (wordsArray.length === 0) {

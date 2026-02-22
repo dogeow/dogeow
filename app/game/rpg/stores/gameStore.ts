@@ -30,6 +30,12 @@ import {
 import { apiGet, post, put, del, ApiRequestError } from '@/lib/api'
 import { soundManager } from '../utils/soundManager'
 
+/** 进入地图接口响应 */
+interface EnterMapResponse {
+  character: GameCharacter
+  map: MapDefinition
+}
+
 interface GameState {
   // 角色数据
   characters: GameCharacter[]
@@ -843,12 +849,9 @@ const store: StateCreator<GameState> = (set, get) => ({
         set(state => ({ ...state, isLoading: false }))
         return
       }
-      const response = (await (post as any)('/rpg/maps/' + mapId + '/enter', {
+      const response = await post<EnterMapResponse>('/rpg/maps/' + mapId + '/enter', {
         character_id: selectedId,
-      })) as {
-        character: GameCharacter
-        map: MapDefinition
-      }
+      })
       soundManager.play('teleport') // 使用传送音效
       const maps = get().maps
       const currentMap = maps.find(m => m.id === mapId) || null

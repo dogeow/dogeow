@@ -12,6 +12,7 @@ import { toast } from 'sonner'
 import { CheckCircle2, BookX, ArrowLeft, PartyPopper } from 'lucide-react'
 import Link from 'next/link'
 import { PageContainer } from '@/components/layout'
+import { normalizeWordsResponse } from '../types'
 
 export default function FillBlankPage() {
   const router = useRouter()
@@ -28,7 +29,7 @@ export default function FillBlankPage() {
   useEffect(() => {
     if (!words) return
 
-    const wordsArray = Array.isArray(words) ? words : (words as any)?.data || []
+    const wordsArray = normalizeWordsResponse(words)
 
     if (wordsArray.length > 0) {
       queueMicrotask(() => {
@@ -150,7 +151,7 @@ export default function FillBlankPage() {
     )
   }
 
-  const wordsArray = Array.isArray(words) ? words : (words as any)?.data || []
+  const wordsArray = normalizeWordsResponse(words)
 
   // 没有可练习的单词
   if (wordsArray.length === 0) {

@@ -49,7 +49,7 @@ export default function DashboardSidebar() {
   const tiles = translatedConfigs.tiles
 
   // 安全的 name key（翻译可能会导致 name undefined）
-  const getNameKey = (tile: any) => (tile.name ?? '') as string
+  const getNameKey = (tile: { name?: string; href?: string }) => (tile.name ?? '') as string
 
   // 分组：常用和工具
   const commonTiles = tiles.filter(tile =>

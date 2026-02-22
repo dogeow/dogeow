@@ -43,7 +43,7 @@ export default function Sidebar() {
   if (!theme) return null
 
   const tiles = translatedConfigs.tiles
-  const getNameKey = (tile: any) => (tile.name ?? '') as string
+  const getNameKey = (tile: { name?: string; href?: string }) => (tile.name ?? '') as string
 
   return (
     <aside className="bg-card flex h-full flex-col border-r">

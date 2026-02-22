@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -77,116 +77,116 @@ export function WordAIDialog({ word, open, onOpenChange }: WordAIDialogProps) {
     }
   }
 
-  // 发送消息给 AI
-  const sendMessage = async (content: string) => {
-    if (!content.trim() || isLoading) return
+  // 发送消息给 AI（用 useCallback 稳定引用，供下方 effect 正确声明依赖）
+  const sendMessage = useCallback(
+    async (content: string) => {
+      if (!content.trim() || isLoading) return
 
-    setErrorMessage(null)
-    const userMessage: Message = { role: 'user', content }
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
-    setIsLoading(true)
+      setErrorMessage(null)
+      const userMessage: Message = { role: 'user', content }
+      setMessages(prev => [...prev, userMessage])
+      setInput('')
+      setIsLoading(true)
 
-    try {
-      const chatMessages = [
-        ...messages.map(m => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })),
-        { role: 'user' as const, content },
-      ]
+      try {
+        const chatMessages = [
+          ...messages.map(m => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+          })),
+          { role: 'user' as const, content },
+        ]
 
-      const body = {
-        useChat: true,
-        messages: chatMessages,
-        command: '你是一个英语学习助手，帮助用户学习英语单词。请用中文回答。',
-      }
-
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-
-      if (!response.ok) {
-        const text = await response.text()
-        let message = 'AI 请求失败'
-        try {
-          const data = text ? JSON.parse(text) : {}
-          if (typeof data?.error === 'string') message = data.error
-        } catch {
-          if (text.trim()) message = text.trim()
+        const body = {
+          useChat: true,
+          messages: chatMessages,
+          command: '你是一个英语学习助手，帮助用户学习英语单词。请用中文回答。',
         }
-        throw new Error(message)
-      }
 
-      const reader = response.body?.getReader()
-      if (!reader) throw new Error('无法读取响应')
+        const response = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
 
-      let assistantContent = ''
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }])
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        const text = new TextDecoder().decode(value)
-        const lines = text.split('\n').filter(line => line.trim())
-
-        for (const line of lines) {
+        if (!response.ok) {
+          const text = await response.text()
+          let message = 'AI 请求失败'
           try {
-            if (line.startsWith('0:')) {
-              const match = line.match(/^0:"(.*)"$/)
-              if (match) {
-                const decodedContent = match[1]
-                  .replace(/\\n/g, '\n')
-                  .replace(/\\r/g, '\r')
-                  .replace(/\\t/g, '\t')
-                  .replace(/\\"/g, '"')
-                  .replace(/\\\\/g, '\\')
-                assistantContent += decodedContent
-                setMessages(prev => {
-                  const newMessages = [...prev]
-                  newMessages[newMessages.length - 1] = {
-                    role: 'assistant',
-                    content: assistantContent,
-                  }
-                  return newMessages
-                })
-              }
-            }
+            const data = text ? JSON.parse(text) : {}
+            if (typeof (data as { error?: string })?.error === 'string')
+              message = (data as { error: string }).error
           } catch {
-            // 忽略解析错误
+            if (text.trim()) message = text.trim()
+          }
+          throw new Error(message)
+        }
+
+        const reader = response.body?.getReader()
+        if (!reader) throw new Error('无法读取响应')
+
+        let assistantContent = ''
+        setMessages(prev => [...prev, { role: 'assistant', content: '' }])
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const text = new TextDecoder().decode(value)
+          const lines = text.split('\n').filter(line => line.trim())
+
+          for (const line of lines) {
+            try {
+              if (line.startsWith('0:')) {
+                const match = line.match(/^0:"(.*)"$/)
+                if (match) {
+                  const decodedContent = match[1]
+                    .replace(/\\n/g, '\n')
+                    .replace(/\\r/g, '\r')
+                    .replace(/\\t/g, '\t')
+                    .replace(/\\"/g, '"')
+                    .replace(/\\\\/g, '\\')
+                  assistantContent += decodedContent
+                  setMessages(prev => {
+                    const newMessages = [...prev]
+                    newMessages[newMessages.length - 1] = {
+                      role: 'assistant',
+                      content: assistantContent,
+                    }
+                    return newMessages
+                  })
+                }
+              }
+            } catch {
+              // 忽略解析错误
+            }
           }
         }
+      } catch (error) {
+        console.error('AI 请求失败:', error)
+        const apiMsg = error instanceof Error ? error.message : ''
+        const toShow =
+          typeof apiMsg === 'string' && apiMsg && apiMsg !== 'AI 请求失败'
+            ? apiMsg
+            : 'AI 请求失败，请稍后重试'
+        setErrorMessage(toShow)
+        toast.error(toShow)
+        setMessages(prev => prev.slice(0, -1))
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      console.error('AI 请求失败:', error)
-      const apiMsg = error instanceof Error ? error.message : ''
-      const toShow =
-        typeof apiMsg === 'string' && apiMsg && apiMsg !== 'AI 请求失败'
-          ? apiMsg
-          : 'AI 请求失败，请稍后重试'
-      setErrorMessage(toShow)
-      toast.error(toShow)
-      setMessages(prev => prev.slice(0, -1))
-    } finally {
-      setIsLoading(false)
-    }
-  }
+    },
+    [messages, isLoading]
+  )
 
-  // 自动查询单词解释
-  const sendMessageRef = useRef(sendMessage)
-  sendMessageRef.current = sendMessage
-
+  // 打开弹窗时自动发送一次单词解释请求（仅一次，由 autoQueryDone 保证）
   useEffect(() => {
     if (open && !autoQueryDone && !isLoading) {
       setAutoQueryDone(true)
       const prompt = `请详细解释英语单词 "${word.content}" 的含义、用法、词性、常见搭配和例句。请用中文回答。`
-      sendMessageRef.current(prompt)
+      sendMessage(prompt)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, autoQueryDone, isLoading])
+  }, [open, autoQueryDone, isLoading, sendMessage, word.content])
 
   // AI 生成数据
   const generateData = async () => {

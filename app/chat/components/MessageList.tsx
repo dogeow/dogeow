@@ -204,14 +204,15 @@ function MessageListContent({
       stableLoadMessages(roomId).catch(error => {
         let errMsg: string
         if (error instanceof Error) errMsg = error.message
-        else if (error && typeof error === 'object')
+        else if (error && typeof error === 'object') {
+          const errObj = error as Record<string, unknown>
           errMsg = JSON.stringify({
             type: typeof error,
-            message: (error as any).message || 'Unknown error',
-            status: (error as any).status || 'No status',
-            code: (error as any).code || 'No code',
+            message: (typeof errObj.message === 'string' && errObj.message) || 'Unknown error',
+            status: errObj.status ?? 'No status',
+            code: errObj.code ?? 'No code',
           })
-        else errMsg = String(error)
+        } else errMsg = String(error)
         console.error('Failed to load messages:', errMsg)
       })
     }

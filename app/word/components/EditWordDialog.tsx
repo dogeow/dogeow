@@ -119,8 +119,8 @@ export function EditWordDialog({ word, open, onOpenChange }: EditWordDialogProps
       console.error('保存失败:', error)
 
       // 如果是后端验证错误，尝试展示具体字段错误信息
-      if (error instanceof ApiRequestError && (error as any).data?.errors) {
-        const errors = (error as any).data.errors
+      if (error instanceof ApiRequestError && error.data?.errors) {
+        const errors = error.data.errors
         // 找到第一个字段错误并展示
         const firstField = Object.keys(errors)[0]
         const firstMsg = Array.isArray(errors[firstField])

@@ -153,10 +153,15 @@ export function useHomeLayout() {
           // 如果返回格式不对，尝试其他路径
           console.warn('⚠️ Unexpected response format, trying alternative paths:', response)
 
-          // 尝试其他可能的路径
-          const altTiles1 = (response?.layout as any)?.tiles
-          const altTiles2 = (response as any)?.tiles
-          const altTiles3 = (response as any)?.data?.layout?.tiles
+          type AltLayoutResponse = {
+            layout?: { tiles?: TileConfig[] }
+            tiles?: TileConfig[]
+            data?: { layout?: { tiles?: TileConfig[] } }
+          }
+          const alt = response as AltLayoutResponse
+          const altTiles1 = alt?.layout?.tiles
+          const altTiles2 = alt?.tiles
+          const altTiles3 = alt?.data?.layout?.tiles
 
           let foundTiles: TileConfig[] | null = null
           if (altTiles1 && Array.isArray(altTiles1)) {

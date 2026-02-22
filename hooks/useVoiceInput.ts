@@ -3,16 +3,49 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { toast } from 'sonner'
 
+// 浏览器语音识别 API 类型（非标准，仅部分浏览器支持）
+interface SpeechRecognitionWindow extends Window {
+  SpeechRecognition?: new () => SpeechRecognitionInstance
+  webkitSpeechRecognition?: new () => SpeechRecognitionInstance
+}
+interface SpeechRecognitionInstance {
+  lang: string
+  continuous: boolean
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((event: SpeechRecognitionResultEvent) => void) | null
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
+  onstart: (() => void) | null
+  onend: (() => void) | null
+  start(): void
+  stop(): void
+  abort(): void
+}
+interface SpeechRecognitionResultEvent {
+  resultIndex: number
+  results: ArrayLike<{
+    isFinal: boolean
+    length: number
+    0: { transcript: string }
+    [i: number]: { transcript: string }
+  }>
+}
+interface SpeechRecognitionErrorEvent {
+  error: string
+}
+
 // 检查浏览器是否支持语音识别
-const isSpeechRecognitionSupported = () => {
+const isSpeechRecognitionSupported = (): boolean => {
   if (typeof window === 'undefined') return false
-  return 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window
+  const w = window as SpeechRecognitionWindow
+  return Boolean(w.SpeechRecognition || w.webkitSpeechRecognition)
 }
 
 // 获取 SpeechRecognition 构造函数
-const getSpeechRecognition = () => {
+const getSpeechRecognition = (): (new () => SpeechRecognitionInstance) | null => {
   if (typeof window === 'undefined') return null
-  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+  const w = window as SpeechRecognitionWindow
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
 }
 
 export interface UseVoiceInputOptions {
@@ -49,7 +82,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   const [interimTranscript, setInterimTranscript] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const recognitionRef = useRef<any>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const finalTranscriptRef = useRef('')
 
   // 初始化语音识别
@@ -66,7 +99,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     recognition.maxAlternatives = 1
 
     // 识别结果处理
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionResultEvent) => {
       let interim = ''
       let final = ''
 
@@ -95,7 +128,7 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
     }
 
     // 错误处理
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       let errorMessage = '语音识别错误'
 
       switch (event.error) {
@@ -166,8 +199,8 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
       setInterimTranscript('')
       recognitionRef.current.start()
       toast.success('开始语音识别...')
-    } catch (err: any) {
-      if (err.name === 'InvalidStateError') {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'InvalidStateError') {
         // 已经在运行中
         console.warn('语音识别已在运行')
       } else {
