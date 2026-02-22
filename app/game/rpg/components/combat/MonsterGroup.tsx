@@ -38,10 +38,13 @@ export function MonsterGroup({
   monsters,
   skillUsed,
   skillTargetPositions,
+  showDamageAndHp = true,
 }: {
   monsters: (MonsterWithMeta | null)[]
   skillUsed?: SkillUsedEntry | null
   skillTargetPositions?: number[]
+  /** 为 false 时表示技能动画中，不显示扣血/伤害/受击，并清空已有状态避免重复播放 */
+  showDamageAndHp?: boolean
 }) {
   const prevMonstersRef = useRef<MonsterWithMeta[]>([])
   // 存储上一次的 instance_id，用于检测新怪物（持久化，避免切换导航后重新触发动画）
@@ -94,8 +97,19 @@ export function MonsterGroup({
   // 检查是否有有效怪物
   const hasValidMonsters = validMonsters.length > 0
 
+  // 技能动画期间不显示扣血/伤害/受击，并清空状态，避免先播一次、动画结束再播一次
+  useEffect(() => {
+    if (!showDamageAndHp) {
+      setDamageTexts({})
+      setHitMonsters(new Set())
+      return
+    }
+  }, [showDamageAndHp])
+
   // 检测怪物掉血并显示伤害数字，以及检测新怪物
   useEffect(() => {
+    if (!showDamageAndHp) return
+
     // 检测新怪物：通过比较 instance_id
     const currentInstanceIds = new Set<string>(
       validMonsters.map(m => m.instance_id).filter((id): id is string => Boolean(id))
@@ -199,7 +213,7 @@ export function MonsterGroup({
     })
 
     prevMonstersRef.current = validMonsters
-  }, [validMonsters])
+  }, [validMonsters, showDamageAndHp])
 
   // 检测战斗结束（没有活着的怪物）时清除已显示动画的缓存
   useEffect(() => {

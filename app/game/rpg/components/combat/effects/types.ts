@@ -24,6 +24,8 @@ export interface SkillEffectProps {
   targetPositions?: { x: number; y: number }[]
   /** 回调：特效结束 */
   onComplete?: () => void
+  /** 回调：技能视觉上命中目标时（用于提前显示扣血，避免等整段尾效播完） */
+  onHit?: () => void
   /** 自定义样式类 */
   className?: string
 }
@@ -32,6 +34,8 @@ export interface SkillEffectProps {
 export interface EffectBaseProps {
   active: boolean
   onComplete?: () => void
+  /** 技能视觉命中时调用，可早于 onComplete */
+  onHit?: () => void
   targetPosition?: { x: number; y: number }
   targetPositions?: { x: number; y: number }[]
 }

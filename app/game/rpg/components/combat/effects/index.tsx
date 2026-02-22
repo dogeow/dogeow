@@ -28,6 +28,7 @@ export function SkillEffect({
   targetPosition,
   targetPositions,
   onComplete,
+  onHit,
   className = '',
 }: SkillEffectProps) {
   const [isActive, setIsActive] = useState(false)
@@ -51,6 +52,7 @@ export function SkillEffect({
   const effectProps = {
     active: isActive,
     onComplete: handleComplete,
+    onHit,
     targetPosition,
     targetPositions,
   }

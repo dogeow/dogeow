@@ -1,7 +1,7 @@
 'use client'
 
 import { type CombatMonster, type SkillUsedEntry } from '../../types'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { MonsterIcon } from './MonsterIcon'
 import { MonsterGroup } from './MonsterGroup'
 import { VSSwords } from './VSSwords'
@@ -44,12 +44,12 @@ export function BattleArena({
   const rafRef = useRef<number | null>(null)
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingFinalHpRef = useRef<number>(finalMonsterHp)
+  const lastSkillUsedRef = useRef<SkillUsedEntry | null>(null)
+  const skillAnimationCompletedRef = useRef(false)
 
   // 技能动画未结束前不显示扣血，等 onComplete 后再更新
   const [showDamageAndHp, setShowDamageAndHp] = useState(true)
 
-  // 优先用「本回合开始前」血量，这样首帧就是从满血（或回合初）再动画到扣血后
-  const effectiveMonsterHp = displayMonsterHp ?? monsterHpBeforeRound ?? finalMonsterHp
   // 检测怪物死亡
   const isMonsterDead = finalMonsterHp <= 0
   // 检测角色死亡
@@ -64,18 +64,6 @@ export function BattleArena({
     : 0
 
   const hasValidMonsters = monsters?.some(m => m != null) ?? false
-
-  // 多怪物时：技能动画期间显示「扣血前」血量并隐藏伤害，等 onComplete 后再显示真实血量与伤害数字
-  const displayMonsters = useMemo(() => {
-    const list = monsters ?? []
-    if (showDamageAndHp || list.length === 0) return list
-    return list.map(m => {
-      if (m == null) return m
-      const taken = (m as CombatMonster & { damage_taken?: number }).damage_taken ?? 0
-      const beforeHp = Math.min(m.max_hp ?? 99999, (m.hp ?? 0) + taken)
-      return { ...m, hp: beforeHp, damage_taken: undefined } as typeof m
-    })
-  }, [monsters, showDamageAndHp])
 
   // 技能特效类型：直接使用后端返回的 effect_key
   const computedSkillEffect = useMemo((): SkillEffectType | null => {
@@ -94,6 +82,25 @@ export function BattleArena({
     ]
     return valid.includes(key as SkillEffectType) ? (key as SkillEffectType) : null
   }, [skillUsed])
+
+  // 多怪物：延迟显示时传扣血前数据
+  const displayMonsters = useMemo(() => {
+    const list = monsters ?? []
+    if (showDamageAndHp || list.length === 0) return list
+    return list.map(m => {
+      if (m == null) return m
+      const taken = (m as CombatMonster & { damage_taken?: number }).damage_taken ?? 0
+      const beforeHp = Math.min(m.max_hp ?? 99999, (m.hp ?? 0) + taken)
+      return { ...m, hp: beforeHp, damage_taken: undefined } as typeof m
+    })
+  }, [monsters, showDamageAndHp])
+
+  // 有技能回合且未到「可显示扣血」时，强制用扣血前血量，避免首帧就显示 finalMonsterHp
+  const hasSkillThisRound = Boolean(skillUsed && computedSkillEffect)
+  const effectiveMonsterHp =
+    hasSkillThisRound && !showDamageAndHp
+      ? (monsterHpBeforeRound ?? displayMonsterHp ?? maxHp ?? 0)
+      : (displayMonsterHp ?? monsterHpBeforeRound ?? finalMonsterHp)
 
   // 怪物血量显示：有技能动画时等 onComplete 后再扣血，否则 150ms 后扣血
   useEffect(() => {
@@ -156,28 +163,40 @@ export function BattleArena({
   const lastSkillUsedIdRef = useRef<number>(0)
   const skillTriggerCountRef = useRef<number>(0)
 
-  // 当 skillUsed 变化时触发特效
-
-  useEffect(() => {
+  // 有技能时在 useLayoutEffect 里立即设为延迟显示，首帧重绘即传扣血前数据
+  useLayoutEffect(() => {
     if (skillUsed && computedSkillEffect) {
+      if (skillUsed !== lastSkillUsedRef.current) {
+        lastSkillUsedRef.current = skillUsed
+        skillAnimationCompletedRef.current = false
+      }
       setShowDamageAndHp(false)
-      // 使用 skill_id 和递增计数器来区分每次技能释放
       skillTriggerCountRef.current += 1
       const uniqueSkillId = skillUsed.skill_id * 10000 + skillTriggerCountRef.current
-
       if (lastSkillUsedIdRef.current !== uniqueSkillId) {
         lastSkillUsedIdRef.current = uniqueSkillId
         setActiveSkillEffect(computedSkillEffect)
       }
     } else {
+      lastSkillUsedRef.current = null
       setShowDamageAndHp(true)
     }
   }, [skillUsed, computedSkillEffect])
 
-  const handleSkillComplete = () => {
-    setActiveSkillEffect(null)
+  /** 技能视觉命中时调用（如冰箭击中），提前显示扣血，不等尾效播完 */
+  const handleHit = useCallback(() => {
+    skillAnimationCompletedRef.current = true
     setShowDamageAndHp(true)
     setDisplayMonsterHp(pendingFinalHpRef.current)
+  }, [])
+
+  const handleSkillComplete = () => {
+    if (!skillAnimationCompletedRef.current) {
+      skillAnimationCompletedRef.current = true
+      setShowDamageAndHp(true)
+      setDisplayMonsterHp(pendingFinalHpRef.current)
+    }
+    setActiveSkillEffect(null)
   }
 
   return (
@@ -194,6 +213,7 @@ export function BattleArena({
               : undefined
           }
           onComplete={handleSkillComplete}
+          onHit={handleHit}
           className="absolute inset-0 z-10"
         />
       )}
@@ -205,6 +225,7 @@ export function BattleArena({
             monsters={displayMonsters}
             skillUsed={skillUsed}
             skillTargetPositions={skillTargetPositions}
+            showDamageAndHp={showDamageAndHp}
           />
         ) : !isLoading && isFighting && monster ? (
           <div className={isMonsterDead ? styles['monster-death'] : ''}>

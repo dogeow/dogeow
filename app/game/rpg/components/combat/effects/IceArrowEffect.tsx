@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import type { EffectBaseProps } from './types'
 
 /** 冰箭特效 */
-export function IceArrowEffect({ active, onComplete, targetPosition }: EffectBaseProps) {
+export function IceArrowEffect({ active, onComplete, onHit, targetPosition }: EffectBaseProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const arrowsRef = useRef<any[]>([])
   const impactsRef = useRef<any[]>([])
@@ -39,10 +39,12 @@ export function IceArrowEffect({ active, onComplete, targetPosition }: EffectBas
   }, [])
 
   const hasActivatedRef = useRef(false)
+  const hasCalledHitRef = useRef(false)
 
   useEffect(() => {
     if (active && !hasActivatedRef.current) {
       hasActivatedRef.current = true
+      hasCalledHitRef.current = false
       setIsActive(true)
       cast()
     } else if (!active) {
@@ -74,6 +76,10 @@ export function IceArrowEffect({ active, onComplete, targetPosition }: EffectBas
 
         if (dist < 20) {
           a.alive = false
+          if (onHit && !hasCalledHitRef.current) {
+            hasCalledHitRef.current = true
+            onHit()
+          }
           impactsRef.current.push({ x: a.x, y: a.y, radius: 0, maxRadius: 50, alpha: 1 })
           frostRef.current.push({ x: a.x, y: a.y, radius: 0, maxRadius: 50, life: 1 })
         }
@@ -169,7 +175,7 @@ export function IceArrowEffect({ active, onComplete, targetPosition }: EffectBas
 
     rafRef.current = requestAnimationFrame(update)
     return () => cancelAnimationFrame(rafRef.current)
-  }, [isActive, onComplete])
+  }, [isActive, onComplete, onHit])
 
   if (!isActive && !active) return null
 
