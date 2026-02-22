@@ -485,19 +485,14 @@ export function InventoryPanel() {
                     <PopoverTrigger asChild>
                       <div
                         className={`relative flex h-14 w-12 shrink-0 flex-col items-center rounded border-2 shadow-sm transition-all hover:shadow-md ${
-                          selectedItem?.id === cell.item.id
-                            ? 'border-yellow-500 ring-2 ring-yellow-500/50 dark:border-yellow-400 dark:ring-yellow-400/50'
-                            : 'border-border'
+                          selectedItem?.id === cell.item.id ? '' : 'border-border'
                         }`}
                         style={{
                           background:
                             selectedItem?.id === cell.item.id
-                              ? `${QUALITY_COLORS[cell.item.quality]}20`
-                              : `linear-gradient(135deg, ${QUALITY_COLORS[cell.item.quality]}15 0%, ${QUALITY_COLORS[cell.item.quality]}08 100%)`,
-                          borderColor:
-                            selectedItem?.id === cell.item.id
                               ? undefined
-                              : QUALITY_COLORS[cell.item.quality],
+                              : `linear-gradient(135deg, ${QUALITY_COLORS[cell.item.quality]}15 0%, ${QUALITY_COLORS[cell.item.quality]}08 100%)`,
+                          borderColor: QUALITY_COLORS[cell.item.quality],
                         }}
                         title={getItemDisplayName(cell.item)}
                       >
