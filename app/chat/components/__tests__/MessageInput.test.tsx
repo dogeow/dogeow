@@ -8,6 +8,8 @@ vi.mock('@/app/chat/chatStore', () => ({
   default: () => ({
     currentRoom: { id: 1, name: 'Test Room' },
     onlineUsers: {},
+    checkMuteStatus: () => false,
+    muteUntil: null,
   }),
 }))
 
@@ -21,9 +23,6 @@ vi.mock('@/hooks/useTranslation', () => ({
   })),
 }))
 
-vi.mock('use-debounce', () => ({
-  useDebounce: vi.fn(value => [value, vi.fn()]),
-}))
 
 vi.mock('next/image', () => ({
   __esModule: true,

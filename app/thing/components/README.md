@@ -6,7 +6,7 @@
 
 #### 创建自定义 Hook
 
-- **`useFormHandlers`**: 提取通用的表单处理逻辑，包括输入、选择、开关和数值处理
+- **`useFormHandlers`**: 提取通用的表单处理逻辑，包括输入、选择、开关和数值处理（全局 hook `@/hooks/useFormHandlers`）
 - 提高代码复用性，减少重复代码
 
 #### 组件拆分

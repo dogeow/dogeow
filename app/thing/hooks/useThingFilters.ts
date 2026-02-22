@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { FilterParams } from '@/app/thing/types'
 import { useFilterPersistenceStore } from '@/app/thing/stores/filterPersistenceStore'
+import { usePagination } from '@/hooks/usePagination'
 
 interface UseThingFiltersReturn {
   filters: FilterParams
@@ -18,7 +19,7 @@ export function useThingFilters(): UseThingFiltersReturn {
     clearFilters: clearPersistedFilters,
   } = useFilterPersistenceStore()
   const [filters, setFilters] = useState<FilterParams>(savedFilters)
-  const [currentPage, setCurrentPage] = useState(1)
+  const { currentPage, setPage: setCurrentPage, reset: resetPage } = usePagination(1)
 
   // 当持久化的筛选条件变化时，更新本地状态
   useEffect(() => {
@@ -37,10 +38,10 @@ export function useThingFilters(): UseThingFiltersReturn {
 
   const clearFilters = useCallback(() => {
     setFilters({})
-    setCurrentPage(1)
+    resetPage()
     // 清除持久化的筛选条件
     clearPersistedFilters()
-  }, [clearPersistedFilters])
+  }, [clearPersistedFilters, resetPage])
 
   const hasActiveFilters = useCallback(() => {
     const activeFilters = Object.entries(filters).filter(([key, value]) => {

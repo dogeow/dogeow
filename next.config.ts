@@ -1,8 +1,17 @@
+import path from 'node:path'
 import type { NextConfig } from 'next'
 
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // Next.js 16 默认使用 Turbopack；保留 webpack 以兼容 --webpack 或构建
+  turbopack: {},
+  webpack: (config, { isServer }) => {
+    config.resolve ??= {}
+    config.resolve.alias ??= {}
+    config.resolve.alias['@'] = path.join(__dirname)
+    return config
+  },
   images: {
     remotePatterns: [
       {

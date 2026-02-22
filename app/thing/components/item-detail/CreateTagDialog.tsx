@@ -1,0 +1,189 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { RefreshCw } from 'lucide-react'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tag } from '@/app/thing/types'
+import { apiRequest } from '@/lib/api'
+import { toast } from 'sonner'
+import { generateRandomColor } from '@/lib/helpers/colorUtils'
+
+interface CreateTagDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onTagCreated: (tag: Tag) => void
+  initialName?: string
+}
+
+const COLOR_OPTIONS = [
+  '#ef4444',
+  '#f97316',
+  '#eab308',
+  '#22c55e',
+  '#3b82f6',
+  '#8b5cf6',
+  '#ec4899',
+  '#6b7280',
+  '#000000',
+]
+
+const DEFAULT_COLOR = '#3b82f6'
+
+const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
+  open,
+  onOpenChange,
+  onTagCreated,
+  initialName = '',
+}) => {
+  const [loading, setLoading] = useState(false)
+  const [name, setName] = useState(initialName)
+  const [color, setColor] = useState(DEFAULT_COLOR)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  useEffect(() => {
+    if (initialName) setName(initialName)
+  }, [initialName])
+
+  useEffect(() => {
+    if (open) {
+      let newColor: string
+      do {
+        newColor = generateRandomColor()
+      } while (newColor === '#000000' || newColor === '#ffffff')
+      setColor(newColor)
+    }
+  }, [open])
+
+  const refreshColor = () => {
+    let newColor: string
+    do {
+      newColor = generateRandomColor()
+    } while (newColor === '#000000' || newColor === '#ffffff')
+    setColor(newColor)
+  }
+
+  const resetForm = () => {
+    setName('')
+    setColor(DEFAULT_COLOR)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!name.trim()) {
+      toast.error('请输入标签名称')
+      return
+    }
+
+    setLoading(true)
+
+    try {
+      const tagData = { name: name.trim(), color }
+      const response = await apiRequest<Tag>('/things/tags', 'POST', tagData)
+
+      toast.success('标签创建成功')
+      resetForm()
+      onTagCreated(response)
+      onOpenChange(false)
+    } catch {
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const ColorButton = ({ colorValue }: { colorValue: string }) => (
+    <button
+      type="button"
+      className={`h-8 w-8 rounded-full transition-all ${
+        color === colorValue ? 'ring-primary ring-2 ring-offset-2' : ''
+      }`}
+      style={{ backgroundColor: colorValue }}
+      onClick={() => setColor(colorValue)}
+      disabled={loading}
+    />
+  )
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>创建新标签</DialogTitle>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Input
+              id="name"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="输入标签名称"
+              disabled={loading}
+              maxLength={50}
+              autoFocus={!isMobile}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {COLOR_OPTIONS.map(option => (
+                <ColorButton key={option} colorValue={option} />
+              ))}
+
+              <div className="relative h-8">
+                <Input
+                  type="color"
+                  value={color}
+                  onChange={e => setColor(e.target.value)}
+                  className="absolute h-8 w-8 cursor-pointer p-0 opacity-0"
+                  disabled={loading}
+                />
+                <div
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border"
+                  style={{ backgroundColor: color }}
+                >
+                  <span className="text-xs text-white">+</span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={refreshColor}
+                className="h-8 w-8"
+                title="生成随机颜色"
+                disabled={loading}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-4 gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+              取消
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? '创建中...' : '创建标签'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export default CreateTagDialog

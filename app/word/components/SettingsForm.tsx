@@ -18,11 +18,11 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
 import { Check } from 'lucide-react'
+import { useAutoSave } from '@/hooks/useAutoSave'
 
 export function SettingsForm() {
   const { data: settings, isLoading } = useWordSettings()
   const { setSettings } = useWordStore()
-  const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [formData, setFormData] = useState({
     daily_new_words: 10,
@@ -30,67 +30,61 @@ export function SettingsForm() {
     is_auto_pronounce: true,
   })
   const isInitialized = useRef(false)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-
-  useEffect(() => {
-    if (settings) {
-      setFormData({
-        daily_new_words: settings.daily_new_words,
-        review_multiplier: settings.review_multiplier,
-        is_auto_pronounce: settings.is_auto_pronounce,
-      })
-      setSettings(settings)
-      isInitialized.current = true
-    }
-  }, [settings, setSettings])
 
   const saveSettings = useCallback(
     async (data: typeof formData) => {
-      setIsSaving(true)
       setSaved(false)
       try {
         const result = await updateWordSettings(data)
         if (result.setting) {
           setSettings(result.setting)
           mutate('/word/settings')
-          setSaved(true)
-          setTimeout(() => setSaved(false), 2000)
+          // saved state will be handled by lastSaved effect
         }
       } catch (error) {
         toast.error('保存设置失败')
         console.error('保存设置失败:', error)
-      } finally {
-        setIsSaving(false)
       }
     },
     [setSettings]
   )
 
-  // 自动保存（防抖）
-  const handleChange = useCallback(
-    (newData: typeof formData) => {
-      setFormData(newData)
-
-      if (!isInitialized.current) return
-
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-      }
-
-      saveTimeoutRef.current = setTimeout(() => {
-        saveSettings(newData)
-      }, 500)
-    },
-    [saveSettings]
-  )
+  const { autoSaving, lastSaved, triggerAutoSave, setInitialData } = useAutoSave<typeof formData>({
+    onSave: saveSettings,
+    delay: 500,
+    initialData: formData,
+  })
 
   useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
+    if (settings) {
+      const newData = {
+        daily_new_words: settings.daily_new_words,
+        review_multiplier: settings.review_multiplier,
+        is_auto_pronounce: settings.is_auto_pronounce,
       }
+      setFormData(newData)
+      setSettings(settings)
+      isInitialized.current = true
+      setInitialData(newData)
     }
-  }, [])
+  }, [settings, setSettings, setInitialData])
+
+
+  // trigger auto-save whenever formData changes after initialization
+  useEffect(() => {
+    if (isInitialized.current) {
+      triggerAutoSave()
+    }
+  }, [formData, triggerAutoSave])
+
+  // show saved indicator when lastSaved updates
+  useEffect(() => {
+    if (lastSaved) {
+      setSaved(true)
+      const timer = setTimeout(() => setSaved(false), 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [lastSaved])
 
   if (isLoading) {
     return (
@@ -108,10 +102,10 @@ export function SettingsForm() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">学习设置</CardTitle>
           <div className="text-muted-foreground flex items-center gap-1 text-sm">
-            {isSaving && <LoadingSpinner className="h-3 w-3" />}
+              {autoSaving && <LoadingSpinner className="h-3 w-3" />}
             {saved && <Check className="h-3 w-3 text-green-500" />}
-            {(isSaving || saved) && (
-              <span className="text-xs">{isSaving ? '保存中' : '已保存'}</span>
+            {(autoSaving || saved) && (
+              <span className="text-xs">{autoSaving ? '保存中' : '已保存'}</span>
             )}
           </div>
         </div>
@@ -128,9 +122,7 @@ export function SettingsForm() {
               min="1"
               max="100"
               value={formData.daily_new_words}
-              onChange={e =>
-                handleChange({ ...formData, daily_new_words: parseInt(e.target.value) || 10 })
-              }
+              onChange={e => setFormData(prev => ({ ...prev, daily_new_words: parseInt(e.target.value) || 10 }))}
             />
           </div>
 
@@ -141,7 +133,7 @@ export function SettingsForm() {
             <Select
               value={formData.review_multiplier.toString()}
               onValueChange={value =>
-                handleChange({ ...formData, review_multiplier: parseInt(value) })
+                setFormData(prev => ({ ...prev, review_multiplier: parseInt(value) }))
               }
             >
               <SelectTrigger>
@@ -163,7 +155,7 @@ export function SettingsForm() {
           <Switch
             id="is_auto_pronounce"
             checked={formData.is_auto_pronounce}
-            onCheckedChange={checked => handleChange({ ...formData, is_auto_pronounce: checked })}
+            onCheckedChange={checked => setFormData(prev => ({ ...prev, is_auto_pronounce: checked }))}
           />
         </div>
       </CardContent>

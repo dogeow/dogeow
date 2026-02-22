@@ -1,5 +1,7 @@
 import React from 'react'
-import ReadonlyEditor from '@/components/novel-editor/readonly'
+import dynamic from 'next/dynamic'
+
+const ReadonlyEditor = dynamic(() => import('@/components/novel-editor/readonly'), { ssr: false })
 
 /**
  * 判断编辑器内容是否为空

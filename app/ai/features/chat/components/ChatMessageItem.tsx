@@ -1,8 +1,8 @@
 import React from 'react'
 import { User } from 'lucide-react'
 import Image from 'next/image'
-import MarkdownPreview from '@/components/novel-editor/markdown-preview'
 import type { ChatMessage } from '../types'
+import { SimpleMarkdown } from './SimpleMarkdown'
 
 interface ChatMessageItemProps {
   message: ChatMessage
@@ -31,7 +31,7 @@ export const ChatMessageItem = React.memo<ChatMessageItemProps>(({ message, vari
                   : '[&_.prose]:prose-neutral [&_.prose_*]:!text-foreground [&_.prose]:my-0 [&_.prose_p]:!my-0 [&_.prose_p]:!mt-0 [&_.prose_p]:!mb-0'
               }
             >
-              <MarkdownPreview content={message.content} />
+              <SimpleMarkdown content={message.content} />
             </div>
           </div>
         </div>
@@ -68,7 +68,7 @@ export const ChatMessageItem = React.memo<ChatMessageItemProps>(({ message, vari
             isUser ? 'bg-muted text-foreground' : 'bg-muted text-foreground'
           }`}
         >
-          <MarkdownPreview
+          <SimpleMarkdown
             content={message.content}
             className={isUser ? '[&_*]:text-foreground' : '[&_*]:text-foreground'}
           />

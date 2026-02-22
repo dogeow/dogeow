@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useCallback } from 'react'
+import dynamic from 'next/dynamic'
 import { MusicPlayer } from './MusicPlayer'
 import { SettingsPanel, CustomBackground } from './SettingsPanel'
 import { useRouter, usePathname } from 'next/navigation'
@@ -14,12 +15,16 @@ import { AppsView } from './views/AppsView'
 import { SearchResultView } from './views/SearchResultView'
 import { ViewWrapper } from './views/ViewWrapper'
 import { useMusicStore } from '@/stores/musicStore'
-import { AiDialog } from '@/components/app/AiDialog'
 import { useMediaKeys } from './hooks/useMediaKeys'
 import { useMediaSession } from './hooks/useMediaSession'
 import { AudioVisualizer } from './music/AudioVisualizer'
 import { FullscreenVisualizer } from './music/FullscreenVisualizer'
 import { SettingsDialog } from './settings/SettingsDialog'
+
+const AiDialog = dynamic(
+  () => import('@/components/app/AiDialog').then(m => ({ default: m.AiDialog })),
+  { ssr: false }
+)
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
@@ -244,7 +249,7 @@ export function AppLauncher() {
 
   return (
     <>
-      <AiDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
+      {isAiDialogOpen && <AiDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />}
       <AuthDialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} />
       <SearchDialog
         open={searchManager.isSearchDialogOpen}

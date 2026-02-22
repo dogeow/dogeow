@@ -1,7 +1,6 @@
 'use client'
 
 import React from 'react'
-import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/helpers'
 import Image from 'next/image'
@@ -18,7 +17,7 @@ interface BackgroundButtonProps {
 
 export function BackgroundButton({ background, isSelected, onSelect }: BackgroundButtonProps) {
   return (
-    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} className="shrink-0">
+    <div className="shrink-0 transition-transform hover:scale-105 active:scale-95">
       <Button
         variant="ghost"
         className={cn(
@@ -41,6 +40,6 @@ export function BackgroundButton({ background, isSelected, onSelect }: Backgroun
           </div>
         )}
       </Button>
-    </motion.div>
+    </div>
   )
 }

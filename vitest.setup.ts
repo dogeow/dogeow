@@ -1,5 +1,17 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
+import * as ReactLibrary from '@testing-library/react'
+import * as DomLibrary from '@testing-library/dom'
+
+// Make screen, fireEvent, waitFor available globally
+// @testing-library/react 16.x removed these from the main export
+const { screen, fireEvent, waitFor, within } = DomLibrary
+
+// Expose to global for tests
+Object.defineProperty(globalThis, 'screen', { value: screen })
+Object.defineProperty(globalThis, 'fireEvent', { value: fireEvent })
+Object.defineProperty(globalThis, 'waitFor', { value: waitFor })
+Object.defineProperty(globalThis, 'within', { value: within })
 
 // Setup DOM environment for React testing
 const { JSDOM } = require('jsdom')

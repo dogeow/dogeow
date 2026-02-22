@@ -24,10 +24,33 @@ global.fetch = vi.fn()
 describe('useChatRoom', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    vi.mocked(fetch).mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ rooms: [], users: [] }),
-    } as Response)
+    vi.mocked(fetch).mockImplementation((input: RequestInfo) => {
+      const url = typeof input === 'string' ? input : input.url
+      if (url.includes('/messages')) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({ current_page: 1, last_page: 1, data: [] }),
+        } as Response)
+      }
+      if (url.includes('/users')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ users: [] }),
+        } as Response)
+      }
+      if (url.includes('/join')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+        } as Response)
+      }
+      // fallback
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ rooms: [], users: [] }),
+      } as Response)
+    })
   })
 
   describe('Initialization', () => {
@@ -57,13 +80,15 @@ describe('useChatRoom', () => {
   })
 
   describe('Room Management', () => {
-    it('should join room successfully', async () => {
+    it('should join room successfully and reset page', async () => {
       const { result } = renderHook(() => useChatRoom())
 
       await act(async () => {
         const success = await result.current.joinRoom('1')
         expect(success).toBe(true)
       })
+
+      expect(result.current.currentPage).toBe(1)
     })
 
     it('should leave room successfully', async () => {
@@ -134,15 +159,35 @@ describe('useChatRoom', () => {
       })
     })
 
-    it('should load more messages successfully', async () => {
+    it('should load more messages and increment page', async () => {
       const { result } = renderHook(() => useChatRoom())
+
+      // join first so pagination context is set
+      await act(async () => {
+        await result.current.joinRoom('1')
+      })
+
+      // override fetch to return page 2 on next messages call
+      vi.mocked(fetch).mockImplementationOnce((input: RequestInfo) => {
+        const url = typeof input === 'string' ? input : input.url
+        if (url.includes('/messages')) {
+          return Promise.resolve({
+            ok: true,
+            json: () =>
+              Promise.resolve({ current_page: 2, last_page: 3, data: [] }),
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({}),
+        } as Response)
+      })
 
       await act(async () => {
         await result.current.loadMoreMessages()
       })
 
-      // Should not throw error
-      expect(true).toBe(true)
+      expect(result.current.currentPage).toBe(2)
     })
   })
 

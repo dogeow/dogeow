@@ -3,21 +3,37 @@ import { toast } from 'sonner'
 import { useSWRConfig } from 'swr'
 import { put } from '@/lib/api'
 import useFileStore from '../store/useFileStore'
+import { useFormModal } from '@/hooks/useFormModal'
 import type { CloudFile } from '../types'
 
 interface UseFileEditReturn {
-  editingFile: CloudFile | null
+  open: boolean
+  selectedId: number | null
+  mode: string
+  setOpen: (open: boolean) => void
+  setSelectedId: (id: number | null) => void
+  openModal: (id: number, mode?: string) => void
+  closeModal: () => void
   fileName: string
   fileDescription: string
-  setEditingFile: (file: CloudFile | null) => void
   setFileName: (name: string) => void
   setFileDescription: (description: string) => void
   updateFile: () => Promise<void>
   closeEditDialog: () => void
+  setEditingFile: (file: CloudFile | null) => void
 }
 
 export function useFileEdit(): UseFileEditReturn {
-  const [editingFile, setEditingFile] = useState<CloudFile | null>(null)
+  const {
+    open,
+    selectedId,
+    mode,
+    setOpen,
+    setSelectedId,
+    openModal,
+    closeModal,
+  } = useFormModal<number>('edit')
+
   const [fileName, setFileName] = useState('')
   const [fileDescription, setFileDescription] = useState('')
   const { mutate } = useSWRConfig()
@@ -26,34 +42,54 @@ export function useFileEdit(): UseFileEditReturn {
   const getSWRKey = `/cloud/files?parent_id=${currentFolderId || ''}`
 
   const updateFile = useCallback(async () => {
-    if (!editingFile || !fileName.trim()) return
+    if (!selectedId || !fileName.trim()) return
     try {
-      await put(`/cloud/files/${editingFile.id}`, {
+      await put(`/cloud/files/${selectedId}`, {
         name: fileName.trim(),
         description: fileDescription.trim(),
       })
       mutate(key => typeof key === 'string' && key.startsWith(getSWRKey))
       toast.success('更新成功')
-      setEditingFile(null)
+      closeEditDialog()
     } catch {
       toast.error('更新失败')
     }
-  }, [editingFile, fileName, fileDescription, mutate, getSWRKey])
+  }, [selectedId, fileName, fileDescription, mutate, getSWRKey])
 
   const closeEditDialog = useCallback(() => {
-    setEditingFile(null)
+    closeModal()
+    setSelectedId(null)
     setFileName('')
     setFileDescription('')
-  }, [])
+  }, [closeModal, setSelectedId])
+
+  const setEditingFile = useCallback(
+    (file: CloudFile | null) => {
+      if (file) {
+        openModal(file.id)
+        setFileName(file.name)
+        setFileDescription(file.description || '')
+      } else {
+        closeEditDialog()
+      }
+    },
+    [openModal, closeEditDialog]
+  )
 
   return {
-    editingFile,
+    open,
+    selectedId,
+    mode,
+    setOpen,
+    setSelectedId,
+    openModal,
+    closeModal,
     fileName,
     fileDescription,
-    setEditingFile,
     setFileName,
     setFileDescription,
     updateFile,
     closeEditDialog,
-  }
+    setEditingFile,
+  } as any // cast since setEditingFile added ad-hoc
 }

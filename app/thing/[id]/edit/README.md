@@ -5,7 +5,7 @@
 ### 1. 代码结构重构
 
 - **提取自定义 Hooks**: 将复杂的逻辑拆分到专门的 hooks 中
-  - `useAutoSave`: 处理自动保存逻辑
+  - `useAutoSave`: 处理自动保存逻辑（已提取到全局 `@/hooks/useAutoSave`）
   - `useItemEdit`: 处理物品编辑的所有业务逻辑
 - **组件拆分**: 将UI组件进一步细化
   - `AutoSaveStatus`: 自动保存状态显示组件
@@ -50,7 +50,7 @@ app/thing/[id]/edit/
 └── hooks/
     ├── useAutoSave.ts          # 自动保存hook
     ├── useItemEdit.ts          # 物品编辑hook
-    └── useFormHandlers.ts      # 表单处理hook
+    ├── useFormHandlers.ts      # 表单处理hook（已提取到全局 `@/hooks/useFormHandlers`）
 ├── components/
     ├── AutoSaveStatus.tsx      # 自动保存状态组件
     ├── LoadingState.tsx        # 加载状态组件

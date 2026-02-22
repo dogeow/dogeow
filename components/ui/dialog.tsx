@@ -2,7 +2,6 @@
 
 import * as React from 'react'
 import * as DialogPrimitive from '@radix-ui/react-dialog'
-import * as VisuallyHiddenPrimitive from '@radix-ui/react-visually-hidden'
 import { X } from 'lucide-react'
 
 import { cn } from '@/lib/helpers'
@@ -91,8 +90,6 @@ const DialogDescription = React.forwardRef<
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
-const VisuallyHidden = VisuallyHiddenPrimitive.Root
-
 export {
   Dialog,
   DialogPortal,
@@ -104,5 +101,4 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-  VisuallyHidden,
 }

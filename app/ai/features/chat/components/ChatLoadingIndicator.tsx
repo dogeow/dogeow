@@ -1,6 +1,6 @@
 import React from 'react'
 import Image from 'next/image'
-import MarkdownPreview from '@/components/novel-editor/markdown-preview'
+import { SimpleMarkdown } from './SimpleMarkdown'
 
 interface ChatLoadingIndicatorProps {
   completion?: string
@@ -17,7 +17,7 @@ export const ChatLoadingIndicator = React.memo<ChatLoadingIndicatorProps>(
               <>
                 <div className="bg-muted text-foreground w-full rounded-xl px-3 py-2 break-words">
                   <div className="[&_.prose]:prose-neutral [&_.prose_*]:!text-foreground [&_.prose]:my-0 [&_.prose_p]:!my-0 [&_.prose_p]:!mt-0 [&_.prose_p]:!mb-0">
-                    <MarkdownPreview content={completion} />
+                    <SimpleMarkdown content={completion} />
                   </div>
                 </div>
                 <div className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
@@ -66,7 +66,7 @@ export const ChatLoadingIndicator = React.memo<ChatLoadingIndicatorProps>(
         <div className="flex max-w-[75%] flex-col items-start">
           <div className="bg-muted text-foreground rounded-2xl px-4 py-2.5">
             {completion ? (
-              <MarkdownPreview content={completion} />
+              <SimpleMarkdown content={completion} />
             ) : (
               <div className="flex items-center gap-2">
                 <div className="flex gap-1">

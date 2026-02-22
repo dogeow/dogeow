@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useGameStore } from '../stores/gameStore'
 import { createEchoInstance } from '@/lib/websocket'
+import { post } from '@/lib/api'
 import { toast } from 'sonner'
 import type Echo from 'laravel-echo'
 import type {
@@ -67,6 +68,7 @@ interface EchoConnector {
 
 const SUBSCRIBE_DEBOUNCE_MS = 150
 const RECONNECT_INTERVAL_MS = 5000 // 重连间隔 5 秒
+const HEARTBEAT_INTERVAL_MS = 15000 // 游戏页心跳 15 秒（服务端 45s 无心跳会停止自动战斗）
 
 export function useCombatWebSocket(characterId: number | null) {
   const echoRef = useRef<Echo<'reverb'> | null>(null)
@@ -74,6 +76,7 @@ export function useCombatWebSocket(characterId: number | null) {
   const subscribedCharacterIdRef = useRef<number | null>(null)
   const subscribedAtRef = useRef<number>(0)
   const reconnectTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const heartbeatTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [isConnected, setIsConnected] = useState(false)
   const [authError, setAuthError] = useState(false)
 
@@ -84,6 +87,21 @@ export function useCombatWebSocket(characterId: number | null) {
       reconnectTimerRef.current = null
     }
   }
+
+  // 清理心跳定时器
+  const clearHeartbeatTimer = () => {
+    if (heartbeatTimerRef.current) {
+      clearInterval(heartbeatTimerRef.current)
+      heartbeatTimerRef.current = null
+    }
+  }
+
+  // 发送游戏页心跳，供服务端判断用户是否仍在游戏页（关闭浏览器后停止自动战斗）
+  const sendHeartbeat = useCallback((cid: number) => {
+    post('/rpg/combat/heartbeat', { character_id: cid }).catch(() => {
+      // 静默失败，如未登录或网络问题
+    })
+  }, [])
 
   // 重新订阅频道
   const resubscribe = useCallback(() => {
@@ -134,10 +152,16 @@ export function useCombatWebSocket(characterId: number | null) {
       console.log('WebSocket: 重新订阅成功')
       setIsConnected(true)
       clearReconnectTimer()
+      clearHeartbeatTimer()
+      sendHeartbeat(characterId)
+      heartbeatTimerRef.current = setInterval(
+        () => sendHeartbeat(characterId),
+        HEARTBEAT_INTERVAL_MS
+      )
     } catch (error) {
       console.error('WebSocket: 重新订阅失败', error)
     }
-  }, [characterId])
+  }, [characterId, sendHeartbeat])
 
   useEffect(() => {
     // 如果没有角色ID，或者已经订阅了相同的角色，跳过
@@ -205,6 +229,14 @@ export function useCombatWebSocket(characterId: number | null) {
         useGameStore.getState().handleInventoryUpdate(data)
       })
       subscribedCharacterIdRef.current = characterId
+
+      // 启动游戏页心跳，服务端据此判断用户是否仍在游戏页（关闭浏览器后约 45s 停止自动战斗）
+      clearHeartbeatTimer()
+      sendHeartbeat(characterId)
+      heartbeatTimerRef.current = setInterval(
+        () => sendHeartbeat(characterId),
+        HEARTBEAT_INTERVAL_MS
+      )
     }
 
     try {
@@ -261,7 +293,8 @@ export function useCombatWebSocket(characterId: number | null) {
 
     // 清理函数：避免 React Strict Mode 下刚订阅就被 cleanup 取消（150ms 内不真正 unsubscribe）
     return () => {
-      clearReconnectTimer() // 清除重连定时器
+      clearReconnectTimer()
+      clearHeartbeatTimer()
       connectionCleanup?.()
       if (subscribedCharacterIdRef.current !== characterId) return
       if (Date.now() - subscribedAtRef.current < SUBSCRIBE_DEBOUNCE_MS) return

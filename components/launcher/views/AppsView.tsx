@@ -17,7 +17,7 @@ interface AppsViewProps {
     isSearchVisible: boolean
     searchTerm: string
     setSearchTerm: (term: string) => void
-    handleSearch: (e: React.FormEvent, keepSearchOpen?: boolean) => void
+    handleSearch: (e: React.SyntheticEvent, keepSearchOpen?: boolean) => void
     toggleSearch: () => void
     currentApp: string
     isHomePage: boolean

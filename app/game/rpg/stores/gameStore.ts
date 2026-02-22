@@ -147,7 +147,6 @@ interface GameState {
   startCombat: () => Promise<void>
   revive: () => Promise<void>
   stopCombat: () => Promise<void>
-  executeCombat: () => Promise<void>
   setShouldAutoCombat: (should: boolean) => void // 设置是否应该自动战斗
   /** 已启用的技能 id 列表，可多选；自动战斗时会按顺序尝试施放 */
   enabledSkillIds: number[]
@@ -350,6 +349,8 @@ const store: StateCreator<GameState> = (set, get) => ({
           isLoading: false,
         }
       })
+      // 删除角色后清除 localStorage 中的游戏状态
+      useGameStore.persist.clearStorage()
     } catch (error) {
       set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
     }
@@ -1135,143 +1136,6 @@ const store: StateCreator<GameState> = (set, get) => ({
         currentCombatMonsterFromStatus: null,
         character: state.character ? { ...state.character, is_fighting: false } : null,
       }))
-    }
-  },
-
-  executeCombat: async () => {
-    try {
-      const enabledIds = get().enabledSkillIds
-      console.log(
-        '[GameStore] Executing combat...',
-        enabledIds.length ? { skill_ids: enabledIds } : ''
-      )
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        console.warn('[GameStore] executeCombat - no character selected, skipping')
-        return
-      }
-      const body: { character_id: number; skill_ids?: number[] } = { character_id: selectedId }
-      if (enabledIds.length > 0) body.skill_ids = enabledIds
-      const response = (await post('/rpg/combat/execute', body)) as CombatResult
-      console.log('[GameStore] Combat execute response:', response)
-      console.log('[GameStore] response.character?.current_hp:', response.character?.current_hp)
-      console.log('[GameStore] response.character?.current_mana:', response.character?.current_mana)
-
-      // 药水被使用后需要刷新背包
-      const usedPotion =
-        response.potion_used &&
-        ((response.potion_used.before && Object.keys(response.potion_used.before).length > 0) ||
-          (response.potion_used.after && Object.keys(response.potion_used.after).length > 0))
-
-      set(state => {
-        // 使用 combat_log_id 或 id 去重，避免同一日志被多次添加
-        const existingLogIds = new Set<number>(
-          state.combatLogs
-            .map(l => {
-              if ('combat_log_id' in l && typeof l.combat_log_id === 'number')
-                return l.combat_log_id
-              if ('id' in l && typeof l.id === 'number') return l.id
-              return null
-            })
-            .filter((id): id is number => id != null)
-        )
-        // 优先使用 id 字段（从 API 返回的日志），其次使用 combat_log_id（WebSocket 推送的实时数据）
-        const responseLogId =
-          'id' in response && typeof response.id === 'number'
-            ? response.id
-            : 'combat_log_id' in response && typeof response.combat_log_id === 'number'
-              ? response.combat_log_id
-              : null
-
-        // 创建一个带正确 ID 的日志对象
-        const logWithId = responseLogId != null ? { ...response, id: responseLogId } : response
-
-        const newLogs =
-          responseLogId != null && !existingLogIds.has(responseLogId)
-            ? [logWithId, ...state.combatLogs].slice(0, 100)
-            : state.combatLogs
-
-        console.log(
-          '[GameStore] executeCombat - combat_log_id:',
-          responseLogId,
-          'new logs count:',
-          newLogs.length
-        )
-
-        // 总是更新 currentHp 和 currentMana（使用新值或保持旧值）
-        const newCurrentHp = response.character?.current_hp ?? state.currentHp
-        const newCurrentMana = response.character?.current_mana ?? state.currentMana
-        console.log('[GameStore] Setting currentHp to:', newCurrentHp)
-        console.log('[GameStore] Setting currentMana to:', newCurrentMana)
-
-        // 合并角色数据，并保留药水设置（execute 返回的 character 可能未包含或错误覆盖）
-        const potionKeys = [
-          'auto_use_hp_potion',
-          'hp_potion_threshold',
-          'auto_use_mp_potion',
-          'mp_potion_threshold',
-        ] as const
-        const preservedPotion = state.character
-          ? Object.fromEntries(
-              potionKeys
-                .filter(k => state.character![k] !== undefined)
-                .map(k => [k, state.character![k]])
-            )
-          : {}
-        const mergedCharacter =
-          response.character != null
-            ? state.character != null
-              ? { ...state.character, ...response.character, ...preservedPotion }
-              : { ...response.character, ...preservedPotion }
-            : state.character
-
-        return {
-          ...state,
-          combatResult: response,
-          combatLogs: newLogs,
-          character: mergedCharacter,
-          currentHp: newCurrentHp,
-          currentMana: newCurrentMana,
-          inventory: response.loot?.item
-            ? [...state.inventory, response.loot.item as GameItem]
-            : state.inventory,
-          // 战败时自动停止战斗
-          ...(response.auto_stopped && {
-            isFighting: false,
-            shouldAutoCombat: false,
-          }),
-        }
-      })
-
-      // 检测到使用药水时刷新背包（药水被消耗了）
-      if (usedPotion) {
-        await get().fetchInventory()
-      }
-
-      // 战败时播放音效（弹窗由 CombatPanel 组件处理）
-      if (response.auto_stopped) {
-        soundManager.play('combat_defeat')
-      }
-    } catch (error) {
-      console.error('[GameStore] Execute combat error:', error)
-
-      // 检查是否是血量不足导致的自动停止
-      if (error instanceof ApiRequestError) {
-        const errorData = error.data as { auto_stopped?: boolean; current_hp?: number } | undefined
-        if (errorData?.auto_stopped) {
-          console.log('[GameStore] Combat auto-stopped due to low HP')
-          soundManager.play('combat_defeat')
-          set(state => ({
-            ...state,
-            isFighting: false,
-            shouldAutoCombat: false,
-            currentHp: errorData.current_hp ?? 0,
-            error: error.message || '角色血量不足，已自动停止战斗',
-          }))
-          return
-        }
-      }
-      set(state => ({ ...state, error: (error as Error).message }))
     }
   },
 

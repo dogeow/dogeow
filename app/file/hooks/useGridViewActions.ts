@@ -16,7 +16,6 @@ interface UseGridViewActionsReturn {
   handleItemClick: (file: CloudFile) => void
   downloadFile: (file: CloudFile) => void
   deleteFile: (file: CloudFile) => Promise<void>
-  openEditDialog: (file: CloudFile, event: React.MouseEvent) => void
 }
 
 export function useGridViewActions({
@@ -73,9 +72,6 @@ export function useGridViewActions({
     [mutate, getSWRKey]
   )
 
-  const openEditDialog = useCallback((file: CloudFile, event: React.MouseEvent) => {
-    event.stopPropagation()
-  }, [])
 
   return useMemo(
     () => ({
@@ -84,8 +80,7 @@ export function useGridViewActions({
       handleItemClick,
       downloadFile,
       deleteFile,
-      openEditDialog,
     }),
-    [getSWRKey, toggleSelection, handleItemClick, downloadFile, deleteFile, openEditDialog]
+    [getSWRKey, toggleSelection, handleItemClick, downloadFile, deleteFile]
   )
 }

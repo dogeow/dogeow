@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react'
-import { ScrollArea } from '@/components/novel-editor/ui/scroll-area'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { ChatMessageItem } from './ChatMessageItem'
 import { ChatLoadingIndicator } from './ChatLoadingIndicator'
 import { ChatEmptyState } from './ChatEmptyState'

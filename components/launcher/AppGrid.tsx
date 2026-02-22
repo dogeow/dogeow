@@ -3,7 +3,6 @@
 import React from 'react'
 import { Settings, Music, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
 import { useMusicStore } from '@/stores/musicStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import { cn } from '@/lib/helpers'
@@ -29,28 +28,13 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
     },
     {
       icon: (
-        <motion.div
-          animate={
-            isPlaying
-              ? {
-                  scale: [1, 1.1, 1],
-                }
-              : {
-                  scale: 1,
-                }
-          }
-          transition={
-            isPlaying
-              ? {
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }
-              : {
-                  duration: 0.3,
-                }
-          }
-          className={cn(isPlaying && 'music-rainbow-pulse', isPlaying && 'music-rainbow-wrapper')}
+        <div
+          className={cn(
+            'transition-transform duration-300',
+            isPlaying && 'animate-pulse',
+            isPlaying && 'music-rainbow-pulse',
+            isPlaying && 'music-rainbow-wrapper'
+          )}
         >
           <Music
             className={cn('h-5 w-5 transition-colors', isPlaying && 'opacity-0')}
@@ -62,7 +46,7 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
                   }
             }
           />
-        </motion.div>
+        </div>
       ),
       label: t('appgrid.music'),
       onClick: () => toggleDisplayMode('music'),
@@ -77,7 +61,7 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
   return (
     <div className="flex items-center space-x-4">
       {buttons.map((button, index) => (
-        <motion.div key={index} whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+        <div key={index} className="transition-transform hover:scale-105 active:scale-95">
           <Button
             variant="ghost"
             size="icon"
@@ -87,7 +71,7 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
             {button.icon}
             <span className="sr-only">{button.label}</span>
           </Button>
-        </motion.div>
+        </div>
       ))}
     </div>
   )

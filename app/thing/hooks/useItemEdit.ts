@@ -5,7 +5,7 @@ import { useItemStore } from '@/app/thing/stores/itemStore'
 import { useAreas, useRooms, useSpots } from '../services/api'
 import { apiRequest } from '@/lib/api'
 import { ItemFormData, UploadedImage, Room, Spot, Tag, LocationSelection } from '@/app/thing/types'
-import { useAutoSave } from './useAutoSave'
+import { useAutoSave } from '@/hooks/useAutoSave'
 import { INITIAL_FORM_DATA, AUTO_SAVE_DELAY, ERROR_MESSAGES } from '@/app/thing/constants'
 import {
   convertImagesToUploadedFormat,

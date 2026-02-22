@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea'
 import useFileStore from '../store/useFileStore'
 import type { FileView } from '../types'
 import { useCreateFolder, useFileUpload, useDeleteFiles } from '../hooks/useFileOperations'
-import { useSearchDebounce } from '../hooks/useDebounce'
+import { useSearchDebounce } from '@/hooks/useDebounce'
 import { VIEW_CONFIG, SEARCH_CONFIG } from '../constants'
 
 export default function FileHeader() {

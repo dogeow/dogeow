@@ -18,13 +18,13 @@ export default function GridView({ files }: GridViewProps) {
   const { currentFolderId } = useFileStore()
   const { previewFile, previewType, previewUrl, previewContent, previewItem, closePreview } =
     useFilePreview()
-  const { getSWRKey, toggleSelection, handleItemClick, downloadFile, deleteFile, openEditDialog } =
+  const { getSWRKey, toggleSelection, handleItemClick, downloadFile, deleteFile } =
     useGridViewActions({ currentFolderId })
   const {
-    editingFile,
+    selectedId: editingId,
+    setEditingFile,
     fileName,
     fileDescription,
-    setEditingFile,
     setFileName,
     setFileDescription,
     updateFile,
@@ -42,8 +42,6 @@ export default function GridView({ files }: GridViewProps) {
   const handleEdit = (file: CloudFile, event: React.MouseEvent) => {
     event.stopPropagation()
     setEditingFile(file)
-    setFileName(file.name)
-    setFileDescription(file.description || '')
   }
 
   const handleDelete = (file: CloudFile, event: React.MouseEvent) => {
@@ -69,7 +67,7 @@ export default function GridView({ files }: GridViewProps) {
       </div>
 
       <EditFileDialog
-        file={editingFile}
+        file={editingId != null ? files.find(f => f.id === editingId) || null : null}
         fileName={fileName}
         fileDescription={fileDescription}
         onFileNameChange={setFileName}

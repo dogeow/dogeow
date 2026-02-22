@@ -1,7 +1,6 @@
 import React from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { motion } from 'framer-motion'
 
 interface BackButtonProps {
   onClick: () => void
@@ -11,7 +10,7 @@ interface BackButtonProps {
 
 export function BackButton({ onClick, title = '返回', className = '' }: BackButtonProps) {
   return (
-    <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+    <div className="transition-transform hover:scale-110 active:scale-90">
       <Button
         variant="ghost"
         size="icon"
@@ -22,7 +21,7 @@ export function BackButton({ onClick, title = '返回', className = '' }: BackBu
         <ArrowLeft className="h-4 w-4" />
         <span className="sr-only">{title}</span>
       </Button>
-    </motion.div>
+    </div>
   )
 }
 

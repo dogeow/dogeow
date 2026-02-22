@@ -15,6 +15,7 @@ import { ItemDetailModal } from './components/ItemDetailModal'
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import { useThingFilters } from '@/app/thing/hooks/useThingFilters'
 import { useThingSearch } from '@/app/thing/hooks/useThingSearch'
+import { useFormModal } from '@/hooks/useFormModal'
 import { PageContainer } from '@/components/layout'
 
 // Types
@@ -27,10 +28,16 @@ export default function Thing() {
   // 视图模式状态
   const [viewMode, setViewMode] = useState<ViewMode>('list')
 
-  // 弹窗状态
-  const [modalOpen, setModalOpen] = useState(false)
-  const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
-  const [modalMode, setModalMode] = useState<'view' | 'edit'>('view')
+  // 弹窗状态（抽象到通用 hook）
+  const {
+    open: modalOpen,
+    setOpen: setModalOpen,
+    selectedId: selectedItemId,
+    mode: modalMode,
+    setMode: setModalMode,
+    openModal,
+    closeModal,
+  } = useFormModal<number>('view')
 
   // 使用自定义hooks管理复杂逻辑
   const { filters, updateFilters, clearFilters, hasActiveFilters, currentPage, setCurrentPage } =
@@ -100,22 +107,13 @@ export default function Thing() {
 
   // 导航处理 - 改为弹窗
   const handleItemEdit = useCallback((id: number) => {
-    setSelectedItemId(id)
-    setModalMode('edit')
-    setModalOpen(true)
-  }, [])
+    openModal(id, 'edit')
+  }, [openModal])
 
   const handleItemView = useCallback((id: number) => {
-    setSelectedItemId(id)
-    setModalMode('view')
-    setModalOpen(true)
-  }, [])
+    openModal(id, 'view')
+  }, [openModal])
 
-  const handleModalClose = useCallback(() => {
-    setModalOpen(false)
-    setSelectedItemId(null)
-    setModalMode('view')
-  }, [])
 
   const handleItemDeleted = useCallback(() => {
     // 删除后刷新列表

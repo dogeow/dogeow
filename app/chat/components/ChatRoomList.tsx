@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import { useFormModal } from '@/hooks/useFormModal'
 import { Skeleton } from '@/components/ui/skeleton'
 import useChatStore from '@/app/chat/chatStore'
 import { CreateRoomDialog } from './CreateRoomDialog'
@@ -30,9 +31,9 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
     loadRooms,
   } = useChatStore()
 
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [editingRoom, setEditingRoom] = useState<ChatRoom | null>(null)
-  const [deletingRoom, setDeletingRoom] = useState<ChatRoom | null>(null)
+  const createModal = useFormModal<null>('create')
+  const editModal = useFormModal<number>('edit')
+  const deleteModal = useFormModal<number>('delete')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'favorites' | 'recent'>('all')
 
@@ -82,19 +83,19 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
   // 编辑房间
   const handleEditRoom = useCallback((room: ChatRoom, event: React.MouseEvent) => {
     event.stopPropagation()
-    setEditingRoom(room)
-  }, [])
+    editModal.openModal(room.id)
+  }, [editModal])
 
   // 删除房间
   const handleDeleteRoom = useCallback((room: ChatRoom, event: React.MouseEvent) => {
     event.stopPropagation()
-    setDeletingRoom(room)
-  }, [])
+    deleteModal.openModal(room.id)
+  }, [deleteModal])
 
   // 打开新建房间弹窗
   const handleCreateRoom = useCallback(() => {
-    setIsCreateDialogOpen(true)
-  }, [])
+    createModal.openModal(null)
+  }, [createModal])
 
   // 刷新房间列表
   const handleRefresh = useCallback(() => {
@@ -149,19 +150,19 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
       </div>
 
       {/* 弹窗 */}
-      <CreateRoomDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
-      {editingRoom && (
+      <CreateRoomDialog open={createModal.open} onOpenChange={createModal.setOpen} />
+      {editModal.selectedId != null && (
         <EditRoomDialog
-          room={editingRoom}
-          open={!!editingRoom}
-          onOpenChange={open => !open && setEditingRoom(null)}
+          room={rooms.find(r => r.id === editModal.selectedId) || null}
+          open={!!editModal.selectedId}
+          onOpenChange={open => !open && editModal.closeModal()}
         />
       )}
-      {deletingRoom && (
+      {deleteModal.selectedId != null && (
         <DeleteRoomDialog
-          room={deletingRoom}
-          open={!!deletingRoom}
-          onOpenChange={open => !open && setDeletingRoom(null)}
+          room={rooms.find(r => r.id === deleteModal.selectedId) || null}
+          open={!!deleteModal.selectedId}
+          onOpenChange={open => !open && deleteModal.closeModal()}
         />
       )}
     </div>

@@ -30,6 +30,17 @@
 
 > 这是目标（部分代码可能还没有改正）
 
+## 构建与分析
+
+项目使用 Next.js 的官方构建命令，脚本在 `package.json` 中配置：
+
+```bash
+npm run build           # 生产构建 (next build)
+npm run analyze         # 生成 bundle 分析报告 (next experimental-analyze)
+```
+
+在 CI 中会额外跑一次 `npm run analyze` 并上传分析报告为构建产物；分析失败不会阻塞流水线。若 `next experimental-analyze` 输出目录有变，需同步修改 CI 中的 artifact path。
+
 ## 其他后续使用
 
 - Vercel

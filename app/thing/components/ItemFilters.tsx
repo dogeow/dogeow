@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, startTransition } from 'react
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import { useFilterPersistenceStore } from '@/app/thing/stores/filterPersistenceStore'
-import { useDebounce } from './filters/hooks/useDebounce'
+import { useDebounce } from '@/hooks/useDebounce'
 import { initialFilters, type FilterState } from './filters/types'
 import { applyFilters, hasActiveFilters, getInitialFilterState } from './filters/utils/filterUtils'
 import { BasicFiltersTabContent } from './filters/components/BasicFiltersTabContent'

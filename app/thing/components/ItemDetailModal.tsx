@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import Modal from '@/components/ui/modal'
 import { Edit, Trash2, Lock, Unlock, X } from 'lucide-react'
 import { format } from 'date-fns'
 import Image from 'next/image'
@@ -32,11 +32,11 @@ import {
 } from '@/app/thing/types'
 import { ItemRelationsDisplay } from './ItemRelationsDisplay'
 import { useAuth } from '@/hooks/useAuth'
-import LoadingState from './LoadingState'
-import AutoSaveStatus from './AutoSaveStatus'
-import UnifiedBasicInfoForm from './forms/UnifiedBasicInfoForm'
-import UnifiedDetailInfoForm from './forms/UnifiedDetailInfoForm'
-import CreateTagDialog from './CreateTagDialog'
+import LoadingState from './item-detail/LoadingState'
+import AutoSaveStatus from './item-detail/AutoSaveStatus'
+import UnifiedBasicInfoForm from './item-detail/forms/UnifiedBasicInfoForm'
+import UnifiedDetailInfoForm from './item-detail/forms/UnifiedDetailInfoForm'
+import CreateTagDialog from './item-detail/CreateTagDialog'
 import {
   convertImagesToUploadedFormat,
   buildLocationPath,
@@ -44,7 +44,7 @@ import {
   hasDataChanged,
 } from '../utils/dataTransform'
 import { INITIAL_FORM_DATA, AUTO_SAVE_DELAY } from '../constants'
-import { useAutoSave } from '../hooks/useAutoSave'
+import { useAutoSave } from '@/hooks/useAutoSave'
 import { useAreas, useRooms, useSpots } from '../services/api'
 import { apiRequest } from '@/lib/api'
 
@@ -486,28 +486,29 @@ export function ItemDetailModal({
     // 如果数据还在加载或者item还没有加载完成，显示加载状态
     if (editLoading || !item || loading) {
       return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="flex h-[85vh] w-[calc(100vw-1rem)] max-w-4xl flex-col sm:w-[calc(100vw-2rem)]">
-            <DialogHeader>
-              <DialogTitle className="sr-only">编辑物品</DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 overflow-y-auto">
-              <LoadingState onBack={handleClose} />
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Modal
+          open={open}
+          onOpenChange={onOpenChange}
+          title="编辑物品"
+          contentClassName="flex h-[85vh] w-[calc(100vw-1rem)] max-w-4xl flex-col sm:w-[calc(100vw-2rem)]"
+        >
+          <div className="flex-1 overflow-y-auto">
+            <LoadingState onBack={handleClose} />
+          </div>
+        </Modal>
       )
     }
 
     return (
       <>
-        <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="flex h-[85vh] w-[calc(100vw-1rem)] max-w-4xl flex-col p-0 sm:w-[calc(100vw-2rem)]">
-            <DialogHeader className="sr-only">
-              <DialogTitle>编辑物品{item?.name ? ` - ${item.name}` : ''}</DialogTitle>
-            </DialogHeader>
-            {/* 顶部Tab和X按钮 */}
-            <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
+        <Modal
+          open={open}
+          onOpenChange={onOpenChange}
+          title={`编辑物品${item?.name ? ` - ${item.name}` : ''}`}
+          contentClassName="flex h-[85vh] w-[calc(100vw-1rem)] max-w-4xl flex-col p-0 sm:w-[calc(100vw-2rem)]"
+        >
+          {/* 顶部Tab和X按钮 */}
+          <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
               <Tabs
                 value={activeTab}
                 onValueChange={v => setActiveTab(v as 'basic' | 'details')}
@@ -559,8 +560,7 @@ export function ItemDetailModal({
                 </TabsContent>
               </Tabs>
             </div>
-          </DialogContent>
-        </Dialog>
+        </Modal>
 
         {/* 创建标签对话框 */}
         <CreateTagDialog
@@ -583,34 +583,34 @@ export function ItemDetailModal({
   // 查看模式：显示物品详情
   if (loading) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex h-[85vh] w-[calc(100vw-2rem)] max-w-4xl flex-col">
-          <DialogHeader>
-            <DialogTitle className="sr-only">加载物品详情</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-1 items-center justify-center overflow-y-auto">
-            <LoadingState onBack={handleClose} />
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Modal
+        open={open}
+        onOpenChange={onOpenChange}
+        title="加载物品详情"
+        contentClassName="flex h-[85vh] w-[calc(100vw-2rem)] max-w-4xl flex-col"
+      >
+        <div className="flex flex-1 items-center justify-center overflow-y-auto">
+          <LoadingState onBack={handleClose} />
+        </div>
+      </Modal>
     )
   }
 
   if (error || (!loading && !item)) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="w-[calc(100vw-1rem)] max-w-4xl sm:w-[calc(100vw-2rem)]">
-          <DialogHeader>
-            <DialogTitle className="sr-only">错误</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col items-center justify-center py-12">
-            <p className="mb-4 text-red-500">{error?.message || '物品不存在'}</p>
-            <Button onClick={handleClose} variant="outline">
-              关闭
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <Modal
+        open={open}
+        onOpenChange={onOpenChange}
+        title="错误"
+        contentClassName="w-[calc(100vw-1rem)] max-w-4xl sm:w-[calc(100vw-2rem)]"
+      >
+        <div className="flex flex-col items-center justify-center py-12">
+          <p className="mb-4 text-red-500">{error?.message || '物品不存在'}</p>
+          <Button onClick={handleClose} variant="outline">
+            关闭
+          </Button>
+        </div>
+      </Modal>
     )
   }
 
@@ -618,13 +618,14 @@ export function ItemDetailModal({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex h-[85vh] w-[calc(100vw-2rem)] max-w-4xl flex-col p-0">
-          <DialogHeader className="sr-only">
-            <DialogTitle>物品详情{item.name ? ` - ${item.name}` : ''}</DialogTitle>
-          </DialogHeader>
-          {/* 顶部Tab和X按钮 */}
-          <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
+      <Modal
+        open={open}
+        onOpenChange={onOpenChange}
+        title={`物品详情${item.name ? ` - ${item.name}` : ''}`}
+        contentClassName="flex h-[85vh] w-[calc(100vw-2rem)] max-w-4xl flex-col p-0"
+      >
+        {/* 顶部Tab和X按钮 */}
+        <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
             <Tabs
               value={activeTab}
               onValueChange={v => setActiveTab(v as 'basic' | 'details')}
@@ -728,8 +729,7 @@ export function ItemDetailModal({
               </TabsContent>
             </Tabs>
           </div>
-        </DialogContent>
-      </Dialog>
+      </Modal>
 
       {/* 删除确认对话框 */}
       <DeleteConfirmationDialog

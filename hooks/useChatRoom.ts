@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { usePagination } from '@/hooks/usePagination'
 import { useChatWebSocket } from './useChatWebSocket'
 import type { SendMessageResult } from './chat-websocket/types'
 import { getAuthManager } from '@/lib/websocket'
@@ -66,7 +67,14 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
   const [isLoadingMoreMessages, setIsLoadingMoreMessages] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasMoreMessages, setHasMoreMessages] = useState(true)
-  const [currentPage, setCurrentPage] = useState(1)
+
+  // pagination helper for message pages
+  const {
+    currentPage,
+    setPage: setCurrentPage,
+    reset: resetPage,
+    goNext,
+  } = usePagination(1)
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -318,7 +326,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         setCurrentRoom(room)
         setMessages([])
         setOnlineUsers([])
-        setCurrentPage(1)
+        resetPage()
         setHasMoreMessages(true)
         isInitialLoad.current = true
 

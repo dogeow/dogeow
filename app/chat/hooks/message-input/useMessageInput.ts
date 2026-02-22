@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { toast } from '@/components/ui/use-toast'
-import { useDebounce } from 'use-debounce'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useTranslation } from '@/hooks/useTranslation'
 import useChatStore from '@/app/chat/chatStore'
 import {
@@ -35,7 +35,7 @@ export function useMessageInput({
   const { currentRoom, checkMuteStatus, muteUntil } = useChatStore()
 
   // 防抖消息用于自动保存
-  const [debouncedMessage] = useDebounce(message, DEBOUNCE_DELAY)
+  const debouncedMessage = useDebounce(message, DEBOUNCE_DELAY)
 
   // 自动调整文本框高度
   const adjustTextareaHeight = useCallback(() => {
