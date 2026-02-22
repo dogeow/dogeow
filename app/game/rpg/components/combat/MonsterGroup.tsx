@@ -2,7 +2,6 @@
 
 import { type CombatMonster, type SkillUsedEntry } from '../../types'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import Image from 'next/image'
 import { MonsterIcon } from './MonsterIcon'
 import { MonsterInfoDialog } from './MonsterInfoDialog'
 import styles from '../../rpg.module.css'
@@ -59,30 +58,8 @@ export function MonsterGroup({
   const [deadMonsters, setDeadMonsters] = useState<Set<string>>(new Set())
   // 记录需要显示出现动画的怪物 instance_id（仅当前会话使用，不从 sessionStorage 初始化）
   const [appearingMonsters, setAppearingMonsters] = useState<Set<string>>(new Set())
-  // 技能图标显示状态：position -> skill info
-  const [skillIcons, setSkillIcons] = useState<
-    Record<number, { skillId: number; icon: string | null; name: string }>
-  >({})
   // 记录需要显示被攻击后退动画的怪物 position
   const [hitMonsters, setHitMonsters] = useState<Set<number>>(new Set())
-
-  // 当有新技能使用时，在目标怪物上显示技能图标（queueMicrotask 避免 effect 内同步 setState）
-  useEffect(() => {
-    if (skillUsed && skillTargetPositions && skillTargetPositions.length > 0) {
-      const newIcons: Record<number, { skillId: number; icon: string | null; name: string }> = {}
-      skillTargetPositions.forEach(pos => {
-        newIcons[pos] = {
-          skillId: skillUsed.skill_id,
-          icon: skillUsed.icon ?? null,
-          name: skillUsed.name,
-        }
-      })
-      queueMicrotask(() => setSkillIcons(newIcons))
-      // 1.5秒后清除技能图标
-      const timer = setTimeout(() => setSkillIcons({}), 1500)
-      return () => clearTimeout(timer)
-    }
-  }, [skillUsed, skillTargetPositions])
 
   const handleMonsterClick = (m: MonsterWithMeta) => {
     setSelectedMonster(m)
@@ -248,7 +225,6 @@ export function MonsterGroup({
           // 使用 position 作为 key 来区分同一波中的不同怪物实例
           const monsterKey = `pos-${m.position}`
           const isDead = (m.hp ?? 0) <= 0 && deadMonsters.has(monsterKey)
-          const skillIcon = skillIcons[pos]
           const isHit = m.position != null && hitMonsters.has(m.position)
 
           // 使用 instance_id 作为 key，这样新怪物出现时会重新创建元素触发动画
@@ -260,24 +236,6 @@ export function MonsterGroup({
               className={`relative flex cursor-pointer flex-col items-center gap-0.5 transition-opacity hover:opacity-80 ${isNew ? styles['monster-appear'] : ''} ${isDead ? styles['monster-death'] : ''} ${isHit ? styles['monster-hit'] : ''}`}
               title={`点击查看 ${m.name} 详情`}
             >
-              {/* 技能图标 - 显示在被命中的怪物图片上 */}
-              {skillIcon && (
-                <span className="absolute top-1/2 left-1/2 z-20 h-10 w-10 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-lg bg-blue-500/90 p-1 shadow-lg sm:h-12 sm:w-12">
-                  {skillIcon.icon && skillIcon.icon.length <= 4 ? (
-                    <span className="flex h-full w-full items-center justify-center text-base font-bold text-white sm:text-lg">
-                      {skillIcon.icon}
-                    </span>
-                  ) : (
-                    <Image
-                      src={`/game/rpg/skills/skill_${skillIcon.skillId}.png`}
-                      alt={skillIcon.name}
-                      fill
-                      className="rounded object-cover"
-                      sizes="48px"
-                    />
-                  )}
-                </span>
-              )}
               {damage !== undefined && (
                 <span className="absolute -top-5 text-xs font-bold text-red-500 sm:text-sm">
                   -{damage}
