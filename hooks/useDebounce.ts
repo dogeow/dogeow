@@ -25,20 +25,12 @@ export function useDebounce<T>(value: T, delay: number = 300): T {
 /**
  * 搜索专用防抖逻辑，带最小长度判断
  */
-export function useSearchDebounce(
-  searchQuery: string,
-  delay: number = 300,
-  minLength: number = 1
-) {
+export function useSearchDebounce(searchQuery: string, delay: number = 300, minLength: number = 1) {
   const debouncedQuery = useDebounce(searchQuery, delay)
 
-  const isSearching = useMemo(
-    () => searchQuery !== debouncedQuery,
-    [searchQuery, debouncedQuery]
-  )
+  const isSearching = useMemo(() => searchQuery !== debouncedQuery, [searchQuery, debouncedQuery])
 
-  const effectiveQuery =
-    debouncedQuery.length >= minLength ? debouncedQuery : ''
+  const effectiveQuery = debouncedQuery.length >= minLength ? debouncedQuery : ''
 
   return {
     debouncedQuery: effectiveQuery,

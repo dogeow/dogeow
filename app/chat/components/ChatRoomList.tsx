@@ -81,16 +81,22 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
   )
 
   // 编辑房间
-  const handleEditRoom = useCallback((room: ChatRoom, event: React.MouseEvent) => {
-    event.stopPropagation()
-    editModal.openModal(room.id)
-  }, [editModal])
+  const handleEditRoom = useCallback(
+    (room: ChatRoom, event: React.MouseEvent) => {
+      event.stopPropagation()
+      editModal.openModal(room.id)
+    },
+    [editModal]
+  )
 
   // 删除房间
-  const handleDeleteRoom = useCallback((room: ChatRoom, event: React.MouseEvent) => {
-    event.stopPropagation()
-    deleteModal.openModal(room.id)
-  }, [deleteModal])
+  const handleDeleteRoom = useCallback(
+    (room: ChatRoom, event: React.MouseEvent) => {
+      event.stopPropagation()
+      deleteModal.openModal(room.id)
+    },
+    [deleteModal]
+  )
 
   // 打开新建房间弹窗
   const handleCreateRoom = useCallback(() => {
@@ -153,14 +159,14 @@ export function ChatRoomList({ onRoomSelect, showHeader = true }: ChatRoomListPr
       <CreateRoomDialog open={createModal.open} onOpenChange={createModal.setOpen} />
       {editModal.selectedId != null && (
         <EditRoomDialog
-          room={rooms.find(r => r.id === editModal.selectedId) || null}
+          room={rooms.find(r => r.id === editModal.selectedId)!}
           open={!!editModal.selectedId}
           onOpenChange={open => !open && editModal.closeModal()}
         />
       )}
       {deleteModal.selectedId != null && (
         <DeleteRoomDialog
-          room={rooms.find(r => r.id === deleteModal.selectedId) || null}
+          room={rooms.find(r => r.id === deleteModal.selectedId)!}
           open={!!deleteModal.selectedId}
           onOpenChange={open => !open && deleteModal.closeModal()}
         />

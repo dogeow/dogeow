@@ -1,5 +1,3 @@
-import { Text } from 'slate'
-
 // 标准化tokens，使其扁平化并按行分组
 export const normalizeTokens = (tokens: unknown[]): { types: string[]; content: string }[][] => {
   const normalizedTokens: { types: string[]; content: string }[][] = [[]]
@@ -36,10 +34,9 @@ export const normalizeTokens = (tokens: unknown[]): { types: string[]; content: 
   return normalizedTokens
 }
 
-// 计算装饰范围
+// 计算装饰范围（预留接口，目前未实现）
 export const getTokensForCodeBlock = (node: unknown): unknown[] => {
-  if (!Text.isText(node)) return []
-  // 目前未实现，预留接口
+  if (!node || typeof node !== 'object' || !('text' in node)) return []
   return []
 }
 

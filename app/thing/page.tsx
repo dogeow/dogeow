@@ -106,14 +106,19 @@ export default function Thing() {
   }, [setSearchTerm, clearFilters, fetchItems])
 
   // 导航处理 - 改为弹窗
-  const handleItemEdit = useCallback((id: number) => {
-    openModal(id, 'edit')
-  }, [openModal])
+  const handleItemEdit = useCallback(
+    (id: number) => {
+      openModal(id, 'edit')
+    },
+    [openModal]
+  )
 
-  const handleItemView = useCallback((id: number) => {
-    openModal(id, 'view')
-  }, [openModal])
-
+  const handleItemView = useCallback(
+    (id: number) => {
+      openModal(id, 'view')
+    },
+    [openModal]
+  )
 
   const handleItemDeleted = useCallback(() => {
     // 删除后刷新列表
@@ -160,7 +165,7 @@ export default function Thing() {
         itemId={selectedItemId}
         open={modalOpen}
         onOpenChange={setModalOpen}
-        mode={modalMode}
+        mode={modalMode as 'view' | 'edit' | undefined}
         onModeChange={setModalMode}
         onItemDeleted={handleItemDeleted}
       />

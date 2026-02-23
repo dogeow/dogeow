@@ -69,12 +69,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
   const [hasMoreMessages, setHasMoreMessages] = useState(true)
 
   // pagination helper for message pages
-  const {
-    currentPage,
-    setPage: setCurrentPage,
-    reset: resetPage,
-    goNext,
-  } = usePagination(1)
+  const { currentPage, setPage: setCurrentPage, reset: resetPage, goNext } = usePagination(1)
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)

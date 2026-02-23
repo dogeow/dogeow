@@ -23,7 +23,6 @@ vi.mock('@/hooks/useTranslation', () => ({
   })),
 }))
 
-
 vi.mock('next/image', () => ({
   __esModule: true,
   default: ({ ...props }: React.ComponentProps<'div'>) => (

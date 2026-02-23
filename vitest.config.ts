@@ -11,13 +11,6 @@ export default defineConfig({
     css: true,
     // Performance optimizations
     pool: 'threads',
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        minThreads: 1,
-        maxThreads: 4,
-      },
-    },
     // Optimize test discovery and execution
     include: ['**/__tests__/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: [

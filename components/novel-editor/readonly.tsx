@@ -170,7 +170,7 @@ const readonlyExtensions = [
   }),
   HighlightExtension,
   TiptapUnderline,
-]
+] as any
 
 interface ReadonlyEditorProps {
   content?: JSONContent | null

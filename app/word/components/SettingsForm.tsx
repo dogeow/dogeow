@@ -69,7 +69,6 @@ export function SettingsForm() {
     }
   }, [settings, setSettings, setInitialData])
 
-
   // trigger auto-save whenever formData changes after initialization
   useEffect(() => {
     if (isInitialized.current) {
@@ -102,7 +101,7 @@ export function SettingsForm() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">学习设置</CardTitle>
           <div className="text-muted-foreground flex items-center gap-1 text-sm">
-              {autoSaving && <LoadingSpinner className="h-3 w-3" />}
+            {autoSaving && <LoadingSpinner className="h-3 w-3" />}
             {saved && <Check className="h-3 w-3 text-green-500" />}
             {(autoSaving || saved) && (
               <span className="text-xs">{autoSaving ? '保存中' : '已保存'}</span>
@@ -122,7 +121,9 @@ export function SettingsForm() {
               min="1"
               max="100"
               value={formData.daily_new_words}
-              onChange={e => setFormData(prev => ({ ...prev, daily_new_words: parseInt(e.target.value) || 10 }))}
+              onChange={e =>
+                setFormData(prev => ({ ...prev, daily_new_words: parseInt(e.target.value) || 10 }))
+              }
             />
           </div>
 
@@ -155,7 +156,9 @@ export function SettingsForm() {
           <Switch
             id="is_auto_pronounce"
             checked={formData.is_auto_pronounce}
-            onCheckedChange={checked => setFormData(prev => ({ ...prev, is_auto_pronounce: checked }))}
+            onCheckedChange={checked =>
+              setFormData(prev => ({ ...prev, is_auto_pronounce: checked }))
+            }
           />
         </div>
       </CardContent>

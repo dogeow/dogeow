@@ -25,7 +25,9 @@ const AvatarImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<H
     // For dicebear SVGs, use unoptimized loading
     const srcString = typeof src === 'string' ? src : ''
     const shouldUnoptimize =
-      srcString.includes('dicebear.com') || srcString.includes('ui-avatars.com') || srcString.includes('robohash.org')
+      srcString.includes('dicebear.com') ||
+      srcString.includes('ui-avatars.com') ||
+      srcString.includes('robohash.org')
 
     // Only render Image if src is a valid string
     if (!srcString) {

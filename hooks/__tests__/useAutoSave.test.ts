@@ -13,9 +13,7 @@ describe('useAutoSave', () => {
 
   it('triggers onSave after the delay when triggered', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined)
-    const { result } = renderHook(() =>
-      useAutoSave<{ foo: string }>({ onSave, delay: 500 })
-    )
+    const { result } = renderHook(() => useAutoSave<{ foo: string }>({ onSave, delay: 500 }))
 
     act(() => {
       result.current.setInitialData({ foo: 'bar' })
@@ -42,9 +40,7 @@ describe('useAutoSave', () => {
 
   it('cancels previous timer when triggerAutoSave is called repeatedly', () => {
     const onSave = vi.fn().mockResolvedValue(undefined)
-    const { result } = renderHook(() =>
-      useAutoSave<{ foo: string }>({ onSave, delay: 500 })
-    )
+    const { result } = renderHook(() => useAutoSave<{ foo: string }>({ onSave, delay: 500 }))
 
     act(() => {
       result.current.setInitialData({ foo: 'baz' })

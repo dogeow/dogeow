@@ -49,7 +49,7 @@ const navItemSchema = z.object({
   is_visible: z.boolean(),
   is_new_window: z.boolean(),
   sort_order: z.coerce.number().int().nonnegative(),
-}) as z.ZodType<FormData>
+})
 
 interface NavFormProps {
   item?: NavItem // 传入 item 表示编辑模式

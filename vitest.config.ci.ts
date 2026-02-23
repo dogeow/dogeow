@@ -10,14 +10,6 @@ export default defineConfig({
     outputFile: {
       junit: './test-results/junit.xml',
     },
-    // Increase parallelism for CI
-    poolOptions: {
-      threads: {
-        singleThread: false,
-        minThreads: 2,
-        maxThreads: 8, // Higher for CI environments
-      },
-    },
     // Stricter timeouts for CI
     testTimeout: 15000,
     hookTimeout: 15000,

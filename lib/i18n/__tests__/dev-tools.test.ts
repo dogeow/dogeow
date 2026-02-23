@@ -282,7 +282,7 @@ describe('dev-tools', () => {
       logTranslationStats()
 
       // Should be sorted: b (3), c (2), a (1)
-      const logCalls = consoleSpy.log.mock.calls
+      const logCalls = consoleSpy.log.mock.calls as Array<[string]>
       const namespaceCalls = logCalls.filter(
         call => call[0] && (call[0] as string).includes(' keys')
       )

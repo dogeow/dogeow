@@ -119,7 +119,7 @@ const previewExtensions = [
     transformPastedText: false,
     transformCopiedText: false,
   }),
-]
+] as any
 
 interface MarkdownPreviewProps {
   content: string
@@ -141,7 +141,7 @@ const MarkdownPreview = ({ content, className }: MarkdownPreviewProps) => {
     if (content && parserEditor) {
       try {
         // 使用编辑器的 setContent 方法和 markdown 扩展来解析
-        parserEditor.commands.setContent(content, false)
+        parserEditor.commands.setContent(content)
 
         // 获取解析后的 JSONContent
         const parsedContent = parserEditor.getJSON()

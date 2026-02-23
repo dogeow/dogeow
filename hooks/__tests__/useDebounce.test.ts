@@ -12,12 +12,9 @@ describe('useDebounce', () => {
   })
 
   it('returns the updated value after the specified delay', () => {
-    const { result, rerender } = renderHook(
-      ({ value, delay }) => useDebounce(value, delay),
-      {
-        initialProps: { value: 'first', delay: 500 },
-      }
-    )
+    const { result, rerender } = renderHook(({ value, delay }) => useDebounce(value, delay), {
+      initialProps: { value: 'first', delay: 500 },
+    })
 
     expect(result.current).toBe('first')
 

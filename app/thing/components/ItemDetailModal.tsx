@@ -509,57 +509,57 @@ export function ItemDetailModal({
         >
           {/* 顶部Tab和X按钮 */}
           <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
-              <Tabs
-                value={activeTab}
-                onValueChange={v => setActiveTab(v as 'basic' | 'details')}
-                className="flex-1"
-              >
-                <TabsList className="grid w-full max-w-md grid-cols-2">
-                  <TabsTrigger value="basic">基本信息</TabsTrigger>
-                  <TabsTrigger value="details">详细信息</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              <div className="flex items-center gap-2">
-                {autoSaving !== undefined && lastSaved !== undefined && (
-                  <AutoSaveStatus autoSaving={autoSaving} lastSaved={lastSaved} />
-                )}
-                <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
+            <Tabs
+              value={activeTab}
+              onValueChange={v => setActiveTab(v as 'basic' | 'details')}
+              className="flex-1"
+            >
+              <TabsList className="grid w-full max-w-md grid-cols-2">
+                <TabsTrigger value="basic">基本信息</TabsTrigger>
+                <TabsTrigger value="details">详细信息</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <div className="flex items-center gap-2">
+              {autoSaving !== undefined && lastSaved !== undefined && (
+                <AutoSaveStatus autoSaving={autoSaving} lastSaved={lastSaved} />
+              )}
+              <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
+                <X className="h-4 w-4" />
+              </Button>
             </div>
+          </div>
 
-            {/* 编辑表单内容 - 可滚动区域 */}
-            <div className="flex-1 overflow-y-auto px-6 pb-6">
-              <Tabs
-                value={activeTab}
-                onValueChange={v => setActiveTab(v as 'basic' | 'details')}
-                className="w-full"
-              >
-                <TabsContent value="basic" className="mt-6 space-y-6">
-                  <UnifiedBasicInfoForm
-                    formData={formData}
-                    setFormData={setFormData}
-                    tags={tags}
-                    selectedTags={selectedTags}
-                    setSelectedTags={setSelectedTags}
-                    setCreateTagDialogOpen={setCreateTagDialogOpen}
-                    categories={categories}
-                    uploadedImages={uploadedImages}
-                    setUploadedImages={setUploadedImages}
-                    locationPath={locationPath}
-                    selectedLocation={selectedLocation}
-                    onLocationSelect={handleLocationSelect}
-                    watchAreaId={watchAreaId}
-                    watchRoomId={watchRoomId}
-                    watchSpotId={watchSpotId}
-                  />
-                </TabsContent>
-                <TabsContent value="details" className="mt-6 space-y-6">
-                  <UnifiedDetailInfoForm formData={formData} setFormData={setFormData} />
-                </TabsContent>
-              </Tabs>
-            </div>
+          {/* 编辑表单内容 - 可滚动区域 */}
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <Tabs
+              value={activeTab}
+              onValueChange={v => setActiveTab(v as 'basic' | 'details')}
+              className="w-full"
+            >
+              <TabsContent value="basic" className="mt-6 space-y-6">
+                <UnifiedBasicInfoForm
+                  formData={formData}
+                  setFormData={setFormData}
+                  tags={tags}
+                  selectedTags={selectedTags}
+                  setSelectedTags={setSelectedTags}
+                  setCreateTagDialogOpen={setCreateTagDialogOpen}
+                  categories={categories}
+                  uploadedImages={uploadedImages}
+                  setUploadedImages={setUploadedImages}
+                  locationPath={locationPath}
+                  selectedLocation={selectedLocation}
+                  onLocationSelect={handleLocationSelect}
+                  watchAreaId={watchAreaId}
+                  watchRoomId={watchRoomId}
+                  watchSpotId={watchSpotId}
+                />
+              </TabsContent>
+              <TabsContent value="details" className="mt-6 space-y-6">
+                <UnifiedDetailInfoForm formData={formData} setFormData={setFormData} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </Modal>
 
         {/* 创建标签对话框 */}
@@ -626,109 +626,109 @@ export function ItemDetailModal({
       >
         {/* 顶部Tab和X按钮 */}
         <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
-            <Tabs
-              value={activeTab}
-              onValueChange={v => setActiveTab(v as 'basic' | 'details')}
-              className="flex-1"
-            >
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="basic">基本信息</TabsTrigger>
-                <TabsTrigger value="details">详细信息</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <div className="flex items-center gap-2">
-              {canEdit && (
-                <>
-                  <Button variant="ghost" size="icon" onClick={handleEdit} className="h-8 w-8">
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
-                    onClick={() => setDeleteDialogOpen(true)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-              <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+          <Tabs
+            value={activeTab}
+            onValueChange={v => setActiveTab(v as 'basic' | 'details')}
+            className="flex-1"
+          >
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="basic">基本信息</TabsTrigger>
+              <TabsTrigger value="details">详细信息</TabsTrigger>
+            </TabsList>
+          </Tabs>
+          <div className="flex items-center gap-2">
+            {canEdit && (
+              <>
+                <Button variant="ghost" size="icon" onClick={handleEdit} className="h-8 w-8">
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
+              <X className="h-4 w-4" />
+            </Button>
           </div>
+        </div>
 
-          {/* 内容区域 - 可滚动区域 */}
-          <div className="flex-1 overflow-y-auto px-6 pb-6">
-            <Tabs
-              value={activeTab}
-              onValueChange={v => setActiveTab(v as 'basic' | 'details')}
-              className="w-full"
-            >
-              {/* 基本信息标签页 */}
-              <TabsContent value="basic" className="mt-6">
+        {/* 内容区域 - 可滚动区域 */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={v => setActiveTab(v as 'basic' | 'details')}
+            className="w-full"
+          >
+            {/* 基本信息标签页 */}
+            <TabsContent value="basic" className="mt-6">
+              <Card className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <StatusBadges item={item} />
+                  <TagsDisplay tags={item.tags || []} />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* 图片展示 */}
+                  <ImageGallery
+                    images={item.images}
+                    itemName={item.name}
+                    activeIndex={activeImageIndex}
+                    onIndexChange={setActiveImageIndex}
+                  />
+
+                  {/* 描述 */}
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <h3 className="text-muted-foreground mb-1 text-sm font-medium">描述</h3>
+                    <p className="text-xs">{item.description || '无描述'}</p>
+                  </div>
+
+                  {/* 基本信息卡片 */}
+                  {(item.quantity > 1 || item.purchase_price || item.purchase_date) && (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {item.quantity > 1 && <InfoCard label="数量" value={item.quantity} />}
+                      {item.purchase_price && (
+                        <InfoCard label="价格" value={`¥${item.purchase_price}`} />
+                      )}
+                      {item.purchase_date && (
+                        <InfoCard label="购买日期" value={formatDate(item.purchase_date)} />
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* 详细信息标签页 */}
+            <TabsContent value="details" className="mt-6">
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* 时间信息 */}
                 <Card className="overflow-hidden">
                   <CardHeader className="pb-3">
-                    <StatusBadges item={item} />
-                    <TagsDisplay tags={item.tags || []} />
+                    <CardTitle>时间信息</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* 图片展示 */}
-                    <ImageGallery
-                      images={item.images}
-                      itemName={item.name}
-                      activeIndex={activeImageIndex}
-                      onIndexChange={setActiveImageIndex}
-                    />
-
-                    {/* 描述 */}
-                    <div className="bg-muted/30 rounded-lg p-3">
-                      <h3 className="text-muted-foreground mb-1 text-sm font-medium">描述</h3>
-                      <p className="text-xs">{item.description || '无描述'}</p>
-                    </div>
-
-                    {/* 基本信息卡片 */}
-                    {(item.quantity > 1 || item.purchase_price || item.purchase_date) && (
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {item.quantity > 1 && <InfoCard label="数量" value={item.quantity} />}
-                        {item.purchase_price && (
-                          <InfoCard label="价格" value={`¥${item.purchase_price}`} />
-                        )}
-                        {item.purchase_date && (
-                          <InfoCard label="购买日期" value={formatDate(item.purchase_date)} />
-                        )}
-                      </div>
-                    )}
+                  <CardContent>
+                    <TimeInfo item={item} />
                   </CardContent>
                 </Card>
-              </TabsContent>
 
-              {/* 详细信息标签页 */}
-              <TabsContent value="details" className="mt-6">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  {/* 时间信息 */}
-                  <Card className="overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <CardTitle>时间信息</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <TimeInfo item={item} />
-                    </CardContent>
-                  </Card>
-
-                  {/* 存放位置 */}
-                  <Card className="overflow-hidden">
-                    <CardHeader className="pb-3">
-                      <CardTitle>存放位置</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <LocationInfo item={item} />
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
+                {/* 存放位置 */}
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <CardTitle>存放位置</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <LocationInfo item={item} />
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </Modal>
 
       {/* 删除确认对话框 */}

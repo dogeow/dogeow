@@ -72,7 +72,6 @@ export function useGridViewActions({
     [mutate, getSWRKey]
   )
 
-
   return useMemo(
     () => ({
       getSWRKey,

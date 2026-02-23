@@ -4,7 +4,13 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { RefreshCw } from 'lucide-react'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Tag } from '@/app/thing/types'
 import { apiRequest } from '@/lib/api'
 import { toast } from 'sonner'
@@ -173,7 +179,12 @@ const CreateTagDialog: React.FC<CreateTagDialogProps> = ({
           </div>
 
           <DialogFooter className="mt-4 gap-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
               取消
             </Button>
             <Button type="submit" disabled={loading}>

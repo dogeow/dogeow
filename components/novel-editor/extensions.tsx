@@ -186,4 +186,4 @@ export const defaultExtensions = [
   CustomKeymap,
   GlobalDragHandle,
   MarkdownCopyExtension,
-]
+] as any

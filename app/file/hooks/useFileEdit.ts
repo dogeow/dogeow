@@ -24,15 +24,8 @@ interface UseFileEditReturn {
 }
 
 export function useFileEdit(): UseFileEditReturn {
-  const {
-    open,
-    selectedId,
-    mode,
-    setOpen,
-    setSelectedId,
-    openModal,
-    closeModal,
-  } = useFormModal<number>('edit')
+  const { open, selectedId, mode, setOpen, setSelectedId, openModal, closeModal } =
+    useFormModal<number>('edit')
 
   const [fileName, setFileName] = useState('')
   const [fileDescription, setFileDescription] = useState('')
@@ -58,7 +51,7 @@ export function useFileEdit(): UseFileEditReturn {
 
   const closeEditDialog = useCallback(() => {
     closeModal()
-    setSelectedId(null)
+    ;(setSelectedId as (id: number | null) => void)(null)
     setFileName('')
     setFileDescription('')
   }, [closeModal, setSelectedId])
