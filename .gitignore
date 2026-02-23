@@ -38,6 +38,7 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+.type-check-error.log
 next-env.d.ts
 
 # 本地环境变量

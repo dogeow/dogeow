@@ -89,11 +89,16 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     if (process.env.NEXT_PUBLIC_REVERB_HOST) {
       return process.env.NEXT_PUBLIC_REVERB_HOST
     }
-    if (typeof window === 'undefined') {
+    if (typeof window !== 'undefined') {
       return window.location.host
     }
-    // 使用当前 host
-    return window.location.host
+    // SSR 分支：从 API URL 解析 host 或使用默认
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    try {
+      return new URL(apiUrl).host
+    } catch {
+      return 'localhost'
+    }
   })()
 
   const config = {
