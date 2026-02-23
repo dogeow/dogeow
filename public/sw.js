@@ -176,6 +176,8 @@ self.addEventListener('message', event => {
 self.addEventListener('push', function (event) {
   if (event.data) {
     const data = event.data.json()
+    // 后端 WebPushNotification 把 url 放在 data 对象里，即 payload.data.url
+    const url = data.url ?? data.data?.url ?? '/'
     const options = {
       body: data.body || 'DogeOW 有新消息',
       icon: data.icon || '/480.png',
@@ -184,7 +186,7 @@ self.addEventListener('push', function (event) {
       data: {
         dateOfArrival: Date.now(),
         primaryKey: '1',
-        url: data.url || '/',
+        url,
       },
       actions: [
         {
