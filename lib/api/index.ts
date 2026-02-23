@@ -288,7 +288,7 @@ export async function apiRequest<T>(
   }
 
   // 处理请求体
-  if (data && ['POST', 'PUT', 'PATCH'].includes(method)) {
+  if (data !== undefined && data !== null && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
     requestOptions.body = isFormData ? data : JSON.stringify(data)
   }
 
@@ -385,6 +385,10 @@ export const patch = <T>(endpoint: string, data: unknown): Promise<T> =>
   apiRequest<T>(endpoint, 'PATCH', data)
 
 export const del = <T>(endpoint: string): Promise<T> => apiRequest<T>(endpoint, 'DELETE')
+
+/** DELETE 请求并携带 body（用于 endpoint 等较长参数） */
+export const delWithBody = <T>(endpoint: string, data: unknown): Promise<T> =>
+  apiRequest<T>(endpoint, 'DELETE', data)
 
 export const uploadFile = <T>(endpoint: string, formData: FormData): Promise<T> =>
   apiRequest<T>(endpoint, 'POST', formData)
