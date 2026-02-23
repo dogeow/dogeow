@@ -174,35 +174,43 @@ self.addEventListener('message', event => {
 
 // 推送通知事件
 self.addEventListener('push', function (event) {
-  if (event.data) {
-    const data = event.data.json()
-    // 后端 WebPushNotification 把 url 放在 data 对象里，即 payload.data.url
-    const url = data.url ?? data.data?.url ?? '/'
-    const options = {
-      body: data.body || 'DogeOW 有新消息',
-      icon: data.icon || '/480.png',
-      badge: '/80.png',
-      vibrate: [100, 50, 100],
-      data: {
-        dateOfArrival: Date.now(),
-        primaryKey: '1',
-        url,
-      },
-      actions: [
-        {
-          action: 'open',
-          title: '打开',
-          icon: '/80.png',
-        },
-        {
-          action: 'close',
-          title: '关闭',
-          icon: '/80.png',
-        },
-      ],
-    }
-    event.waitUntil(self.registration.showNotification(data.title || 'DogeOW', options))
+  if (!event.data) return
+
+  let data
+  try {
+    data = event.data.json()
+  } catch {
+    // payload 可能是纯文本（非 JSON），按纯文本展示
+    const text = event.data.text()
+    event.waitUntil(
+      self.registration.showNotification('DogeOW', {
+        body: text || 'DogeOW 有新消息',
+        icon: '/480.png',
+        badge: '/80.png',
+        data: { url: '/' },
+      })
+    )
+    return
   }
+
+  // 后端 WebPushNotification 把 url 放在 data 对象里，即 payload.data.url
+  const url = data.url ?? data.data?.url ?? '/'
+  const options = {
+    body: data.body || 'DogeOW 有新消息',
+    icon: data.icon || '/480.png',
+    badge: '/80.png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: '1',
+      url,
+    },
+    actions: [
+      { action: 'open', title: '打开', icon: '/80.png' },
+      { action: 'close', title: '关闭', icon: '/80.png' },
+    ],
+  }
+  event.waitUntil(self.registration.showNotification(data.title || 'DogeOW', options))
 })
 
 // 通知点击事件
