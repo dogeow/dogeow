@@ -59,7 +59,7 @@ export function usePushSubscription() {
       const applicationServerKey = base64UrlToUint8Array(publicKey)
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey,
+        applicationServerKey: applicationServerKey as BufferSource,
       })
 
       const payload = subscriptionToPayload(subscription)
@@ -85,7 +85,7 @@ export function usePushSubscription() {
     let cancelled = false
     register().then(ok => {
       if (cancelled) return
-      if (!ok && status === 'loading') setStatus('idle')
+      if (!ok) setStatus('idle')
     })
     return () => {
       cancelled = true

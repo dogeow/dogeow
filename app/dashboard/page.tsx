@@ -7,7 +7,7 @@ import useSWR, { mutate } from 'swr'
 import { getBrowserInfo, getOSInfo } from '@/lib/utils/userAgent'
 import { LoadingState } from '@/components/ui/loading-state'
 import { PageContainer, PageTitle } from '@/components/layout'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { isAdminSync } from '@/lib/auth'
 import {
   Sheet,
