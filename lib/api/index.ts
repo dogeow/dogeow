@@ -408,6 +408,34 @@ const swrOptions = {
 export const fetchCurrentUser = () => get<User>('/user')
 export const useUser = () => useSWR<User>('/user', fetcher, swrOptions)
 
+// 未读通知（拉取时会触发后端「打开时补发汇总推送」）
+export interface UnreadNotificationItem {
+  id: string
+  type: string
+  data: { title?: string; body?: string; url?: string; icon?: string }
+  created_at: string
+}
+
+export interface UnreadNotificationsResponse {
+  count: number
+  items: UnreadNotificationItem[]
+}
+
+export const fetchUnreadNotifications = () =>
+  get<UnreadNotificationsResponse>('notifications/unread')
+
+export const useUnreadNotifications = () =>
+  useSWR<UnreadNotificationsResponse>('notifications/unread', fetcher, {
+    ...swrOptions,
+    revalidateOnFocus: true,
+  })
+
+export const markNotificationRead = (id: string) =>
+  post<{ message: string }>(`notifications/${id}/read`, {})
+
+export const markAllNotificationsRead = () =>
+  post<{ message: string }>('notifications/read-all', {})
+
 // 创建变更函数
 export const createMutation = <T>(endpoint: string, method: string = 'POST') => {
   return async (data: unknown): Promise<T> => {

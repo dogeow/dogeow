@@ -13,6 +13,7 @@ import { LanguageProvider } from '@/components/provider/LanguageProvider'
 import { PWAInstallPrompt } from '@/components/app/PWAInstallPrompt'
 import { PWARegister } from '@/components/app/PWARegister'
 import { PushSubscriptionRegister } from '@/components/app/PushSubscriptionRegister'
+import { UnreadNotificationFetcher } from '@/components/app/UnreadNotificationFetcher'
 import '@/lib/themes/registry' // 初始化主题注册表
 import '@/lib/i18n/log-control'
 
@@ -114,6 +115,7 @@ export default function RootLayout({
                 <PWAInstallPrompt />
                 <PWARegister />
                 <PushSubscriptionRegister />
+                <UnreadNotificationFetcher />
               </LanguageProvider>
             </UIThemeProvider>
           </ThemeProvider>
