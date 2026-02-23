@@ -249,13 +249,30 @@ const reportCombatDebug = (location: string, message: string, data: Record<strin
   }).catch(() => {})
 }
 
+const isGameItem = (data: unknown): data is GameItem => {
+  return !!(
+    data &&
+    typeof data === 'object' &&
+    'id' in data &&
+    'character_id' in data &&
+    'definition_id' in data &&
+    'definition' in data &&
+    'quality' in data &&
+    'quantity' in data
+  )
+}
+
 const normalizeEquipmentResponse = (
   equipmentResponse?: InventoryEquipmentResponse
 ): Record<string, GameItem | null> => {
   const equipment: Record<string, GameItem | null> = {}
   Object.entries(equipmentResponse || {}).forEach(([slot, data]) => {
-    equipment[slot] =
-      data && typeof data === 'object' && 'item' in data ? (data.item ?? null) : (data ?? null)
+    if (data && typeof data === 'object' && 'item' in data) {
+      const item = data.item
+      equipment[slot] = isGameItem(item) ? item : null
+      return
+    }
+    equipment[slot] = isGameItem(data) ? data : null
   })
   return equipment
 }

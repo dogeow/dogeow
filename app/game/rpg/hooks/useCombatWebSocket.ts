@@ -315,7 +315,7 @@ export function useCombatWebSocket(characterId: number | null) {
       subscribedCharacterIdRef.current = null
       setIsConnected(false)
     }
-  }, [characterId, resubscribe])
+  }, [characterId, resubscribe, sendHeartbeat])
 
   // 返回连接状态，供 UI 显示（可选）
   return { isConnected, authError }

@@ -275,7 +275,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         setIsLoadingMoreMessages(false)
       }
     },
-    [apiCall, messagesPerPage, onError]
+    [apiCall, messagesPerPage, onError, setCurrentPage]
   )
 
   // Load online users
@@ -344,7 +344,17 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         setIsLoading(false)
       }
     },
-    [currentRoom, rooms, connect, onError, apiCall, leaveRoom, loadMessages, loadOnlineUsers]
+    [
+      currentRoom,
+      rooms,
+      connect,
+      onError,
+      apiCall,
+      leaveRoom,
+      loadMessages,
+      loadOnlineUsers,
+      resetPage,
+    ]
   )
 
   // Load more messages (pagination)

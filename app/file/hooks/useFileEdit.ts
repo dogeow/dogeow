@@ -34,6 +34,13 @@ export function useFileEdit(): UseFileEditReturn {
 
   const getSWRKey = `/cloud/files?parent_id=${currentFolderId || ''}`
 
+  const closeEditDialog = useCallback(() => {
+    closeModal()
+    ;(setSelectedId as (id: number | null) => void)(null)
+    setFileName('')
+    setFileDescription('')
+  }, [closeModal, setSelectedId])
+
   const updateFile = useCallback(async () => {
     if (!selectedId || !fileName.trim()) return
     try {
@@ -47,14 +54,7 @@ export function useFileEdit(): UseFileEditReturn {
     } catch {
       toast.error('更新失败')
     }
-  }, [selectedId, fileName, fileDescription, mutate, getSWRKey])
-
-  const closeEditDialog = useCallback(() => {
-    closeModal()
-    ;(setSelectedId as (id: number | null) => void)(null)
-    setFileName('')
-    setFileDescription('')
-  }, [closeModal, setSelectedId])
+  }, [selectedId, fileName, fileDescription, mutate, getSWRKey, closeEditDialog])
 
   const setEditingFile = useCallback(
     (file: CloudFile | null) => {

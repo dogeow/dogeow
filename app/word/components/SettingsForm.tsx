@@ -23,7 +23,6 @@ import { useAutoSave } from '@/hooks/useAutoSave'
 export function SettingsForm() {
   const { data: settings, isLoading } = useWordSettings()
   const { setSettings } = useWordStore()
-  const [saved, setSaved] = useState(false)
   const [formData, setFormData] = useState({
     daily_new_words: 10,
     review_multiplier: 2,
@@ -33,7 +32,6 @@ export function SettingsForm() {
 
   const saveSettings = useCallback(
     async (data: typeof formData) => {
-      setSaved(false)
       try {
         const result = await updateWordSettings(data)
         if (result.setting) {
@@ -62,10 +60,13 @@ export function SettingsForm() {
         review_multiplier: settings.review_multiplier,
         is_auto_pronounce: settings.is_auto_pronounce,
       }
-      setFormData(newData)
-      setSettings(settings)
-      isInitialized.current = true
-      setInitialData(newData)
+      const rafId = requestAnimationFrame(() => {
+        setFormData(newData)
+        setSettings(settings)
+        isInitialized.current = true
+        setInitialData(newData)
+      })
+      return () => cancelAnimationFrame(rafId)
     }
   }, [settings, setSettings, setInitialData])
 
@@ -76,14 +77,7 @@ export function SettingsForm() {
     }
   }, [formData, triggerAutoSave])
 
-  // show saved indicator when lastSaved updates
-  useEffect(() => {
-    if (lastSaved) {
-      setSaved(true)
-      const timer = setTimeout(() => setSaved(false), 2000)
-      return () => clearTimeout(timer)
-    }
-  }, [lastSaved])
+  const saved = !autoSaving && Boolean(lastSaved)
 
   if (isLoading) {
     return (
