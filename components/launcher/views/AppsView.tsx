@@ -5,6 +5,7 @@ import { AppGrid } from '../AppGrid'
 import { SearchBar } from '../SearchBar'
 import { LogoButton } from '../common/LogoButton'
 import { UserButton } from './UserButton'
+import { NotificationDropdown } from '@/components/app/NotificationDropdown'
 import { useFilterPersistenceStore } from '@/app/thing/stores/filterPersistenceStore'
 
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
@@ -58,7 +59,7 @@ export function AppsView({
         </div>
       )}
 
-      {/* 右侧：搜索和用户 */}
+      {/* 右侧：搜索、通知、用户 */}
       <div
         className={`flex items-center gap-3 ${searchManager.isSearchVisible ? 'flex-1 justify-between' : 'ml-auto'}`}
       >
@@ -70,6 +71,9 @@ export function AppsView({
           onToggleSearch={searchManager.toggleSearch}
           currentApp={searchManager.currentApp}
         />
+
+        {/* 通知铃铛 */}
+        {!(searchManager.isSearchVisible && !searchManager.isHomePage) && <NotificationDropdown />}
 
         {/* 用户按钮 */}
         {!(searchManager.isSearchVisible && !searchManager.isHomePage) && (

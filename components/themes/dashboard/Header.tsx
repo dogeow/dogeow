@@ -2,9 +2,11 @@
 
 import { useUITheme } from '@/components/themes/UIThemeProvider'
 import { AppLauncher } from '@/components/launcher'
-import { Search, Bell, Menu } from 'lucide-react'
+import { Search, Menu } from 'lucide-react'
 import { useState } from 'react'
 import { useThemeStore } from '@/stores/themeStore'
+import { NotificationDropdown } from '@/components/app/NotificationDropdown'
+import useAuthStore from '@/stores/authStore'
 
 /**
  * Dashboard 主题的 Header 组件
@@ -14,6 +16,7 @@ export default function DashboardHeader() {
   const theme = useUITheme()
   const { currentUITheme, setCurrentUITheme } = useThemeStore()
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
 
   if (!theme) return null
 
@@ -55,14 +58,8 @@ export default function DashboardHeader() {
 
       {/* 右侧：通知和用户菜单 */}
       <div className="flex items-center gap-2">
-        {/* 通知图标 */}
-        <button
-          className="hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
-          aria-label="通知"
-        >
-          <Bell className="h-5 w-5" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
-        </button>
+        {/* 通知下拉列表 */}
+        <NotificationDropdown />
 
         {/* 用户菜单 */}
         {theme.layout.header.showUserMenu && (
