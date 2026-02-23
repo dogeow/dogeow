@@ -412,7 +412,13 @@ export const useUser = () => useSWR<User>('/user', fetcher, swrOptions)
 export interface UnreadNotificationItem {
   id: string
   type: string
-  data: { title?: string; body?: string; url?: string; icon?: string }
+  data: {
+    title?: string
+    body?: string
+    url?: string
+    icon?: string
+    notification_id?: string
+  }
   created_at: string
 }
 

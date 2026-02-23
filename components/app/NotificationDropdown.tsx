@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import useSWR from 'swr'
 import { get, post } from '@/lib/api'
 import type { UnreadNotificationsResponse } from '@/lib/api'
-import { Bell, X } from 'lucide-react'
+import { Bell } from 'lucide-react'
 import { toast } from 'sonner'
 
 const fetcher = (url: string) => get<UnreadNotificationsResponse>(url)
@@ -96,15 +96,6 @@ export function NotificationDropdown() {
                 >
                   <div className="flex w-full items-center justify-between">
                     <span className="font-medium">{item.data.title || '通知'}</span>
-                    {item.data.notification_id && (
-                      <X
-                        onClick={e => {
-                          e.stopPropagation()
-                          handleMarkRead(item.id, item.data.url || '/')
-                        }}
-                        className="text-muted-foreground h-4 w-4 hover:text-foreground"
-                      />
-                    )}
                   </div>
                   {item.data.body && (
                     <span className="text-muted-foreground line-clamp-2 text-sm">
