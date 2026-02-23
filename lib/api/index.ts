@@ -6,10 +6,22 @@ import useAuthStore from '../../stores/authStore'
 import type { User, ApiError } from '@/app'
 import { toast } from 'sonner'
 
-// 在客户端自动使用当前 origin（支持 Tailscale 等外部访问）
+// 判断是否是 IP 地址（支持 IPv4 和 IPv6，用于 Tailscale 等场景）
+const isIpAddress = (host: string): boolean => {
+  // IPv4 正则
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
+  // IPv6 正则（简化版本）
+  const ipv6Regex = /^(\[?[a-fA-F0-9:]+:?)+\]?$/
+
+  return ipv4Regex.test(host) || ipv6Regex.test(host)
+}
+
+// 在客户端如果是 IP 访问则使用当前 origin（支持 Tailscale 等外部访问），否则使用环境变量
 export const API_URL =
   typeof window !== 'undefined'
-    ? window.location.origin.replace(':3000', ':8000')
+    ? isIpAddress(window.location.hostname)
+      ? window.location.origin.replace(':3000', ':8000')
+      : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000')
     : (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000')
 
 // 自定义API错误类

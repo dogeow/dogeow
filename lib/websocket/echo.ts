@@ -84,18 +84,16 @@ export function createEchoInstance(): Echo<'reverb'> | null {
       ? 443
       : 8080
 
-  // 自动判断 WebSocket 主机：本地访问用域名，其他用当前 host
+  // WebSocket 主机：优先使用环境变量配置的值
   const wsHost = (() => {
+    if (process.env.NEXT_PUBLIC_REVERB_HOST) {
+      return process.env.NEXT_PUBLIC_REVERB_HOST
+    }
     if (typeof window === 'undefined') {
-      return process.env.NEXT_PUBLIC_REVERB_HOST || 'ws.game.dogeow.com'
+      return window.location.host
     }
-    const currentHost = window.location.host
-    // localhost 或 127.0.0.1 使用默认域名
-    if (currentHost.includes('localhost') || currentHost.includes('127.0.0.1')) {
-      return process.env.NEXT_PUBLIC_REVERB_HOST || 'ws.game.dogeow.com'
-    }
-    // 其他情况（IP/Tailscale）使用当前 host
-    return currentHost.split(':')[0]
+    // 使用当前 host
+    return window.location.host
   })()
 
   const config = {
