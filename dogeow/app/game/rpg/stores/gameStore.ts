@@ -13,7 +13,6 @@ import {
   CombatLogDetail,
   GameItem,
   CharacterSkill,
-  SkillDefinition,
   SkillWithLearnedState,
   MapDefinition,
   CharacterMap,
@@ -27,7 +26,7 @@ import {
   GameLootDroppedEvent,
   GameLevelUpEvent,
 } from '../types'
-import { apiGet, post, put, del, ApiRequestError } from '@/lib/api'
+import { apiGet, post, put, del } from '@/lib/api'
 import { soundManager } from '../utils/soundManager'
 
 /** 进入地图接口响应 */
@@ -147,7 +146,6 @@ interface GameState {
   startCombat: () => Promise<void>
   revive: () => Promise<void>
   stopCombat: () => Promise<void>
-  executeCombat: () => Promise<void>
   setShouldAutoCombat: (should: boolean) => void // 设置是否应该自动战斗
   /** 已启用的技能 id 列表，可多选；自动战斗时会按顺序尝试施放 */
   enabledSkillIds: number[]
@@ -220,6 +218,141 @@ const initialState = {
   compendiumMonsterDrops: null,
 }
 
+type CombatLogEntry = CombatResult | CombatLog
+
+type InventoryEquipmentResponse = Record<
+  string,
+  { slot?: string; item?: GameItem | null } | GameItem | null
+>
+
+const COMBAT_DEBUG_ENDPOINT = 'http://127.0.0.1:7242/ingest/ac3282d5-f86a-44d0-8cac-a78210bb3b66'
+const COMBAT_DEBUG_HEADERS = {
+  'Content-Type': 'application/json',
+  'X-Debug-Session-Id': '7eb03a',
+}
+const COMBAT_DEBUG_BASE = {
+  sessionId: '7eb03a',
+  hypothesisId: 'H1',
+}
+
+const reportCombatDebug = (location: string, message: string, data: Record<string, unknown>) => {
+  fetch(COMBAT_DEBUG_ENDPOINT, {
+    method: 'POST',
+    headers: COMBAT_DEBUG_HEADERS,
+    body: JSON.stringify({
+      ...COMBAT_DEBUG_BASE,
+      location,
+      message,
+      data,
+      timestamp: Date.now(),
+    }),
+  }).catch(() => {})
+}
+
+const isGameItem = (data: unknown): data is GameItem => {
+  return !!(
+    data &&
+    typeof data === 'object' &&
+    'id' in data &&
+    'character_id' in data &&
+    'definition_id' in data &&
+    'definition' in data &&
+    'quality' in data &&
+    'quantity' in data
+  )
+}
+
+const normalizeEquipmentResponse = (
+  equipmentResponse?: InventoryEquipmentResponse
+): Record<string, GameItem | null> => {
+  const equipment: Record<string, GameItem | null> = {}
+  Object.entries(equipmentResponse || {}).forEach(([slot, data]) => {
+    if (data && typeof data === 'object' && 'item' in data) {
+      const item = data.item
+      equipment[slot] = isGameItem(item) ? item : null
+      return
+    }
+    equipment[slot] = isGameItem(data) ? data : null
+  })
+  return equipment
+}
+
+const extractCombatLogId = (log: CombatLogEntry | GameCombatUpdateEvent): number | null => {
+  if ('id' in log && typeof log.id === 'number') return log.id
+  if ('combat_log_id' in log && typeof log.combat_log_id === 'number') return log.combat_log_id
+  return null
+}
+
+const mergeCombatLogsWithUpdate = (
+  logs: CombatLogEntry[],
+  update: GameCombatUpdateEvent
+): CombatLogEntry[] => {
+  const updateLogId = extractCombatLogId(update)
+  if (updateLogId == null) {
+    return logs
+  }
+
+  const existingLogIds = new Set<number>(
+    logs.map(log => extractCombatLogId(log)).filter((id): id is number => id != null)
+  )
+  if (existingLogIds.has(updateLogId)) {
+    return logs
+  }
+
+  const normalizedLog = { ...update, id: updateLogId } as CombatLogEntry
+  return [normalizedLog, ...logs].slice(0, 100)
+}
+
+const hasPotionUsage = (update: GameCombatUpdateEvent): boolean => {
+  const potionUsed = update.potion_used
+  return !!(
+    potionUsed &&
+    ((potionUsed.before && Object.keys(potionUsed.before).length > 0) ||
+      (potionUsed.after && Object.keys(potionUsed.after).length > 0))
+  )
+}
+
+type SetGameState = (updater: (state: GameState) => GameState | Partial<GameState>) => void
+
+const getSelectedCharacterIdOrAbort = (
+  getState: () => GameState,
+  setState: SetGameState,
+  options: { context: string; stopLoading?: boolean; warn?: boolean }
+): number | null => {
+  const { context, stopLoading = true, warn = true } = options
+  const selectedId = getState().selectedCharacterId
+  if (selectedId) return selectedId
+
+  if (warn) {
+    console.warn(`[GameStore] ${context} - no character selected, skipping`)
+  }
+  if (stopLoading) {
+    setState(state => ({ ...state, isLoading: false }))
+  }
+  return null
+}
+
+const setRequestError = (setState: SetGameState, error: unknown) => {
+  setState(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+}
+
+const startRequest = (setState: SetGameState, extra: Partial<GameState> = {}) => {
+  setState(state => ({ ...state, isLoading: true, error: null, ...extra }))
+}
+
+const patchCharacter = (
+  character: GameCharacter | null,
+  patch: Partial<GameCharacter>
+): GameCharacter | null => (character ? { ...character, ...patch } : null)
+
+const withUpdatedCopper = (character: GameCharacter | null, copper: number): GameCharacter | null =>
+  patchCharacter(character, { copper })
+
+const withCombatFlag = (state: GameState, isFighting: boolean): Partial<GameState> => ({
+  isFighting,
+  character: patchCharacter(state.character, { is_fighting: isFighting }),
+})
+
 const store: StateCreator<GameState> = (set, get) => ({
   ...initialState,
 
@@ -249,9 +382,8 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   selectCharacter: async characterId => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      console.log('[GameStore] Selecting character:', characterId)
       // 设置选中的角色ID
       set(state => ({ ...state, selectedCharacterId: characterId }))
       // 更新在线时间
@@ -260,14 +392,13 @@ const store: StateCreator<GameState> = (set, get) => ({
       await get().fetchCharacter()
     } catch (error) {
       console.error('[GameStore] Select character error:', error)
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   fetchCharacter: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      console.log('[GameStore] Fetching character...')
       const selectedId = get().selectedCharacterId
       const params = selectedId ? `?character_id=${selectedId}` : ''
       const response = (await apiGet(`/rpg/character${params}`)) as {
@@ -278,7 +409,6 @@ const store: StateCreator<GameState> = (set, get) => ({
         current_hp?: number
         current_mana?: number
       }
-      console.log('[GameStore] Character response:', response)
       set(state => ({
         ...state,
         character: response.character,
@@ -291,12 +421,12 @@ const store: StateCreator<GameState> = (set, get) => ({
       }))
     } catch (error) {
       console.error('[GameStore] Fetch character error:', error)
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   createCharacter: async (name, characterClass, gender = 'male') => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
       const response = (await post('/rpg/character', {
         name,
@@ -315,12 +445,12 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   deleteCharacter: async characterId => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
       await del(`/rpg/character?character_id=${characterId}`)
       set(state => {
@@ -350,19 +480,21 @@ const store: StateCreator<GameState> = (set, get) => ({
           isLoading: false,
         }
       })
+      // 删除角色后清除 localStorage 中的游戏状态
+      useGameStore.persist.clearStorage()
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   allocateStats: async stats => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'allocateStats',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await put('/rpg/character/stats', {
         ...stats,
         character_id: selectedId,
@@ -383,14 +515,14 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   setDifficulty: async difficultyTier => {
     const selectedId = get().selectedCharacterId
     if (selectedId == null) return
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
       const response = (await put('/rpg/character/difficulty', {
         character_id: selectedId,
@@ -404,7 +536,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
@@ -438,14 +570,10 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   fetchInventory: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        console.warn('[GameStore] fetchInventory - no character selected, skipping')
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, { context: 'fetchInventory' })
+      if (!selectedId) return
       const params = `?character_id=${selectedId}`
       const response = (await apiGet(`/rpg/inventory${params}`)) as {
         inventory: GameItem[]
@@ -454,10 +582,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         inventory_size?: number
         storage_size?: number
       }
-      const equipment: Record<string, GameItem | null> = {}
-      Object.entries(response.equipment || {}).forEach(([slot, data]) => {
-        equipment[slot] = data && 'item' in data ? data.item : null
-      })
+      const equipment = normalizeEquipmentResponse(response.equipment)
       set(state => ({
         ...state,
         inventory: response.inventory || [],
@@ -472,18 +597,18 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   equipItem: async itemId => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'equipItem',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/inventory/equip', {
         item_id: itemId,
         character_id: selectedId,
@@ -515,18 +640,18 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   unequipItem: async slot => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'unequipItem',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/inventory/unequip', {
         slot,
         character_id: selectedId,
@@ -547,18 +672,18 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   socketGem: async (itemId, gemItemId, socketIndex) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'socketGem',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/gems/socket', {
         item_id: itemId,
         gem_item_id: gemItemId,
@@ -583,18 +708,18 @@ const store: StateCreator<GameState> = (set, get) => ({
         }
       })
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   unsocketGem: async (itemId, socketIndex) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'unsocketGem',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/gems/unsocket', {
         item_id: itemId,
         socket_index: socketIndex,
@@ -616,18 +741,18 @@ const store: StateCreator<GameState> = (set, get) => ({
         }
       })
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   sellItem: async (itemId, quantity = 1) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'sellItem',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/inventory/sell', {
         item_id: itemId,
         quantity,
@@ -636,23 +761,23 @@ const store: StateCreator<GameState> = (set, get) => ({
       soundManager.play('gold')
       set(state => ({
         ...state,
-        character: state.character ? { ...state.character, copper: response.copper } : null,
+        character: withUpdatedCopper(state.character, response.copper),
         inventory: state.inventory.filter(i => i.id !== itemId),
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   sellItemsByQuality: async (quality: string) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return { count: 0, total_price: 0 }
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'sellItemsByQuality',
+        warn: false,
+      })
+      if (!selectedId) return { count: 0, total_price: 0 }
       const response = (await post('/rpg/inventory/sell-by-quality', {
         quality,
         character_id: selectedId,
@@ -660,7 +785,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       soundManager.play('gold')
       set(state => ({
         ...state,
-        character: state.character ? { ...state.character, copper: response.copper } : null,
+        character: withUpdatedCopper(state.character, response.copper),
         inventory: state.inventory.filter(
           i =>
             i.quality !== quality || i.definition?.type === 'potion' || i.definition?.type === 'gem'
@@ -669,19 +794,19 @@ const store: StateCreator<GameState> = (set, get) => ({
       }))
       return { count: response.count, total_price: response.total_price }
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
       return { count: 0, total_price: 0 }
     }
   },
 
   moveItem: async (itemId, toStorage, slotIndex) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'moveItem',
+        warn: false,
+      })
+      if (!selectedId) return
       await post('/rpg/inventory/move', {
         item_id: itemId,
         to_storage: toStorage,
@@ -691,18 +816,18 @@ const store: StateCreator<GameState> = (set, get) => ({
       // 重新获取背包
       get().fetchInventory()
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   sortInventory: async sortBy => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'sortInventory',
+        warn: false,
+      })
+      if (!selectedId) return
       await post('/rpg/inventory/sort', {
         sort_by: sortBy,
         character_id: selectedId,
@@ -710,19 +835,15 @@ const store: StateCreator<GameState> = (set, get) => ({
       // 重新获取背包
       get().fetchInventory()
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   fetchSkills: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        console.warn('[GameStore] fetchSkills - no character selected, skipping')
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, { context: 'fetchSkills' })
+      if (!selectedId) return
       const params = `?character_id=${selectedId}`
       const response = (await apiGet(`/rpg/skills${params}`)) as {
         skills: SkillWithLearnedState[]
@@ -743,25 +864,23 @@ const store: StateCreator<GameState> = (set, get) => ({
       set(state => ({
         ...state,
         skills,
-        character: state.character
-          ? { ...state.character, skill_points: response.skill_points }
-          : null,
+        character: patchCharacter(state.character, { skill_points: response.skill_points }),
         enabledSkillIds,
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   learnSkill: async skillId => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'learnSkill',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/skills/learn', {
         skill_id: skillId,
         character_id: selectedId,
@@ -771,9 +890,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         if (!cs) {
           return {
             ...state,
-            character: state.character
-              ? { ...state.character, skill_points: response.skill_points }
-              : null,
+            character: patchCharacter(state.character, { skill_points: response.skill_points }),
             isLoading: false,
           }
         }
@@ -797,9 +914,7 @@ const store: StateCreator<GameState> = (set, get) => ({
         return {
           ...state,
           skills: nextSkills,
-          character: state.character
-            ? { ...state.character, skill_points: response.skill_points }
-            : null,
+          character: patchCharacter(state.character, { skill_points: response.skill_points }),
           enabledSkillIds: newEnabledSkillIds,
           isLoading: false,
         }
@@ -808,19 +923,15 @@ const store: StateCreator<GameState> = (set, get) => ({
         get().fetchSkills()
       }
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   fetchMaps: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        console.warn('[GameStore] fetchMaps - no character selected, skipping')
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, { context: 'fetchMaps' })
+      if (!selectedId) return
       const params = `?character_id=${selectedId}`
       const response = (await apiGet(`/rpg/maps${params}`)) as {
         maps: MapDefinition[]
@@ -837,18 +948,18 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   enterMap: async mapId => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'enterMap',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = await post<EnterMapResponse>('/rpg/maps/' + mapId + '/enter', {
         character_id: selectedId,
       })
@@ -864,18 +975,18 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   teleportToMap: async mapId => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'teleportToMap',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/maps/' + mapId + '/teleport', {
         character_id: selectedId,
       })) as {
@@ -897,20 +1008,18 @@ const store: StateCreator<GameState> = (set, get) => ({
         currentMana: char?.current_mana ?? state.currentMana,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   fetchCombatStatus: async () => {
     try {
-      const selectedId = get().selectedCharacterId
-      console.log('[GameStore] fetchCombatStatus - selectedCharacterId:', selectedId)
-      if (!selectedId) {
-        console.warn('[GameStore] fetchCombatStatus - no character selected, skipping')
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'fetchCombatStatus',
+        stopLoading: false,
+      })
+      if (!selectedId) return
       const params = `?character_id=${selectedId}`
-      console.log('[GameStore] fetchCombatStatus - params:', params)
       const response = (await apiGet(`/rpg/combat/status${params}`)) as {
         is_fighting: boolean
         current_map: MapDefinition | null
@@ -928,7 +1037,6 @@ const store: StateCreator<GameState> = (set, get) => ({
         }
         current_combat_monsters?: (CombatMonster | null)[]
       }
-      console.log('[GameStore] fetchCombatStatus - response:', response)
       const fromStatus =
         response.is_fighting && response.current_combat_monster
           ? {
@@ -961,29 +1069,19 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   fetchCombatLogs: async () => {
     try {
-      console.log('[GameStore] Fetching combat logs...')
-      console.log('[GameStore] Current character:', get().character?.id)
-      console.log('[GameStore] Selected character ID:', get().selectedCharacterId)
-      const selectedId = get().selectedCharacterId
-      console.log('[GameStore] fetchCombatLogs - selectedId:', selectedId)
-      if (!selectedId) {
-        console.warn('[GameStore] fetchCombatLogs - no character selected, skipping')
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'fetchCombatLogs',
+        stopLoading: false,
+      })
+      if (!selectedId) return
       const params = `?character_id=${selectedId}`
-      console.log('[GameStore] fetchCombatLogs - params:', params)
       const response = (await apiGet(`/rpg/combat/logs${params}`)) as {
         logs: CombatLog[]
       }
-      console.log('[GameStore] Combat logs response:', response)
-      console.log('[GameStore] Logs array:', response?.logs)
-      console.log('[GameStore] Logs count:', response?.logs?.length)
-      console.log('[GameStore] First log:', response?.logs?.[0])
       set(state => ({
         ...state,
         combatLogs: response.logs || [],
       }))
-      console.log('[GameStore] Combat logs state updated')
     } catch (error) {
       console.error('[GameStore] Fetch combat logs error:', error)
     }
@@ -992,15 +1090,16 @@ const store: StateCreator<GameState> = (set, get) => ({
   // 获取单条战斗日志详情
   fetchCombatLogDetail: async (logId: number) => {
     try {
-      const selectedId = get().selectedCharacterId
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'fetchCombatLogDetail',
+        stopLoading: false,
+        warn: false,
+      })
       if (!selectedId) return
       const params = `?character_id=${selectedId}`
-      console.log('[GameStore] Fetching combat log detail, logId:', logId)
       const response = (await apiGet(`/rpg/combat/logs/${logId}${params}`)) as {
         log: CombatLogDetail
       }
-      console.log('[GameStore] Combat log detail response:', response)
-      console.log('[GameStore] Combat log detail log:', response.log)
       set(state => ({
         ...state,
         combatLogDetail: response.log || null,
@@ -1019,103 +1118,69 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   startCombat: async () => {
-    set(state => ({ ...state, isLoading: true, error: null, combatResult: null }))
+    startRequest(set, { combatResult: null })
     try {
-      const selectedId = get().selectedCharacterId
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'startCombat',
+        warn: true,
+      })
       const enabledIds = get().enabledSkillIds
-      if (!selectedId) {
-        console.warn('[GameStore] startCombat - no character selected')
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      if (!selectedId) return
       const body: { character_id: number; skill_ids?: number[] } = { character_id: selectedId }
       if (enabledIds.length > 0) body.skill_ids = enabledIds
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/ac3282d5-f86a-44d0-8cac-a78210bb3b66', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7eb03a' },
-        body: JSON.stringify({
-          sessionId: '7eb03a',
-          location: 'gameStore.ts:startCombat:before',
-          message: 'calling combat/start',
-          data: { characterId: selectedId, skillIds: body.skill_ids },
-          timestamp: Date.now(),
-          hypothesisId: 'H1',
-        }),
-      }).catch(() => {})
-      // #endregion
+      reportCombatDebug('gameStore.ts:startCombat:before', 'calling combat/start', {
+        characterId: selectedId,
+        skillIds: body.skill_ids,
+      })
       const response = await post<{ message?: string }>('/rpg/combat/start', body)
-      // #region agent log
-      fetch('http://127.0.0.1:7242/ingest/ac3282d5-f86a-44d0-8cac-a78210bb3b66', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Debug-Session-Id': '7eb03a' },
-        body: JSON.stringify({
-          sessionId: '7eb03a',
-          location: 'gameStore.ts:startCombat:after',
-          message: 'combat/start success',
-          data: { characterId: selectedId },
-          timestamp: Date.now(),
-          hypothesisId: 'H1',
-        }),
-      }).catch(() => {})
-      // #endregion
+      reportCombatDebug('gameStore.ts:startCombat:after', 'combat/start success', {
+        characterId: selectedId,
+      })
       // 如果是复活（角色已死亡），刷新角色数据
       if (response.message?.includes('复活')) {
         await get().fetchCharacter()
-        // 复活后开始战斗
-        set(state => ({
-          ...state,
-          isFighting: true,
-          character: state.character ? { ...state.character, is_fighting: true } : null,
-          isLoading: false,
-        }))
       } else {
         soundManager.play('combat_start')
-        set(state => ({
-          ...state,
-          isFighting: true,
-          character: state.character ? { ...state.character, is_fighting: true } : null,
-          isLoading: false,
-        }))
       }
+      set(state => ({
+        ...state,
+        ...withCombatFlag(state, true),
+        isLoading: false,
+      }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   /** 复活角色，不自动开始战斗 */
   revive: async () => {
     // 立即清空战斗结果和战斗状态，避免界面继续显示死亡前的怪物
-    set(state => ({
-      ...state,
-      isLoading: true,
-      error: null,
+    startRequest(set, {
       combatResult: null,
       currentCombatMonsterFromStatus: null,
       isFighting: false,
       shouldAutoCombat: false,
-    }))
+    })
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'revive',
+        warn: false,
+      })
+      if (!selectedId) return
       await post('/rpg/combat/start', { character_id: selectedId })
       // 刷新角色数据
       await get().fetchCharacter()
       // 复活后不自动开始战斗，并清空上次战斗结果，避免继续显示怪物头像/HP
       set(state => ({
         ...state,
-        isFighting: false,
+        ...withCombatFlag(state, false),
         shouldAutoCombat: false,
         combatResult: null,
         currentCombatMonsterFromStatus: null,
-        character: state.character ? { ...state.character, is_fighting: false } : null,
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
@@ -1129,149 +1194,11 @@ const store: StateCreator<GameState> = (set, get) => ({
       set(state => ({
         ...state,
         enabledSkillIds: [],
-        isFighting: false,
+        ...withCombatFlag(state, false),
         shouldAutoCombat: false,
         combatResult: null,
         currentCombatMonsterFromStatus: null,
-        character: state.character ? { ...state.character, is_fighting: false } : null,
       }))
-    }
-  },
-
-  executeCombat: async () => {
-    try {
-      const enabledIds = get().enabledSkillIds
-      console.log(
-        '[GameStore] Executing combat...',
-        enabledIds.length ? { skill_ids: enabledIds } : ''
-      )
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        console.warn('[GameStore] executeCombat - no character selected, skipping')
-        return
-      }
-      const body: { character_id: number; skill_ids?: number[] } = { character_id: selectedId }
-      if (enabledIds.length > 0) body.skill_ids = enabledIds
-      const response = (await post('/rpg/combat/execute', body)) as CombatResult
-      console.log('[GameStore] Combat execute response:', response)
-      console.log('[GameStore] response.character?.current_hp:', response.character?.current_hp)
-      console.log('[GameStore] response.character?.current_mana:', response.character?.current_mana)
-
-      // 药水被使用后需要刷新背包
-      const usedPotion =
-        response.potion_used &&
-        ((response.potion_used.before && Object.keys(response.potion_used.before).length > 0) ||
-          (response.potion_used.after && Object.keys(response.potion_used.after).length > 0))
-
-      set(state => {
-        // 使用 combat_log_id 或 id 去重，避免同一日志被多次添加
-        const existingLogIds = new Set<number>(
-          state.combatLogs
-            .map(l => {
-              if ('combat_log_id' in l && typeof l.combat_log_id === 'number')
-                return l.combat_log_id
-              if ('id' in l && typeof l.id === 'number') return l.id
-              return null
-            })
-            .filter((id): id is number => id != null)
-        )
-        // 优先使用 id 字段（从 API 返回的日志），其次使用 combat_log_id（WebSocket 推送的实时数据）
-        const responseLogId =
-          'id' in response && typeof response.id === 'number'
-            ? response.id
-            : 'combat_log_id' in response && typeof response.combat_log_id === 'number'
-              ? response.combat_log_id
-              : null
-
-        // 创建一个带正确 ID 的日志对象
-        const logWithId = responseLogId != null ? { ...response, id: responseLogId } : response
-
-        const newLogs =
-          responseLogId != null && !existingLogIds.has(responseLogId)
-            ? [logWithId, ...state.combatLogs].slice(0, 100)
-            : state.combatLogs
-
-        console.log(
-          '[GameStore] executeCombat - combat_log_id:',
-          responseLogId,
-          'new logs count:',
-          newLogs.length
-        )
-
-        // 总是更新 currentHp 和 currentMana（使用新值或保持旧值）
-        const newCurrentHp = response.character?.current_hp ?? state.currentHp
-        const newCurrentMana = response.character?.current_mana ?? state.currentMana
-        console.log('[GameStore] Setting currentHp to:', newCurrentHp)
-        console.log('[GameStore] Setting currentMana to:', newCurrentMana)
-
-        // 合并角色数据，并保留药水设置（execute 返回的 character 可能未包含或错误覆盖）
-        const potionKeys = [
-          'auto_use_hp_potion',
-          'hp_potion_threshold',
-          'auto_use_mp_potion',
-          'mp_potion_threshold',
-        ] as const
-        const preservedPotion = state.character
-          ? Object.fromEntries(
-              potionKeys
-                .filter(k => state.character![k] !== undefined)
-                .map(k => [k, state.character![k]])
-            )
-          : {}
-        const mergedCharacter =
-          response.character != null
-            ? state.character != null
-              ? { ...state.character, ...response.character, ...preservedPotion }
-              : { ...response.character, ...preservedPotion }
-            : state.character
-
-        return {
-          ...state,
-          combatResult: response,
-          combatLogs: newLogs,
-          character: mergedCharacter,
-          currentHp: newCurrentHp,
-          currentMana: newCurrentMana,
-          inventory: response.loot?.item
-            ? [...state.inventory, response.loot.item as GameItem]
-            : state.inventory,
-          // 战败时自动停止战斗
-          ...(response.auto_stopped && {
-            isFighting: false,
-            shouldAutoCombat: false,
-          }),
-        }
-      })
-
-      // 检测到使用药水时刷新背包（药水被消耗了）
-      if (usedPotion) {
-        await get().fetchInventory()
-      }
-
-      // 战败时播放音效（弹窗由 CombatPanel 组件处理）
-      if (response.auto_stopped) {
-        soundManager.play('combat_defeat')
-      }
-    } catch (error) {
-      console.error('[GameStore] Execute combat error:', error)
-
-      // 检查是否是血量不足导致的自动停止
-      if (error instanceof ApiRequestError) {
-        const errorData = error.data as { auto_stopped?: boolean; current_hp?: number } | undefined
-        if (errorData?.auto_stopped) {
-          console.log('[GameStore] Combat auto-stopped due to low HP')
-          soundManager.play('combat_defeat')
-          set(state => ({
-            ...state,
-            isFighting: false,
-            shouldAutoCombat: false,
-            currentHp: errorData.current_hp ?? 0,
-            error: error.message || '角色血量不足，已自动停止战斗',
-          }))
-          return
-        }
-      }
-      set(state => ({ ...state, error: (error as Error).message }))
     }
   },
 
@@ -1309,13 +1236,13 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   consumePotion: async (itemId: number) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'consumePotion',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/inventory/use-potion', {
         item_id: itemId,
         character_id: selectedId,
@@ -1337,7 +1264,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       }))
       // 背包由 WebSocket inventory.update 推送更新
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
@@ -1345,7 +1272,6 @@ const store: StateCreator<GameState> = (set, get) => ({
   // 处理怪物出现事件
   handleMonstersAppear: data => {
     const typedData = data as GameMonstersAppearEvent
-    console.log('[GameStore] handleMonstersAppear:', typedData)
     if (!get().isFighting) return
 
     const currentHp = typedData.character?.current_hp ?? get().currentHp
@@ -1374,12 +1300,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       soundManager.play('combat_hit')
     }
 
-    // 药水被使用后需要刷新背包
-    const potionUsed = typedData.potion_used
-    const usedPotion =
-      potionUsed &&
-      ((potionUsed.before && Object.keys(potionUsed.before).length > 0) ||
-        (potionUsed.after && Object.keys(potionUsed.after).length > 0))
+    const usedPotion = hasPotionUsage(typedData)
 
     set(state => {
       // 优先使用顶层字段，其次使用 character 对象中的字段
@@ -1388,41 +1309,9 @@ const store: StateCreator<GameState> = (set, get) => ({
         typedData.current_hp ?? typedData.character?.current_hp ?? state.currentHp
       const newCurrentMana =
         typedData.current_mana ?? typedData.character?.current_mana ?? state.currentMana
-      console.log('[GameStore] handleCombatUpdate setting currentHp to:', newCurrentHp)
-      console.log('[GameStore] handleCombatUpdate setting currentMana to:', newCurrentMana)
 
-      // 使用 combat_log_id 或 id 去重，避免同一日志被多次添加
-      const existingLogIds = new Set<number>(
-        state.combatLogs
-          .map(l => {
-            if ('combat_log_id' in l && typeof l.combat_log_id === 'number') return l.combat_log_id
-            if ('id' in l && typeof l.id === 'number') return l.id
-            return null
-          })
-          .filter((id): id is number => id != null)
-      )
-      // 优先使用 id 字段（从 API 返回的日志），其次使用 combat_log_id（WebSocket 推送的实时数据）
-      const dataLogId =
-        'id' in typedData && typeof typedData.id === 'number'
-          ? typedData.id
-          : 'combat_log_id' in typedData && typeof typedData.combat_log_id === 'number'
-            ? typedData.combat_log_id
-            : null
-
-      // 创建一个带正确 ID 的日志对象
-      const logWithId = dataLogId != null ? { ...typedData, id: dataLogId } : typedData
-
-      const newLogs =
-        dataLogId != null && !existingLogIds.has(dataLogId)
-          ? [logWithId, ...state.combatLogs].slice(0, 100)
-          : state.combatLogs
-
-      console.log(
-        '[GameStore] handleCombatUpdate - combat_log_id:',
-        dataLogId,
-        'new logs count:',
-        newLogs.length
-      )
+      const dataLogId = extractCombatLogId(typedData)
+      const newLogs = mergeCombatLogsWithUpdate(state.combatLogs, typedData)
 
       return {
         combatResult: typedData,
@@ -1450,13 +1339,6 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   handleInventoryUpdate: data => {
-    const inv = data.inventory ?? []
-    const item1385 = inv.find((i: { id?: number }) => i.id === 1385)
-    console.log('[GameStore] handleInventoryUpdate received', {
-      inventoryLength: inv.length,
-      item1385Quantity: item1385?.quantity,
-      item1385,
-    })
     set(state => ({
       ...state,
       inventory: data.inventory ?? state.inventory,
@@ -1503,14 +1385,10 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   // 商店操作
   fetchShopItems: async () => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        console.warn('[GameStore] fetchShopItems - no character selected, skipping')
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, { context: 'fetchShopItems' })
+      if (!selectedId) return
       const params = `?character_id=${selectedId}`
       const response = (await apiGet(`/rpg/shop${params}`)) as {
         items: ShopItem[]
@@ -1521,19 +1399,19 @@ const store: StateCreator<GameState> = (set, get) => ({
         ...state,
         shopItems: response.items || [],
         shopNextRefreshAt: response.next_refresh_at ?? null,
-        character: state.character ? { ...state.character, copper: response.player_copper } : null,
+        character: withUpdatedCopper(state.character, response.player_copper),
         isLoading: false,
       }))
     } catch (error) {
       console.error('[GameStore] Fetch shop items error:', error)
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   refreshShopItems: async () => {
     const selectedId = get().selectedCharacterId
     if (!selectedId) return
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
       const response = (await post('/rpg/shop/refresh', {
         character_id: selectedId,
@@ -1546,23 +1424,23 @@ const store: StateCreator<GameState> = (set, get) => ({
         ...state,
         shopItems: response.items ?? [],
         shopNextRefreshAt: response.next_refresh_at ?? null,
-        character: state.character ? { ...state.character, copper: response.player_copper } : null,
+        character: withUpdatedCopper(state.character, response.player_copper),
         isLoading: false,
       }))
     } catch (error) {
       console.error('[GameStore] Refresh shop error:', error)
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   buyItem: async (itemId: number, quantity = 1) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'buyItem',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/shop/buy', {
         item_id: itemId,
         quantity,
@@ -1577,23 +1455,23 @@ const store: StateCreator<GameState> = (set, get) => ({
       // 更新金币和重新获取背包
       set(state => ({
         ...state,
-        character: state.character ? { ...state.character, copper: response.copper } : null,
+        character: withUpdatedCopper(state.character, response.copper),
         isLoading: false,
       }))
       // 背包由 WebSocket inventory.update 推送
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   sellItemToShop: async (itemId: number, quantity = 1) => {
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
-      const selectedId = get().selectedCharacterId
-      if (!selectedId) {
-        set(state => ({ ...state, isLoading: false }))
-        return
-      }
+      const selectedId = getSelectedCharacterIdOrAbort(get, set, {
+        context: 'sellItemToShop',
+        warn: false,
+      })
+      if (!selectedId) return
       const response = (await post('/rpg/shop/sell', {
         item_id: itemId,
         quantity,
@@ -1607,22 +1485,21 @@ const store: StateCreator<GameState> = (set, get) => ({
       soundManager.play('gold')
       set(state => ({
         ...state,
-        character: state.character ? { ...state.character, copper: response.copper } : null,
+        character: withUpdatedCopper(state.character, response.copper),
         inventory: state.inventory.filter(i => i.id !== itemId),
         isLoading: false,
       }))
     } catch (error) {
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   // 图鉴操作
   fetchCompendiumItems: async () => {
     const selectedId = get().selectedCharacterId
-    console.log('[GameStore] fetchCompendiumItems - selectedId:', selectedId)
     if (!selectedId) return
 
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
       const response = (await apiGet(`/rpg/compendium/items?character_id=${selectedId}`)) as {
         items: CompendiumItem[]
@@ -1636,16 +1513,15 @@ const store: StateCreator<GameState> = (set, get) => ({
       }))
     } catch (error) {
       console.error('[GameStore] Fetch compendium items error:', error)
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 
   fetchCompendiumMonsters: async () => {
     const selectedId = get().selectedCharacterId
-    console.log('[GameStore] fetchCompendiumMonsters - selectedId:', selectedId)
     if (!selectedId) return
 
-    set(state => ({ ...state, isLoading: true, error: null }))
+    startRequest(set)
     try {
       const response = (await apiGet(`/rpg/compendium/monsters?character_id=${selectedId}`)) as {
         monsters: CompendiumMonster[]
@@ -1659,7 +1535,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       }))
     } catch (error) {
       console.error('[GameStore] Fetch compendium monsters error:', error)
-      set(state => ({ ...state, error: (error as Error).message, isLoading: false }))
+      setRequestError(set, error)
     }
   },
 

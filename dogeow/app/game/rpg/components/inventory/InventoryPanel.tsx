@@ -37,6 +37,65 @@ const INVENTORY_CATEGORIES = [
   { id: 'gem', emoji: '💎', label: '宝石', types: ['gem'] },
 ] as const
 
+type SlotCell = { item: GameItem | null; source: 'inventory' | 'storage' }
+
+const EMPTY_CATEGORY: { types: readonly string[] | null } = { types: null }
+
+const getCategoryById = (categoryId: string) =>
+  categoryId === ''
+    ? EMPTY_CATEGORY
+    : (INVENTORY_CATEGORIES.find(category => category.id === categoryId) ?? EMPTY_CATEGORY)
+
+const buildSlotArray = (items: GameItem[], size: number) => {
+  const slots: (GameItem | null)[] = Array.from({ length: size }, () => null)
+  items.forEach(item => {
+    const idx = item.slot_index
+    if (typeof idx === 'number' && idx >= 0 && idx < size) slots[idx] = item
+  })
+  return slots
+}
+
+const toSlotCells = (slots: (GameItem | null)[], source: SlotCell['source']) =>
+  slots.map(item => ({ item, source }))
+
+const filterSlotsByCategory = (slots: SlotCell[], types: readonly string[] | null) => {
+  if (!types) return slots
+  return slots.filter(
+    (cell): cell is SlotCell & { item: GameItem } =>
+      cell.item != null && itemMatchesCategory(cell.item, types)
+  )
+}
+
+const computeQualityStats = (items: GameItem[]) => {
+  const stats: Record<string, { count: number; totalPrice: number }> = {}
+  items.forEach(item => {
+    const type = item.definition?.type
+    if (type === 'potion' || type === 'gem') return
+
+    const quality = item.quality
+    if (!stats[quality]) {
+      stats[quality] = { count: 0, totalPrice: 0 }
+    }
+    stats[quality].count += 1
+    stats[quality].totalPrice += (item.sell_price ?? 0) * (item.quantity ?? 1)
+  })
+  return stats
+}
+
+const getGemsInInventory = (items: GameItem[]) =>
+  items.filter(item => item.definition?.type === 'gem')
+
+const canSocketItem = (item: GameItem): boolean => {
+  if (!item.sockets || item.sockets <= 0) return false
+  const gemCount = item.gems?.length ?? 0
+  return gemCount < item.sockets
+}
+
+const canUnsocketItem = (item: GameItem): boolean => {
+  if (item.quality !== 'common') return false
+  return !!(item.gems && item.gems.length > 0)
+}
+
 export function InventoryPanel() {
   const {
     inventory,
@@ -68,20 +127,7 @@ export function InventoryPanel() {
 
   // 计算每个品质的装备数量和总价
   const qualityStats = useMemo(() => {
-    const stats: Record<string, { count: number; totalPrice: number }> = {}
-    inventory.forEach(item => {
-      const type = item.definition?.type
-      // 只计算非药水、非宝石的装备
-      if (type !== 'potion' && type !== 'gem') {
-        const q = item.quality
-        if (!stats[q]) {
-          stats[q] = { count: 0, totalPrice: 0 }
-        }
-        stats[q].count++
-        stats[q].totalPrice += (item.sell_price ?? 0) * (item.quantity ?? 1)
-      }
-    })
-    return stats
+    return computeQualityStats(inventory)
   }, [inventory])
 
   // 处理品质回收
@@ -96,44 +142,21 @@ export function InventoryPanel() {
 
   // 背包按 slot_index 放入对应格位，与后端格位一致（格位数由后端提供）
   const inventorySlots = useMemo(() => {
-    const slots: (GameItem | null)[] = Array.from({ length: inventorySize }, () => null)
-    inventory.forEach(item => {
-      const idx = item.slot_index
-      if (typeof idx === 'number' && idx >= 0 && idx < inventorySize) slots[idx] = item
-    })
-    return slots
+    return buildSlotArray(inventory, inventorySize)
   }, [inventory, inventorySize])
   // 仓库按 slot_index 放入对应格位
   const warehouseSlots = useMemo(() => {
-    const slots: (GameItem | null)[] = Array.from({ length: storageSize }, () => null)
-    storage.forEach(item => {
-      const idx = item.slot_index
-      if (typeof idx === 'number' && idx >= 0 && idx < storageSize) slots[idx] = item
-    })
-    return slots
+    return buildSlotArray(storage, storageSize)
   }, [storage, storageSize])
 
-  const category = useMemo(
-    () =>
-      categoryId === ''
-        ? { types: null as readonly string[] | null }
-        : (INVENTORY_CATEGORIES.find(c => c.id === categoryId) ?? {
-            types: null as readonly string[] | null,
-          }),
-    [categoryId]
-  )
+  const category = useMemo(() => getCategoryById(categoryId), [categoryId])
   // 当前 Tab 对应的格位（背包或仓库），每格带 source；分类非空时只显示该分类物品（紧凑）
-  type SlotCell = { item: GameItem | null; source: 'inventory' | 'storage' }
   const displaySlots = useMemo((): SlotCell[] => {
     const raw = showStorage
-      ? warehouseSlots.map(item => ({ item, source: 'storage' as const }))
-      : inventorySlots.map(item => ({ item, source: 'inventory' as const }))
-    if (!category.types) return raw
-    return raw.filter(
-      (cell): cell is SlotCell & { item: GameItem } =>
-        cell.item != null && itemMatchesCategory(cell.item, category.types)
-    )
-  }, [showStorage, inventorySlots, warehouseSlots, category])
+      ? toSlotCells(warehouseSlots, 'storage')
+      : toSlotCells(inventorySlots, 'inventory')
+    return filterSlotsByCategory(raw, category.types)
+  }, [showStorage, inventorySlots, warehouseSlots, category.types])
 
   const handleEquip = async () => {
     if (!selectedItem) return
@@ -173,21 +196,14 @@ export function InventoryPanel() {
 
   // 获取背包中的宝石
   const gemsInInventory = useMemo(() => {
-    return inventory.filter(item => item.definition?.type === 'gem')
+    return getGemsInInventory(inventory)
   }, [inventory])
 
   // 判断装备是否可以镶嵌（有空插槽）
-  const canSocket = (item: GameItem): boolean => {
-    if (!item.sockets || item.sockets <= 0) return false
-    const gemCount = item.gems?.length ?? 0
-    return gemCount < item.sockets
-  }
+  const canSocket = canSocketItem
 
   // 判断装备是否可以取下宝石（普通装备）
-  const canUnsocket = (item: GameItem): boolean => {
-    if (item.quality !== 'common') return false
-    return !!(item.gems && item.gems.length > 0)
-  }
+  const canUnsocket = canUnsocketItem
 
   // 打开宝石选择弹窗
   const handleOpenGemSelector = (item: GameItem) => {
