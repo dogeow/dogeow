@@ -15,7 +15,7 @@ import {
   BookOpen,
   Columns,
 } from 'lucide-react'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
 import { useProjectCoverStore } from '@/stores/projectCoverStore'
@@ -265,7 +265,7 @@ export function SettingsDialog({
         <div className="flex h-[60vh] min-h-[400px] w-full flex-col overflow-hidden">
           {/* 顶部标题栏 */}
           <div className="flex h-12 items-center justify-center border-b px-4">
-            <h2 className="text-sm font-semibold">设置</h2>
+            <DialogTitle className="text-sm font-semibold">设置</DialogTitle>
           </div>
 
           {/* 左侧和右侧内容 */}

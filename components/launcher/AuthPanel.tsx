@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { LoginForm } from './auth/LoginForm'
 import { ProfileView } from './auth/ProfileView'
-import { Dialog, DialogContent } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 
 type DisplayMode = 'music' | 'apps' | 'settings'
 
@@ -91,10 +91,10 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="min-h-[300px] w-[90%] max-w-md overflow-hidden p-0">
-        <div className="p-6">
-          <h2 className="mb-6 text-center text-xl font-semibold">
-            {isAuthenticated && user ? '个人资料' : '登录'}
-          </h2>
+        <DialogTitle className="mb-6 text-center text-xl font-semibold">
+          {isAuthenticated && user ? '个人资料' : '登录'}
+        </DialogTitle>
+        <div className="px-6 pb-6">
           {isAuthenticated && user ? renderProfileView() : renderLoginView()}
         </div>
       </DialogContent>

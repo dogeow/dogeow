@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { MessageSquarePlus } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useAiChat } from '@/app/ai/features/chat/hooks/useAiChat'
 import { useKnowledgeChat } from '@/app/ai/features/knowledge/hooks/useKnowledgeChat'
@@ -169,6 +169,9 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!fixed !top-1/2 !left-1/2 flex h-[90vh] max-h-[90vh] w-full max-w-4xl !-translate-x-1/2 !-translate-y-1/2 flex-col gap-0 p-0">
         <DialogHeader className="flex-none p-0">
+          <DialogTitle className="sr-only">
+            {chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'}
+          </DialogTitle>
           <ChatHeader
             variant="dialog"
             title={chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'}
