@@ -1,0 +1,21 @@
+# 在国内服务器上的自托管 Runner 执行，推送 main 后自动部署（本机 git pull + 零停机脚本）
+# 前提：Runner 装在与应用同一台机；在仓库 Settings -> Secrets and variables -> Actions 里添加 secret：APP_ROOT = 服务器上的应用目录（如 /var/www/dogeow-next）
+name: Deploy (Self-hosted)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Deploy
+        run: |
+          cd "$APP_ROOT"
+          git pull
+          chmod +x scripts/deploy-zero-downtime.sh
+          ./scripts/deploy-zero-downtime.sh
+        env:
+          APP_ROOT: ${{ secrets.APP_ROOT }}
