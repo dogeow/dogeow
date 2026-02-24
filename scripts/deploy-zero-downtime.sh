@@ -6,9 +6,9 @@
 # 1) 发布目录+符号链接：存在 current 时，在 releases/时间戳 构建，再 ln -sfn 切换，零停机可回滚。
 # 2) 临时目录+原子替换：无 current 时，在 .build-staging 构建，再原子替换 .next。
 #
-# 首次用模式 1 需在服务器初始化（一次）：
-#   mkdir -p releases && r=releases/$(date +%Y%m%d%H%M%S) && rsync -a --exclude=node_modules --exclude=.next . "$r"/ && ln -sfn "$(pwd)/$r" current
-#   cd "$r" && npm ci && npx next build
+# 首次用模式 1 需在服务器初始化（一次）。先建临时目录，构建完成后再用时间戳重命名：
+#   mkdir -p releases && s=releases/.staging.$$ && rsync -a --exclude=node_modules --exclude=.next --exclude=releases --exclude=current . "$s"/ && cd "$s" && npm ci && npx next build
+#   cd "releases" && r=$(date +%Y%m%d%H%M%S) && mv .staging.$$ "$r" && cd "$APP_ROOT" && ln -sfn "$(pwd)/releases/$r" current
 # PM2 使用 ecosystem.config.js，模式 1 下通过 PM2_CWD 指定 current 为 cwd。
 set -euo pipefail
 
@@ -29,7 +29,7 @@ if [ -L "$CURRENT_LINK" ] || [ -d "$CURRENT_LINK" ]; then
   echo "[deploy] 使用发布目录模式（零停机）"
 
   [ -d "$RELEASES_DIR" ] || mkdir -p "$RELEASES_DIR"
-  NEW_RELEASE="${RELEASES_DIR}/$(date +%Y%m%d%H%M%S)"
+  STAGING="${RELEASES_DIR}/.staging.$$"
   CURRENT_RELEASE=""
   if [ -L "$CURRENT_LINK" ]; then
     CURRENT_RELEASE="$(readlink "$CURRENT_LINK")"
@@ -38,13 +38,13 @@ if [ -L "$CURRENT_LINK" ] || [ -d "$CURRENT_LINK" ]; then
     CURRENT_RELEASE="$CURRENT_LINK"
   fi
 
-  # 从当前发布复制出新发布（不复制 node_modules 和 .next，加快且避免覆盖中文件）
-  echo "[deploy] 创建新发布目录: $NEW_RELEASE"
-  mkdir -p "$NEW_RELEASE"
+  # 在临时目录构建，完成后再用时间戳重命名，使目录名对应实际上线时间
+  echo "[deploy] 构建到临时目录: $STAGING"
+  mkdir -p "$STAGING"
   rsync -a --exclude='node_modules' --exclude='.next' --exclude='releases' --exclude='current' \
-    "${CURRENT_RELEASE:-.}/" "$NEW_RELEASE/" 2>/dev/null || rsync -a --exclude='node_modules' --exclude='.next' --exclude='releases' --exclude='current' ./ "$NEW_RELEASE/"
+    "${CURRENT_RELEASE:-.}/" "$STAGING/" 2>/dev/null || rsync -a --exclude='node_modules' --exclude='.next' --exclude='releases' --exclude='current' ./ "$STAGING/"
 
-  cd "$NEW_RELEASE"
+  cd "$STAGING"
   git pull
   npm ci
   if [ -n "$RUN_ANALYZE" ]; then
@@ -54,13 +54,17 @@ if [ -L "$CURRENT_LINK" ] || [ -d "$CURRENT_LINK" ]; then
     npx next build
   fi
 
-  # 原子切换 current 指向新发布
+  # 构建完成后再生成时间戳并重命名，原子切换 current
+  cd "$APP_ROOT"
+  NEW_RELEASE="${RELEASES_DIR}/$(date +%Y%m%d%H%M%S)"
+  mv "$STAGING" "$NEW_RELEASE"
   ln -sfn "$NEW_RELEASE" "$CURRENT_LINK"
   echo "[deploy] 已切换 current -> $NEW_RELEASE"
 
-  # 可选：只保留最近 5 个发布，节省磁盘
+  # 只保留最近 5 个发布（仅删除时间戳目录，不删 .staging.*）
   KEEP=5
-  (cd "$RELEASES_DIR" && ls -1t | tail -n +$((KEEP + 1)) | while read -r d; do [ -n "$d" ] && rm -rf "$RELEASES_DIR/$d"; done)
+  (cd "$RELEASES_DIR" && ls -1t | grep -E '^[0-9]{14}$' | tail -n +$((KEEP + 1)) | while read -r d; do [ -n "$d" ] && rm -rf "$RELEASES_DIR/$d"; done)
+  rm -rf "${RELEASES_DIR}"/.staging.* 2>/dev/null || true
 
   if pm2 info dogeow-nextjs >/dev/null 2>&1; then
     pm2 reload dogeow-nextjs
