@@ -42,7 +42,7 @@ const editRoomSchema = z.object({
       'Room name can only contain letters, numbers, spaces, hyphens, and underscores'
     ),
   description: z.string().max(200, 'Description must be less than 200 characters').optional(),
-  is_private: z.boolean().optional().default(false),
+  is_private: z.boolean(),
 })
 
 type EditRoomFormData = z.infer<typeof editRoomSchema>
