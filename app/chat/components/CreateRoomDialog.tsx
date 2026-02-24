@@ -47,7 +47,7 @@ const createRoomSchema = z.object({
       `房间名称不能超过${MAX_ROOM_NAME_LENGTH}个字符（中文/emoji算2个字符，数字/字母算1个字符）`
     ),
   description: z.string().max(200, '描述不能超过200个字符').optional(),
-  is_private: z.boolean().optional().default(false),
+  is_private: z.boolean(),
 })
 
 type CreateRoomFormData = z.infer<typeof createRoomSchema>
