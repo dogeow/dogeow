@@ -9,7 +9,7 @@
 # 首次用模式 1 需在服务器初始化（一次）：
 #   mkdir -p releases && r=releases/$(date +%Y%m%d%H%M%S) && rsync -a --exclude=node_modules --exclude=.next . "$r"/ && ln -sfn "$(pwd)/$r" current
 #   cd "$r" && npm ci && npx next build
-# PM2 需用 current 为 cwd，见 ecosystem.current.config.js。
+# PM2 使用 ecosystem.config.js，模式 1 下通过 PM2_CWD 指定 current 为 cwd。
 set -euo pipefail
 
 # 应用根目录，由调用方通过环境变量传入（如 workflow 里用 secrets.APP_ROOT），不写死在脚本中
@@ -65,7 +65,7 @@ if [ -L "$CURRENT_LINK" ] || [ -d "$CURRENT_LINK" ]; then
   if pm2 info dogeow-nextjs >/dev/null 2>&1; then
     pm2 reload dogeow-nextjs
   else
-    pm2 start "$APP_ROOT/ecosystem.config.js" --only dogeow-nextjs
+    PM2_CWD="${CURRENT_LINK}" pm2 start "$APP_ROOT/ecosystem.config.js" --only dogeow-nextjs
   fi
   pm2 status
   echo "[deploy] 完成（零停机）"

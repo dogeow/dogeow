@@ -3,8 +3,8 @@ module.exports = {
     {
       name: 'dogeow-nextjs',
       script: 'npm',
-      args: 'run start', // 更推荐 'run start'，更明确
-      cwd: '/var/www/dogeow-next',
+      args: 'run start',
+      cwd: process.env.PM2_CWD || process.env.APP_ROOT,
       instances: 'max', // 自动检测CPU核心数
       exec_mode: 'cluster', // 集群模式，充分利用多核CPU
       env: {
