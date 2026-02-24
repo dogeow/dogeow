@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/helpers'
 
 // AI 提供商类型
-type AIProvider = 'github' | 'minimax' | 'ollama'
+type AIProvider = 'github' | 'minimax' | 'ollama' | 'zhipuai'
 
 interface ChatInputProps {
   prompt: string
@@ -85,7 +85,9 @@ export const ChatInput = React.memo<ChatInputProps>(
                             ? 'text-green-600'
                             : provider === 'minimax'
                               ? 'text-orange-500'
-                              : 'text-primary'
+                              : provider === 'zhipuai'
+                                ? 'text-cyan-500'
+                                : 'text-primary'
                         )}
                       />
                     </Button>
@@ -132,6 +134,19 @@ export const ChatInput = React.memo<ChatInputProps>(
                         <div className="flex flex-col">
                           <span>MiniMax</span>
                           <span className="text-muted-foreground text-xs">M2.5</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="zhipuai"
+                        className={cn(
+                          'cursor-pointer',
+                          provider === 'zhipuai' &&
+                            'relative z-10 bg-cyan-500/10 font-medium ring-2 ring-cyan-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>智谱AI</span>
+                          <span className="text-muted-foreground text-xs">GLM 系列</span>
                         </div>
                       </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
@@ -215,6 +230,49 @@ export const ChatInput = React.memo<ChatInputProps>(
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
+              {/* 智谱AI 模型选择 */}
+              {model && onModelChange && provider === 'zhipuai' && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="border-border h-12 w-12 border-2 transition-all"
+                      disabled={isLoading}
+                    >
+                      <Cpu className="h-5 w-5 text-cyan-500" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
+                      <DropdownMenuRadioItem value="glm-4.7" className="cursor-pointer">
+                        <div className="flex flex-col">
+                          <span>GLM-4.7</span>
+                          <span className="text-muted-foreground text-xs">最新旗舰</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="glm-4.6v-flash" className="cursor-pointer">
+                        <div className="flex flex-col">
+                          <span>GLM-4.6V Flash</span>
+                          <span className="text-muted-foreground text-xs">视觉理解</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="glm-4.6v" className="cursor-pointer">
+                        <div className="flex flex-col">
+                          <span>GLM-4.6V</span>
+                          <span className="text-muted-foreground text-xs">视觉理解(标准)</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="glm-4.5-air" className="cursor-pointer">
+                        <div className="flex flex-col">
+                          <span>GLM-4.5-Air</span>
+                          <span className="text-muted-foreground text-xs">轻量快速</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
               <Button
                 onClick={isLoading && onStop ? onStop : onSend}
                 disabled={isLoading ? false : !prompt.trim()}
@@ -260,7 +318,9 @@ export const ChatInput = React.memo<ChatInputProps>(
                             ? 'text-green-600'
                             : provider === 'minimax'
                               ? 'text-orange-500'
-                              : 'text-primary'
+                              : provider === 'zhipuai'
+                                ? 'text-cyan-500'
+                                : 'text-primary'
                         )}
                       />
                     </Button>
@@ -307,6 +367,19 @@ export const ChatInput = React.memo<ChatInputProps>(
                         <div className="flex flex-col">
                           <span>MiniMax</span>
                           <span className="text-muted-foreground text-xs">M2.5</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem
+                        value="zhipuai"
+                        className={cn(
+                          'cursor-pointer',
+                          provider === 'zhipuai' &&
+                            'relative z-10 bg-cyan-500/10 font-medium ring-2 ring-cyan-500 ring-offset-1'
+                        )}
+                      >
+                        <div className="flex flex-col">
+                          <span>智谱AI</span>
+                          <span className="text-muted-foreground text-xs">GLM 系列</span>
                         </div>
                       </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>
@@ -437,6 +510,49 @@ export const ChatInput = React.memo<ChatInputProps>(
                           <span className="text-muted-foreground text-xs">
                             nomic-embed-text:latest
                           </span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {/* 智谱AI 模型选择 - page variant */}
+              {model && onModelChange && provider === 'zhipuai' && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="border-border h-12 w-12 border-2 transition-all"
+                      disabled={isLoading}
+                    >
+                      <Cpu className="h-5 w-5 text-cyan-500" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
+                      <DropdownMenuRadioItem value="glm-4.7" className="cursor-pointer">
+                        <div className="flex flex-col">
+                          <span>GLM-4.7</span>
+                          <span className="text-muted-foreground text-xs">最新旗舰</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="glm-4.6v-flash" className="cursor-pointer">
+                        <div className="flex flex-col">
+                          <span>GLM-4.6V Flash</span>
+                          <span className="text-muted-foreground text-xs">视觉理解</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="glm-4.6v" className="cursor-pointer">
+                        <div className="flex flex-col">
+                          <span>GLM-4.6V</span>
+                          <span className="text-muted-foreground text-xs">视觉理解(标准)</span>
+                        </div>
+                      </DropdownMenuRadioItem>
+                      <DropdownMenuRadioItem value="glm-4.5-air" className="cursor-pointer">
+                        <div className="flex flex-col">
+                          <span>GLM-4.5-Air</span>
+                          <span className="text-muted-foreground text-xs">轻量快速</span>
                         </div>
                       </DropdownMenuRadioItem>
                     </DropdownMenuRadioGroup>

@@ -4,6 +4,7 @@ export interface ChatRoom {
   description?: string
   created_by: number
   is_active: boolean
+  is_private?: boolean
   created_at: string
   updated_at: string
   online_count?: number
@@ -53,6 +54,7 @@ export interface ChatUser {
 export interface CreateRoomData {
   name: string
   description?: string
+  is_private?: boolean
 }
 
 export interface MessagePagination {

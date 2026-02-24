@@ -26,6 +26,7 @@ interface AppsViewProps {
   isAuthenticated: boolean
   toggleDisplayMode: (mode: DisplayMode) => void
   onOpenAi?: () => void
+  onOpenVisionAi?: () => void
 }
 
 export function AppsView({
@@ -34,6 +35,7 @@ export function AppsView({
   isAuthenticated,
   toggleDisplayMode,
   onOpenAi,
+  onOpenVisionAi,
 }: AppsViewProps) {
   const { clearFilters } = useFilterPersistenceStore()
 
@@ -55,7 +57,11 @@ export function AppsView({
       {/* 中间：应用图标 */}
       {!searchManager.isSearchVisible && (
         <div className="flex flex-1 items-center justify-start">
-          <AppGrid toggleDisplayMode={toggleDisplayMode} onOpenAi={onOpenAi} />
+          <AppGrid
+            toggleDisplayMode={toggleDisplayMode}
+            onOpenAi={onOpenAi}
+            onOpenVisionAi={onOpenVisionAi}
+          />
         </div>
       )}
 

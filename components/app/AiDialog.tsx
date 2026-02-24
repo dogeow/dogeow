@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { format, formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { MessageSquarePlus } from 'lucide-react'
@@ -43,8 +43,14 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     }
   }, [knowledgeUpdatedAt])
 
+  // 只在 open 且 chatMode === 'knowledge' 且未加载过时加载初始消息，避免死循环
   useEffect(() => {
-    if (!open || knowledgeInitialMessages.length > 0 || isLoadingKnowledgeInitial) {
+    if (
+      !open ||
+      chatMode !== 'knowledge' ||
+      isLoadingKnowledgeInitial ||
+      knowledgeInitialMessages.length > 0
+    ) {
       return
     }
 
@@ -62,23 +68,14 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
         if (data.success && data.documents && data.documents.length > 0) {
           const welcomeMessage: ChatMessage = {
             role: 'assistant',
-            content: `你好！欢迎了解我的知识库。
-            
-我会基于知识库内容为你解答。
-
-有什么想了解的吗？${updateTimeText}`,
+            content: `你好！欢迎了解我的知识库。\n\n我会基于知识库内容为你解答。\n\n有什么想了解的吗？${updateTimeText}`,
           }
-
           setKnowledgeInitialMessages([welcomeMessage])
         } else {
           setKnowledgeInitialMessages([
             {
               role: 'assistant',
-              content: `你好！欢迎了解我的知识库。
-
-目前知识库中还没有文档。
-
-有什么想了解的吗？${updateTimeText}`,
+              content: `你好！欢迎了解我的知识库。\n\n目前知识库中还没有文档。\n\n有什么想了解的吗？${updateTimeText}`,
             },
           ])
         }
@@ -99,9 +96,34 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     }
 
     loadInitialMessage()
-  }, [open, knowledgeInitialMessages.length, isLoadingKnowledgeInitial, knowledgeSubtitle])
+  }, [
+    open,
+    chatMode,
+    isLoadingKnowledgeInitial,
+    knowledgeSubtitle,
+    knowledgeInitialMessages.length,
+  ])
 
-  // 当更新时间变化时，更新第一条消息
+  // 切换 tab 时重置 loading 状态，切换到 knowledge 时清空初始消息（防止死循环）
+  useEffect(() => {
+    if (chatMode !== 'knowledge') {
+      setIsLoadingKnowledgeInitial(false)
+      setKnowledgeInitialMessages([])
+    }
+  }, [chatMode])
+
+  // 当更新时间变化时，更新第一条消息（使用 ref 跟踪避免无限循环）
+  const knowledgeMessagesRef = useRef(knowledgeInitialMessages)
+  const prevKnowledgeSubtitleRef = useRef(knowledgeSubtitle)
+
+  // 同步 ref
+  if (knowledgeInitialMessages !== knowledgeMessagesRef.current) {
+    knowledgeMessagesRef.current = knowledgeInitialMessages
+  }
+  if (knowledgeSubtitle !== prevKnowledgeSubtitleRef.current) {
+    prevKnowledgeSubtitleRef.current = knowledgeSubtitle
+  }
+
   useEffect(() => {
     if (
       chatMode === 'knowledge' &&
@@ -109,39 +131,31 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
       knowledgeInitialMessages[0]?.role === 'assistant' &&
       knowledgeSubtitle
     ) {
-      setKnowledgeInitialMessages(prev => {
-        const firstMessage = prev[0]
-        if (!firstMessage) return prev
+      // 使用 ref 检查内容是否真的变化了
+      const firstMessage = knowledgeMessagesRef.current[0]
+      if (!firstMessage) return
 
-        // 检查是否已经包含更新时间
-        const hasUpdateTime = firstMessage.content.includes('更新于')
-        const updateTimeText = `\n\n<small class="text-muted-foreground">${knowledgeSubtitle}</small>`
+      const hasUpdateTime = firstMessage.content.includes('更新于')
+      const updateTimeText = `\n\n<small class="text-muted-foreground">${knowledgeSubtitle}</small>`
 
-        if (!hasUpdateTime) {
-          return [
-            {
-              ...firstMessage,
-              content: firstMessage.content + updateTimeText,
-            },
-            ...prev.slice(1),
-          ]
-        } else {
-          // 如果已包含，则更新它
-          const contentWithoutUpdateTime = firstMessage.content.replace(
-            /\n\n<small class="text-muted-foreground">更新于.*?<\/small>/,
-            ''
-          )
-          return [
-            {
-              ...firstMessage,
-              content: contentWithoutUpdateTime + updateTimeText,
-            },
-            ...prev.slice(1),
-          ]
-        }
-      })
+      // 只有当内容确实需要更新时才更新状态
+      const contentWithoutUpdateTime = firstMessage.content.replace(
+        /\n\n<small class="text-muted-foreground">更新于.*?<\/small>/,
+        ''
+      )
+      const newContent = contentWithoutUpdateTime + updateTimeText
+
+      if (newContent !== firstMessage.content) {
+        setKnowledgeInitialMessages(prev => [
+          {
+            ...prev[0],
+            content: newContent,
+          },
+          ...prev.slice(1),
+        ])
+      }
     }
-  }, [knowledgeSubtitle, chatMode, knowledgeInitialMessages])
+  }, [knowledgeSubtitle, chatMode])
 
   const activeChat = chatMode === 'knowledge' ? knowledgeChat : aiChat
   const {
@@ -193,7 +207,7 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
         />
 
         <div className="relative flex-none p-2">
-          {prompt.trim() && (
+          {(chatMode === 'knowledge' ? knowledgeChat.hasMessages : aiChat.hasMessages) && (
             <Button
               variant="secondary"
               size="sm"

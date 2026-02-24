@@ -1,5 +1,5 @@
 import React, { memo } from 'react'
-import { Hash, Users, Star, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { Hash, Lock, Users, Star, MoreVertical, Edit, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -48,6 +48,12 @@ export const RoomListItem = memo<RoomListItemProps>(
             <div className="flex items-center gap-2">
               <Hash className="text-muted-foreground h-4 w-4 shrink-0" />
               <span className="truncate font-medium">{room.name}</span>
+              {room.is_private && (
+                <Lock
+                  className="text-muted-foreground h-3 w-3 shrink-0"
+                  aria-label={t('chat.private_room', '私有房间')}
+                />
+              )}
               {room.description && (
                 <span className="text-muted-foreground text-xs">• {room.description}</span>
               )}

@@ -110,11 +110,18 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     forceTLS: isHttps,
     enabledTransports: ['ws', 'wss'],
     disableStats: true,
-    // 使用当前 origin 支持 Tailscale 等外部访问
-    authEndpoint:
-      typeof window !== 'undefined'
-        ? `${window.location.origin.replace(':3000', ':8000')}/broadcasting/auth`
-        : `${process.env.NEXT_PUBLIC_API_URL}/broadcasting/auth`,
+    // 生产/预发必须用 API 域名，否则会请求到 Next 同域导致 404；本地可用 window.origin 替换端口
+    authEndpoint: (() => {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL
+      if (apiBase) {
+        const base = apiBase.replace(/\/+$/, '')
+        return `${base}/broadcasting/auth`
+      }
+      if (typeof window !== 'undefined') {
+        return `${window.location.origin.replace(':3000', ':8000')}/broadcasting/auth`
+      }
+      return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/broadcasting/auth`
+    })(),
     auth: {
       headers: {
         Authorization: authToken ? `Bearer ${authToken}` : '',

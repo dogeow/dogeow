@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { AI_SYSTEM_PROMPT, type ChatMessage } from '../types'
 
 // AI 提供商类型
-type AIProvider = 'github' | 'minimax' | 'ollama'
+type AIProvider = 'github' | 'minimax' | 'ollama' | 'zhipuai'
 
 interface UseAiChatOptions {
   open?: boolean
@@ -48,7 +48,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   const [provider, setProvider] = useState<AIProvider>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ai_provider')
-      if (saved === 'github' || saved === 'minimax' || saved === 'ollama') {
+      if (saved === 'github' || saved === 'minimax' || saved === 'ollama' || saved === 'zhipuai') {
         return saved
       }
     }
@@ -262,6 +262,26 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
       localStorage.setItem('ai_provider', provider)
     }
   }, [provider])
+
+  // 当切换到智谱AI时，自动设置默认模型
+  useEffect(() => {
+    if (provider === 'zhipuai') {
+      const savedModel = localStorage.getItem('zhipuai_model')
+      if (savedModel) {
+        setModel(savedModel)
+      } else {
+        setModel('glm-4.7')
+        localStorage.setItem('zhipuai_model', 'glm-4.7')
+      }
+    }
+  }, [provider])
+
+  // 当 model 改变时，如果是智谱AI，保存到 localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined' && provider === 'zhipuai') {
+      localStorage.setItem('zhipuai_model', model)
+    }
+  }, [model, provider])
 
   return {
     prompt,

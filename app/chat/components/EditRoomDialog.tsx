@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import { put } from '@/lib/api'
 import useChatStore from '@/app/chat/chatStore'
 import type { ChatRoom } from '../types'
@@ -41,6 +42,7 @@ const editRoomSchema = z.object({
       'Room name can only contain letters, numbers, spaces, hyphens, and underscores'
     ),
   description: z.string().max(200, 'Description must be less than 200 characters').optional(),
+  is_private: z.boolean().optional().default(false),
 })
 
 type EditRoomFormData = z.infer<typeof editRoomSchema>
@@ -61,6 +63,7 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
     defaultValues: {
       name: room.name,
       description: room.description || '',
+      is_private: room.is_private ?? false,
     },
   })
 
@@ -69,6 +72,7 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
     form.reset({
       name: room.name,
       description: room.description || '',
+      is_private: room.is_private ?? false,
     })
   }, [room, form])
 
@@ -79,6 +83,7 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
       await put(`/chat/rooms/${room.id}`, {
         name: data.name.trim(),
         description: data.description?.trim() || null,
+        is_private: data.is_private ?? false,
       })
 
       // Reload rooms to get updated data
@@ -157,6 +162,30 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
                     )}
                   </FormDescription>
                   <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="is_private"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      {t('chat.private_room', '私有房间')}
+                    </FormLabel>
+                    <FormDescription>
+                      {t('chat.private_room_hint', '仅成员可见，其他人无法加入')}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      disabled={isSubmitting}
+                    />
+                  </FormControl>
                 </FormItem>
               )}
             />

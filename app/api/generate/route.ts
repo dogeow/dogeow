@@ -19,6 +19,9 @@ interface GenerateRequestBody {
   useChat?: boolean // 是否使用 chat 模式
   model?: string // Ollama 模型名称
   provider?: AIProvider // AI 提供商
+  // 视觉理解支持（智谱AI）
+  images?: string[] // base64 编码的图片数组
+  imageUrl?: string // 图片URL
 }
 
 // GitHub Models SSE 响应片段
@@ -63,8 +66,13 @@ const ANTHROPIC_BASE_URL = process.env.ANTHROPIC_BASE_URL ?? 'https://api.minima
 const ANTHROPIC_AUTH_TOKEN = process.env.ANTHROPIC_AUTH_TOKEN ?? ''
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL ?? 'MiniMax-M2.5-highspeed'
 
+// 智谱AI (ZhipuAI) 配置
+const ZHIPUAI_BASE_URL = 'https://open.bigmodel.cn/api/paas/v4'
+const ZHIPUAI_API_KEY = process.env.ZHIPUAI_API_KEY ?? ''
+const ZHIPUAI_MODEL = 'glm-4.6v-flash'
+
 // AI 提供商类型
-type AIProvider = 'github' | 'minimax' | 'ollama'
+type AIProvider = 'github' | 'minimax' | 'ollama' | 'zhipuai'
 
 // embedding 模型仅用于检索，不能用于 Chat/Generate API，需回退为对话模型
 const EMBEDDING_MODEL_PREFIXES = ['qwen3-embedding', 'embeddinggemma', 'nomic-embed-text']
@@ -225,6 +233,211 @@ const callMiniMaxAPI = async (messages: ChatMessage[]): Promise<Response> => {
     throw new Error(`MiniMax API (${res.status}): ${detail}`.slice(0, 500))
   }
   return res
+}
+
+// 智谱AI (ZhipuAI) 响应类型
+interface ZhipuAIChunk {
+  choices?: Array<{
+    delta?: { content?: string; reasoning_content?: string }
+    finish_reason?: string | null
+  }>
+  usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
+}
+
+// 调用智谱AI API（视觉理解）
+const callZhipuAIAPI = async (
+  messages: ChatMessage[],
+  images?: string[],
+  imageUrl?: string,
+  model?: string
+): Promise<Response> => {
+  if (!ZHIPUAI_API_KEY) {
+    throw new Error('智谱AI API Key 未配置，请设置 ZHIPUAI_API_KEY 环境变量')
+  }
+
+  // 使用传入的模型或默认模型
+  const selectedModel = model || 'glm-4.7'
+
+  // 构建消息内容
+  const contents: Array<{ type: string; image_url?: { url: string }; text?: string }> = []
+
+  // 添加图片（仅支持 URL）
+  if (images && images.length > 0) {
+    for (const image of images) {
+      contents.push({
+        type: 'image_url',
+        image_url: { url: image },
+      })
+    }
+  } else if (imageUrl) {
+    contents.push({
+      type: 'image_url',
+      image_url: { url: imageUrl },
+    })
+  }
+
+  // 添加文本内容
+  const userMessage = messages.find(m => m.role === 'user')
+  if (userMessage?.content) {
+    contents.push({
+      type: 'text',
+      text: userMessage.content,
+    })
+  }
+
+  // 过滤掉 system 消息用于API调用
+  const filteredMessages = messages.filter(m => m.role !== 'system')
+
+  // 从消息中提取 system prompt
+  const systemMessage =
+    messages.find(m => m.role === 'system')?.content ?? '你是一个有用的AI助理，请用中文回答问题。'
+
+  const requestBody = {
+    model: selectedModel,
+    messages: [
+      { role: 'system', content: systemMessage },
+      ...filteredMessages.slice(0, -1),
+      {
+        role: 'user',
+        content:
+          contents.length > 0 ? contents : [{ type: 'text', text: userMessage?.content ?? '' }],
+      },
+    ],
+    stream: true,
+    thinking: {
+      type: 'enabled',
+    },
+  }
+
+  const res = await fetch(`${ZHIPUAI_BASE_URL}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${ZHIPUAI_API_KEY}`,
+    },
+    body: JSON.stringify(requestBody),
+  })
+
+  if (!res.ok) {
+    const text = await res.text()
+    let detail = text
+    try {
+      const data = text ? JSON.parse(text) : null
+      if (data?.message) detail = data.message
+      else if (data?.error)
+        detail = typeof data.error === 'string' ? data.error : JSON.stringify(data.error)
+    } catch {
+      // 非 JSON 时保留原始 text
+    }
+    throw new Error(`智谱AI API (${res.status}): ${detail}`.slice(0, 500))
+  }
+  return res
+}
+
+// 将智谱AI SSE 流转换为与 Ollama 相同的输出格式
+function createZhipuAIStreamResponse(zhipuaiResponse: Response): Response {
+  const encoder = new TextEncoder()
+  const decoder = new TextDecoder()
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const reader = zhipuaiResponse.body?.getReader()
+      if (!reader) {
+        controller.error(new Error('无法获取响应流'))
+        return
+      }
+
+      let buffer = ''
+      let totalTokens = 0
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            const dataStr = line.slice(6)
+            if (dataStr === '[DONE]') {
+              controller.enqueue(
+                encoder.encode(
+                  `d:${JSON.stringify({
+                    finishReason: 'stop',
+                    usage: {
+                      promptTokens: 0,
+                      completionTokens: totalTokens,
+                      totalTokens: totalTokens,
+                    },
+                  })}\n`
+                )
+              )
+              controller.close()
+              return
+            }
+            try {
+              const data: ZhipuAIChunk = JSON.parse(dataStr)
+              const content = data.choices?.[0]?.delta?.content
+              if (content) {
+                const escaped = escapeJsonString(content)
+                controller.enqueue(encoder.encode(`0:"${escaped}"\n`))
+                totalTokens += Math.ceil(content.length / 4)
+              }
+              if (data.choices?.[0]?.finish_reason) {
+                controller.enqueue(
+                  encoder.encode(
+                    `d:${JSON.stringify({
+                      finishReason: 'stop',
+                      usage: {
+                        promptTokens: data.usage?.prompt_tokens ?? 0,
+                        completionTokens: data.usage?.completion_tokens ?? totalTokens,
+                        totalTokens: data.usage?.total_tokens ?? totalTokens,
+                      },
+                    })}\n`
+                  )
+                )
+                controller.close()
+                return
+              }
+            } catch {
+              // 忽略单行解析错误
+            }
+          }
+        }
+
+        controller.enqueue(
+          encoder.encode(
+            `d:${JSON.stringify({
+              finishReason: 'stop',
+              usage: {
+                promptTokens: 0,
+                completionTokens: totalTokens,
+                totalTokens: totalTokens,
+              },
+            })}\n`
+          )
+        )
+        controller.close()
+      } catch (e) {
+        console.error('智谱AI 流处理错误:', e)
+        controller.error(e)
+      } finally {
+        reader.releaseLock()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'x-vercel-ai-data-stream': 'v1',
+    },
+  })
 }
 
 // 将 MiniMax SSE 流转换为与 Ollama 相同的输出格式
@@ -549,12 +762,21 @@ function createStreamResponse(
 // 根据环境变量决定使用哪个 AI 服务（优先使用 GitHub Models）
 const useGitHub = !!GITHUB_PAT
 const useMiniMax = !!ANTHROPIC_AUTH_TOKEN
+const useZhipuAI = !!ZHIPUAI_API_KEY
 
 // 确定实际使用的 AI 提供商
-const getAIProvider = (requestedProvider?: AIProvider): AIProvider => {
+const getAIProvider = (requestedProvider?: AIProvider, hasImages?: boolean): AIProvider => {
+  // 如果有图片输入，优先使用智谱AI（视觉理解）
+  if (hasImages && ZHIPUAI_API_KEY) return 'zhipuai'
   if (requestedProvider === 'github' && GITHUB_PAT) return 'github'
   if (requestedProvider === 'minimax' && ANTHROPIC_AUTH_TOKEN) return 'minimax'
+  if (requestedProvider === 'zhipuai' && ZHIPUAI_API_KEY) return 'zhipuai'
   if (requestedProvider === 'ollama') return 'ollama'
+  // 如果有图片输入但没有智谱AI，回退到其他提供商
+  if (hasImages) {
+    if (GITHUB_PAT) return 'github'
+    if (ANTHROPIC_AUTH_TOKEN) return 'minimax'
+  }
   // 默认优先级：GitHub > MiniMax > Ollama
   if (GITHUB_PAT) return 'github'
   if (ANTHROPIC_AUTH_TOKEN) return 'minimax'
@@ -570,14 +792,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: '无效的请求体' }, { status: 400 })
   }
 
-  const { option, command, text = '', messages, useChat = false, model, provider } = body
+  const {
+    option,
+    command,
+    text = '',
+    messages,
+    useChat = false,
+    model,
+    provider,
+    images,
+    imageUrl,
+  } = body
+
+  // 检查是否有图片输入
+  const hasImages = !!(images && images.length > 0) || !!imageUrl
 
   try {
     // 调试日志
-    console.log('[Generate API] 接收到的请求:', { provider, model, useChat })
+    console.log('[Generate API] 接收到的请求:', { provider, model, useChat, hasImages })
 
     // 确定实际使用的 AI 提供商
-    const actualProvider = getAIProvider(provider)
+    const actualProvider = getAIProvider(provider, hasImages)
     console.log('[Generate API] 实际使用的 AI 提供商:', actualProvider)
 
     // 如果使用 chat 模式且有 messages，使用连续对话
@@ -605,6 +840,12 @@ export async function POST(request: NextRequest) {
         return createMiniMaxStreamResponse(minimaxResponse)
       }
 
+      // 智谱AI - 支持视觉理解
+      if (actualProvider === 'zhipuai') {
+        const zhipuaiResponse = await callZhipuAIAPI(chatMessages, images, imageUrl, model)
+        return createZhipuAIStreamResponse(zhipuaiResponse)
+      }
+
       // 默认使用 Ollama
       const ollamaResponse = await callOllamaChatAPI(chatMessages, model)
       return createStreamResponse(ollamaResponse, '', promptTokens)
@@ -622,13 +863,15 @@ export async function POST(request: NextRequest) {
     console.error('AI API错误:', error)
     const isNetworkOrFetch = error instanceof Error && (error.message?.includes('fetch') ?? false)
     // 从请求体中提取 provider，如果不存在则使用默认值
-    const actualProvider = getAIProvider(provider ?? undefined)
+    const actualProvider = getAIProvider(provider ?? undefined, hasImages)
     const fallbackMessage =
       actualProvider === 'github'
         ? 'AI 服务暂时不可用，请检查后端 GITHUB_PAT 环境变量及网络'
         : actualProvider === 'minimax'
           ? 'AI 服务暂时不可用，请检查后端 ANTHROPIC_AUTH_TOKEN 环境变量及网络'
-          : 'AI 服务暂时不可用，请确保 Ollama 服务正在运行'
+          : actualProvider === 'zhipuai'
+            ? 'AI 服务暂时不可用，请检查后端 ZHIPUAI_API_KEY 环境变量及网络'
+            : 'AI 服务暂时不可用，请确保 Ollama 服务正在运行'
     const errorMessage =
       error instanceof Error
         ? isNetworkOrFetch
