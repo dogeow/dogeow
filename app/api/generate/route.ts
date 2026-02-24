@@ -244,7 +244,21 @@ interface ZhipuAIChunk {
   usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number }
 }
 
-// 调用智谱AI API（视觉理解）
+// 智谱文本模型（对话补全）要求 content 为字符串；视觉模型支持 content 为多模态数组
+const ZHIPUAI_TEXT_MODELS = new Set([
+  'glm-5',
+  'glm-4.7',
+  'glm-4.7-flash',
+  'glm-4.7-flashx',
+  'glm-4.6',
+  'glm-4.5-air',
+  'glm-4.5-airx',
+  'glm-4.5-flash',
+  'glm-4-flash-250414',
+  'glm-4-flashx-250414',
+])
+
+// 调用智谱AI API（支持纯文本与视觉理解）
 const callZhipuAIAPI = async (
   messages: ChatMessage[],
   images?: string[],
@@ -255,58 +269,46 @@ const callZhipuAIAPI = async (
     throw new Error('智谱AI API Key 未配置，请设置 ZHIPUAI_API_KEY 环境变量')
   }
 
-  // 使用传入的模型或默认模型
-  const selectedModel = model || 'glm-4.7'
+  const hasImage = !!(images && images.length > 0) || !!imageUrl
+  // 有图时必须用视觉模型；无图时用传入模型或默认文本模型
+  const selectedModel = hasImage
+    ? ZHIPUAI_TEXT_MODELS.has(model ?? '')
+      ? ZHIPUAI_MODEL
+      : model || ZHIPUAI_MODEL
+    : model || 'glm-4.7'
 
-  // 构建消息内容
+  // 构建多模态内容（仅在有图时使用）
   const contents: Array<{ type: string; image_url?: { url: string }; text?: string }> = []
-
-  // 添加图片（仅支持 URL）
   if (images && images.length > 0) {
     for (const image of images) {
-      contents.push({
-        type: 'image_url',
-        image_url: { url: image },
-      })
+      contents.push({ type: 'image_url', image_url: { url: image } })
     }
   } else if (imageUrl) {
-    contents.push({
-      type: 'image_url',
-      image_url: { url: imageUrl },
-    })
+    contents.push({ type: 'image_url', image_url: { url: imageUrl } })
   }
 
-  // 添加文本内容
   const userMessage = messages.find(m => m.role === 'user')
   if (userMessage?.content) {
-    contents.push({
-      type: 'text',
-      text: userMessage.content,
-    })
+    contents.push({ type: 'text', text: userMessage.content })
   }
 
-  // 过滤掉 system 消息用于API调用
   const filteredMessages = messages.filter(m => m.role !== 'system')
-
-  // 从消息中提取 system prompt
   const systemMessage =
     messages.find(m => m.role === 'system')?.content ?? '你是一个有用的AI助理，请用中文回答问题。'
+
+  // 文本模型要求 user content 为字符串；视觉模型可为多模态数组
+  const lastUserContent: string | typeof contents =
+    hasImage && contents.length > 0 ? contents : (userMessage?.content ?? '')
 
   const requestBody = {
     model: selectedModel,
     messages: [
       { role: 'system', content: systemMessage },
       ...filteredMessages.slice(0, -1),
-      {
-        role: 'user',
-        content:
-          contents.length > 0 ? contents : [{ type: 'text', text: userMessage?.content ?? '' }],
-      },
+      { role: 'user', content: lastUserContent },
     ],
     stream: true,
-    thinking: {
-      type: 'enabled',
-    },
+    thinking: { type: 'enabled' as const },
   }
 
   const res = await fetch(`${ZHIPUAI_BASE_URL}/chat/completions`, {
