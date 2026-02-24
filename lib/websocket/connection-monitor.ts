@@ -1,5 +1,5 @@
 import Echo from 'laravel-echo'
-import { getEchoInstance } from './echo'
+import { getEchoInstance, destroyEchoInstance } from './echo'
 import WebSocketErrorHandler, { ConnectionError } from './error-handler'
 
 export type ConnectionStatus =
@@ -94,6 +94,11 @@ class WebSocketConnectionMonitor {
         const connectionError = this.errorHandler.handleError(error, 'WebSocket connection')
         this.updateStatus('error')
 
+        if (connectionError.type === 'authentication') {
+          console.warn('ConnectionMonitor: 认证失败，销毁 Echo 实例以便下次用新 token 重建')
+          destroyEchoInstance()
+          return
+        }
         if (this.errorHandler.shouldRetry(connectionError)) {
           this.scheduleReconnectWithErrorHandler()
         }
@@ -106,6 +111,11 @@ class WebSocketConnectionMonitor {
         )
         this.updateStatus('error')
 
+        if (connectionError.type === 'authentication') {
+          console.warn('ConnectionMonitor: 认证失败，销毁 Echo 实例以便下次用新 token 重建')
+          destroyEchoInstance()
+          return
+        }
         if (this.errorHandler.shouldRetry(connectionError)) {
           this.scheduleReconnectWithErrorHandler()
         }
@@ -116,6 +126,11 @@ class WebSocketConnectionMonitor {
         const connectionError = this.errorHandler.handleError(error, 'WebSocket connection failed')
         this.updateStatus('error')
 
+        if (connectionError.type === 'authentication') {
+          console.warn('ConnectionMonitor: 认证失败，销毁 Echo 实例以便下次用新 token 重建')
+          destroyEchoInstance()
+          return
+        }
         if (this.errorHandler.shouldRetry(connectionError)) {
           this.scheduleReconnectWithErrorHandler()
         }

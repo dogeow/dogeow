@@ -18,6 +18,8 @@ if (typeof window !== 'undefined') {
 let echoInstance: Echo<'reverb'> | null = null
 let isCreating = false
 let lastCreatedAt = 0
+/** 创建当前实例时使用的 token，用于复用前校验是否已变化（如刷新/多标签页登录） */
+let lastAuthToken: string | null = null
 
 export function createEchoInstance(): Echo<'reverb'> | null {
   if (typeof window === 'undefined') {
@@ -31,6 +33,30 @@ export function createEchoInstance(): Echo<'reverb'> | null {
   if (isCreating) {
     console.log('Echo: 跳过创建 - 正在创建中')
     return echoInstance!
+  }
+
+  // 复用前校验：localStorage 中的 token 若已变化（过期刷新、多标签页登录等），必须重建实例
+  const currentToken = (() => {
+    try {
+      const authStorage = localStorage.getItem('auth-storage')
+      if (authStorage) {
+        const authData = JSON.parse(authStorage)
+        return authData.state?.token ?? null
+      }
+    } catch {
+      // ignore
+    }
+    return null
+  })()
+
+  const tokenChanged =
+    echoInstance &&
+    (currentToken !== lastAuthToken || (currentToken === '' && lastAuthToken !== null))
+
+  if (tokenChanged) {
+    console.log('Echo: token 已变化，销毁旧实例并重建')
+    destroyEchoInstance()
+    lastAuthToken = null
   }
 
   // 检查现有实例是否可用
@@ -63,7 +89,15 @@ export function createEchoInstance(): Echo<'reverb'> | null {
 
   console.log('Echo: 正在创建新的 Echo 实例')
 
-  // 获取认证token
+  // 刷新/新开页后清除 Pusher 的 transport 缓存，避免沿用上一会话的缓存导致连接失败
+  try {
+    localStorage.removeItem('pusherTransportTLS')
+    localStorage.removeItem('pusherTransportNonTLS')
+  } catch {
+    // ignore
+  }
+
+  // 获取认证 token（始终从 localStorage 读取最新，与 auth-storage 一致）
   let authToken = ''
   try {
     const authStorage = localStorage.getItem('auth-storage')
@@ -74,6 +108,8 @@ export function createEchoInstance(): Echo<'reverb'> | null {
   } catch (error) {
     console.warn('Echo: 获取认证token失败:', error)
   }
+  const previousToken = lastAuthToken
+  lastAuthToken = authToken || null
 
   // 智能端口配置：当使用 HTTPS 且端口是标准端口时，不设置端口号
   const scheme = process.env.NEXT_PUBLIC_REVERB_SCHEME || 'https'
@@ -157,22 +193,28 @@ export function createEchoInstance(): Echo<'reverb'> | null {
   // 检查是否需要销毁已有实例
   if (echoInstance) {
     console.log('Echo: 发现已有实例，检查是否需要重新创建')
-    // 如果已有实例且连接正常，直接返回
-    try {
-      if (echoInstance.connector && 'pusher' in echoInstance.connector) {
-        const connector = echoInstance.connector as { pusher?: { connection?: { state?: string } } }
-        if (connector.pusher?.connection?.state === 'connected') {
-          console.log('Echo: 已有实例连接正常，复用现有实例')
-          isCreating = false
-          return echoInstance
+    // 若当前 token 与已有实例创建时使用的 token 不同，必须重建
+    if (authToken !== previousToken) {
+      console.log('Echo: 认证已变化，销毁已有实例并重新创建')
+      destroyEchoInstance()
+    } else {
+      try {
+        if (echoInstance.connector && 'pusher' in echoInstance.connector) {
+          const connector = echoInstance.connector as {
+            pusher?: { connection?: { state?: string } }
+          }
+          if (connector.pusher?.connection?.state === 'connected') {
+            console.log('Echo: 已有实例连接正常，复用现有实例')
+            isCreating = false
+            return echoInstance
+          }
         }
+      } catch (error) {
+        console.warn('Echo: 检查现有连接状态失败:', error)
       }
-    } catch (error) {
-      console.warn('Echo: 检查现有连接状态失败:', error)
+      console.log('Echo: 销毁已有实例并重新创建')
+      destroyEchoInstance()
     }
-
-    console.log('Echo: 销毁已有实例并重新创建')
-    destroyEchoInstance()
   }
 
   // 认证头部稍后设置（如有需要）
@@ -306,6 +348,7 @@ function performDestroy(): void {
     console.warn('Echo: 断开连接时出错:', error)
   }
   echoInstance = null
+  lastAuthToken = null
   ;(window as { Echo?: unknown }).Echo = undefined
 }
 
