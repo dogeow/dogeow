@@ -1,6 +1,6 @@
 'use client'
 
-import { X, Trash2, BookOpen, Sparkles } from 'lucide-react'
+import { X, Trash2, BookOpen, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -76,7 +76,7 @@ export function KnowledgeChatHeader({
         {variant === 'page' && !hideAiLink && (
           <Button variant="ghost" size="sm" asChild>
             <Link href="/ai" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
+              <Bot className="h-4 w-4" />
               <span className="hidden sm:inline">普通问答</span>
             </Link>
           </Button>

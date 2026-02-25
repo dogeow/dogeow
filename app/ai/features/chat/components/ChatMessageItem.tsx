@@ -11,6 +11,8 @@ interface ChatMessageItemProps {
 
 export const ChatMessageItem = React.memo<ChatMessageItemProps>(({ message, variant = 'page' }) => {
   const isUser = message.role === 'user'
+  const messageImages = message.images ?? []
+  const hasImages = messageImages.length > 0
 
   if (variant === 'dialog') {
     return (
@@ -24,15 +26,32 @@ export const ChatMessageItem = React.memo<ChatMessageItemProps>(({ message, vari
               isUser ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground'
             }`}
           >
-            <div
-              className={
-                isUser
-                  ? '[&_.prose]:prose-invert [&_.prose_*]:!text-primary-foreground [&_.prose]:my-0 [&_.prose_p]:!my-0 [&_.prose_p]:!mt-0 [&_.prose_p]:!mb-0'
-                  : '[&_.prose]:prose-neutral [&_.prose_*]:!text-foreground [&_.prose]:my-0 [&_.prose_p]:!my-0 [&_.prose_p]:!mt-0 [&_.prose_p]:!mb-0'
-              }
-            >
-              <SimpleMarkdown content={message.content} />
-            </div>
+            {hasImages && (
+              <div className={`flex flex-wrap gap-2 ${message.content ? 'mb-2' : ''}`}>
+                {messageImages.map((item, index) => (
+                  <Image
+                    key={`${item.url}-${index}`}
+                    src={item.url}
+                    alt={`消息图片 ${index + 1}`}
+                    width={128}
+                    height={128}
+                    unoptimized
+                    className="h-24 w-24 rounded-md border object-cover"
+                  />
+                ))}
+              </div>
+            )}
+            {message.content && (
+              <div
+                className={
+                  isUser
+                    ? '[&_.prose]:prose-invert [&_.prose_*]:!text-primary-foreground [&_.prose]:my-0 [&_.prose_p]:!my-0 [&_.prose_p]:!mt-0 [&_.prose_p]:!mb-0'
+                    : '[&_.prose]:prose-neutral [&_.prose_*]:!text-foreground [&_.prose]:my-0 [&_.prose_p]:!my-0 [&_.prose_p]:!mt-0 [&_.prose_p]:!mb-0'
+                }
+              >
+                <SimpleMarkdown content={message.content} />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -68,10 +87,27 @@ export const ChatMessageItem = React.memo<ChatMessageItemProps>(({ message, vari
             isUser ? 'bg-muted text-foreground' : 'bg-muted text-foreground'
           }`}
         >
-          <SimpleMarkdown
-            content={message.content}
-            className={isUser ? '[&_*]:text-foreground' : '[&_*]:text-foreground'}
-          />
+          {hasImages && (
+            <div className={`flex flex-wrap gap-2 ${message.content ? 'mb-2' : ''}`}>
+              {messageImages.map((item, index) => (
+                <Image
+                  key={`${item.url}-${index}`}
+                  src={item.url}
+                  alt={`消息图片 ${index + 1}`}
+                  width={128}
+                  height={128}
+                  unoptimized
+                  className="h-24 w-24 rounded-md border object-cover"
+                />
+              ))}
+            </div>
+          )}
+          {message.content && (
+            <SimpleMarkdown
+              content={message.content}
+              className={isUser ? '[&_*]:text-foreground' : '[&_*]:text-foreground'}
+            />
+          )}
         </div>
       </div>
     </div>

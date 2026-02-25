@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useState, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { format, formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { MessageSquarePlus } from 'lucide-react'
+import { MessageSquarePlus, X } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useAiChat } from '@/app/ai/features/chat/hooks/useAiChat'
@@ -15,9 +16,11 @@ import type { ChatMessage } from '@/app/ai/features/chat/types'
 interface AiDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** panel: 固定面板，从 header 下方填满屏幕，header 仍可点击；dialog: 居中弹窗 */
+  variant?: 'dialog' | 'panel'
 }
 
-export function AiDialog({ open, onOpenChange }: AiDialogProps) {
+export function AiDialog({ open, onOpenChange, variant = 'dialog' }: AiDialogProps) {
   const [chatMode, setChatMode] = useState<'ai' | 'knowledge'>('ai')
   const [knowledgeInitialMessages, setKnowledgeInitialMessages] = useState<ChatMessage[]>([])
   const [isLoadingKnowledgeInitial, setIsLoadingKnowledgeInitial] = useState(false)
@@ -43,7 +46,6 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     }
   }, [knowledgeUpdatedAt])
 
-  // 只在 open 且 chatMode === 'knowledge' 且未加载过时加载初始消息，避免死循环
   useEffect(() => {
     if (
       !open ||
@@ -60,7 +62,6 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
         const response = await fetch('/api/knowledge/documents')
         const data = await response.json()
 
-        // 构建更新时间文本
         const updateTimeText = knowledgeSubtitle
           ? `\n\n<small class="text-muted-foreground">${knowledgeSubtitle}</small>`
           : ''
@@ -104,7 +105,6 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     knowledgeInitialMessages.length,
   ])
 
-  // 切换 tab 时重置 loading 状态，切换到 knowledge 时清空初始消息（防止死循环）
   useEffect(() => {
     if (chatMode !== 'knowledge') {
       setIsLoadingKnowledgeInitial(false)
@@ -112,11 +112,9 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     }
   }, [chatMode])
 
-  // 当更新时间变化时，更新第一条消息（使用 ref 跟踪避免无限循环）
   const knowledgeMessagesRef = useRef(knowledgeInitialMessages)
   const prevKnowledgeSubtitleRef = useRef(knowledgeSubtitle)
 
-  // 同步 ref
   if (knowledgeInitialMessages !== knowledgeMessagesRef.current) {
     knowledgeMessagesRef.current = knowledgeInitialMessages
   }
@@ -131,14 +129,11 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
       knowledgeInitialMessages[0]?.role === 'assistant' &&
       knowledgeSubtitle
     ) {
-      // 使用 ref 检查内容是否真的变化了
       const firstMessage = knowledgeMessagesRef.current[0]
       if (!firstMessage) return
 
-      const hasUpdateTime = firstMessage.content.includes('更新于')
       const updateTimeText = `\n\n<small class="text-muted-foreground">${knowledgeSubtitle}</small>`
 
-      // 只有当内容确实需要更新时才更新状态
       const contentWithoutUpdateTime = firstMessage.content.replace(
         /\n\n<small class="text-muted-foreground">更新于.*?<\/small>/,
         ''
@@ -173,11 +168,99 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     messagesEndRef,
   } = activeChat
 
-  // provider 和 setProvider 始终从 aiChat 获取（知识库模式不支持 provider）
   const { provider, setProvider } = aiChat
 
-  // 当弹窗关闭时，可以选择保留或清空对话历史
-  // 这里选择保留，用户下次打开时继续之前的对话
+  const chatBody = (
+    <>
+      <ChatMessageList
+        messages={messages}
+        isLoading={isLoading}
+        completion={completion}
+        messagesEndRef={messagesEndRef}
+        variant="dialog"
+      />
+
+      <div className="relative flex-none p-2">
+        {(chatMode === 'knowledge' ? knowledgeChat.hasMessages : aiChat.hasMessages) && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleClear}
+            disabled={isLoading}
+            className="absolute right-4 bottom-full mb-2 h-9 gap-1.5 rounded-full px-3 shadow-md"
+          >
+            <MessageSquarePlus className="h-4 w-4" />
+            新会话
+          </Button>
+        )}
+        <ChatInput
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          onSend={handleSend}
+          onStop={stop}
+          isLoading={isLoading}
+          model={model}
+          onModelChange={setModel}
+          provider={provider}
+          onProviderChange={setProvider}
+          chatMode={chatMode}
+          onChatModeChange={value => setChatMode(value as 'ai' | 'knowledge')}
+          images={chatMode === 'ai' ? aiChat.images : []}
+          isUploadingImages={chatMode === 'ai' ? aiChat.isUploadingImages : false}
+          onImageSelect={chatMode === 'ai' ? aiChat.handleImageSelect : undefined}
+          onRemoveImage={chatMode === 'ai' ? aiChat.removeImage : undefined}
+          variant="dialog"
+          placeholder={
+            isLoadingKnowledgeInitial && chatMode === 'knowledge'
+              ? '正在加载知识库...'
+              : chatMode === 'knowledge'
+                ? '与知识库AI对话'
+                : '与通用AI对话'
+          }
+        />
+      </div>
+    </>
+  )
+
+  if (variant === 'panel') {
+    if (!open) return null
+
+    const panelEl = (
+      <div
+        className="bg-background fixed inset-x-0 bottom-0 z-[29] flex flex-col overflow-hidden shadow-lg"
+        style={{ top: 'var(--app-header-height, 50px)' }}
+        role="dialog"
+        aria-label={chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'}
+      >
+        <div className="flex flex-none items-center justify-between border-b px-4 py-0">
+          <div className="flex-1">
+            <ChatHeader
+              variant="panel"
+              title={chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'}
+              hasMessages={hasMessages}
+              isLoading={isLoading}
+              onClear={handleClear}
+              hideClear
+              chatMode={chatMode}
+              onChatModeChange={value => setChatMode(value as 'ai' | 'knowledge')}
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 shrink-0"
+            onClick={() => onOpenChange(false)}
+            aria-label="关闭"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        {chatBody}
+      </div>
+    )
+
+    return createPortal(panelEl, document.body)
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -197,50 +280,7 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
             onChatModeChange={value => setChatMode(value as 'ai' | 'knowledge')}
           />
         </DialogHeader>
-
-        <ChatMessageList
-          messages={messages}
-          isLoading={isLoading}
-          completion={completion}
-          messagesEndRef={messagesEndRef}
-          variant="dialog"
-        />
-
-        <div className="relative flex-none p-2">
-          {(chatMode === 'knowledge' ? knowledgeChat.hasMessages : aiChat.hasMessages) && (
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleClear}
-              disabled={isLoading}
-              className="absolute right-4 bottom-full mb-2 h-9 gap-1.5 rounded-full px-3 shadow-md"
-            >
-              <MessageSquarePlus className="h-4 w-4" />
-              新会话
-            </Button>
-          )}
-          <ChatInput
-            prompt={prompt}
-            onPromptChange={setPrompt}
-            onSend={handleSend}
-            onStop={stop}
-            isLoading={isLoading}
-            model={model}
-            onModelChange={setModel}
-            provider={provider}
-            onProviderChange={setProvider}
-            chatMode={chatMode}
-            onChatModeChange={value => setChatMode(value as 'ai' | 'knowledge')}
-            variant="dialog"
-            placeholder={
-              isLoadingKnowledgeInitial && chatMode === 'knowledge'
-                ? '正在加载知识库...'
-                : chatMode === 'knowledge'
-                  ? '与知识库AI对话'
-                  : '与通用AI对话'
-            }
-          />
-        </div>
+        {chatBody}
       </DialogContent>
     </Dialog>
   )

@@ -40,7 +40,7 @@ export function ThemeView({
         </>
       )}
 
-      {/* 预设主题色网格 */}
+      {/* 预设主题色网格 + 添加按钮 */}
       <div className="grid grid-cols-4 gap-3">
         {translatedConfigs.themeColors
           .filter(theme => theme.id && theme.name && theme.color)
@@ -61,15 +61,17 @@ export function ThemeView({
               )}
             </button>
           ))}
+        <AddThemeDialog onAddTheme={onAddTheme} />
       </div>
 
       {/* 主题名称标签 */}
-      <div className="text-muted-foreground grid grid-cols-4 gap-2 text-center text-[10px]">
+      <div className="text-muted-foreground grid grid-cols-4 gap-2 text-center text-xs">
         {translatedConfigs.themeColors
           .filter(theme => theme.id && theme.name && theme.color)
           .map(theme => (
             <span key={theme.id!}>{theme.name}</span>
           ))}
+        <span aria-hidden />
       </div>
 
       {/* 自定义主题 */}
@@ -105,9 +107,6 @@ export function ThemeView({
           </div>
         </>
       )}
-
-      {/* 添加自定义主题 */}
-      <AddThemeDialog onAddTheme={onAddTheme} />
     </div>
   )
 }

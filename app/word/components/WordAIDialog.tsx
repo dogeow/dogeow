@@ -6,17 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Word } from '../types'
-import {
-  Loader2,
-  Send,
-  Save,
-  Sparkles,
-  RefreshCw,
-  MessageSquare,
-  Edit,
-  Copy,
-  Check,
-} from 'lucide-react'
+import { Loader2, Send, Save, Bot, RefreshCw, MessageSquare, Edit, Copy, Check } from 'lucide-react'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
 
@@ -314,7 +304,7 @@ export function WordAIDialog({ word, open, onOpenChange }: WordAIDialogProps) {
       <SheetContent side="bottom" className="flex h-[85vh] flex-col p-0">
         <SheetHeader className="border-b p-4 pb-2">
           <SheetTitle className="flex items-center gap-2 text-base">
-            <Sparkles className="text-primary h-4 w-4" />
+            <Bot className="text-primary h-4 w-4" />
             编辑单词 - {word.content}
           </SheetTitle>
         </SheetHeader>

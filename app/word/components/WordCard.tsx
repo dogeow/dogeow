@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Volume2, Sparkles, MoreVertical, Edit, CheckCircle } from 'lucide-react'
+import { Volume2, Bot, MoreVertical, Edit, CheckCircle } from 'lucide-react'
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -213,7 +213,7 @@ export function WordCard({ word, onNext }: WordCardProps) {
                   className="h-9 w-9 shrink-0"
                   aria-label="AI 学习"
                 >
-                  <Sparkles className="h-4 w-4" />
+                  <Bot className="h-4 w-4" />
                 </Button>
                 <Button
                   onClick={() => handleMarkAndNext(false)}

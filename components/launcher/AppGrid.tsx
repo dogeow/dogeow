@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Settings, Music, Sparkles, Image } from 'lucide-react'
+import { Settings, Music, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMusicStore } from '@/stores/musicStore'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -13,24 +13,18 @@ type DisplayMode = 'music' | 'apps' | 'settings'
 export interface AppGridProps {
   toggleDisplayMode: (mode: DisplayMode) => void
   onOpenAi?: () => void
-  onOpenVisionAi?: () => void
 }
 
-export function AppGrid({ toggleDisplayMode, onOpenAi, onOpenVisionAi }: AppGridProps) {
+export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
   const { t } = useTranslation()
   const { isPlaying } = useMusicStore()
 
   // 定义按钮配置
   const buttons = [
     {
-      icon: <Sparkles className="h-5 w-5" />,
+      icon: <Bot className="h-5 w-5" />,
       label: 'AI 助理',
       onClick: () => onOpenAi?.(),
-    },
-    {
-      icon: <Image className="h-5 w-5 text-blue-500" />,
-      label: 'AI 视觉',
-      onClick: () => onOpenVisionAi?.(),
     },
     {
       icon: (

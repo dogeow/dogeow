@@ -26,7 +26,6 @@ interface AppsViewProps {
   isAuthenticated: boolean
   toggleDisplayMode: (mode: DisplayMode) => void
   onOpenAi?: () => void
-  onOpenVisionAi?: () => void
 }
 
 export function AppsView({
@@ -35,15 +34,11 @@ export function AppsView({
   isAuthenticated,
   toggleDisplayMode,
   onOpenAi,
-  onOpenVisionAi,
 }: AppsViewProps) {
   const { clearFilters } = useFilterPersistenceStore()
 
-  // 处理 Logo 点击，清除筛选条件并跳转到首页
   const handleLogoClick = () => {
-    // 清除物品管理页面的筛选条件
     clearFilters()
-    // 跳转到首页
     router.push('/')
   }
 
@@ -57,11 +52,7 @@ export function AppsView({
       {/* 中间：应用图标 */}
       {!searchManager.isSearchVisible && (
         <div className="flex flex-1 items-center justify-start">
-          <AppGrid
-            toggleDisplayMode={toggleDisplayMode}
-            onOpenAi={onOpenAi}
-            onOpenVisionAi={onOpenVisionAi}
-          />
+          <AppGrid toggleDisplayMode={toggleDisplayMode} onOpenAi={onOpenAi} />
         </div>
       )}
 

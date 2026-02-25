@@ -39,18 +39,16 @@ export function AddThemeDialog({ onAddTheme }: AddThemeDialogProps) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <div className="shrink-0">
-          <Button
-            variant="ghost"
-            className={cn(
-              'relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-md p-1',
-              'bg-primary/10 hover:bg-primary/20 border-primary/30 border-2 border-dashed'
-            )}
-            title="Add Theme"
-          >
-            <Plus className="text-primary/70 h-5 w-5" />
-          </Button>
-        </div>
+        <button
+          type="button"
+          className={cn(
+            'relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl transition-all',
+            'border-2 border-dashed border-primary/30 bg-primary/10 hover:bg-primary/20 hover:opacity-90'
+          )}
+          title="添加主题"
+        >
+          <Plus className="text-primary/70 h-5 w-5" />
+        </button>
       </DialogTrigger>
 
       <DialogContent className="max-w-[80%]">

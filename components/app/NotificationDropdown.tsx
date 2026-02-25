@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import useSWR from 'swr'
 import { get, post } from '@/lib/api'
 import type { UnreadNotificationsResponse } from '@/lib/api'
+import useAuthStore from '@/stores/authStore'
 import { Bell } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -11,11 +12,15 @@ const fetcher = (url: string) => get<UnreadNotificationsResponse>(url)
 
 export function NotificationDropdown() {
   const [open, setOpen] = useState(false)
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const ref = useRef<HTMLDivElement>(null)
 
   const { data, mutate } = useSWR<UnreadNotificationsResponse>(
-    open ? 'notifications/unread' : null,
-    fetcher
+    isAuthenticated ? 'notifications/unread' : null,
+    fetcher,
+    {
+      revalidateOnMount: false,
+    }
   )
 
   // 点击外部关闭
@@ -29,6 +34,12 @@ export function NotificationDropdown() {
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
   }, [open])
+
+  // 打开下拉时主动刷新一次，确保列表和角标是最新
+  useEffect(() => {
+    if (!open || !isAuthenticated) return
+    void mutate()
+  }, [open, isAuthenticated, mutate])
 
   const handleMarkRead = async (id: string, url: string) => {
     try {
@@ -62,7 +73,7 @@ export function NotificationDropdown() {
         className="hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
         aria-label="通知"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-4 w-4" />
         {count > 0 && (
           <span className="bg-destructive text-destructive-foreground absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-medium">
             {count > 99 ? '99+' : count}

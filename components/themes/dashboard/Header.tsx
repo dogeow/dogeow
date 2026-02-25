@@ -14,14 +14,9 @@ const AiDialog = dynamic(
   { ssr: false }
 )
 
-const VisionAiDialog = dynamic(
-  () => import('@/components/app/VisionAiDialog').then(m => ({ default: m.VisionAiDialog })),
-  { ssr: false }
-)
-
 /**
  * Dashboard 主题的 Header 组件
- * 星星按钮 → 通用 AI，图片按钮 → 视觉 AI
+ * 星星按钮 → 通用 AI（含视觉理解）
  */
 export default function DashboardHeader() {
   const theme = useUITheme()
@@ -29,14 +24,12 @@ export default function DashboardHeader() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const [isAiOpen, setIsAiOpen] = useState(false)
-  const [isVisionAiOpen, setIsVisionAiOpen] = useState(false)
 
   if (!theme) return null
 
   return (
     <>
-      <AiDialog open={isAiOpen} onOpenChange={setIsAiOpen} />
-      <VisionAiDialog open={isVisionAiOpen} onOpenChange={setIsVisionAiOpen} />
+      <AiDialog variant="panel" open={isAiOpen} onOpenChange={setIsAiOpen} />
       <div className="flex h-full w-full items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <button
@@ -75,10 +68,7 @@ export default function DashboardHeader() {
 
           {theme.layout.header.showUserMenu && (
             <div className="flex items-center gap-2">
-              <AppLauncher
-                onOpenAi={() => setIsAiOpen(true)}
-                onOpenVisionAi={() => setIsVisionAiOpen(true)}
-              />
+              <AppLauncher onOpenAi={() => setIsAiOpen(true)} />
             </div>
           )}
         </div>

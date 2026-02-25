@@ -2,6 +2,9 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { AI_SYSTEM_PROMPT, type ChatMessage } from '../types'
+import { API_URL } from '@/lib/api'
+import useAuthStore from '@/stores/authStore'
+import { toast } from 'sonner'
 
 // AI 提供商类型
 type AIProvider = 'github' | 'minimax' | 'ollama' | 'zhipuai'
@@ -16,6 +19,12 @@ interface UseAiChatReturn {
   messages: ChatMessage[]
   displayMessages: ChatMessage[]
   hasMessages: boolean
+  images: ImageItem[]
+  hasImages: boolean
+  isUploadingImages: boolean
+  handleImageSelect: (files: FileList | null) => void
+  removeImage: (index: number) => void
+  clearImages: () => void
   completion: string | undefined
   isLoading: boolean
   model: string
@@ -28,11 +37,22 @@ interface UseAiChatReturn {
   messagesEndRef: React.RefObject<HTMLDivElement | null>
 }
 
+/** 单张图片：本地预览 + 上传后的 URL */
+interface ImageItem {
+  id: string
+  preview: string
+  url?: string
+  uploading?: boolean
+}
+
+const MAX_IMAGE_COUNT = 5
+
 export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   const { open } = options
 
   const [prompt, setPrompt] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [images, setImages] = useState<ImageItem[]>([])
   const [completion, setCompletion] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
   const [model, setModel] = useState<string>(() => {
@@ -57,10 +77,13 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const imagesRef = useRef<ImageItem[]>([])
 
   // 过滤掉 system 消息用于显示
   const displayMessages = messages.filter(m => m.role !== 'system')
   const hasMessages = displayMessages.length > 0
+  const hasImages = images.length > 0
+  const isUploadingImages = images.some(item => item.uploading)
 
   // 自动滚动到底部
   useEffect(() => {
@@ -68,6 +91,113 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages, completion, isLoading])
+
+  useEffect(() => {
+    imagesRef.current = images
+  }, [images])
+
+  const revokePreview = useCallback((preview: string) => {
+    if (preview.startsWith('blob:')) {
+      URL.revokeObjectURL(preview)
+    }
+  }, [])
+
+  const clearImages = useCallback(() => {
+    setImages(prev => {
+      prev.forEach(item => revokePreview(item.preview))
+      return []
+    })
+  }, [revokePreview])
+
+  // 关闭弹窗时清理附件，避免旧图片残留与 blob 泄漏
+  useEffect(() => {
+    if (!open) {
+      clearImages()
+    }
+  }, [open, clearImages])
+
+  // 卸载时释放所有 blob URL
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach(item => revokePreview(item.preview))
+    }
+  }, [revokePreview])
+
+  // 上传单张图片到后端（又拍云）
+  const uploadImageToServer = useCallback(async (file: File): Promise<string> => {
+    const token = useAuthStore.getState().token
+    const formData = new FormData()
+    formData.append('image', file)
+
+    const response = await fetch(`${API_URL}/api/vision/upload`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: formData,
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      throw new Error(err.message || '图片上传失败')
+    }
+
+    const data = await response.json()
+    if (!data.success) {
+      throw new Error(data.message || '图片上传失败')
+    }
+
+    return data.url
+  }, [])
+
+  // 处理图片选择：先本地预览，再异步上传
+  const handleImageSelect = useCallback(
+    (files: FileList | null) => {
+      if (!files) return
+
+      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
+      const remainingSlots = Math.max(0, MAX_IMAGE_COUNT - images.length)
+
+      if (imageFiles.length > remainingSlots) {
+        toast.warning(`最多只能上传 ${remainingSlots} 张图片`)
+      }
+
+      const filesToProcess = imageFiles.slice(0, remainingSlots)
+      filesToProcess.forEach(file => {
+        const id = `img-${Date.now()}-${Math.random().toString(36).slice(2)}`
+        const preview = URL.createObjectURL(file)
+
+        setImages(prev => [...prev, { id, preview, uploading: true }])
+
+        uploadImageToServer(file)
+          .then(url => {
+            setImages(prev =>
+              prev.map(item => (item.id === id ? { ...item, url, uploading: false } : item))
+            )
+          })
+          .catch(err => {
+            revokePreview(preview)
+            toast.error(err instanceof Error ? err.message : '图片上传失败')
+            setImages(prev => prev.filter(item => item.id !== id))
+          })
+      })
+    },
+    [images.length, uploadImageToServer, revokePreview]
+  )
+
+  const removeImage = useCallback(
+    (index: number) => {
+      setImages(prev => {
+        const item = prev[index]
+        if (item) {
+          revokePreview(item.preview)
+        }
+        return prev.filter((_, i) => i !== index)
+      })
+    },
+    [revokePreview]
+  )
 
   // 停止生成
   const stop = useCallback(() => {
@@ -85,21 +215,33 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     setMessages([])
     setCompletion('')
     setPrompt('')
-  }, [stop])
+    clearImages()
+  }, [stop, clearImages])
 
   // 发送消息
   const handleSend = useCallback(async () => {
-    if (!prompt.trim() || isLoading) return
+    if (isLoading) return
+
+    const imageUrls = images.map(item => item.url).filter((url): url is string => !!url)
+    const hasReadyImages = imageUrls.length > 0
+
+    if (!prompt.trim() && !hasReadyImages) return
+    if (isUploadingImages) {
+      toast.warning('图片上传中，请稍候')
+      return
+    }
 
     const userMessage: ChatMessage = {
       role: 'user',
-      content: prompt.trim(),
+      content: prompt.trim() || '请描述这张图片',
+      images: imageUrls.map(url => ({ url })),
     }
 
     // 添加用户消息到历史
     const newMessages: ChatMessage[] = [...messages, userMessage]
     setMessages(newMessages)
     setPrompt('')
+    clearImages()
     setIsLoading(true)
     setCompletion('')
 
@@ -119,7 +261,12 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
             ...newMessages,
           ]
 
+      const requestMessages = chatMessages.map(({ role, content }) => ({ role, content }))
+
       // 调用 API
+      const requestProvider = hasReadyImages ? 'zhipuai' : provider
+      const requestModel = hasReadyImages && provider !== 'zhipuai' ? undefined : model
+
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
@@ -127,9 +274,10 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
         },
         body: JSON.stringify({
           useChat: true,
-          messages: chatMessages,
-          model,
-          provider,
+          messages: requestMessages,
+          model: requestModel,
+          provider: requestProvider,
+          images: imageUrls,
         }),
         signal: abortController.signal,
       })
@@ -247,7 +395,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     } finally {
       abortControllerRef.current = null
     }
-  }, [prompt, messages, isLoading, model, provider])
+  }, [prompt, messages, images, isUploadingImages, isLoading, model, provider, clearImages])
 
   // 当 model 改变时保存到 localStorage
   useEffect(() => {
@@ -289,6 +437,12 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     messages,
     displayMessages,
     hasMessages,
+    images,
+    hasImages,
+    isUploadingImages,
+    handleImageSelect,
+    removeImage,
+    clearImages,
     completion: completion || undefined,
     isLoading,
     model,

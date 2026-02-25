@@ -31,11 +31,9 @@ type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 export interface AppLauncherProps {
   /** 点击星星（AI 助理）时打开通用 AI 对话框 */
   onOpenAi?: () => void
-  /** 点击图片（AI 视觉）时打开视觉理解对话框 */
-  onOpenVisionAi?: () => void
 }
 
-export function AppLauncher({ onOpenAi, onOpenVisionAi }: AppLauncherProps = {}) {
+export function AppLauncher({ onOpenAi }: AppLauncherProps = {}) {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false)
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
@@ -241,7 +239,6 @@ export function AppLauncher({ onOpenAi, onOpenVisionAi }: AppLauncherProps = {})
             isAuthenticated={isAuthenticated}
             toggleDisplayMode={toggleDisplayMode}
             onOpenAi={onOpenAi ?? (() => setIsAiDialogOpen(true))}
-            onOpenVisionAi={onOpenVisionAi}
           />
         )
 
@@ -257,7 +254,7 @@ export function AppLauncher({ onOpenAi, onOpenVisionAi }: AppLauncherProps = {})
 
   return (
     <>
-      {isAiDialogOpen && <AiDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />}
+      <AiDialog variant="panel" open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
       <AuthDialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} />
       <SearchDialog
         open={searchManager.isSearchDialogOpen}

@@ -169,19 +169,21 @@ export function SettingsDialog({
               <Sun className="h-4 w-4 shrink-0" />
               <div className="flex flex-1 gap-1">
                 <button
+                  type="button"
                   onClick={() => setFollowSystem(true)}
-                  className={`min-w-0 shrink-0 rounded px-2 py-1.5 text-sm whitespace-nowrap transition-colors ${
+                  className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
                     followSystem ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
                   }`}
                 >
                   跟随系统
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setFollowSystem(false)
                     setTheme('light')
                   }}
-                  className={`min-w-0 shrink-0 rounded px-2 py-1.5 text-sm whitespace-nowrap transition-colors ${
+                  className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
                     !followSystem && theme === 'light'
                       ? 'bg-primary text-primary-foreground'
                       : 'hover:bg-muted'
@@ -190,11 +192,12 @@ export function SettingsDialog({
                   浅色
                 </button>
                 <button
+                  type="button"
                   onClick={() => {
                     setFollowSystem(false)
                     setTheme('dark')
                   }}
-                  className={`min-w-0 shrink-0 rounded px-2 py-1.5 text-sm whitespace-nowrap transition-colors ${
+                  className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
                     !followSystem && theme === 'dark'
                       ? 'bg-primary text-primary-foreground'
                       : 'hover:bg-muted'
@@ -265,7 +268,7 @@ export function SettingsDialog({
         <div className="flex h-[60vh] min-h-[400px] w-full flex-col overflow-hidden">
           {/* 顶部标题栏 */}
           <div className="flex h-12 items-center justify-center border-b px-4">
-            <DialogTitle className="text-sm font-semibold">设置</DialogTitle>
+            <DialogTitle className="text-base font-semibold">设置</DialogTitle>
           </div>
 
           {/* 左侧和右侧内容 */}
@@ -289,7 +292,7 @@ export function SettingsDialog({
                         }`}
                       >
                         {item.icon}
-                        <span className="text-sm">{item.label}</span>
+                        <span className="text-sm font-medium">{item.label}</span>
                       </button>
                     )
                   })}
@@ -303,8 +306,10 @@ export function SettingsDialog({
               <div className="flex h-10 items-center border-b px-4">
                 {activeSection !== 'appearance' && (
                   <button
+                    type="button"
                     onClick={() => setActiveSection('appearance')}
-                    className="hover:bg-muted mr-2 flex h-5 w-5 items-center justify-center rounded-md"
+                    className="hover:bg-muted -ml-1 mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
+                    aria-label="返回外观"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -316,6 +321,7 @@ export function SettingsDialog({
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      aria-hidden
                     >
                       <path d="m15 18-6-6 6-6" />
                     </svg>
@@ -349,7 +355,7 @@ function SettingsItem({ icon, label, onClick, trailing }: SettingsItemProps) {
       className="hover:bg-muted flex w-full items-center gap-2 rounded-lg p-2 transition-colors"
     >
       {icon}
-      <span className="flex-1 text-left text-sm">{label}</span>
+      <span className="flex-1 text-left text-xs">{label}</span>
       {trailing}
     </button>
   )
@@ -379,7 +385,7 @@ function AppsListView({
         <div className="flex flex-1 gap-1">
           <button
             onClick={() => setSiteLayout('grid')}
-            className={`flex-1 rounded px-2 py-1 text-sm transition-colors ${
+            className={`flex-1 rounded px-2 py-1 text-xs transition-colors ${
               siteLayout === 'grid' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
@@ -387,7 +393,7 @@ function AppsListView({
           </button>
           <button
             onClick={() => setSiteLayout('magazine')}
-            className={`flex-1 rounded px-2 py-1 text-sm transition-colors ${
+            className={`flex-1 rounded px-2 py-1 text-xs transition-colors ${
               siteLayout === 'magazine' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
@@ -402,7 +408,11 @@ function AppsListView({
         label="显示封面"
         onClick={() => setShowProjectCovers(!showProjectCovers)}
         trailing={
-          <div className="bg-primary flex h-5 w-9 items-center rounded-full p-0.5">
+          <div
+            className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${
+              showProjectCovers ? 'bg-primary' : 'bg-muted'
+            }`}
+          >
             <div
               className={`bg-background h-3.5 w-3.5 rounded-full shadow-md transition-transform ${
                 showProjectCovers ? 'translate-x-4' : 'translate-x-0'

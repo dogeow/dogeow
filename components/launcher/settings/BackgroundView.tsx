@@ -57,7 +57,7 @@ export function BackgroundView({
               )}
               {/* 名字标签 */}
               <div className="absolute right-0 bottom-0 left-0 bg-black/50 px-2 py-1">
-                <span className="text-[10px] text-white">{bg.name}</span>
+                <span className="text-xs text-white">{bg.name}</span>
               </div>
               {/* 选中标记 */}
               {backgroundImage === bg.url && (
@@ -86,7 +86,7 @@ export function BackgroundView({
             )}
             {/* 名字标签 */}
             <div className="absolute right-0 bottom-0 left-0 bg-black/50 px-2 py-1">
-              <span className="text-[10px] text-white">{bg.name}</span>
+              <span className="text-xs text-white">{bg.name}</span>
             </div>
             {/* 选中标记 */}
             {backgroundImage === bg.url && (

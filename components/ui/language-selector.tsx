@@ -26,6 +26,8 @@ interface LanguageSelectorProps {
   showText?: boolean
   showFlag?: boolean
   showDetectionInfo?: boolean
+  /** Applied to each button when variant="button", e.g. text-xs for settings dialog */
+  buttonClassName?: string
   detectionInfo?: {
     method: string
     confidence: number
@@ -49,6 +51,7 @@ export function LanguageSelector({
   showText = true,
   showFlag = true,
   showDetectionInfo = true,
+  buttonClassName,
   detectionInfo,
   ...props
 }: LanguageSelectorProps) {
@@ -120,7 +123,8 @@ export function LanguageSelector({
             className={cn(
               'relative transition-all duration-200',
               currentLanguage === language.code && 'ring-primary/20 ring-2',
-              isTransitioning && 'cursor-not-allowed opacity-70'
+              isTransitioning && 'cursor-not-allowed opacity-70',
+              buttonClassName
             )}
           >
             {showFlag && <FlagIcon languageCode={language.code} />}

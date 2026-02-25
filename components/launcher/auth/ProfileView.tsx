@@ -29,7 +29,6 @@ export const ProfileView = memo<ProfileViewProps>(
           </div>
           <div>
             <div className="text-lg font-medium">{userName}</div>
-            <div className="text-muted-foreground text-sm">个人账号</div>
           </div>
         </div>
 

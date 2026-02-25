@@ -31,11 +31,15 @@ export function useMessageInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const activeRoomIdRef = useRef<number | null>(null)
+  const latestMessageRef = useRef('')
 
   const { currentRoom, checkMuteStatus, muteUntil } = useChatStore()
+  const storage = typeof window !== 'undefined' ? window.localStorage : null
 
   // 防抖消息用于自动保存
-  const debouncedMessage = useDebounce(message, DEBOUNCE_DELAY)
+  const draftPayload = useMemo(() => ({ roomId, message }), [roomId, message])
+  const debouncedDraftPayload = useDebounce(draftPayload, DEBOUNCE_DELAY)
 
   // 自动调整文本框高度
   const adjustTextareaHeight = useCallback(() => {
@@ -129,9 +133,11 @@ export function useMessageInput({
 
   // 清除草稿
   const clearDraft = useCallback(() => {
+    if (!storage) return
+
     const draftKey = getDraftKey(roomId)
-    localStorage.removeItem(draftKey)
-  }, [roomId])
+    storage.removeItem(draftKey)
+  }, [roomId, storage])
 
   // 发送消息
   const handleSendMessage = useCallback(async () => {
@@ -243,24 +249,50 @@ export function useMessageInput({
     return message.trim().length > 0 && !isSending && isConnected && !isCurrentlyMuted
   }, [message, isSending, isConnected, checkMuteStatus])
 
-  // 自动保存草稿
   useEffect(() => {
-    if (debouncedMessage && currentRoom) {
-      const draftKey = getDraftKey(roomId)
-      localStorage.setItem(draftKey, debouncedMessage)
-    }
-  }, [debouncedMessage, roomId, currentRoom])
+    latestMessageRef.current = message
+  }, [message])
 
-  // 挂载时加载草稿
+  // 房间切换时保存当前草稿并加载目标房间草稿
   useEffect(() => {
-    if (currentRoom && !message) {
-      const draftKey = getDraftKey(roomId)
-      const savedDraft = localStorage.getItem(draftKey)
-      if (savedDraft) {
-        setMessage(savedDraft)
+    if (!currentRoom || !storage) return
+
+    const previousRoomId = activeRoomIdRef.current
+    if (previousRoomId === roomId) return
+
+    if (previousRoomId !== null) {
+      const previousDraftKey = getDraftKey(previousRoomId)
+      const previousMessage = latestMessageRef.current
+
+      if (previousMessage.trim()) {
+        storage.setItem(previousDraftKey, previousMessage)
+      } else {
+        storage.removeItem(previousDraftKey)
       }
     }
-  }, [currentRoom, roomId, message])
+
+    activeRoomIdRef.current = roomId
+
+    const draftKey = getDraftKey(roomId)
+    const savedDraft = storage.getItem(draftKey)
+    setMessage(savedDraft ?? '')
+  }, [currentRoom, roomId, storage])
+
+  // 自动保存草稿
+  useEffect(() => {
+    if (!currentRoom || !storage) return
+
+    const { roomId: draftRoomId, message: draftMessage } = debouncedDraftPayload
+    if (activeRoomIdRef.current !== draftRoomId) return
+
+    const draftKey = getDraftKey(draftRoomId)
+    if (draftMessage.trim()) {
+      storage.setItem(draftKey, draftMessage)
+      return
+    }
+
+    storage.removeItem(draftKey)
+  }, [debouncedDraftPayload, currentRoom, storage])
 
   // 挂载时和回复时自动聚焦
   useEffect(() => {

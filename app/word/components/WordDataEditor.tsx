@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { Loader2, Save, RefreshCw, Sparkles } from 'lucide-react'
+import { Loader2, Save, RefreshCw, Bot } from 'lucide-react'
 import { toast } from 'sonner'
 import { parseEducationLevelNames, getEducationLevelNames } from '../hooks/useWord'
 
@@ -183,7 +183,7 @@ export function WordDataEditor({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Sparkles className="text-primary h-5 w-5" />
+          <Bot className="text-primary h-5 w-5" />
           单词：{wordContent}
         </CardTitle>
       </CardHeader>
