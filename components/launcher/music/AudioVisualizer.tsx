@@ -278,9 +278,9 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         }
 
         // 绘制柱子：优先使用 roundRect（若支持），否则使用 fillRect（整像素绘制更稳定）
-        if ((ctx as any).roundRect) {
+        if (ctx.roundRect) {
           ctx.beginPath()
-          ;(ctx as any).roundRect(x, y, w, hRounded, 2)
+          ctx.roundRect(x, y, w, hRounded, 2)
           ctx.fill()
         } else {
           ctx.fillRect(x, y, w, hRounded)
@@ -467,9 +467,9 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         ctx.fillStyle = fillColor
 
         // 绘制宽柱（优先使用 roundRect，否则使用 fillRect）
-        if ((ctx as any).roundRect) {
+        if (ctx.roundRect) {
           ctx.beginPath()
-          ;(ctx as any).roundRect(x, y, w, h, 8)
+          ctx.roundRect(x, y, w, h, 8)
           ctx.fill()
         } else {
           ctx.fillRect(x, y, w, h)
@@ -504,8 +504,8 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
       // 绘制大柱（带圆角）
       ctx.beginPath()
-      if ((ctx as any).roundRect) {
-        ;(ctx as any).roundRect(x, y, barW, h, 12)
+      if (ctx.roundRect) {
+        ctx.roundRect(x, y, barW, h, 12)
       } else {
         const radius = 12
         ctx.moveTo(x + radius, y)
@@ -581,8 +581,8 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
 
         // 绘制带圆角的柱子
         ctx.beginPath()
-        if ((ctx as any).roundRect) {
-          ;(ctx as any).roundRect(x, y, w, h, [radius, radius, 0, 0])
+        if (ctx.roundRect) {
+          ctx.roundRect(x, y, w, h, [radius, radius, 0, 0])
         } else {
           ctx.moveTo(x + radius, y)
           ctx.lineTo(x + w - radius, y)
@@ -949,7 +949,7 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
       const dataArray = dataArrayRef.current
 
       // 获取频率数据
-      analyserNode.getByteFrequencyData(dataArray as any)
+      analyserNode.getByteFrequencyData(dataArray as Uint8Array<ArrayBuffer>)
 
       // 切换效果类型时，清空画布残留（脉冲/星空等拖尾效果会留下不透明残留）
       if (prevTypeRef.current !== type) {

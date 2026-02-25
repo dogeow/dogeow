@@ -96,7 +96,9 @@ export default function Game2048() {
 
   const initMoveAudioContext = useCallback(() => {
     if (moveAudioContextRef.current || typeof window === 'undefined') return
-    const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext
+    const AudioContextCtor =
+      window.AudioContext ??
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
     if (!AudioContextCtor) return
     try {
       moveAudioContextRef.current = new AudioContextCtor()
@@ -308,11 +310,12 @@ export default function Game2048() {
       setIsGyroSupported(false)
       return false
     }
-    //@ts-ignore
-    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+    const devOrientation = DeviceOrientationEvent as typeof DeviceOrientationEvent & {
+      requestPermission?: () => Promise<'granted' | 'denied'>
+    }
+    if (typeof devOrientation.requestPermission === 'function') {
       try {
-        //@ts-ignore
-        const permission = await DeviceOrientationEvent.requestPermission()
+        const permission = await devOrientation.requestPermission()
         if (permission === 'granted') {
           setIsGyroSupported(true)
           return true

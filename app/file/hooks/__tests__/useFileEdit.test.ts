@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react'
+import type { CloudFile } from '../../types'
 import { describe, it, expect, vi } from 'vitest'
 import { useFileEdit } from '../useFileEdit'
 
@@ -36,7 +37,7 @@ describe('useFileEdit', () => {
 
     const fakeFile = { id: 7, name: 'foo', description: 'bar' }
     act(() => {
-      result.current.setEditingFile(fakeFile as any)
+      result.current.setEditingFile(fakeFile as CloudFile)
     })
 
     expect(result.current.open).toBe(true)

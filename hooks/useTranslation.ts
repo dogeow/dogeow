@@ -55,7 +55,7 @@ export function useTranslation(): UseTranslationReturn {
   }, [initializeLanguage, isLanguageLoaded])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- 语言初始化
     initLanguage()
   }, [initLanguage])
 

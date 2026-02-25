@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -5,9 +6,8 @@ import { GalleryItem } from '../GalleryItem'
 import { Item } from '@/app/thing/types'
 
 // Mock next/image
-/* eslint-disable @next/next/no-img-element */
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: any) => (
+  default: ({ src, alt, ...props }: { src?: string; alt?: string; [k: string]: unknown }) => (
     <img src={src} alt={alt} data-testid="next-image" {...props} />
   ),
 }))

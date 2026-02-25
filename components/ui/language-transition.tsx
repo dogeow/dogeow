@@ -22,7 +22,6 @@ export function LanguageTransition({ children, className }: LanguageTransitionPr
     if (prevLanguage !== currentLanguage) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsTransitioning(true)
-
       setPrevLanguage(currentLanguage)
 
       // 短暂的过渡动画
@@ -69,7 +68,6 @@ export function TextTransition({ children, className }: LanguageTransitionProps)
     if (prevLanguage !== currentLanguage) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsTransitioning(true)
-
       setPrevLanguage(currentLanguage)
 
       const timer = setTimeout(() => {

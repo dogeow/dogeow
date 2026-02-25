@@ -32,11 +32,11 @@ describe('useFormModal', () => {
   })
 
   it('allows manual setters to work', () => {
-    const { result } = renderHook(() => useFormModal<number>('view'))
+    const { result } = renderHook(() => useFormModal<number, 'view' | 'custom'>('view'))
     act(() => {
       result.current.setOpen(true)
       result.current.setSelectedId(99)
-      result.current.setMode('custom' as any)
+      result.current.setMode('custom')
     })
     expect(result.current.open).toBe(true)
     expect(result.current.selectedId).toBe(99)

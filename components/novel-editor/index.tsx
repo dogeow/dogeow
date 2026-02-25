@@ -26,7 +26,7 @@ import {
   handleImageDrop,
   handleImagePaste,
 } from 'novel'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 import { usePathname } from 'next/navigation'
 import { defaultExtensions } from './extensions'
@@ -97,7 +97,24 @@ const extensions = [...defaultExtensions, slashCommand]
 
 const TailwindAdvancedEditor = () => {
   const pathname = usePathname()
-  const [initialContent, setInitialContent] = useState<null | JSONContent>(null)
+  const getInitialContentSnapshot = () => {
+    if (typeof window === 'undefined') return null
+    if (pathname === '/note/new') return emptyEditorContent
+    const stored = window.localStorage.getItem('novel-content')
+    if (stored) {
+      try {
+        return JSON.parse(stored) as JSONContent
+      } catch {
+        return emptyEditorContent
+      }
+    }
+    return emptyEditorContent
+  }
+  const initialContent = useSyncExternalStore(
+    () => () => {},
+    getInitialContentSnapshot,
+    () => null
+  )
   const [saveStatus, setSaveStatus] = useState('Saved')
   const [charsCount, setCharsCount] = useState<number | undefined>(undefined)
 
@@ -180,29 +197,11 @@ const TailwindAdvancedEditor = () => {
   }, 500)
 
   useEffect(() => {
-    const isNewNotePage = pathname === '/note/new'
-
-    if (isNewNotePage) {
-      // 新建笔记页面：清空localStorage并使用空内容
+    if (pathname === '/note/new') {
+      // 新建笔记页面：清空 localStorage（内容由 useSyncExternalStore 的 getSnapshot 提供）
       window.localStorage.removeItem('novel-content')
       window.localStorage.removeItem('html-content')
       window.localStorage.removeItem('markdown')
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setInitialContent(emptyEditorContent)
-    } else {
-      // 其他页面：尝试从localStorage加载内容
-      const content = window.localStorage.getItem('novel-content')
-      if (content) {
-        try {
-          setInitialContent(JSON.parse(content))
-        } catch (error) {
-          console.warn('Failed to parse stored content, using empty:', error)
-
-          setInitialContent(emptyEditorContent)
-        }
-      } else {
-        setInitialContent(emptyEditorContent)
-      }
     }
 
     // 添加全局复制事件监听器作为备选方案

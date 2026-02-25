@@ -173,7 +173,7 @@ export function BattleArena({
         lastSkillUsedRef.current = skillUsed
         skillAnimationCompletedRef.current = false
       }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 技能动画期间同步 UI
       setShowDamageAndHp(false)
       skillTriggerCountRef.current += 1
       const uniqueSkillId = skillUsed.skill_id * 10000 + skillTriggerCountRef.current

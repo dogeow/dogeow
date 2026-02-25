@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -6,7 +7,6 @@ import { Item } from '../../types'
 
 // Mock Next.js Image component
 
-/* eslint-disable @next/next/no-img-element */
 vi.mock('next/image', () => ({
   default: ({ src, alt }: any) => <img src={src} alt={alt} data-testid="item-image" />,
 }))

@@ -107,4 +107,23 @@ declare global {
     artwork?: MediaImage[]
     constructor(init?: MediaMetadataInit)
   }
+
+  // Safari / 旧版 Chrome 的 webkit 前缀
+  interface Window {
+    webkitAudioContext?: typeof AudioContext
+  }
+}
+
+// DeviceOrientation 权限 API（iOS 13+）
+declare global {
+  interface DeviceOrientationEvent {
+    requestPermission?: () => Promise<'granted' | 'denied'>
+  }
+}
+
+// Canvas roundRect（较新规范，部分浏览器已支持）
+declare global {
+  interface CanvasRenderingContext2D {
+    roundRect?(x: number, y: number, w: number, h: number, radii?: number | number[]): void
+  }
 }

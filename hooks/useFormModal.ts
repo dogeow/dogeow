@@ -2,10 +2,10 @@ import { useState, useCallback } from 'react'
 
 export interface UseFormModalReturn<T = number | null, M = string> {
   open: boolean
-  selectedId: T
+  selectedId: T | null
   mode: M
   setOpen: (open: boolean) => void
-  setSelectedId: (id: T) => void
+  setSelectedId: (id: T | null) => void
   setMode: (mode: M) => void
   openModal: (id: T, mode?: M) => void
   closeModal: () => void
@@ -22,7 +22,7 @@ export function useFormModal<T = number | null, M extends string = string>(
   initialMode: M
 ): UseFormModalReturn<T, M> {
   const [open, setOpen] = useState(false)
-  const [selectedId, setSelectedId] = useState<T>(null as any)
+  const [selectedId, setSelectedId] = useState<T | null>(null)
   const [mode, setMode] = useState<M>(initialMode)
 
   const openModal = useCallback((id: T, modeOverride?: M) => {
@@ -35,7 +35,7 @@ export function useFormModal<T = number | null, M extends string = string>(
 
   const closeModal = useCallback(() => {
     setOpen(false)
-    setSelectedId(null as any)
+    setSelectedId(null)
     setMode(initialMode)
   }, [initialMode])
 

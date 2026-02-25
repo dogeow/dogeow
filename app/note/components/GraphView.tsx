@@ -309,7 +309,7 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   // 链接颜色获取函数
   const linkColor = useCallback(
     (link: unknown) => {
-      return createLinkColorGetter(activeNode, activeLink, graphPalette)(link as any)
+      return createLinkColorGetter(activeNode, activeLink, graphPalette)(link as LinkData)
     },
     [activeNode, activeLink, graphPalette]
   )
@@ -317,7 +317,7 @@ export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }:
   // 链接宽度获取函数
   const linkWidth = useCallback(
     (link: unknown) => {
-      return createLinkWidthGetter(activeNode, activeLink)(link as any)
+      return createLinkWidthGetter(activeNode, activeLink)(link as LinkData)
     },
     [activeNode, activeLink]
   )

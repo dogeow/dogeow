@@ -35,7 +35,7 @@ export function useBowlingControls() {
         newAngle = aimAngle
       }
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 陀螺仪外部输入同步
       setCurrentAimAngle(newAngle)
 
       // 只有在陀螺仪可用时才更新store中的角度

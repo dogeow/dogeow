@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -22,9 +23,8 @@ vi.mock('@/lib/api', () => ({
   post: vi.fn(),
 }))
 
-/* eslint-disable @next/next/no-img-element */
 vi.mock('next/image', () => ({
-  default: ({ src, alt, onClick }: any) => (
+  default: ({ src, alt, onClick }: { src?: string; alt?: string; onClick?: () => void }) => (
     <img src={src} alt={alt} onClick={onClick} data-testid="uploaded-image" />
   ),
 }))

@@ -62,8 +62,11 @@ export function LanguageDetectionPrompt({
         }
         return true
       }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (shouldShow()) setIsVisible(true)
+
+      if (shouldShow()) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setIsVisible(true)
+      }
     }
   }, [
     showOnFirstVisit,

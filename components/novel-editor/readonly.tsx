@@ -2,7 +2,7 @@
 
 import './novel-editor.css'
 import { EditorContent, EditorRoot, type JSONContent } from 'novel'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import hljs from 'highlight.js/lib/core'
 import javascript from 'highlight.js/lib/languages/javascript'
 import typescript from 'highlight.js/lib/languages/typescript'
@@ -178,7 +178,7 @@ interface ReadonlyEditorProps {
 }
 
 const ReadonlyEditor = ({ content, className }: ReadonlyEditorProps) => {
-  const [initialContent, setInitialContent] = useState<JSONContent | null>(null)
+  const displayContent = content ?? null
 
   // 应用代码高亮
   const highlightCodeblocks = () => {
@@ -197,25 +197,18 @@ const ReadonlyEditor = ({ content, className }: ReadonlyEditorProps) => {
   }
 
   useEffect(() => {
-    if (content) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setInitialContent(content)
-    }
-  }, [content])
-
-  useEffect(() => {
-    if (initialContent) {
+    if (displayContent) {
       highlightCodeblocks()
     }
-  }, [initialContent])
+  }, [displayContent])
 
-  if (!initialContent) return null
+  if (!displayContent) return null
 
   return (
     <div className={`relative w-full px-4 ${className || ''}`}>
-      <EditorRoot>
+      <EditorRoot key={displayContent ? 'loaded' : 'empty'}>
         <EditorContent
-          initialContent={initialContent}
+          initialContent={displayContent}
           extensions={readonlyExtensions}
           className="prose prose-neutral dark:prose-invert prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-h1:text-3xl prose-h1:mb-6 prose-h1:mt-8 prose-h2:text-2xl prose-h2:mb-4 prose-h2:mt-6 prose-h3:text-xl prose-h3:mb-3 prose-h3:mt-5 prose-p:leading-relaxed prose-p:text-foreground prose-p:mb-4 prose-strong:font-semibold prose-strong:text-foreground prose-em:text-foreground prose-code:text-foreground prose-code:bg-muted prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-pre:bg-muted prose-pre:border prose-pre:rounded-lg prose-pre:p-4 prose-pre:overflow-x-auto prose-blockquote:border-l-4 prose-blockquote:border-primary/20 prose-blockquote:pl-6 prose-blockquote:py-2 prose-blockquote:my-6 prose-blockquote:italic prose-blockquote:text-muted-foreground prose-ul:space-y-1 prose-ol:space-y-1 prose-li:leading-relaxed prose-hr:my-8 prose-hr:border-t prose-hr:border-border prose-a:text-primary prose-a:underline prose-a:underline-offset-[3px] hover:prose-a:text-primary/80 prose-img:rounded-lg prose-img:border prose-img:border-border prose-img:my-6 max-w-none font-sans focus:outline-none"
           editable={false}

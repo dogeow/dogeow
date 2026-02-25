@@ -1,6 +1,11 @@
 // 物品相关的通用工具函数
 
-import type { GameItem, ItemType, EquipmentSlot } from '../types'
+import type { GameItem, ItemDefinition, ItemType, EquipmentSlot } from '../types'
+
+/** 适用于 getItemIconFallback 的物品形态：GameItem 或仅含 definition 的对象（如图鉴 CompendiumItem） */
+type ItemWithDefinition =
+  | GameItem
+  | { definition: Pick<ItemDefinition, 'type' | 'sub_type' | 'icon'> }
 
 // 物品类型图标映射
 export const ITEM_TYPE_ICONS: Record<string, string> = {
@@ -32,8 +37,9 @@ export const ITEM_TYPE_NAMES: Record<string, string> = {
 
 /**
  * 获取物品图标回退：药水按 sub_type 区分 HP❤️/MP💙，其余按 type 或 definition.icon，最后 📦
+ * 支持 GameItem 或图鉴等仅含 definition 形态的对象
  */
-export function getItemIconFallback(item: GameItem): string {
+export function getItemIconFallback(item: ItemWithDefinition): string {
   const def = item.definition
   if (!def) return '📦'
   if (def.type === 'potion') {

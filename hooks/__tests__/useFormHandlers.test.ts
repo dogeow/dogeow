@@ -1,3 +1,4 @@
+import React from 'react'
 import { renderHook, act } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
 import { useFormHandlers } from '../useFormHandlers'
@@ -21,7 +22,7 @@ describe('useFormHandlers', () => {
     act(() => {
       result.current.handleInputChange({
         target: { name: 'text', value: 'hello' },
-      } as any)
+      } as React.ChangeEvent<HTMLInputElement>)
     })
 
     expect(data.text).toBe('hello')

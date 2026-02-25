@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -343,7 +343,14 @@ export function CheckInCalendar() {
                 return (
                   <div
                     className={`grid ${fitOneScreen ? 'gap-1' : 'gap-6'}`}
-                    style={{ paddingTop: 56, paddingLeft: 0, paddingRight: 0, ...gridStyle } as any}
+                    style={
+                      {
+                        paddingTop: 56,
+                        paddingLeft: 0,
+                        paddingRight: 0,
+                        ...gridStyle,
+                      } as CSSProperties
+                    }
                   >
                     {Array.from({ length: 12 }).map((_, idx) => (
                       <div

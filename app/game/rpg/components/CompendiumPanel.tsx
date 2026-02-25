@@ -238,7 +238,7 @@ export function CompendiumPanel() {
                     <span className="absolute inset-0">
                       <ImageWithFallback
                         src={`/game/rpg/items/item_${selectedItem.id}_origin.png`}
-                        fallback={getItemIconFallback({ definition: selectedItem } as any)}
+                        fallback={getItemIconFallback({ definition: selectedItem })}
                       />
                     </span>
                   </button>
@@ -423,7 +423,7 @@ export function CompendiumPanel() {
                         {compendiumMonsterDrops.possible_items.map(item => (
                           <div key={item.id} className="bg-muted rounded p-1 text-center">
                             <span className="text-lg">
-                              {getItemIconFallback({ definition: item } as any)}
+                              {getItemIconFallback({ definition: item })}
                             </span>
                             <p className="truncate text-xs">{item.name}</p>
                             {item.drop_rate !== undefined && (
@@ -466,7 +466,7 @@ function ImageWithFallback({ src, fallback }: { src: string; fallback: string })
 /** 物品小图标 */
 function ItemIcon({ item, className }: { item: CompendiumItem; className?: string }) {
   const definitionId = item.id
-  const fallback = getItemIconFallback({ definition: item } as any)
+  const fallback = getItemIconFallback({ definition: item })
   const [useImg, setUseImg] = useState(definitionId != null)
   const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
   return (
@@ -492,7 +492,7 @@ function ItemIcon({ item, className }: { item: CompendiumItem; className?: strin
 /** 物品 tip 大图标 */
 function ItemTipIcon({ item, onClick }: { item: CompendiumItem; onClick?: () => void }) {
   const definitionId = item.id
-  const fallback = getItemIconFallback({ definition: item } as any)
+  const fallback = getItemIconFallback({ definition: item })
   const [useImg, setUseImg] = useState(definitionId != null)
   const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
   return (

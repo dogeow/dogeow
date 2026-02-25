@@ -21,7 +21,7 @@ export function useAvatarImage({ seed, fallbackInitials }: UseAvatarImageProps) 
   const [currentUrlIndex, setCurrentUrlIndex] = useState(-1) // -1 means using primary URL
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- seed 变化时重置状态
     setImageError(false)
 
     setIsLoading(true)

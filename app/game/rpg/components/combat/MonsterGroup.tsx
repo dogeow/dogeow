@@ -78,7 +78,7 @@ export function MonsterGroup({
 
   useEffect(() => {
     if (!showDamageAndHp) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 动画期间清空派生状态
       setDamageTexts({})
       setHitMonsters(new Set())
       return

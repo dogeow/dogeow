@@ -28,7 +28,8 @@ export function useGameStats(difficulty: 3 | 4 | 5): GameStatsHook {
       const saved = localStorage.getItem(storageKey)
       if (saved) {
         const parsedStats = JSON.parse(saved)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage 初始化
         setStats(parsedStats)
       }
     } catch (error) {

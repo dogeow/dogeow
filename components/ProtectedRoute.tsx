@@ -1,10 +1,12 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useSyncExternalStore, useCallback } from 'react'
 import useAuthStore from '@/stores/authStore'
 import { configs } from '@/app/configs'
 import { useTranslation } from '@/hooks/useTranslation'
+
+const emptySubscribe = () => () => {}
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -15,14 +17,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { isAuthenticated, loading } = useAuthStore()
-  const [isClient, setIsClient] = useState(false)
-
-  // 确保组件只在客户端渲染，避免水合错误
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsClient(true)
-  }, [])
+  const isClient = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  )
 
   // 根据当前路径判断是否需要登录保护
   const needsProtection = useCallback(() => {

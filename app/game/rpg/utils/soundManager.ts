@@ -32,7 +32,10 @@ class SoundManager {
 
     if (!this.audioContext) {
       try {
-        this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+        const Ctor =
+          window.AudioContext ??
+          (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+        if (Ctor) this.audioContext = new Ctor()
       } catch (error) {
         console.warn('SoundManager: 无法创建 AudioContext', error)
         return null
@@ -40,7 +43,7 @@ class SoundManager {
     }
 
     // 如果 AudioContext 被暂停（浏览器自动暂停策略），尝试恢复
-    if (this.audioContext.state === 'suspended') {
+    if (this.audioContext?.state === 'suspended') {
       this.audioContext.resume().catch(() => {})
     }
 

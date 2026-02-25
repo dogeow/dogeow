@@ -36,7 +36,7 @@ export function useFileEdit(): UseFileEditReturn {
 
   const closeEditDialog = useCallback(() => {
     closeModal()
-    ;(setSelectedId as (id: number | null) => void)(null)
+    setSelectedId(null)
     setFileName('')
     setFileDescription('')
   }, [closeModal, setSelectedId])
@@ -84,5 +84,5 @@ export function useFileEdit(): UseFileEditReturn {
     updateFile,
     closeEditDialog,
     setEditingFile,
-  } as any // cast since setEditingFile added ad-hoc
+  }
 }

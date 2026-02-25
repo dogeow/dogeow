@@ -28,7 +28,8 @@ export function useJigsawStats(difficulty: number): JigsawStatsHook {
       const saved = localStorage.getItem(storageKey)
       if (saved) {
         const parsedStats = JSON.parse(saved)
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage 初始化
         setStats(parsedStats)
       }
     } catch (error) {
