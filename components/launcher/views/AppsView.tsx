@@ -26,6 +26,9 @@ interface AppsViewProps {
   isAuthenticated: boolean
   toggleDisplayMode: (mode: DisplayMode) => void
   onOpenAi?: () => void
+  /** 若 AI 已打开，点击 logo 时先关闭 AI */
+  isAiOpen?: boolean
+  onCloseAi?: () => void
 }
 
 export function AppsView({
@@ -34,10 +37,16 @@ export function AppsView({
   isAuthenticated,
   toggleDisplayMode,
   onOpenAi,
+  isAiOpen,
+  onCloseAi,
 }: AppsViewProps) {
   const { clearFilters } = useFilterPersistenceStore()
 
   const handleLogoClick = () => {
+    if (isAiOpen && onCloseAi) {
+      onCloseAi()
+      return
+    }
     clearFilters()
     router.push('/')
   }

@@ -25,7 +25,11 @@ export default function MinimalHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <AppLauncher onOpenAi={() => setIsAiOpen(true)} />
+          <AppLauncher
+            onOpenAi={() => setIsAiOpen(prev => !prev)}
+            isAiOpen={isAiOpen}
+            onCloseAi={() => setIsAiOpen(false)}
+          />
         </div>
       </div>
     </>

@@ -29,12 +29,26 @@ const AiDialog = dynamic(
 type DisplayMode = 'music' | 'apps' | 'settings' | 'auth' | 'search-result'
 
 export interface AppLauncherProps {
-  /** 点击星星（AI 助理）时打开通用 AI 对话框 */
+  /** 点击 AI 按钮时切换通用 AI 面板（打开/关闭） */
   onOpenAi?: () => void
+  /** 点击视觉 AI 按钮时由主题 Header 打开视觉 AI 面板 */
+  onOpenVisionAi?: () => void
+  /** 由主题 Header 传入：AI 是否打开，用于 logo 点击时先关闭 AI */
+  isAiOpen?: boolean
+  /** 由主题 Header 传入：关闭 AI 的回调 */
+  onCloseAi?: () => void
 }
 
-export function AppLauncher({ onOpenAi }: AppLauncherProps = {}) {
+export function AppLauncher({
+  onOpenAi,
+  onOpenVisionAi: _onOpenVisionAi,
+  isAiOpen: isAiOpenFromParent,
+  onCloseAi,
+}: AppLauncherProps = {}) {
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false)
+  const isAiOpen = isAiOpenFromParent ?? isAiDialogOpen
+  const closeAi = onCloseAi ?? (() => setIsAiDialogOpen(false))
+  const toggleAi = onOpenAi ?? (() => setIsAiDialogOpen(prev => !prev))
   const [isSettingsDialogOpen, setIsSettingsDialogOpen] = useState(false)
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const router = useRouter()
@@ -238,7 +252,9 @@ export function AppLauncher({ onOpenAi }: AppLauncherProps = {}) {
             searchManager={searchManager}
             isAuthenticated={isAuthenticated}
             toggleDisplayMode={toggleDisplayMode}
-            onOpenAi={onOpenAi ?? (() => setIsAiDialogOpen(true))}
+            onOpenAi={toggleAi}
+            isAiOpen={isAiOpen}
+            onCloseAi={closeAi}
           />
         )
 
