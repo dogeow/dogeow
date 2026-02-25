@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { isAdminSync } from '@/lib/auth'
 import { apiRequest } from '@/lib/api'
 import { cn } from '@/lib/helpers'
@@ -54,6 +55,8 @@ interface DashboardCardProps {
   className?: string
 }
 
+type DashboardSection = 'location' | 'logs'
+
 function DashboardCard({
   title,
   description,
@@ -80,6 +83,9 @@ function DashboardCard({
 export default function Dashboard() {
   const { isAuthenticated } = useAuthStore()
   const isAdmin = useMemo(() => isAdminSync(), [])
+  const [activeSection, setActiveSection] = useState<DashboardSection>('location')
+  const displaySection: DashboardSection =
+    !isAdmin && activeSection === 'logs' ? 'location' : activeSection
 
   if (!isAuthenticated) {
     return <div className="text-muted-foreground p-6">正在加载用户信息...</div>
@@ -95,26 +101,46 @@ export default function Dashboard() {
           </p>
         </header>
 
-        <div
-          className={cn(
-            'grid items-start gap-6',
-            isAdmin ? 'xl:grid-cols-[minmax(320px,1fr)_minmax(0,1.8fr)]' : 'mx-auto max-w-3xl'
-          )}
+        <Tabs
+          value={displaySection}
+          onValueChange={value => setActiveSection(value as DashboardSection)}
+          className="mx-auto max-w-5xl"
         >
-          <DashboardCard title="我的位置" description="查看 IP、地理位置和浏览器环境" icon={MapPin}>
-            <LocationPanel />
-          </DashboardCard>
+          <TabsList
+            className={cn('grid h-auto w-full gap-1 p-1', isAdmin ? 'grid-cols-2' : 'grid-cols-1')}
+          >
+            <TabsTrigger value="location" className="h-10">
+              我的位置
+            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="logs" className="h-10">
+                Laravel 日志
+              </TabsTrigger>
+            )}
+          </TabsList>
+
+          <TabsContent value="location" className="mt-4">
+            <DashboardCard
+              title="我的位置"
+              description="查看 IP、地理位置和浏览器环境"
+              icon={MapPin}
+            >
+              <LocationPanel />
+            </DashboardCard>
+          </TabsContent>
 
           {isAdmin && (
-            <DashboardCard
-              title="Laravel 日志"
-              description="选择日期并查看服务器日志内容"
-              icon={FileText}
-            >
-              <LogPanel />
-            </DashboardCard>
+            <TabsContent value="logs" className="mt-4">
+              <DashboardCard
+                title="Laravel 日志"
+                description="选择日期并查看服务器日志内容"
+                icon={FileText}
+              >
+                <LogPanel />
+              </DashboardCard>
+            </TabsContent>
           )}
-        </div>
+        </Tabs>
       </PageContainer>
     </ProtectedRoute>
   )

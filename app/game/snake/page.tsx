@@ -291,6 +291,20 @@ export default function SnakeGame() {
     }
   }, [gameOver, resetGame])
 
+  // 获取蛇头方向 (0=右, 1=下, 2=左, 3=上)
+  const getSnakeHeadDirection = useCallback(() => {
+    if (snake.length < 2) return 0 // 默认面向右侧
+    const head = snake[0]
+    const nextSegment = snake[1]
+
+    if (nextSegment.x > head.x) return 0 // 身体在右边，头朝右
+    if (nextSegment.y > head.y) return 1 // 身体在下边，头朝下
+    if (nextSegment.x < head.x) return 2 // 身体在左边，头朝左
+    if (nextSegment.y < head.y) return 3 // 身体在上边，头朝上
+
+    return 0
+  }, [snake])
+
   // 渲染游戏格子
   const renderGameCell = useCallback(
     (index: number) => {
@@ -301,30 +315,65 @@ export default function SnakeGame() {
       const isSnakeBody = snake.slice(1).some(segment => segment.x === x && segment.y === y)
       const isFood = food.x === x && food.y === y
 
-      let cellClass = 'aspect-square rounded-sm transition-all duration-100 '
+      let cellClass =
+        'aspect-square transition-all duration-100 bg-gray-200/50 dark:bg-gray-800/50 '
 
       if (isSnakeHead) {
-        cellClass += 'bg-green-500 shadow-lg'
+        cellClass += 'relative'
       } else if (isSnakeBody) {
-        cellClass += 'bg-green-400'
+        cellClass += 'bg-green-500/80'
       } else if (isFood) {
-        cellClass += 'bg-red-500'
-      } else {
-        cellClass += 'bg-gray-100 dark:bg-gray-800'
+        cellClass += 'relative'
       }
 
       return (
         <div key={index} className={cellClass}>
           {isFood && (
-            <div className="flex h-full w-full items-center justify-center text-xs">🍎</div>
+            <div className="flex h-full w-full items-center justify-center text-lg leading-none">
+              🍎
+            </div>
           )}
           {isSnakeHead && (
-            <div className="flex h-full w-full items-center justify-center text-xs">🐍</div>
+            <div className="flex h-full w-full items-center justify-center">
+              <div className="relative h-5 w-5">
+                {/* 蛇头主体 */}
+                <div className="absolute inset-0 rounded-full bg-gradient-to-br from-green-400 to-green-600" />
+                {/* 眼睛 - 根据方向显示 */}
+                {getSnakeHeadDirection() === 0 && (
+                  // 朝右
+                  <>
+                    <div className="absolute right-0 top-1/2 h-2 w-1 -translate-y-1/2 rounded-sm bg-white" />
+                    <div className="absolute right-0.5 top-1/2 h-1 w-0.5 -translate-y-1/2 rounded-full bg-black" />
+                  </>
+                )}
+                {getSnakeHeadDirection() === 1 && (
+                  // 朝下
+                  <>
+                    <div className="absolute bottom-0 left-1/2 h-1 w-2 -translate-x-1/2 rounded-sm bg-white" />
+                    <div className="absolute bottom-0.5 left-1/2 h-0.5 w-1 -translate-x-1/2 rounded-full bg-black" />
+                  </>
+                )}
+                {getSnakeHeadDirection() === 2 && (
+                  // 朝左
+                  <>
+                    <div className="absolute left-0 top-1/2 h-2 w-1 -translate-y-1/2 rounded-sm bg-white" />
+                    <div className="absolute left-0.5 top-1/2 h-1 w-0.5 -translate-y-1/2 rounded-full bg-black" />
+                  </>
+                )}
+                {getSnakeHeadDirection() === 3 && (
+                  // 朝上
+                  <>
+                    <div className="absolute top-0 left-1/2 h-1 w-2 -translate-x-1/2 rounded-sm bg-white" />
+                    <div className="absolute top-0.5 left-1/2 h-0.5 w-1 -translate-x-1/2 rounded-full bg-black" />
+                  </>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )
     },
-    [snake, food]
+    [snake, food, getSnakeHeadDirection]
   )
 
   // 渲染控制按钮
@@ -388,9 +437,9 @@ export default function SnakeGame() {
         </div>
       </div>
 
-      <Card className="mb-4 p-2">
+      <Card className="mb-4 overflow-hidden p-0">
         <div
-          className="grid gap-0 rounded-lg bg-gray-50 p-2 dark:bg-gray-900"
+          className="grid rounded-lg bg-gray-100 dark:bg-gray-900"
           style={{
             gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
             aspectRatio: '1',

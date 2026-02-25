@@ -1,53 +1,110 @@
+'use client'
+
 import { useMemo } from 'react'
-import { MessageSquare, Server, Activity } from 'lucide-react'
+import { Server, Activity, ListTodo } from 'lucide-react'
+import useSWR from 'swr'
+import { apiRequest } from '@/lib/api'
 import type { SystemStatus } from '../types'
+import type { SystemStatusApiResponse } from '../types-api'
+
+const STATUS_KEY = 'system/status'
+const REFRESH_INTERVAL_MS = 12_000
+
+type StatusKind = 'online' | 'offline' | 'warning' | 'error'
+
+function normalizeStatus(s: string): StatusKind {
+  if (s === 'online') return 'online'
+  if (s === 'offline') return 'offline'
+  if (s === 'warning') return 'warning'
+  return 'error'
+}
+
+function mapApiToSystemStatus(data: SystemStatusApiResponse, lastCheck: Date): SystemStatus[] {
+  const iconClass = 'h-5 w-5 text-gray-600 dark:text-gray-400'
+  return [
+    {
+      name: 'OpenClaw 服务器',
+      status: normalizeStatus(data.openclaw.status),
+      lastCheck,
+      icon: <Server className={iconClass} />,
+      description: 'OpenClaw 应用服务器（CPU / 内存 / 磁盘）',
+      details: data.openclaw.details || undefined,
+    },
+    {
+      name: 'Reverb',
+      status: normalizeStatus(data.reverb.status),
+      lastCheck,
+      icon: <Activity className={iconClass} />,
+      description: 'Laravel Reverb WebSocket 服务',
+      details: data.reverb.details || undefined,
+    },
+    {
+      name: '队列',
+      status: normalizeStatus(data.queue.status),
+      lastCheck,
+      icon: <ListTodo className={iconClass} />,
+      description: 'Laravel 队列 Worker（Supervisor）',
+      details: data.queue.details || undefined,
+    },
+  ]
+}
+
+function fallbackStatuses(
+  message: string,
+  lastCheck: Date,
+  isError: boolean = true
+): SystemStatus[] {
+  const iconClass = 'h-5 w-5 text-gray-600 dark:text-gray-400'
+  const status: StatusKind = isError ? 'error' : 'online'
+  return [
+    {
+      name: 'OpenClaw 服务器',
+      status,
+      lastCheck,
+      icon: <Server className={iconClass} />,
+      description: 'OpenClaw 应用服务器（CPU / 内存 / 磁盘）',
+      details: message,
+    },
+    {
+      name: 'Reverb',
+      status,
+      lastCheck,
+      icon: <Activity className={iconClass} />,
+      description: 'Laravel Reverb WebSocket 服务',
+      details: message,
+    },
+    {
+      name: '队列',
+      status,
+      lastCheck,
+      icon: <ListTodo className={iconClass} />,
+      description: 'Laravel 队列 Worker（Supervisor）',
+      details: message,
+    },
+  ]
+}
+
+const fetcher = (endpoint: string) =>
+  apiRequest<SystemStatusApiResponse>(endpoint, 'GET', undefined, { handleError: false })
 
 export const useSystemStatus = (): SystemStatus[] => {
-  const systemBaseTime = useMemo(() => new Date(), [])
+  const { data, error, isLoading } = useSWR<SystemStatusApiResponse>(STATUS_KEY, fetcher, {
+    refreshInterval: REFRESH_INTERVAL_MS,
+    revalidateOnFocus: false,
+  })
 
-  return useMemo<SystemStatus[]>(
-    () => [
-      {
-        name: '聊天室',
-        status: 'online',
-        lastCheck: new Date(systemBaseTime),
-        icon: <MessageSquare className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
-        description: 'WebSocket 实时聊天服务',
-        details: '连接数: 12 | 消息/分钟: 45',
-      },
-      {
-        name: '队列系统',
-        status: 'online',
-        lastCheck: new Date(systemBaseTime.getTime() - 30000), // 30秒前
-        icon: <Server className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
-        description: 'Laravel Horizon 队列处理',
-        details: '活跃队列: 3 | 待处理任务: 5',
-      },
-      {
-        name: 'Octane 服务',
-        status: 'online',
-        lastCheck: new Date(systemBaseTime.getTime() - 60000), // 1分钟前
-        icon: <Activity className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
-        description: 'Laravel Octane 高性能服务',
-        details: '内存使用: 128MB | 请求/秒: 156',
-      },
-      {
-        name: '数据库',
-        status: 'warning',
-        lastCheck: new Date(systemBaseTime.getTime() - 120000), // 2分钟前
-        icon: <Server className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
-        description: 'MySQL 数据库连接',
-        details: '连接池: 85% | 慢查询: 2',
-      },
-      {
-        name: '缓存服务',
-        status: 'online',
-        lastCheck: new Date(systemBaseTime.getTime() - 45000), // 45秒前
-        icon: <Activity className="h-5 w-5 text-gray-600 dark:text-gray-400" />,
-        description: 'Redis 缓存服务',
-        details: '命中率: 94% | 内存使用: 256MB',
-      },
-    ],
-    [systemBaseTime]
-  )
+  return useMemo(() => {
+    const lastCheck = new Date()
+    if (error) {
+      return fallbackStatuses(
+        error instanceof Error ? error.message : '获取状态失败，请稍后刷新',
+        lastCheck,
+        true
+      )
+    }
+    if (isLoading || !data) {
+      return fallbackStatuses('加载中…', lastCheck, false)
+    }
+    return mapApiToSystemStatus(data, lastCheck)
+  }, [data, error, isLoading])
 }

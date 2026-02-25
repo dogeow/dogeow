@@ -150,7 +150,7 @@ export function AiDialog({ open, onOpenChange, variant = 'dialog' }: AiDialogPro
         ])
       }
     }
-  }, [knowledgeSubtitle, chatMode])
+  }, [knowledgeSubtitle, chatMode, knowledgeInitialMessages])
 
   const activeChat = chatMode === 'knowledge' ? knowledgeChat : aiChat
   const {

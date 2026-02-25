@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { Image, X, Send, Square, Loader2, Upload, Trash2 } from 'lucide-react'
+import { Image as ImageIcon, X, Send, Square, Loader2, Upload, Trash2 } from 'lucide-react'
+import Image from 'next/image'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -364,7 +365,7 @@ export function VisionAiDialog({ open, onOpenChange }: VisionAiDialogProps) {
         <DialogHeader className="flex-none border-b px-4 py-3">
           <div className="flex items-center justify-between">
             <DialogTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Image className="h-5 w-5 text-blue-500" />
+              <ImageIcon className="h-5 w-5 text-blue-500" aria-hidden />
               AI 视觉理解
             </DialogTitle>
             {hasMessages && (
@@ -381,7 +382,7 @@ export function VisionAiDialog({ open, onOpenChange }: VisionAiDialogProps) {
           {messages.length === 0 && !isLoading && !completion && (
             <div className="flex h-full flex-col items-center justify-center text-center">
               <div className="bg-primary/10 mb-4 rounded-full p-4">
-                <Image className="h-12 w-12 text-primary" />
+                <ImageIcon className="h-12 w-12 text-primary" aria-hidden />
               </div>
               <h3 className="mb-2 text-lg font-semibold">AI 视觉理解</h3>
               <p className="text-muted-foreground mb-6 max-w-md text-sm">
@@ -427,9 +428,12 @@ export function VisionAiDialog({ open, onOpenChange }: VisionAiDialogProps) {
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   {images.map((item, index) => (
                     <div key={item.id} className="group relative">
-                      <img
+                      <Image
                         src={item.preview}
                         alt={`上传的图片 ${index + 1}`}
+                        width={80}
+                        height={80}
+                        unoptimized
                         className="h-20 w-20 rounded-lg object-cover border"
                       />
                       {item.uploading && (
@@ -490,9 +494,12 @@ export function VisionAiDialog({ open, onOpenChange }: VisionAiDialogProps) {
             <div className="mb-4 flex flex-wrap gap-2">
               {images.map((item, index) => (
                 <div key={item.id} className="group relative">
-                  <img
+                  <Image
                     src={item.preview}
                     alt={`上传的图片 ${index + 1}`}
+                    width={80}
+                    height={80}
+                    unoptimized
                     className="h-20 w-20 rounded-lg object-cover border"
                   />
                   {item.uploading && (
@@ -521,9 +528,12 @@ export function VisionAiDialog({ open, onOpenChange }: VisionAiDialogProps) {
             <div className="mb-2 flex flex-wrap gap-2">
               {images.map((item, index) => (
                 <div key={item.id} className="group relative">
-                  <img
+                  <Image
                     src={item.preview}
                     alt={`上传的图片 ${index + 1}`}
+                    width={64}
+                    height={64}
+                    unoptimized
                     className="h-16 w-16 rounded-lg object-cover border"
                   />
                   {item.uploading && (
