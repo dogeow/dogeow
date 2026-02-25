@@ -1,9 +1,0 @@
-# 将 type-check 输出同时写入文件，方便在 IDE 弹窗无法复制时从文件复制
-npm run type-check > .type-check-error.log 2>&1
-ret=$?
-cat .type-check-error.log
-if [ $ret -ne 0 ]; then
-  echo "" >> .type-check-error.log
-  echo "--- 上述错误已保存到 .type-check-error.log，可直接打开该文件复制 ---" >> .type-check-error.log
-fi
-exit $ret
