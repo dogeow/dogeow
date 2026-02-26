@@ -75,7 +75,7 @@ export function NotificationDropdown() {
       >
         <Bell className="h-4 w-4" />
         {count > 0 && (
-          <span className="bg-destructive text-destructive-foreground absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-medium">
+          <span className="bg-destructive text-destructive-foreground absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[10px] font-medium">
             {count > 99 ? '99+' : count}
           </span>
         )}
