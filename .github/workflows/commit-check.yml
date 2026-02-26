@@ -1,0 +1,31 @@
+name: Commit Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  commit-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check commit messages
+        uses: commit-check/action@v1
+        with:
+          # 支持的类型
+          types: |
+            feat
+            fix
+            refactor
+            docs
+            test
+            chore
+            perf
+            ci
+            style
+            revert
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

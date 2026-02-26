@@ -1,0 +1,23 @@
+name: Conventional Branch
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  conventional-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        uses: conventional-branch/action@v1
+        with:
+          branches: |
+            main
+            develop
+            feature/*
+            bugfix/*
+            hotfix/*
+            release/*
+            chore/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
