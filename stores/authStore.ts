@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
 import type { User, AuthResponse } from '../app'
-import { post } from '@/lib/api'
+import { get as apiGet, post } from '@/lib/api'
 
 // 常量定义
 const AUTH_TOKEN_KEY = 'auth-token'
@@ -16,6 +16,7 @@ interface AuthState {
   // 操作方法
   setLoading: (loading: boolean) => void
   login: (email: string, password: string) => Promise<AuthResponse>
+  loginWithGithub: () => Promise<void>
   register: (
     name: string,
     email: string,
@@ -121,6 +122,22 @@ const useAuthStore = create<AuthState>()(
           await syncWithWebSocketAuth(data.token)
 
           return data
+        } catch (error) {
+          set({ loading: false })
+          throw error
+        }
+      },
+
+      loginWithGithub: async () => {
+        set({ loading: true })
+
+        try {
+          // 获取 GitHub 授权 URL
+          const data = await apiGet<{ url: string }>('/auth/github')
+          if (!data?.url) {
+            throw new Error('未获取到 GitHub 授权 URL')
+          }
+          window.location.href = data.url
         } catch (error) {
           set({ loading: false })
           throw error

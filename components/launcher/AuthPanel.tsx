@@ -91,7 +91,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="min-h-[300px] w-[90%] max-w-md overflow-hidden p-0">
-        <DialogTitle className="mb-6 text-center text-xl font-semibold">
+        <DialogTitle className="mb-6 mt-4 text-center text-xl font-semibold">
           {isAuthenticated && user ? '个人资料' : '登录'}
         </DialogTitle>
         <div className="px-6 pb-6">

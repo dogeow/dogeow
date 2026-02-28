@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import useAuthStore from '@/stores/authStore'
+import { Github } from 'lucide-react'
 
 interface LoginFormProps {
   email: string
@@ -22,7 +23,21 @@ export const LoginForm = memo<LoginFormProps>(
     const [name, setName] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [localLoading, setLocalLoading] = useState(false)
-    const { register } = useAuthStore()
+    const [githubLoading, setGithubLoading] = useState(false)
+    const { register, loginWithGithub } = useAuthStore()
+
+    const handleGithubLogin = async () => {
+      setGithubLoading(true)
+      try {
+        await loginWithGithub()
+      } catch (err) {
+        toast.error('GitHub 登录失败', {
+          description: err instanceof Error ? err.message : '请稍后重试',
+          position: 'top-center',
+        })
+        setGithubLoading(false)
+      }
+    }
 
     const handleRegister = async (e: React.FormEvent) => {
       e.preventDefault()
@@ -144,6 +159,28 @@ export const LoginForm = memo<LoginFormProps>(
 
     return (
       <form onSubmit={onSubmit} className="flex w-full flex-col gap-4">
+        {/* GitHub 登录 - 放在最上面 */}
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 w-full"
+          onClick={handleGithubLogin}
+          disabled={githubLoading}
+        >
+          <Github className="mr-2 h-4 w-4" />
+          {githubLoading ? '跳转中...' : '使用 GitHub 登录'}
+        </Button>
+
+        {/* 分隔线 */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">或</span>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-2">
           <Label htmlFor="email" className="text-sm">
             邮箱
@@ -175,6 +212,7 @@ export const LoginForm = memo<LoginFormProps>(
         <Button type="submit" className="h-10 w-full" disabled={loading}>
           {loading ? '登录中...' : '登录'}
         </Button>
+
         <div className="text-muted-foreground flex items-center justify-center gap-1 text-sm">
           <span>还没有账号？</span>
           <Button variant="link" className="h-auto p-0 text-sm" type="button" onClick={toggleMode}>
