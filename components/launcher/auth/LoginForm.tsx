@@ -191,6 +191,7 @@ export const LoginForm = memo<LoginFormProps>(
             value={email}
             onChange={e => onEmailChange(e.target.value)}
             placeholder="请输入邮箱"
+            autoFocus={false}
             className="h-10"
             required
           />
