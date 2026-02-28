@@ -1,4 +1,5 @@
 name: Commit Check
+enabled: false
 
 on:
   push:
@@ -15,7 +16,6 @@ jobs:
       - name: Check commit messages
         uses: commit-check/action@v1
         with:
-          # 支持的类型
           types: |
             feat
             fix

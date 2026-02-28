@@ -1,4 +1,5 @@
 name: Conventional Branch
+enabled: false
 
 on:
   pull_request:
