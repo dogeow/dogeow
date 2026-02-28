@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { useGameStore } from '../../stores/gameStore'
-import { EquipmentGrid } from '../inventory/InventoryPanel'
+import { EquipmentGrid } from '../inventory/EquipmentGrid'
 import {
   CLASS_NAMES,
   STAT_DESCRIPTIONS,
