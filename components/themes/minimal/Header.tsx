@@ -18,7 +18,7 @@ export default function MinimalHeader() {
 
   return (
     <>
-      <AiDialog variant="panel" open={isAiOpen} onOpenChange={setIsAiOpen} />
+      <AiDialog open={isAiOpen} onOpenChange={setIsAiOpen} />
       <div className="flex h-full w-full items-center justify-between bg-transparent px-6">
         <div className="flex items-center gap-2">
           <span className="text-xl font-light">DogeOW</span>

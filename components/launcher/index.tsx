@@ -270,7 +270,7 @@ export function AppLauncher({
 
   return (
     <>
-      <AiDialog variant="panel" open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
+      <AiDialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen} />
       <AuthDialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen} />
       <SearchDialog
         open={searchManager.isSearchDialogOpen}

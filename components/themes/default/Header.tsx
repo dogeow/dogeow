@@ -18,7 +18,7 @@ export default function DefaultHeader() {
 
   return (
     <>
-      <AiDialog variant="panel" open={isAiOpen} onOpenChange={setIsAiOpen} />
+      <AiDialog open={isAiOpen} onOpenChange={setIsAiOpen} />
       <div className="mx-auto flex h-full w-full max-w-7xl items-center px-2 sm:px-4">
         <AppLauncher
           onOpenAi={() => setIsAiOpen(prev => !prev)}

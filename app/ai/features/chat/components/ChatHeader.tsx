@@ -64,7 +64,7 @@ function DialogLikeHeader({
               </TabsTrigger>
               <TabsTrigger value="knowledge" className="gap-2 px-5 text-base">
                 <BookOpen className="h-5 w-5" />
-                知识库 AI
+                {subtitle ? `知识库 AI (${subtitle})` : '知识库 AI'}
               </TabsTrigger>
             </TabsList>
           </Tabs>

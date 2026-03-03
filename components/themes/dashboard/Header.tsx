@@ -29,7 +29,7 @@ export default function DashboardHeader() {
 
   return (
     <>
-      <AiDialog variant="panel" open={isAiOpen} onOpenChange={setIsAiOpen} />
+      <AiDialog open={isAiOpen} onOpenChange={setIsAiOpen} />
       <div className="flex h-full w-full items-center justify-between px-6">
         <div className="flex items-center gap-4">
           <button

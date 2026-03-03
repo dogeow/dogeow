@@ -24,7 +24,7 @@ export default function SidebarHeader() {
 
   return (
     <>
-      <AiDialog variant="panel" open={isAiOpen} onOpenChange={setIsAiOpen} />
+      <AiDialog open={isAiOpen} onOpenChange={setIsAiOpen} />
       <div className="bg-background/95 flex h-full w-full items-center justify-between px-4 shadow-sm">
         <div className="flex items-center gap-3">
           <button

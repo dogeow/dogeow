@@ -2,10 +2,14 @@ import * as React from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
-import reactIcon from '@/public/images/tech/react.svg'
-import laravelIcon from '@/public/images/tech/laravel.svg'
-import NextJsIcon from '@/public/images/tech/next-js.svg'
-import graphQlIcon from '@/public/images/tech/shadcn.svg'
+const assetBaseUrl = process.env.NEXT_PUBLIC_ASSET_BASE_URL || ''
+
+const techIcons = {
+  laravel: `${assetBaseUrl}/images/tech/laravel.svg`,
+  react: `${assetBaseUrl}/images/tech/react.svg`,
+  nextJs: `${assetBaseUrl}/images/tech/next-js.svg`,
+  shadcn: `${assetBaseUrl}/images/tech/shadcn.svg`,
+}
 
 interface TechLinkProps {
   href: string
@@ -34,10 +38,20 @@ const TechLink: React.FC<TechLinkProps> = ({ href, src, alt, needsInvert }) => (
 const PoweredBy: React.FC = () => (
   <div className="flex items-center gap-2 text-sm opacity-80">
     <span>🫴 Powered By</span>
-    <TechLink href="https://laravel.com" src={laravelIcon} alt="Laravel" needsInvert={false} />
-    <TechLink href="https://react.dev" src={reactIcon} alt="React" needsInvert={false} />
-    <TechLink href="https://nextjs.org" src={NextJsIcon} alt="Next.js" needsInvert={true} />
-    <TechLink href="https://ui.shadcn.com" src={graphQlIcon} alt="shadcn/ui" needsInvert={true} />
+    <TechLink
+      href="https://laravel.com"
+      src={techIcons.laravel}
+      alt="Laravel"
+      needsInvert={false}
+    />
+    <TechLink href="https://react.dev" src={techIcons.react} alt="React" needsInvert={false} />
+    <TechLink href="https://nextjs.org" src={techIcons.nextJs} alt="Next.js" needsInvert={true} />
+    <TechLink
+      href="https://ui.shadcn.com"
+      src={techIcons.shadcn}
+      alt="shadcn/ui"
+      needsInvert={true}
+    />
   </div>
 )
 
