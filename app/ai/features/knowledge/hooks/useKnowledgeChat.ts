@@ -43,12 +43,12 @@ export function useKnowledgeChat(options: UseKnowledgeChatOptions = {}): UseKnow
   const [useContext, setUseContext] = useState(true)
   const [searchMethod, setSearchMethod] = useState<SearchMethod>('rag')
   const [model, setModel] = useState<string>(() => {
-    // 从 localStorage 读取，默认使用 qwen2.5:0.5b；选 embedding 时 API 会用默认对话模型
+    // 从 localStorage 读取，默认使用 qwen3:0.6b；选 embedding 时 API 会用默认对话模型
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('ollama_model')
-      return saved || 'qwen2.5:0.5b'
+      return saved || 'qwen3:0.6b'
     }
-    return 'qwen2.5:0.5b'
+    return 'qwen3:0.6b'
   })
 
   const abortControllerRef = useRef<AbortController | null>(null)

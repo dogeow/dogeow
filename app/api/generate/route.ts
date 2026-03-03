@@ -54,7 +54,7 @@ const PROMPT_TEMPLATES: Record<GenerateOption, (text: string, command?: string) 
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? 'http://localhost:11434'
 const OLLAMA_GENERATE_URL = `${OLLAMA_BASE_URL}/api/generate`
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE_URL}/api/chat`
-const DEFAULT_MODEL = process.env.OLLAMA_MODEL ?? 'qwen2.5:0.5b'
+const DEFAULT_MODEL = process.env.OLLAMA_MODEL ?? 'qwen3:0.6b'
 
 // GitHub Models 配置
 const GITHUB_MODELS_URL = 'https://models.github.ai/inference/chat/completions'

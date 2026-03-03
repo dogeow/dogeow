@@ -19,7 +19,7 @@ interface KnowledgeChatRequestBody {
 // Ollama配置
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
 const OLLAMA_CHAT_URL = `${OLLAMA_BASE_URL}/api/chat`
-const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'qwen2.5:0.5b'
+const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'qwen3:0.6b'
 
 // embedding 模型仅用于检索，不能用于 Chat API，需回退为对话模型
 const EMBEDDING_MODEL_PREFIXES = ['qwen3-embedding', 'embeddinggemma', 'nomic-embed-text']
