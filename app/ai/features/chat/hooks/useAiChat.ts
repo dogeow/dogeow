@@ -54,8 +54,14 @@ interface UseAiChatReturn {
   clearImages: () => void
   completion: string | undefined
   isLoading: boolean
-  ollamaModels: Array<{ name: string; size?: number; parameterSize?: string }>
+  ollamaModels: Array<{
+    name: string
+    size?: number
+    parameterSize?: string
+    supportsVision?: boolean
+  }>
   isLoadingOllamaModels: boolean
+  supportsImages: boolean
   model: string
   setModel: (value: string) => void
   provider: AIProvider
@@ -78,9 +84,28 @@ interface OllamaModelListItem {
   name: string
   size?: number
   parameterSize?: string
+  supportsVision?: boolean
 }
 
 const MAX_IMAGE_COUNT = 5
+
+const ZHIPUAI_VISION_MODELS = new Set(['glm-4.6v-flash', 'glm-4.6v'])
+
+function supportsImagesForSelection(
+  provider: AIProvider,
+  model: string,
+  ollamaModels: OllamaModelListItem[]
+): boolean {
+  if (provider === 'zhipuai') {
+    return ZHIPUAI_VISION_MODELS.has(model)
+  }
+
+  if (provider === 'ollama') {
+    return ollamaModels.find(item => item.name === model)?.supportsVision ?? false
+  }
+
+  return false
+}
 
 export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   const { open } = options
@@ -110,6 +135,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   const hasMessages = displayMessages.length > 0
   const hasImages = images.length > 0
   const isUploadingImages = images.some(item => item.uploading)
+  const supportsImages = supportsImagesForSelection(provider, model, ollamaModels)
 
   // 自动滚动到底部
   useEffect(() => {
@@ -176,6 +202,12 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
       clearImages()
     }
   }, [open, clearImages])
+
+  useEffect(() => {
+    if (!supportsImages && images.length > 0) {
+      clearImages()
+    }
+  }, [supportsImages, images.length, clearImages])
 
   // 卸载时释放所有 blob URL
   useEffect(() => {
@@ -325,9 +357,6 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
       const requestMessages = chatMessages.map(({ role, content }) => ({ role, content }))
 
       // 调用 API
-      const requestProvider = hasReadyImages ? 'zhipuai' : provider
-      const requestModel = hasReadyImages && provider !== 'zhipuai' ? undefined : model
-
       const response = await fetch('/api/generate', {
         method: 'POST',
         headers: {
@@ -336,8 +365,8 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
         body: JSON.stringify({
           useChat: true,
           messages: requestMessages,
-          model: requestModel,
-          provider: requestProvider,
+          model,
+          provider,
           images: imageUrls,
         }),
         signal: abortController.signal,
@@ -507,6 +536,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     isLoading,
     ollamaModels,
     isLoadingOllamaModels,
+    supportsImages,
     model,
     setModel,
     provider,

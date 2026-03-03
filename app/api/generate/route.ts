@@ -788,18 +788,11 @@ const useMiniMax = !!ANTHROPIC_AUTH_TOKEN
 const useZhipuAI = !!ZHIPUAI_API_KEY
 
 // 确定实际使用的 AI 提供商
-const getAIProvider = (requestedProvider?: AIProvider, hasImages?: boolean): AIProvider => {
-  // 如果有图片输入，优先使用智谱AI（视觉理解）
-  if (hasImages && ZHIPUAI_API_KEY) return 'zhipuai'
+const getAIProvider = (requestedProvider?: AIProvider): AIProvider => {
   if (requestedProvider === 'github' && GITHUB_PAT) return 'github'
   if (requestedProvider === 'minimax' && ANTHROPIC_AUTH_TOKEN) return 'minimax'
   if (requestedProvider === 'zhipuai' && ZHIPUAI_API_KEY) return 'zhipuai'
   if (requestedProvider === 'ollama') return 'ollama'
-  // 如果有图片输入但没有智谱AI，回退到其他提供商
-  if (hasImages) {
-    if (GITHUB_PAT) return 'github'
-    if (ANTHROPIC_AUTH_TOKEN) return 'minimax'
-  }
   // 默认优先级：GitHub > MiniMax > Ollama
   if (GITHUB_PAT) return 'github'
   if (ANTHROPIC_AUTH_TOKEN) return 'minimax'
@@ -835,7 +828,7 @@ export async function POST(request: NextRequest) {
     console.log('[Generate API] 接收到的请求:', { provider, model, useChat, hasImages })
 
     // 确定实际使用的 AI 提供商
-    const actualProvider = getAIProvider(provider, hasImages)
+    const actualProvider = getAIProvider(provider)
     console.log('[Generate API] 实际使用的 AI 提供商:', actualProvider)
 
     // 如果使用 chat 模式且有 messages，使用连续对话
@@ -886,7 +879,7 @@ export async function POST(request: NextRequest) {
     console.error('AI API错误:', error)
     const isNetworkOrFetch = error instanceof Error && (error.message?.includes('fetch') ?? false)
     // 从请求体中提取 provider，如果不存在则使用默认值
-    const actualProvider = getAIProvider(provider ?? undefined, hasImages)
+    const actualProvider = getAIProvider(provider ?? undefined)
     const fallbackMessage =
       actualProvider === 'github'
         ? 'AI 服务暂时不可用，请检查后端 GITHUB_PAT 环境变量及网络'

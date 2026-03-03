@@ -29,6 +29,7 @@ interface OllamaModelListItem {
   name: string
   size?: number
   parameterSize?: string
+  supportsVision?: boolean
 }
 
 const PROVIDER_LABELS: Record<AIProvider, string> = {
@@ -66,6 +67,7 @@ interface ChatInputProps {
   isLoading: boolean
   ollamaModels?: OllamaModelListItem[]
   isLoadingOllamaModels?: boolean
+  supportsImages?: boolean
   model?: string
   onModelChange?: (value: string) => void
   provider?: AIProvider
@@ -81,10 +83,10 @@ interface ChatInputProps {
 }
 
 const FALLBACK_OLLAMA_MODELS: OllamaModelListItem[] = [
-  { name: 'qwen2.5:0.5b', parameterSize: '0.5B' },
-  { name: 'qwen3:0.6b', parameterSize: '0.6B' },
-  { name: 'qwen3:8b', parameterSize: '8B' },
-  { name: 'qwen3:14b', parameterSize: '14B' },
+  { name: 'qwen2.5:0.5b', parameterSize: '0.5B', supportsVision: false },
+  { name: 'qwen3:0.6b', parameterSize: '0.6B', supportsVision: false },
+  { name: 'qwen3:8b', parameterSize: '8B', supportsVision: false },
+  { name: 'qwen3:14b', parameterSize: '14B', supportsVision: false },
 ]
 
 function formatOllamaModelMeta(model: OllamaModelListItem): string | undefined {
@@ -105,6 +107,7 @@ export const ChatInput = React.memo<ChatInputProps>(
     isLoading,
     ollamaModels = [],
     isLoadingOllamaModels = false,
+    supportsImages = false,
     model,
     onModelChange,
     provider,
@@ -122,7 +125,7 @@ export const ChatInput = React.memo<ChatInputProps>(
     const [providerMenuOpen, setProviderMenuOpen] = React.useState(false)
     const [modelMenuOpen, setModelMenuOpen] = React.useState(false)
     const canSend = prompt.trim().length > 0 || images.length > 0
-    const canUploadImages = chatMode !== 'knowledge' && !!onImageSelect
+    const canUploadImages = chatMode !== 'knowledge' && !!onImageSelect && supportsImages
     const availableOllamaModels = ollamaModels.length > 0 ? ollamaModels : FALLBACK_OLLAMA_MODELS
 
     const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -42,6 +42,7 @@ interface OllamaModelListItem {
   family?: string
   parameterSize?: string
   quantizationLevel?: string
+  supportsVision: boolean
 }
 
 const EMBEDDING_NAME_PATTERNS = [
@@ -55,6 +56,7 @@ const EMBEDDING_NAME_PATTERNS = [
 ]
 
 const EMBEDDING_FAMILY_PATTERNS = [/embed/i, /^bert$/i, /bert/i]
+const VISION_NAME_PATTERNS = [/^llava(?::|$)/i, /vision/i, /vl(?::|$)/i, /minicpm-v/i]
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await fetch(url, init)
@@ -98,6 +100,15 @@ function isChatCapableModel(model: OllamaTagModel, show?: OllamaShowResponse): b
   return !isEmbeddingByHeuristic(model, show)
 }
 
+function supportsVision(model: OllamaTagModel, show?: OllamaShowResponse): boolean {
+  const capabilities = show?.capabilities ?? []
+  if (capabilities.length > 0) {
+    return capabilities.includes('vision')
+  }
+
+  return VISION_NAME_PATTERNS.some(pattern => pattern.test(model.name ?? ''))
+}
+
 export async function GET() {
   try {
     const tags = await fetchJson<OllamaTagsResponse>(OLLAMA_TAGS_URL)
@@ -128,6 +139,7 @@ export async function GET() {
         family: show?.details?.family ?? model.details?.family,
         parameterSize: show?.details?.parameter_size ?? model.details?.parameter_size,
         quantizationLevel: show?.details?.quantization_level ?? model.details?.quantization_level,
+        supportsVision: supportsVision(model, show),
       }))
       .sort((a, b) => a.name.localeCompare(b.name))
 
