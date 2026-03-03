@@ -9,6 +9,33 @@ import { toast } from 'sonner'
 // AI 提供商类型
 type AIProvider = 'github' | 'minimax' | 'ollama' | 'zhipuai'
 
+const AI_PROVIDER_STORAGE_KEY = 'ai_provider'
+const OLLAMA_MODEL_STORAGE_KEY = 'ollama_model'
+const ZHIPUAI_MODEL_STORAGE_KEY = 'zhipuai_model'
+const DEFAULT_OLLAMA_MODEL = 'qwen3:0.6b'
+const DEFAULT_ZHIPUAI_MODEL = 'glm-4.7'
+
+const getStoredProvider = (): AIProvider => {
+  if (typeof window === 'undefined') return 'ollama'
+
+  const saved = localStorage.getItem(AI_PROVIDER_STORAGE_KEY)
+  if (saved === 'github' || saved === 'minimax' || saved === 'ollama' || saved === 'zhipuai') {
+    return saved
+  }
+
+  return 'ollama'
+}
+
+const getStoredOllamaModel = (): string => {
+  if (typeof window === 'undefined') return DEFAULT_OLLAMA_MODEL
+  return localStorage.getItem(OLLAMA_MODEL_STORAGE_KEY) || DEFAULT_OLLAMA_MODEL
+}
+
+const getStoredZhipuaiModel = (): string => {
+  if (typeof window === 'undefined') return DEFAULT_ZHIPUAI_MODEL
+  return localStorage.getItem(ZHIPUAI_MODEL_STORAGE_KEY) || DEFAULT_ZHIPUAI_MODEL
+}
+
 interface UseAiChatOptions {
   open?: boolean
 }
@@ -27,6 +54,8 @@ interface UseAiChatReturn {
   clearImages: () => void
   completion: string | undefined
   isLoading: boolean
+  ollamaModels: Array<{ name: string; size?: number; parameterSize?: string }>
+  isLoadingOllamaModels: boolean
   model: string
   setModel: (value: string) => void
   provider: AIProvider
@@ -45,6 +74,12 @@ interface ImageItem {
   uploading?: boolean
 }
 
+interface OllamaModelListItem {
+  name: string
+  size?: number
+  parameterSize?: string
+}
+
 const MAX_IMAGE_COUNT = 5
 
 export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
@@ -55,24 +90,15 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   const [images, setImages] = useState<ImageItem[]>([])
   const [completion, setCompletion] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
-  const [model, setModel] = useState<string>(() => {
-    // 从 localStorage 读取，默认使用 qwen2.5:0.5b
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ollama_model')
-      return saved || 'qwen2.5:0.5b'
-    }
-    return 'qwen2.5:0.5b'
-  })
+  const [ollamaModels, setOllamaModels] = useState<OllamaModelListItem[]>([])
+  const [isLoadingOllamaModels, setIsLoadingOllamaModels] = useState(false)
 
   // AI 提供商状态
-  const [provider, setProvider] = useState<AIProvider>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('ai_provider')
-      if (saved === 'github' || saved === 'minimax' || saved === 'ollama' || saved === 'zhipuai') {
-        return saved
-      }
-    }
-    return 'ollama'
+  const [provider, setProvider] = useState<AIProvider>(() => getStoredProvider())
+
+  const [model, setModel] = useState<string>(() => {
+    const initialProvider = getStoredProvider()
+    return initialProvider === 'zhipuai' ? getStoredZhipuaiModel() : getStoredOllamaModel()
   })
 
   const abortControllerRef = useRef<AbortController | null>(null)
@@ -95,6 +121,41 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   useEffect(() => {
     imagesRef.current = images
   }, [images])
+
+  useEffect(() => {
+    let cancelled = false
+
+    const loadOllamaModels = async () => {
+      setIsLoadingOllamaModels(true)
+
+      try {
+        const response = await fetch('/api/ollama/models')
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status}`)
+        }
+
+        const data = (await response.json()) as { models?: OllamaModelListItem[] }
+        if (!cancelled) {
+          setOllamaModels(Array.isArray(data.models) ? data.models : [])
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('Failed to load Ollama models:', error)
+          setOllamaModels([])
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingOllamaModels(false)
+        }
+      }
+    }
+
+    loadOllamaModels()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const revokePreview = useCallback((preview: string) => {
     if (preview.startsWith('blob:')) {
@@ -397,37 +458,36 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     }
   }, [prompt, messages, images, isUploadingImages, isLoading, model, provider, clearImages])
 
-  // 当 model 改变时保存到 localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ollama_model', model)
-    }
-  }, [model])
-
   // 当 provider 改变时保存到 localStorage
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('ai_provider', provider)
+      localStorage.setItem(AI_PROVIDER_STORAGE_KEY, provider)
     }
   }, [provider])
 
-  // 当切换到智谱AI时，自动设置默认模型
+  // 切换 provider 时恢复各自最近一次选择的模型，避免跨 provider 串值
   useEffect(() => {
+    if (provider === 'ollama') {
+      setModel(getStoredOllamaModel())
+      return
+    }
+
     if (provider === 'zhipuai') {
-      const savedModel = localStorage.getItem('zhipuai_model')
-      if (savedModel) {
-        setModel(savedModel)
-      } else {
-        setModel('glm-4.7')
-        localStorage.setItem('zhipuai_model', 'glm-4.7')
-      }
+      setModel(getStoredZhipuaiModel())
     }
   }, [provider])
 
-  // 当 model 改变时，如果是智谱AI，保存到 localStorage
+  // 按 provider 保存各自模型选择
   useEffect(() => {
-    if (typeof window !== 'undefined' && provider === 'zhipuai') {
-      localStorage.setItem('zhipuai_model', model)
+    if (typeof window === 'undefined') return
+
+    if (provider === 'ollama') {
+      localStorage.setItem(OLLAMA_MODEL_STORAGE_KEY, model)
+      return
+    }
+
+    if (provider === 'zhipuai') {
+      localStorage.setItem(ZHIPUAI_MODEL_STORAGE_KEY, model)
     }
   }, [model, provider])
 
@@ -445,6 +505,8 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     clearImages,
     completion: completion || undefined,
     isLoading,
+    ollamaModels,
+    isLoadingOllamaModels,
     model,
     setModel,
     provider,

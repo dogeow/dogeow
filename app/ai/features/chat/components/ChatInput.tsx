@@ -25,6 +25,12 @@ import { cn } from '@/lib/helpers'
 // AI 提供商类型
 type AIProvider = 'github' | 'minimax' | 'ollama' | 'zhipuai'
 
+interface OllamaModelListItem {
+  name: string
+  size?: number
+  parameterSize?: string
+}
+
 const PROVIDER_LABELS: Record<AIProvider, string> = {
   ollama: 'Ollama',
   github: 'GitHub',
@@ -35,16 +41,8 @@ const PROVIDER_LABELS: Record<AIProvider, string> = {
 function getModelLabel(provider: AIProvider | undefined, model: string | undefined): string {
   if (!provider || !model) return ''
   if (provider === 'ollama') {
-    const labels: Record<string, string> = {
-      'qwen2.5:0.5b': '快速',
-      'qwen3:0.6b': '中等',
-      'qwen3:8b': '慢速',
-      'qwen3:14b': '超慢速',
-      'qwen3-embedding:0.6b': 'qwen3-embedding',
-      embeddinggemma: 'embeddinggemma',
-      'nomic-embed-text:latest': 'nomic-embed-text',
-    }
-    return labels[model] ?? model
+    // Ollama 显示具体模型名
+    return model
   }
   if (provider === 'zhipuai') {
     const labels: Record<string, string> = {
@@ -66,6 +64,8 @@ interface ChatInputProps {
   onSend: () => void
   onStop?: () => void
   isLoading: boolean
+  ollamaModels?: OllamaModelListItem[]
+  isLoadingOllamaModels?: boolean
   model?: string
   onModelChange?: (value: string) => void
   provider?: AIProvider
@@ -80,6 +80,22 @@ interface ChatInputProps {
   placeholder?: string
 }
 
+const FALLBACK_OLLAMA_MODELS: OllamaModelListItem[] = [
+  { name: 'qwen2.5:0.5b', parameterSize: '0.5B' },
+  { name: 'qwen3:0.6b', parameterSize: '0.6B' },
+  { name: 'qwen3:8b', parameterSize: '8B' },
+  { name: 'qwen3:14b', parameterSize: '14B' },
+]
+
+function formatOllamaModelMeta(model: OllamaModelListItem): string | undefined {
+  if (model.parameterSize) return model.parameterSize
+  if (typeof model.size === 'number' && model.size > 0) {
+    const gb = model.size / (1024 * 1024 * 1024)
+    return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(model.size / (1024 * 1024)).toFixed(0)} MB`
+  }
+  return undefined
+}
+
 export const ChatInput = React.memo<ChatInputProps>(
   ({
     prompt,
@@ -87,6 +103,8 @@ export const ChatInput = React.memo<ChatInputProps>(
     onSend,
     onStop,
     isLoading,
+    ollamaModels = [],
+    isLoadingOllamaModels = false,
     model,
     onModelChange,
     provider,
@@ -105,6 +123,7 @@ export const ChatInput = React.memo<ChatInputProps>(
     const [modelMenuOpen, setModelMenuOpen] = React.useState(false)
     const canSend = prompt.trim().length > 0 || images.length > 0
     const canUploadImages = chatMode !== 'knowledge' && !!onImageSelect
+    const availableOllamaModels = ollamaModels.length > 0 ? ollamaModels : FALLBACK_OLLAMA_MODELS
 
     const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       onImageSelect?.(event.target.files)
@@ -265,46 +284,32 @@ export const ChatInput = React.memo<ChatInputProps>(
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56">
                         <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                          <DropdownMenuRadioItem
-                            value="qwen2.5:0.5b"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'qwen2.5:0.5b' &&
-                                'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>快速</span>
-                              <span className="text-muted-foreground text-xs">qwen2.5:0.5b</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="qwen3:0.6b"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'qwen3:0.6b' &&
-                                'relative z-10 bg-blue-500/10 font-medium ring-2 ring-blue-500 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>中等</span>
-                              <span className="text-muted-foreground text-xs">qwen3:0.6b</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="qwen3:8b"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'qwen3:8b' &&
-                                'relative z-10 bg-purple-500/10 font-medium ring-2 ring-purple-500 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>慢速</span>
-                              <span className="text-muted-foreground text-xs">qwen3:8b</span>
-                            </div>
-                          </DropdownMenuRadioItem>
+                          {availableOllamaModels.map(item => (
+                            <DropdownMenuRadioItem
+                              key={item.name}
+                              value={item.name}
+                              className={cn(
+                                'cursor-pointer',
+                                model === item.name &&
+                                  'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+                              )}
+                            >
+                              <div className="flex flex-col">
+                                <span>{item.name}</span>
+                                {formatOllamaModelMeta(item) && (
+                                  <span className="text-muted-foreground text-xs">
+                                    {formatOllamaModelMeta(item)}
+                                  </span>
+                                )}
+                              </div>
+                            </DropdownMenuRadioItem>
+                          ))}
                         </DropdownMenuRadioGroup>
+                        {isLoadingOllamaModels && (
+                          <div className="text-muted-foreground px-2 py-1 text-xs">
+                            正在读取本地 Ollama 模型...
+                          </div>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}
@@ -548,102 +553,32 @@ export const ChatInput = React.memo<ChatInputProps>(
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56">
                         <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                          <DropdownMenuRadioItem
-                            value="qwen2.5:0.5b"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'qwen2.5:0.5b' &&
-                                'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>快速</span>
-                              <span className="text-muted-foreground text-xs">qwen2.5:0.5b</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="qwen3:0.6b"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'qwen3:0.6b' &&
-                                'relative z-10 bg-blue-500/10 font-medium ring-2 ring-blue-500 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>中等</span>
-                              <span className="text-muted-foreground text-xs">qwen3:0.6b</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="qwen3:8b"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'qwen3:8b' &&
-                                'relative z-10 bg-purple-500/10 font-medium ring-2 ring-purple-500 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>慢速</span>
-                              <span className="text-muted-foreground text-xs">qwen3:8b</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="qwen3:14b"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'qwen3:14b' &&
-                                'relative z-10 bg-purple-500/10 font-medium ring-2 ring-purple-500 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>超慢速</span>
-                              <span className="text-muted-foreground text-xs">qwen3:14b</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="qwen3-embedding:0.6b"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'qwen3-embedding:0.6b' &&
-                                'relative z-10 bg-amber-500/10 font-medium ring-2 ring-amber-500 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>检索用（不用于对话）</span>
-                              <span className="text-muted-foreground text-xs">
-                                qwen3-embedding:0.6b
-                              </span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="embeddinggemma"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'embeddinggemma' &&
-                                'relative z-10 bg-amber-500/10 font-medium ring-2 ring-amber-500 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>检索用（不用于对话）</span>
-                              <span className="text-muted-foreground text-xs">embeddinggemma</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem
-                            value="nomic-embed-text:latest"
-                            className={cn(
-                              'cursor-pointer',
-                              model === 'nomic-embed-text:latest' &&
-                                'relative z-10 bg-amber-500/10 font-medium ring-2 ring-amber-500 ring-offset-1'
-                            )}
-                          >
-                            <div className="flex flex-col">
-                              <span>检索用（不用于对话）</span>
-                              <span className="text-muted-foreground text-xs">
-                                nomic-embed-text:latest
-                              </span>
-                            </div>
-                          </DropdownMenuRadioItem>
+                          {availableOllamaModels.map(item => (
+                            <DropdownMenuRadioItem
+                              key={item.name}
+                              value={item.name}
+                              className={cn(
+                                'cursor-pointer',
+                                model === item.name &&
+                                  'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+                              )}
+                            >
+                              <div className="flex flex-col">
+                                <span>{item.name}</span>
+                                {formatOllamaModelMeta(item) && (
+                                  <span className="text-muted-foreground text-xs">
+                                    {formatOllamaModelMeta(item)}
+                                  </span>
+                                )}
+                              </div>
+                            </DropdownMenuRadioItem>
+                          ))}
                         </DropdownMenuRadioGroup>
+                        {isLoadingOllamaModels && (
+                          <div className="text-muted-foreground px-2 py-1 text-xs">
+                            正在读取本地 Ollama 模型...
+                          </div>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   )}

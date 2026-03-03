@@ -168,7 +168,7 @@ export function AiDialog({ open, onOpenChange, variant = 'dialog' }: AiDialogPro
     messagesEndRef,
   } = activeChat
 
-  const { provider, setProvider } = aiChat
+  const { provider, setProvider, ollamaModels, isLoadingOllamaModels } = aiChat
 
   const chatBody = (
     <>
@@ -199,6 +199,8 @@ export function AiDialog({ open, onOpenChange, variant = 'dialog' }: AiDialogPro
           onSend={handleSend}
           onStop={stop}
           isLoading={isLoading}
+          ollamaModels={ollamaModels}
+          isLoadingOllamaModels={isLoadingOllamaModels}
           model={model}
           onModelChange={setModel}
           provider={provider}
