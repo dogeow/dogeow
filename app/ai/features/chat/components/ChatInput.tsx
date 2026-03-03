@@ -16,8 +16,10 @@ import { Textarea } from '@/components/ui/textarea'
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/helpers'
@@ -98,6 +100,27 @@ function formatOllamaModelMeta(model: OllamaModelListItem): string | undefined {
   return undefined
 }
 
+function renderOllamaModelItem(model: string | undefined, item: OllamaModelListItem) {
+  return (
+    <DropdownMenuRadioItem
+      key={item.name}
+      value={item.name}
+      className={cn(
+        'cursor-pointer',
+        model === item.name &&
+          'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
+      )}
+    >
+      <div className="flex flex-col">
+        <span>{item.name}</span>
+        {formatOllamaModelMeta(item) && (
+          <span className="text-muted-foreground text-xs">{formatOllamaModelMeta(item)}</span>
+        )}
+      </div>
+    </DropdownMenuRadioItem>
+  )
+}
+
 export const ChatInput = React.memo<ChatInputProps>(
   ({
     prompt,
@@ -127,6 +150,8 @@ export const ChatInput = React.memo<ChatInputProps>(
     const canSend = prompt.trim().length > 0 || images.length > 0
     const canUploadImages = chatMode !== 'knowledge' && !!onImageSelect && supportsImages
     const availableOllamaModels = ollamaModels.length > 0 ? ollamaModels : FALLBACK_OLLAMA_MODELS
+    const textOnlyOllamaModels = availableOllamaModels.filter(item => !item.supportsVision)
+    const visionOllamaModels = availableOllamaModels.filter(item => item.supportsVision)
 
     const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       onImageSelect?.(event.target.files)
@@ -287,26 +312,25 @@ export const ChatInput = React.memo<ChatInputProps>(
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56">
                         <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                          {availableOllamaModels.map(item => (
-                            <DropdownMenuRadioItem
-                              key={item.name}
-                              value={item.name}
-                              className={cn(
-                                'cursor-pointer',
-                                model === item.name &&
-                                  'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-                              )}
-                            >
-                              <div className="flex flex-col">
-                                <span>{item.name}</span>
-                                {formatOllamaModelMeta(item) && (
-                                  <span className="text-muted-foreground text-xs">
-                                    {formatOllamaModelMeta(item)}
-                                  </span>
-                                )}
-                              </div>
-                            </DropdownMenuRadioItem>
-                          ))}
+                          {textOnlyOllamaModels.length > 0 && (
+                            <>
+                              <DropdownMenuLabel className="text-muted-foreground text-xs">
+                                文本
+                              </DropdownMenuLabel>
+                              {textOnlyOllamaModels.map(item => renderOllamaModelItem(model, item))}
+                            </>
+                          )}
+                          {textOnlyOllamaModels.length > 0 && visionOllamaModels.length > 0 && (
+                            <DropdownMenuSeparator />
+                          )}
+                          {visionOllamaModels.length > 0 && (
+                            <>
+                              <DropdownMenuLabel className="text-muted-foreground text-xs">
+                                图像
+                              </DropdownMenuLabel>
+                              {visionOllamaModels.map(item => renderOllamaModelItem(model, item))}
+                            </>
+                          )}
                         </DropdownMenuRadioGroup>
                         {isLoadingOllamaModels && (
                           <div className="text-muted-foreground px-2 py-1 text-xs">
@@ -365,6 +389,57 @@ export const ChatInput = React.memo<ChatInputProps>(
                   )}
                 </>
               )}
+            </div>
+          )}
+          {chatMode === 'knowledge' && model && onModelChange && (
+            <div className="mb-2 flex items-center gap-1.5 text-sm">
+              <span className="px-0 py-1 text-muted-foreground">Ollama</span>
+              <span className="text-muted-foreground">·</span>
+              <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={isLoading}
+                    className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
+                  >
+                    {model}
+                    {modelMenuOpen ? (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
+                    {textOnlyOllamaModels.length > 0 && (
+                      <>
+                        <DropdownMenuLabel className="text-muted-foreground text-xs">
+                          文本
+                        </DropdownMenuLabel>
+                        {textOnlyOllamaModels.map(item => renderOllamaModelItem(model, item))}
+                      </>
+                    )}
+                    {textOnlyOllamaModels.length > 0 && visionOllamaModels.length > 0 && (
+                      <DropdownMenuSeparator />
+                    )}
+                    {visionOllamaModels.length > 0 && (
+                      <>
+                        <DropdownMenuLabel className="text-muted-foreground text-xs">
+                          图像
+                        </DropdownMenuLabel>
+                        {visionOllamaModels.map(item => renderOllamaModelItem(model, item))}
+                      </>
+                    )}
+                  </DropdownMenuRadioGroup>
+                  {isLoadingOllamaModels && (
+                    <div className="text-muted-foreground px-2 py-1 text-xs">
+                      正在读取本地 Ollama 模型...
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
 
@@ -556,26 +631,25 @@ export const ChatInput = React.memo<ChatInputProps>(
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="start" className="w-56">
                         <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                          {availableOllamaModels.map(item => (
-                            <DropdownMenuRadioItem
-                              key={item.name}
-                              value={item.name}
-                              className={cn(
-                                'cursor-pointer',
-                                model === item.name &&
-                                  'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-                              )}
-                            >
-                              <div className="flex flex-col">
-                                <span>{item.name}</span>
-                                {formatOllamaModelMeta(item) && (
-                                  <span className="text-muted-foreground text-xs">
-                                    {formatOllamaModelMeta(item)}
-                                  </span>
-                                )}
-                              </div>
-                            </DropdownMenuRadioItem>
-                          ))}
+                          {textOnlyOllamaModels.length > 0 && (
+                            <>
+                              <DropdownMenuLabel className="text-muted-foreground text-xs">
+                                文本
+                              </DropdownMenuLabel>
+                              {textOnlyOllamaModels.map(item => renderOllamaModelItem(model, item))}
+                            </>
+                          )}
+                          {textOnlyOllamaModels.length > 0 && visionOllamaModels.length > 0 && (
+                            <DropdownMenuSeparator />
+                          )}
+                          {visionOllamaModels.length > 0 && (
+                            <>
+                              <DropdownMenuLabel className="text-muted-foreground text-xs">
+                                图像
+                              </DropdownMenuLabel>
+                              {visionOllamaModels.map(item => renderOllamaModelItem(model, item))}
+                            </>
+                          )}
                         </DropdownMenuRadioGroup>
                         {isLoadingOllamaModels && (
                           <div className="text-muted-foreground px-2 py-1 text-xs">
@@ -634,6 +708,57 @@ export const ChatInput = React.memo<ChatInputProps>(
                   )}
                 </>
               )}
+            </div>
+          )}
+          {chatMode === 'knowledge' && model && onModelChange && (
+            <div className="mb-2 flex items-center gap-1.5 text-sm">
+              <span className="px-0 py-1 text-muted-foreground">Ollama</span>
+              <span className="text-muted-foreground">·</span>
+              <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={isLoading}
+                    className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
+                  >
+                    {model}
+                    {modelMenuOpen ? (
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    ) : (
+                      <ChevronUp className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56">
+                  <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
+                    {textOnlyOllamaModels.length > 0 && (
+                      <>
+                        <DropdownMenuLabel className="text-muted-foreground text-xs">
+                          文本
+                        </DropdownMenuLabel>
+                        {textOnlyOllamaModels.map(item => renderOllamaModelItem(model, item))}
+                      </>
+                    )}
+                    {textOnlyOllamaModels.length > 0 && visionOllamaModels.length > 0 && (
+                      <DropdownMenuSeparator />
+                    )}
+                    {visionOllamaModels.length > 0 && (
+                      <>
+                        <DropdownMenuLabel className="text-muted-foreground text-xs">
+                          图像
+                        </DropdownMenuLabel>
+                        {visionOllamaModels.map(item => renderOllamaModelItem(model, item))}
+                      </>
+                    )}
+                  </DropdownMenuRadioGroup>
+                  {isLoadingOllamaModels && (
+                    <div className="text-muted-foreground px-2 py-1 text-xs">
+                      正在读取本地 Ollama 模型...
+                    </div>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
 
