@@ -39,7 +39,7 @@ function NavigationMenuList({
     <NavigationMenuPrimitive.List
       data-slot="navigation-menu-list"
       className={cn(
-        'group scrollbar-none -mx-2 flex flex-1 list-none items-center justify-center gap-1 overflow-x-auto px-2 py-1',
+        'group scrollbar-none flex flex-1 list-none items-center justify-center gap-1 overflow-x-auto px-2 py-1',
         className
       )}
       {...props}

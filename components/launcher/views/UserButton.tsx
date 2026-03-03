@@ -60,7 +60,7 @@ export const UserButton = memo<UserButtonProps>(({ isAuthenticated, onToggleAuth
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9"
+          className="size-10 rounded-xl"
           onClick={() => setOpen(prev => !prev)}
           aria-haspopup="menu"
           aria-expanded={open}

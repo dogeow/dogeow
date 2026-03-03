@@ -13,6 +13,8 @@ export const TrackInfo = memo(
     MusicPlayerProps,
     'isPlaying' | 'getCurrentTrackName' | 'currentTime' | 'duration' | 'formatTime'
   >) => {
+    const trackName = getCurrentTrackName()
+    const isEmptyState = trackName === '没有选择音乐' || trackName === '播放列表为空'
     const [textWidth, setTextWidth] = useState(0)
     const [containerWidth, setContainerWidth] = useState(0)
     const [scrollLeft, setScrollLeft] = useState(0)
@@ -97,7 +99,7 @@ export const TrackInfo = memo(
     }, [shouldShowDrag, handleMouseMove, handleMouseUp])
 
     return (
-      <div className="mx-1 flex-1 overflow-hidden">
+      <div className="mx-1 w-full overflow-hidden">
         <div
           className="relative overflow-hidden"
           ref={containerRef}
@@ -115,7 +117,9 @@ export const TrackInfo = memo(
                 cursor: isPlaying && shouldShowDrag ? 'grab' : 'default',
               }}
             >
-              {getCurrentTrackName()} - {formatTime(currentTime)} / {formatTime(duration)}
+              {isEmptyState
+                ? '暂无音乐'
+                : `${trackName} - ${formatTime(currentTime)} / ${formatTime(duration)}`}
             </span>
           </div>
         </div>

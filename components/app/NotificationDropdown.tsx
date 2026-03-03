@@ -70,7 +70,7 @@ export function NotificationDropdown() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen(!open)}
-        className="hover:bg-muted relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors"
+        className="hover:bg-muted relative flex size-10 items-center justify-center rounded-xl transition-colors"
         aria-label="通知"
       >
         <Bell className="h-4 w-4" />

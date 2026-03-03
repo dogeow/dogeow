@@ -107,7 +107,7 @@ export function SearchBar({
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9"
+        className="size-10 rounded-xl"
         onClick={onToggleSearch}
         aria-label="Open search"
       >
@@ -137,7 +137,7 @@ export function SearchBar({
         type="button"
         variant="ghost"
         size="icon"
-        className="h-9 w-9 shrink-0"
+        className="size-10 shrink-0 rounded-xl"
         onClick={e => {
           e.stopPropagation()
           onToggleSearch()

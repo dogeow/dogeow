@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, memo } from 'react'
-import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, List, Maximize2 } from 'lucide-react'
+import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, List } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 import type { MusicPlayerProps } from './types'
 import { PlaylistDialog } from './PlaylistDialog'
@@ -38,10 +38,20 @@ export const MusicPlayer = memo(
     onOpenFullscreen,
   }: MusicPlayerProps) => {
     const [playlistOpen, setPlaylistOpen] = useState(false)
+    const isEmptyState = !currentTrack || availableTracks.length === 0
+
+    React.useEffect(() => {
+      const handleOpenPlaylist = () => {
+        setPlaylistOpen(true)
+      }
+
+      window.addEventListener('music-player:open-playlist', handleOpenPlaylist)
+      return () => window.removeEventListener('music-player:open-playlist', handleOpenPlaylist)
+    }, [])
 
     return (
       <>
-        <div className="relative -mx-2 flex w-full min-w-0 items-center justify-between gap-2 overflow-hidden px-2">
+        <div className="relative flex w-full min-w-0 items-center gap-2 overflow-hidden px-2">
           {/* 内容层 - 控制按钮和文本 */}
           <div className="relative z-10 flex shrink-0 items-center">
             <BackButton onClick={() => toggleDisplayMode('apps')} title="返回启动台" />
@@ -57,13 +67,13 @@ export const MusicPlayer = memo(
             />
           </div>
 
-          {audioError && (
+          {audioError && !isEmptyState && (
             <div className="relative z-10 shrink-0 truncate rounded bg-amber-50 px-2 py-1 text-xs text-amber-600">
               {audioError.includes('播放列表为空') ? '🎵 暂无音乐' : audioError}
             </div>
           )}
 
-          <div className="relative z-10 flex shrink-0 items-center gap-1">
+          <div className="relative z-10 ml-auto flex shrink-0 items-center gap-1">
             <PlayerControlButton
               onClick={toggleMute}
               title={isMuted ? '取消静音' : '静音'}
@@ -85,21 +95,16 @@ export const MusicPlayer = memo(
               title="播放列表"
               icon={<List className={ICON_SIZE} />}
             />
-            {onOpenFullscreen && (
-              <PlayerControlButton
-                onClick={onOpenFullscreen}
-                title="全屏可视化"
-                icon={<Maximize2 className={ICON_SIZE} />}
-              />
-            )}
           </div>
         </div>
 
-        <ProgressBar
-          currentTime={currentTime}
-          duration={duration}
-          handleProgressChange={handleProgressChange}
-        />
+        {!isEmptyState && (
+          <ProgressBar
+            currentTime={currentTime}
+            duration={duration}
+            handleProgressChange={handleProgressChange}
+          />
+        )}
 
         {/* 播放列表弹窗 */}
         <PlaylistDialog
@@ -116,6 +121,7 @@ export const MusicPlayer = memo(
           onPrevTrack={switchToPrevTrack}
           onNextTrack={switchToNextTrack}
           playMode={playMode}
+          onOpenFullscreen={onOpenFullscreen}
         />
       </>
     )

@@ -2,7 +2,17 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, SkipBack, SkipForward, Play, Pause, Volume2, VolumeX, List } from 'lucide-react'
+import {
+  X,
+  Minimize2,
+  SkipBack,
+  SkipForward,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  List,
+} from 'lucide-react'
 import { AudioVisualizer, type VisualizerType } from './AudioVisualizer'
 import { cn } from '@/lib/helpers'
 import { PlaylistDialog } from '../PlaylistDialog'
@@ -65,6 +75,11 @@ export function FullscreenVisualizer({
   const [showControls, setShowControls] = useState(true)
   const [hideTimer, setHideTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
   const [playlistOpen, setPlaylistOpen] = useState(false)
+
+  const handleMinimizeToPlaylist = useCallback(() => {
+    onClose()
+    window.dispatchEvent(new Event('music-player:open-playlist'))
+  }, [onClose])
 
   // 自动隐藏控件
   const resetHideTimer = useCallback(() => {
@@ -137,7 +152,14 @@ export function FullscreenVisualizer({
           <h2 className="max-w-[60%] truncate text-lg font-medium text-white drop-shadow-lg">
             {trackName}
           </h2>
-          <div className="w-10" />
+          <button
+            onClick={handleMinimizeToPlaylist}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-colors hover:bg-white/20"
+            aria-label="缩小到播放列表"
+            title="缩小到播放列表"
+          >
+            <Minimize2 className="h-5 w-5 text-white" />
+          </button>
         </div>
 
         {/* 底部：可视化类型切换 + 播放控件 */}
