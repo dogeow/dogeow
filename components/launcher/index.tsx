@@ -315,7 +315,7 @@ export function AppLauncher({
 
       <div
         id="app-launcher-bar"
-        className="bg-background/80 relative z-50 flex h-full w-full flex-col px-2 backdrop-blur-md"
+        className="bg-background/80 relative z-50 flex h-full w-full flex-col backdrop-blur-md"
       >
         {/* 音频可视化 - 作为背景层，覆盖整个 app-launcher-bar，包括 padding */}
         {displayMode === 'music' && audioManager.analyserNode && (
