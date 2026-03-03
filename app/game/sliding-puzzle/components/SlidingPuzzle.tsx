@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 
 // 内联组件 - 计时器
 function Timer({ startTime }: { startTime: Date }) {
@@ -46,6 +46,8 @@ interface PuzzleProps {
 }
 
 export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
+  const completeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // 检查拼图是否有解
   const checkSolvable = useCallback((board: number[], boardSize: number) => {
     // 找到空格位置
@@ -119,6 +121,10 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
 
   // 重置游戏
   const resetGame = useCallback(() => {
+    if (completeTimerRef.current) {
+      clearTimeout(completeTimerRef.current)
+      completeTimerRef.current = null
+    }
     setBoard(createBoard(size))
     setMoves(0)
     setStartTime(new Date())
@@ -157,11 +163,25 @@ export default function SlidingPuzzle({ size, onComplete }: PuzzleProps) {
 
       if (completed) {
         setIsComplete(true)
-        onComplete()
+        if (completeTimerRef.current) {
+          clearTimeout(completeTimerRef.current)
+        }
+        completeTimerRef.current = setTimeout(() => {
+          onComplete()
+          completeTimerRef.current = null
+        }, 220)
       }
     },
     [board, isComplete, size, onComplete]
   )
+
+  useEffect(() => {
+    return () => {
+      if (completeTimerRef.current) {
+        clearTimeout(completeTimerRef.current)
+      }
+    }
+  }, [])
 
   // 处理键盘控制
   useEffect(() => {

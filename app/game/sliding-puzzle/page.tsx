@@ -34,6 +34,7 @@ function SlidingPuzzleGame() {
     return [3, 4, 5].includes(level) ? level : (3 as 3 | 4 | 5)
   }, [searchParams])
   const [gameKey, setGameKey] = useState(0)
+  const [completionMessage, setCompletionMessage] = useState('')
 
   // 更新URL参数
   const updateUrlParams = (level: 3 | 4 | 5) => {
@@ -44,18 +45,20 @@ function SlidingPuzzleGame() {
 
   const startGame = (level: 3 | 4 | 5) => {
     console.log('开始游戏，难度:', level)
+    setCompletionMessage('')
     setGameKey(prev => prev + 1) // 重置游戏实例
     updateUrlParams(level)
   }
 
   const restartGame = () => {
+    setCompletionMessage('')
     setGameKey(prev => prev + 1) // 重置游戏实例
   }
 
   // 处理游戏完成
   const handleGameComplete = () => {
     console.log('游戏完成！')
-    alert(`恭喜！你完成了 ${difficulty}×${difficulty} 的拼图！`)
+    setCompletionMessage(`恭喜！你完成了 ${difficulty}×${difficulty} 的拼图！`)
   }
 
   return (
@@ -100,6 +103,12 @@ function SlidingPuzzleGame() {
             重新开始
           </Button>
         </div>
+
+        {completionMessage && (
+          <p className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-600 dark:text-emerald-300">
+            {completionMessage}
+          </p>
+        )}
 
         {/* 使用key强制重新渲染 */}
         <div key={`game-${difficulty}-${gameKey}`}>

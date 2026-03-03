@@ -310,9 +310,6 @@ export default function PicturePuzzle({ imageUrl, size, onComplete }: PicturePuz
           <MoveCounter moves={moves} />
           <div className="text-center">
             <Timer startTime={startTime} />
-            {moves === 0 && !isComplete && (
-              <p className="mt-1 text-xs text-gray-400">开始移动拼图块吧！</p>
-            )}
           </div>
           <Button variant="outline" size="sm" onClick={resetGame}>
             重新开始
