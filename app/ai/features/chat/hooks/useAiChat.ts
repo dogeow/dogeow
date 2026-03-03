@@ -2,12 +2,10 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { AI_SYSTEM_PROMPT, type ChatMessage } from '../types'
+import { getRequestModel, type AIProvider } from '../request-model'
 import { API_URL } from '@/lib/api'
 import useAuthStore from '@/stores/authStore'
 import { toast } from 'sonner'
-
-// AI 提供商类型
-type AIProvider = 'github' | 'minimax' | 'ollama' | 'zhipuai'
 
 const AI_PROVIDER_STORAGE_KEY = 'ai_provider'
 const OLLAMA_MODEL_STORAGE_KEY = 'ollama_model'
@@ -365,7 +363,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
         body: JSON.stringify({
           useChat: true,
           messages: requestMessages,
-          model,
+          model: getRequestModel(provider, model),
           provider,
           images: imageUrls,
         }),
