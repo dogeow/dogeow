@@ -10,12 +10,6 @@ export function useLoginTrigger() {
       return true
     }
 
-    // 显示提示信息
-    toast.error('请先登录', {
-      description: '正在为您打开登录界面...',
-      duration: 2000,
-    })
-
     // 尝试找到并点击登录按钮
     setTimeout(() => {
       // 1. 优先查找启动器中带有 data-login-trigger 属性的登录按钮

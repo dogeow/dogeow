@@ -65,10 +65,6 @@ describe('useLoginTrigger', () => {
       const success = result.current.triggerLogin()
 
       expect(success).toBe(false)
-      expect(mockToastError).toHaveBeenCalledWith('请先登录', {
-        description: '正在为您打开登录界面...',
-        duration: 2000,
-      })
     })
 
     it('should attempt to find login button after timeout', () => {
@@ -130,10 +126,6 @@ describe('useLoginTrigger', () => {
       result.current.requireLogin(callback)
 
       expect(callback).not.toHaveBeenCalled()
-      expect(mockToastError).toHaveBeenCalledWith('请先登录', {
-        description: '正在为您打开登录界面...',
-        duration: 2000,
-      })
     })
   })
 
@@ -159,10 +151,6 @@ describe('useLoginTrigger', () => {
       await result.current.requireLoginAsync(callback)
 
       expect(callback).not.toHaveBeenCalled()
-      expect(mockToastError).toHaveBeenCalledWith('请先登录', {
-        description: '正在为您打开登录界面...',
-        duration: 2000,
-      })
     })
 
     it('should handle async callback that throws error', async () => {
