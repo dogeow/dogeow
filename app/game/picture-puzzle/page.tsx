@@ -8,6 +8,7 @@ import dynamic from 'next/dynamic'
 import { Upload, Image as ImageIcon } from 'lucide-react'
 import { GameRulesDialog } from '@/components/ui/game-rules-dialog'
 import Link from 'next/link'
+import { imageAsset } from '@/lib/helpers/assets'
 
 // 动态导入拼图游戏组件
 const PicturePuzzle = dynamic(() => import('./components/PicturePuzzle'), {
@@ -20,32 +21,32 @@ const SYSTEM_IMAGES = [
   {
     id: 'bg1',
     name: '风景1',
-    url: '/images/backgrounds/F_RIhiObMAA-c8N.jpeg',
-    thumbnail: '/images/backgrounds/F_RIhiObMAA-c8N.jpeg',
+    url: imageAsset('/images/backgrounds/F_RIhiObMAA-c8N.jpeg'),
+    thumbnail: imageAsset('/images/backgrounds/F_RIhiObMAA-c8N.jpeg'),
   },
   {
     id: 'bg3',
     name: '风景2',
-    url: '/images/backgrounds/wallhaven-72rd8e_2560x1440-1.webp',
-    thumbnail: '/images/backgrounds/wallhaven-72rd8e_2560x1440-1.webp',
+    url: imageAsset('/images/backgrounds/wallhaven-72rd8e_2560x1440-1.webp'),
+    thumbnail: imageAsset('/images/backgrounds/wallhaven-72rd8e_2560x1440-1.webp'),
   },
   {
     id: 'project1',
     name: '游戏界面',
-    url: '/images/projects/game.png',
-    thumbnail: '/images/projects/game.png',
+    url: imageAsset('/images/projects/game.png'),
+    thumbnail: imageAsset('/images/projects/game.png'),
   },
   {
     id: 'project2',
     name: '实验室',
-    url: '/images/projects/lab.png',
-    thumbnail: '/images/projects/lab.png',
+    url: imageAsset('/images/projects/lab.png'),
+    thumbnail: imageAsset('/images/projects/lab.png'),
   },
   {
     id: 'project3',
     name: '笔记应用',
-    url: '/images/projects/note.png',
-    thumbnail: '/images/projects/note.png',
+    url: imageAsset('/images/projects/note.png'),
+    thumbnail: imageAsset('/images/projects/note.png'),
   },
 ]
 

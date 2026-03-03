@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
+import { gameAsset } from '@/lib/helpers/assets'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useGameStore } from '../../stores/gameStore'
 import { useMonsterDrops } from '../../hooks/useMonsterDrops'
@@ -226,12 +227,14 @@ export function CompendiumPanel() {
                     className="border-border bg-muted relative flex h-[200px] w-[200px] shrink-0 cursor-zoom-in items-center justify-center rounded-lg border-2"
                     onClick={e => {
                       e.stopPropagation()
-                      setViewingImage(`/game/rpg/items/item_${selectedItem.id}_origin.png`)
+                      setViewingImage(
+                        gameAsset(`/game/rpg/items/item_${selectedItem.id}_origin.png`)
+                      )
                     }}
                   >
                     <span className="absolute inset-0 rounded-md p-2">
                       <ImageWithFallback
-                        src={`/game/rpg/items/item_${selectedItem.id}_origin.png`}
+                        src={gameAsset(`/game/rpg/items/item_${selectedItem.id}_origin.png`)}
                         fallback={getItemIconFallback({ definition: selectedItem })}
                       />
                     </span>
@@ -377,12 +380,14 @@ export function CompendiumPanel() {
                       onClick={e => {
                         e.stopPropagation()
                         setViewingImage(
-                          `/game/rpg/monsters/monster_${selectedMonster?.id}_origin.png`
+                          gameAsset(`/game/rpg/monsters/monster_${selectedMonster?.id}_origin.png`)
                         )
                       }}
                     >
                       <Image
-                        src={`/game/rpg/monsters/monster_${selectedMonster?.id}_origin.png`}
+                        src={gameAsset(
+                          `/game/rpg/monsters/monster_${selectedMonster?.id}_origin.png`
+                        )}
                         alt=""
                         fill
                         className="object-contain"
@@ -477,7 +482,7 @@ function ItemIcon({ item, className }: { item: CompendiumItem; className?: strin
   const definitionId = item.id
   const fallback = getItemIconFallback({ definition: item })
   const [useImg, setUseImg] = useState(definitionId != null)
-  const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
+  const src = definitionId != null ? gameAsset(`/game/rpg/items/item_${definitionId}.png`) : ''
   return (
     <span
       className={`relative inline-flex h-full w-full items-center justify-center ${className ?? ''}`}
@@ -503,7 +508,7 @@ function ItemTipIcon({ item, onClick }: { item: CompendiumItem; onClick?: () => 
   const definitionId = item.id
   const fallback = getItemIconFallback({ definition: item })
   const [useImg, setUseImg] = useState(definitionId != null)
-  const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
+  const src = definitionId != null ? gameAsset(`/game/rpg/items/item_${definitionId}.png`) : ''
   return (
     <span
       className={`bg-muted relative inline-flex h-[80px] w-[80px] shrink-0 items-center justify-center rounded-lg border-2 border-gray-400 shadow-sm ${onClick ? 'cursor-zoom-in' : ''}`}
@@ -528,7 +533,7 @@ function ItemTipIcon({ item, onClick }: { item: CompendiumItem; onClick?: () => 
 /** 怪物图标 */
 function MonsterIcon({ monsterId, className }: { monsterId: number; className?: string }) {
   const [useImg, setUseImg] = useState(true)
-  const src = `/game/rpg/monsters/monster_${monsterId}.png`
+  const src = gameAsset(`/game/rpg/monsters/monster_${monsterId}.png`)
   return (
     <span className={`relative inline-flex items-center justify-center ${className ?? ''}`}>
       {useImg ? (

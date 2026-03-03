@@ -12,13 +12,14 @@ import {
   ITEM_TYPE_NAMES,
 } from '@/app/game/rpg/utils/itemUtils'
 import { CopperDisplay } from '@/app/game/rpg/components/shared/CopperDisplay'
+import { gameAsset } from '@/lib/helpers/assets'
 
 /** 商店物品图标：优先使用图片，加载失败则用 emoji */
 function ShopItemIcon({ item, className }: { item: ShopItem; className?: string }) {
   const definitionId = item.id
   const fallback = getShopItemIcon(item.type, item.sub_type)
   const [useImg, setUseImg] = useState(true)
-  const src = `/game/rpg/items/item_${definitionId}.png`
+  const src = gameAsset(`/game/rpg/items/item_${definitionId}.png`)
 
   return (
     <span

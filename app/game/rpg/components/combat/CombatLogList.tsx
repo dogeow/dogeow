@@ -16,10 +16,11 @@ import { getItemDisplayName } from '../../utils/itemUtils'
 import { ItemDetailModal } from '@/components/game'
 import { useGameStore } from '../../stores/gameStore'
 import { X, Swords, Shield, Zap, Target, Skull, Award, Coins } from 'lucide-react'
+import { gameAsset } from '@/lib/helpers/assets'
 
 function ItemTipIcon({ item, className }: { item: GameItem; className?: string }) {
   const definitionId = item.definition?.id
-  const src = definitionId != null ? `/game/rpg/items/item_${definitionId}.png` : ''
+  const src = definitionId != null ? gameAsset(`/game/rpg/items/item_${definitionId}.png`) : ''
   const [useImg, setUseImg] = useState(definitionId != null)
 
   return (

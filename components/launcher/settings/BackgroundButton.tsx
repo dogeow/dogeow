@@ -4,6 +4,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/helpers'
 import Image from 'next/image'
+import { imageAsset } from '@/lib/helpers/assets'
 
 interface BackgroundButtonProps {
   background: {
@@ -29,7 +30,7 @@ export function BackgroundButton({ background, isSelected, onSelect }: Backgroun
       >
         {background.url ? (
           <Image
-            src={`/images/backgrounds/${background.url}`}
+            src={imageAsset(`/images/backgrounds/${background.url}`)}
             alt={background.name}
             fill
             className="object-cover"

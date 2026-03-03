@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+import { gameAsset } from '@/lib/helpers/assets'
 
 export function MapCardMonsterAvatar({ monsterId, name }: { monsterId: number; name: string }) {
   const [useImg, setUseImg] = useState(true)
@@ -12,7 +13,7 @@ export function MapCardMonsterAvatar({ monsterId, name }: { monsterId: number; n
     >
       {useImg ? (
         <Image
-          src={`/game/rpg/monsters/monster_${monsterId}.png`}
+          src={gameAsset(`/game/rpg/monsters/monster_${monsterId}.png`)}
           alt=""
           fill
           className="object-cover"

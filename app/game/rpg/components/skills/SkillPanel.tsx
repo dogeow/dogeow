@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useRef } from 'react'
 import Image from 'next/image'
 import { useGameStore } from '../../stores/gameStore'
 import type { SkillWithLearnedState, CharacterClass } from '../../types'
+import { gameAsset } from '@/lib/helpers/assets'
 
 /** 技能图标 */
 function SkillIcon({
@@ -17,7 +18,7 @@ function SkillIcon({
 }) {
   const fallback = icon && icon.length <= 4 ? icon : (name?.[0] ?? '?')
   const [useImg, setUseImg] = useState(true)
-  const src = `/game/rpg/skills/skill_${skillId}.png`
+  const src = gameAsset(`/game/rpg/skills/skill_${skillId}.png`)
   return (
     <span className="bg-muted relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded text-lg">
       {useImg ? (

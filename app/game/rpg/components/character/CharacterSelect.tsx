@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import { gameAsset } from '@/lib/helpers/assets'
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useGameStore } from '../../stores/gameStore'
 import { CreateCharacter } from './CreateCharacter'
@@ -139,7 +140,7 @@ export function CharacterSelect({ onBack, onCreateCharacter }: CharacterSelectPr
       const difficultyTier = character.difficulty_tier ?? 0
       const gender = character.gender ?? 'male'
       const avatarKey = gender === 'female' ? classInfo.female : classInfo.male
-      const avatarUrl = `/game/rpg/avatar/${avatarKey}.png`
+      const avatarUrl = gameAsset(`/game/rpg/avatar/${avatarKey}.png`)
 
       const handleDeleteClick = (e: React.MouseEvent) => {
         e.stopPropagation()

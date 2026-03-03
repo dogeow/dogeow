@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useBackgroundStore } from '@/stores/backgroundStore'
+import { imageAsset } from '@/lib/helpers/assets'
 
 export const useBackgroundManager = () => {
   const { backgroundImage, setBackgroundImage } = useBackgroundStore()
@@ -14,7 +15,7 @@ export const useBackgroundManager = () => {
 
     // 系统背景图片
     if (backgroundImage.startsWith('wallhaven') || backgroundImage.startsWith('F_RIhiObMAA')) {
-      imageUrl = `/images/backgrounds/${backgroundImage}`
+      imageUrl = imageAsset(`/images/backgrounds/${backgroundImage}`)
     }
     // 自定义上传的背景图片（base64格式）
     else if (backgroundImage.startsWith('data:')) {

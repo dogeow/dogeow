@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks/useTranslation'
 import type { CustomBackground } from '../SettingsPanel'
 import { Check } from 'lucide-react'
 import Image from 'next/image'
+import { imageAsset } from '@/lib/helpers/assets'
 
 interface BackgroundViewProps {
   onBack: () => void
@@ -45,7 +46,7 @@ export function BackgroundView({
             >
               {bg.url ? (
                 <Image
-                  src={`/images/backgrounds/${bg.url}`}
+                  src={imageAsset(`/images/backgrounds/${bg.url}`)}
                   alt={bg.name!}
                   fill
                   className="object-cover"

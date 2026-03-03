@@ -8,13 +8,14 @@ import { CopperDisplay } from '../shared/CopperDisplay'
 import { ShopItem, QUALITY_COLORS, formatCopper, GameItem, ItemType } from '../../types'
 import { getShopItemIcon, getEquipmentSlot } from '../../utils/itemUtils'
 import { ItemDetailModal } from '@/components/game'
+import { gameAsset } from '@/lib/helpers/assets'
 
 /** 商店物品图标：优先使用图片，加载失败则用 emoji */
 function ShopItemIcon({ item, className }: { item: ShopItem; className?: string }) {
   const definitionId = item.id
   const fallback = getShopItemIcon(item.type, item.sub_type)
   const [useImg, setUseImg] = useState(true)
-  const src = `/game/rpg/items/item_${definitionId}.png`
+  const src = gameAsset(`/game/rpg/items/item_${definitionId}.png`)
 
   return (
     <span

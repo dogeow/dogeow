@@ -6,6 +6,7 @@ import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
 import { Lock, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/helpers'
+import { imageAsset } from '@/lib/helpers/assets'
 
 interface TileCardProps {
   tile: Tile
@@ -89,7 +90,7 @@ export const TileCard = memo(
           {showCover && tile.cover && (
             <div className="relative h-32 w-full overflow-hidden rounded-lg">
               <Image
-                src={`/images/projects/${tile.cover}`}
+                src={imageAsset(`/images/projects/${tile.cover}`)}
                 alt={tileName}
                 fill
                 className="object-cover opacity-60 transition-opacity group-hover:opacity-100"

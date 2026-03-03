@@ -1,11 +1,12 @@
 import * as React from 'react'
 import Image from 'next/image'
 import { ExternalLink } from '@/components/ExternalLink'
+import { imageAsset } from '@/lib/helpers/assets'
 
 const BEIAN_URL = 'http://www.beian.gov.cn/'
 const MIIT_URL = 'https://beian.miit.gov.cn/'
 
-const ICP_ICON_PATH = '/images/tech/ICP.png'
+const ICP_ICON_PATH = imageAsset('/images/tech/ICP.png')
 
 const ICP = () => {
   return (

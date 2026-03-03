@@ -4,6 +4,7 @@ import { Lock } from 'lucide-react'
 import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
 import { PERFORMANCE } from '@/lib/constants'
+import { imageAsset } from '@/lib/helpers/assets'
 
 // 常量定义
 const TILE_CLASSES = {
@@ -61,7 +62,7 @@ const TileIcon = memo(
     if (typeof tile.icon === 'string' && tile.icon.length > 0) {
       return (
         <Image
-          src={`/images/projects/${tile.icon}`}
+          src={imageAsset(`/images/projects/${tile.icon}`)}
           alt={tileName}
           width={24}
           height={24}
@@ -142,7 +143,7 @@ export const TileCard = memo(
         {hasBackground && (
           <>
             <Image
-              src={`/images/projects/${coverImage}`}
+              src={imageAsset(`/images/projects/${coverImage}`)}
               alt={`${tileName} background`}
               fill
               className={`tile-image z-[1] object-cover transition-opacity duration-300 ${

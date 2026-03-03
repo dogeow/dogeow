@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
+import { gameAsset } from '@/lib/helpers/assets'
 
 import { type MonsterType } from '../../types'
 
@@ -25,7 +26,7 @@ export function MonsterIcon({
   monsterType?: MonsterType
 }) {
   const fallback = name && name[0] ? name[0] : '?'
-  const src = monsterId != null ? `/game/rpg/monsters/monster_${monsterId}.png` : ''
+  const src = monsterId != null ? gameAsset(`/game/rpg/monsters/monster_${monsterId}.png`) : ''
   const [useImg, setUseImg] = useState(true)
   const sizeClass =
     size === 'sm'

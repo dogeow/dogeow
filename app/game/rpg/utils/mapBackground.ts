@@ -1,6 +1,7 @@
 import type { MapDefinition } from '../types'
+import { gameAsset } from '@/lib/helpers/assets'
 
-const BG_BASE = '/game/rpg/bg'
+const BG_BASE = gameAsset('/game/rpg/bg')
 
 /** 按幕(act)的渐变背景，图片加载失败或未配置时使用 */
 const ACT_GRADIENTS: Record<number, string> = {

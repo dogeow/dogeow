@@ -6,6 +6,7 @@ import { Lock, ArrowRight } from 'lucide-react'
 import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
 import { PERFORMANCE } from '@/lib/constants'
+import { imageAsset } from '@/lib/helpers/assets'
 
 interface MagazineTileCardProps {
   tile: Tile
@@ -49,7 +50,7 @@ const HeroCard = memo(
         {/* 背景图 */}
         {hasBackground && (
           <Image
-            src={`/images/projects/${coverImage}`}
+            src={imageAsset(`/images/projects/${coverImage}`)}
             alt={`${tileName} background`}
             fill
             className={`object-cover transition-all duration-500 group-hover:scale-105 ${
