@@ -5,12 +5,8 @@ import type { CustomTheme } from '@/app/types'
 import {
   Palette,
   Image as ImageIcon,
-  Grid,
   Languages,
   Sun,
-  ChevronRight,
-  AppWindow,
-  Monitor,
   LayoutGrid,
   BookOpen,
   Columns,
@@ -20,20 +16,13 @@ import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
 import { useProjectCoverStore } from '@/stores/projectCoverStore'
 import { useLayoutStore } from '@/stores/layoutStore'
+import { hexToHSL } from '@/lib/helpers'
 import { BackgroundView } from './BackgroundView'
 import { ThemeView } from './ThemeView'
 import { LanguageView } from './LanguageView'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-export type SettingsSection =
-  | 'appearance'
-  | 'background'
-  | 'theme'
-  | 'language'
-  | 'layout'
-  | 'covers'
-  | 'system'
-  | 'apps'
+export type SettingsSection = 'color' | 'background' | 'theme' | 'language' | 'apps'
 
 interface SettingsDialogProps {
   open: boolean
@@ -54,15 +43,21 @@ export function SettingsDialog({
   customBackgrounds,
   setCustomBackgrounds,
 }: SettingsDialogProps) {
-  const [activeSection, setActiveSection] = useState<SettingsSection>('appearance')
+  const [activeSection, setActiveSection] = useState<SettingsSection>('color')
 
   // Theme store
   const { theme, setTheme } = useTheme()
-  const { followSystem, setFollowSystem } = useThemeStore()
+  const {
+    followSystem,
+    setFollowSystem,
+    currentTheme,
+    customThemes,
+    setCurrentTheme,
+    addCustomTheme,
+    removeCustomTheme,
+  } = useThemeStore()
   const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
   const { siteLayout, setSiteLayout } = useLayoutStore()
-
-  const mounted = typeof window !== 'undefined'
 
   // Handle background
   const handleSetBackground = useCallback(
@@ -93,43 +88,57 @@ export function SettingsDialog({
     [setBackgroundImage, setCustomBackgrounds]
   )
 
-  // Handle theme
-
-  // Handle theme
-  const [customThemes, setCustomThemes] = useState<CustomTheme[]>([])
   const handleSetTheme = useCallback(
-    (newTheme: string) => {
-      setTheme(newTheme as 'light' | 'dark' | 'system')
+    (themeId: string) => {
+      setCurrentTheme(themeId)
     },
-    [setTheme]
+    [setCurrentTheme]
   )
 
-  const handleAddTheme = useCallback((name: string, color: string) => {
-    const newTheme: CustomTheme = {
-      id: `theme-${Date.now()}`,
-      name,
-      color,
-      primary: color,
-    }
-    setCustomThemes(prev => [...prev, newTheme])
-  }, [])
+  const handleAddTheme = useCallback(
+    (name: string, color: string) => {
+      const newTheme: CustomTheme = {
+        id: `theme-${Date.now()}`,
+        name,
+        color,
+        primary: hexToHSL(color),
+      }
+      addCustomTheme(newTheme)
+      setCurrentTheme(newTheme.id)
+    },
+    [addCustomTheme, setCurrentTheme]
+  )
 
-  const handleRemoveTheme = useCallback((id: string) => {
-    setCustomThemes(prev => prev.filter(t => t.id !== id))
-  }, [])
+  const handleRemoveTheme = useCallback(
+    (id: string) => {
+      removeCustomTheme(id)
+    },
+    [removeCustomTheme]
+  )
 
-  // Settings items - only show appearance in sidebar
   const settingsItems: { id: SettingsSection; icon: React.ReactNode; label: string }[] = [
-    { id: 'appearance', icon: <Monitor className="h-4 w-4" />, label: '外观' },
+    { id: 'color', icon: <Sun className="h-4 w-4" />, label: '颜色' },
+    { id: 'language', icon: <Languages className="h-4 w-4" />, label: '语言' },
+    { id: 'theme', icon: <Palette className="h-4 w-4" />, label: '主题' },
+    { id: 'background', icon: <ImageIcon className="h-4 w-4" />, label: '背景' },
+    { id: 'apps', icon: <LayoutGrid className="h-4 w-4" />, label: 'APP列表' },
   ]
 
-  // Render content based on active section
   const renderContent = () => {
     switch (activeSection) {
+      case 'color':
+        return (
+          <ColorModeView
+            followSystem={followSystem}
+            theme={theme}
+            setFollowSystem={setFollowSystem}
+            setTheme={setTheme}
+          />
+        )
       case 'background':
         return (
           <BackgroundView
-            onBack={() => setActiveSection('appearance')}
+            onBack={() => setActiveSection('color')}
             backgroundImage={backgroundImage}
             onSetBackground={handleSetBackground}
             customBackgrounds={customBackgrounds}
@@ -140,8 +149,8 @@ export function SettingsDialog({
       case 'theme':
         return (
           <ThemeView
-            onBack={() => setActiveSection('appearance')}
-            currentTheme={theme || 'system'}
+            onBack={() => setActiveSection('color')}
+            currentTheme={currentTheme}
             customThemes={customThemes}
             onSetTheme={handleSetTheme}
             onRemoveTheme={handleRemoveTheme}
@@ -150,11 +159,11 @@ export function SettingsDialog({
           />
         )
       case 'language':
-        return <LanguageView onBack={() => setActiveSection('appearance')} showBackButton={false} />
+        return <LanguageView onBack={() => setActiveSection('color')} showBackButton={false} />
       case 'apps':
         return (
           <AppsListView
-            onBack={() => setActiveSection('appearance')}
+            onBack={() => setActiveSection('color')}
             siteLayout={siteLayout}
             setSiteLayout={setSiteLayout}
             showProjectCovers={showProjectCovers}
@@ -162,91 +171,14 @@ export function SettingsDialog({
           />
         )
       default:
-        return (
-          <div className="flex flex-col space-y-2">
-            {/* 外观 - 跟随系统/浅色/深色模式 */}
-            <div className="flex w-full items-center gap-2 rounded-lg p-2">
-              <Sun className="h-4 w-4 shrink-0" />
-              <div className="flex flex-1 gap-1">
-                <button
-                  type="button"
-                  onClick={() => setFollowSystem(true)}
-                  className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
-                    followSystem ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
-                  }`}
-                >
-                  跟随系统
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFollowSystem(false)
-                    setTheme('light')
-                  }}
-                  className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
-                    !followSystem && theme === 'light'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  浅色
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFollowSystem(false)
-                    setTheme('dark')
-                  }}
-                  className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
-                    !followSystem && theme === 'dark'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  深色
-                </button>
-              </div>
-            </div>
-
-            {/* 语言 */}
-            <SettingsItem
-              icon={<Languages className="h-4 w-4" />}
-              label="语言"
-              onClick={() => setActiveSection('language')}
-              trailing={<ChevronRight className="text-muted-foreground h-3 w-3" />}
-            />
-
-            {/* 主题 */}
-            <SettingsItem
-              icon={<Palette className="h-4 w-4" />}
-              label="主题"
-              onClick={() => setActiveSection('theme')}
-              trailing={<ChevronRight className="text-muted-foreground h-3 w-3" />}
-            />
-
-            {/* 背景 */}
-            <SettingsItem
-              icon={<ImageIcon className="h-4 w-4" aria-hidden />}
-              label="背景"
-              onClick={() => setActiveSection('background')}
-              trailing={<ChevronRight className="text-muted-foreground h-3 w-3" />}
-            />
-
-            {/* APP列表 */}
-            <SettingsItem
-              icon={<LayoutGrid className="h-4 w-4" />}
-              label="APP列表"
-              onClick={() => setActiveSection('apps')}
-              trailing={<ChevronRight className="text-muted-foreground h-3 w-3" />}
-            />
-          </div>
-        )
+        return null
     }
   }
 
-  // Get section title
   const getSectionTitle = () => {
     switch (activeSection) {
+      case 'color':
+        return '颜色'
       case 'background':
         return '背景'
       case 'theme':
@@ -255,8 +187,6 @@ export function SettingsDialog({
         return '语言'
       case 'apps':
         return 'APP列表'
-      case 'appearance':
-        return '外观'
       default:
         return '设置'
     }
@@ -274,20 +204,16 @@ export function SettingsDialog({
           {/* 左侧和右侧内容 */}
           <div className="flex flex-1 overflow-hidden">
             {/* 左侧 sidebar */}
-            <div className="bg-muted/20 w-24 shrink-0 border-r">
+            <div className="bg-muted/20 w-28 shrink-0 border-r">
               <ScrollArea className="h-full">
                 <div className="flex flex-col p-1">
                   {settingsItems.map(item => {
-                    // 判断是否选中：当前 section 等于 item，或者当前 section 是 item 的子项
-                    const isSelected =
-                      activeSection === item.id ||
-                      (item.id === 'appearance' &&
-                        ['language', 'theme', 'background', 'apps'].includes(activeSection))
+                    const isSelected = activeSection === item.id
                     return (
                       <button
                         key={item.id}
                         onClick={() => setActiveSection(item.id)}
-                        className={`flex items-center gap-1.5 rounded px-1.5 py-1 text-left transition-colors ${
+                        className={`flex items-center gap-2 rounded px-2 py-2 text-left transition-colors ${
                           isSelected ? 'bg-primary/10 text-primary' : 'hover:bg-muted'
                         }`}
                       >
@@ -304,29 +230,6 @@ export function SettingsDialog({
             <div className="flex flex-1 flex-col overflow-hidden">
               {/* 标题栏 */}
               <div className="flex h-10 items-center border-b px-4">
-                {activeSection !== 'appearance' && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveSection('appearance')}
-                    className="hover:bg-muted -ml-1 mr-2 flex h-8 w-8 shrink-0 items-center justify-center rounded-md"
-                    aria-label="返回外观"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      <path d="m15 18-6-6 6-6" />
-                    </svg>
-                  </button>
-                )}
                 <h2 className="text-sm font-medium">{getSectionTitle()}</h2>
               </div>
 
@@ -340,24 +243,58 @@ export function SettingsDialog({
   )
 }
 
-// Settings Item component
-interface SettingsItemProps {
-  icon: React.ReactNode
-  label: string
-  onClick?: () => void
-  trailing?: React.ReactNode
+interface ColorModeViewProps {
+  followSystem: boolean
+  theme?: string
+  setFollowSystem: (follow: boolean, currentMode?: string) => void
+  setTheme: (theme: 'light' | 'dark' | 'system') => void
 }
 
-function SettingsItem({ icon, label, onClick, trailing }: SettingsItemProps) {
+function ColorModeView({ followSystem, theme, setFollowSystem, setTheme }: ColorModeViewProps) {
   return (
-    <button
-      onClick={onClick}
-      className="hover:bg-muted flex w-full items-center gap-2 rounded-lg p-2 transition-colors"
-    >
-      {icon}
-      <span className="flex-1 text-left text-xs">{label}</span>
-      {trailing}
-    </button>
+    <div className="flex flex-col space-y-3">
+      <div className="flex w-full items-center gap-2 rounded-lg p-2">
+        <div className="flex flex-1 gap-1">
+          <button
+            type="button"
+            onClick={() => setFollowSystem(true)}
+            className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
+              followSystem ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            跟随系统
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFollowSystem(false, 'light')
+              setTheme('light')
+            }}
+            className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
+              !followSystem && theme === 'light'
+                ? 'bg-primary text-primary-foreground'
+                : 'hover:bg-muted'
+            }`}
+          >
+            浅色
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFollowSystem(false, 'dark')
+              setTheme('dark')
+            }}
+            className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
+              !followSystem && theme === 'dark'
+                ? 'bg-primary text-primary-foreground'
+                : 'hover:bg-muted'
+            }`}
+          >
+            深色
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -402,25 +339,24 @@ function AppsListView({
         </div>
       </div>
 
-      {/* 显示封面 */}
-      <SettingsItem
-        icon={<BookOpen className="h-4 w-4" />}
-        label="显示封面"
+      <button
         onClick={() => setShowProjectCovers(!showProjectCovers)}
-        trailing={
+        className="hover:bg-muted flex w-full items-center gap-2 rounded-lg p-2 transition-colors"
+      >
+        <BookOpen className="h-4 w-4" />
+        <span className="flex-1 text-left text-xs">显示封面</span>
+        <div
+          className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${
+            showProjectCovers ? 'bg-primary' : 'bg-muted'
+          }`}
+        >
           <div
-            className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${
-              showProjectCovers ? 'bg-primary' : 'bg-muted'
+            className={`bg-background h-3.5 w-3.5 rounded-full shadow-md transition-transform ${
+              showProjectCovers ? 'translate-x-4' : 'translate-x-0'
             }`}
-          >
-            <div
-              className={`bg-background h-3.5 w-3.5 rounded-full shadow-md transition-transform ${
-                showProjectCovers ? 'translate-x-4' : 'translate-x-0'
-              }`}
-            />
-          </div>
-        }
-      />
+          />
+        </div>
+      </button>
     </div>
   )
 }

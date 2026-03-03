@@ -11,7 +11,6 @@ export type VisualizerType =
   | 'spectrum'
   | 'particles'
   | 'silk'
-  | 'pulse'
 
 interface AudioVisualizerProps {
   analyserNode: AnalyserNode | null
@@ -797,128 +796,6 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     []
   )
 
-  // 光环脉冲系统状态
-  const pulseRingsRef = useRef<
-    Array<{
-      radius: number
-      maxRadius: number
-      alpha: number
-      hue: number
-      lineWidth: number
-      speed: number
-    }>
-  >([])
-  const pulseSmoothedBassRef = useRef(0)
-  const pulseSmoothedMidRef = useRef(0)
-  const pulseSmoothedHighRef = useRef(0)
-
-  // 绘制光环脉冲效果
-  const drawPulse = useCallback(
-    (ctx: CanvasRenderingContext2D, dataArray: Uint8Array, width: number, height: number) => {
-      // 半透明清除，产生拖尾
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.08)'
-      ctx.fillRect(0, 0, width, height)
-
-      const cx = width / 2
-      const cy = height / 2
-      const maxR = Math.sqrt(cx * cx + cy * cy) * 1.1
-      const rings = pulseRingsRef.current
-
-      // 频段分析
-      const len = dataArray.length
-      const bassSlice = dataArray.slice(0, Math.floor(len * 0.1))
-      const midSlice = dataArray.slice(Math.floor(len * 0.1), Math.floor(len * 0.5))
-      const highSlice = dataArray.slice(Math.floor(len * 0.5))
-
-      const bassRaw = bassSlice.reduce((s, v) => s + v, 0) / bassSlice.length / 255
-      const midRaw = midSlice.reduce((s, v) => s + v, 0) / midSlice.length / 255
-      const highRaw = highSlice.reduce((s, v) => s + v, 0) / highSlice.length / 255
-
-      // 平滑
-      pulseSmoothedBassRef.current += (bassRaw - pulseSmoothedBassRef.current) * 0.25
-      pulseSmoothedMidRef.current += (midRaw - pulseSmoothedMidRef.current) * 0.2
-      pulseSmoothedHighRef.current += (highRaw - pulseSmoothedHighRef.current) * 0.2
-
-      const bass = pulseSmoothedBassRef.current
-      const mid = pulseSmoothedMidRef.current
-      const high = pulseSmoothedHighRef.current
-      const avg = (bass + mid + high) / 3
-
-      // 根据低频节拍生成新环
-      const beatThreshold = 0.35
-      const spawnChance = bass > beatThreshold ? 0.6 + bass * 0.4 : 0.05 + avg * 0.15
-      if (Math.random() < spawnChance && rings.length < 25) {
-        const hueBase = 280 + mid * 80 // 紫→粉色域
-        rings.push({
-          radius: 10 + bass * 30,
-          maxRadius: maxR,
-          alpha: 0.6 + bass * 0.4,
-          hue: hueBase + Math.random() * 40 - 20,
-          lineWidth: 1.5 + bass * 4,
-          speed: 2 + bass * 6 + Math.random() * 2,
-        })
-      }
-
-      // 中心呼吸光晕
-      const breathR = 40 + bass * 120 + Math.sin(performance.now() / 800) * 15
-      const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, breathR)
-      const glowHue = 280 + mid * 60
-      glowGrad.addColorStop(0, `hsla(${glowHue}, 80%, 70%, ${0.15 + avg * 0.25})`)
-      glowGrad.addColorStop(0.5, `hsla(${glowHue + 20}, 70%, 55%, ${0.08 + avg * 0.12})`)
-      glowGrad.addColorStop(1, `hsla(${glowHue + 40}, 60%, 40%, 0)`)
-      ctx.fillStyle = glowGrad
-      ctx.fillRect(cx - breathR, cy - breathR, breathR * 2, breathR * 2)
-
-      // 更新和绘制圆环
-      for (let i = rings.length - 1; i >= 0; i--) {
-        const ring = rings[i]
-        ring.radius += ring.speed
-        // 随扩散变淡变细
-        const life = 1 - ring.radius / ring.maxRadius
-        ring.alpha = Math.max(0, life * (0.5 + bass * 0.5))
-        ring.lineWidth = Math.max(0.3, life * (1.5 + bass * 3))
-
-        if (ring.alpha <= 0.01 || ring.radius >= ring.maxRadius) {
-          rings.splice(i, 1)
-          continue
-        }
-
-        // 主圆环
-        ctx.beginPath()
-        ctx.arc(cx, cy, ring.radius, 0, Math.PI * 2)
-        ctx.strokeStyle = `hsla(${ring.hue}, 75%, 65%, ${ring.alpha})`
-        ctx.lineWidth = ring.lineWidth
-        ctx.stroke()
-
-        // 外层辉光（更粗更透明）
-        if (ring.alpha > 0.1) {
-          ctx.beginPath()
-          ctx.arc(cx, cy, ring.radius, 0, Math.PI * 2)
-          ctx.strokeStyle = `hsla(${ring.hue}, 60%, 70%, ${ring.alpha * 0.3})`
-          ctx.lineWidth = ring.lineWidth * 3
-          ctx.stroke()
-        }
-      }
-
-      // 高频驱动的微粒点缀（围绕中心散布）
-      const dotCount = Math.floor(high * 40)
-      for (let i = 0; i < dotCount; i++) {
-        const angle = Math.random() * Math.PI * 2
-        const dist = 50 + Math.random() * (maxR * 0.5) * avg
-        const px = cx + Math.cos(angle) * dist
-        const py = cy + Math.sin(angle) * dist
-        const dotR = 0.5 + Math.random() * 1.5
-        const dotAlpha = 0.2 + Math.random() * 0.4 * high
-
-        ctx.beginPath()
-        ctx.arc(px, py, dotR, 0, Math.PI * 2)
-        ctx.fillStyle = `hsla(${280 + Math.random() * 80}, 70%, 75%, ${dotAlpha})`
-        ctx.fill()
-      }
-    },
-    []
-  )
-
   // 启动/停止动画
   useEffect(() => {
     // 绘制循环函数
@@ -982,9 +859,6 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
         case 'silk':
           drawSilk(ctx, dataArray, width, height)
           break
-        case 'pulse':
-          drawPulse(ctx, dataArray, width, height)
-          break
       }
 
       if (isPlaying && analyserNode) {
@@ -1019,7 +893,6 @@ export const AudioVisualizer: React.FC<AudioVisualizerProps> = ({
     drawWaveformHistory,
     drawParticles,
     drawSilk,
-    drawPulse,
   ])
 
   return (
