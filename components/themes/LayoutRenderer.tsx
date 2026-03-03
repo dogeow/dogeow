@@ -119,9 +119,10 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
 
         {/* 主内容 */}
         <main
-          className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+          className="mx-auto min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto"
           style={{
             maxWidth: theme.layout.main.maxWidth === '100%' ? '100%' : theme.layout.main.maxWidth,
+            padding: theme.layout.main.padding,
           }}
         >
           {children}
