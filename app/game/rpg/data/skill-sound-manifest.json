@@ -1,0 +1,194 @@
+[
+  {
+    "skillName": "治疗术",
+    "effectKey": "heal",
+    "fileName": "heal-soft.wav",
+    "preset": "heal",
+    "durationSeconds": 0.78,
+    "promptEn": "Short fantasy healing spell for an action RPG, gentle holy shimmer, rising magical chimes, soft restorative glow, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "火球术",
+    "effectKey": "fireball",
+    "fileName": "fireball-ember.wav",
+    "preset": "fireball",
+    "durationSeconds": 0.72,
+    "promptEn": "Short fantasy fireball cast for an action RPG, ember ignition into a fast burning projectile, hot magical whoosh, tiny impact tail, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "冰箭",
+    "effectKey": "ice-arrow",
+    "fileName": "ice-arrow-crack.wav",
+    "preset": "ice-arrow",
+    "durationSeconds": 0.64,
+    "promptEn": "Short fantasy ice arrow cast for an action RPG, sharp crystalline launch, cold magical whistle, brittle frost crack on hit, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "烈焰风暴",
+    "effectKey": "meteor-storm",
+    "fileName": "inferno-meteor-storm.wav",
+    "preset": "meteor-storm",
+    "durationSeconds": 1.3,
+    "promptEn": "Epic fantasy fire storm ultimate for an action RPG, roaring inferno vortex, multiple flaming impacts, intense heat and destruction, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "冰霜新星",
+    "effectKey": "ice-arrow",
+    "fileName": "frost-nova-ring.wav",
+    "preset": "frost-nova",
+    "durationSeconds": 0.92,
+    "promptEn": "Short fantasy frost nova burst for an action RPG, expanding ring of freezing energy, icy sparkle and crackling freeze wave, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "冰河世纪",
+    "effectKey": "ice-age",
+    "fileName": "ice-age-blizzard.wav",
+    "preset": "ice-age",
+    "durationSeconds": 1.45,
+    "promptEn": "Epic fantasy ice age ultimate for an action RPG, deep freezing blizzard surge, ancient glacier cracking, wide area frost devastation, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "雷击",
+    "effectKey": "lightning",
+    "fileName": "lightning-strike-zap.wav",
+    "preset": "lightning-strike",
+    "durationSeconds": 0.58,
+    "promptEn": "Short fantasy lightning strike for an action RPG, instant electric crack, bright magical zap, focused thunder snap, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "连锁闪电",
+    "effectKey": "chain-lightning",
+    "fileName": "chain-lightning-arc.wav",
+    "preset": "chain-lightning",
+    "durationSeconds": 0.95,
+    "promptEn": "Short fantasy chain lightning spell for an action RPG, electricity jumping rapidly between enemies, multiple sharp arcs and crackles, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "雷霆万钧",
+    "effectKey": "lightning",
+    "fileName": "thunder-wrath-burst.wav",
+    "preset": "thunder-wrath",
+    "durationSeconds": 1.18,
+    "promptEn": "Epic fantasy thunder wrath ultimate for an action RPG, massive sky lightning blast, layered electric surges and thunder power, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "魔法护盾",
+    "effectKey": "shield",
+    "fileName": "arcane-shield-hum.wav",
+    "preset": "shield",
+    "durationSeconds": 0.84,
+    "promptEn": "Short fantasy magic shield activation for an action RPG, arcane barrier rising, shimmering energy dome, defensive magical hum, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "陨石术",
+    "effectKey": "meteor",
+    "fileName": "meteor-impact-fall.wav",
+    "preset": "meteor",
+    "durationSeconds": 1.06,
+    "promptEn": "Epic fantasy meteor spell for an action RPG, falling rock from the sky, fiery descent, heavy magical impact, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "穿刺射击",
+    "effectKey": "pierce",
+    "fileName": "pierce-shot-flight.wav",
+    "preset": "pierce",
+    "durationSeconds": 0.56,
+    "promptEn": "Short fantasy piercing arrow shot for an action RPG, taut bow release, fast air-cutting projectile, precise impact, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "多重射击",
+    "effectKey": "multi-shot",
+    "fileName": "multishot-volley.wav",
+    "preset": "multi-shot",
+    "durationSeconds": 0.82,
+    "promptEn": "Short fantasy multi-shot ability for an action RPG, rapid volley of arrows, repeated bow snaps, layered projectile swishes, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "疾风步",
+    "effectKey": "dash",
+    "fileName": "wind-dash-step.wav",
+    "preset": "dash",
+    "durationSeconds": 0.44,
+    "promptEn": "Short fantasy wind dash movement skill for an action RPG, fast agile burst, airy whoosh and footstep vanish, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "毒箭",
+    "effectKey": "poison",
+    "fileName": "poison-arrow-hiss.wav",
+    "preset": "poison",
+    "durationSeconds": 0.72,
+    "promptEn": "Short fantasy poison arrow shot for an action RPG, sinister hiss, toxic liquid sting, sharp projectile launch, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "闪避",
+    "effectKey": "dodge",
+    "fileName": "dodge-swish-evade.wav",
+    "preset": "dodge",
+    "durationSeconds": 0.34,
+    "promptEn": "Short fantasy dodge maneuver for an action RPG, quick evasive sidestep, light air swish, responsive movement cue, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "箭雨",
+    "effectKey": "arrow-rain",
+    "fileName": "arrow-rain-storm.wav",
+    "preset": "arrow-rain",
+    "durationSeconds": 1.2,
+    "promptEn": "Epic fantasy arrow rain ultimate for an action RPG, many arrows falling from the sky, whistling barrage and clustered impacts, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "暗影步",
+    "effectKey": "shadow-step",
+    "fileName": "shadow-step-veil.wav",
+    "preset": "shadow-step",
+    "durationSeconds": 0.62,
+    "promptEn": "Short fantasy shadow step for an action RPG, dark teleport blur, smoky vanish, stealthy magical reappearance, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "重击",
+    "effectKey": "slash",
+    "fileName": "heavy-slash-smash.wav",
+    "preset": "slash",
+    "durationSeconds": 0.58,
+    "promptEn": "Short fantasy heavy slash attack for an action RPG, powerful blade swing, metallic cut and brutal hit, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "战吼",
+    "effectKey": "buff",
+    "fileName": "battle-shout-buff.wav",
+    "preset": "battle-shout",
+    "durationSeconds": 0.78,
+    "promptEn": "Short fantasy battle shout buff for an action RPG, heroic war cry energy burst, empowering pulse, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "冲锋",
+    "effectKey": "charge",
+    "fileName": "charge-rush-impact.wav",
+    "preset": "charge",
+    "durationSeconds": 0.7,
+    "promptEn": "Short fantasy charge attack for an action RPG, armored rush forward, heavy momentum, impact on contact, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "旋风斩",
+    "effectKey": "whirlwind",
+    "fileName": "whirlwind-blade-spin.wav",
+    "preset": "whirlwind",
+    "durationSeconds": 0.92,
+    "promptEn": "Short fantasy whirlwind blade attack for an action RPG, spinning steel arcs, circular slash motion, repeated cutting hits, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "狂暴",
+    "effectKey": "rage",
+    "fileName": "rage-burst-frenzy.wav",
+    "preset": "rage",
+    "durationSeconds": 0.86,
+    "promptEn": "Short fantasy rage activation for an action RPG, savage power-up surge, aggressive pulse, intense combat ferocity, no voice, no music, clean isolated sound effect."
+  },
+  {
+    "skillName": "斩杀",
+    "effectKey": "execute",
+    "fileName": "execute-cleaver-finisher.wav",
+    "preset": "execute",
+    "durationSeconds": 0.74,
+    "promptEn": "Short fantasy execution finisher for an action RPG, decisive heavy weapon strike, lethal cut and final impact, no voice, no music, clean isolated sound effect."
+  }
+]

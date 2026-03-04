@@ -22,6 +22,7 @@
     "test:changed": "vitest --changed --run",
     "test:related": "vitest --related --run",
     "test:ci": "vitest --config vitest.config.ci.ts --run",
+    "generate:rpg-sfx": "node scripts/generate-rpg-skill-sfx.mjs",
     "test:perf": "node scripts/test-performance.js",
     "test:check-coverage": "node scripts/check-coverage-v8.js",
     "test:generate": "node scripts/generate-test.js",

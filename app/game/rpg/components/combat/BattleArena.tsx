@@ -6,6 +6,7 @@ import { MonsterIcon } from './MonsterIcon'
 import { MonsterGroup } from './MonsterGroup'
 import { VSSwords } from './VSSwords'
 import { SkillEffect, type SkillEffectType } from './effects'
+import { soundManager } from '../../utils/soundManager'
 import styles from '../../rpg.module.css'
 
 /** 战斗对阵：上侧怪物（支持多只），下侧用户，中间 VS 可点击开始/停止挂机 */
@@ -45,6 +46,7 @@ export function BattleArena({
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingFinalHpRef = useRef<number>(finalMonsterHp)
   const lastSkillUsedRef = useRef<SkillUsedEntry | null>(null)
+  const lastPlayedSkillSoundRef = useRef<SkillUsedEntry | null>(null)
   const skillAnimationCompletedRef = useRef(false)
 
   // 技能动画未结束前不显示扣血，等 onComplete 后再更新
@@ -81,6 +83,14 @@ export function BattleArena({
       'chain-lightning',
     ]
     return valid.includes(key as SkillEffectType) ? (key as SkillEffectType) : null
+  }, [skillUsed])
+
+  useEffect(() => {
+    if (!skillUsed) return
+    if (skillUsed === lastPlayedSkillSoundRef.current) return
+
+    lastPlayedSkillSoundRef.current = skillUsed
+    soundManager.playSkill(skillUsed)
   }, [skillUsed])
 
   // 多怪物：延迟显示时传扣血前数据

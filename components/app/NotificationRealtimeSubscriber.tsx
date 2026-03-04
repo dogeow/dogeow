@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useSWRConfig } from 'swr'
 import { createEchoInstance, getEchoInstance } from '@/lib/websocket'
+import { fetchCurrentUser } from '@/lib/api'
 import useAuthStore from '@/stores/authStore'
 
 interface NotificationCreatedEvent {
@@ -19,44 +20,71 @@ interface NotificationCreatedEvent {
  * 全局实时订阅用户通知私有频道；收到新通知后刷新未读数/列表。
  */
 export function NotificationRealtimeSubscriber() {
+  const loading = useAuthStore(s => s.loading)
   const isAuthenticated = useAuthStore(s => s.isAuthenticated)
   const userId = useAuthStore(s => s.user?.id)
+  const setUser = useAuthStore(s => s.setUser)
   const { mutate } = useSWRConfig()
 
   useEffect(() => {
-    if (!isAuthenticated || !userId) return
+    if (loading || !isAuthenticated) return
 
-    const echo = getEchoInstance() ?? createEchoInstance()
-    if (!echo) return
-
-    const channelName = `user.${userId}.notifications`
     const eventName = '.notification.created'
-    const channel = echo.private(channelName)
-
     const handleNotificationCreated = (_event: NotificationCreatedEvent) => {
       void mutate('notifications/unread')
     }
 
-    channel.listen(eventName, handleNotificationCreated)
+    let isCancelled = false
+    let cleanup: (() => void) | null = null
 
-    return () => {
+    const subscribe = async () => {
       try {
-        channel.stopListening(eventName)
-      } catch (error) {
-        if (process.env.NODE_ENV === 'development') {
-          console.warn('通知频道停止监听失败:', error)
+        const currentUser = await fetchCurrentUser()
+        if (isCancelled) return
+
+        if (userId !== currentUser.id) {
+          setUser(currentUser)
         }
-      }
 
-      try {
-        echo.leave(channelName)
+        const echo = getEchoInstance() ?? createEchoInstance()
+        if (!echo) return
+
+        const channelName = `user.${currentUser.id}.notifications`
+        const channel = echo.private(channelName)
+
+        channel.listen(eventName, handleNotificationCreated)
+
+        cleanup = () => {
+          try {
+            channel.stopListening(eventName)
+          } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('通知频道停止监听失败:', error)
+            }
+          }
+
+          try {
+            echo.leave(channelName)
+          } catch (error) {
+            if (process.env.NODE_ENV === 'development') {
+              console.warn('通知频道离开失败:', error)
+            }
+          }
+        }
       } catch (error) {
         if (process.env.NODE_ENV === 'development') {
-          console.warn('通知频道离开失败:', error)
+          console.warn('通知频道订阅前同步当前用户失败:', error)
         }
       }
     }
-  }, [isAuthenticated, userId, mutate])
+
+    void subscribe()
+
+    return () => {
+      isCancelled = true
+      cleanup?.()
+    }
+  }, [loading, isAuthenticated, userId, setUser, mutate])
 
   return null
 }

@@ -1,4 +1,6 @@
 // 游戏音效管理器
+import type { SkillUsedEntry } from '../types'
+import { getAllSkillSoundUrls, getSkillSoundUrl } from './skillSoundRegistry'
 
 type SoundEffect =
   | 'combat_start'
@@ -16,6 +18,7 @@ type SoundEffect =
 
 class SoundManager {
   private sounds: Map<SoundEffect, HTMLAudioElement> = new Map()
+  private audioCache: Map<string, HTMLAudioElement> = new Map()
   private enabled: boolean = true
   private volume: number = 0.3
   // 单例 AudioContext - 避免每次播放音效都创建新实例
@@ -51,6 +54,8 @@ class SoundManager {
   }
 
   private loadSounds() {
+    if (typeof window === 'undefined' || typeof Audio === 'undefined') return
+
     // 使用浏览器内置的 Web Audio API 或免费音效库
     const soundUrls: Partial<Record<SoundEffect, string>> = {
       // 可以使用免费音效资源，如：
@@ -66,6 +71,10 @@ class SoundManager {
         audio.volume = this.volume
         this.sounds.set(key as SoundEffect, audio)
       }
+    })
+
+    getAllSkillSoundUrls().forEach(url => {
+      this.getCachedAudio(url)
     })
   }
 
@@ -97,6 +106,49 @@ class SoundManager {
 
     // 使用 Web Audio API 生成简单音效
     this.playGeneratedSound(effect)
+  }
+
+  playSkill(skill?: Pick<SkillUsedEntry, 'name' | 'effect_key'> | null) {
+    if (!this.enabled || typeof window === 'undefined' || !skill) return
+
+    const url = getSkillSoundUrl(skill)
+    if (!url) {
+      this.playGeneratedSound('skill_use')
+      return
+    }
+
+    void this.playAudioFile(url).then(played => {
+      if (!played) {
+        this.playGeneratedSound('skill_use')
+      }
+    })
+  }
+
+  private getCachedAudio(url: string): HTMLAudioElement {
+    const cached = this.audioCache.get(url)
+    if (cached) return cached
+
+    const audio = new Audio(url)
+    audio.preload = 'auto'
+    audio.volume = this.volume
+    this.audioCache.set(url, audio)
+
+    return audio
+  }
+
+  private async playAudioFile(url: string): Promise<boolean> {
+    try {
+      const base = this.getCachedAudio(url)
+      const audio = base.cloneNode() as HTMLAudioElement
+      audio.volume = this.volume
+      await audio.play()
+
+      return true
+    } catch (error) {
+      console.warn(`SoundManager: 技能音效播放失败 ${url}`, error)
+
+      return false
+    }
   }
 
   private playGeneratedSound(effect: SoundEffect) {
