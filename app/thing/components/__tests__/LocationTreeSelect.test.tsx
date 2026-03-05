@@ -97,6 +97,14 @@ describe('LocationTreeSelect', () => {
 
       expect(onToggleExpand).toHaveBeenCalledTimes(1)
     })
+
+    it('应该在未展开时显示"展开全部"按钮文本', () => {
+      render(
+        <LocationTreeSelect onSelect={mockOnSelect} isExpanded={false} onToggleExpand={() => {}} />
+      )
+
+      expect(screen.getByRole('button', { name: '展开全部' })).toBeInTheDocument()
+    })
   })
 
   describe('搜索功能', () => {
@@ -207,6 +215,19 @@ describe('LocationTreeSelect', () => {
 
       const livingRoom = screen.getByText('客厅')
       expect(livingRoom.closest('div')).toHaveClass('bg-muted')
+    })
+
+    it('应该高亮选中的位置项', () => {
+      render(
+        <LocationTreeSelect
+          onSelect={mockOnSelect}
+          isExpanded={true}
+          selectedLocation={{ type: 'spot', id: 1 }}
+        />
+      )
+
+      const spot = screen.getByText('沙发')
+      expect(spot.closest('div')).toHaveClass('bg-muted')
     })
   })
 

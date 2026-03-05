@@ -147,6 +147,26 @@ describe('ThingHeader', () => {
       expect(screen.getByText('电子产品')).toBeInTheDocument()
     })
 
+    it('应该在分类 id 无效时回退显示所有分类', () => {
+      const filtersWithInvalidCategory = { ...mockFilters, category_id: 99999 }
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={filtersWithInvalidCategory}
+          hasActiveFilters={true}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      expect(screen.getByText('所有分类')).toBeInTheDocument()
+    })
+
     it('应该在选中子分类时显示子分类名称', () => {
       const filtersWithChildCategory = { ...mockFilters, category_id: 2 }
       render(

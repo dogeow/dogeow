@@ -249,5 +249,20 @@ describe('CategoryTreeSelect', () => {
       expect(screen.getByRole('combobox', { name: '选择或创建主分类' })).toHaveValue('none')
       expect(screen.queryByRole('combobox', { name: '选择或创建子分类' })).not.toBeInTheDocument()
     })
+
+    it('应该在从未分类切换到 parent 时同步本地状态', async () => {
+      const { rerender } = render(
+        <CategoryTreeSelect onSelect={mockOnSelect} selectedCategory={undefined} />
+      )
+
+      rerender(
+        <CategoryTreeSelect onSelect={mockOnSelect} selectedCategory={{ type: 'parent', id: 1 }} />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByRole('combobox', { name: '选择或创建主分类' })).toHaveValue('1')
+      })
+      expect(screen.getByRole('combobox', { name: '选择或创建子分类' })).toBeInTheDocument()
+    })
   })
 })
