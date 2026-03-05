@@ -6,8 +6,20 @@ import { Item } from '../../types'
 
 // Mock child components
 vi.mock('../ItemCard', () => ({
-  default: ({ item, isLoading }: any) => (
-    <div data-testid={isLoading ? 'loading-card' : 'item-card'}>{!isLoading && item.name}</div>
+  default: ({ item, isLoading, onEdit, onView }: any) => (
+    <div data-testid={isLoading ? 'loading-card' : 'item-card'}>
+      {!isLoading && (
+        <>
+          <span>{item.name}</span>
+          <button type="button" onClick={onEdit}>
+            edit-{item.id}
+          </button>
+          <button type="button" onClick={onView}>
+            view-{item.id}
+          </button>
+        </>
+      )}
+    </div>
   ),
 }))
 
@@ -213,6 +225,33 @@ describe('ThingContent', () => {
       expect(screen.getByText('Item 2')).toBeInTheDocument()
       expect(screen.getByText('Item 3')).toBeInTheDocument()
     })
+
+    it('应该在点击物品操作时调用 onItemEdit 和 onItemView', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingContent
+          items={mockItems}
+          loading={false}
+          error={null}
+          meta={mockMeta}
+          currentPage={1}
+          searchTerm=""
+          hasActiveFilters={false}
+          viewMode="list"
+          onPageChange={mockOnPageChange}
+          onItemEdit={mockOnItemEdit}
+          onItemView={mockOnItemView}
+          onReload={mockOnReload}
+          onClearFilters={mockOnClearFilters}
+        />
+      )
+
+      await user.click(screen.getByRole('button', { name: 'edit-1' }))
+      await user.click(screen.getByRole('button', { name: 'view-2' }))
+
+      expect(mockOnItemEdit).toHaveBeenCalledWith(1)
+      expect(mockOnItemView).toHaveBeenCalledWith(2)
+    })
   })
 
   describe('画廊视图', () => {
@@ -264,6 +303,31 @@ describe('ThingContent', () => {
       expect(screen.getByText('1')).toBeInTheDocument()
       expect(screen.getByText('2')).toBeInTheDocument()
       expect(screen.getByText('3')).toBeInTheDocument()
+    })
+
+    it('应该在点击页码时调用 onPageChange', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingContent
+          items={mockItems}
+          loading={false}
+          error={null}
+          meta={mockMeta}
+          currentPage={1}
+          searchTerm=""
+          hasActiveFilters={false}
+          viewMode="list"
+          onPageChange={mockOnPageChange}
+          onItemEdit={mockOnItemEdit}
+          onItemView={mockOnItemView}
+          onReload={mockOnReload}
+          onClearFilters={mockOnClearFilters}
+        />
+      )
+
+      await user.click(screen.getByText('2'))
+
+      expect(mockOnPageChange).toHaveBeenCalledWith(2)
     })
 
     it('应该在只有一页时不显示分页', () => {

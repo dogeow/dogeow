@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import CreatableCategorySelect from '../CreatableCategorySelect'
+import { toast } from 'sonner'
 
 // Mock toast
 vi.mock('sonner', () => ({
@@ -196,6 +197,83 @@ describe('CreatableCategorySelect', () => {
       await waitFor(() => {
         expect(mockOnCreateCategory).toHaveBeenCalledWith('新分类')
         expect(mockOnValueChange).toHaveBeenCalledWith('4')
+      })
+    })
+
+    it('应该在没有 onCreateCategory 时回退为本地创建值', async () => {
+      const user = userEvent.setup()
+      render(
+        <CreatableCategorySelect
+          value=""
+          onValueChange={mockOnValueChange}
+          categories={mockCategories}
+        />
+      )
+
+      await user.click(screen.getByText('选择分类'))
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('输入或选择分类')).toBeInTheDocument()
+      })
+
+      const input = screen.getByPlaceholderText('输入或选择分类')
+      await user.type(input, '临时分类')
+
+      const createOption = await screen.findByText(/添加"临时分类"/)
+      fireEvent.click(createOption)
+
+      await waitFor(() => {
+        expect(mockOnValueChange).toHaveBeenCalledWith('临时分类')
+      })
+    })
+
+    it('应该在创建分类失败时显示错误提示', async () => {
+      mockOnCreateCategory.mockRejectedValue(new Error('创建失败'))
+      const user = userEvent.setup()
+      render(
+        <CreatableCategorySelect
+          value=""
+          onValueChange={mockOnValueChange}
+          categories={mockCategories}
+          onCreateCategory={mockOnCreateCategory}
+        />
+      )
+
+      await user.click(screen.getByText('选择分类'))
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('输入或选择分类')).toBeInTheDocument()
+      })
+
+      const input = screen.getByPlaceholderText('输入或选择分类')
+      await user.type(input, '失败分类')
+      const createOption = await screen.findByText(/添加"失败分类"/)
+      fireEvent.click(createOption)
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('创建失败')
+      })
+    })
+
+    it('应该在再次点击选择按钮时关闭并清空输入', async () => {
+      const user = userEvent.setup()
+      render(
+        <CreatableCategorySelect
+          value=""
+          onValueChange={mockOnValueChange}
+          categories={mockCategories}
+        />
+      )
+
+      const button = screen.getByText('选择分类')
+      await user.click(button)
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('输入或选择分类')).toBeInTheDocument()
+      })
+      await user.type(screen.getByPlaceholderText('输入或选择分类'), 'abc')
+
+      await user.click(button)
+
+      await waitFor(() => {
+        expect(screen.queryByPlaceholderText('输入或选择分类')).not.toBeInTheDocument()
       })
     })
   })
