@@ -1,5 +1,7 @@
 import { ComponentType } from 'react'
 import TimeConverter from './components/TimeConverter'
+import Base64Image from './components/Base64Image'
+import TextDiff from './components/TextDiff'
 import ToolPlaceholder from './components/ToolPlaceholder'
 
 // 工具类别定义
@@ -77,12 +79,28 @@ export const tools: Tool[] = [
     tags: ['Markdown', '预览', '转换'],
   },
   {
+    id: 'text-diff',
+    title: '文本对比',
+    description: '左右对比两段文本，高亮删除（红）与新增（绿）',
+    component: TextDiff,
+    category: '文本处理',
+    tags: ['文本', '对比', 'diff', '差异'],
+  },
+  {
     id: 'base64',
     title: 'Base64 编解码',
     description: '文本与 Base64 互转',
     component: ToolPlaceholder,
     category: '编码转换',
     tags: ['Base64', '编码', '解码'],
+  },
+  {
+    id: 'base64-image',
+    title: '图片 Base64',
+    description: '拖放文件生成 Base64，或粘贴 Base64 生成图片，可复制',
+    component: Base64Image,
+    category: '编码转换',
+    tags: ['Base64', '图片', '编码', '解码'],
   },
   {
     id: 'url-encode',

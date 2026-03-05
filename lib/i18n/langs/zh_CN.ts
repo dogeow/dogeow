@@ -112,6 +112,18 @@ export const zh_CN = {
   // Settings options
   'settings.project_covers': '功能封面图',
   'settings.follow_system': '跟随系统',
+  'settings.theme_mode': '主题模式',
+  'settings.theme_light': '浅色',
+  'settings.theme_dark': '深色',
+  'settings.theme_rest': '休息时段',
+  'settings.appearance': '外观',
+  'settings.appearance_desc': '选择外观模式，休息时段内自动使用深色。',
+  'settings.rest_period': '休息时段',
+  'settings.rest_period_hint': '该时段内使用深色，其余时间浅色。跨天请将开始时间设为大于结束时间。',
+  'settings.rest_start': '开始',
+  'settings.rest_end': '结束',
+  'settings.layout': '布局',
+  'settings.sonner': '提示',
 
   // Search
   'search.placeholder': '搜索...',

@@ -110,6 +110,18 @@ export const zh_TW = {
   // Settings options
   'settings.project_covers': '功能封面圖',
   'settings.follow_system': '跟隨系統',
+  'settings.theme_mode': '主題模式',
+  'settings.theme_light': '淺色',
+  'settings.theme_dark': '深色',
+  'settings.theme_rest': '休息時段',
+  'settings.appearance': '外觀',
+  'settings.appearance_desc': '選擇外觀模式，休息時段內自動使用深色。',
+  'settings.rest_period': '休息時段',
+  'settings.rest_period_hint': '該時段內使用深色，其餘時間淺色。跨天請將開始時間設為大於結束時間。',
+  'settings.rest_start': '開始',
+  'settings.rest_end': '結束',
+  'settings.layout': '佈局',
+  'settings.sonner': '提示',
 
   // Search
   'search.placeholder': '搜尋...',

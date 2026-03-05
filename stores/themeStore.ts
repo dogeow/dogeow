@@ -5,15 +5,30 @@ import { persist } from 'zustand/middleware'
 import { configs } from '@/app/configs'
 import type { CustomTheme } from '@/app/types'
 
+/** 外观模式：浅色、深色、跟随系统、休息时段（可配置时间段内深色） */
+export type ThemeMode = 'light' | 'dark' | 'system' | 'rest'
+
+/** 休息时段：深色开始小时 (0-23)、深色结束小时 (0-23)，结束小时不包含。如 23,6 表示 23:00–5:59 深色 */
+export interface RestPeriod {
+  startHour: number
+  endHour: number
+}
+
+const DEFAULT_REST_PERIOD: RestPeriod = { startHour: 23, endHour: 6 }
+
 interface ThemeState {
   currentTheme: string
   customThemes: CustomTheme[]
   followSystem: boolean
   previousThemeMode: string
-  // UI 主题（用于切换完整布局主题）
+  themeMode: ThemeMode
+  /** 休息时段配置，仅 themeMode===rest 时生效 */
+  restPeriod: RestPeriod
   currentUITheme: string
   setCurrentUITheme: (themeId: string) => void
   setCurrentTheme: (theme: string) => void
+  setThemeMode: (mode: ThemeMode) => void
+  setRestPeriod: (startHour: number, endHour: number) => void
   addCustomTheme: (theme: CustomTheme) => void
   removeCustomTheme: (id: string) => void
   setFollowSystem: (follow: boolean, currentMode?: string) => void
@@ -26,8 +41,22 @@ export const useThemeStore = create<ThemeState>()(
       customThemes: [],
       followSystem: false,
       previousThemeMode: 'light',
+      themeMode: 'light',
+      restPeriod: DEFAULT_REST_PERIOD,
       setCurrentTheme: theme => set({ currentTheme: theme }),
-      // UI 主题方法
+      setThemeMode: mode =>
+        set(state => ({
+          themeMode: mode,
+          followSystem: mode === 'system',
+          previousThemeMode: mode === 'light' || mode === 'dark' ? mode : state.previousThemeMode,
+        })),
+      setRestPeriod: (startHour, endHour) =>
+        set({
+          restPeriod: {
+            startHour: Math.max(0, Math.min(23, startHour)),
+            endHour: Math.max(0, Math.min(23, endHour)),
+          },
+        }),
       currentUITheme: 'default',
       setCurrentUITheme: themeId => set({ currentUITheme: themeId }),
       addCustomTheme: theme =>
@@ -43,25 +72,56 @@ export const useThemeStore = create<ThemeState>()(
       setFollowSystem: (follow, currentMode) =>
         set(state => {
           if (follow) {
-            // 启用跟随系统主题时，保存当前主题和模式
             return {
               followSystem: follow,
+              themeMode: 'system' as ThemeMode,
               previousThemeMode: currentMode || 'light',
             }
-          } else {
-            // 取消跟随系统主题时，恢复到之前的主题和模式
-            return {
-              followSystem: follow,
-              previousThemeMode: state.previousThemeMode,
-            }
+          }
+          return {
+            followSystem: follow,
+            themeMode: (state.previousThemeMode === 'dark' ? 'dark' : 'light') as ThemeMode,
+            previousThemeMode: state.previousThemeMode,
           }
         }),
     }),
     {
       name: 'theme-storage',
+      version: 3,
+      migrate: (persisted, version) => {
+        if (persisted && typeof persisted === 'object') {
+          const p = persisted as Record<string, unknown>
+          const out = { ...p } as Record<string, unknown>
+          if (version < 2) {
+            if (p.themeMode == null) {
+              out.themeMode =
+                p.followSystem === true
+                  ? 'system'
+                  : p.previousThemeMode === 'dark'
+                    ? 'dark'
+                    : 'light'
+            }
+          }
+          if (version < 3 || p.restPeriod == null) {
+            out.restPeriod = DEFAULT_REST_PERIOD
+          }
+          return out as unknown as ThemeState
+        }
+        return persisted as unknown as ThemeState
+      },
     }
   )
 )
+
+/** 根据休息时段配置判断当前是否处于休息时段（应使用深色） */
+export function isRestPeriodNow(restPeriod: RestPeriod): boolean {
+  const hour = new Date().getHours()
+  const { startHour, endHour } = restPeriod
+  if (startHour > endHour) {
+    return hour >= startHour || hour < endHour
+  }
+  return hour >= startHour && hour < endHour
+}
 
 // 获取当前主题的色彩值
 export const getCurrentThemeColor = (

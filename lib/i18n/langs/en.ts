@@ -114,6 +114,19 @@ export const en = {
   // Settings options
   'settings.project_covers': 'Project Covers',
   'settings.follow_system': 'Follow System',
+  'settings.theme_mode': 'Theme mode',
+  'settings.theme_light': 'Light',
+  'settings.theme_dark': 'Dark',
+  'settings.theme_rest': 'Rest period',
+  'settings.appearance': 'Appearance',
+  'settings.appearance_desc': 'Choose appearance mode; dark during rest period.',
+  'settings.rest_period': 'Rest period',
+  'settings.rest_period_hint':
+    'Dark during this period, light otherwise. For overnight, set start > end (e.g. 23 → 6).',
+  'settings.rest_start': 'Start',
+  'settings.rest_end': 'End',
+  'settings.layout': 'Layout',
+  'settings.sonner': 'Notifications',
 
   // Search
   'search.placeholder': 'Search...',

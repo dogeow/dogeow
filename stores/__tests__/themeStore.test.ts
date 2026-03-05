@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { vi } from 'vitest'
-import { useThemeStore, getCurrentThemeColor } from '../themeStore'
+import { useThemeStore, getCurrentThemeColor, isRestPeriodNow } from '../themeStore'
 import type { CustomTheme } from '../../app/types'
 
 // Mock the configs
@@ -54,6 +54,8 @@ describe('themeStore', () => {
       customThemes: [],
       followSystem: false,
       previousThemeMode: 'light',
+      themeMode: 'light',
+      restPeriod: { startHour: 23, endHour: 6 },
     })
   })
 
@@ -64,6 +66,8 @@ describe('themeStore', () => {
     expect(result.current.customThemes).toEqual([])
     expect(result.current.followSystem).toBe(false)
     expect(result.current.previousThemeMode).toBe('light')
+    expect(result.current.themeMode).toBe('light')
+    expect(result.current.restPeriod).toEqual({ startHour: 23, endHour: 6 })
   })
 
   it('should set current theme', () => {
@@ -176,6 +180,7 @@ describe('themeStore', () => {
     })
 
     expect(result.current.followSystem).toBe(true)
+    expect(result.current.themeMode).toBe('system')
     expect(result.current.previousThemeMode).toBe('dark')
   })
 
@@ -199,6 +204,7 @@ describe('themeStore', () => {
     })
 
     expect(result.current.followSystem).toBe(true)
+    expect(result.current.themeMode).toBe('system')
     expect(result.current.previousThemeMode).toBe('dark')
 
     // Then disable follow system
@@ -207,7 +213,8 @@ describe('themeStore', () => {
     })
 
     expect(result.current.followSystem).toBe(false)
-    expect(result.current.previousThemeMode).toBe('dark') // Should preserve the previous mode
+    expect(result.current.themeMode).toBe('dark') // Restored from previous
+    expect(result.current.previousThemeMode).toBe('dark')
   })
 
   it('should handle follow system toggle sequence', () => {
@@ -240,6 +247,8 @@ describe('themeStore', () => {
       currentTheme: 'green',
       customThemes: [mockCustomTheme],
       followSystem: true,
+      themeMode: 'system' as const,
+      restPeriod: { startHour: 23, endHour: 6 },
       previousThemeMode: 'dark',
     }
 
@@ -252,7 +261,56 @@ describe('themeStore', () => {
     expect(result.current.currentTheme).toBe('green')
     expect(result.current.customThemes).toEqual([mockCustomTheme])
     expect(result.current.followSystem).toBe(true)
+    expect(result.current.themeMode).toBe('system')
     expect(result.current.previousThemeMode).toBe('dark')
+  })
+
+  it('should set theme mode and sync followSystem', () => {
+    const { result } = renderHook(() => useThemeStore())
+
+    act(() => {
+      result.current.setThemeMode('system')
+    })
+    expect(result.current.themeMode).toBe('system')
+    expect(result.current.followSystem).toBe(true)
+
+    act(() => {
+      result.current.setThemeMode('rest')
+    })
+    expect(result.current.themeMode).toBe('rest')
+    expect(result.current.followSystem).toBe(false)
+
+    act(() => {
+      result.current.setThemeMode('dark')
+    })
+    expect(result.current.themeMode).toBe('dark')
+    expect(result.current.followSystem).toBe(false)
+  })
+
+  it('should set rest period and clamp hours to 0-23', () => {
+    const { result } = renderHook(() => useThemeStore())
+
+    act(() => {
+      result.current.setRestPeriod(23, 6)
+    })
+    expect(result.current.restPeriod).toEqual({ startHour: 23, endHour: 6 })
+
+    act(() => {
+      result.current.setRestPeriod(0, 12)
+    })
+    expect(result.current.restPeriod).toEqual({ startHour: 0, endHour: 12 })
+
+    act(() => {
+      result.current.setRestPeriod(30, -1)
+    })
+    expect(result.current.restPeriod).toEqual({ startHour: 23, endHour: 0 })
+  })
+})
+
+describe('isRestPeriodNow', () => {
+  it('should return boolean based on current hour and rest period', () => {
+    const result = isRestPeriodNow({ startHour: 23, endHour: 6 })
+    expect(typeof result).toBe('boolean')
   })
 })
 

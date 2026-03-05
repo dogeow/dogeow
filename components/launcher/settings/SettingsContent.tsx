@@ -5,11 +5,13 @@ import { BackgroundView } from './BackgroundView'
 import { ThemeView } from './ThemeView'
 import { LanguageView } from './LanguageView'
 import { SonnerView } from './SonnerView'
+import { AppearanceView } from './AppearanceView'
 import { SettingsDivider } from './SettingsDivider'
 import type { CustomBackground } from '../SettingsPanel'
 import type { CustomTheme } from '@/app/types'
+import type { ThemeMode, RestPeriod } from '@/stores/themeStore'
 
-type SettingsView = 'main' | 'background' | 'theme' | 'language' | 'sonner'
+type SettingsView = 'main' | 'background' | 'theme' | 'language' | 'sonner' | 'appearance'
 type DisplayMode = 'music' | 'apps' | 'settings'
 
 interface SettingsContentProps {
@@ -20,14 +22,16 @@ interface SettingsContentProps {
   customBackgrounds: CustomBackground[]
   currentTheme: string
   customThemes: CustomTheme[]
-  followSystem: boolean
+  themeMode: ThemeMode
+  restPeriod: RestPeriod
   showProjectCovers: boolean
   handleSetBackground: (url: string) => void
   handleUploadBackground: (e: React.ChangeEvent<HTMLInputElement>) => void
   setCurrentTheme: (theme: string) => void
+  setThemeMode: (mode: ThemeMode) => void
+  setRestPeriod: (startHour: number, endHour: number) => void
   handleAddCustomTheme: (name: string, color: string) => void
   handleRemoveCustomTheme: (id: string) => void
-  handleToggleFollowSystem: (checked: boolean) => void
   handleToggleProjectCovers: (checked: boolean) => void
   onClose?: () => void
 }
@@ -40,14 +44,16 @@ export function SettingsContent({
   customBackgrounds,
   currentTheme,
   customThemes,
-  followSystem,
+  themeMode,
+  restPeriod,
+  setRestPeriod,
   showProjectCovers,
   handleSetBackground,
   handleUploadBackground,
   setCurrentTheme,
+  setThemeMode,
   handleAddCustomTheme,
   handleRemoveCustomTheme,
-  handleToggleFollowSystem,
   handleToggleProjectCovers,
   onClose,
 }: SettingsContentProps) {
@@ -89,6 +95,17 @@ export function SettingsContent({
     case 'sonner':
       return <SonnerView onBack={() => setCurrentView('main')} />
 
+    case 'appearance':
+      return (
+        <AppearanceView
+          onBack={() => setCurrentView('main')}
+          themeMode={themeMode}
+          onThemeModeChange={setThemeMode}
+          restPeriod={restPeriod}
+          onRestPeriodChange={setRestPeriod}
+        />
+      )
+
     default:
       return (
         <>
@@ -101,10 +118,9 @@ export function SettingsContent({
           <MainView
             onNavigateToBackground={() => setCurrentView('background')}
             onNavigateToTheme={() => setCurrentView('theme')}
+            onNavigateToAppearance={() => setCurrentView('appearance')}
             onNavigateToLanguage={() => setCurrentView('language')}
             onNavigateToSonner={() => setCurrentView('sonner')}
-            followSystem={followSystem}
-            onToggleFollowSystem={handleToggleFollowSystem}
             showProjectCovers={showProjectCovers}
             onToggleProjectCovers={handleToggleProjectCovers}
           />

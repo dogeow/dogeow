@@ -113,6 +113,19 @@ export const ja = {
   // Settings options
   'settings.project_covers': 'プロジェクトカバー',
   'settings.follow_system': 'システムに従う',
+  'settings.theme_mode': 'テーマモード',
+  'settings.theme_light': 'ライト',
+  'settings.theme_dark': 'ダーク',
+  'settings.theme_rest': '休息時間',
+  'settings.appearance': '外観',
+  'settings.appearance_desc': '外観モードを選択。休息時間は自動でダークになります。',
+  'settings.rest_period': '休息時間',
+  'settings.rest_period_hint':
+    'この時間帯はダーク、それ以外はライト。跨ぐ場合は開始＞終了（例 23→6）。',
+  'settings.rest_start': '開始',
+  'settings.rest_end': '終了',
+  'settings.layout': 'レイアウト',
+  'settings.sonner': '通知',
 
   // Search
   'search.placeholder': '検索...',

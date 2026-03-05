@@ -55,3 +55,17 @@ export const SUCCESS_MESSAGES = {
   LOGIN_SUCCESS: '登录成功',
   LOGOUT_SUCCESS: '退出成功',
 } as const
+
+/** 又拍云 CDN 根地址，用于 Footer 背景等静态资源 */
+export const UPYUN_CDN_URL =
+  process.env.NEXT_PUBLIC_ASSET_BASE_URL?.trim() || '' || 'https://upyun.dogeow.com'
+
+/** Footer 浅色主题下随机展示的背景图文件名（位于 CDN /bg/ 目录） */
+export const FOOTER_BG_IMAGES_LIGHT = [
+  'camry_1.png',
+  'camry_2.png',
+  'tesla-model-3-png-1-original.png',
+  'Supra_1.png',
+  'Supra_2.png',
+  'Mustang.png',
+] as const

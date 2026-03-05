@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { ChevronDown } from 'lucide-react'
 import { tools } from './tools'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { PageContainer } from '@/components/layout'
 
 // 搜索结果缓存
@@ -57,7 +57,11 @@ const useToolSearch = () => {
 
 // 工具选择状态管理 hook
 const useToolSelection = (initialToolId: string = 'time-converter') => {
-  const [activeTab, setActiveTab] = useState(initialToolId)
+  const searchParams = useSearchParams()
+  const toolFromUrl = searchParams.get('tool')
+  const validInitialId =
+    toolFromUrl && tools.some(t => t.id === toolFromUrl) ? toolFromUrl : initialToolId
+  const [activeTab, setActiveTab] = useState(validInitialId)
   const router = useRouter()
   const pathname = usePathname()
   const isInternalChange = useRef(false)
@@ -82,6 +86,14 @@ const useToolSelection = (initialToolId: string = 'time-converter') => {
       isInternalChange.current = false
     }
   }, [pathname])
+
+  // URL 的 ?tool= 变化时同步到当前工具（异步避免 effect 内同步 setState）
+  useEffect(() => {
+    const t = searchParams.get('tool')
+    if (t && tools.some(tool => tool.id === t) && t !== activeTab) {
+      queueMicrotask(() => setActiveTab(t))
+    }
+  }, [searchParams, activeTab])
 
   return { activeTab, setActiveTab, handleToolSelect }
 }
@@ -207,7 +219,10 @@ export default function ToolPage() {
                                         ? 'border-foreground/40 bg-muted text-foreground'
                                         : 'border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
                                     }`}
-                                    onClick={() => handleToolSelect(tool.id)}
+                                    onClick={() => {
+                                      handleToolSelect(tool.id)
+                                      setIsExpanded(false)
+                                    }}
                                   >
                                     {tool.title}
                                   </button>

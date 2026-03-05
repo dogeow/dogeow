@@ -2,6 +2,8 @@
 
 import React, { useState, useCallback, useEffect } from 'react'
 import type { CustomTheme } from '@/app/types'
+import type { ThemeMode, RestPeriod } from '@/stores/themeStore'
+import { BottomHourPicker } from '@/components/ui/bottom-hour-picker'
 import {
   Palette,
   Image as ImageIcon,
@@ -66,10 +68,12 @@ export function SettingsDialog({
   }, [])
 
   // Theme store
-  const { theme, setTheme } = useTheme()
+  const { theme } = useTheme()
   const {
-    followSystem,
-    setFollowSystem,
+    themeMode,
+    setThemeMode,
+    restPeriod,
+    setRestPeriod,
     currentTheme,
     customThemes,
     setCurrentTheme,
@@ -162,10 +166,11 @@ export function SettingsDialog({
       case 'color':
         return (
           <ColorModeView
-            followSystem={followSystem}
-            theme={theme}
-            setFollowSystem={setFollowSystem}
-            setTheme={setTheme}
+            themeMode={themeMode}
+            resolvedTheme={theme}
+            onThemeModeChange={setThemeMode}
+            restPeriod={restPeriod}
+            onRestPeriodChange={setRestPeriod}
           />
         )
       case 'background':
@@ -281,56 +286,80 @@ export function SettingsDialog({
 }
 
 interface ColorModeViewProps {
-  followSystem: boolean
-  theme?: string
-  setFollowSystem: (follow: boolean, currentMode?: string) => void
-  setTheme: (theme: 'light' | 'dark' | 'system') => void
+  themeMode: ThemeMode
+  resolvedTheme?: string
+  onThemeModeChange: (mode: ThemeMode) => void
+  restPeriod: RestPeriod
+  onRestPeriodChange: (startHour: number, endHour: number) => void
 }
 
-function ColorModeView({ followSystem, theme, setFollowSystem, setTheme }: ColorModeViewProps) {
+function ColorModeView({
+  themeMode,
+  resolvedTheme,
+  onThemeModeChange,
+  restPeriod,
+  onRestPeriodChange,
+}: ColorModeViewProps) {
   return (
-    <div className="flex flex-col space-y-3">
-      <div className="flex w-full items-center gap-2 rounded-lg p-2">
-        <div className="flex flex-1 gap-1">
+    <div className="flex flex-col space-y-4">
+      <p className="text-muted-foreground text-xs">
+        选择外观模式；休息时段内自动深色，其余时间浅色。
+      </p>
+      <div className="flex flex-col gap-2">
+        {[
+          { mode: 'light' as const, label: '浅色' },
+          { mode: 'dark' as const, label: '深色' },
+          { mode: 'system' as const, label: '跟随系统' },
+          { mode: 'rest' as const, label: '休息时段' },
+        ].map(({ mode, label }) => (
           <button
+            key={mode}
             type="button"
-            onClick={() => setFollowSystem(true)}
-            className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
-              followSystem ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            onClick={() => onThemeModeChange(mode)}
+            className={`rounded-lg px-3 py-2.5 text-left text-sm transition-colors ${
+              themeMode === mode ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             }`}
           >
-            跟随系统
+            {label}
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              setFollowSystem(false, 'light')
-              setTheme('light')
-            }}
-            className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
-              !followSystem && theme === 'light'
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-muted'
-            }`}
-          >
-            浅色
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setFollowSystem(false, 'dark')
-              setTheme('dark')
-            }}
-            className={`min-w-0 flex-1 rounded px-2 py-1.5 text-xs whitespace-nowrap transition-colors ${
-              !followSystem && theme === 'dark'
-                ? 'bg-primary text-primary-foreground'
-                : 'hover:bg-muted'
-            }`}
-          >
-            深色
-          </button>
-        </div>
+        ))}
       </div>
+      {themeMode === 'rest' && (
+        <>
+          <div className="border-t pt-3">
+            <p className="text-muted-foreground mb-2 text-xs font-medium">休息时段设置</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center gap-2">
+                <label htmlFor="dialog-rest-start" className="text-xs">
+                  开始
+                </label>
+                <BottomHourPicker
+                  id="dialog-rest-start"
+                  value={restPeriod.startHour}
+                  onChange={h => onRestPeriodChange(h, restPeriod.endHour)}
+                  label="开始"
+                  title="开始时间"
+                  className="h-8 min-w-[4.5rem] px-2"
+                />
+              </div>
+              <span className="text-muted-foreground">→</span>
+              <div className="flex items-center gap-2">
+                <label htmlFor="dialog-rest-end" className="text-xs">
+                  结束
+                </label>
+                <BottomHourPicker
+                  id="dialog-rest-end"
+                  value={restPeriod.endHour}
+                  onChange={h => onRestPeriodChange(restPeriod.startHour, h)}
+                  label="结束"
+                  title="结束时间"
+                  className="h-8 min-w-[4.5rem] px-2"
+                />
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }

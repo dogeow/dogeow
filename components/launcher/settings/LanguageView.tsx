@@ -36,7 +36,6 @@ export function LanguageView({ onBack, showBackButton = true }: LanguageViewProp
           title="重新检测语言"
         >
           <RefreshCw className={`h-3 w-3 ${isDetecting ? 'animate-spin' : ''}`} />
-          <span>重新检测</span>
         </button>
       </div>
 

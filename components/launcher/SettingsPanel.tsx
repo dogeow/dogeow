@@ -33,15 +33,17 @@ export function SettingsPanel({
     currentView,
     currentTheme,
     customThemes,
-    followSystem,
+    themeMode,
+    restPeriod,
+    setRestPeriod,
     showProjectCovers,
     setCurrentView,
     handleSetBackground,
     handleUploadBackground,
     setCurrentTheme,
+    setThemeMode,
     handleAddCustomTheme,
     handleRemoveCustomTheme,
-    handleToggleFollowSystem,
     handleToggleProjectCovers,
   } = useSettingsPanel({
     backgroundImage,
@@ -60,14 +62,16 @@ export function SettingsPanel({
         customBackgrounds={customBackgrounds}
         currentTheme={currentTheme}
         customThemes={customThemes}
-        followSystem={followSystem}
+        themeMode={themeMode}
+        restPeriod={restPeriod}
+        setRestPeriod={setRestPeriod}
         showProjectCovers={showProjectCovers}
         handleSetBackground={handleSetBackground}
         handleUploadBackground={handleUploadBackground}
         setCurrentTheme={setCurrentTheme}
+        setThemeMode={setThemeMode}
         handleAddCustomTheme={handleAddCustomTheme}
         handleRemoveCustomTheme={handleRemoveCustomTheme}
-        handleToggleFollowSystem={handleToggleFollowSystem}
         handleToggleProjectCovers={handleToggleProjectCovers}
         onClose={onClose}
       />

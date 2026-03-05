@@ -8,7 +8,7 @@ import { hexToHSL } from '@/lib/helpers'
 import type { CustomTheme } from '@/app/types'
 import type { CustomBackground } from '../SettingsPanel'
 
-type SettingsView = 'main' | 'background' | 'theme' | 'language' | 'sonner'
+type SettingsView = 'main' | 'background' | 'theme' | 'language' | 'sonner' | 'appearance'
 
 interface UseSettingsPanelProps {
   backgroundImage: string
@@ -28,6 +28,10 @@ export function useSettingsPanel({
     removeCustomTheme,
     followSystem,
     setFollowSystem,
+    themeMode,
+    setThemeMode,
+    restPeriod,
+    setRestPeriod,
     addCustomTheme,
   } = useThemeStore()
 
@@ -104,6 +108,9 @@ export function useSettingsPanel({
     currentTheme,
     customThemes,
     followSystem,
+    themeMode,
+    restPeriod,
+    setRestPeriod,
     showProjectCovers,
 
     // 导航方法
@@ -115,6 +122,7 @@ export function useSettingsPanel({
 
     // 主题相关方法
     setCurrentTheme,
+    setThemeMode,
     handleAddCustomTheme,
     handleRemoveCustomTheme,
 
