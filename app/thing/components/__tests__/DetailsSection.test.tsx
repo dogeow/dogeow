@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import DetailsSection from '../DetailsSection'
 import { ItemFormData } from '@/app/thing/types'
@@ -61,9 +61,9 @@ describe('DetailsSection', () => {
         />
       )
 
-      expect(screen.getByLabelText(/purchase_date/i)).toBeInTheDocument()
-      expect(screen.getByLabelText(/expiry_date/i)).toBeInTheDocument()
-      expect(screen.getByLabelText(/purchase_price/i)).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('选择购买日期')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('选择过期日期')).toBeInTheDocument()
+      expect(screen.getByLabelText('购买价格')).toBeInTheDocument()
       expect(screen.getByTestId('location-tree-select')).toBeInTheDocument()
     })
 
@@ -84,7 +84,6 @@ describe('DetailsSection', () => {
 
   describe('Interactions', () => {
     it('should update purchase_date when date picker changes', async () => {
-      const user = userEvent.setup()
       render(
         <DetailsSection
           formData={mockFormData}
@@ -97,13 +96,15 @@ describe('DetailsSection', () => {
 
       const datePickers = screen.getAllByTestId('date-picker')
       const purchaseDatePicker = datePickers[0]
-      await user.type(purchaseDatePicker, '2024-01-01')
+      fireEvent.change(purchaseDatePicker, { target: { value: '2024-01-01' } })
 
       expect(mockSetFormData).toHaveBeenCalled()
+      const updater = mockSetFormData.mock.calls.at(-1)?.[0] as (prev: ItemFormData) => ItemFormData
+      const nextState = updater(mockFormData)
+      expect(nextState.purchase_date).toEqual(new Date('2024-01-01'))
     })
 
-    it('should update purchase_price when input changes', async () => {
-      const user = userEvent.setup()
+    it('should update expiry_date when date picker changes', () => {
       render(
         <DetailsSection
           formData={mockFormData}
@@ -114,10 +115,52 @@ describe('DetailsSection', () => {
         />
       )
 
-      const priceInput = screen.getByLabelText(/purchase_price/i)
-      await user.type(priceInput, '100')
+      const datePickers = screen.getAllByTestId('date-picker')
+      const expiryDatePicker = datePickers[1]
+      fireEvent.change(expiryDatePicker, { target: { value: '2026-12-31' } })
 
       expect(mockSetFormData).toHaveBeenCalled()
+      const updater = mockSetFormData.mock.calls.at(-1)?.[0] as (prev: ItemFormData) => ItemFormData
+      const nextState = updater(mockFormData)
+      expect(nextState.expiry_date).toEqual(new Date('2026-12-31'))
+    })
+
+    it('should update purchase_price when input changes', async () => {
+      render(
+        <DetailsSection
+          formData={mockFormData}
+          setFormData={mockSetFormData}
+          locationPath=""
+          selectedLocation={undefined}
+          onLocationSelect={mockOnLocationSelect}
+        />
+      )
+
+      const priceInput = screen.getByLabelText('购买价格')
+      fireEvent.change(priceInput, { target: { value: '100' } })
+
+      expect(mockSetFormData).toHaveBeenCalled()
+      const updater = mockSetFormData.mock.calls.at(-1)?.[0] as (prev: ItemFormData) => ItemFormData
+      expect(updater(mockFormData).purchase_price).toBe(100)
+    })
+
+    it('should set purchase_price to null when input is cleared', () => {
+      render(
+        <DetailsSection
+          formData={{ ...mockFormData, purchase_price: 99 }}
+          setFormData={mockSetFormData}
+          locationPath=""
+          selectedLocation={undefined}
+          onLocationSelect={mockOnLocationSelect}
+        />
+      )
+
+      const priceInput = screen.getByLabelText('购买价格')
+      fireEvent.change(priceInput, { target: { value: '' } })
+
+      expect(mockSetFormData).toHaveBeenCalled()
+      const updater = mockSetFormData.mock.calls.at(-1)?.[0] as (prev: ItemFormData) => ItemFormData
+      expect(updater({ ...mockFormData, purchase_price: 99 }).purchase_price).toBeNull()
     })
 
     it('should call onLocationSelect when location is selected', async () => {

@@ -21,26 +21,9 @@ vi.mock('../GalleryItem', () => ({
   ),
 }))
 
-vi.mock('../ItemDetailDialog', () => ({
-  ItemDetailDialog: ({ item, open, onOpenChange, onViewDetails }: any) =>
-    open ? (
-      <div data-testid="item-detail-dialog">
-        <button onClick={() => onOpenChange(false)}>Close</button>
-        <button onClick={() => onViewDetails(item.id)}>View Details</button>
-      </div>
-    ) : null,
-}))
-
-// Mock next/navigation
-const mockPush = vi.fn()
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
-}))
-
 describe('ItemGallery', () => {
   const mockItems: Item[] = [{ id: 1, name: 'Item 1' } as Item, { id: 2, name: 'Item 2' } as Item]
+  const mockOnItemView = vi.fn()
 
   beforeEach(() => {
     vi.clearAllMocks()
@@ -68,16 +51,14 @@ describe('ItemGallery', () => {
   })
 
   describe('Interactions', () => {
-    it('should open detail dialog when item is clicked', async () => {
+    it('should call onItemView when item is clicked', async () => {
       const user = userEvent.setup()
-      render(<ItemGallery items={mockItems} />)
+      render(<ItemGallery items={mockItems} onItemView={mockOnItemView} />)
 
       const item1 = screen.getByTestId('gallery-item-1')
       await user.click(item1)
 
-      await waitFor(() => {
-        expect(screen.getByTestId('item-detail-dialog')).toBeInTheDocument()
-      })
+      expect(mockOnItemView).toHaveBeenCalledWith(1)
     })
 
     it('should change image size when size control is used', async () => {
@@ -89,6 +70,24 @@ describe('ItemGallery', () => {
 
       // Size should be updated (tested through component state)
       expect(changeSizeButton).toBeInTheDocument()
+    })
+
+    it('should recalculate width on window resize', async () => {
+      const rafSpy = vi
+        .spyOn(window, 'requestAnimationFrame')
+        .mockImplementation((cb: FrameRequestCallback) => {
+          cb(0)
+          return 1
+        })
+
+      render(<ItemGallery items={mockItems} />)
+
+      const initialCalls = rafSpy.mock.calls.length
+      window.dispatchEvent(new Event('resize'))
+
+      await waitFor(() => {
+        expect(rafSpy.mock.calls.length).toBeGreaterThan(initialCalls)
+      })
     })
   })
 })

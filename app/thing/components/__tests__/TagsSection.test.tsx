@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import TagsSection from '../TagsSection'
 import { Tag } from '@/app/thing/types'
@@ -53,12 +53,11 @@ describe('TagsSection', () => {
         />
       )
 
-      expect(screen.getByText('标签')).toBeInTheDocument()
       expect(screen.getByText('编辑物品的标签')).toBeInTheDocument()
+      expect(screen.getByText('选择标签')).toBeInTheDocument()
     })
 
-    it('should show selected tags count', async () => {
-      const user = userEvent.setup()
+    it('should show selected tags count', () => {
       render(
         <TagsSection
           selectedTags={['1']}
@@ -68,12 +67,7 @@ describe('TagsSection', () => {
         />
       )
 
-      const trigger = screen.getByText(/选择标签|已选择/)
-      await user.click(trigger)
-
-      await waitFor(() => {
-        expect(screen.getByText('Tag 1')).toBeInTheDocument()
-      })
+      expect(screen.getByText('已选择 1 项')).toBeInTheDocument()
     })
   })
 
@@ -89,7 +83,7 @@ describe('TagsSection', () => {
         />
       )
 
-      const createButton = screen.getByRole('button', { name: /plus|tag/i })
+      const createButton = screen.getByRole('button', { name: '创建标签' })
       await user.click(createButton)
 
       await waitFor(() => {
@@ -119,6 +113,78 @@ describe('TagsSection', () => {
       await user.click(tag1)
 
       expect(mockSetSelectedTags).toHaveBeenCalled()
+      const updater = mockSetSelectedTags.mock.calls[0][0] as (prev: string[]) => string[]
+      expect(updater([])).toEqual(['1'])
+    })
+
+    it('should remove selected tag when selected tag is clicked again', async () => {
+      const user = userEvent.setup()
+      render(
+        <TagsSection
+          selectedTags={['1']}
+          setSelectedTags={mockSetSelectedTags}
+          tags={mockTags}
+          onTagCreated={mockOnTagCreated}
+        />
+      )
+
+      await user.click(screen.getByText(/已选择 1 项/))
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText('搜索标签...')).toBeInTheDocument()
+      })
+      const [dropdownTag] = screen.getAllByText('Tag 1')
+      await user.click(dropdownTag)
+
+      expect(mockSetSelectedTags).toHaveBeenCalled()
+      const updater = mockSetSelectedTags.mock.calls[0][0] as (prev: string[]) => string[]
+      expect(updater(['1'])).toEqual([])
+    })
+
+    it('should show create action with search term and pass it to dialog', async () => {
+      const user = userEvent.setup()
+      render(
+        <TagsSection
+          selectedTags={mockSelectedTags}
+          setSelectedTags={mockSetSelectedTags}
+          tags={mockTags}
+          onTagCreated={mockOnTagCreated}
+        />
+      )
+
+      await user.click(screen.getByText(/选择标签/))
+      const input = await screen.findByPlaceholderText('搜索标签...')
+      await user.type(input, 'Brand New Tag')
+
+      const addButton = await screen.findByRole('button', { name: '添加标签《Brand New Tag》' })
+      await user.click(addButton)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('create-tag-dialog')).toBeInTheDocument()
+      })
+      await user.click(screen.getByRole('button', { name: 'Create' }))
+
+      expect(mockOnTagCreated).toHaveBeenCalledWith({ id: 1, name: 'Brand New Tag' })
+    })
+
+    it('should close dropdown when clicking outside', async () => {
+      const user = userEvent.setup()
+      render(
+        <TagsSection
+          selectedTags={mockSelectedTags}
+          setSelectedTags={mockSetSelectedTags}
+          tags={mockTags}
+          onTagCreated={mockOnTagCreated}
+        />
+      )
+
+      await user.click(screen.getByText(/选择标签/))
+      expect(screen.getByPlaceholderText('搜索标签...')).toBeInTheDocument()
+
+      fireEvent.mouseDown(document.body)
+
+      await waitFor(() => {
+        expect(screen.queryByPlaceholderText('搜索标签...')).not.toBeInTheDocument()
+      })
     })
   })
 })

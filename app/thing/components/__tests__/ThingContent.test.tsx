@@ -330,6 +330,78 @@ describe('ThingContent', () => {
       expect(mockOnPageChange).toHaveBeenCalledWith(2)
     })
 
+    it('应该在点击上一页和下一页时调用 onPageChange', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingContent
+          items={mockItems}
+          loading={false}
+          error={null}
+          meta={mockMeta}
+          currentPage={2}
+          searchTerm=""
+          hasActiveFilters={false}
+          viewMode="list"
+          onPageChange={mockOnPageChange}
+          onItemEdit={mockOnItemEdit}
+          onItemView={mockOnItemView}
+          onReload={mockOnReload}
+          onClearFilters={mockOnClearFilters}
+        />
+      )
+
+      await user.click(screen.getByLabelText('Go to previous page'))
+      await user.click(screen.getByLabelText('Go to next page'))
+
+      expect(mockOnPageChange).toHaveBeenCalledWith(1)
+      expect(mockOnPageChange).toHaveBeenCalledWith(3)
+    })
+
+    it('应该在到达边界时不触发上一页/下一页回调', async () => {
+      const user = userEvent.setup()
+      const { rerender } = render(
+        <ThingContent
+          items={mockItems}
+          loading={false}
+          error={null}
+          meta={mockMeta}
+          currentPage={1}
+          searchTerm=""
+          hasActiveFilters={false}
+          viewMode="list"
+          onPageChange={mockOnPageChange}
+          onItemEdit={mockOnItemEdit}
+          onItemView={mockOnItemView}
+          onReload={mockOnReload}
+          onClearFilters={mockOnClearFilters}
+        />
+      )
+
+      await user.click(screen.getByLabelText('Go to previous page'))
+      expect(mockOnPageChange).not.toHaveBeenCalled()
+
+      rerender(
+        <ThingContent
+          items={mockItems}
+          loading={false}
+          error={null}
+          meta={mockMeta}
+          currentPage={3}
+          searchTerm=""
+          hasActiveFilters={false}
+          viewMode="list"
+          onPageChange={mockOnPageChange}
+          onItemEdit={mockOnItemEdit}
+          onItemView={mockOnItemView}
+          onReload={mockOnReload}
+          onClearFilters={mockOnClearFilters}
+        />
+      )
+
+      await user.click(screen.getByLabelText('Go to next page'))
+      expect(mockOnPageChange).not.toHaveBeenCalled()
+    })
+
     it('应该在只有一页时不显示分页', () => {
       const singlePageMeta = { ...mockMeta, last_page: 1 }
       render(
