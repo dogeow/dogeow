@@ -94,6 +94,8 @@ const TagsSection: React.FC<TagsSectionProps> = ({
                   variant="outline"
                   size="sm"
                   className="h-7 px-2"
+                  aria-label="创建标签"
+                  title="创建标签"
                   onClick={() => setCreateTagDialogOpen(true)}
                 >
                   <Plus className="h-3.5 w-3.5" />

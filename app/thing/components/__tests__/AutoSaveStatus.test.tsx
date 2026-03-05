@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import AutoSaveStatus from '../AutoSaveStatus'
 
@@ -14,7 +14,7 @@ describe('AutoSaveStatus', () => {
   describe('Rendering', () => {
     it('should render nothing when not saving and no lastSaved', () => {
       const { container } = render(<AutoSaveStatus autoSaving={false} lastSaved={null} />)
-      expect(container.firstChild).toBeNull()
+      expect(container.firstChild).toBeEmptyDOMElement()
     })
 
     it('should render saving indicator when autoSaving is true', () => {

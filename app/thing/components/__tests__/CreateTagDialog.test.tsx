@@ -3,6 +3,9 @@ import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import CreateTagDialog from '../CreateTagDialog'
 import { Tag } from '../../types'
+import { apiRequest } from '@/lib/api'
+import { toast } from 'sonner'
+import { generateRandomColor } from '@/lib/helpers/colorUtils'
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -26,6 +29,7 @@ describe('CreateTagDialog', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.mocked(generateRandomColor).mockReturnValue('#3b82f6')
   })
 
   describe('渲染', () => {
@@ -127,9 +131,8 @@ describe('CreateTagDialog', () => {
     })
 
     it('应该在提交成功后创建标签', async () => {
-      const { apiRequest } = require('@/lib/api')
       const mockTag: Tag = { id: 1, name: 'New Tag', color: '#3b82f6' }
-      apiRequest.mockResolvedValue(mockTag)
+      vi.mocked(apiRequest).mockResolvedValue(mockTag)
 
       const user = userEvent.setup()
       render(
@@ -153,7 +156,6 @@ describe('CreateTagDialog', () => {
     })
 
     it('应该在名称为空时显示错误', async () => {
-      const { toast } = require('sonner')
       const user = userEvent.setup()
 
       render(
@@ -171,7 +173,6 @@ describe('CreateTagDialog', () => {
     })
 
     it('应该在点击刷新按钮时生成新颜色', async () => {
-      const { generateRandomColor } = require('@/lib/helpers/colorUtils')
       const user = userEvent.setup()
 
       render(
@@ -183,9 +184,10 @@ describe('CreateTagDialog', () => {
       )
 
       const refreshButton = screen.getByTitle('生成随机颜色')
+      const callsBeforeClick = vi.mocked(generateRandomColor).mock.calls.length
       await user.click(refreshButton)
 
-      expect(generateRandomColor).toHaveBeenCalled()
+      expect(vi.mocked(generateRandomColor).mock.calls.length).toBeGreaterThan(callsBeforeClick)
     })
   })
 })

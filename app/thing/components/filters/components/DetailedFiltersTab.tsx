@@ -48,6 +48,9 @@ export const DetailedFiltersTab = memo<DetailedFiltersTabProps>(
     onRoomIdChange,
     onSpotIdChange,
   }) => {
+    const toSelectValue = (value: string | number | null | undefined) =>
+      value === null || value === undefined ? '' : value.toString()
+
     return (
       <div className="space-y-6">
         <DateRangePicker
@@ -94,14 +97,7 @@ export const DetailedFiltersTab = memo<DetailedFiltersTabProps>(
         <div className="space-y-3">
           <Label className="text-base font-medium">位置</Label>
           <div className="space-y-3">
-            <Select
-              value={
-                typeof filters.area_id === 'number'
-                  ? filters.area_id.toString()
-                  : filters.area_id.toString()
-              }
-              onValueChange={onAreaIdChange}
-            >
+            <Select value={toSelectValue(filters.area_id)} onValueChange={onAreaIdChange}>
               <SelectTrigger className="bg-background border-input text-foreground h-11 border">
                 <SelectValue placeholder="选择区域" />
               </SelectTrigger>
@@ -115,11 +111,7 @@ export const DetailedFiltersTab = memo<DetailedFiltersTabProps>(
               </SelectContent>
             </Select>
             <Select
-              value={
-                typeof filters.room_id === 'number'
-                  ? filters.room_id.toString()
-                  : filters.room_id.toString()
-              }
+              value={toSelectValue(filters.room_id)}
               onValueChange={onRoomIdChange}
               disabled={
                 filters.area_id === 'all' || filters.area_id === null || filters.area_id === ''
@@ -144,11 +136,7 @@ export const DetailedFiltersTab = memo<DetailedFiltersTabProps>(
               </SelectContent>
             </Select>
             <Select
-              value={
-                typeof filters.spot_id === 'number'
-                  ? filters.spot_id.toString()
-                  : filters.spot_id.toString()
-              }
+              value={toSelectValue(filters.spot_id)}
               onValueChange={onSpotIdChange}
               disabled={
                 filters.room_id === 'all' || filters.room_id === null || filters.room_id === ''

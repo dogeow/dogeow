@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, startTransition } from 'react'
+import { useState, useEffect, useCallback, startTransition, useRef } from 'react'
 import type { Area, Room, Spot } from '@/app/thing/types'
 
 export type LocationSelection =
@@ -20,6 +20,7 @@ export const useLocationSelection = (
   const [selectedAreaId, setSelectedAreaId] = useState<string>('')
   const [selectedRoomId, setSelectedRoomId] = useState<string>('')
   const [selectedSpotId, setSelectedSpotId] = useState<string>('')
+  const previousSelectedLocationRef = useRef<LocationSelection | undefined>(selectedLocation)
 
   // 根据当前选择更新下拉框状态
   useEffect(() => {
@@ -63,13 +64,15 @@ export const useLocationSelection = (
             }
           }
         }
-      } else {
+      } else if (previousSelectedLocationRef.current) {
         if (selectedAreaId || selectedRoomId || selectedSpotId) {
           setSelectedAreaId('')
           setSelectedRoomId('')
           setSelectedSpotId('')
         }
       }
+
+      previousSelectedLocationRef.current = selectedLocation
     })
   }, [selectedLocation, rooms, spots, selectedAreaId, selectedRoomId, selectedSpotId])
 

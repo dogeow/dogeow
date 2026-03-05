@@ -73,7 +73,7 @@ export const LocationTreeContent: React.FC<LocationTreeContentProps> = ({
           {/* 区域下的房间 */}
           {visibleAreaIds.includes(area.id) &&
             rooms
-              .filter(room => room.area_id === area.id && visibleRoomIds.includes(room.id))
+              .filter(room => room.area_id === area.id)
               .map(room => (
                 <RoomNode
                   key={`room-${room.id}`}

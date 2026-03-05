@@ -1,9 +1,15 @@
 import { renderHook, act, waitFor } from '@testing-library/react'
+import { vi } from 'vitest'
 import { useVoiceInput } from '../useVoiceInput'
 import { toast } from 'sonner'
 
 // Mock toast
-jest.mock('sonner')
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}))
 
 // Mock SpeechRecognition API
 class MockSpeechRecognition {
@@ -39,7 +45,7 @@ describe('useVoiceInput', () => {
   beforeEach(() => {
     // Setup mock
     ;(window as any).SpeechRecognition = MockSpeechRecognition
-    jest.clearAllMocks()
+    vi.clearAllMocks()
   })
 
   afterEach(() => {
@@ -125,7 +131,7 @@ describe('useVoiceInput', () => {
   })
 
   it('应该调用 onTranscript 回调', async () => {
-    const onTranscript = jest.fn()
+    const onTranscript = vi.fn()
     const { result } = renderHook(() => useVoiceInput({ onTranscript }))
 
     act(() => {

@@ -43,14 +43,21 @@ describe('languageStore', () => {
     vi.clearAllMocks()
 
     // Reset the store state
-    useLanguageStore.setState({
-      currentLanguage: 'zh-CN',
-      availableLanguages: [
-        { code: 'zh-CN', name: 'Chinese (Simplified)', nativeName: '简体中文', isDefault: true },
-        { code: 'zh-TW', name: 'Chinese (Traditional)', nativeName: '繁體中文', isDefault: false },
-        { code: 'en', name: 'English', nativeName: 'English', isDefault: false },
-        { code: 'ja', name: 'Japanese', nativeName: '日本語', isDefault: false },
-      ],
+    act(() => {
+      useLanguageStore.setState({
+        currentLanguage: 'zh-CN',
+        availableLanguages: [
+          { code: 'zh-CN', name: 'Chinese (Simplified)', nativeName: '简体中文', isDefault: true },
+          {
+            code: 'zh-TW',
+            name: 'Chinese (Traditional)',
+            nativeName: '繁體中文',
+            isDefault: false,
+          },
+          { code: 'en', name: 'English', nativeName: 'English', isDefault: false },
+          { code: 'ja', name: 'Japanese', nativeName: '日本語', isDefault: false },
+        ],
+      })
     })
   })
 
@@ -85,11 +92,11 @@ describe('languageStore', () => {
     expect(mockNormalizeLanguageCode).toHaveBeenCalledWith('invalid-lang')
   })
 
-  it('should initialize language from browser detection when no stored language', () => {
+  it('should initialize language from browser detection when no stored language', async () => {
     const { result } = renderHook(() => useLanguageStore())
 
-    act(() => {
-      result.current.initializeLanguage()
+    await act(async () => {
+      await result.current.initializeLanguage()
     })
 
     expect(result.current.currentLanguage).toBe('en') // Mocked to return 'en'
@@ -98,17 +105,19 @@ describe('languageStore', () => {
     expect(mockCreateTranslationFunction).toHaveBeenCalledWith('en')
   })
 
-  it('should use stored language when initializing if already set to non-default', () => {
+  it('should use stored language when initializing if already set to non-default', async () => {
     // Set up store with a non-default language
-    useLanguageStore.setState({
-      currentLanguage: 'ja',
-      availableLanguages: mockGetAvailableLanguages(),
+    act(() => {
+      useLanguageStore.setState({
+        currentLanguage: 'ja',
+        availableLanguages: mockGetAvailableLanguages(),
+      })
     })
 
     const { result } = renderHook(() => useLanguageStore())
 
-    act(() => {
-      result.current.initializeLanguage()
+    await act(async () => {
+      await result.current.initializeLanguage()
     })
 
     // Should use the stored language, not detect browser language
@@ -117,17 +126,19 @@ describe('languageStore', () => {
     expect(mockCreateTranslationFunction).toHaveBeenCalledWith('ja')
   })
 
-  it('should detect browser language when stored language is default zh-CN', () => {
+  it('should detect browser language when stored language is default zh-CN', async () => {
     // Ensure store has default language
-    useLanguageStore.setState({
-      currentLanguage: 'zh-CN',
-      availableLanguages: mockGetAvailableLanguages(),
+    act(() => {
+      useLanguageStore.setState({
+        currentLanguage: 'zh-CN',
+        availableLanguages: mockGetAvailableLanguages(),
+      })
     })
 
     const { result } = renderHook(() => useLanguageStore())
 
-    act(() => {
-      result.current.initializeLanguage()
+    await act(async () => {
+      await result.current.initializeLanguage()
     })
 
     expect(mockDetectBrowserLanguage).toHaveBeenCalled()
@@ -145,18 +156,20 @@ describe('languageStore', () => {
     expect(result.current.t('nav.game', 'Games')).toBe('ja:nav.game:Games')
   })
 
-  it('should handle various browser language detection scenarios', () => {
+  it('should handle various browser language detection scenarios', async () => {
     const testCases = [
       { browserLang: 'zh-TW', expected: 'zh-TW' },
       { browserLang: 'ja', expected: 'ja' },
       { browserLang: 'fr', expected: 'zh-CN' }, // Unsupported language should fallback
     ]
 
-    testCases.forEach(({ expected }) => {
+    for (const { expected } of testCases) {
       // Reset store to default state
-      useLanguageStore.setState({
-        currentLanguage: 'zh-CN',
-        availableLanguages: mockGetAvailableLanguages(),
+      act(() => {
+        useLanguageStore.setState({
+          currentLanguage: 'zh-CN',
+          availableLanguages: mockGetAvailableLanguages(),
+        })
       })
 
       // Mock browser language detection for this specific test
@@ -164,12 +177,12 @@ describe('languageStore', () => {
 
       const { result } = renderHook(() => useLanguageStore())
 
-      act(() => {
-        result.current.initializeLanguage()
+      await act(async () => {
+        await result.current.initializeLanguage()
       })
 
       expect(result.current.currentLanguage).toBe(expected)
-    })
+    }
   })
 
   it('should handle error scenarios in language switching', () => {
@@ -192,10 +205,12 @@ describe('languageStore', () => {
 
   it('should maintain translation function consistency', () => {
     // Reset store to ensure clean state
-    useLanguageStore.setState({
-      currentLanguage: 'zh-CN',
-      availableLanguages: mockGetAvailableLanguages(),
-      t: mockCreateTranslationFunction('zh-CN'),
+    act(() => {
+      useLanguageStore.setState({
+        currentLanguage: 'zh-CN',
+        availableLanguages: mockGetAvailableLanguages(),
+        t: mockCreateTranslationFunction('zh-CN'),
+      })
     })
 
     const { result } = renderHook(() => useLanguageStore())
@@ -212,17 +227,19 @@ describe('languageStore', () => {
     expect(result.current.t('test', 'fallback')).toBe('en:test:fallback')
   })
 
-  it('should handle edge case when currentLanguage is falsy', () => {
+  it('should handle edge case when currentLanguage is falsy', async () => {
     // Set up store with falsy currentLanguage
-    useLanguageStore.setState({
-      currentLanguage: '' as SupportedLanguage,
-      availableLanguages: mockGetAvailableLanguages(),
+    act(() => {
+      useLanguageStore.setState({
+        currentLanguage: '' as SupportedLanguage,
+        availableLanguages: mockGetAvailableLanguages(),
+      })
     })
 
     const { result } = renderHook(() => useLanguageStore())
 
-    act(() => {
-      result.current.initializeLanguage()
+    await act(async () => {
+      await result.current.initializeLanguage()
     })
 
     // Should detect browser language since currentLanguage is falsy
@@ -230,17 +247,19 @@ describe('languageStore', () => {
     expect(result.current.currentLanguage).toBe('en')
   })
 
-  it('should handle null currentLanguage', () => {
+  it('should handle null currentLanguage', async () => {
     // Set up store with null currentLanguage
-    useLanguageStore.setState({
-      currentLanguage: 'zh-CN' as SupportedLanguage,
-      availableLanguages: mockGetAvailableLanguages(),
+    act(() => {
+      useLanguageStore.setState({
+        currentLanguage: 'zh-CN' as SupportedLanguage,
+        availableLanguages: mockGetAvailableLanguages(),
+      })
     })
 
     const { result } = renderHook(() => useLanguageStore())
 
-    act(() => {
-      result.current.initializeLanguage()
+    await act(async () => {
+      await result.current.initializeLanguage()
     })
 
     // Should detect browser language since currentLanguage is null

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, type ReactElement } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   Columns2Icon,
@@ -17,71 +17,54 @@ interface ImageSizeControlProps {
   onSizeChange: (newSize: number) => void
 }
 
+type SizePreset = 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+
+const SIZE_PRESET_COLUMNS: Record<SizePreset, number> = {
+  xs: 6,
+  sm: 4,
+  md: 3,
+  lg: 2,
+  xl: 1,
+}
+
 export function ImageSizeControl({ initialSize, maxSize, onSizeChange }: ImageSizeControlProps) {
   const [imageSize, setImageSize] = useState(initialSize)
-  const [currentSizePreset, setCurrentSizePreset] = useState<string | null>(null)
+  const [currentSizePreset, setCurrentSizePreset] = useState<SizePreset>('md')
   const containerRef = useRef<HTMLDivElement>(null)
 
   const getCalculatedSize = useCallback(
-    (preset: string, containerWidth: number): number => {
-      let columns
-      switch (preset) {
-        case 'xs':
-          columns = 6
-          break
-        case 'sm':
-          columns = 4
-          break
-        case 'md':
-          columns = 3
-          break
-        case 'lg':
-          columns = 2
-          break
-        case 'xl':
-          columns = 1
-          break
-        default:
-          columns = Math.floor(containerWidth / initialSize) || 1
-      }
+    (preset: SizePreset, containerWidth: number): number => {
+      const columns = SIZE_PRESET_COLUMNS[preset]
       const gap = 8
       const newSize = ensureEven((containerWidth - (columns - 1) * gap) / columns)
       const finalSize = Math.max(60, Math.min(newSize, maxSize))
       return finalSize
     },
-    [initialSize, maxSize]
+    [maxSize]
   )
 
   useEffect(() => {
-    if (containerRef.current) {
-      const newSize = getCalculatedSize('md', containerRef.current.offsetWidth)
-      setImageSize(newSize)
-      onSizeChange(newSize)
-      setCurrentSizePreset('md')
-    }
+    const newSize = getCalculatedSize('md', containerRef.current!.offsetWidth)
+    setImageSize(newSize)
+    onSizeChange(newSize)
   }, [getCalculatedSize, onSizeChange])
 
   useEffect(() => {
     const handleResize = () => {
-      if (containerRef.current) {
-        const presetToUse = currentSizePreset || 'md'
-        const newSize = getCalculatedSize(presetToUse, containerRef.current.offsetWidth)
-        setImageSize(newSize)
-        onSizeChange(newSize)
-      }
+      const newSize = getCalculatedSize(currentSizePreset, containerRef.current!.offsetWidth)
+      setImageSize(newSize)
+      onSizeChange(newSize)
     }
 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [currentSizePreset, getCalculatedSize, onSizeChange])
 
-  const handlePresetClick = (preset: string) => {
-    if (containerRef.current) {
-      const newSize = getCalculatedSize(preset, containerRef.current.offsetWidth)
-      setImageSize(newSize)
-      onSizeChange(newSize)
-      setCurrentSizePreset(preset)
-    }
+  const handlePresetClick = (preset: SizePreset) => {
+    const newSize = getCalculatedSize(preset, containerRef.current!.offsetWidth)
+    setImageSize(newSize)
+    onSizeChange(newSize)
+    setCurrentSizePreset(preset)
   }
 
   const sizePresets = [
@@ -90,7 +73,7 @@ export function ImageSizeControl({ initialSize, maxSize, onSizeChange }: ImageSi
     { id: 'md', label: 'M', icon: <Columns3Icon className="h-4 w-4" /> },
     { id: 'lg', label: 'L', icon: <Columns2Icon className="h-4 w-4" /> },
     { id: 'xl', label: 'XL', icon: <RectangleHorizontalIcon className="h-4 w-4" /> },
-  ]
+  ] as const satisfies ReadonlyArray<{ id: SizePreset; label: string; icon: ReactElement }>
 
   return (
     <div

@@ -1,60 +1,50 @@
-import { render, screen, fireEvent } from '@testing-library/react'
+import { fireEvent, render } from '@testing-library/react'
 import { vi } from 'vitest'
 import { MentionHighlight, extractMentions, containsMention } from '../MentionHighlight'
 
-// Mock the auth store
 vi.mock('@/stores/authStore', () => ({
   __esModule: true,
-  default: () => ({
+  default: vi.fn(() => ({
     user: { name: 'testuser' },
-  }),
+  })),
 }))
 
 describe('MentionHighlight', () => {
   it('renders plain text without mentions', () => {
-    render(<MentionHighlight text="Hello world" />)
-    expect(screen.getByText('Hello world')).toBeInTheDocument()
+    const view = render(<MentionHighlight text="Hello world" />)
+
+    expect(view.getByText('Hello world')).toBeInTheDocument()
   })
 
   it('highlights @username mentions', () => {
-    render(<MentionHighlight text="Hello @john how are you?" />)
+    const view = render(<MentionHighlight text="Hello @john how are you?" />)
 
-    expect(
-      screen.getByText((content, element) => {
-        return element?.textContent === 'Hello '
-      })
-    ).toBeInTheDocument()
-    expect(screen.getByText('@john')).toBeInTheDocument()
-    expect(
-      screen.getByText((content, element) => {
-        return element?.textContent === ' how are you?'
-      })
-    ).toBeInTheDocument()
-
-    const mentionButton = screen.getByText('@john')
+    const mentionButton = view.getByRole('button', { name: '@john' })
+    expect(mentionButton).toBeInTheDocument()
     expect(mentionButton).toHaveClass('bg-blue-500/15')
+    expect(view.container.textContent).toContain('Hello @john how are you?')
   })
 
   it('highlights quoted mentions', () => {
-    render(<MentionHighlight text='Hello @"John Doe" how are you?' />)
+    const view = render(<MentionHighlight text='Hello @"John Doe" how are you?' />)
 
-    const mentionButton = screen.getByText('@"John Doe"')
+    const mentionButton = view.getByRole('button', { name: '@"John Doe"' })
     expect(mentionButton).toBeInTheDocument()
   })
 
   it('highlights current user mentions differently', () => {
-    render(<MentionHighlight text="Hello @testuser" />)
+    const view = render(<MentionHighlight text="Hello @testuser" />)
 
-    const mentionButton = screen.getByText('@testuser')
+    const mentionButton = view.getByRole('button', { name: '@testuser' })
     expect(mentionButton).toHaveClass('bg-primary/15')
     expect(mentionButton).toHaveClass('text-primary')
   })
 
   it('calls onMentionClick when mention is clicked', () => {
     const mockOnClick = vi.fn()
-    render(<MentionHighlight text="Hello @john" onMentionClick={mockOnClick} />)
+    const view = render(<MentionHighlight text="Hello @john" onMentionClick={mockOnClick} />)
 
-    const mentionButton = screen.getByText('@john')
+    const mentionButton = view.getByRole('button', { name: '@john' })
     fireEvent.click(mentionButton)
 
     expect(mockOnClick).toHaveBeenCalledWith('john')

@@ -31,6 +31,36 @@ export default defineConfig({
     isolate: true,
     // Optimize reporter output
     reporters: process.env.CI ? ['verbose', 'github-actions'] : ['verbose'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json-summary', 'clover'],
+      reportsDirectory: './coverage',
+      // 聚焦已建立测试的组件层级，减少历史目录的覆盖率噪音
+      include: [
+        'app/thing/components/*.{ts,tsx}',
+        'app/thing/components/filters/**/*.{ts,tsx}',
+        'app/thing/components/item-detail/*.{ts,tsx}',
+        'app/thing/components/location-combobox/**/*.{ts,tsx}',
+        'app/thing/components/location-tree/**/*.{ts,tsx}',
+      ],
+      exclude: [
+        '**/__tests__/**',
+        '**/*.test.*',
+        '**/*.spec.*',
+        '**/*.d.ts',
+        'app/thing/components/**/index.ts',
+        'app/thing/components/**/types.ts',
+        // 兼容导出壳文件与旧实现，暂不纳入覆盖率统计
+        'app/thing/components/AutoSaveStatus.tsx',
+        'app/thing/components/CreateTagDialog.tsx',
+        'app/thing/components/LoadingState.tsx',
+        'app/thing/components/EnhancedSearchInput.tsx',
+        'app/thing/components/ItemDetailModal.tsx',
+        'app/thing/components/ItemRelationSelector.tsx',
+        'app/thing/components/ItemRelationsDisplay.tsx',
+        'app/thing/components/filters/BasicFilters.tsx',
+      ],
+    },
   },
   resolve: {
     alias: {

@@ -113,4 +113,104 @@ describe('DetailedFiltersTab', () => {
     expect(screen.getByText('客厅位置')).toBeInTheDocument()
     expect(screen.queryByText('卧室位置')).not.toBeInTheDocument()
   })
+
+  it('should show all room/spot options when area_id and room_id are all', () => {
+    render(
+      <DetailedFiltersTab
+        filters={{ ...initialFilters, area_id: 'all', room_id: 'all', spot_id: 'all' }}
+        areas={[
+          { id: 1, name: '客厅' },
+          { id: 2, name: '卧室' },
+        ]}
+        rooms={[
+          { id: 11, name: '客厅房间', area_id: 1 },
+          { id: 22, name: '卧室房间', area_id: 2 },
+        ]}
+        spots={[
+          { id: 111, name: '客厅位置', room_id: 11 },
+          { id: 222, name: '卧室位置', room_id: 22 },
+        ]}
+        onPurchaseDateFromChange={vi.fn()}
+        onPurchaseDateToChange={vi.fn()}
+        onIncludeNullPurchaseDateChange={vi.fn()}
+        onExpiryDateFromChange={vi.fn()}
+        onExpiryDateToChange={vi.fn()}
+        onIncludeNullExpiryDateChange={vi.fn()}
+        onPriceFromChange={vi.fn()}
+        onPriceToChange={vi.fn()}
+        onAreaIdChange={vi.fn()}
+        onRoomIdChange={vi.fn()}
+        onSpotIdChange={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('客厅房间')).toBeInTheDocument()
+    expect(screen.getByText('卧室房间')).toBeInTheDocument()
+    expect(screen.getByText('客厅位置')).toBeInTheDocument()
+    expect(screen.getByText('卧室位置')).toBeInTheDocument()
+  })
+
+  it('supports numeric area/room/spot ids in filter values', () => {
+    render(
+      <DetailedFiltersTab
+        filters={{ ...initialFilters, area_id: 1, room_id: 11, spot_id: 111 }}
+        areas={[{ id: 1, name: '客厅' }]}
+        rooms={[{ id: 11, name: '客厅房间', area_id: 1 }]}
+        spots={[{ id: 111, name: '客厅位置', room_id: 11 }]}
+        onPurchaseDateFromChange={vi.fn()}
+        onPurchaseDateToChange={vi.fn()}
+        onIncludeNullPurchaseDateChange={vi.fn()}
+        onExpiryDateFromChange={vi.fn()}
+        onExpiryDateToChange={vi.fn()}
+        onIncludeNullExpiryDateChange={vi.fn()}
+        onPriceFromChange={vi.fn()}
+        onPriceToChange={vi.fn()}
+        onAreaIdChange={vi.fn()}
+        onRoomIdChange={vi.fn()}
+        onSpotIdChange={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('select-1')).toBeInTheDocument()
+    expect(screen.getByTestId('select-11')).toBeInTheDocument()
+    expect(screen.getByTestId('select-111')).toBeInTheDocument()
+  })
+
+  it('handles nullable filter ids with optional area/room ids in options', () => {
+    render(
+      <DetailedFiltersTab
+        filters={{
+          ...initialFilters,
+          area_id: null as any,
+          room_id: null as any,
+          spot_id: null as any,
+        }}
+        areas={[{ id: 1, name: '客厅' }]}
+        rooms={[
+          { id: 11, name: '无区域房间', area_id: undefined as any },
+          { id: 22, name: '有区域房间', area_id: 1 },
+        ]}
+        spots={[
+          { id: 111, name: '无房间位置', room_id: undefined as any },
+          { id: 222, name: '有房间位置', room_id: 11 },
+        ]}
+        onPurchaseDateFromChange={vi.fn()}
+        onPurchaseDateToChange={vi.fn()}
+        onIncludeNullPurchaseDateChange={vi.fn()}
+        onExpiryDateFromChange={vi.fn()}
+        onExpiryDateToChange={vi.fn()}
+        onIncludeNullExpiryDateChange={vi.fn()}
+        onPriceFromChange={vi.fn()}
+        onPriceToChange={vi.fn()}
+        onAreaIdChange={vi.fn()}
+        onRoomIdChange={vi.fn()}
+        onSpotIdChange={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText('无区域房间')).toBeInTheDocument()
+    expect(screen.queryByText('有区域房间')).not.toBeInTheDocument()
+    expect(screen.getByText('无房间位置')).toBeInTheDocument()
+    expect(screen.queryByText('有房间位置')).not.toBeInTheDocument()
+  })
 })

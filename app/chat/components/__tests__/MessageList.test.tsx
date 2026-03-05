@@ -1,217 +1,197 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ChatMessage } from '@/app/chat/types'
 import { MessageList } from '../MessageList'
 
-// Mock dependencies
+const loadMessagesMock = vi.fn(() => Promise.resolve())
+const useMessageScrollMock = vi.fn()
+
+type MockChatState = {
+  isLoading: boolean
+  loadMessages: (roomId: number, page?: number) => Promise<void>
+  messages: Record<string, ChatMessage[]>
+}
+
+const mockChatState: MockChatState = {
+  isLoading: false,
+  loadMessages: loadMessagesMock,
+  messages: {},
+}
+
 vi.mock('@/app/chat/chatStore', () => ({
-  default: () => ({
-    messages: [],
-    isLoadingMessages: false,
-    hasMoreMessages: true,
-    loadMoreMessages: vi.fn(),
-    currentRoom: null,
+  __esModule: true,
+  default: vi.fn((selector?: (state: MockChatState) => unknown) =>
+    selector ? selector(mockChatState) : mockChatState
+  ),
+}))
+
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (_key: string, fallback?: string) => fallback ?? _key,
   }),
 }))
 
-vi.mock('@/hooks/useChatWebSocket', () => ({
-  useChatWebSocket: vi.fn(() => ({
-    isConnected: true,
-  })),
+vi.mock('next/image', () => ({
+  __esModule: true,
+  default: (props: React.ComponentProps<'img'>) => <img alt="" {...props} />,
 }))
 
-vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, ...props }: React.ComponentProps<'button'>) => (
-    <button {...props}>{children}</button>
+vi.mock('@/app/chat/hooks/message-list/useMessageScroll', () => ({
+  useMessageScroll: (params: unknown) => {
+    useMessageScrollMock(params)
+  },
+}))
+
+vi.mock('../MentionHighlight', () => ({
+  MentionHighlight: ({ text, className }: { text: string; className?: string }) => (
+    <span className={className}>{text}</span>
+  ),
+  useMentionDetection: (text: string) => ({
+    hasMentions: text.includes('@'),
+    hasCurrentUserMention: text.includes('@me'),
+    mentions: [],
+  }),
+}))
+
+vi.mock('../MessageInteractions', () => ({
+  MessageInteractions: ({
+    message,
+    onReply,
+  }: {
+    message: ChatMessage
+    onReply?: (message: ChatMessage) => void
+  }) => (
+    <button type="button" aria-label={`reply-${message.id}`} onClick={() => onReply?.(message)}>
+      Reply
+    </button>
   ),
 }))
 
-vi.mock('@/components/ui/scroll-area', () => ({
-  ScrollArea: ({ children, ...props }: React.ComponentProps<'div'>) => (
-    <div data-testid="scroll-area" {...props}>
-      {children}
-    </div>
-  ),
-}))
+const userAlice = {
+  id: 1,
+  name: 'Alice',
+  email: 'alice@example.com',
+}
 
-vi.mock('@/components/ui/avatar', () => ({
-  Avatar: ({ children, ...props }: React.ComponentProps<'div'>) => (
-    <div data-testid="avatar" {...props}>
-      {children}
-    </div>
-  ),
-  AvatarImage: ({ ...props }: React.ComponentProps<'img'>) => (
-    <div data-testid="avatar-image" {...props} />
-  ),
-  AvatarFallback: ({ children, ...props }: React.ComponentProps<'div'>) => (
-    <div data-testid="avatar-fallback" {...props}>
-      {children}
-    </div>
-  ),
-}))
+const userBob = {
+  id: 2,
+  name: 'Bob',
+  email: 'bob@example.com',
+}
+
+function buildMessage(params: Partial<ChatMessage> = {}): ChatMessage {
+  const id = params.id ?? 1
+  const createdAt = params.created_at ?? '2026-03-05T10:00:00.000Z'
+
+  return {
+    id,
+    room_id: 1,
+    user_id: params.user?.id ?? userAlice.id,
+    message: params.message ?? `message-${id}`,
+    message_type: 'text',
+    created_at: createdAt,
+    updated_at: params.updated_at ?? createdAt,
+    user: params.user ?? userAlice,
+    reactions: params.reactions,
+  }
+}
 
 describe('MessageList', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockChatState.isLoading = false
+    mockChatState.messages = {}
+    loadMessagesMock.mockResolvedValue(undefined)
   })
 
-  describe('Rendering', () => {
-    it('should render empty message list', () => {
-      render(<MessageList roomId={1} />)
+  it('loads messages for room on mount', async () => {
+    render(<MessageList roomId={42} />)
 
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-      expect(screen.getByText('No messages yet')).toBeInTheDocument()
-    })
-
-    it('should render loading state', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByText('Loading messages...')).toBeInTheDocument()
-    })
-
-    it('should render messages correctly', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(loadMessagesMock).toHaveBeenCalledWith(42)
     })
   })
 
-  describe('Message Display', () => {
-    it('should display message with user avatar', () => {
-      render(<MessageList roomId={1} />)
+  it('renders empty state when room has no messages', () => {
+    const view = render(<MessageList roomId={1} />)
 
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-
-    it('should display message without avatar', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-
-    it('should format message timestamp correctly', () => {
-      render(<MessageList roomId={1} />)
-
-      // Should display formatted time
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
+    expect(view.getByText('No messages yet')).toBeInTheDocument()
+    expect(view.getByText('Be the first to start the conversation!')).toBeInTheDocument()
   })
 
-  describe('Load More Messages', () => {
-    it('should show load more button when has more messages', () => {
-      render(<MessageList roomId={1} />)
+  it('renders loading indicator while loading', () => {
+    mockChatState.isLoading = true
 
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-
-    it('should load more messages when button is clicked', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-
-    it('should hide load more button when no more messages', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
+    const view = render(<MessageList roomId={1} />)
+    expect(view.getByText('Loading more messages...')).toBeInTheDocument()
   })
 
-  describe('Message Interactions', () => {
-    it('should handle message reply', () => {
-      const onReply = vi.fn()
-      render(<MessageList roomId={1} onReply={onReply} />)
+  it('renders grouped messages and log accessibility attributes', () => {
+    mockChatState.messages = {
+      '1': [
+        buildMessage({
+          id: 1,
+          message: 'hello one',
+          user: userAlice,
+          created_at: '2026-03-05T10:00:00.000Z',
+        }),
+        buildMessage({
+          id: 2,
+          message: 'hello two',
+          user: userAlice,
+          created_at: '2026-03-05T10:03:00.000Z',
+        }),
+        buildMessage({
+          id: 3,
+          message: 'hello three',
+          user: userBob,
+          created_at: '2026-03-05T10:20:00.000Z',
+        }),
+      ],
+    }
 
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
+    const view = render(<MessageList roomId={1} />)
+    const log = view.getByRole('log')
 
-    it('should handle message reactions', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
+    expect(log).toHaveAttribute('aria-live', 'polite')
+    expect(log).toHaveAttribute('aria-busy', 'false')
+    expect(view.getByText('hello one')).toBeInTheDocument()
+    expect(view.getByText('hello two')).toBeInTheDocument()
+    expect(view.getByText('hello three')).toBeInTheDocument()
+    expect(view.getAllByText('Alice')).toHaveLength(1)
+    expect(view.getAllByText('Bob')).toHaveLength(1)
   })
 
-  describe('Search Functionality', () => {
-    it('should highlight search terms in messages', () => {
-      render(<MessageList roomId={1} searchQuery="test" />)
+  it('filters messages by search query', () => {
+    mockChatState.messages = {
+      '1': [
+        buildMessage({ id: 1, message: 'important update from ops', user: userAlice }),
+        buildMessage({ id: 2, message: 'casual hello', user: userBob }),
+      ],
+    }
 
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
+    const view = render(<MessageList roomId={1} searchQuery="important" />)
 
-    it('should filter messages based on search query', () => {
-      render(<MessageList roomId={1} searchQuery="important" />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
+    expect(view.getByText('important update from ops')).toBeInTheDocument()
+    expect(view.queryByText('casual hello')).not.toBeInTheDocument()
   })
 
-  describe('Accessibility', () => {
-    it('should have proper ARIA labels', () => {
-      render(<MessageList roomId={1} />)
+  it('forwards reply action to onReply callback', async () => {
+    mockChatState.messages = {
+      '1': [buildMessage({ id: 7, message: 'reply me', user: userAlice })],
+    }
+    const onReply = vi.fn()
+    const user = userEvent.setup()
+    const view = render(<MessageList roomId={1} onReply={onReply} />)
 
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
+    await user.click(view.getByRole('button', { name: 'reply-7' }))
 
-    it('should support keyboard navigation', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-  })
-
-  describe('Performance', () => {
-    it('should handle large message lists efficiently', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-
-    it('should virtualize long message lists', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-  })
-
-  describe('Connection Status', () => {
-    it('should show disconnected message when not connected', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByText('Disconnected from chat')).toBeInTheDocument()
-    })
-
-    it('should not show disconnected message when connected', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.queryByText('Disconnected from chat')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('Message Grouping', () => {
-    it('should group messages by user', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-  })
-
-  describe('Edge Cases', () => {
-    it('should handle messages with missing user data', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-
-    it('should handle empty message content', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
-
-    it('should handle very long message content', () => {
-      render(<MessageList roomId={1} />)
-
-      expect(screen.getByTestId('scroll-area')).toBeInTheDocument()
-    })
+    expect(onReply).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 7,
+        message: 'reply me',
+      })
+    )
   })
 })

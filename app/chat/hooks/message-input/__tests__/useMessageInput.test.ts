@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react'
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { useMessageInput } from '../useMessageInput'
+import { TYPING_TIMEOUT } from '@/app/chat/utils/message-input/constants'
 
 vi.mock('@/hooks/useTranslation', () => ({
   useTranslation: () => ({
@@ -72,5 +73,83 @@ describe('useMessageInput draft isolation', () => {
     expect(localStorageMock.setItem).toHaveBeenCalledWith('chat-draft-1', 'Room 1 draft')
     expect(localStorageMock.setItem).not.toHaveBeenCalledWith('chat-draft-2', 'Room 1 draft')
     expect(storage.get('chat-draft-1')).toBe('Room 1 draft')
+  })
+})
+
+describe('useMessageInput typing callbacks', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.clearAllTimers()
+    vi.useRealTimers()
+  })
+
+  it('calls typing start once and typing stop after timeout', () => {
+    const sendMessage = vi.fn(async () => ({ success: true as const }))
+    const onTypingStart = vi.fn()
+    const onTypingStop = vi.fn()
+
+    const { result } = renderHook(() =>
+      useMessageInput({
+        roomId: 1,
+        sendMessage,
+        isConnected: true,
+        replyingTo: undefined,
+        onCancelReply: undefined,
+        onTypingStart,
+        onTypingStop,
+      })
+    )
+
+    act(() => {
+      result.current.handleInputChange('hello')
+      result.current.handleInputChange('hello again')
+    })
+
+    expect(onTypingStart).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      vi.advanceTimersByTime(TYPING_TIMEOUT)
+    })
+
+    expect(onTypingStop).toHaveBeenCalledTimes(1)
+  })
+
+  it('calls typing stop when message is sent before timeout', async () => {
+    const sendMessage = vi.fn(async () => ({ success: true as const }))
+    const onTypingStart = vi.fn()
+    const onTypingStop = vi.fn()
+
+    const { result } = renderHook(() =>
+      useMessageInput({
+        roomId: 1,
+        sendMessage,
+        isConnected: true,
+        replyingTo: undefined,
+        onCancelReply: undefined,
+        onTypingStart,
+        onTypingStop,
+      })
+    )
+
+    act(() => {
+      result.current.handleInputChange('hello')
+    })
+
+    await act(async () => {
+      await result.current.handleSendMessage()
+    })
+
+    expect(onTypingStart).toHaveBeenCalledTimes(1)
+    expect(onTypingStop).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      vi.advanceTimersByTime(TYPING_TIMEOUT)
+    })
+
+    expect(onTypingStop).toHaveBeenCalledTimes(1)
   })
 })

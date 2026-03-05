@@ -19,8 +19,8 @@ describe('FolderIcon', () => {
 
   describe('Rendering', () => {
     it('should render folder icon', () => {
-      render(<FolderIcon isOpen={false} />)
-      expect(screen.getByRole('generic')).toBeInTheDocument()
+      const { container } = render(<FolderIcon isOpen={false} />)
+      expect(container.querySelector('svg')).toBeInTheDocument()
     })
 
     it('should apply custom className', () => {
@@ -30,17 +30,22 @@ describe('FolderIcon', () => {
     })
 
     it('should use custom size', () => {
-      render(<FolderIcon isOpen={false} size={24} />)
-      expect(screen.getByRole('generic')).toBeInTheDocument()
+      const { container } = render(<FolderIcon isOpen={false} size={24} />)
+      const icons = container.querySelectorAll('svg')
+      expect(icons.length).toBeGreaterThan(0)
+      icons.forEach(icon => {
+        expect(icon).toHaveAttribute('width', '24')
+        expect(icon).toHaveAttribute('height', '24')
+      })
     })
   })
 
   describe('Interactions', () => {
     it('should call onClick when clicked', async () => {
       const user = userEvent.setup()
-      render(<FolderIcon isOpen={false} onClick={mockOnClick} />)
+      const { container } = render(<FolderIcon isOpen={false} onClick={mockOnClick} />)
 
-      const icon = screen.getByRole('generic')
+      const icon = container.firstElementChild as HTMLElement
       await user.click(icon)
 
       expect(mockOnClick).toHaveBeenCalledTimes(1)
@@ -48,9 +53,9 @@ describe('FolderIcon', () => {
 
     it('should not call onClick when not provided', async () => {
       const user = userEvent.setup()
-      render(<FolderIcon isOpen={false} />)
+      const { container } = render(<FolderIcon isOpen={false} />)
 
-      const icon = screen.getByRole('generic')
+      const icon = container.firstElementChild as HTMLElement
       await user.click(icon)
 
       // Should not throw error

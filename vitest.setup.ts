@@ -1,7 +1,8 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
-import * as ReactLibrary from '@testing-library/react'
 import * as DomLibrary from '@testing-library/dom'
+import Module from 'node:module'
+import path from 'node:path'
 
 // Make screen, fireEvent, waitFor available globally
 // @testing-library/react 16.x removed these from the main export
@@ -13,56 +14,66 @@ Object.defineProperty(globalThis, 'fireEvent', { value: fireEvent })
 Object.defineProperty(globalThis, 'waitFor', { value: waitFor })
 Object.defineProperty(globalThis, 'within', { value: within })
 
-// Setup DOM environment for React testing
-const { JSDOM } = require('jsdom')
-const dom = new JSDOM('<!DOCTYPE html><html><body></body></html>', {
-  url: 'http://localhost',
+// Jest compatibility shim for legacy tests
+Object.defineProperty(globalThis, 'jest', {
+  value: vi,
+  configurable: true,
 })
-global.window = dom.window
-global.document = dom.window.document
-global.navigator = dom.window.navigator
-global.location = dom.window.location
-global.history = dom.window.history
+
+// Support legacy CommonJS require with "@/..." alias in old tests.
+const ModuleAny = Module as unknown as {
+  _resolveFilename: (request: string, parent: unknown, isMain: boolean, options: unknown) => string
+}
+const originalResolveFilename = ModuleAny._resolveFilename
+ModuleAny._resolveFilename = function (request, parent, isMain, options) {
+  if (typeof request === 'string' && request.startsWith('@/')) {
+    const mappedPath = path.resolve(process.cwd(), request.slice(2))
+    return originalResolveFilename.call(this, mappedPath, parent, isMain, options)
+  }
+  return originalResolveFilename.call(this, request, parent, isMain, options)
+}
 
 // Mock Next.js router
+const mockUseRouter = vi.fn(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+  prefetch: vi.fn(),
+  back: vi.fn(),
+  forward: vi.fn(),
+  refresh: vi.fn(),
+}))
+const mockUseSearchParams = vi.fn(() => new URLSearchParams())
+const mockUsePathname = vi.fn(() => '/')
+
 vi.mock('next/navigation', () => ({
-  useRouter() {
-    return {
-      push: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-    }
-  },
-  useSearchParams() {
-    return new URLSearchParams()
-  },
-  usePathname() {
-    return '/'
-  },
+  useRouter: mockUseRouter,
+  useSearchParams: mockUseSearchParams,
+  usePathname: mockUsePathname,
 }))
 
 // Mock Pusher/Echo
 vi.mock('laravel-echo', () => {
-  return vi.fn().mockImplementation(() => ({
-    channel: vi.fn().mockReturnThis(),
-    private: vi.fn().mockReturnThis(),
-    presence: vi.fn().mockReturnThis(),
-    listen: vi.fn().mockReturnThis(),
-    whisper: vi.fn().mockReturnThis(),
-    leave: vi.fn().mockReturnThis(),
-    disconnect: vi.fn(),
-  }))
+  return {
+    default: vi.fn().mockImplementation(() => ({
+      channel: vi.fn().mockReturnThis(),
+      private: vi.fn().mockReturnThis(),
+      presence: vi.fn().mockReturnThis(),
+      listen: vi.fn().mockReturnThis(),
+      whisper: vi.fn().mockReturnThis(),
+      leave: vi.fn().mockReturnThis(),
+      disconnect: vi.fn(),
+    })),
+  }
 })
 
 vi.mock('pusher-js', () => {
-  return vi.fn().mockImplementation(() => ({
-    subscribe: vi.fn(),
-    unsubscribe: vi.fn(),
-    disconnect: vi.fn(),
-  }))
+  return {
+    default: vi.fn().mockImplementation(() => ({
+      subscribe: vi.fn(),
+      unsubscribe: vi.fn(),
+      disconnect: vi.fn(),
+    })),
+  }
 })
 
 // Mock window.matchMedia
@@ -81,18 +92,25 @@ Object.defineProperty(window, 'matchMedia', {
 })
 
 // Mock IntersectionObserver
-global.IntersectionObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+class MockIntersectionObserver {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver
 
 // Mock ResizeObserver
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}))
+class MockResizeObserver {
+  observe = vi.fn()
+  unobserve = vi.fn()
+  disconnect = vi.fn()
+}
+global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver
+
+Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {
+  value: vi.fn(),
+  writable: true,
+})
 
 // Mock Notification API
 Object.defineProperty(window, 'Notification', {
@@ -116,24 +134,42 @@ Object.defineProperty(window, 'Audio', {
   })),
 })
 
-// Mock localStorage
-const localStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
+const createStorageMock = () => {
+  let store: Record<string, string> = {}
+  return {
+    getItem: vi.fn((key: string) => (key in store ? store[key] : null)),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = String(value)
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key]
+    }),
+    clear: vi.fn(() => {
+      store = {}
+    }),
+    key: vi.fn((index: number) => Object.keys(store)[index] ?? null),
+    get length() {
+      return Object.keys(store).length
+    },
+  }
 }
+
+const localStorageMock = createStorageMock()
+const sessionStorageMock = createStorageMock()
+
 Object.defineProperty(window, 'localStorage', {
   value: localStorageMock,
+  configurable: true,
 })
-
-// Mock sessionStorage
-const sessionStorageMock = {
-  getItem: vi.fn(),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-}
+Object.defineProperty(globalThis, 'localStorage', {
+  value: localStorageMock,
+  configurable: true,
+})
 Object.defineProperty(window, 'sessionStorage', {
   value: sessionStorageMock,
+  configurable: true,
+})
+Object.defineProperty(globalThis, 'sessionStorage', {
+  value: sessionStorageMock,
+  configurable: true,
 })

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ImageSizeControl } from '../ImageSizeControl'
 
@@ -96,7 +96,9 @@ describe('ImageSizeControl', () => {
         value: 1200,
       })
 
-      window.dispatchEvent(new Event('resize'))
+      act(() => {
+        window.dispatchEvent(new Event('resize'))
+      })
 
       await waitFor(() => {
         expect(mockOnSizeChange.mock.calls.length).toBeGreaterThan(initialCallCount)

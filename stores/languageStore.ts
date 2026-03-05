@@ -27,7 +27,7 @@ interface LanguageState {
   t: (key: string, fallback?: string) => string
   initializeLanguage: () => Promise<void>
   resetToDetected: () => void
-  getLanguagePreference: () => SupportedLanguage
+  getLanguagePreference: () => SupportedLanguage | null
   setLanguagePreference: (language: SupportedLanguage) => void
   refreshDetection: () => Promise<void>
   getDetectionStats: () => { confidence: number; method: string; timestamp: number | null }
@@ -99,15 +99,21 @@ export const useLanguageStore = create<LanguageState>()(
             console.log('[LanguageStore] 初始化语言...')
           }
 
-          // 如果已有存储的语言偏好，则直接使用
+          // 优先使用显式存储偏好；其次使用非默认当前语言
           const storedPreference = state.getLanguagePreference()
-          if (storedPreference && storedPreference !== 'en') {
+          const currentLanguagePreference =
+            state.currentLanguage && state.currentLanguage !== 'zh-CN'
+              ? state.currentLanguage
+              : null
+          const preferredLanguage = storedPreference || currentLanguagePreference
+
+          if (preferredLanguage) {
             if (shouldLog()) {
-              console.log('[LanguageStore] ✅ 使用存储的偏好:', storedPreference)
+              console.log('[LanguageStore] ✅ 使用存储/当前偏好:', preferredLanguage)
             }
-            const translationFunction = createTranslationFunction(storedPreference)
+            const translationFunction = createTranslationFunction(preferredLanguage)
             set({
-              currentLanguage: storedPreference,
+              currentLanguage: preferredLanguage,
               t: translationFunction,
               isAutoDetected: false,
               lastDetectionTime: Date.now(),
@@ -116,10 +122,20 @@ export const useLanguageStore = create<LanguageState>()(
           }
 
           if (shouldLog()) {
-            console.log('[LanguageStore] 没有存储的偏好，开始检测...')
+            console.log('[LanguageStore] 没有存储偏好，使用浏览器语言检测...')
           }
-          // 否则执行高级语言检测
-          await state.refreshDetection()
+
+          const detectedLanguage = detectBrowserLanguage()
+          const translationFunction = createTranslationFunction(detectedLanguage)
+          const now = Date.now()
+
+          set({
+            currentLanguage: detectedLanguage,
+            t: translationFunction,
+            detectedLanguage,
+            isAutoDetected: true,
+            lastDetectionTime: now,
+          })
         },
 
         refreshDetection: async () => {
@@ -229,7 +245,7 @@ export const useLanguageStore = create<LanguageState>()(
         },
 
         getLanguagePreference: () => {
-          if (typeof window === 'undefined') return 'zh-CN'
+          if (typeof window === 'undefined') return null
 
           try {
             const stored = localStorage.getItem('dogeow-language-preference')
@@ -248,7 +264,7 @@ export const useLanguageStore = create<LanguageState>()(
             console.warn('[LanguageStore] 获取语言偏好失败:', error)
           }
 
-          return 'zh-CN'
+          return null
         },
 
         setLanguagePreference: (language: SupportedLanguage) => {

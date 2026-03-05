@@ -206,6 +206,7 @@ export default function SearchInput({
                 size="icon"
                 className="hover:bg-muted/80 absolute top-1/2 right-8 h-8 w-8 -translate-y-1/2 transform"
                 onClick={handleClear}
+                aria-label="清除搜索"
                 tabIndex={-1}
               >
                 <X className="h-4 w-4" />
@@ -217,6 +218,7 @@ export default function SearchInput({
               size="icon"
               className="hover:bg-primary/10 absolute top-1/2 right-0 h-8 w-8 -translate-y-1/2 transform disabled:opacity-50"
               disabled={!hasValue}
+              aria-label="搜索"
               tabIndex={-1}
             >
               <Search className="h-4 w-4" />

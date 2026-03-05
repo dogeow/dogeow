@@ -18,19 +18,27 @@ export function useMessageInput({
   isConnected,
   replyingTo,
   onCancelReply,
+  onTypingStart,
+  onTypingStop,
 }: Pick<
   MessageInputProps,
-  'roomId' | 'sendMessage' | 'isConnected' | 'replyingTo' | 'onCancelReply'
+  | 'roomId'
+  | 'sendMessage'
+  | 'isConnected'
+  | 'replyingTo'
+  | 'onCancelReply'
+  | 'onTypingStart'
+  | 'onTypingStop'
 >) {
   const { t } = useTranslation()
   const [message, setMessage] = useState('')
   const [isSending, setIsSending] = useState(false)
-  const [isTyping, setIsTyping] = useState(false)
   const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false)
 
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const typingActiveRef = useRef(false)
   const activeRoomIdRef = useRef<number | null>(null)
   const latestMessageRef = useRef('')
 
@@ -52,9 +60,9 @@ export function useMessageInput({
 
   // 处理输入指示器
   const handleTypingIndicator = useCallback(() => {
-    if (!isTyping) {
-      setIsTyping(true)
-      // TODO: 通过WebSocket发送输入开始事件
+    if (!typingActiveRef.current) {
+      typingActiveRef.current = true
+      onTypingStart?.()
     }
 
     // 清除现有超时
@@ -64,10 +72,11 @@ export function useMessageInput({
 
     // 设置新超时以停止输入指示器
     typingTimeoutRef.current = setTimeout(() => {
-      setIsTyping(false)
-      // TODO: 通过WebSocket发送输入停止事件
+      typingActiveRef.current = false
+      onTypingStop?.()
+      typingTimeoutRef.current = null
     }, TYPING_TIMEOUT)
-  }, [isTyping])
+  }, [onTypingStart, onTypingStop])
 
   // 处理消息输入变化
   const handleInputChange = useCallback(
@@ -219,11 +228,16 @@ export function useMessageInput({
       toast.error(errorMessage)
     } finally {
       setIsSending(false)
-      setIsTyping(false)
 
       // 清除输入超时
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current)
+        typingTimeoutRef.current = null
+      }
+
+      if (typingActiveRef.current) {
+        typingActiveRef.current = false
+        onTypingStop?.()
       }
     }
   }, [
@@ -241,6 +255,7 @@ export function useMessageInput({
     onCancelReply,
     checkMuteStatus,
     muteUntil,
+    onTypingStop,
   ])
 
   // 计算是否可以发送
@@ -316,6 +331,7 @@ export function useMessageInput({
       try {
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current)
+          typingTimeoutRef.current = null
         }
       } catch (error) {
         console.warn('Error during cleanup:', error)

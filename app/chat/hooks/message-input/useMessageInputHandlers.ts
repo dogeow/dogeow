@@ -216,13 +216,24 @@ export function useMessageInputHandlers({
 
     updateHeight()
 
-    const observer = new ResizeObserver(() => {
-      updateHeight()
-    })
-    observer.observe(container)
+    let observer: ResizeObserver | null = null
+    const canConstructResizeObserver =
+      typeof ResizeObserver === 'function' &&
+      typeof ResizeObserver.prototype?.observe === 'function'
+
+    if (canConstructResizeObserver) {
+      try {
+        observer = new ResizeObserver(() => {
+          updateHeight()
+        })
+        observer.observe(container)
+      } catch {
+        // Ignore and keep static height when observer cannot be initialized.
+      }
+    }
 
     return () => {
-      observer.disconnect()
+      observer?.disconnect()
     }
   }, [inputContainerRef])
 

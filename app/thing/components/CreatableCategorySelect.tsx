@@ -128,7 +128,7 @@ export default function CreatableCategorySelect({
               {filtered.map(cat => (
                 <CommandItem
                   key={cat.id}
-                  value={cat.id.toString()}
+                  value={`${cat.id.toString()} ${cat.name}`}
                   onSelect={() => {
                     onValueChange(cat.id.toString())
                     setOpen(false)

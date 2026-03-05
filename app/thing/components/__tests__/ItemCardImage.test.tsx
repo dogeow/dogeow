@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import ItemCardImage from '../ItemCardImage'
 
 // Mock next/image
@@ -9,11 +9,17 @@ vi.mock('next/image', () => ({
     src,
     alt,
     onError,
+    fill: _fill,
+    unoptimized: _unoptimized,
+    priority: _priority,
     ...props
   }: {
     src?: string
     alt?: string
     onError?: () => void
+    fill?: boolean
+    unoptimized?: boolean
+    priority?: boolean
     [k: string]: unknown
   }) => <img src={src} alt={alt} onError={onError} data-testid="next-image" {...props} />,
 }))
@@ -157,7 +163,7 @@ describe('ItemCardImage', () => {
   })
 
   describe('Edge Cases', () => {
-    it('should handle image error and show placeholder', () => {
+    it('should handle image error and show placeholder', async () => {
       const props = {
         ...defaultProps,
         initialPrimaryImage: {
@@ -168,12 +174,11 @@ describe('ItemCardImage', () => {
       render(<ItemCardImage {...props} />)
       const image = screen.getByTestId('next-image')
 
-      // Simulate error
-      const errorEvent = new Event('error')
-      image.dispatchEvent(errorEvent)
+      fireEvent.error(image)
 
-      // After error, should show placeholder
-      expect(screen.getByTestId('image-placeholder')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByTestId('image-placeholder')).toBeInTheDocument()
+      })
     })
   })
 })

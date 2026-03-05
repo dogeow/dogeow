@@ -34,10 +34,17 @@ export function MessageInput({
   sendMessage,
   isConnected,
   scrollContainerRef,
+  onTypingStart,
+  onTypingStop,
 }: MessageInputProps) {
   const { t } = useTranslation()
-  const { onlineUsers, muteUntil, muteReason, checkMuteStatus, refreshMuteStatus, messages } =
-    useChatStore()
+  const chatStore = useChatStore()
+  const onlineUsers = chatStore.onlineUsers ?? {}
+  const muteUntil = chatStore.muteUntil ?? null
+  const muteReason = chatStore.muteReason ?? null
+  const checkMuteStatus = chatStore.checkMuteStatus ?? (() => false)
+  const refreshMuteStatus = chatStore.refreshMuteStatus ?? (() => {})
+  const messages = chatStore.messages ?? {}
   const inputContainerRef = useRef<HTMLDivElement>(null)
 
   // 使用自定义hooks管理状态和逻辑
@@ -59,6 +66,8 @@ export function MessageInput({
     isConnected,
     replyingTo,
     onCancelReply,
+    onTypingStart,
+    onTypingStop,
   })
 
   // 获取在线用户用于@提及
@@ -190,6 +199,7 @@ export function MessageInput({
         multiple
         accept="image/*,.pdf,.doc,.docx,.txt"
         onChange={handleFileInputChange}
+        data-testid="file-input"
         className="hidden"
         aria-label={t('chat.file_input', 'File input')}
       />

@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
+import { usePathname } from 'next/navigation'
 import ThingNavigation from '../ThingNavigation'
 
 // Mock Next.js navigation
@@ -15,6 +16,10 @@ vi.mock('@/hooks/useTranslation', () => ({
 }))
 
 describe('ThingNavigation', () => {
+  beforeEach(() => {
+    vi.mocked(usePathname).mockReturnValue('/thing')
+  })
+
   describe('渲染', () => {
     it('应该渲染所有导航项', () => {
       render(<ThingNavigation />)
@@ -26,43 +31,39 @@ describe('ThingNavigation', () => {
     })
 
     it('应该高亮当前激活的导航项', () => {
-      const { usePathname } = require('next/navigation')
-      usePathname.mockReturnValue('/thing')
+      vi.mocked(usePathname).mockReturnValue('/thing')
 
       render(<ThingNavigation />)
 
       const allThingsLink = screen.getByText('所有物品').closest('a')
-      expect(allThingsLink?.parentElement).toHaveClass('font-medium')
+      expect(allThingsLink).toHaveClass('font-medium')
     })
 
     it('应该为分类页面高亮分类导航项', () => {
-      const { usePathname } = require('next/navigation')
-      usePathname.mockReturnValue('/thing/categories')
+      vi.mocked(usePathname).mockReturnValue('/thing/categories')
 
       render(<ThingNavigation />)
 
       const categoriesLink = screen.getByText('分类').closest('a')
-      expect(categoriesLink?.parentElement).toHaveClass('font-medium')
+      expect(categoriesLink).toHaveClass('font-medium')
     })
 
     it('应该为位置页面高亮位置导航项', () => {
-      const { usePathname } = require('next/navigation')
-      usePathname.mockReturnValue('/thing/locations')
+      vi.mocked(usePathname).mockReturnValue('/thing/locations')
 
       render(<ThingNavigation />)
 
       const locationsLink = screen.getByText('位置').closest('a')
-      expect(locationsLink?.parentElement).toHaveClass('font-medium')
+      expect(locationsLink).toHaveClass('font-medium')
     })
 
     it('应该为标签页面高亮标签导航项', () => {
-      const { usePathname } = require('next/navigation')
-      usePathname.mockReturnValue('/thing/tags')
+      vi.mocked(usePathname).mockReturnValue('/thing/tags')
 
       render(<ThingNavigation />)
 
       const tagsLink = screen.getByText('标签').closest('a')
-      expect(tagsLink?.parentElement).toHaveClass('font-medium')
+      expect(tagsLink).toHaveClass('font-medium')
     })
   })
 

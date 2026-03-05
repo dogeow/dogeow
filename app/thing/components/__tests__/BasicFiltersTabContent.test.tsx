@@ -123,4 +123,45 @@ describe('BasicFiltersTabContent', () => {
     expect(screen.getByTestId('selected-tags')).toHaveTextContent('3|4')
     expect(screen.getByRole('button', { name: '清空分类筛选' })).toBeDisabled()
   })
+
+  it('should map is_public true/false and fallback to empty tags for unexpected tag value', async () => {
+    const user = userEvent.setup()
+    const onIsPublicChange = vi.fn()
+
+    const { rerender } = render(
+      <BasicFiltersTabContent
+        filters={{ ...initialFilters, is_public: true, tags: null as any }}
+        selectedCategory={undefined}
+        tags={[]}
+        onNameChange={vi.fn()}
+        onDescriptionChange={vi.fn()}
+        onStatusChange={vi.fn()}
+        onIsPublicChange={onIsPublicChange}
+        onTagsChange={vi.fn()}
+        onCategorySelect={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('select-true')).toBeInTheDocument()
+    expect(screen.getByTestId('selected-tags')).toHaveTextContent('')
+
+    await user.click(screen.getByLabelText('pick-true-null'))
+    expect(onIsPublicChange).toHaveBeenCalledWith(null)
+
+    rerender(
+      <BasicFiltersTabContent
+        filters={{ ...initialFilters, is_public: false, tags: '' }}
+        selectedCategory={undefined}
+        tags={[]}
+        onNameChange={vi.fn()}
+        onDescriptionChange={vi.fn()}
+        onStatusChange={vi.fn()}
+        onIsPublicChange={onIsPublicChange}
+        onTagsChange={vi.fn()}
+        onCategorySelect={vi.fn()}
+      />
+    )
+
+    expect(screen.getByTestId('select-false')).toBeInTheDocument()
+  })
 })

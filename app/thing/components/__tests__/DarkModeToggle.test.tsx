@@ -26,9 +26,9 @@ describe('DarkModeToggle', () => {
   })
 
   describe('Rendering', () => {
-    it('should render nothing when not mounted', () => {
+    it('should render toggle in client environment', () => {
       const { container } = render(<DarkModeToggle />)
-      expect(container.firstChild).toBeNull()
+      expect(container.firstChild).not.toBeNull()
     })
 
     it('should render theme toggle buttons after mount', async () => {
@@ -59,7 +59,7 @@ describe('DarkModeToggle', () => {
       render(<DarkModeToggle />)
 
       await waitFor(() => {
-        expect(screen.getByText(/浅色/)).toBeInTheDocument()
+        expect(screen.getByText('当前模式: 浅色')).toBeInTheDocument()
       })
     })
 
@@ -72,7 +72,7 @@ describe('DarkModeToggle', () => {
       render(<DarkModeToggle />)
 
       await waitFor(() => {
-        expect(screen.getByText(/深色/)).toBeInTheDocument()
+        expect(screen.getByText('当前模式: 深色')).toBeInTheDocument()
       })
     })
   })
@@ -86,7 +86,7 @@ describe('DarkModeToggle', () => {
         expect(screen.getByText('主题:')).toBeInTheDocument()
       })
 
-      const lightButton = screen.getByLabelText('浅色模式')
+      const lightButton = screen.getByRole('button', { name: '浅色模式' })
       await user.click(lightButton)
 
       expect(mockSetTheme).toHaveBeenCalledWith('light')
@@ -100,7 +100,7 @@ describe('DarkModeToggle', () => {
         expect(screen.getByText('主题:')).toBeInTheDocument()
       })
 
-      const darkButton = screen.getByLabelText('深色模式')
+      const darkButton = screen.getByRole('button', { name: '深色模式' })
       await user.click(darkButton)
 
       expect(mockSetTheme).toHaveBeenCalledWith('dark')

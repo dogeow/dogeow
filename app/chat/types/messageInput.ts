@@ -13,6 +13,8 @@ export interface MessageInputProps {
   ) => Promise<{ success: true } | { success: false; errorMessage?: string }>
   isConnected: boolean
   scrollContainerRef?: React.RefObject<HTMLElement | null>
+  onTypingStart?: () => void
+  onTypingStop?: () => void
 }
 
 export interface MentionSuggestion {

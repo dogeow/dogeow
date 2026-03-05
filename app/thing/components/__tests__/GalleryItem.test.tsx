@@ -7,9 +7,17 @@ import { Item } from '@/app/thing/types'
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: { src?: string; alt?: string; [k: string]: unknown }) => (
-    <img src={src} alt={alt} data-testid="next-image" {...props} />
-  ),
+  default: ({
+    src,
+    alt,
+    fill: _fill,
+    ...props
+  }: {
+    src?: string
+    alt?: string
+    fill?: boolean
+    [k: string]: unknown
+  }) => <img src={src} alt={alt} data-testid="next-image" {...props} />,
 }))
 
 // Mock ImagePlaceholder
@@ -58,8 +66,10 @@ describe('GalleryItem', () => {
 
     it('should render public badge when item is public', () => {
       const publicItem = { ...mockItem, is_public: true }
-      render(<GalleryItem item={publicItem} imageSize={200} onClick={mockOnClick} />)
-      expect(screen.getByRole('generic')).toBeInTheDocument()
+      const { container } = render(
+        <GalleryItem item={publicItem} imageSize={200} onClick={mockOnClick} />
+      )
+      expect(container.querySelector('[data-slot="badge"]')).toBeInTheDocument()
     })
   })
 
