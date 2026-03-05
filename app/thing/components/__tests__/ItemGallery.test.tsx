@@ -6,8 +6,8 @@ import { Item } from '@/app/thing/types'
 
 // Mock child components
 vi.mock('../ImageSizeControl', () => ({
-  ImageSizeControl: ({ onSizeChange }: any) => (
-    <div data-testid="image-size-control">
+  ImageSizeControl: ({ onSizeChange, maxSize }: any) => (
+    <div data-testid="image-size-control" data-max-size={String(maxSize)}>
       <button onClick={() => onSizeChange(150)}>Change Size</button>
     </div>
   ),
@@ -27,6 +27,10 @@ describe('ItemGallery', () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+      configurable: true,
+      value: 800,
+    })
     // Mock getElementById
     const mockContainer = {
       offsetWidth: 800,
@@ -61,6 +65,14 @@ describe('ItemGallery', () => {
       expect(mockOnItemView).toHaveBeenCalledWith(1)
     })
 
+    it('should not fail when item is clicked without onItemView handler', async () => {
+      const user = userEvent.setup()
+      render(<ItemGallery items={mockItems} />)
+
+      await user.click(screen.getByTestId('gallery-item-1'))
+      expect(screen.getByTestId('gallery-item-1')).toBeInTheDocument()
+    })
+
     it('should change image size when size control is used', async () => {
       const user = userEvent.setup()
       render(<ItemGallery items={mockItems} />)
@@ -88,6 +100,33 @@ describe('ItemGallery', () => {
       await waitFor(() => {
         expect(rafSpy.mock.calls.length).toBeGreaterThan(initialCalls)
       })
+    })
+
+    it('should update maxSize after container width is measured', async () => {
+      const rafSpy = vi
+        .spyOn(window, 'requestAnimationFrame')
+        .mockImplementation((cb: FrameRequestCallback) => {
+          cb(0)
+          return 1
+        })
+
+      render(<ItemGallery items={mockItems} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('image-size-control')).toHaveAttribute('data-max-size', '520')
+      })
+
+      rafSpy.mockRestore()
+    })
+
+    it('should keep fallback maxSize when container width is zero', () => {
+      Object.defineProperty(HTMLElement.prototype, 'offsetWidth', {
+        configurable: true,
+        value: 0,
+      })
+
+      render(<ItemGallery items={mockItems} />)
+      expect(screen.getByTestId('image-size-control')).toHaveAttribute('data-max-size', '300')
     })
   })
 })

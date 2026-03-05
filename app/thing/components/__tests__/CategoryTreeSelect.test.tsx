@@ -81,6 +81,18 @@ describe('CategoryTreeSelect', () => {
         expect(screen.getByText('子分类（可选）')).toBeInTheDocument()
       })
     })
+
+    it('应该在分类列表为空时触发 fetchCategories', () => {
+      vi.mocked(useItemStore).mockReturnValue({
+        categories: [],
+        createCategory: mockCreateCategory,
+        fetchCategories: mockFetchCategories,
+      } as ReturnType<typeof useItemStore>)
+
+      render(<CategoryTreeSelect onSelect={mockOnSelect} />)
+
+      expect(mockFetchCategories).toHaveBeenCalledTimes(1)
+    })
   })
 
   describe('分类选择', () => {
@@ -177,6 +189,18 @@ describe('CategoryTreeSelect', () => {
         expect(toast.error).toHaveBeenCalledWith('创建子分类失败：创建失败')
       })
     })
+
+    it('应该在创建主分类失败时提示错误', async () => {
+      mockCreateCategory.mockRejectedValue(new Error('主分类失败'))
+      const user = userEvent.setup()
+      render(<CategoryTreeSelect onSelect={mockOnSelect} />)
+
+      await user.click(screen.getByRole('button', { name: '创建主分类' }))
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('创建主分类失败：主分类失败')
+      })
+    })
   })
 
   describe('初始化', () => {
@@ -197,6 +221,33 @@ describe('CategoryTreeSelect', () => {
         expect(screen.getByRole('combobox', { name: '选择或创建主分类' })).toHaveValue('1')
       })
       expect(screen.getByRole('combobox', { name: '选择或创建子分类' })).toHaveValue('2')
+    })
+
+    it('应该在 selectedCategory 变为 undefined 时重置为未分类', async () => {
+      const { rerender } = render(
+        <CategoryTreeSelect onSelect={mockOnSelect} selectedCategory={{ type: 'parent', id: 1 }} />
+      )
+
+      expect(screen.getByRole('combobox', { name: '选择或创建主分类' })).toHaveValue('1')
+
+      rerender(<CategoryTreeSelect onSelect={mockOnSelect} selectedCategory={undefined} />)
+
+      await waitFor(() => {
+        expect(screen.getByRole('combobox', { name: '选择或创建主分类' })).toHaveValue('none')
+      })
+      expect(screen.queryByRole('combobox', { name: '选择或创建子分类' })).not.toBeInTheDocument()
+    })
+
+    it('应该在 child 类型不存在时回退到未分类', () => {
+      render(
+        <CategoryTreeSelect
+          onSelect={mockOnSelect}
+          selectedCategory={{ type: 'child', id: 99999 }}
+        />
+      )
+
+      expect(screen.getByRole('combobox', { name: '选择或创建主分类' })).toHaveValue('none')
+      expect(screen.queryByRole('combobox', { name: '选择或创建子分类' })).not.toBeInTheDocument()
     })
   })
 })

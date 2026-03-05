@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import ThingHeader from '../ThingHeader'
 import { Category, Tag, Area, Room, Spot, FilterParams } from '../../types'
@@ -147,6 +147,26 @@ describe('ThingHeader', () => {
       expect(screen.getByText('电子产品')).toBeInTheDocument()
     })
 
+    it('应该在选中子分类时显示子分类名称', () => {
+      const filtersWithChildCategory = { ...mockFilters, category_id: 2 }
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={filtersWithChildCategory}
+          hasActiveFilters={true}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      expect(screen.getByText('手机')).toBeInTheDocument()
+    })
+
     it('应该在选中标签时显示标签数量', () => {
       const filtersWithTags = { ...mockFilters, tags: '1,2' }
       render(
@@ -157,6 +177,26 @@ describe('ThingHeader', () => {
           rooms={mockRooms}
           spots={mockSpots}
           filters={filtersWithTags}
+          hasActiveFilters={true}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      expect(screen.getByText('2个标签')).toBeInTheDocument()
+    })
+
+    it('应该支持数组格式的 tags 过滤参数', () => {
+      const filtersWithArrayTags = { ...mockFilters, tags: [1, 2] }
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={filtersWithArrayTags}
           hasActiveFilters={true}
           viewMode="list"
           onApplyFilters={mockOnApplyFilters}
@@ -264,6 +304,66 @@ describe('ThingHeader', () => {
         page: 1,
       })
     })
+
+    it('应该在点击分类菜单外部时关闭分类菜单', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={mockFilters}
+          hasActiveFilters={false}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      await user.click(screen.getByText('所有分类'))
+      await waitFor(() => {
+        expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
+      })
+
+      fireEvent.mouseDown(document.body)
+      await waitFor(() => {
+        expect(screen.queryByTestId('category-tree-select')).not.toBeInTheDocument()
+      })
+    })
+
+    it('应该在点击 combobox 元素时保持分类菜单打开', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={mockFilters}
+          hasActiveFilters={false}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      await user.click(screen.getByText('所有分类'))
+      await waitFor(() => {
+        expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
+      })
+
+      const comboboxTarget = document.createElement('div')
+      comboboxTarget.setAttribute('role', 'combobox')
+      document.body.appendChild(comboboxTarget)
+      fireEvent.mouseDown(comboboxTarget)
+
+      expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
+
+      comboboxTarget.remove()
+    })
   })
 
   describe('标签筛选', () => {
@@ -361,6 +461,88 @@ describe('ThingHeader', () => {
         page: 1,
       })
     })
+
+    it('应该在再次点击已选标签时取消该标签', async () => {
+      const user = userEvent.setup()
+      const filtersWithTags = { ...mockFilters, tags: '1' }
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={filtersWithTags}
+          hasActiveFilters={true}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      await user.click(screen.getByText('1个标签'))
+      await waitFor(() => {
+        expect(screen.getByText('重要')).toBeInTheDocument()
+      })
+
+      await user.click(screen.getByText('重要'))
+
+      expect(mockOnApplyFilters).toHaveBeenCalledWith({
+        ...filtersWithTags,
+        tags: undefined,
+        page: 1,
+      })
+    })
+
+    it('应该在没有标签时显示空提示', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={[]}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={mockFilters}
+          hasActiveFilters={false}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      await user.click(screen.getByText('标签'))
+
+      expect(screen.getByText('暂无标签')).toBeInTheDocument()
+    })
+
+    it('应该在点击标签菜单外部时关闭标签菜单', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={mockFilters}
+          hasActiveFilters={false}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      await user.click(screen.getByText('标签'))
+      await waitFor(() => {
+        expect(screen.getByText('重要')).toBeInTheDocument()
+      })
+
+      fireEvent.mouseDown(document.body)
+      await waitFor(() => {
+        expect(screen.queryByText('重要')).not.toBeInTheDocument()
+      })
+    })
   })
 
   describe('视图切换', () => {
@@ -381,14 +563,81 @@ describe('ThingHeader', () => {
         />
       )
 
-      // 找到画廊视图按钮并点击
-      const galleryButton = screen.getByRole('tab', { name: '' })
       const buttons = screen.getAllByRole('tab')
       const galleryTab = buttons[1] // 第二个标签是画廊视图
 
       await user.click(galleryTab)
 
       expect(mockOnViewModeChange).toHaveBeenCalledWith('gallery')
+    })
+  })
+
+  describe('筛选侧边栏', () => {
+    it('应该在按下 Escape 时关闭筛选侧边栏', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={mockFilters}
+          hasActiveFilters={false}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      const filterButton = document.querySelector(
+        'button[data-state="closed"]'
+      ) as HTMLButtonElement
+      await user.click(filterButton)
+
+      await waitFor(() => {
+        expect(document.querySelector('[data-slot="sheet-content"]')).toBeInTheDocument()
+      })
+
+      const sheetContent = document.querySelector('[data-slot="sheet-content"]') as HTMLElement
+      fireEvent.keyDown(sheetContent, { key: 'Escape', code: 'Escape' })
+
+      await waitFor(() => {
+        expect(document.querySelector('[data-slot="sheet-content"]')).not.toBeInTheDocument()
+      })
+    })
+
+    it('应该在点击外部时关闭筛选侧边栏', async () => {
+      const user = userEvent.setup()
+      render(
+        <ThingHeader
+          categories={mockCategories}
+          tags={mockTags}
+          areas={mockAreas}
+          rooms={mockRooms}
+          spots={mockSpots}
+          filters={mockFilters}
+          hasActiveFilters={false}
+          viewMode="list"
+          onApplyFilters={mockOnApplyFilters}
+          onViewModeChange={mockOnViewModeChange}
+        />
+      )
+
+      const filterButton = document.querySelector(
+        'button[data-state="closed"]'
+      ) as HTMLButtonElement
+      await user.click(filterButton)
+
+      await waitFor(() => {
+        expect(document.querySelector('[data-slot="sheet-content"]')).toBeInTheDocument()
+      })
+
+      fireEvent.pointerDown(document.body)
+
+      await waitFor(() => {
+        expect(document.querySelector('[data-slot="sheet-content"]')).not.toBeInTheDocument()
+      })
     })
   })
 })
