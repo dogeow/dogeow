@@ -52,8 +52,8 @@ const ERROR_CONFIG = {
     description: '请求格式有误，请检查输入内容后重试。',
   },
   unknown: {
-    icon: <AlertCircle className="h-8 w-8 text-gray-500" />,
-    colorClass: 'border-gray-200 bg-gray-50',
+    icon: <AlertCircle className="text-muted-foreground h-8 w-8" />,
+    colorClass: 'border-border bg-muted',
     title: '出现错误',
     description: '发生未知错误，请重试。',
   },
@@ -187,8 +187,8 @@ export default function ErrorFallback({
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0">{icon}</div>
           <div className="min-w-0 flex-1">
-            <h4 className="font-medium text-gray-900">{title}</h4>
-            <p className="mt-1 text-sm text-gray-600">{errorMessage}</p>
+            <h4 className="text-foreground font-medium">{title}</h4>
+            <p className="text-muted-foreground mt-1 text-sm">{errorMessage}</p>
             {actionButtons.length > 0 && <div className="mt-3 flex gap-2">{actionButtons}</div>}
           </div>
         </div>
@@ -207,10 +207,10 @@ export default function ErrorFallback({
         </CardHeader>
         <CardContent className="space-y-4">
           {/* 错误详情 */}
-          <div className="rounded-lg bg-white/50 p-3">
-            <p className="text-sm font-medium text-gray-700">错误详情：</p>
-            <p className="mt-1 text-sm text-gray-600">{errorMessage}</p>
-            <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+          <div className="bg-background/50 rounded-lg p-3">
+            <p className="text-foreground text-sm font-medium">错误详情：</p>
+            <p className="text-muted-foreground mt-1 text-sm">{errorMessage}</p>
+            <div className="text-muted-foreground mt-2 flex items-center justify-between text-xs">
               <span>类型：{errorType}</span>
               <span>
                 {timestamp instanceof Date
@@ -232,7 +232,7 @@ export default function ErrorFallback({
 
           {/* 额外帮助信息 */}
           <div className="text-center">
-            <p className="text-xs text-gray-500">如果问题持续存在，请联系技术支持。</p>
+            <p className="text-muted-foreground text-xs">如果问题持续存在，请联系技术支持。</p>
           </div>
         </CardContent>
       </Card>

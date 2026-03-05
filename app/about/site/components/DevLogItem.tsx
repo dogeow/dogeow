@@ -14,9 +14,9 @@ export const DevLogItem: React.FC<DevLogItemProps> = ({ log, t }) => {
   const config = getTypeConfig(log.type, t)
 
   return (
-    <div className="border-b border-gray-100 last:border-b-0 dark:border-gray-800">
+    <div className="border-border/50 border-b last:border-b-0">
       <div
-        className="flex cursor-pointer flex-col gap-3 px-4 py-3 transition-colors hover:bg-gray-50 sm:flex-row sm:items-center dark:hover:bg-gray-900/50"
+        className="hover:bg-muted/50 flex cursor-pointer flex-col gap-3 px-4 py-3 transition-colors sm:flex-row sm:items-center"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -30,18 +30,16 @@ export const DevLogItem: React.FC<DevLogItemProps> = ({ log, t }) => {
               {log.version && (
                 <Badge
                   variant="outline"
-                  className="border-gray-300 bg-gray-100 text-xs text-gray-700 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  className="border-border bg-muted text-muted-foreground text-xs"
                 >
                   v{log.version}
                 </Badge>
               )}
             </div>
-            <span className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-              {log.title}
-            </span>
+            <span className="text-foreground truncate text-sm font-medium">{log.title}</span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs whitespace-nowrap text-gray-500 dark:text-gray-400">
+          <div className="text-muted-foreground flex items-center gap-2 text-xs whitespace-nowrap">
             <Calendar className="h-3 w-3" />
             <span>{log.date.toLocaleDateString()}</span>
           </div>
@@ -50,9 +48,9 @@ export const DevLogItem: React.FC<DevLogItemProps> = ({ log, t }) => {
 
       {isExpanded && (
         <div className={`${config.bgColor} border-t px-4 py-3 ${config.borderColor}`}>
-          <div className="mb-3 text-sm text-gray-700 dark:text-gray-300">{log.description}</div>
+          <div className="text-muted-foreground mb-3 text-sm">{log.description}</div>
 
-          <div className="flex flex-col gap-4 text-xs text-gray-600 sm:flex-row sm:items-center dark:text-gray-400">
+          <div className="text-muted-foreground flex flex-col gap-4 text-xs sm:flex-row sm:items-center">
             {log.author && (
               <div className="flex items-center gap-1">
                 <User className="h-3 w-3" />
@@ -67,7 +65,7 @@ export const DevLogItem: React.FC<DevLogItemProps> = ({ log, t }) => {
                   {log.tags.map(tag => (
                     <span
                       key={tag}
-                      className="rounded bg-gray-200 px-1.5 py-0.5 text-xs dark:bg-gray-700 dark:text-gray-300"
+                      className="bg-muted text-muted-foreground rounded px-1.5 py-0.5 text-xs"
                     >
                       {tag}
                     </span>
