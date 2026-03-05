@@ -18,7 +18,7 @@ vi.mock('@/lib/helpers/dateUtils', () => ({
 
 // Mock location utils
 vi.mock('@/app/thing/utils', () => ({
-  getLocationPath: (spot: any) => spot?.name || 'No location',
+  getLocationPath: (spot: any) => spot?.name || '',
 }))
 
 describe('ItemDetailDialog', () => {
@@ -197,6 +197,36 @@ describe('ItemDetailDialog', () => {
       expect(screen.getByText('No Image')).toBeInTheDocument()
     })
 
+    it('应该在没有主图时回退显示 images 第一张图片', () => {
+      const itemWithFallbackImage = {
+        ...mockItem,
+        primary_image: undefined,
+        images: [
+          {
+            id: 99,
+            path: '/path/to/fallback.jpg',
+            thumbnail_path: '/path/to/fallback-thumb.jpg',
+            url: 'https://example.com/fallback.jpg',
+            thumbnail_url: 'https://example.com/fallback-thumb.jpg',
+            is_primary: false,
+          },
+        ],
+      }
+      render(
+        <ItemDetailDialog
+          item={itemWithFallbackImage}
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onViewDetails={mockOnViewDetails}
+        />
+      )
+
+      expect(screen.getByTestId('item-image')).toHaveAttribute(
+        'src',
+        'https://example.com/fallback.jpg'
+      )
+    })
+
     it('应该在私有物品时显示私有图标', () => {
       const privateItem = { ...mockItem, is_public: false }
       render(
@@ -209,6 +239,32 @@ describe('ItemDetailDialog', () => {
       )
 
       expect(screen.getByText('Private')).toBeInTheDocument()
+    })
+
+    it('应该在缺失字段时显示默认回退文案', () => {
+      const itemWithFallbackText = {
+        ...mockItem,
+        category: undefined,
+        description: '',
+        spot: undefined,
+        purchase_date: null,
+        expiry_date: null,
+        quantity: null,
+      } as unknown as Item
+
+      render(
+        <ItemDetailDialog
+          item={itemWithFallbackText}
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onViewDetails={mockOnViewDetails}
+        />
+      )
+
+      expect(screen.getByText('Uncategorized')).toBeInTheDocument()
+      expect(screen.getByText('No description provided.')).toBeInTheDocument()
+      expect(screen.getByText('No location specified.')).toBeInTheDocument()
+      expect(screen.getAllByText('N/A').length).toBeGreaterThan(0)
     })
   })
 
@@ -267,6 +323,22 @@ describe('ItemDetailDialog', () => {
       )
 
       expect(screen.getByText(expectedText)).toBeInTheDocument()
+    })
+
+    it('应该为未知状态使用默认样式并保留原始文案', () => {
+      const itemWithUnknownStatus = { ...mockItem, status: 'archived' }
+      render(
+        <ItemDetailDialog
+          item={itemWithUnknownStatus}
+          open={true}
+          onOpenChange={mockOnOpenChange}
+          onViewDetails={mockOnViewDetails}
+        />
+      )
+
+      const badge = screen.getByText('archived')
+      expect(badge).toBeInTheDocument()
+      expect(badge).toHaveClass('bg-gray-400')
     })
   })
 })

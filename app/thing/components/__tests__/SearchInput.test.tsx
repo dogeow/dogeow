@@ -166,6 +166,16 @@ describe('SearchInput', () => {
       expect(mockOnSearch).not.toHaveBeenCalled()
     })
 
+    it('should no-op when forcing submit with blank value', () => {
+      render(
+        <ControlledSearchInput initialValue="   " onChange={mockOnChange} onSearch={mockOnSearch} />
+      )
+
+      const input = screen.getByPlaceholderText('搜索物品...')
+      fireEvent.submit(input.closest('form')!)
+      expect(mockOnSearch).not.toHaveBeenCalled()
+    })
+
     it('should trigger empty search after debounce when input is cleared by typing', async () => {
       vi.useFakeTimers()
       const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
@@ -186,6 +196,38 @@ describe('SearchInput', () => {
       await waitFor(() => {
         expect(mockOnSearch).toHaveBeenCalledWith('')
       })
+    })
+
+    it('should clear pending debounce timer and refocus input on submit', async () => {
+      vi.useFakeTimers()
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+
+      const originalRaf = globalThis.requestAnimationFrame
+      vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
+        cb(0)
+        return 1
+      })
+
+      const focusSpy = vi.spyOn(HTMLInputElement.prototype, 'focus')
+
+      render(
+        <ControlledSearchInput onChange={mockOnChange} onSearch={mockOnSearch} debounceTime={300} />
+      )
+
+      const input = screen.getByPlaceholderText('搜索物品...')
+      input.focus()
+      focusSpy.mockClear()
+
+      await user.type(input, 'timer')
+      fireEvent.submit(input.closest('form')!)
+
+      expect(mockOnSearch).toHaveBeenCalledWith('timer')
+      vi.advanceTimersByTime(300)
+      expect(mockOnSearch).toHaveBeenCalledTimes(1)
+      expect(focusSpy).toHaveBeenCalled()
+
+      focusSpy.mockRestore()
+      vi.stubGlobal('requestAnimationFrame', originalRaf)
     })
   })
 
@@ -221,6 +263,14 @@ describe('SearchInput', () => {
       await waitFor(() => {
         expect(localStorageMock.setItem).toHaveBeenCalled()
       })
+    })
+
+    it('should tolerate malformed search history in localStorage', () => {
+      localStorageMock.getItem.mockReturnValue('not-valid-json')
+
+      render(<ControlledSearchInput onChange={mockOnChange} onSearch={mockOnSearch} />)
+
+      expect(screen.getByPlaceholderText('搜索物品...')).toBeInTheDocument()
     })
   })
 
