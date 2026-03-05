@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import LocationComboboxSelectSimple from '../LocationComboboxSelectSimple'
+import { apiRequest } from '@/lib/api'
+import { toast } from 'sonner'
 
 // Mock dependencies
 vi.mock('sonner', () => ({
@@ -16,9 +19,20 @@ vi.mock('@/lib/api', () => ({
 
 // Mock Combobox component
 vi.mock('@/components/ui/combobox', () => ({
-  Combobox: ({ options, placeholder }: any) => (
+  Combobox: ({ options, value, placeholder, onChange }: any) => (
     <div data-testid="combobox">
       <div>{placeholder}</div>
+      <select
+        aria-label={placeholder}
+        value={value ?? ''}
+        onChange={e => onChange?.(e.target.value)}
+      >
+        {options.map((opt: any) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
       <div>{options.length} options</div>
     </div>
   ),
@@ -26,12 +40,11 @@ vi.mock('@/components/ui/combobox', () => ({
 
 describe('LocationComboboxSelectSimple', () => {
   const mockOnSelect = vi.fn()
-  const { apiRequest } = require('@/lib/api')
 
   beforeEach(() => {
     vi.clearAllMocks()
     // Mock API responses
-    apiRequest.mockImplementation((url: string) => {
+    vi.mocked(apiRequest).mockImplementation((url: string) => {
       if (url === '/areas') {
         return Promise.resolve([
           { id: 1, name: '客厅' },
@@ -98,18 +111,31 @@ describe('LocationComboboxSelectSimple', () => {
     })
 
     it('应该在加载时显示加载提示', async () => {
-      apiRequest.mockImplementation(() => new Promise(() => {}))
+      let resolveAreas!: (value: unknown) => void
+      const areasPromise = new Promise(resolve => {
+        resolveAreas = resolve
+      })
+      vi.mocked(apiRequest).mockImplementation((url: string) => {
+        if (url === '/areas') {
+          return areasPromise
+        }
+        return Promise.resolve([])
+      })
 
       render(<LocationComboboxSelectSimple onSelect={mockOnSelect} />)
 
       await waitFor(() => {
         expect(screen.getByText('加载中...')).toBeInTheDocument()
       })
+
+      resolveAreas([])
+      await waitFor(() => {
+        expect(screen.queryByText('加载中...')).not.toBeInTheDocument()
+      })
     })
 
     it('应该在加载失败时显示错误', async () => {
-      const { toast } = require('sonner')
-      apiRequest.mockRejectedValue(new Error('加载失败'))
+      vi.mocked(apiRequest).mockRejectedValue(new Error('加载失败'))
 
       render(<LocationComboboxSelectSimple onSelect={mockOnSelect} />)
 
@@ -133,6 +159,62 @@ describe('LocationComboboxSelectSimple', () => {
 
       // 位置选择器应该始终存在（即使禁用）
       expect(screen.getByText('具体位置（可选）')).toBeInTheDocument()
+    })
+  })
+
+  describe('级联选择与回退', () => {
+    it('应该在选择和清空区域/房间/位置时按层级回退调用 onSelect', async () => {
+      const user = userEvent.setup()
+
+      render(<LocationComboboxSelectSimple onSelect={mockOnSelect} />)
+
+      await waitFor(() => {
+        expect(apiRequest).toHaveBeenCalledWith('/areas')
+      })
+
+      const areaSelect = screen.getByRole('combobox', { name: '选择或创建区域' })
+      await user.selectOptions(areaSelect, '1')
+
+      await waitFor(() => {
+        expect(mockOnSelect).toHaveBeenCalledWith('area', 1, '客厅')
+      })
+
+      await waitFor(() => {
+        expect(apiRequest).toHaveBeenCalledWith('/areas/1/rooms')
+      })
+
+      const roomSelect = await screen.findByRole('combobox', { name: '选择或创建房间' })
+      await user.selectOptions(roomSelect, '1')
+
+      await waitFor(() => {
+        expect(mockOnSelect).toHaveBeenCalledWith('room', 1, '客厅 > 主卧')
+      })
+
+      await waitFor(() => {
+        expect(apiRequest).toHaveBeenCalledWith('/rooms/1/spots')
+      })
+
+      const spotSelect = await screen.findByRole('combobox', { name: '选择或创建具体位置' })
+      await user.selectOptions(spotSelect, '1')
+
+      await waitFor(() => {
+        expect(mockOnSelect).toHaveBeenCalledWith('spot', 1, '客厅 > 主卧 > 书桌')
+      })
+
+      await user.selectOptions(spotSelect, '')
+      await waitFor(() => {
+        expect(mockOnSelect).toHaveBeenCalledWith('room', 1, '客厅 > 主卧')
+      })
+
+      await user.selectOptions(roomSelect, '')
+      await waitFor(() => {
+        expect(mockOnSelect).toHaveBeenCalledWith('area', 1, '客厅')
+      })
+
+      await user.selectOptions(areaSelect, '')
+      await waitFor(() => {
+        expect(mockOnSelect).toHaveBeenCalledWith('area', 0, '')
+      })
     })
   })
 })
