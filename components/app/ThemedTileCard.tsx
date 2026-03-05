@@ -22,11 +22,9 @@ interface ThemedTileCardProps {
 export function ThemedTileCard(props: ThemedTileCardProps) {
   const theme = useUITheme()
 
-  // 动态加载主题的 TileCard 组件
   const TileCardComponent = useMemo(() => {
     if (!theme) return DefaultTileCard
 
-    // 如果主题有自定义的 TileCard，使用它
     const customTileCardPath = theme.components?.TileCard
     if (!customTileCardPath) return DefaultTileCard
 
@@ -37,15 +35,12 @@ export function ThemedTileCard(props: ThemedTileCardProps) {
           import(`@/${componentPath}`)
             .then(module => ({ default: module.TileCard || module.default }))
             .catch(() => ({ default: DefaultTileCard })),
-        {
-          ssr: false,
-          loading: () => <DefaultTileCard {...props} />,
-        }
+        { ssr: false }
       )
     } catch {
       return DefaultTileCard
     }
-  }, [theme, props])
+  }, [theme])
 
   const Component = TileCardComponent || DefaultTileCard
 

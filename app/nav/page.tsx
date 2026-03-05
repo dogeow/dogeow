@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect, Suspense, useMemo, useRef } from 'react'
-import { Plus, Settings, Lock, Search } from 'lucide-react'
+import { useState, useEffect, Suspense, useMemo, useRef, useCallback } from 'react'
+import { Plus, Settings, Lock, Search, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -15,7 +15,6 @@ import { NavCategory } from '@/app/nav/types'
 import { PageContainer, PageHeader } from '@/components/layout'
 import { cn } from '@/lib/helpers'
 
-// 搜索组件
 function SearchBar({ onSearch }: { onSearch: (term: string) => void }) {
   const { searchTerm } = useNavStore()
   const [localSearch, setLocalSearch] = useState(searchTerm)
@@ -24,7 +23,6 @@ function SearchBar({ onSearch }: { onSearch: (term: string) => void }) {
     setLocalSearch(searchTerm)
   }, [searchTerm])
 
-  // 防抖搜索
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localSearch !== searchTerm) {
@@ -41,13 +39,13 @@ function SearchBar({ onSearch }: { onSearch: (term: string) => void }) {
         placeholder="搜索导航..."
         value={localSearch}
         onChange={e => setLocalSearch(e.target.value)}
-        className="h-9 pl-9"
+        className="pl-9"
+        aria-label="搜索导航"
       />
     </div>
   )
 }
 
-// 分类侧边栏
 function CategorySidebar({
   categories,
   selectedCategory,
@@ -68,9 +66,11 @@ function CategorySidebar({
     )
 
   return (
-    <aside className="bg-card/30 border-border/60 flex w-24 shrink-0 flex-col gap-1 rounded-lg border p-2">
+    <aside className="flex w-20 shrink-0 flex-col gap-1 px-2 py-2" aria-label="导航分类">
       <button
-        className={getButtonClassName(selectedCategory === 'all')}
+        className={`rounded px-2 py-1 text-left text-sm font-bold transition-colors ${
+          selectedCategory === 'all' ? '' : 'hover:bg-muted'
+        }`}
         style={selectedCategory === 'all' ? { background: themeColor.color, color: '#fff' } : {}}
         onClick={() => onSelect('all')}
       >
@@ -79,7 +79,9 @@ function CategorySidebar({
       {categories.map(cat => (
         <button
           key={cat.id}
-          className={getButtonClassName(selectedCategory === cat.id)}
+          className={`rounded px-2 py-1 text-left text-sm transition-colors ${
+            selectedCategory === cat.id ? 'font-bold' : 'hover:bg-muted'
+          }`}
           style={selectedCategory === cat.id ? { background: themeColor.color, color: '#fff' } : {}}
           onClick={() => onSelect(cat.id)}
           title={cat.name}
@@ -109,23 +111,19 @@ function NavContent() {
 
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<number | 'all'>('all')
-  const [displayItems, setDisplayItems] = useState(items)
 
   const { currentTheme, customThemes } = useThemeStore()
   const themeColor = getCurrentThemeColor(currentTheme, customThemes)
   const { requireLogin, isAuthenticated } = useLoginTrigger()
   const { t } = useTranslation()
 
-  // 根据搜索词和分类筛选项目
   const filteredItems = useMemo(() => {
     let result = items
 
-    // 按分类筛选
     if (selectedCategory !== 'all') {
       result = result.filter(item => item.nav_category_id === selectedCategory)
     }
 
-    // 按搜索词筛选
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       result = result.filter(
@@ -137,18 +135,16 @@ function NavContent() {
     return result
   }, [items, selectedCategory, searchTerm])
 
-  // 更新显示的项目
-  useEffect(() => {
-    setDisplayItems(filteredItems)
-  }, [filteredItems])
-
-  // 初始数据加载 - 使用 ref 确保只运行一次
   const initialLoadRef = useRef(false)
   const initialFilterRef = useRef(initialFilter)
 
   useEffect(() => {
     if (initialLoadRef.current) return
     initialLoadRef.current = true
+
+    if (initialFilterRef.current) {
+      handleSearch(initialFilterRef.current)
+    }
 
     const fetchData = async () => {
       try {
@@ -166,32 +162,38 @@ function NavContent() {
     }
 
     fetchData()
-  }, [fetchCategories, fetchItems, applySampleData, categories.length, items.length])
+  }, [fetchCategories, fetchItems, applySampleData, categories.length, items.length, handleSearch])
 
-  // 分类点击处理
-  const handleCategoryClick = async (catId: number | 'all') => {
-    setSelectedCategory(catId)
-    await fetchItems(catId === 'all' ? undefined : catId)
-  }
+  const handleCategoryClick = useCallback(
+    async (catId: number | 'all') => {
+      setSelectedCategory(catId)
+      await fetchItems(catId === 'all' ? undefined : catId)
+    },
+    [fetchItems]
+  )
 
-  // 处理搜索
-  const onSearch = (term: string) => {
-    handleSearch(term)
-    const newUrl = term ? `?filter[name]=${encodeURIComponent(term)}` : '/nav'
-    router.push(newUrl, { scroll: false })
-  }
+  const onSearch = useCallback(
+    (term: string) => {
+      handleSearch(term)
+      const newUrl = term ? `?filter[name]=${encodeURIComponent(term)}` : '/nav'
+      router.push(newUrl, { scroll: false })
+    },
+    [handleSearch, router]
+  )
 
-  const handleAddNav = () => {
+  const handleAddNav = useCallback(() => {
     requireLogin(() => {
       router.push('/nav/add')
     })
-  }
+  }, [requireLogin, router])
 
-  const handleManageCategories = () => {
+  const handleManageCategories = useCallback(() => {
     requireLogin(() => {
       router.push('/nav/categories')
     })
-  }
+  }, [requireLogin, router])
+
+  const isLoading = loading || storeLoading
 
   return (
     <PageContainer className="py-2">
@@ -242,20 +244,19 @@ function NavContent() {
           onSelect={handleCategoryClick}
           themeColor={themeColor}
         />
-        <div className="border-border/60 flex flex-1 flex-col gap-2 border-l border-dashed px-2">
-          {loading || storeLoading ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <div key={index} className="bg-card space-y-3 rounded-xl border p-4">
-                  <Skeleton className="h-5 w-2/3" />
-                  <Skeleton className="h-4 w-full" />
-                  <Skeleton className="h-4 w-4/5" />
-                </div>
-              ))}
+        <div className="border-border flex flex-1 flex-col gap-2 border-l border-dashed px-2">
+          {isLoading ? (
+            <div
+              className="flex items-center justify-center py-12"
+              role="status"
+              aria-live="polite"
+            >
+              <Loader2 className="text-muted-foreground h-6 w-6 animate-spin" />
+              <span className="text-muted-foreground ml-2 text-sm">加载中...</span>
             </div>
-          ) : displayItems.length > 0 ? (
+          ) : filteredItems.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {displayItems.map(item => (
+              {filteredItems.map(item => (
                 <NavCard key={item.id} item={item} highlight={searchTerm} />
               ))}
             </div>
@@ -272,7 +273,6 @@ function NavContent() {
   )
 }
 
-// 主页面组件
 export default function NavPage() {
   return (
     <Suspense fallback={null}>

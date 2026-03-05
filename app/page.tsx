@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import Footer from '@/components/app/Footer'
 import { configs } from '@/app/configs'
 import { ThemedTileCard } from '@/components/app/ThemedTileCard'
@@ -8,37 +9,66 @@ import { useTileManagement } from '@/hooks/useTileManagement'
 import { PageContainer } from '@/components/layout'
 import { useUITheme } from '@/components/themes/UIThemeProvider'
 import { useLayoutStore } from '@/stores/layoutStore'
+import type { Tile } from '@/app/types'
+
+function TileList({
+  tiles,
+  showCover,
+  getTileStatus,
+  onTileClick,
+}: {
+  tiles: Tile[]
+  showCover: boolean
+  getTileStatus: (tile: Tile) => { needsLogin: boolean }
+  onTileClick: (tile: Tile) => void
+}) {
+  return (
+    <>
+      {tiles.map((tile, index) => {
+        const tileStatus = getTileStatus(tile)
+        return (
+          <ThemedTileCard
+            key={tile.name}
+            tile={tile}
+            index={index}
+            showCover={showCover}
+            needsLogin={tileStatus.needsLogin}
+            onClick={() => onTileClick(tile)}
+          />
+        )
+      })}
+    </>
+  )
+}
 
 export default function Home() {
   const { tiles, showProjectCovers, handleTileClick, getTileStatus } = useTileManagement()
   const theme = useUITheme()
   const { siteLayout } = useLayoutStore()
 
-  // 根据主题决定布局方式
-  const isGridLayout = !theme || theme.id === 'default'
-  const isDashboardLayout = theme?.id === 'dashboard'
-  const isMagazineLayout = siteLayout === 'magazine'
+  const layoutType = useMemo(() => {
+    if (siteLayout === 'magazine') return 'magazine'
+    if (!theme || theme.id === 'default') return 'grid'
+    if (theme.id === 'dashboard') return 'dashboard'
+    return 'list'
+  }, [siteLayout, theme])
 
   return (
     <>
-      {/* SEO 和可访问性优化 */}
       <div className="sr-only">
         <h1>DogeOW - 个人工具和游戏平台</h1>
         <p>包含物品管理、文件管理、笔记、导航、实验室和各种小游戏的综合平台</p>
       </div>
 
-      {/* 主要内容区域 */}
       <PageContainer className="py-3">
-        {isMagazineLayout ? (
-          /* 杂志风格布局 */
+        {layoutType === 'magazine' ? (
           <MagazineLayout
             tiles={tiles}
             showProjectCovers={showProjectCovers}
             getTileStatus={getTileStatus}
             handleTileClick={handleTileClick}
           />
-        ) : isGridLayout ? (
-          /* 默认网格布局 */
+        ) : layoutType === 'grid' ? (
           <div
             className="grid gap-3 sm:gap-4"
             style={{
@@ -55,7 +85,6 @@ export default function Home() {
                   <ThemedTileCard
                     tile={tile}
                     index={index}
-                    customStyles=""
                     showCover={showProjectCovers}
                     needsLogin={tileStatus.needsLogin}
                     onClick={() => handleTileClick(tile)}
@@ -64,41 +93,23 @@ export default function Home() {
               )
             })}
           </div>
-        ) : isDashboardLayout ? (
-          /* Dashboard 主题：3列网格布局 */
+        ) : layoutType === 'dashboard' ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {tiles.map((tile, index) => {
-              const tileStatus = getTileStatus(tile)
-              return (
-                <ThemedTileCard
-                  key={tile.name}
-                  tile={tile}
-                  index={index}
-                  customStyles=""
-                  showCover={showProjectCovers}
-                  needsLogin={tileStatus.needsLogin}
-                  onClick={() => handleTileClick(tile)}
-                />
-              )
-            })}
+            <TileList
+              tiles={tiles}
+              showCover={showProjectCovers}
+              getTileStatus={getTileStatus}
+              onTileClick={handleTileClick}
+            />
           </div>
         ) : (
-          /* 其他主题：默认列表布局 */
           <div className="space-y-3">
-            {tiles.map((tile, index) => {
-              const tileStatus = getTileStatus(tile)
-              return (
-                <ThemedTileCard
-                  key={tile.name}
-                  tile={tile}
-                  index={index}
-                  customStyles=""
-                  showCover={showProjectCovers}
-                  needsLogin={tileStatus.needsLogin}
-                  onClick={() => handleTileClick(tile)}
-                />
-              )
-            })}
+            <TileList
+              tiles={tiles}
+              showCover={showProjectCovers}
+              getTileStatus={getTileStatus}
+              onTileClick={handleTileClick}
+            />
           </div>
         )}
       </PageContainer>

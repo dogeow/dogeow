@@ -50,8 +50,8 @@ export default function AboutPage() {
           <ul
             className={`${longCang.className} flex flex-col gap-3 text-2xl text-muted-foreground`}
           >
-            {QUOTES.map((q, i) => (
-              <li key={i} className="border-b border-border/50 pb-2 last:border-0">
+            {QUOTES.map(q => (
+              <li key={q.slice(0, 20)} className="border-b border-border/50 pb-2 last:border-0">
                 {q}
               </li>
             ))}

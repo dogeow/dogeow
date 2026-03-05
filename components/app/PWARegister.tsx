@@ -118,7 +118,7 @@ export function PWARegister() {
   return (
     <>
       {hasUpdate && (
-        <div className="fixed right-4 bottom-4 z-50 rounded-lg bg-blue-500 px-4 py-2 text-white shadow-lg">
+        <div className="bg-primary text-primary-foreground fixed right-4 bottom-4 z-50 rounded-lg px-4 py-2 shadow-lg">
           <div className="flex items-center gap-2">
             <span>有新版本可用</span>
             <button
@@ -126,8 +126,8 @@ export function PWARegister() {
               disabled={isChecking}
               className={`rounded px-2 py-1 text-sm transition-colors ${
                 isChecking
-                  ? 'cursor-not-allowed bg-gray-300 text-gray-600'
-                  : 'bg-white text-blue-500 hover:bg-gray-100'
+                  ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                  : 'bg-background text-foreground hover:bg-muted'
               }`}
             >
               {isChecking ? '更新中...' : '立即更新'}

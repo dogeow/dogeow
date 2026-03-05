@@ -44,7 +44,7 @@ export function GameRulesDialog({ title, rules, className = '' }: GameRulesDialo
             {rules.map((rule, index) => (
               <li key={index} className="flex items-start gap-2 text-sm">
                 <span className="text-primary font-medium">•</span>
-                <span className="text-gray-700 dark:text-gray-300">{rule}</span>
+                <span className="text-muted-foreground">{rule}</span>
               </li>
             ))}
           </ul>

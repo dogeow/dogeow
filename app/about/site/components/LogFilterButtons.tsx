@@ -24,7 +24,7 @@ export const LogFilterButtons: React.FC<LogFilterButtonsProps> = ({
 
   return (
     <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
-      <span className="text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-300">
+      <span className="text-foreground text-sm font-medium whitespace-nowrap">
         {t('devlog.filter.label', '筛选:')}
       </span>
       <div className="flex flex-wrap items-center gap-2">
@@ -36,8 +36,8 @@ export const LogFilterButtons: React.FC<LogFilterButtonsProps> = ({
             onClick={() => onTypeChange(value)}
             className={
               selectedType === value
-                ? 'border-gray-900 bg-gray-900 text-white hover:bg-gray-800 dark:border-gray-100 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-200'
-                : 'border-gray-300 bg-gray-100 text-gray-700 hover:bg-gray-200 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+                ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'
+                : 'border-border bg-muted text-muted-foreground hover:bg-accent hover:text-accent-foreground'
             }
           >
             {label}
