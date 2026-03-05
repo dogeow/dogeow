@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react'
 import LocationComboboxSelect from '../LocationComboboxSelect'
 import { apiRequest } from '@/lib/api'
 import { toast } from 'sonner'
@@ -28,6 +28,12 @@ vi.mock('@/components/ui/combobox', () => ({
           </option>
         ))}
       </select>
+      <button type="button" data-testid="trigger-empty" onClick={() => onChange?.('')}>
+        trigger-empty
+      </button>
+      <button type="button" data-testid="trigger-unknown" onClick={() => onChange?.('999')}>
+        trigger-unknown
+      </button>
     </div>
   ),
 }))
@@ -215,27 +221,32 @@ describe('LocationComboboxSelect', () => {
         expect(screen.getByRole('option', { name: '主卧' })).toBeInTheDocument()
       })
 
+      const comboboxes = screen.getAllByTestId('combobox')
+      const areaBox = comboboxes[0]
+      fireEvent.click(within(areaBox).getByTestId('trigger-empty'))
+      fireEvent.click(within(areaBox).getByTestId('trigger-unknown'))
+
       const areaSelect = screen.getAllByRole('combobox')[0]
-      fireEvent.change(areaSelect, { target: { value: '' } })
-      fireEvent.change(areaSelect, { target: { value: '999' } })
       fireEvent.change(areaSelect, { target: { value: '1' } })
 
       await waitFor(() => {
         expect(screen.getByRole('option', { name: '主卧' })).toBeInTheDocument()
       })
 
+      const roomBox = screen.getAllByTestId('combobox')[1]
+      fireEvent.click(within(roomBox).getByTestId('trigger-empty'))
+      fireEvent.click(within(roomBox).getByTestId('trigger-unknown'))
+
       const roomSelect = screen.getAllByRole('combobox')[1]
-      fireEvent.change(roomSelect, { target: { value: '' } })
-      fireEvent.change(roomSelect, { target: { value: '999' } })
       fireEvent.change(roomSelect, { target: { value: '1' } })
 
       await waitFor(() => {
         expect(screen.getByRole('option', { name: '书桌' })).toBeInTheDocument()
       })
 
-      const spotSelect = screen.getAllByRole('combobox')[2]
-      fireEvent.change(spotSelect, { target: { value: '' } })
-      fireEvent.change(spotSelect, { target: { value: '999' } })
+      const spotBox = screen.getAllByTestId('combobox')[2]
+      fireEvent.click(within(spotBox).getByTestId('trigger-empty'))
+      fireEvent.click(within(spotBox).getByTestId('trigger-unknown'))
 
       expect(mockOnSelect).not.toHaveBeenCalledWith('spot', 999, expect.any(String))
     })
