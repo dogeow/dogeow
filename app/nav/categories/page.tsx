@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageContainer } from '@/components/layout'
+import { PageContainer, PageHeader } from '@/components/layout'
 import {
   Table,
   TableBody,
@@ -15,7 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Trash2, Check, X, ArrowLeft } from 'lucide-react'
+import { Trash2, Check, X } from 'lucide-react'
 import { NavCategory } from '@/app/nav/types'
 import { useRouter } from 'next/navigation'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
@@ -111,19 +111,12 @@ export default function CategoryManager() {
 
   return (
     <PageContainer>
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => router.push('/nav')}
-            className="mr-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-2xl font-bold tracking-tight">导航分类管理</h1>
-        </div>
-      </div>
+      <PageHeader
+        title="导航分类管理"
+        description="支持行内重命名、删除分类与快速新增。"
+        showBackButton
+        onBackClick={() => router.push('/nav')}
+      />
 
       <div className="py-2 pb-24">
         <Card>
