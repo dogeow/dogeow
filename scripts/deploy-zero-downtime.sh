@@ -3,16 +3,16 @@
 # 原理：在独立目录构建，完成后原子切换，避免 next build 覆盖正在服务的 .next
 #
 # 两种模式：
-# 1) 发布目录+符号链接：存在 current 时，在 releases/时间戳 构建，再 ln -sfn 切换，零停机可回滚。
-# 2) 临时目录+原子替换：无 current 时，在 .build-staging 构建，再原子替换 .next。
+# 1) 发布目录+符号链接：存在 current 时，在「releases/时间戳」目录构建，再 ln -sfn 切换，零停机可回滚。
+# 2) 临时目录+原子替换：无 current 时，在「.build-staging」目录构建，再原子替换 .next。
 #
-# 首次用模式 1 需在服务器初始化（一次）。先建临时目录，构建完成后再用时间戳重命名：
+# 首次用模式 1 需在服务器初始化一次。先建临时目录，构建完成后再用时间戳重命名：
 #   mkdir -p releases && s=releases/.staging.$$ && rsync -a --exclude=node_modules --exclude=.next --exclude=releases --exclude=current . "$s"/ && cd "$s" && npm ci && npx next build
 #   cd "releases" && r=$(date +%Y%m%d%H%M%S) && mv .staging.$$ "$r" && cd "$APP_ROOT" && ln -sfn "$(pwd)/releases/$r" current
 # PM2 使用 ecosystem.config.js，模式 1 下通过 PM2_CWD 指定 current 为 cwd。
 set -euo pipefail
 
-# 应用根目录，由调用方通过环境变量传入（如 workflow 里用 secrets.APP_ROOT），不写死在脚本中
+# 应用根目录，由调用方通过环境变量传入（如 workflow 里用 secrets.APP_ROOT）
 if [ -z "${APP_ROOT:-}" ]; then
   echo "错误：请设置环境变量 APP_ROOT（应用在服务器上的根目录），例: APP_ROOT=/path/to/app $0"
   exit 1
