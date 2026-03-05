@@ -8,6 +8,18 @@ export interface UsePaginationReturn {
   goPrev: () => void
 }
 
+const toSafeInteger = (value: number, fallback: number): number => {
+  if (!Number.isFinite(value)) {
+    return fallback
+  }
+
+  return Math.trunc(value)
+}
+
+const normalizePage = (page: number, minPage: number): number => {
+  return Math.max(minPage, toSafeInteger(page, minPage))
+}
+
 /**
  * Small reusable pagination state helper.
  *
@@ -17,23 +29,27 @@ export interface UsePaginationReturn {
  * remain with callers.
  */
 export function usePagination(initialPage = 1): UsePaginationReturn {
-  const [currentPage, setCurrentPage] = useState(initialPage)
+  const minPage = Math.max(1, toSafeInteger(initialPage, 1))
+  const [currentPage, setCurrentPage] = useState(minPage)
 
-  const setPage = useCallback((page: number) => {
-    setCurrentPage(page)
-  }, [])
+  const setPage = useCallback(
+    (page: number) => {
+      setCurrentPage(normalizePage(page, minPage))
+    },
+    [minPage]
+  )
 
   const reset = useCallback(() => {
-    setCurrentPage(initialPage)
-  }, [initialPage])
+    setCurrentPage(minPage)
+  }, [minPage])
 
   const goNext = useCallback(() => {
-    setCurrentPage(prev => prev + 1)
-  }, [])
+    setCurrentPage(prev => normalizePage(prev + 1, minPage))
+  }, [minPage])
 
   const goPrev = useCallback(() => {
-    setCurrentPage(prev => Math.max(initialPage, prev - 1))
-  }, [initialPage])
+    setCurrentPage(prev => Math.max(minPage, normalizePage(prev, minPage) - 1))
+  }, [minPage])
 
   return { currentPage, setPage, reset, goNext, goPrev }
 }
