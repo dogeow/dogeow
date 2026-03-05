@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense, useMemo, useRef } from 'react'
 import { Plus, Settings, Lock, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useNavStore } from '@/app/nav/stores/navStore'
 import { useThemeStore, getCurrentThemeColor } from '@/stores/themeStore'
@@ -11,12 +12,17 @@ import { useLoginTrigger } from '@/hooks/useLoginTrigger'
 import { useTranslation } from '@/hooks/useTranslation'
 import { NavCard } from './components/NavCard'
 import { NavCategory } from '@/app/nav/types'
-import { PageContainer } from '@/components/layout'
+import { PageContainer, PageHeader } from '@/components/layout'
+import { cn } from '@/lib/helpers'
 
 // 搜索组件
 function SearchBar({ onSearch }: { onSearch: (term: string) => void }) {
-  const { searchTerm, setSearchTerm } = useNavStore()
+  const { searchTerm } = useNavStore()
   const [localSearch, setLocalSearch] = useState(searchTerm)
+
+  useEffect(() => {
+    setLocalSearch(searchTerm)
+  }, [searchTerm])
 
   // 防抖搜索
   useEffect(() => {
@@ -35,7 +41,7 @@ function SearchBar({ onSearch }: { onSearch: (term: string) => void }) {
         placeholder="搜索导航..."
         value={localSearch}
         onChange={e => setLocalSearch(e.target.value)}
-        className="pl-9"
+        className="h-9 pl-9"
       />
     </div>
   )
@@ -53,12 +59,18 @@ function CategorySidebar({
   onSelect: (id: number | 'all') => void
   themeColor: { color: string }
 }) {
+  const getButtonClassName = (isActive: boolean) =>
+    cn(
+      'rounded-md px-2 py-1 text-left text-sm transition-colors',
+      isActive
+        ? 'font-semibold text-primary-foreground shadow-sm'
+        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+    )
+
   return (
-    <aside className="flex w-20 shrink-0 flex-col gap-1 px-2 py-2">
+    <aside className="bg-card/30 border-border/60 flex w-24 shrink-0 flex-col gap-1 rounded-lg border p-2">
       <button
-        className={`rounded px-2 py-1 text-left text-sm font-bold transition-colors ${
-          selectedCategory === 'all' ? '' : 'hover:bg-gray-100'
-        }`}
+        className={getButtonClassName(selectedCategory === 'all')}
         style={selectedCategory === 'all' ? { background: themeColor.color, color: '#fff' } : {}}
         onClick={() => onSelect('all')}
       >
@@ -67,13 +79,12 @@ function CategorySidebar({
       {categories.map(cat => (
         <button
           key={cat.id}
-          className={`rounded px-2 py-1 text-left text-sm transition-colors ${
-            selectedCategory === cat.id ? 'font-bold' : 'hover:bg-gray-100'
-          }`}
+          className={getButtonClassName(selectedCategory === cat.id)}
           style={selectedCategory === cat.id ? { background: themeColor.color, color: '#fff' } : {}}
           onClick={() => onSelect(cat.id)}
+          title={cat.name}
         >
-          {cat.name}
+          <span className="block truncate">{cat.name}</span>
         </button>
       ))}
     </aside>
@@ -184,51 +195,65 @@ function NavContent() {
 
   return (
     <PageContainer className="py-2">
-      <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">网址导航</h1>
-        <div className="flex items-center gap-2">
-          <div className="w-full sm:w-64">
-            <SearchBar onSearch={onSearch} />
+      <PageHeader
+        title="网址导航"
+        description="按分类快速浏览常用站点，支持搜索与登录后管理。"
+        className="mb-3"
+        actions={
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+            <div className="w-full sm:w-64">
+              <SearchBar onSearch={onSearch} />
+            </div>
+            <Button
+              onClick={handleAddNav}
+              size="icon"
+              variant="default"
+              className="relative h-9 w-9"
+              disabled={!isAuthenticated}
+              style={{
+                backgroundColor: themeColor.color,
+                color: '#fff',
+                opacity: !isAuthenticated ? 0.6 : 1,
+              }}
+              aria-label={t('nav.add_nav', '添加导航')}
+            >
+              <Plus className="h-4 w-4" />
+              {!isAuthenticated && <Lock className="h-3 w-3 text-white" />}
+            </Button>
+            <Button
+              onClick={handleManageCategories}
+              size="icon"
+              variant="outline"
+              className="relative h-9 w-9"
+              disabled={!isAuthenticated}
+              style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
+              aria-label={t('nav.manage_categories', '管理分类')}
+            >
+              <Settings className="h-4 w-4" />
+              {!isAuthenticated && <Lock className="text-muted-foreground ml-1 h-3 w-3" />}
+            </Button>
           </div>
-          <Button
-            onClick={handleAddNav}
-            size="icon"
-            variant="default"
-            className="relative h-9 w-9"
-            disabled={!isAuthenticated}
-            style={{
-              backgroundColor: themeColor.color,
-              color: '#fff',
-              opacity: !isAuthenticated ? 0.6 : 1,
-            }}
-            aria-label={t('nav.add_nav', '添加导航')}
-          >
-            <Plus className="h-4 w-4" />
-            {!isAuthenticated && <Lock className="h-3 w-3 text-white" />}
-          </Button>
-          <Button
-            onClick={handleManageCategories}
-            size="icon"
-            variant="outline"
-            className="relative h-9 w-9"
-            disabled={!isAuthenticated}
-            style={{ opacity: !isAuthenticated ? 0.6 : 1 }}
-            aria-label={t('nav.manage_categories', '管理分类')}
-          >
-            <Settings className="h-4 w-4" />
-            {!isAuthenticated && <Lock className="text-muted-foreground ml-1 h-3 w-3" />}
-          </Button>
-        </div>
-      </div>
-      <div className="flex">
+        }
+      />
+      <div className="flex gap-2">
         <CategorySidebar
           categories={categories}
           selectedCategory={selectedCategory}
           onSelect={handleCategoryClick}
           themeColor={themeColor}
         />
-        <div className="border-border flex flex-1 flex-col gap-2 border-l border-dashed px-2">
-          {loading || storeLoading ? null : displayItems.length > 0 ? (
+        <div className="border-border/60 flex flex-1 flex-col gap-2 border-l border-dashed px-2">
+          {loading || storeLoading ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className="bg-card space-y-3 rounded-xl border p-4">
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-4/5" />
+                </div>
+              ))}
+            </div>
+          ) : displayItems.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
               {displayItems.map(item => (
                 <NavCard key={item.id} item={item} highlight={searchTerm} />

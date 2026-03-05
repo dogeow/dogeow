@@ -2,12 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { ArrowLeft } from 'lucide-react'
 import { toast } from 'sonner'
 import { useNavStore } from '@/app/nav/stores/navStore'
 import { Card, CardContent } from '@/components/ui/card'
-import { PageContainer } from '@/components/layout'
+import { PageContainer, PageHeader } from '@/components/layout'
 import { NavForm } from '../../components/NavForm'
 import { NavItem } from '@/app/nav/types'
 
@@ -68,19 +66,12 @@ export default function EditNavPage() {
 
   return (
     <PageContainer className="py-2">
-      <div className="mb-6 flex items-center justify-between">
-        <div className="flex items-center">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => router.push('/nav')}
-            className="mr-4"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-2xl font-bold tracking-tight">编辑导航</h1>
-        </div>
-      </div>
+      <PageHeader
+        title="编辑导航"
+        description="更新站点信息后保存即可生效。"
+        showBackButton
+        onBackClick={() => router.push('/nav')}
+      />
 
       <Card className="mx-auto max-w-2xl">
         <CardContent className="pt-6">{item && <NavForm item={item} />}</CardContent>
