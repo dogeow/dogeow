@@ -1,10 +1,8 @@
 /**
- * API工具函数
+ * @deprecated 此文件未被项目使用，请使用 `@/lib/api` 替代。
+ * 保留仅供参考，后续版本将移除。
  */
 
-/**
- * 处理API响应
- */
 export const handleApiResponse = async <T>(
   response: Response
 ): Promise<{ success: boolean; data?: T; error?: string }> => {
@@ -22,9 +20,6 @@ export const handleApiResponse = async <T>(
   }
 }
 
-/**
- * 统一的API请求函数
- */
 export const apiRequest = async <T>(
   endpoint: string,
   options: RequestInit = {}

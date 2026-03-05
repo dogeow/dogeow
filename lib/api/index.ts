@@ -161,7 +161,7 @@ const createTimeoutController = (isFormData: boolean) => {
   const controller = new AbortController()
   const timeoutDuration = isFormData ? 60000 : 30000
 
-  const timeoutId = window.setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     controller.abort()
   }, timeoutDuration)
 
@@ -444,13 +444,14 @@ export const markAllNotificationsRead = () =>
 
 // 创建变更函数
 export const createMutation = <T>(endpoint: string, method: string = 'POST') => {
+  const baseSegment = endpoint.split('/').filter(Boolean)[0]
+
   return async (data: unknown): Promise<T> => {
     const result = await apiRequest<T>(endpoint, method, data)
 
-    // 自动重新验证相关资源
     await mutate(key => {
       if (typeof key !== 'string') return false
-      return key === endpoint || key.startsWith(endpoint.split('/')[1])
+      return key === endpoint || (baseSegment ? key.startsWith(`/${baseSegment}`) : false)
     })
 
     return result
