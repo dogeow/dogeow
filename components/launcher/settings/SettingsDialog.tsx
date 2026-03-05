@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import type { CustomTheme } from '@/app/types'
 import {
   Palette,
@@ -10,19 +10,22 @@ import {
   LayoutGrid,
   BookOpen,
   Columns,
+  Maximize2,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
 import { useProjectCoverStore } from '@/stores/projectCoverStore'
 import { useLayoutStore } from '@/stores/layoutStore'
-import { hexToHSL } from '@/lib/helpers'
+import { hexToHSL, fullscreen, exitFullscreen, isFullscreen } from '@/lib/helpers'
 import { BackgroundView } from './BackgroundView'
 import { ThemeView } from './ThemeView'
 import { LanguageView } from './LanguageView'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Switch } from '@/components/ui/switch'
+import { toast } from 'sonner'
 
-export type SettingsSection = 'color' | 'background' | 'theme' | 'language' | 'apps'
+export type SettingsSection = 'color' | 'background' | 'theme' | 'language' | 'apps' | 'fullscreen'
 
 interface SettingsDialogProps {
   open: boolean
@@ -44,6 +47,23 @@ export function SettingsDialog({
   setCustomBackgrounds,
 }: SettingsDialogProps) {
   const [activeSection, setActiveSection] = useState<SettingsSection>('color')
+  const [fullscreenOn, setFullscreenOn] = useState(false)
+
+  // 同步实际全屏状态（用户按 ESC 或浏览器行为）
+  useEffect(() => {
+    const sync = () => setFullscreenOn(isFullscreen())
+    sync()
+    document.addEventListener('fullscreenchange', sync)
+    document.addEventListener('webkitfullscreenchange', sync)
+    document.addEventListener('mozfullscreenchange', sync)
+    document.addEventListener('MSFullscreenChange', sync)
+    return () => {
+      document.removeEventListener('fullscreenchange', sync)
+      document.removeEventListener('webkitfullscreenchange', sync)
+      document.removeEventListener('mozfullscreenchange', sync)
+      document.removeEventListener('MSFullscreenChange', sync)
+    }
+  }, [])
 
   // Theme store
   const { theme, setTheme } = useTheme()
@@ -116,12 +136,25 @@ export function SettingsDialog({
     [removeCustomTheme]
   )
 
+  const handleFullscreenChange = useCallback(() => {
+    try {
+      if (fullscreenOn) {
+        exitFullscreen()
+      } else {
+        fullscreen()
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '全屏操作失败')
+    }
+  }, [fullscreenOn])
+
   const settingsItems: { id: SettingsSection; icon: React.ReactNode; label: string }[] = [
     { id: 'color', icon: <Sun className="h-4 w-4" />, label: '颜色' },
     { id: 'language', icon: <Languages className="h-4 w-4" />, label: '语言' },
     { id: 'theme', icon: <Palette className="h-4 w-4" />, label: '主题' },
     { id: 'background', icon: <ImageIcon className="h-4 w-4" />, label: '背景' },
     { id: 'apps', icon: <LayoutGrid className="h-4 w-4" />, label: 'APP列表' },
+    { id: 'fullscreen', icon: <Maximize2 className="h-4 w-4" />, label: '全屏' },
   ]
 
   const renderContent = () => {
@@ -170,6 +203,8 @@ export function SettingsDialog({
             setShowProjectCovers={setShowProjectCovers}
           />
         )
+      case 'fullscreen':
+        return <FullscreenView fullscreenOn={fullscreenOn} onToggle={handleFullscreenChange} />
       default:
         return null
     }
@@ -187,6 +222,8 @@ export function SettingsDialog({
         return '语言'
       case 'apps':
         return 'APP列表'
+      case 'fullscreen':
+        return '全屏'
       default:
         return '设置'
     }
@@ -294,6 +331,23 @@ function ColorModeView({ followSystem, theme, setFollowSystem, setTheme }: Color
           </button>
         </div>
       </div>
+    </div>
+  )
+}
+
+interface FullscreenViewProps {
+  fullscreenOn: boolean
+  onToggle: () => void
+}
+
+function FullscreenView({ fullscreenOn, onToggle }: FullscreenViewProps) {
+  return (
+    <div className="flex flex-col space-y-3">
+      <div className="flex w-full items-center justify-between gap-2 rounded-lg p-2">
+        <span className="text-sm font-medium">全屏显示</span>
+        <Switch checked={fullscreenOn} onCheckedChange={onToggle} aria-label="切换全屏" />
+      </div>
+      <p className="text-muted-foreground text-xs">开启后页面将全屏显示；也可按 ESC 退出全屏。</p>
     </div>
   )
 }

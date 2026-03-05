@@ -17,3 +17,7 @@ export { getLanguageFlag, getSupportedLanguageCodes, hasLanguageFlag } from './l
 
 // 导出字符长度工具函数
 export { calculateCharLength, exceedsMaxLength, belowMinLength } from './charLength'
+
+// 导出全屏工具函数
+export { fullscreen, exitFullscreen, isFullscreen } from './fullscreen'
+export type { EnhancedElement, EnhancedDocument } from './fullscreen'
