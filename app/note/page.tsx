@@ -3,7 +3,7 @@
 import './note-styles.css'
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { apiRequest } from '@/lib/api'
-import { List, Network, Plus, Link as LinkIcon, Search, X } from 'lucide-react'
+import { List, Network, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { PageContainer } from '@/components/layout'
 import NoteSpeedDial from './components/NoteSpeedDial'
@@ -18,6 +18,53 @@ import NoteCard from './components/NoteCard'
 import NotePageGraphToolbar from './components/NotePageGraphToolbar'
 
 type ViewMode = 'list' | 'graph'
+
+function ViewModeSwitch({
+  viewMode,
+  onChangeMode,
+  listCount,
+  graphCount,
+}: {
+  viewMode: ViewMode
+  onChangeMode: (mode: ViewMode) => void
+  listCount: number
+  graphCount: number
+}) {
+  return (
+    <div
+      className="border-border bg-card flex items-center gap-2 rounded-lg border p-1"
+      role="tablist"
+      aria-label="视图切换"
+    >
+      <button
+        role="tab"
+        aria-selected={viewMode === 'list'}
+        onClick={() => onChangeMode('list')}
+        className={`flex items-center gap-2 rounded px-3 py-1.5 text-sm whitespace-nowrap transition-colors ${
+          viewMode === 'list'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        <List className="h-4 w-4 flex-shrink-0" />
+        <span>列表({listCount})</span>
+      </button>
+      <button
+        role="tab"
+        aria-selected={viewMode === 'graph'}
+        onClick={() => onChangeMode('graph')}
+        className={`flex items-center gap-2 rounded px-3 py-1.5 text-sm whitespace-nowrap transition-colors ${
+          viewMode === 'graph'
+            ? 'bg-primary text-primary-foreground'
+            : 'text-muted-foreground hover:text-foreground'
+        }`}
+      >
+        <Network className="h-4 w-4 flex-shrink-0" />
+        <span>图谱({graphCount})</span>
+      </button>
+    </div>
+  )
+}
 
 export default function NotePage() {
   const [notes, setNotes] = useState<Note[]>([])
@@ -95,22 +142,12 @@ export default function NotePage() {
     return (
       <PageContainer>
         <header className="mb-6 flex min-w-0 items-center gap-4 overflow-hidden">
-          <div className="border-border bg-card flex items-center gap-2 rounded-lg border p-1">
-            <button
-              onClick={() => setViewMode('list')}
-              className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded px-3 py-1.5 text-sm whitespace-nowrap transition-colors"
-            >
-              <List className="h-4 w-4 flex-shrink-0" />
-              <span>列表({notesWithContentCount})</span>
-            </button>
-            <button
-              onClick={() => setViewMode('graph')}
-              className="bg-primary text-primary-foreground flex items-center gap-2 rounded px-3 py-1.5 text-sm whitespace-nowrap transition-colors"
-            >
-              <Network className="h-4 w-4 flex-shrink-0" />
-              <span>图谱({graphNodeCount})</span>
-            </button>
-          </div>
+          <ViewModeSwitch
+            viewMode={viewMode}
+            onChangeMode={setViewMode}
+            listCount={notesWithContentCount}
+            graphCount={graphNodeCount}
+          />
 
           <div className="flex min-w-0 flex-1 items-center gap-2">
             {!isSearchExpanded && (
@@ -133,6 +170,7 @@ export default function NotePage() {
                     value={graphQuery}
                     onChange={e => setGraphQuery(e.target.value)}
                     placeholder="搜索"
+                    aria-label="搜索图谱节点"
                     className="border-border bg-card text-foreground focus:ring-primary max-w-full min-w-0 flex-1 rounded-lg border px-3 py-2 transition-all focus:ring-2 focus:outline-none"
                     autoFocus
                   />
@@ -144,6 +182,7 @@ export default function NotePage() {
                       }}
                       className="border-border bg-card text-foreground hover:bg-muted flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border transition-colors"
                       title="清空"
+                      aria-label="清空搜索内容"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -155,6 +194,7 @@ export default function NotePage() {
                     }}
                     className="border-border bg-card text-foreground hover:bg-muted flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border transition-colors"
                     title="关闭搜索"
+                    aria-label="关闭搜索"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -167,6 +207,7 @@ export default function NotePage() {
                   }}
                   className="border-border bg-card text-foreground hover:bg-muted flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg border transition-colors"
                   title="搜索"
+                  aria-label="搜索图谱"
                 >
                   <Search className="h-4 w-4" />
                 </button>
@@ -190,22 +231,12 @@ export default function NotePage() {
   return (
     <PageContainer>
       <header className="mb-6 flex min-w-0 items-center gap-4 overflow-hidden">
-        <div className="border-border bg-card flex items-center gap-2 rounded-lg border p-1">
-          <button
-            onClick={() => setViewMode('list')}
-            className="bg-primary text-primary-foreground flex items-center gap-2 rounded px-3 py-1.5 text-sm whitespace-nowrap transition-colors"
-          >
-            <List className="h-4 w-4 flex-shrink-0" />
-            <span>列表({notesWithContentCount})</span>
-          </button>
-          <button
-            onClick={() => setViewMode('graph')}
-            className="text-muted-foreground hover:text-foreground flex items-center gap-2 rounded px-3 py-1.5 text-sm whitespace-nowrap transition-colors"
-          >
-            <Network className="h-4 w-4 flex-shrink-0" />
-            <span>图谱({graphNodeCount})</span>
-          </button>
-        </div>
+        <ViewModeSwitch
+          viewMode={viewMode}
+          onChangeMode={setViewMode}
+          listCount={notesWithContentCount}
+          graphCount={graphNodeCount}
+        />
       </header>
 
       <main>
