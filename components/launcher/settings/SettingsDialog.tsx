@@ -328,34 +328,29 @@ function ColorModeView({
         <>
           <div className="border-t pt-3">
             <p className="text-muted-foreground mb-2 text-xs font-medium">休息时段设置</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <label htmlFor="dialog-rest-start" className="text-xs">
-                  开始
-                </label>
-                <BottomHourPicker
-                  id="dialog-rest-start"
-                  value={restPeriod.startHour}
-                  onChange={h => onRestPeriodChange(h, restPeriod.endHour)}
-                  label="开始"
-                  title="开始时间"
-                  className="h-8 min-w-[4.5rem] px-2"
-                />
-              </div>
-              <span className="text-muted-foreground">→</span>
-              <div className="flex items-center gap-2">
-                <label htmlFor="dialog-rest-end" className="text-xs">
-                  结束
-                </label>
-                <BottomHourPicker
-                  id="dialog-rest-end"
-                  value={restPeriod.endHour}
-                  onChange={h => onRestPeriodChange(restPeriod.startHour, h)}
-                  label="结束"
-                  title="结束时间"
-                  className="h-8 min-w-[4.5rem] px-2"
-                />
-              </div>
+            <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2">
+              <label htmlFor="dialog-rest-start" className="text-xs">
+                开始
+              </label>
+              <BottomHourPicker
+                id="dialog-rest-start"
+                value={restPeriod.startHour}
+                onChange={h => onRestPeriodChange(h, restPeriod.endHour)}
+                label="开始"
+                title="开始时间"
+                className="h-8 min-w-[4.5rem] px-2"
+              />
+              <label htmlFor="dialog-rest-end" className="text-xs">
+                结束
+              </label>
+              <BottomHourPicker
+                id="dialog-rest-end"
+                value={restPeriod.endHour}
+                onChange={h => onRestPeriodChange(restPeriod.startHour, h)}
+                label="结束"
+                title="结束时间"
+                className="h-8 min-w-[4.5rem] px-2"
+              />
             </div>
           </div>
         </>

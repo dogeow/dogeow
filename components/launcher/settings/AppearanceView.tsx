@@ -84,32 +84,27 @@ export function AppearanceView({
                 '该时段内使用深色，其余时间浅色。跨天请将开始时间设为大于结束时间。'
               )}
             </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="rest-start" className="text-xs whitespace-nowrap">
-                  {t('settings.rest_start', '开始')}
-                </Label>
-                <BottomHourPicker
-                  id="rest-start"
-                  value={restPeriod.startHour}
-                  onChange={h => onRestPeriodChange(h, restPeriod.endHour)}
-                  label={t('settings.rest_start', '开始')}
-                  title={t('settings.rest_start', '开始')}
-                />
-              </div>
-              <span className="text-muted-foreground text-sm">→</span>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="rest-end" className="text-xs whitespace-nowrap">
-                  {t('settings.rest_end', '结束')}
-                </Label>
-                <BottomHourPicker
-                  id="rest-end"
-                  value={restPeriod.endHour}
-                  onChange={h => onRestPeriodChange(restPeriod.startHour, h)}
-                  label={t('settings.rest_end', '结束')}
-                  title={t('settings.rest_end', '结束')}
-                />
-              </div>
+            <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2">
+              <Label htmlFor="rest-start" className="text-xs">
+                {t('settings.rest_start', '开始')}
+              </Label>
+              <BottomHourPicker
+                id="rest-start"
+                value={restPeriod.startHour}
+                onChange={h => onRestPeriodChange(h, restPeriod.endHour)}
+                label={t('settings.rest_start', '开始')}
+                title={t('settings.rest_start', '开始')}
+              />
+              <Label htmlFor="rest-end" className="text-xs">
+                {t('settings.rest_end', '结束')}
+              </Label>
+              <BottomHourPicker
+                id="rest-end"
+                value={restPeriod.endHour}
+                onChange={h => onRestPeriodChange(restPeriod.startHour, h)}
+                label={t('settings.rest_end', '结束')}
+                title={t('settings.rest_end', '结束')}
+              />
             </div>
           </div>
         </>
