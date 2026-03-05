@@ -32,13 +32,13 @@ export const SearchInput = memo<SearchInputProps>(
         {searchTerm && (
           <button
             type="button"
-            className="absolute top-1/2 right-2 -translate-y-1/2 transform rounded-full border border-transparent p-1 hover:border-gray-300 hover:bg-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-700"
+            className="hover:border-border hover:bg-muted absolute top-1/2 right-2 -translate-y-1/2 transform rounded-full border border-transparent p-1"
             data-clear-button="true"
             aria-label="Clear search"
             title="清除搜索内容"
             onClick={onClear}
           >
-            <X className="h-3 w-3 text-gray-500" />
+            <X className="text-muted-foreground h-3 w-3" />
           </button>
         )}
       </form>

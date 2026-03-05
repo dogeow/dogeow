@@ -18,9 +18,13 @@ const sizeMap = {
 export const LoadingState = memo(
   ({ message = '加载中...', size = 'md', className, children }: LoadingStateProps) => {
     return (
-      <div className={cn('flex items-center justify-center space-x-2', className)}>
-        <Loader2 className={cn('animate-spin text-gray-400', sizeMap[size])} />
-        {message && <span className="text-sm text-gray-600">{message}</span>}
+      <div
+        className={cn('flex items-center justify-center space-x-2', className)}
+        role="status"
+        aria-live="polite"
+      >
+        <Loader2 className={cn('text-muted-foreground animate-spin', sizeMap[size])} />
+        {message && <span className="text-muted-foreground text-sm">{message}</span>}
         {children}
       </div>
     )

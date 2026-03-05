@@ -8,9 +8,9 @@ import './styles/prism.css'
 export default function NoteLayout({ children }: { children: React.ReactNode }) {
   return (
     <ProtectedRoute>
-      <div className="flex min-h-[calc(100vh-50px)] flex-col">
+      <div className="flex min-h-[calc(100vh-var(--header-height,50px))] flex-col">
         <NoteNavigation />
-        <div className="flex-1">{children}</div>
+        <main className="flex-1">{children}</main>
       </div>
     </ProtectedRoute>
   )

@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { useTheme } from 'next-themes'
 import BuiltBy from './BuiltBy'
-import PowerBy from './PoweredBy'
+import PoweredBy from './PoweredBy'
 import ICP from './ICP'
 import LegalLinks from './LegalLinks'
 import { UPYUN_CDN_URL, FOOTER_BG_IMAGES_LIGHT } from '@/lib/constants'
@@ -39,7 +39,7 @@ export default function Footer() {
       >
         <LegalLinks />
         <BuiltBy />
-        <PowerBy />
+        <PoweredBy />
         <ICP />
       </div>
     </footer>

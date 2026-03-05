@@ -55,14 +55,13 @@ export const OptimizedImage = memo(
       <div className={cn('relative overflow-hidden', containerClassName)}>
         {/* 加载指示器 */}
         {showLoadingSpinner && isLoading && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+          <div className="bg-muted absolute inset-0 z-10 flex items-center justify-center">
+            <div className="border-muted-foreground/30 border-t-primary h-6 w-6 animate-spin rounded-full border-2" />
           </div>
         )}
 
-        {/* 错误状态 */}
         {hasError && !fallbackSrc && (
-          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 text-gray-500 dark:bg-gray-800">
+          <div className="bg-muted text-muted-foreground absolute inset-0 flex items-center justify-center">
             <span className="text-sm">图片加载失败</span>
           </div>
         )}

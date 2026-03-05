@@ -44,21 +44,10 @@ export function TagSelector({
   // 处理标签点击
   const toggleTag = React.useCallback(
     (tagId: string) => {
-      console.log('标签点击: ', tagId)
+      const newSelected = selectedTags.includes(tagId)
+        ? selectedTags.filter(id => id !== tagId)
+        : [...selectedTags, tagId]
 
-      let newSelected: string[]
-
-      if (selectedTags.includes(tagId)) {
-        // 移除标签
-        newSelected = selectedTags.filter(id => id !== tagId)
-      } else {
-        // 添加标签
-        newSelected = [...selectedTags, tagId]
-      }
-
-      console.log('更新后的标签: ', newSelected)
-
-      // 直接通知父组件
       onChange(newSelected)
     },
     [selectedTags, onChange]
@@ -111,15 +100,15 @@ export function TagSelector({
       </Button>
 
       {open && (
-        <div className="bg-popover text-popover-foreground absolute left-0 z-[60] mt-1 w-full overflow-hidden rounded-md border shadow-lg dark:bg-[#111] dark:text-white">
+        <div className="bg-popover text-popover-foreground absolute left-0 z-[60] mt-1 w-full overflow-hidden rounded-md border shadow-lg">
           <div className="flex flex-col">
             {/* 搜索框 */}
-            <div className="border-b p-2 dark:border-gray-700">
+            <div className="border-border border-b p-2">
               <input
                 placeholder="搜索标签..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="border-input bg-background focus:ring-ring h-9 w-full rounded-md border px-2 text-sm focus:ring-1 focus:outline-none dark:bg-[#222]/70"
+                className="border-input bg-background focus:ring-ring h-9 w-full rounded-md border px-2 text-sm focus:ring-1 focus:outline-none"
               />
             </div>
 
@@ -136,7 +125,7 @@ export function TagSelector({
                       <div
                         key={tagId}
                         onClick={() => toggleTag(tagId)}
-                        className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 dark:hover:bg-gray-700"
+                        className="hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5"
                       >
                         <div
                           className={cn(
@@ -206,8 +195,8 @@ export function TagSelector({
                 onClick={() => toggleTag(tagId)}
               >
                 <span className="mr-1">{tag.name}</span>
-                <span className="ml-1 flex items-center justify-center bg-transparent p-1 dark:bg-transparent">
-                  <X className="dark:text-foreground h-3 w-3 text-gray-500 hover:text-gray-700 dark:hover:text-white" />
+                <span className="ml-1 flex items-center justify-center bg-transparent p-1">
+                  <X className="text-muted-foreground hover:text-foreground h-3 w-3" />
                 </span>
               </Badge>
             ) : null
