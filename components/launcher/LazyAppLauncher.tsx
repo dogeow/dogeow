@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import type { AppLauncherProps } from './index'
 
@@ -9,39 +10,44 @@ const AppLauncher = dynamic(() => import('./index').then(mod => mod.AppLauncher)
   loading: () => <AppLauncherSkeleton />,
 })
 
-const IDLE_TIMEOUT_MS = 1500
-const FALLBACK_DELAY_MS = 400
-
-type IdleCallbackWindow = Window &
-  typeof globalThis & {
-    requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
-    cancelIdleCallback?: (handle: number) => void
-  }
-
-function scheduleLauncherBootstrap(callback: () => void): () => void {
-  if (typeof window === 'undefined') return () => {}
-
-  const runtimeWindow = window as IdleCallbackWindow
-
-  if (
-    typeof runtimeWindow.requestIdleCallback === 'function' &&
-    typeof runtimeWindow.cancelIdleCallback === 'function'
-  ) {
-    const idleId = runtimeWindow.requestIdleCallback(() => callback(), { timeout: IDLE_TIMEOUT_MS })
-    return () => runtimeWindow.cancelIdleCallback?.(idleId)
-  }
-
-  const timeoutId = setTimeout(callback, FALLBACK_DELAY_MS)
-  return () => clearTimeout(timeoutId)
-}
-
 export function LazyAppLauncher(props: AppLauncherProps) {
+  const pathname = usePathname()
   const [isReady, setIsReady] = useState(false)
 
   useEffect(() => {
-    const cancel = scheduleLauncherBootstrap(() => setIsReady(true))
-    return cancel
-  }, [])
+    if (isReady || typeof window === 'undefined') return
+
+    const activate = () => setIsReady(true)
+
+    if (pathname !== '/') {
+      const timeoutId = window.setTimeout(activate, 400)
+      return () => window.clearTimeout(timeoutId)
+    }
+
+    const interactionEvents: Array<keyof WindowEventMap> = [
+      'pointermove',
+      'keydown',
+      'scroll',
+      'touchstart',
+    ]
+
+    const handleFirstInteraction = () => {
+      activate()
+      interactionEvents.forEach(eventName => {
+        window.removeEventListener(eventName, handleFirstInteraction)
+      })
+    }
+
+    interactionEvents.forEach(eventName => {
+      window.addEventListener(eventName, handleFirstInteraction, { passive: true, once: true })
+    })
+
+    return () => {
+      interactionEvents.forEach(eventName => {
+        window.removeEventListener(eventName, handleFirstInteraction)
+      })
+    }
+  }, [isReady, pathname])
 
   if (!isReady) {
     return <AppLauncherSkeleton />

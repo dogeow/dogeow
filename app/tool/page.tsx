@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { Card, CardContent } from '@/components/ui/card'
 import { ChevronDown } from 'lucide-react'
 import { tools } from './tools'
@@ -167,92 +168,94 @@ export default function ToolPage() {
   const ActiveComponent = activeTool?.component
 
   return (
-    <PageContainer>
-      <div className="space-y-6">
-        {/* 工具内容区 */}
-        <div>
-          {activeTool && ActiveComponent ? (
-            <div className="space-y-6">
-              {/* 工具标题区域 */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/40 flex items-center rounded-md border p-1.5 text-xs transition-colors"
-                    onClick={() => setIsExpanded(prev => !prev)}
-                    aria-expanded={isExpanded}
-                    aria-label={isExpanded ? '收起工具选择' : '展开工具选择'}
-                  >
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                  <h1 className="text-2xl font-bold tracking-tight">{activeTool.title}</h1>
-                </div>
-                <p className="text-muted-foreground">{activeTool.description}</p>
-                {isExpanded && (
-                  <Card>
-                    <CardContent className="p-3">
-                      <div className="space-y-3">
-                        {categories.length > 0 ? (
-                          categories.map(category => {
-                            const toolsInCategory = groupedTools[category] ?? []
-                            return (
-                              <div key={category} className="flex flex-wrap items-center gap-2">
-                                <button
-                                  type="button"
-                                  className={`rounded-sm px-2 py-0.5 text-[11px] font-semibold transition-colors ${
-                                    resolvedCategory === category
-                                      ? 'bg-foreground/15 text-foreground'
-                                      : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
-                                  }`}
-                                  onClick={() => setSelectedCategory(category)}
-                                >
-                                  {category}
-                                </button>
-                                {toolsInCategory.map(tool => (
+    <ProtectedRoute>
+      <PageContainer>
+        <div className="space-y-6">
+          {/* 工具内容区 */}
+          <div>
+            {activeTool && ActiveComponent ? (
+              <div className="space-y-6">
+                {/* 工具标题区域 */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/40 flex items-center rounded-md border p-1.5 text-xs transition-colors"
+                      onClick={() => setIsExpanded(prev => !prev)}
+                      aria-expanded={isExpanded}
+                      aria-label={isExpanded ? '收起工具选择' : '展开工具选择'}
+                    >
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    <h1 className="text-2xl font-bold tracking-tight">{activeTool.title}</h1>
+                  </div>
+                  <p className="text-muted-foreground">{activeTool.description}</p>
+                  {isExpanded && (
+                    <Card>
+                      <CardContent className="p-3">
+                        <div className="space-y-3">
+                          {categories.length > 0 ? (
+                            categories.map(category => {
+                              const toolsInCategory = groupedTools[category] ?? []
+                              return (
+                                <div key={category} className="flex flex-wrap items-center gap-2">
                                   <button
-                                    key={tool.id}
                                     type="button"
-                                    className={`rounded-full border px-3 py-1 text-xs transition-colors ${
-                                      activeTab === tool.id
-                                        ? 'border-foreground/40 bg-muted text-foreground'
-                                        : 'border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                    className={`rounded-sm px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+                                      resolvedCategory === category
+                                        ? 'bg-foreground/15 text-foreground'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground'
                                     }`}
-                                    onClick={() => {
-                                      handleToolSelect(tool.id)
-                                      setIsExpanded(false)
-                                    }}
+                                    onClick={() => setSelectedCategory(category)}
                                   >
-                                    {tool.title}
+                                    {category}
                                   </button>
-                                ))}
-                              </div>
-                            )
-                          })
-                        ) : (
-                          <p className="text-muted-foreground py-2 text-center text-sm">
-                            未找到匹配的工具
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                                  {toolsInCategory.map(tool => (
+                                    <button
+                                      key={tool.id}
+                                      type="button"
+                                      className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                                        activeTab === tool.id
+                                          ? 'border-foreground/40 bg-muted text-foreground'
+                                          : 'border-border/60 text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                                      }`}
+                                      onClick={() => {
+                                        handleToolSelect(tool.id)
+                                        setIsExpanded(false)
+                                      }}
+                                    >
+                                      {tool.title}
+                                    </button>
+                                  ))}
+                                </div>
+                              )
+                            })
+                          ) : (
+                            <p className="text-muted-foreground py-2 text-center text-sm">
+                              未找到匹配的工具
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
 
-              {/* 工具内容区域 */}
-              <div className="min-h-[600px]">
-                <ActiveComponent />
+                {/* 工具内容区域 */}
+                <div className="min-h-[600px]">
+                  <ActiveComponent />
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="flex min-h-[400px] items-center justify-center">
-              <p className="text-muted-foreground text-lg">请选择一个工具开始使用</p>
-            </div>
-          )}
+            ) : (
+              <div className="flex min-h-[400px] items-center justify-center">
+                <p className="text-muted-foreground text-lg">请选择一个工具开始使用</p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </PageContainer>
+      </PageContainer>
+    </ProtectedRoute>
   )
 }
