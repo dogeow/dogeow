@@ -25,10 +25,16 @@ interface ThemeState {
   /** 休息时段配置，仅 themeMode===rest 时生效 */
   restPeriod: RestPeriod
   currentUITheme: string
+  /** 是否启用自定义光标（需在 public/cursor 放置 pointer.cur / link.cur / text.cur） */
+  customCursorEnabled: boolean
+  /** 明亮/黑暗主题切换时背景色是否渐变过渡（1s） */
+  themeTransitionEnabled: boolean
   setCurrentUITheme: (themeId: string) => void
   setCurrentTheme: (theme: string) => void
   setThemeMode: (mode: ThemeMode) => void
   setRestPeriod: (startHour: number, endHour: number) => void
+  setCustomCursorEnabled: (enabled: boolean) => void
+  setThemeTransitionEnabled: (enabled: boolean) => void
   addCustomTheme: (theme: CustomTheme) => void
   removeCustomTheme: (id: string) => void
   setFollowSystem: (follow: boolean, currentMode?: string) => void
@@ -58,7 +64,11 @@ export const useThemeStore = create<ThemeState>()(
           },
         }),
       currentUITheme: 'default',
+      customCursorEnabled: false,
+      themeTransitionEnabled: false,
       setCurrentUITheme: themeId => set({ currentUITheme: themeId }),
+      setCustomCursorEnabled: enabled => set({ customCursorEnabled: enabled }),
+      setThemeTransitionEnabled: enabled => set({ themeTransitionEnabled: enabled }),
       addCustomTheme: theme =>
         set(state => ({
           customThemes: [...state.customThemes, theme],
@@ -87,7 +97,7 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'theme-storage',
-      version: 3,
+      version: 5,
       migrate: (persisted, version) => {
         if (persisted && typeof persisted === 'object') {
           const p = persisted as Record<string, unknown>
@@ -104,6 +114,12 @@ export const useThemeStore = create<ThemeState>()(
           }
           if (version < 3 || p.restPeriod == null) {
             out.restPeriod = DEFAULT_REST_PERIOD
+          }
+          if (version < 4 || p.customCursorEnabled == null) {
+            out.customCursorEnabled = false
+          }
+          if (version < 5 || p.themeTransitionEnabled == null) {
+            out.themeTransitionEnabled = false
           }
           return out as unknown as ThemeState
         }

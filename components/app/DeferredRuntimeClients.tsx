@@ -39,6 +39,10 @@ const NotificationRealtimeSubscriber = dynamic(
     ssr: false,
   }
 )
+const CustomCursorSync = dynamic(
+  () => import('@/components/app/CustomCursorSync').then(mod => mod.CustomCursorSync),
+  { ssr: false }
+)
 
 const IDLE_TIMEOUT_MS = 1500
 const FALLBACK_DELAY_MS = 400
@@ -89,6 +93,7 @@ export function DeferredRuntimeClients() {
       <PushSubscriptionRegister />
       <UnreadNotificationFetcher />
       <NotificationRealtimeSubscriber />
+      <CustomCursorSync />
     </>
   )
 }

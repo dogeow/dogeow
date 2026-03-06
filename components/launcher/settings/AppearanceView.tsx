@@ -9,6 +9,7 @@ import type { ThemeMode } from '@/stores/themeStore'
 import type { RestPeriod } from '@/stores/themeStore'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { BottomHourPicker } from '@/components/ui/bottom-hour-picker'
 
 interface AppearanceViewProps {
@@ -17,6 +18,10 @@ interface AppearanceViewProps {
   onThemeModeChange: (mode: ThemeMode) => void
   restPeriod: RestPeriod
   onRestPeriodChange: (startHour: number, endHour: number) => void
+  customCursorEnabled: boolean
+  onCustomCursorChange: (enabled: boolean) => void
+  themeTransitionEnabled: boolean
+  onThemeTransitionChange: (enabled: boolean) => void
 }
 
 export function AppearanceView({
@@ -25,6 +30,10 @@ export function AppearanceView({
   onThemeModeChange,
   restPeriod,
   onRestPeriodChange,
+  customCursorEnabled,
+  onCustomCursorChange,
+  themeTransitionEnabled,
+  onThemeTransitionChange,
 }: AppearanceViewProps) {
   const { t } = useTranslation()
 
@@ -109,6 +118,31 @@ export function AppearanceView({
           </div>
         </>
       )}
+
+      <SettingsDivider />
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor="custom-cursor-panel" className="text-sm font-medium">
+          {t('settings.custom_cursor', '自定义光标')}
+        </Label>
+        <Switch
+          id="custom-cursor-panel"
+          checked={customCursorEnabled}
+          onCheckedChange={onCustomCursorChange}
+          aria-label={t('settings.custom_cursor', '自定义光标')}
+        />
+      </div>
+      <SettingsDivider />
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor="theme-transition-panel" className="text-sm font-medium">
+          {t('settings.theme_transition', '主题切换渐变')}
+        </Label>
+        <Switch
+          id="theme-transition-panel"
+          checked={themeTransitionEnabled}
+          onCheckedChange={onThemeTransitionChange}
+          aria-label={t('settings.theme_transition', '主题切换渐变')}
+        />
+      </div>
     </div>
   )
 }

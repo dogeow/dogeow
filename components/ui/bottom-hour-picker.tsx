@@ -61,7 +61,7 @@ export function BottomHourPicker({
           <div className="sticky top-0 z-10 border-b bg-background/95 px-4 py-3 pr-12 backdrop-blur supports-[backdrop-filter]:bg-background/80">
             <p className="text-foreground text-center font-medium">{title ?? label}</p>
           </div>
-          <ScrollArea className="max-h-[min(50vh,320px)]">
+          <ScrollArea className="h-[min(50vh,320px)]">
             <div className="py-2">
               {HOURS.map(hour => (
                 <button

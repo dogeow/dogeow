@@ -1,0 +1,134 @@
+/* 404 页面：星空背景、火箭/宇航员/星球动画（固定深色，不随站点浅色/深色主题切换） */
+
+.container {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  width: 100dvw;
+  height: 100dvh;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #08080c;
+  color-scheme: dark;
+}
+
+.centralBody {
+  padding: 17% 5% 10% 5%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.objects img {
+  z-index: 90;
+  pointer-events: none;
+}
+
+.objectRocket {
+  position: absolute;
+  pointer-events: none;
+  animation: rocketMovement 100s linear infinite both alternate;
+}
+
+.objectMoon {
+  position: absolute;
+  top: 12%;
+  left: 25%;
+  pointer-events: none;
+}
+
+.objectEarth {
+  position: absolute;
+  top: 70%;
+  left: 40%;
+  pointer-events: none;
+}
+
+.objectAstronaut {
+  animation: rotateAstronaut 200s infinite linear both alternate;
+}
+
+.boxAstronaut {
+  z-index: 110;
+  position: absolute;
+  top: 60%;
+  right: 20%;
+  will-change: transform;
+  animation: moveAstronaut 50s infinite linear both alternate;
+}
+
+.image404 {
+  position: relative;
+  z-index: 100;
+  pointer-events: none;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.stars {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  background-color: #08080c;
+  background-size: contain;
+  background-repeat: repeat;
+  background-position: left top;
+  overflow: hidden;
+}
+
+.glowingStars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.star {
+  position: absolute;
+  border-radius: 100%;
+  background-color: #9e9e9e;
+  width: 3px;
+  height: 3px;
+  opacity: 0.1;
+  will-change: opacity;
+  animation: glowStar 2s infinite ease-in-out alternate;
+}
+
+@keyframes rocketMovement {
+  100% {
+    transform: translate(95vw, -95vw);
+  }
+}
+
+@keyframes moveAstronaut {
+  100% {
+    transform: translate(-160px, -160px);
+  }
+}
+
+@keyframes rotateAstronaut {
+  100% {
+    transform: rotate(-720deg);
+  }
+}
+
+@keyframes glowStar {
+  0% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .boxAstronaut {
+    top: 70%;
+  }
+
+  .centralBody {
+    padding-top: 25%;
+  }
+}

@@ -33,6 +33,10 @@ export function useSettingsPanel({
     restPeriod,
     setRestPeriod,
     addCustomTheme,
+    customCursorEnabled,
+    setCustomCursorEnabled,
+    themeTransitionEnabled,
+    setThemeTransitionEnabled,
   } = useThemeStore()
 
   const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
@@ -129,5 +133,13 @@ export function useSettingsPanel({
     // 系统设置方法
     handleToggleFollowSystem,
     handleToggleProjectCovers,
+
+    // 自定义光标
+    customCursorEnabled,
+    setCustomCursorEnabled,
+
+    // 主题切换渐变
+    themeTransitionEnabled,
+    setThemeTransitionEnabled,
   }
 }

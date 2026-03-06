@@ -33,6 +33,10 @@ interface SettingsContentProps {
   handleAddCustomTheme: (name: string, color: string) => void
   handleRemoveCustomTheme: (id: string) => void
   handleToggleProjectCovers: (checked: boolean) => void
+  customCursorEnabled: boolean
+  onCustomCursorChange: (enabled: boolean) => void
+  themeTransitionEnabled: boolean
+  onThemeTransitionChange: (enabled: boolean) => void
   onClose?: () => void
 }
 
@@ -55,6 +59,10 @@ export function SettingsContent({
   handleAddCustomTheme,
   handleRemoveCustomTheme,
   handleToggleProjectCovers,
+  customCursorEnabled,
+  onCustomCursorChange,
+  themeTransitionEnabled,
+  onThemeTransitionChange,
   onClose,
 }: SettingsContentProps) {
   const handleBack = useCallback(() => {
@@ -103,6 +111,10 @@ export function SettingsContent({
           onThemeModeChange={setThemeMode}
           restPeriod={restPeriod}
           onRestPeriodChange={setRestPeriod}
+          customCursorEnabled={customCursorEnabled}
+          onCustomCursorChange={onCustomCursorChange}
+          themeTransitionEnabled={themeTransitionEnabled}
+          onThemeTransitionChange={onThemeTransitionChange}
         />
       )
 

@@ -45,6 +45,10 @@ export function SettingsPanel({
     handleAddCustomTheme,
     handleRemoveCustomTheme,
     handleToggleProjectCovers,
+    customCursorEnabled,
+    setCustomCursorEnabled,
+    themeTransitionEnabled,
+    setThemeTransitionEnabled,
   } = useSettingsPanel({
     backgroundImage,
     setBackgroundImage,
@@ -73,6 +77,10 @@ export function SettingsPanel({
         handleAddCustomTheme={handleAddCustomTheme}
         handleRemoveCustomTheme={handleRemoveCustomTheme}
         handleToggleProjectCovers={handleToggleProjectCovers}
+        customCursorEnabled={customCursorEnabled}
+        onCustomCursorChange={setCustomCursorEnabled}
+        themeTransitionEnabled={themeTransitionEnabled}
+        onThemeTransitionChange={setThemeTransitionEnabled}
         onClose={onClose}
       />
     </div>

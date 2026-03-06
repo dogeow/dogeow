@@ -79,6 +79,10 @@ export function SettingsDialog({
     setCurrentTheme,
     addCustomTheme,
     removeCustomTheme,
+    customCursorEnabled,
+    setCustomCursorEnabled,
+    themeTransitionEnabled,
+    setThemeTransitionEnabled,
   } = useThemeStore()
   const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
   const { siteLayout, setSiteLayout } = useLayoutStore()
@@ -171,6 +175,10 @@ export function SettingsDialog({
             onThemeModeChange={setThemeMode}
             restPeriod={restPeriod}
             onRestPeriodChange={setRestPeriod}
+            customCursorEnabled={customCursorEnabled}
+            onCustomCursorChange={setCustomCursorEnabled}
+            themeTransitionEnabled={themeTransitionEnabled}
+            onThemeTransitionChange={setThemeTransitionEnabled}
           />
         )
       case 'background':
@@ -244,7 +252,7 @@ export function SettingsDialog({
           </div>
 
           {/* 左侧和右侧内容 */}
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex min-h-0 flex-1 overflow-hidden">
             {/* 左侧 sidebar */}
             <div className="bg-muted/20 w-28 shrink-0 border-r">
               <ScrollArea className="h-full">
@@ -269,14 +277,14 @@ export function SettingsDialog({
             </div>
 
             {/* 右侧内容 */}
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
               {/* 标题栏 */}
-              <div className="flex h-10 items-center border-b px-4">
+              <div className="flex h-10 shrink-0 items-center border-b px-4">
                 <h2 className="text-sm font-medium">{getSectionTitle()}</h2>
               </div>
 
-              {/* 内容区域 */}
-              <ScrollArea className="flex-1 p-3">{renderContent()}</ScrollArea>
+              {/* 内容区域：min-h-0 使 flex 子项可收缩，ScrollArea 才能产生滚动 */}
+              <ScrollArea className="min-h-0 flex-1 p-3">{renderContent()}</ScrollArea>
             </div>
           </div>
         </div>
@@ -291,6 +299,10 @@ interface ColorModeViewProps {
   onThemeModeChange: (mode: ThemeMode) => void
   restPeriod: RestPeriod
   onRestPeriodChange: (startHour: number, endHour: number) => void
+  customCursorEnabled: boolean
+  onCustomCursorChange: (enabled: boolean) => void
+  themeTransitionEnabled: boolean
+  onThemeTransitionChange: (enabled: boolean) => void
 }
 
 function ColorModeView({
@@ -299,6 +311,10 @@ function ColorModeView({
   onThemeModeChange,
   restPeriod,
   onRestPeriodChange,
+  customCursorEnabled,
+  onCustomCursorChange,
+  themeTransitionEnabled,
+  onThemeTransitionChange,
 }: ColorModeViewProps) {
   return (
     <div className="flex flex-col space-y-4">
@@ -355,6 +371,32 @@ function ColorModeView({
           </div>
         </>
       )}
+      <div className="border-t pt-3">
+        <div className="flex w-full items-center justify-between gap-2 rounded-lg p-2">
+          <label htmlFor="custom-cursor" className="text-sm font-medium">
+            自定义光标
+          </label>
+          <Switch
+            id="custom-cursor"
+            checked={customCursorEnabled}
+            onCheckedChange={onCustomCursorChange}
+            aria-label="切换自定义光标"
+          />
+        </div>
+      </div>
+      <div className="border-t pt-3">
+        <div className="flex w-full items-center justify-between gap-2 rounded-lg p-2">
+          <label htmlFor="theme-transition" className="text-sm font-medium">
+            主题切换渐变
+          </label>
+          <Switch
+            id="theme-transition"
+            checked={themeTransitionEnabled}
+            onCheckedChange={onThemeTransitionChange}
+            aria-label="切换主题渐变"
+          />
+        </div>
+      </div>
     </div>
   )
 }

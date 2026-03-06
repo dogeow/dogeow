@@ -193,3 +193,25 @@
 .text-shadow {
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
+
+/* 自定义光标（需在设置中开启，光标文件放在 public/cursor：pointer.cur / link.cur / text.cur） */
+html[data-custom-cursor='true'] {
+  cursor: url('/cursor/pointer.cur'), auto;
+}
+html[data-custom-cursor='true'] a:hover,
+html[data-custom-cursor='true'] button:hover,
+html[data-custom-cursor='true'] button,
+html[data-custom-cursor='true'] li,
+html[data-custom-cursor='true'] input,
+html[data-custom-cursor='true'] .pointer {
+  cursor: url('/cursor/link.cur'), pointer;
+}
+html[data-custom-cursor='true'] input {
+  cursor: url('/cursor/text.cur'), text;
+}
+
+/* 主题切换时背景色渐变（需在设置中开启） */
+html[data-theme-transition='true'] body {
+  transition-property: background-color;
+  transition-duration: 1s;
+}
