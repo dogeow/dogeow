@@ -14,6 +14,7 @@ export const zh_CN = {
   'nav.tool': '工具',
   'nav.nav': '导航',
   'nav.note': '笔记',
+  'nav.todos': '待办',
   'nav.ai': 'AI',
   'nav.game': '游戏',
   'nav.chat': '聊天',

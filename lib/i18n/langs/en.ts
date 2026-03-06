@@ -14,6 +14,7 @@ export const en = {
   'nav.tool': 'Tools',
   'nav.nav': 'Navigation',
   'nav.note': 'Notes',
+  'nav.todos': 'Todos',
   'nav.ai': 'AI',
   'nav.game': 'Games',
   'nav.chat': 'Chat',

@@ -14,6 +14,7 @@ export const ja = {
   'nav.tool': 'ツール',
   'nav.nav': 'ナビ',
   'nav.note': 'ノート',
+  'nav.todos': 'ToDo',
   'nav.ai': 'AI',
   'nav.game': 'ゲーム',
   'nav.chat': 'チャット',

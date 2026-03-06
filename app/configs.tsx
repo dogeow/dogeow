@@ -8,6 +8,7 @@ import {
   Gamepad2,
   MessageSquare,
   Languages,
+  ListTodo,
 } from 'lucide-react'
 import { PRESET_THEME_COLORS } from '@/lib/constants/theme-colors'
 
@@ -81,6 +82,14 @@ const TILES = [
     icon: <NotebookPen />,
     href: '/note',
     color: '#1976D2',
+    needLogin: true,
+  },
+  {
+    name: 'todos',
+    nameKey: 'nav.todos',
+    icon: <ListTodo />,
+    href: '/todos',
+    color: '#2E7D32',
     needLogin: true,
   },
   {
@@ -184,7 +193,7 @@ export const configs = {
     columns: 3,
     templateAreas: `
       "thing thing word"
-      "chat file file"
+      "chat file todos"
       "chat tool lab"
       "nav note game"
     `,
