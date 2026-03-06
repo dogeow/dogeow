@@ -127,6 +127,8 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   const abortControllerRef = useRef<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const imagesRef = useRef<ImageItem[]>([])
+  const hasLoadedOllamaModelsRef = useRef(false)
+  const isOllamaModelsRequestInFlightRef = useRef(false)
 
   // 过滤掉 system 消息用于显示
   const displayMessages = messages.filter(m => m.role !== 'system')
@@ -147,9 +149,18 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
   }, [images])
 
   useEffect(() => {
+    if (!open || provider !== 'ollama') {
+      return
+    }
+
+    if (hasLoadedOllamaModelsRef.current || isOllamaModelsRequestInFlightRef.current) {
+      return
+    }
+
     let cancelled = false
 
     const loadOllamaModels = async () => {
+      isOllamaModelsRequestInFlightRef.current = true
       setIsLoadingOllamaModels(true)
 
       try {
@@ -161,25 +172,29 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
         const data = (await response.json()) as { models?: OllamaModelListItem[] }
         if (!cancelled) {
           setOllamaModels(Array.isArray(data.models) ? data.models : [])
+          hasLoadedOllamaModelsRef.current = true
         }
       } catch (error) {
         if (!cancelled) {
-          console.warn('Failed to load Ollama models:', error)
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Failed to load Ollama models:', error)
+          }
           setOllamaModels([])
         }
       } finally {
+        isOllamaModelsRequestInFlightRef.current = false
         if (!cancelled) {
           setIsLoadingOllamaModels(false)
         }
       }
     }
 
-    loadOllamaModels()
+    void loadOllamaModels()
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [open, provider])
 
   const revokePreview = useCallback((preview: string) => {
     if (preview.startsWith('blob:')) {

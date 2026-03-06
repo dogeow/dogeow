@@ -146,6 +146,7 @@ export async function GET() {
     return NextResponse.json({ models: chatModels })
   } catch (error) {
     const message = error instanceof Error ? error.message : '无法获取 Ollama 模型列表'
-    return NextResponse.json({ error: message, models: [] }, { status: 503 })
+    // Ollama 不可用时返回可降级结果，避免前端产生资源加载失败日志。
+    return NextResponse.json({ error: message, models: [], available: false })
   }
 }
