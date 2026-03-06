@@ -3,6 +3,7 @@ import TimeConverter from './components/TimeConverter'
 import Base64Image from './components/Base64Image'
 import TextDiff from './components/TextDiff'
 import ToolPlaceholder from './components/ToolPlaceholder'
+import MoonDiceGame from './components/MoonDiceGame'
 
 // 工具类别定义
 export type ToolCategory =
@@ -181,6 +182,14 @@ export const tools: Tool[] = [
     component: ToolPlaceholder,
     category: '其他',
     tags: ['随机', '生成', '工具'],
+  },
+  {
+    id: 'moon-dice',
+    title: '月饼骰子',
+    description: '双方轮流摇六颗骰子，按博饼（月饼）规则判定奖项并对比',
+    component: MoonDiceGame,
+    category: '其他',
+    tags: ['游戏', '骰子', '博饼', '月饼'],
   },
 ]
 

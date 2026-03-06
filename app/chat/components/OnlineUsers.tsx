@@ -19,6 +19,8 @@ import {
 } from '@/app/chat/utils/users/filterUtils'
 import type { OnlineUser } from '../types'
 
+const EMPTY_USERS: OnlineUser[] = []
+
 interface OnlineUsersProps {
   roomId: number
   className?: string
@@ -39,7 +41,7 @@ export default function OnlineUsers({
   const { t } = useTranslation()
   // ✅ 性能优化: 精细化选择器，只在当前房间的在线用户改变时重新渲染
   const roomUsers = useChatStore(
-    useCallback(state => state.onlineUsers[roomId.toString()] || [], [roomId])
+    useCallback(state => state.onlineUsers[roomId.toString()] ?? EMPTY_USERS, [roomId])
   )
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('name')

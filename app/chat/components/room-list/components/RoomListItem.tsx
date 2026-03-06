@@ -1,13 +1,6 @@
 import React, { memo } from 'react'
-import { Hash, Lock, Users, Star, MoreVertical, Edit, Trash2 } from 'lucide-react'
+import { Hash, Lock, Users, Star } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/helpers'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ChatRoom } from '@/app/chat/types'
@@ -23,7 +16,7 @@ interface RoomListItemProps {
 }
 
 export const RoomListItem = memo<RoomListItemProps>(
-  ({ room, isActive, isFavorite, onSelect, onToggleFavorite, onEdit, onDelete }) => {
+  ({ room, isActive, isFavorite, onSelect, onToggleFavorite }) => {
     const { t } = useTranslation()
 
     return (
@@ -54,9 +47,6 @@ export const RoomListItem = memo<RoomListItemProps>(
                   aria-label={t('chat.private_room', '私有房间')}
                 />
               )}
-              {room.description && (
-                <span className="text-muted-foreground text-xs">• {room.description}</span>
-              )}
               {isFavorite && <Star className="h-3 w-3 fill-current text-yellow-500" />}
             </div>
           </div>
@@ -83,34 +73,6 @@ export const RoomListItem = memo<RoomListItemProps>(
                   )}
                 />
               </Button>
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={e => e.stopPropagation()}
-                    aria-label={t('chat.more_actions', 'More')}
-                  >
-                    <MoreVertical className="h-3 w-3" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={e => onEdit(room, e)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    {t('chat.edit_room', 'Edit Room')}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={e => onDelete(room, e)}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {t('chat.delete_room', 'Delete Room')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
             {/* 人数 - 始终靠右 */}
             <div className="text-muted-foreground flex items-center gap-1 text-xs">

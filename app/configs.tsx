@@ -22,16 +22,30 @@ const LOGO_TEXT = `
 // 开发环境控制台输出（仅客户端执行一次）
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   const hasLogged = '__dogeow_console_logged__' as const
-  const globalWindow = window as unknown as Window & { [key: string]: boolean }
+  const globalWindow = window as unknown as Window & {
+    [key: string]:
+      | boolean
+      | ((callback: () => void, options?: { timeout: number }) => number)
+      | undefined
+    requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number
+  }
+
+  const scheduleIdleTask = (callback: () => void) => {
+    if (typeof globalWindow.requestIdleCallback === 'function') {
+      globalWindow.requestIdleCallback(callback, { timeout: 2000 })
+      return
+    }
+
+    // Safari (especially older iOS/macOS versions) may not implement requestIdleCallback.
+    window.setTimeout(callback, 0)
+  }
+
   if (!globalWindow[hasLogged]) {
     globalWindow[hasLogged] = true
-    requestIdleCallback(
-      () => {
-        console.log(`%c${LOGO_TEXT}`, 'color: yellow')
-        console.log('🎯 本地开发环境')
-      },
-      { timeout: 2000 }
-    )
+    scheduleIdleTask(() => {
+      console.log(`%c${LOGO_TEXT}`, 'color: yellow')
+      console.log('🎯 本地开发环境')
+    })
   }
 }
 

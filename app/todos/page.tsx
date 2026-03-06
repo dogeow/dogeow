@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   DndContext,
   DragEndEvent,
@@ -90,20 +90,6 @@ function initIds(lists: TodoList[]): void {
   nextTaskId = maxTaskId + 1
 }
 
-function createDefaultList(): TodoList {
-  const now = new Date().toISOString()
-  return {
-    id: genListId(),
-    user_id: 0,
-    name: DEFAULT_LIST_NAME,
-    description: DEFAULT_LIST_DESCRIPTION,
-    position: 0,
-    created_at: now,
-    updated_at: now,
-    tasks: [],
-  }
-}
-
 function TodoItemRow({
   task,
   isCompleted,
@@ -191,7 +177,24 @@ export default function TodosPage() {
   const [lists, setLists] = useState<TodoList[]>(() => {
     const loaded = loadFromStorage()
     initIds(loaded)
-    return loaded.length > 0 ? loaded : [createDefaultList()]
+
+    // 如果没有列表，创建默认列表
+    if (loaded.length === 0) {
+      const now = new Date().toISOString()
+      const newList: TodoList = {
+        id: genListId(),
+        user_id: 0,
+        name: DEFAULT_LIST_NAME,
+        description: DEFAULT_LIST_DESCRIPTION,
+        position: 0,
+        created_at: now,
+        updated_at: now,
+        tasks: [],
+      }
+      return [newList]
+    }
+
+    return loaded
   })
   const [editingTaskId, setEditingTaskId] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState('')
@@ -199,7 +202,7 @@ export default function TodosPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const list = lists[0]
-  const tasks = useMemo(() => list?.tasks ?? [], [list])
+  const tasks = list?.tasks ?? []
 
   useEffect(() => {
     if (lists.length > 0) saveToStorage(lists)
@@ -297,10 +300,7 @@ export default function TodosPage() {
   )
 
   const handleDeleteList = useCallback(() => {
-    setLists([createDefaultList()])
-    setEditingTaskId(null)
-    setEditTitle('')
-    setNewTaskTitle('')
+    setLists([])
     setDeleteDialogOpen(false)
     toast.success('已删除列表')
   }, [])

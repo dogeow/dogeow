@@ -1,5 +1,47 @@
 import type Echo from 'laravel-echo'
 
+/** 私有「输入中」频道包装：监听 whisper + 发送 whisper */
+export type TypingChannelWrapper = {
+  stopListening: () => void
+  whisper: (payload: { id: number; name: string }) => void
+}
+
+/**
+ * 创建「输入中」私有频道，用于监听和发送 typing whisper
+ */
+export const createTypingChannel = (
+  echoInstance: Echo<'reverb'>,
+  roomId: string,
+  onTyping: (data: { id: number; name: string }) => void
+): TypingChannelWrapper => {
+  const channel = echoInstance.private(`chat.room.${roomId}.typing`)
+
+  channel.listenForWhisper('typing', (data: unknown) => {
+    const payload = data as { id?: number; name?: string }
+    if (payload && typeof payload.id === 'number') {
+      onTyping({ id: payload.id, name: typeof payload.name === 'string' ? payload.name : '' })
+    }
+  })
+
+  return {
+    stopListening: () => {
+      try {
+        channel.stopListeningForWhisper('typing')
+        echoInstance.leave(`chat.room.${roomId}.typing`)
+      } catch (e) {
+        console.warn('WebSocket: Error leaving typing channel', e)
+      }
+    },
+    whisper: (payload: { id: number; name: string }) => {
+      try {
+        channel.whisper('typing', payload)
+      } catch (e) {
+        console.warn('WebSocket: Error sending typing whisper', e)
+      }
+    },
+  }
+}
+
 /**
  * 创建频道包装器，合并消息频道和用户状态频道
  */

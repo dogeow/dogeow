@@ -27,12 +27,56 @@ interface MessageGroupProps {
   timestamp: Date
   onReply?: (message: ChatMessage) => void
   onReact?: (messageId: number, emoji: string) => void
+  isTyping?: boolean
 }
 
 interface MessageItemProps {
   message: ChatMessage
   onReply?: (message: ChatMessage) => void
   onReact?: (messageId: number, emoji: string) => void
+}
+
+const EMPTY_MESSAGES: ChatMessage[] = []
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
+const toRenderableMessage = (raw: ChatMessage): ChatMessage | null => {
+  const source = raw as unknown as Record<string, unknown>
+  const id = Number(source.id)
+  const roomId = Number(source.room_id)
+  const userId = Number(source.user_id)
+
+  if (!Number.isFinite(id) || !Number.isFinite(roomId) || !Number.isFinite(userId)) {
+    return null
+  }
+
+  const message = typeof source.message === 'string' ? source.message : ''
+  const createdAtRaw = typeof source.created_at === 'string' ? source.created_at : ''
+  const createdAt = createdAtRaw || new Date().toISOString()
+  const updatedAtRaw = typeof source.updated_at === 'string' ? source.updated_at : ''
+  const updatedAt = updatedAtRaw || createdAt
+
+  const userSource = isRecord(source.user) ? source.user : null
+  const normalizedUserId = Number(userSource?.id ?? userId)
+
+  return {
+    id,
+    room_id: roomId,
+    user_id: userId,
+    message,
+    message_type: source.message_type === 'system' ? 'system' : 'text',
+    created_at: createdAt,
+    updated_at: updatedAt,
+    user: {
+      id: Number.isFinite(normalizedUserId) ? normalizedUserId : userId,
+      name: typeof userSource?.name === 'string' && userSource.name ? userSource.name : 'Unknown',
+      email: typeof userSource?.email === 'string' ? userSource.email : '',
+    },
+    reactions: Array.isArray(source.reactions)
+      ? (source.reactions as ChatMessage['reactions'])
+      : undefined,
+  }
 }
 
 const MessageItem = React.memo(function MessageItem({
@@ -84,6 +128,7 @@ const MessageGroup = React.memo(function MessageGroup({
   timestamp,
   onReply,
   onReact,
+  isTyping,
 }: MessageGroupProps) {
   const { t } = useTranslation()
   const formatTimestamp = useCallback(
@@ -103,7 +148,11 @@ const MessageGroup = React.memo(function MessageGroup({
         </div>
         <div className="flex items-center gap-2">
           <span className="font-medium">{user.name}</span>
-          <span className="text-muted-foreground text-xs">{formatTimestamp(timestamp)}</span>
+          {isTyping ? (
+            <span className="text-primary animate-pulse text-xs font-medium">正在输入中...</span>
+          ) : (
+            <span className="text-muted-foreground text-xs">{formatTimestamp(timestamp)}</span>
+          )}
         </div>
       </div>
       <div className="space-y-1">
@@ -148,19 +197,37 @@ function MessageListContent({
   const roomKey = useMemo(() => roomId.toString(), [roomId])
   const isLoading = useChatStore(state => state.isLoading)
   const loadMessages = useChatStore(state => state.loadMessages)
+  const typingByRoom = useChatStore(state => state.typingByRoom)
   // ✅ 性能优化: 精细化选择器，只在当前房间的消息改变时重新渲染
   const messagesForRoom = useChatStore(
-    useCallback(state => state.messages[roomKey] || [], [roomKey])
+    useCallback(state => state.messages[roomKey] ?? EMPTY_MESSAGES, [roomKey])
   )
+
+  const renderableMessages = useMemo(() => {
+    const normalized = messagesForRoom
+      .map(toRenderableMessage)
+      .filter((message): message is ChatMessage => message !== null)
+
+    if (process.env.NODE_ENV === 'development' && normalized.length !== messagesForRoom.length) {
+      console.warn('MessageList: dropped malformed messages', {
+        roomId,
+        total: messagesForRoom.length,
+        usable: normalized.length,
+      })
+    }
+
+    return normalized
+  }, [messagesForRoom, roomId])
+
   const hasSearchQuery = useMemo(() => !!searchQuery?.trim(), [searchQuery])
 
   const filteredMessages = useMemo(() => {
-    if (!hasSearchQuery) return messagesForRoom
+    if (!hasSearchQuery) return renderableMessages
     const query = searchQuery!.toLowerCase().trim()
-    return messagesForRoom.filter(
+    return renderableMessages.filter(
       m => m.message.toLowerCase().includes(query) || m.user.name.toLowerCase().includes(query)
     )
-  }, [searchQuery, messagesForRoom, hasSearchQuery])
+  }, [searchQuery, renderableMessages, hasSearchQuery])
 
   const stableLoadMessages = useCallback((id: number) => loadMessages(id), [loadMessages])
 
@@ -180,25 +247,33 @@ function MessageListContent({
       messages: ChatMessage[]
       user: { id: number; name: string; email: string }
       timestamp: Date
+      isTyping: boolean
     }[] = []
 
     let curGroup: (typeof groups)[number] | null = null
     for (const m of filteredMessages) {
-      const curDate = new Date(m.created_at)
+      const parsedDate = new Date(m.created_at)
+      const curDate = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate
       const isNewGroup =
         !curGroup ||
         curGroup.user.id !== m.user.id ||
         Math.abs(curDate.getTime() - curGroup.timestamp.getTime()) > 5 * 60 * 1000
 
       if (isNewGroup) {
-        curGroup = { messages: [m], user: m.user, timestamp: curDate }
+        const typingInfo = typingByRoom[roomKey]
+        curGroup = {
+          messages: [m],
+          user: m.user,
+          timestamp: curDate,
+          isTyping: typingInfo?.userId === m.user.id,
+        }
         groups.push(curGroup)
       } else if (curGroup) {
         curGroup.messages.push(m)
       }
     }
     return groups
-  }, [filteredMessages])
+  }, [filteredMessages, typingByRoom, roomKey])
 
   useEffect(() => {
     if (roomId) {
@@ -259,6 +334,7 @@ function MessageListContent({
             timestamp={group.timestamp}
             onReply={onReply}
             onReact={handleReact}
+            isTyping={group.isTyping}
           />
         ))}
       </div>

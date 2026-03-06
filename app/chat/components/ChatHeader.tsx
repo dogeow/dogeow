@@ -5,7 +5,6 @@ import useChatStore from '@/app/chat/chatStore'
 import { useOnlineCount } from '@/app/chat/hooks/useOnlineCount'
 import { ChatHeaderDesktop } from './header/ChatHeaderDesktop'
 import { ChatHeaderMobile } from './header/ChatHeaderMobile'
-import { RoomInfoDialog } from './header/RoomInfoDialog'
 import { NotificationSettingsDialog } from './header/NotificationSettingsDialog'
 import type { ChatRoom } from '../types'
 
@@ -39,10 +38,9 @@ export function ChatHeader({
   } = useChatStore()
 
   // 使用自定义 hooks
-  const { roomOnlineUsers, onlineCount } = useOnlineCount(room, onlineUsers, isConnected)
+  const { onlineCount } = useOnlineCount(room, onlineUsers, isConnected)
 
   // 对话框状态管理
-  const [isRoomInfoOpen, setIsRoomInfoOpen] = useState(false)
   const [isNotificationSettingsOpen, setIsNotificationSettingsOpen] = useState(false)
 
   return (
@@ -55,7 +53,6 @@ export function ChatHeader({
         connectionStatus={connectionStatus}
         onlineCount={onlineCount}
         onBack={onBack}
-        onOpenRoomInfo={() => setIsRoomInfoOpen(true)}
         onOpenNotificationSettings={() => setIsNotificationSettingsOpen(true)}
       />
 
@@ -69,17 +66,7 @@ export function ChatHeader({
         onBack={onBack}
         onOpenRoomList={onOpenRoomList}
         onOpenUsersList={onOpenUsersList}
-        onOpenRoomInfo={() => setIsRoomInfoOpen(true)}
         onOpenNotificationSettings={() => setIsNotificationSettingsOpen(true)}
-      />
-
-      {/* 房间信息对话框 */}
-      <RoomInfoDialog
-        open={isRoomInfoOpen}
-        onOpenChange={setIsRoomInfoOpen}
-        room={room}
-        roomOnlineUsers={roomOnlineUsers}
-        onlineCount={onlineCount}
       />
 
       {/* 通知设置对话框 */}

@@ -101,6 +101,11 @@ export interface ChatState {
   loadOnlineUsers: (roomId: number) => Promise<void>
   updateRoomOnlineCount: (roomId: number, onlineCount: number) => void
 
+  // 输入中状态（typing indicator）
+  typingByRoom: Record<string, { userId: number; userName: string } | null>
+  setTyping: (roomId: number, userId: number, userName: string) => void
+  clearTyping: (roomId: number) => void
+
   // 连接管理
   setConnectionStatus: (status: 'connecting' | 'connected' | 'disconnected') => void
   setConnected: (connected: boolean) => void
@@ -148,6 +153,7 @@ const initialState = {
   isUserMuted: false,
   muteUntil: null,
   muteReason: null,
+  typingByRoom: {},
 
   // 通知状态
   notifications: {},
@@ -600,6 +606,35 @@ const useChatStore = create<ChatState>()(
         }))
       },
 
+      setTyping: (roomId, userId, userName) => {
+        const roomKey = roomId.toString()
+        set(state => ({
+          typingByRoom: {
+            ...state.typingByRoom,
+            [roomKey]: { userId, userName },
+          },
+        }))
+        // 4 秒后自动清除（给typing事件足够的时间持续更新）
+        setTimeout(() => {
+          set(state => {
+            const current = state.typingByRoom[roomKey]
+            if (current && current.userId === userId) {
+              const next = { ...state.typingByRoom, [roomKey]: null }
+              return { typingByRoom: next }
+            }
+            return state
+          })
+        }, 4000)
+      },
+
+      clearTyping: roomId => {
+        set(state => {
+          const next = { ...state.typingByRoom }
+          delete next[roomId.toString()]
+          return { typingByRoom: next }
+        })
+      },
+
       // 连接管理
       setConnectionStatus: status => {
         set({
@@ -826,7 +861,7 @@ const useChatStore = create<ChatState>()(
       setLoading: loading => set({ isLoading: loading }),
 
       clearAllOnlineUsers: () => {
-        set({ onlineUsers: {} })
+        set({ onlineUsers: {}, typingByRoom: {} })
       },
 
       reset: () => set(initialState),

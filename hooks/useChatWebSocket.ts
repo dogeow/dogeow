@@ -15,7 +15,12 @@ import {
   createConnectionError,
 } from './chat-websocket/utils/connectionUtils'
 import { sendMessageToServer, leaveRoomViaAPI } from './chat-websocket/utils/messageUtils'
-import { createChannelWrapper, setupRoomEventListeners } from './chat-websocket/utils/channelUtils'
+import {
+  createChannelWrapper,
+  createTypingChannel,
+  setupRoomEventListeners,
+} from './chat-websocket/utils/channelUtils'
+import useAuthStore from '@/stores/authStore'
 
 export * from './chat-websocket/types'
 
@@ -32,6 +37,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
     onMessageSent,
     onMessageFailed,
     onMessageSentSuccess,
+    onTyping,
     authTokenRefreshCallback,
   } = options
 
@@ -47,6 +53,9 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
 
   const currentRoomRef = useRef<string | null>(null)
   const channelRef = useRef<ReturnType<typeof createChannelWrapper> | null>(null)
+  const typingChannelRef = useRef<ReturnType<typeof createTypingChannel> | null>(null)
+  const lastTypingSentRef = useRef(0)
+  const TYPING_THROTTLE_MS = 1500
   const isComponentMountedRef = useRef(true)
   const connectionMonitorUnsubscribeRef = useRef<(() => void) | null>(null)
   const offlineManagerUnsubscribeRef = useRef<(() => void) | null>(null)
@@ -152,6 +161,8 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         if (channelRef.current && typeof channelRef.current.stopListening === 'function') {
           channelRef.current.stopListening()
         }
+        typingChannelRef.current?.stopListening()
+        typingChannelRef.current = null
       } catch (error) {
         console.error('WebSocket: Error during channel cleanup:', error)
       }
@@ -229,6 +240,8 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         console.log('WebSocket: Disconnecting and stopping listening')
         channelRef.current.stopListening()
       }
+      typingChannelRef.current?.stopListening()
+      typingChannelRef.current = null
     } catch (error) {
       console.error('WebSocket: Error during disconnect:', error)
     }
@@ -264,6 +277,8 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
             console.log('WebSocket: Stopping listening for room', currentRoomRef.current)
             channelRef.current.stopListening()
           }
+          typingChannelRef.current?.stopListening()
+          typingChannelRef.current = null
         } catch (error) {
           console.error('WebSocket: Error stopping listening:', error)
         }
@@ -276,12 +291,28 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
         const channelWrapper = createChannelWrapper(echoToUse, roomId)
         channelRef.current = channelWrapper
         setupRoomEventListeners(channelWrapper, roomId, onMessage)
+
+        const typingChannel = createTypingChannel(echoToUse, roomId, data => {
+          onTyping?.(roomId, data)
+        })
+        typingChannelRef.current = typingChannel
       } catch (error) {
         console.error('WebSocket: Error creating channel for room', roomId, ':', error)
       }
     },
-    [echo, onMessage]
+    [echo, onMessage, onTyping]
   )
+
+  const sendTyping = useCallback((roomId: string) => {
+    if (currentRoomRef.current !== roomId || !typingChannelRef.current) return
+    const now = Date.now()
+    if (now - lastTypingSentRef.current < TYPING_THROTTLE_MS) return
+    lastTypingSentRef.current = now
+    const user = useAuthStore.getState().user
+    if (user?.id != null && user?.name) {
+      typingChannelRef.current.whisper({ id: user.id, name: user.name })
+    }
+  }, [])
 
   const sendMessage = useCallback(
     async (
@@ -342,6 +373,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       disconnect,
       joinRoom,
       sendMessage,
+      sendTyping,
       isConnected: connectionInfo.status === 'connected',
       connectionStatus: connectionInfo.status,
       connectionInfo,
@@ -356,6 +388,7 @@ export const useChatWebSocket = (options: UseChatWebSocketOptions = {}): UseChat
       disconnect,
       joinRoom,
       sendMessage,
+      sendTyping,
       connectionInfo,
       offlineState,
       reconnect,

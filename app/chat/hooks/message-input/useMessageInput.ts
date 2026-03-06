@@ -58,24 +58,24 @@ export function useMessageInput({
     }
   }, [])
 
-  // 处理输入指示器
+  // 处理输入指示器 - 每次输入都发送typing事件（由后端的throttle控制实际发送频率）
   const handleTypingIndicator = useCallback(() => {
-    if (!typingActiveRef.current) {
-      typingActiveRef.current = true
-      onTypingStart?.()
-    }
+    // 每次用户输入时发送typing事件，由sendTyping中的throttle控制发送频率
+    onTypingStart?.()
 
     // 清除现有超时
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current)
     }
 
-    // 设置新超时以停止输入指示器
+    // 如果用户停止输入超过TYPING_TIMEOUT时间，发送onTypingStop
     typingTimeoutRef.current = setTimeout(() => {
       typingActiveRef.current = false
       onTypingStop?.()
       typingTimeoutRef.current = null
     }, TYPING_TIMEOUT)
+
+    typingActiveRef.current = true
   }, [onTypingStart, onTypingStop])
 
   // 处理消息输入变化

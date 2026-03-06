@@ -24,7 +24,10 @@ import { useFileUpload } from '@/app/chat/hooks/message-input/useFileUpload'
 import { useMessageInputHandlers } from '@/app/chat/hooks/message-input/useMessageInputHandlers'
 import { MAX_MESSAGE_LENGTH } from '@/app/chat/utils/message-input/constants'
 import type { MessageInputProps } from '@/app/chat/types/messageInput'
-import type { ChatMessage } from '@/app/chat/types'
+import type { ChatMessage, OnlineUser } from '@/app/chat/types'
+
+const EMPTY_MESSAGES: ChatMessage[] = []
+const EMPTY_USERS: OnlineUser[] = []
 
 export function MessageInput({
   roomId,
@@ -44,10 +47,10 @@ export function MessageInput({
   const checkMuteStatus = useChatStore(state => state.checkMuteStatus)
   const refreshMuteStatus = useChatStore(state => state.refreshMuteStatus)
   const roomMessages = useChatStore(
-    useCallback(state => state.messages[roomId.toString()] || [], [roomId])
+    useCallback(state => state.messages[roomId.toString()] ?? EMPTY_MESSAGES, [roomId])
   )
   const roomUsers = useChatStore(
-    useCallback(state => state.onlineUsers[roomId.toString()] || [], [roomId])
+    useCallback(state => state.onlineUsers[roomId.toString()] ?? EMPTY_USERS, [roomId])
   )
   const inputContainerRef = useRef<HTMLDivElement>(null)
 

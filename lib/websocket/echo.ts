@@ -137,6 +137,28 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     }
   })()
 
+  // 获取认证端点 URL：后端路由在 api.php 中，需走 /api/broadcasting/auth
+  const toBroadcastAuthEndpoint = (baseUrl: string): string => {
+    const normalizedBase = baseUrl.replace(/\/+$/, '')
+    return normalizedBase.endsWith('/api')
+      ? `${normalizedBase}/broadcasting/auth`
+      : `${normalizedBase}/api/broadcasting/auth`
+  }
+
+  const authEndpoint = (() => {
+    const apiBase = process.env.NEXT_PUBLIC_API_URL
+    if (apiBase) {
+      return toBroadcastAuthEndpoint(apiBase)
+    }
+
+    if (typeof window !== 'undefined') {
+      const inferredApiBase = window.location.origin.replace(':3000', ':8000')
+      return toBroadcastAuthEndpoint(inferredApiBase)
+    }
+
+    return toBroadcastAuthEndpoint(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000')
+  })()
+
   const config = {
     broadcaster: 'reverb',
     key: process.env.NEXT_PUBLIC_REVERB_APP_KEY || 'jnwliwk8ulk32jkwqcy7',
@@ -146,37 +168,71 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     forceTLS: isHttps,
     enabledTransports: ['ws', 'wss'],
     disableStats: true,
-    // 生产/预发必须用 API 域名，否则会请求到 Next 同域导致 404；本地可用 window.origin 替换端口
-    authEndpoint: (() => {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL
-      if (apiBase) {
-        const base = apiBase.replace(/\/+$/, '')
-        return `${base}/broadcasting/auth`
-      }
-      if (typeof window !== 'undefined') {
-        return `${window.location.origin.replace(':3000', ':8000')}/broadcasting/auth`
-      }
-      return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/broadcasting/auth`
-    })(),
-    auth: {
-      headers: {
-        Authorization: authToken ? `Bearer ${authToken}` : '',
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
+    authEndpoint,
+    // 使用自定义 authorizer 处理 Sanctum Bearer token 认证
+    authorizer: (channel: { name: string }) => ({
+      authorize: (socketId: string, callback: (error: boolean | Error, data?: unknown) => void) => {
+        // 如果没有 token，直接失败
+        if (!authToken) {
+          console.warn('Echo: 无认证token，跳过频道认证')
+          callback(true, { message: 'No auth token' })
+          return
+        }
+
+        fetch(authEndpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+            Authorization: `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            socket_id: socketId,
+            channel_name: channel.name,
+          }),
+        })
+          .then(async response => {
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error('Echo: 频道认证失败:', {
+                status: response.status,
+                channel: channel.name,
+                error: errorText,
+              })
+              callback(true, new Error(`Auth failed: ${response.status}`))
+              return
+            }
+
+            const data = await response.json()
+            console.log('Echo: 频道认证成功:', {
+              channel: channel.name,
+              response: data,
+            })
+            callback(false, data)
+          })
+          .catch(error => {
+            console.error('Echo: 频道认证请求异常:', {
+              channel: channel.name,
+              error,
+            })
+            callback(true, error)
+          })
       },
-    },
+    }),
   }
 
   console.log('Echo: 配置参数:', {
-    ...config,
-    auth: { headers: '[HIDDEN]' },
+    broadcaster: config.broadcaster,
+    key: config.key,
+    wsHost: config.wsHost,
+    wsPort: config.wsPort,
+    authEndpoint: config.authEndpoint,
   })
 
   console.log('Echo: 认证token状态:', {
     hasToken: !!authToken,
     tokenLength: authToken.length,
     tokenPrefix: authToken.substring(0, 10) + '...',
-    authHeader: config.auth?.headers?.Authorization ? 'Present' : 'Missing',
   })
 
   // 认证端点诊断完成，无需继续测试

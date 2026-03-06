@@ -1,15 +1,7 @@
-import React, { memo, useCallback } from 'react'
-import { ArrowLeft, Settings, Users, Hash, Info, Bell, MenuIcon } from 'lucide-react'
+import React, { memo } from 'react'
+import { ArrowLeft, Settings, Users, Hash, MenuIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { ChatRoom } from '@/app/chat/types'
 
@@ -22,7 +14,6 @@ interface ChatHeaderMobileProps {
   onBack?: () => void
   onOpenRoomList?: () => void
   onOpenUsersList?: () => void
-  onOpenRoomInfo: () => void
   onOpenNotificationSettings: () => void
 }
 
@@ -36,56 +27,9 @@ export const ChatHeaderMobile = memo<ChatHeaderMobileProps>(
     onBack,
     onOpenRoomList,
     onOpenUsersList,
-    onOpenRoomInfo,
     onOpenNotificationSettings,
   }) => {
     const { t } = useTranslation()
-
-    const renderRoomInfoButton = useCallback(
-      () =>
-        room.description && (
-          <Button variant="ghost" size="icon" className="h-5 w-5" onClick={onOpenRoomInfo}>
-            <Info className="h-3 w-3" />
-          </Button>
-        ),
-      [room.description, onOpenRoomInfo]
-    )
-
-    const renderSettingsMenu = useCallback(
-      () => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Settings className="h-4 w-4" />
-              <span className="sr-only">{t('settings.title', '设置')}</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>{t('page.chat_settings', '聊天设置')}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-
-            {/* 通知设置 */}
-            <DropdownMenuItem
-              onClick={onOpenNotificationSettings}
-              className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
-            >
-              <Bell className="mr-2 h-4 w-4" />
-              {t('chat.notification_settings', '通知设置')}
-            </DropdownMenuItem>
-
-            {/* 房间信息 */}
-            <DropdownMenuItem
-              onClick={onOpenRoomInfo}
-              className="min-h-11 gap-2 px-3 py-2 md:min-h-9 md:px-2 md:py-1.5"
-            >
-              <Info className="mr-2 h-4 w-4" />
-              {t('chat.room_info', '房间信息')}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-      [t, onOpenNotificationSettings, onOpenRoomInfo]
-    )
 
     return (
       <div className="bg-background flex items-center justify-between border-b px-3 py-2 md:hidden">
@@ -148,7 +92,6 @@ export const ChatHeaderMobile = memo<ChatHeaderMobileProps>(
                 }}
               />
             </div>
-            {renderRoomInfoButton()}
           </div>
         </div>
 
@@ -179,8 +122,11 @@ export const ChatHeaderMobile = memo<ChatHeaderMobileProps>(
             </Button>
           )}
 
-          {/* 设置下拉菜单 */}
-          {renderSettingsMenu()}
+          {/* 设置按钮：直接打开通知设置 */}
+          <Button variant="ghost" size="icon" onClick={onOpenNotificationSettings}>
+            <Settings className="h-4 w-4" />
+            <span className="sr-only">{t('chat.notification_settings', '通知设置')}</span>
+          </Button>
         </div>
       </div>
     )

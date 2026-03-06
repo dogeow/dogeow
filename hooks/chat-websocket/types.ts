@@ -11,6 +11,7 @@ export interface UseChatWebSocketReturn {
   disconnect: () => void
   joinRoom: (roomId: string, echoInstance?: Echo<'reverb'>) => void
   sendMessage: (roomId: string, message: string) => Promise<SendMessageResult>
+  sendTyping: (roomId: string) => void
   isConnected: boolean
   connectionStatus: ConnectionStatus
   connectionInfo: ConnectionMonitor
@@ -45,6 +46,7 @@ export interface UseChatWebSocketOptions {
   onMessageSent?: (message: QueuedMessage) => void
   onMessageFailed?: (message: QueuedMessage, error: unknown) => void
   onMessageSentSuccess?: (messageData: unknown) => void
+  onTyping?: (roomId: string, data: { id: number; name: string }) => void
   onUserJoined?: (event: UserPresenceEvent) => void
   onUserLeft?: (event: UserPresenceEvent) => void
   authTokenRefreshCallback?: () => Promise<string | null>

@@ -29,6 +29,52 @@ const LOAD_THROTTLE_TIME = 5000
 const CONNECTION_CHECK_INTERVAL = 100
 const CONNECTION_TIMEOUT = 10000
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
+const normalizeIncomingMessage = (value: unknown): ChatMessage | null => {
+  if (!isRecord(value)) return null
+
+  // sendMessage API may return { data: ChatMessage, mentions: [] }
+  const source = isRecord(value.data) ? value.data : value
+
+  const id = Number(source.id)
+  const roomId = Number(source.room_id)
+  const userId = Number(source.user_id)
+
+  if (!Number.isFinite(id) || !Number.isFinite(roomId) || !Number.isFinite(userId)) {
+    return null
+  }
+
+  const createdAt =
+    typeof source.created_at === 'string' && source.created_at
+      ? source.created_at
+      : new Date().toISOString()
+  const updatedAt =
+    typeof source.updated_at === 'string' && source.updated_at ? source.updated_at : createdAt
+
+  const user = isRecord(source.user) ? source.user : null
+  const normalizedUserId = Number(user?.id ?? userId)
+
+  return {
+    id,
+    room_id: roomId,
+    user_id: userId,
+    message: typeof source.message === 'string' ? source.message : '',
+    message_type: source.message_type === 'system' ? 'system' : 'text',
+    created_at: createdAt,
+    updated_at: updatedAt,
+    user: {
+      id: Number.isFinite(normalizedUserId) ? normalizedUserId : userId,
+      name: typeof user?.name === 'string' && user.name ? user.name : 'Unknown',
+      email: typeof user?.email === 'string' ? user.email : '',
+    },
+    reactions: Array.isArray(source.reactions)
+      ? (source.reactions as ChatMessage['reactions'])
+      : undefined,
+  }
+}
+
 function ChatPageContent() {
   const router = useRouter()
   const { isAuthenticated, loading: authLoading, token } = useAuthStore()
@@ -43,6 +89,7 @@ function ChatPageContent() {
     addMessage,
     updateMuteStatus,
     updateRoomOnlineCount,
+    setTyping,
   } = chatStore
 
   // Refs 优化
@@ -95,6 +142,10 @@ function ChatPageContent() {
         clearAllOnlineUsers()
       },
 
+      handleTyping: (roomId: string, data: { id: number; name: string }) => {
+        setTyping(Number(roomId), data.id, data.name || '')
+      },
+
       handleMessage: (data: unknown) => {
         const messageData = data as MessageData
         const currentUserId = useAuthStore.getState().user?.id
@@ -122,7 +173,12 @@ function ChatPageContent() {
 
           case 'message': {
             if (messageData.message) {
-              addMessage(messageData.message.room_id, messageData.message)
+              const normalizedMessage = normalizeIncomingMessage(messageData.message)
+              if (normalizedMessage) {
+                addMessage(normalizedMessage.room_id, normalizedMessage)
+              } else {
+                console.warn('ChatPage: ignored malformed realtime message payload', messageData)
+              }
             }
             break
           }
@@ -143,6 +199,7 @@ function ChatPageContent() {
     [
       setConnectionStatus,
       clearAllOnlineUsers,
+      setTyping,
       updateMuteStatus,
       updateRoomOnlineCount,
       addMessage,
@@ -165,9 +222,11 @@ function ChatPageContent() {
   // 消息发送成功处理
   const handleMessageSentSuccess = useCallback(
     (messageData: unknown) => {
-      const chatMessage = messageData as ChatMessage
-      if (currentRoom) {
-        addMessage(currentRoom.id, chatMessage)
+      const normalizedMessage = normalizeIncomingMessage(messageData)
+      if (currentRoom && normalizedMessage) {
+        addMessage(currentRoom.id, normalizedMessage)
+      } else {
+        console.warn('ChatPage: ignored malformed sendMessage response payload', messageData)
       }
     },
     [currentRoom, addMessage]
@@ -184,6 +243,7 @@ function ChatPageContent() {
       onDisconnect: webSocketHandlers.handleDisconnect,
       onError: webSocketHandlers.handleWebSocketError,
       onMessage: webSocketHandlers.handleMessage,
+      onTyping: webSocketHandlers.handleTyping,
       onOffline: noop,
       onOnline: noop,
       onMessageQueued: noop,
@@ -200,6 +260,7 @@ function ChatPageContent() {
     connect,
     joinRoom: wsJoinRoom,
     sendMessage,
+    sendTyping,
     connectionInfo,
     offlineState,
     reconnect,
@@ -376,6 +437,8 @@ function ChatPageContent() {
                     sendMessage={sendMessage}
                     isConnected={connectionInfo.status === 'connected'}
                     scrollContainerRef={scrollContainerRef}
+                    onTypingStart={() => sendTyping(currentRoom.id.toString())}
+                    onTypingStop={noop}
                   />
                 </div>
               </>
