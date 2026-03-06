@@ -26,7 +26,7 @@ export const TileCard = memo(
       <button
         type="button"
         onClick={onClick}
-        className={`group hover:bg-muted/50 flex w-full flex-col items-start gap-2 rounded-lg p-6 transition-all ${needsLogin ? 'opacity-50' : ''} ${customStyles} `}
+        className={`group hover:bg-muted/50 flex h-full min-h-[8rem] w-full flex-col items-start gap-2 rounded-lg p-6 transition-all ${needsLogin ? 'opacity-50' : ''} ${customStyles} `}
         disabled={needsLogin}
       >
         {/* 标题 */}

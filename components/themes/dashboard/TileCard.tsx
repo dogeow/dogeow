@@ -33,7 +33,7 @@ export const TileCard = memo(
         disabled={needsLogin}
         className={cn(
           'group relative w-full',
-          'flex flex-col gap-3',
+          'flex h-full min-h-[8rem] flex-col gap-3',
           'border-border/50 rounded-xl border',
           'bg-card/50 backdrop-blur-md',
           'p-5',
