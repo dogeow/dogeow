@@ -1,5 +1,4 @@
 name: Commit Check
-enabled: false
 
 on:
   push:
