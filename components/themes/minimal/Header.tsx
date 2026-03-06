@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { AppLauncher } from '@/components/launcher'
+import { LazyAppLauncher } from '@/components/launcher/LazyAppLauncher'
 
 const AiDialog = dynamic(
   () => import('@/components/app/AiDialog').then(m => ({ default: m.AiDialog })),
@@ -25,7 +25,7 @@ export default function MinimalHeader() {
         </div>
 
         <div className="flex items-center gap-2">
-          <AppLauncher
+          <LazyAppLauncher
             onOpenAi={() => setIsAiOpen(prev => !prev)}
             isAiOpen={isAiOpen}
             onCloseAi={() => setIsAiOpen(false)}

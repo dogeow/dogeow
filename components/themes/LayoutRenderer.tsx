@@ -1,7 +1,7 @@
 'use client'
 
 import { useUITheme } from './UIThemeProvider'
-import { AppLauncher } from '@/components/launcher'
+import { LazyAppLauncher } from '@/components/launcher/LazyAppLauncher'
 import dynamic from 'next/dynamic'
 import { useMemo } from 'react'
 import { useBackgroundStore } from '@/stores/backgroundStore'
@@ -161,7 +161,7 @@ function DefaultLayout({ children }: { children: React.ReactNode }) {
         className="bg-background/90 sticky top-0 z-30 h-[var(--app-header-height)] flex-none border-b shadow-sm backdrop-blur"
       >
         <div className="mx-auto flex h-full w-full max-w-7xl items-center px-2 sm:px-4">
-          <AppLauncher />
+          <LazyAppLauncher />
         </div>
       </div>
       <div id="main-container" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">

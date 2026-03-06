@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useUITheme } from '@/components/themes/UIThemeProvider'
-import { AppLauncher } from '@/components/launcher'
+import { LazyAppLauncher } from '@/components/launcher/LazyAppLauncher'
 import { Menu } from 'lucide-react'
 
 const AiDialog = dynamic(
@@ -58,7 +58,7 @@ export default function SidebarHeader() {
         <div className="flex items-center gap-2">
           {theme.layout.header.showUserMenu && (
             <div className="flex items-center gap-2">
-              <AppLauncher
+              <LazyAppLauncher
                 onOpenAi={() => setIsAiOpen(prev => !prev)}
                 isAiOpen={isAiOpen}
                 onCloseAi={() => setIsAiOpen(false)}

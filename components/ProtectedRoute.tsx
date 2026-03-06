@@ -32,6 +32,12 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }, [isClient, isAuthenticated, loading, router, needsProtection])
 
+  // Public routes should render immediately instead of waiting for auth store
+  // hydration, otherwise the app ships a loading shell for the homepage.
+  if (!needsProtection) {
+    return <>{children}</>
+  }
+
   // 在服务端渲染或客户端初始化时，显示加载状态
   if (!isClient || loading) {
     return (
