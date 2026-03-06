@@ -3,7 +3,7 @@
 import { memo } from 'react'
 import Image from 'next/image'
 import type { Tile } from '@/app/types'
-import { useTranslation } from '@/hooks/useTranslation'
+import { useHomepageTranslation } from '@/hooks/useHomepageTranslation'
 import { Lock, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/helpers'
 import { imageAsset } from '@/lib/helpers/assets'
@@ -23,7 +23,7 @@ interface TileCardProps {
  */
 export const TileCard = memo(
   ({ tile, index, customStyles = '', showCover, needsLogin, onClick }: TileCardProps) => {
-    const { t } = useTranslation()
+    const { t } = useHomepageTranslation()
     const tileName = t(tile.nameKey, tile.nameCn || tile.nameKey)
 
     return (
@@ -103,7 +103,7 @@ export const TileCard = memo(
           {needsLogin && (
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
               <Lock className="h-3 w-3" />
-              <span>需要登录</span>
+              <span>{t('common.login_required', '需要登录')}</span>
             </div>
           )}
         </div>

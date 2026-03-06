@@ -6,6 +6,10 @@ import dynamic from 'next/dynamic'
 const Toaster = dynamic(() => import('@/components/ui/sonner').then(mod => mod.Toaster), {
   ssr: false,
 })
+const LanguageProvider = dynamic(
+  () => import('@/components/provider/LanguageProvider').then(mod => mod.LanguageProvider),
+  { ssr: false }
+)
 const PWAInstallPrompt = dynamic(
   () => import('@/components/app/PWAInstallPrompt').then(mod => mod.PWAInstallPrompt),
   { ssr: false }
@@ -83,6 +87,7 @@ export function DeferredRuntimeClients() {
 
   return (
     <>
+      <LanguageProvider>{null}</LanguageProvider>
       <Toaster />
       <PWAInstallPrompt />
       <PWARegister />

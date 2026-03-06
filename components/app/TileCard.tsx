@@ -2,7 +2,7 @@ import { memo, useState, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import { Lock } from 'lucide-react'
 import type { Tile } from '@/app/types'
-import { useTranslation } from '@/hooks/useTranslation'
+import { useHomepageTranslation } from '@/hooks/useHomepageTranslation'
 import { PERFORMANCE } from '@/lib/constants'
 import { imageAsset } from '@/lib/helpers/assets'
 
@@ -90,7 +90,7 @@ TileIcon.displayName = 'TileIcon'
 
 export const TileCard = memo(
   ({ tile, index, customStyles = '', showCover, needsLogin, onClick }: TileCardProps) => {
-    const { t } = useTranslation()
+    const { t } = useHomepageTranslation()
     const [imageError, setImageError] = useState(false)
     const [imageLoaded, setImageLoaded] = useState(false)
 

@@ -4,7 +4,7 @@ import { memo, useMemo, useState, useCallback } from 'react'
 import Image from 'next/image'
 import { Lock, ArrowRight } from 'lucide-react'
 import type { Tile } from '@/app/types'
-import { useTranslation } from '@/hooks/useTranslation'
+import { useHomepageTranslation } from '@/hooks/useHomepageTranslation'
 import { PERFORMANCE } from '@/lib/constants'
 import { imageAsset } from '@/lib/helpers/assets'
 
@@ -23,7 +23,7 @@ const BLUR_DATA_URL =
 /** 杂志布局 - Hero 卡片（首卡大图，稳重简洁） */
 const HeroCard = memo(
   ({ tile, showCover, needsLogin, onClick }: Omit<MagazineTileCardProps, 'variant' | 'index'>) => {
-    const { t } = useTranslation()
+    const { t } = useHomepageTranslation()
     const [imageError, setImageError] = useState(false)
     const [imageLoaded, setImageLoaded] = useState(false)
 
@@ -109,7 +109,7 @@ HeroCard.displayName = 'HeroCard'
 /** 杂志布局 - 普通卡片（列表样式，带图标和箭头） */
 const ListCard = memo(
   ({ tile, showCover, needsLogin, onClick }: Omit<MagazineTileCardProps, 'variant' | 'index'>) => {
-    const { t } = useTranslation()
+    const { t } = useHomepageTranslation()
 
     const tileName = useMemo(
       () => t(tile.nameKey, tile.nameCn || tile.nameKey),

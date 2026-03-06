@@ -2,13 +2,13 @@
 
 import { useMemo } from 'react'
 import dynamic from 'next/dynamic'
-import { configs } from '@/app/configs'
+import { homeGridLayout } from '@/app/home-configs'
 import { ThemedTileCard } from '@/components/app/ThemedTileCard'
 import { useTileManagement } from '@/hooks/useTileManagement'
 import { PageContainer } from '@/components/layout'
 import { useUITheme } from '@/components/themes/UIThemeProvider'
 import { useLayoutStore } from '@/stores/layoutStore'
-import { useTranslation } from '@/hooks/useTranslation'
+import { useHomepageTranslation } from '@/hooks/useHomepageTranslation'
 import type { Tile } from '@/app/types'
 
 const MagazineLayout = dynamic(
@@ -61,7 +61,7 @@ export default function Home() {
   const { tiles, showProjectCovers, handleTileClick, getTileStatus } = useTileManagement()
   const theme = useUITheme()
   const { siteLayout } = useLayoutStore()
-  const { t } = useTranslation()
+  const { t } = useHomepageTranslation()
 
   const layoutType = useMemo(() => {
     if (siteLayout === 'magazine') return 'magazine'
@@ -107,8 +107,8 @@ export default function Home() {
             <div
               className={`grid ${HOME_TILES_GAP}`}
               style={{
-                gridTemplateAreas: configs.gridLayout.templateAreas,
-                gridTemplateColumns: `repeat(${configs.gridLayout.columns}, minmax(0, 1fr))`,
+                gridTemplateAreas: homeGridLayout.templateAreas,
+                gridTemplateColumns: `repeat(${homeGridLayout.columns}, minmax(0, 1fr))`,
               }}
               role="grid"
               aria-label="应用程序网格"

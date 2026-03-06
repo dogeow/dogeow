@@ -1,4 +1,5 @@
 import { Header } from './Header'
+import ProtectedRoute from '@/components/ProtectedRoute'
 import { PageContainer } from '@/components/layout'
 
 export default function RootLayout({
@@ -7,9 +8,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <PageContainer className="py-0">
-      <Header />
-      <main className="py-4">{children}</main>
-    </PageContainer>
+    <ProtectedRoute>
+      <PageContainer className="py-0">
+        <Header />
+        <main className="py-4">{children}</main>
+      </PageContainer>
+    </ProtectedRoute>
   )
 }

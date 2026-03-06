@@ -1,15 +1,5 @@
-import {
-  Package,
-  FlaskConical,
-  FileText,
-  Wrench,
-  Compass,
-  NotebookPen,
-  Gamepad2,
-  MessageSquare,
-  Languages,
-} from 'lucide-react'
 import { PRESET_THEME_COLORS } from '@/lib/constants/theme-colors'
+import { homeGridLayout, homeTiles } from './home-configs'
 
 // 控制台Logo文本
 const LOGO_TEXT = `
@@ -33,81 +23,6 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
     )
   }
 }
-
-const TILES = [
-  {
-    name: 'thing',
-    nameKey: 'nav.thing',
-    icon: <Package />,
-    href: '/thing',
-    color: '#2196F3',
-    needLogin: true,
-  },
-  {
-    name: 'lab',
-    nameKey: 'nav.lab',
-    icon: <FlaskConical />,
-    href: '/lab',
-    color: '#388e3c',
-    needLogin: true,
-  },
-  {
-    name: 'file',
-    nameKey: 'nav.file',
-    icon: <FileText />,
-    href: '/file',
-    color: '#FF5722',
-    needLogin: true,
-  },
-  {
-    name: 'tool',
-    nameKey: 'nav.tool',
-    icon: <Wrench />,
-    href: '/tool',
-    color: '#8B5A2B',
-    needLogin: true,
-  },
-  {
-    name: 'nav',
-    nameKey: 'nav.nav',
-    icon: <Compass />,
-    href: '/nav',
-    color: '#FFA000',
-    needLogin: true,
-  },
-  {
-    name: 'note',
-    nameKey: 'nav.note',
-    icon: <NotebookPen />,
-    href: '/note',
-    color: '#1976D2',
-    needLogin: true,
-  },
-  {
-    name: 'game',
-    nameKey: 'nav.game',
-    icon: <Gamepad2 />,
-    href: '/game',
-    color: '#424242',
-    needLogin: true,
-  },
-  {
-    name: 'chat',
-    nameKey: 'nav.chat',
-    icon: <MessageSquare />,
-    href: '/chat',
-    color: '#E91E63',
-    needLogin: true,
-  },
-  {
-    name: 'word',
-    nameKey: 'nav.word',
-    icon: <Languages />,
-    href: '/word',
-    color: '#E91E63',
-    needLogin: true,
-  },
-]
 
 // 游戏列表配置
 const GAMES = [
@@ -179,16 +94,8 @@ const SYSTEM_BACKGROUNDS = [
 
 // 主配置对象
 export const configs = {
-  tiles: TILES,
-  gridLayout: {
-    columns: 3,
-    templateAreas: `
-      "thing thing word"
-      "chat file file"
-      "chat tool lab"
-      "nav note game"
-    `,
-  },
+  tiles: homeTiles,
+  gridLayout: homeGridLayout,
   games: GAMES,
   navigation: [createModule('nav-1', 'module.nav.name', 'module.nav.desc', '/nav')],
   notes: [createModule('note-1', 'module.note.name', 'module.note.desc', '/note')],
@@ -246,7 +153,9 @@ const mapWithTranslation = (
 // 获取多语言配置
 export const getTranslatedConfigs = (t: (key: string, fallback?: string) => string) => ({
   ...configs,
-  tiles: mapWithTranslation(configs.tiles, t, ['nameKey']),
+  tiles: mapWithTranslation(configs.tiles as unknown as readonly TranslatableItem[], t, [
+    'nameKey',
+  ]),
   games: mapWithTranslation(configs.games, t, ['nameKey', 'descriptionKey']),
   navigation: mapWithTranslation(configs.navigation, t, ['nameKey', 'descriptionKey']),
   notes: mapWithTranslation(configs.notes, t, ['nameKey', 'descriptionKey']),

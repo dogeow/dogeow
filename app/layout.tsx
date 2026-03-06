@@ -6,8 +6,6 @@ import { LayoutRenderer } from '@/components/themes/LayoutRenderer'
 import { BackgroundWrapper } from '@/components/provider/BackgroundWrapper'
 import './globals.css'
 import { SWRProvider } from '@/components/provider/SWRProvider'
-import ProtectedRoute from '@/components/ProtectedRoute'
-import { LanguageProvider } from '@/components/provider/LanguageProvider'
 import { DeferredRuntimeClients } from '@/components/app/DeferredRuntimeClients'
 import '@/lib/themes/registry' // 初始化主题注册表
 import '@/lib/i18n/log-control'
@@ -98,14 +96,10 @@ export default function RootLayout({
         <SWRProvider>
           <ThemeProvider>
             <UIThemeProvider>
-              <LanguageProvider>
-                <LayoutRenderer>
-                  <BackgroundWrapper>
-                    <ProtectedRoute>{children}</ProtectedRoute>
-                  </BackgroundWrapper>
-                </LayoutRenderer>
-                <DeferredRuntimeClients />
-              </LanguageProvider>
+              <LayoutRenderer>
+                <BackgroundWrapper>{children}</BackgroundWrapper>
+              </LayoutRenderer>
+              <DeferredRuntimeClients />
             </UIThemeProvider>
           </ThemeProvider>
         </SWRProvider>

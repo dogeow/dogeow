@@ -2,7 +2,7 @@
 
 import { memo } from 'react'
 import type { Tile } from '@/app/types'
-import { useTranslation } from '@/hooks/useTranslation'
+import { useHomepageTranslation } from '@/hooks/useHomepageTranslation'
 
 interface TileCardProps {
   tile: Tile
@@ -19,7 +19,7 @@ interface TileCardProps {
  */
 export const TileCard = memo(
   ({ tile, index, customStyles = '', showCover, needsLogin, onClick }: TileCardProps) => {
-    const { t } = useTranslation()
+    const { t } = useHomepageTranslation()
     const tileName = t(tile.nameKey, tile.nameCn || tile.nameKey)
 
     return (

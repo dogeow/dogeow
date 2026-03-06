@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { useTranslation } from '@/hooks/useTranslation'
+import { useHomepageTranslation } from '@/hooks/useHomepageTranslation'
 
 export default function LegalLinks() {
-  const { t } = useTranslation()
+  const { t } = useHomepageTranslation()
 
   return (
     <div className="text-muted-foreground flex items-center gap-4 text-sm">

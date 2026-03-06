@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { configs } from '@/app/configs'
+import { homeTiles } from '@/app/home-configs'
 import type { Tile } from '@/app/types'
 import { useProjectCoverStore } from '@/stores/projectCoverStore'
 import { useLoginTrigger } from '@/hooks/useLoginTrigger'
@@ -18,7 +18,7 @@ export function useTileManagement() {
   const { requireLogin, isAuthenticated } = useLoginTrigger()
 
   // 缓存 tiles 数据
-  const tiles = useMemo(() => configs.tiles as Tile[], [])
+  const tiles = useMemo(() => homeTiles as Tile[], [])
 
   // 简化保护检查逻辑
   const isProtectedTile = useCallback((tile: Tile): boolean => {
