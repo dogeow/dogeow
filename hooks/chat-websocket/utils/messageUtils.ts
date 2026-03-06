@@ -1,4 +1,5 @@
 import { getAuthManager } from '@/lib/websocket'
+import { unwrapApiPayload } from '@/lib/api'
 import useChatStore from '@/app/chat/chatStore'
 import type { ConnectionError } from '@/lib/websocket/error-handler'
 
@@ -94,10 +95,10 @@ export const sendMessageToServer = async (
       }
     }
 
-    const responseData = await response.json()
+    const responseData = unwrapApiPayload(await response.json())
     return {
       success: true,
-      data: responseData.data,
+      data: responseData,
     }
   } catch (error) {
     return {

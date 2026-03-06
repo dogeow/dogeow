@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { usePagination } from '@/hooks/usePagination'
 import { useChatWebSocket } from './useChatWebSocket'
 import type { SendMessageResult } from './chat-websocket/types'
+import { unwrapApiPayload } from '@/lib/api'
 import { getAuthManager } from '@/lib/websocket'
 import type {
   ChatRoom,
@@ -226,7 +227,12 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
       }
 
-      return (await response.json()) as T
+      if (response.status === 204) {
+        return {} as T
+      }
+
+      const payload = (await response.json()) as unknown
+      return unwrapApiPayload<T>(payload)
     },
     []
   )

@@ -144,6 +144,38 @@ describe('useChatRoom', () => {
 
       expect(result.current.rooms).toHaveLength(0)
     })
+
+    it('should unwrap standardized API responses', async () => {
+      const { result } = renderHook(() => useChatRoom({ autoLoadRooms: false }))
+
+      vi.mocked(fetch).mockResolvedValueOnce({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            success: true,
+            message: 'Success',
+            data: {
+              rooms: [
+                {
+                  id: 1,
+                  name: 'Wrapped Room',
+                  created_by: 1,
+                  is_active: true,
+                  created_at: '2024-01-01T00:00:00Z',
+                  updated_at: '2024-01-01T00:00:00Z',
+                },
+              ],
+            },
+          }),
+      } as Response)
+
+      await act(async () => {
+        await result.current.loadRooms()
+      })
+
+      expect(result.current.rooms).toHaveLength(1)
+      expect(result.current.rooms[0]?.name).toBe('Wrapped Room')
+    })
   })
 
   describe('Message Management', () => {

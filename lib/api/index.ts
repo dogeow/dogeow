@@ -37,6 +37,33 @@ export class ApiRequestError extends Error {
   }
 }
 
+export interface StandardApiResponse<T = unknown> {
+  success: boolean
+  message?: string
+  data?: T
+  errors?: ApiError['errors'] | Record<string, unknown> | unknown
+}
+
+const isStandardApiResponse = (value: unknown): value is StandardApiResponse<unknown> => {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+
+  return 'success' in value && typeof (value as { success?: unknown }).success === 'boolean'
+}
+
+export const unwrapApiPayload = <T>(value: unknown): T => {
+  if (!isStandardApiResponse(value)) {
+    return value as T
+  }
+
+  if ('data' in value) {
+    return value.data as T
+  }
+
+  return {} as T
+}
+
 /**
  * 统一处理API错误
  */
@@ -145,7 +172,8 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
   }
 
   try {
-    return (await response.json()) as T
+    const payload = (await response.json()) as unknown
+    return unwrapApiPayload<T>(payload)
   } catch (error) {
     if (process.env.NODE_ENV !== 'production') {
       console.error('解析JSON响应失败:', error)
@@ -405,8 +433,17 @@ const swrOptions = {
 }
 
 // 用户相关API
-export const fetchCurrentUser = () => get<User>('/user')
-export const useUser = () => useSWR<User>('/user', fetcher, swrOptions)
+const resolveUserPayload = (payload: User | { user?: User }): User =>
+  'user' in payload && payload.user ? payload.user : (payload as User)
+
+export const fetchCurrentUser = () => get<User | { user?: User }>('/user').then(resolveUserPayload)
+
+export const useUser = () =>
+  useSWR<User>(
+    '/user',
+    async url => resolveUserPayload(await fetcher<User | { user?: User }>(url)),
+    swrOptions
+  )
 
 // 未读通知（拉取时会触发后端「打开时补发汇总推送」）
 export interface UnreadNotificationItem {

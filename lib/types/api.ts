@@ -1,11 +1,34 @@
-// 基础 API 响应类型
+// 标准 API 响应信封（后端统一格式）
+export interface ApiEnvelope<T = unknown> {
+  success: boolean
+  message: string
+  data?: T
+  errors?: Record<string, string[]> | unknown
+  pagination?: PaginationMeta
+  meta?: Record<string, unknown>
+}
+
+// 前端解包后的业务数据类型（由 unwrapApiPayload 自动提取 data 字段）
 export interface ApiResponse<T = unknown> {
   data: T
   message?: string
   status?: number
 }
 
-// 分页响应类型
+// 分页元数据
+export interface PaginationMeta {
+  current_page: number
+  last_page: number
+  per_page: number
+  total: number
+  from: number | null
+  to: number | null
+  has_more_pages: boolean
+  prev_page_url: string | null
+  next_page_url: string | null
+}
+
+// 分页响应类型（解包后）
 export interface PaginatedResponse<T = unknown> {
   data: T[]
   current_page: number
@@ -24,6 +47,7 @@ export interface PaginatedResponse<T = unknown> {
 
 // 错误响应类型
 export interface ApiError {
+  success: false
   message: string
   errors?: Record<string, string[]>
   status?: number
