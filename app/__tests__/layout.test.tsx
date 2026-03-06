@@ -31,10 +31,6 @@ vi.mock('@/components/themes/LayoutRenderer', () => ({
   ),
 }))
 
-vi.mock('@/components/ui/sonner', () => ({
-  Toaster: () => <div data-testid="toaster">Toaster</div>,
-}))
-
 vi.mock('@/components/provider/BackgroundWrapper', () => ({
   BackgroundWrapper: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="background-wrapper">{children}</div>
@@ -59,24 +55,8 @@ vi.mock('@/components/provider/LanguageProvider', () => ({
   ),
 }))
 
-vi.mock('@/components/app/PWAInstallPrompt', () => ({
-  PWAInstallPrompt: () => <div data-testid="pwa-install-prompt" />,
-}))
-
-vi.mock('@/components/app/PWARegister', () => ({
-  PWARegister: () => <div data-testid="pwa-register" />,
-}))
-
-vi.mock('@/components/app/PushSubscriptionRegister', () => ({
-  PushSubscriptionRegister: () => <div data-testid="push-subscription-register" />,
-}))
-
-vi.mock('@/components/app/UnreadNotificationFetcher', () => ({
-  UnreadNotificationFetcher: () => <div data-testid="unread-notification-fetcher" />,
-}))
-
-vi.mock('@/components/app/NotificationRealtimeSubscriber', () => ({
-  NotificationRealtimeSubscriber: () => <div data-testid="notification-realtime-subscriber" />,
+vi.mock('@/components/app/DeferredRuntimeClients', () => ({
+  DeferredRuntimeClients: () => <div data-testid="deferred-runtime-clients" />,
 }))
 
 vi.mock('../globals.css', () => ({}))
@@ -117,18 +97,13 @@ describe('RootLayout', () => {
     expect(view.getByTestId('test-content')).toBeInTheDocument()
   })
 
-  it('renders app runtime helpers', () => {
+  it('renders deferred runtime helpers', () => {
     const view = render(
       <RootLayout>
         <div>Test Content</div>
       </RootLayout>
     )
 
-    expect(view.getByTestId('toaster')).toBeInTheDocument()
-    expect(view.getByTestId('pwa-install-prompt')).toBeInTheDocument()
-    expect(view.getByTestId('pwa-register')).toBeInTheDocument()
-    expect(view.getByTestId('push-subscription-register')).toBeInTheDocument()
-    expect(view.getByTestId('unread-notification-fetcher')).toBeInTheDocument()
-    expect(view.getByTestId('notification-realtime-subscriber')).toBeInTheDocument()
+    expect(view.getByTestId('deferred-runtime-clients')).toBeInTheDocument()
   })
 })

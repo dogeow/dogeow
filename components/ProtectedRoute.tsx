@@ -1,9 +1,9 @@
 'use client'
 
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useSyncExternalStore, useCallback } from 'react'
+import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import useAuthStore from '@/stores/authStore'
-import { configs } from '@/app/configs'
+import { isProtectedPath } from '@/lib/constants/protected-routes'
 import { useTranslation } from '@/hooks/useTranslation'
 
 const emptySubscribe = () => () => {}
@@ -23,24 +23,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     () => false
   )
 
-  // 根据当前路径判断是否需要登录保护
-  const needsProtection = useCallback(() => {
-    // 查找匹配的瓦片配置
-    const matchingTile = configs.tiles.find(tile => pathname.startsWith(tile.href))
-
-    // 如果找到匹配的瓦片，使用其 needLogin 配置
-    if (matchingTile) {
-      return matchingTile.needLogin === true
-    }
-
-    // 对于一些特殊路径，直接判断
-    const protectedPaths = ['/dashboard'] // dashboard 不在 tiles 配置中但需要保护
-    return protectedPaths.some(path => pathname.startsWith(path))
-  }, [pathname])
+  const needsProtection = useMemo(() => isProtectedPath(pathname), [pathname])
 
   useEffect(() => {
     // 只有需要保护的路径才进行登录检查
-    if (isClient && !loading && needsProtection() && !isAuthenticated) {
+    if (isClient && !loading && needsProtection && !isAuthenticated) {
       router.push('/')
     }
   }, [isClient, isAuthenticated, loading, router, needsProtection])
@@ -55,5 +42,5 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   // 如果不需要保护，或者用户已认证，显示内容
-  return !needsProtection() || isAuthenticated ? <>{children}</> : null
+  return !needsProtection || isAuthenticated ? <>{children}</> : null
 }

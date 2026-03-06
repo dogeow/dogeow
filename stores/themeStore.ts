@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { configs } from '@/app/configs'
+import { PRESET_THEME_COLORS } from '@/lib/constants/theme-colors'
 import type { CustomTheme } from '@/app/types'
 
 /** 外观模式：浅色、深色、跟随系统、休息时段（可配置时间段内深色） */
@@ -37,7 +37,7 @@ interface ThemeState {
 export const useThemeStore = create<ThemeState>()(
   persist(
     set => ({
-      currentTheme: configs.themeColors[0].id,
+      currentTheme: PRESET_THEME_COLORS[0].id,
       customThemes: [],
       followSystem: false,
       previousThemeMode: 'light',
@@ -129,7 +129,7 @@ export const getCurrentThemeColor = (
   customThemes: CustomTheme[]
 ): CustomTheme => {
   // 先从预设主题中查找
-  const presetTheme = configs.themeColors.find(theme => theme.id === currentTheme)
+  const presetTheme = PRESET_THEME_COLORS.find(theme => theme.id === currentTheme)
   if (presetTheme) {
     return {
       id: presetTheme.id,
@@ -144,7 +144,7 @@ export const getCurrentThemeColor = (
   if (userTheme) return userTheme
 
   // 默认返回第一个预设主题
-  const defaultTheme = configs.themeColors[0]
+  const defaultTheme = PRESET_THEME_COLORS[0]
   return {
     id: defaultTheme.id,
     name: defaultTheme.nameKey,

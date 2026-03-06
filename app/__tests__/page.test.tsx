@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { vi } from 'vitest'
 import Home from '../page'
 
@@ -66,7 +66,7 @@ describe('Home Page', () => {
     vi.clearAllMocks()
   })
 
-  it('should render the home page with correct structure', () => {
+  it('should render the home page with correct structure', async () => {
     render(<Home />)
 
     expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
@@ -79,7 +79,11 @@ describe('Home Page', () => {
 
     expect(screen.getByTestId('tile-thing')).toBeInTheDocument()
     expect(screen.getByTestId('tile-lab')).toBeInTheDocument()
-    expect(screen.getByTestId('footer')).toBeInTheDocument()
+
+    // Footer is dynamically loaded, wait for it
+    await waitFor(() => {
+      expect(screen.getByTestId('footer')).toBeInTheDocument()
+    })
   })
 
   it('should render tiles with correct grid layout', () => {

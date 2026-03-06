@@ -1,16 +1,24 @@
 'use client'
 
 import { useMemo } from 'react'
-import Footer from '@/components/app/Footer'
+import dynamic from 'next/dynamic'
 import { configs } from '@/app/configs'
 import { ThemedTileCard } from '@/components/app/ThemedTileCard'
-import { MagazineLayout } from '@/components/app/MagazineLayout'
 import { useTileManagement } from '@/hooks/useTileManagement'
 import { PageContainer } from '@/components/layout'
 import { useUITheme } from '@/components/themes/UIThemeProvider'
 import { useLayoutStore } from '@/stores/layoutStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Tile } from '@/app/types'
+
+const MagazineLayout = dynamic(
+  () => import('@/components/app/MagazineLayout').then(mod => mod.MagazineLayout),
+  { ssr: true }
+)
+
+const Footer = dynamic(() => import('@/components/app/Footer'), {
+  ssr: true,
+})
 
 /** 首页四种布局统一的间距：栅格/杂志用 gap */
 const HOME_TILES_GAP = 'gap-4'

@@ -3,30 +3,27 @@ import { vi } from 'vitest'
 import { useThemeStore, getCurrentThemeColor, isRestPeriodNow } from '../themeStore'
 import type { CustomTheme } from '../../app/types'
 
-// Mock the configs
-vi.mock('@/app/configs', () => ({
-  configs: {
-    themeColors: [
-      {
-        id: 'default',
-        nameKey: 'theme.default',
-        primary: '#3b82f6',
-        color: '#1e40af',
-      },
-      {
-        id: 'green',
-        nameKey: 'theme.green',
-        primary: '#10b981',
-        color: '#059669',
-      },
-      {
-        id: 'purple',
-        nameKey: 'theme.purple',
-        primary: '#8b5cf6',
-        color: '#7c3aed',
-      },
-    ],
-  },
+vi.mock('@/lib/constants/theme-colors', () => ({
+  PRESET_THEME_COLORS: [
+    {
+      id: 'default',
+      nameKey: 'theme.default',
+      primary: '#3b82f6',
+      color: '#1e40af',
+    },
+    {
+      id: 'green',
+      nameKey: 'theme.green',
+      primary: '#10b981',
+      color: '#059669',
+    },
+    {
+      id: 'purple',
+      nameKey: 'theme.purple',
+      primary: '#8b5cf6',
+      color: '#7c3aed',
+    },
+  ],
 }))
 
 describe('themeStore', () => {

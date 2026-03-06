@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Languages,
 } from 'lucide-react'
+import { PRESET_THEME_COLORS } from '@/lib/constants/theme-colors'
 
 // 控制台Logo文本
 const LOGO_TEXT = `
@@ -17,18 +18,21 @@ const LOGO_TEXT = `
 ═╩╝└─┘└─┘└─┘╚═╝╚╩╝
 ` as const
 
-// 开发环境控制台输出
-const initializeConsoleOutput = () => {
-  if (typeof window === 'undefined') return
-
-  console.log(`%c${LOGO_TEXT}`, 'color: yellow')
-  if (process.env.NODE_ENV === 'development') {
-    console.log('🎯 本地开发环境')
+// 开发环境控制台输出（仅客户端执行一次）
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+  const hasLogged = '__dogeow_console_logged__' as const
+  const globalWindow = window as unknown as Window & { [key: string]: boolean }
+  if (!globalWindow[hasLogged]) {
+    globalWindow[hasLogged] = true
+    requestIdleCallback(
+      () => {
+        console.log(`%c${LOGO_TEXT}`, 'color: yellow')
+        console.log('🎯 本地开发环境')
+      },
+      { timeout: 2000 }
+    )
   }
 }
-
-// 延迟执行避免阻塞
-setTimeout(initializeConsoleOutput, 0)
 
 const TILES = [
   {
@@ -166,13 +170,6 @@ const createModule = (id: string, nameKey: string, descriptionKey: string, url: 
     url,
   }) as const
 
-// 统一的主题色配置
-const THEME_COLORS = [
-  { id: 'overwatch', nameKey: 'theme.overwatch', primary: 'hsl(35 97% 55%)', color: '#fc9d1c' },
-  { id: 'minecraft', nameKey: 'theme.minecraft', primary: 'hsl(101 50% 43%)', color: '#5d9c32' },
-  { id: 'zelda', nameKey: 'theme.zelda', primary: 'hsl(41 38% 56%)', color: '#b99f65' },
-] as const
-
 // 背景图配置
 const SYSTEM_BACKGROUNDS = [
   { id: 'none', nameKey: 'background.none', url: '' },
@@ -198,7 +195,7 @@ export const configs = {
   files: [createModule('file-1', 'module.file.name', 'module.file.desc', '/file')],
   lab: [createModule('lab-1', 'module.lab.name', 'module.lab.desc', '/lab')],
   systemBackgrounds: SYSTEM_BACKGROUNDS,
-  themeColors: THEME_COLORS,
+  themeColors: PRESET_THEME_COLORS,
 }
 
 // 通用的多语言配置转换函数
