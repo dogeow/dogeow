@@ -2,6 +2,7 @@
 
 import useSWR, { mutate } from 'swr'
 import useAuthStore from '../../stores/authStore'
+import { getEchoInstance } from '@/lib/websocket'
 
 import type { User, ApiError } from '@/app'
 import { toast } from 'sonner'
@@ -113,6 +114,15 @@ const createHeaders = (isFormData = false): Record<string, string> => {
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`
+  }
+
+  // Laravel Echo 连接存在时附带 socket_id，供服务端 broadcast()->toOthers() 等排除发送者
+  if (typeof window !== 'undefined') {
+    const echo = getEchoInstance()
+    const socketId = typeof echo?.socketId === 'function' ? echo.socketId() : undefined
+    if (socketId) {
+      headers['X-Socket-ID'] = socketId
+    }
   }
 
   return headers

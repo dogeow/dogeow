@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic'
 import { useMemo } from 'react'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { cn } from '@/lib/helpers'
+import { ScrollButton } from '@/components/display/ScrollButton'
 
 /**
  * 动态布局渲染器
@@ -119,6 +120,8 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
 
         {/* 主内容 */}
         <main
+          id="main-scroll"
+          data-scroll-container
           className="mx-auto min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto"
           style={{
             maxWidth: theme.layout.main.maxWidth === '100%' ? '100%' : theme.layout.main.maxWidth,
@@ -148,6 +151,7 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
           <Footer />
         </footer>
       )}
+      <ScrollButton />
     </div>
   )
 }
@@ -164,9 +168,14 @@ function DefaultLayout({ children }: { children: React.ReactNode }) {
           <LazyAppLauncher />
         </div>
       </div>
-      <div id="main-container" className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
+      <div
+        id="main-container"
+        data-scroll-container
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto"
+      >
         <div className="mx-auto flex h-full w-full max-w-7xl flex-col p-0">{children}</div>
       </div>
+      <ScrollButton />
     </div>
   )
 }
