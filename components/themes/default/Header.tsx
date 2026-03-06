@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
-import { AppLauncher } from '@/components/launcher'
+import { LazyAppLauncher } from '@/components/launcher/LazyAppLauncher'
 
 const AiDialog = dynamic(
   () => import('@/components/app/AiDialog').then(m => ({ default: m.AiDialog })),
@@ -20,7 +20,7 @@ export default function DefaultHeader() {
     <>
       <AiDialog open={isAiOpen} onOpenChange={setIsAiOpen} />
       <div className="mx-auto flex h-full w-full max-w-7xl items-center px-2 sm:px-4">
-        <AppLauncher
+        <LazyAppLauncher
           onOpenAi={() => setIsAiOpen(prev => !prev)}
           isAiOpen={isAiOpen}
           onCloseAi={() => setIsAiOpen(false)}

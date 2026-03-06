@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useUITheme } from '@/components/themes/UIThemeProvider'
-import { AppLauncher } from '@/components/launcher'
+import { LazyAppLauncher } from '@/components/launcher/LazyAppLauncher'
 import { Search, Menu } from 'lucide-react'
 import { useThemeStore } from '@/stores/themeStore'
 import { NotificationDropdown } from '@/components/app/NotificationDropdown'
@@ -68,7 +68,7 @@ export default function DashboardHeader() {
 
           {theme.layout.header.showUserMenu && (
             <div className="flex items-center gap-2">
-              <AppLauncher
+              <LazyAppLauncher
                 onOpenAi={() => setIsAiOpen(prev => !prev)}
                 isAiOpen={isAiOpen}
                 onCloseAi={() => setIsAiOpen(false)}
