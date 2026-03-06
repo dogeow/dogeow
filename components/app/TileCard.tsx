@@ -99,12 +99,13 @@ export const TileCard = memo(
       () => t(tile.nameKey, tile.nameCn || tile.nameKey),
       [t, tile.nameKey, tile.nameCn]
     )
+    const gridArea = useMemo(() => tile.gridArea || tile.name, [tile.gridArea, tile.name])
     const coverImage = useMemo(
       () => (showCover ? tile.cover || `${tile.name}.png` : null),
       [showCover, tile.cover, tile.name]
     )
+    const isLcpCandidate = index === 0 && gridArea === 'thing'
     const hasBackground = useMemo(() => !!coverImage && !imageError, [coverImage, imageError])
-    const gridArea = useMemo(() => tile.gridArea || tile.name, [tile.gridArea, tile.name])
 
     // 事件处理器
     const handleImageError = useCallback(() => setImageError(true), [])
@@ -151,7 +152,9 @@ export const TileCard = memo(
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               }`}
               sizes={getImageSizes(gridArea)}
-              priority={index < 4}
+              priority={isLcpCandidate || index < 4}
+              fetchPriority={isLcpCandidate ? 'high' : undefined}
+              loading={isLcpCandidate ? 'eager' : undefined}
               onError={handleImageError}
               onLoad={handleImageLoad}
               quality={PERFORMANCE.IMAGE_QUALITY}
