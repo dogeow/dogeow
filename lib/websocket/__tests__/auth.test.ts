@@ -7,6 +7,7 @@ vi.mock('../echo', () => ({
     disconnect: vi.fn(),
   })),
   destroyEchoInstance: vi.fn(),
+  getEchoInstance: vi.fn(() => null),
 }))
 
 describe('WebSocket Auth Manager', () => {
@@ -35,19 +36,25 @@ describe('WebSocket Auth Manager', () => {
 
     // Mock localStorage
     originalLocalStorage = global.localStorage
-    global.localStorage = {
-      getItem: vi.fn(),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-      clear: vi.fn(),
-      length: 0,
-      key: vi.fn(),
-    } as Storage
+    Object.defineProperty(global, 'localStorage', {
+      value: {
+        getItem: vi.fn(),
+        setItem: vi.fn(),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+        length: 0,
+        key: vi.fn(),
+      } as Storage,
+      configurable: true,
+    })
   })
 
   afterEach(() => {
     global.window = originalWindow
-    global.localStorage = originalLocalStorage
+    Object.defineProperty(global, 'localStorage', {
+      value: originalLocalStorage,
+      configurable: true,
+    })
     vi.restoreAllMocks()
   })
 
@@ -78,8 +85,10 @@ describe('WebSocket Auth Manager', () => {
     let manager: ReturnType<typeof import('../auth').getAuthManager>
 
     beforeEach(async () => {
-      const { getAuthManager } = await import('../auth')
+      const { getAuthManager, destroyAuthManager } = await import('../auth')
+      destroyAuthManager()
       manager = getAuthManager()
+      vi.clearAllMocks()
     })
 
     describe('getToken', () => {
@@ -157,6 +166,34 @@ describe('WebSocket Auth Manager', () => {
             state: { user: 'test-user', token: 'new-token' },
           })
         )
+      })
+
+      it('should not reconnect echo when no active instance exists', async () => {
+        const existingAuthData = { state: { user: 'test-user' } }
+        vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify(existingAuthData))
+
+        const { createEchoInstance, destroyEchoInstance, getEchoInstance } = await import('../echo')
+        vi.mocked(getEchoInstance).mockReturnValue(null)
+
+        manager.setToken('new-token')
+
+        expect(destroyEchoInstance).not.toHaveBeenCalled()
+        expect(createEchoInstance).not.toHaveBeenCalled()
+      })
+
+      it('should reconnect echo when an active instance exists', async () => {
+        const existingAuthData = { state: { user: 'test-user' } }
+        vi.mocked(localStorage.getItem).mockReturnValue(JSON.stringify(existingAuthData))
+
+        const { createEchoInstance, destroyEchoInstance, getEchoInstance } = await import('../echo')
+        vi.mocked(getEchoInstance).mockReturnValue(
+          {} as NonNullable<ReturnType<typeof getEchoInstance>>
+        )
+
+        manager.setToken('new-token')
+
+        expect(destroyEchoInstance).toHaveBeenCalledTimes(1)
+        expect(createEchoInstance).toHaveBeenCalledTimes(1)
       })
 
       it('should handle localStorage errors gracefully', () => {

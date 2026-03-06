@@ -22,16 +22,28 @@ const {
     leave: vi.fn(),
   }
 
-  return {
-    mockAuthState: {
-      loading: false,
-      isAuthenticated: true,
-      user: {
-        id: 1,
-        email: 'stale@example.com',
-        name: 'Stale User',
-      },
+  const mockAuthState: {
+    loading: boolean
+    isAuthenticated: boolean
+    token: string | null
+    user: {
+      id: number
+      email: string
+      name: string
+    }
+  } = {
+    loading: false,
+    isAuthenticated: true,
+    token: 'test-token',
+    user: {
+      id: 1,
+      email: 'stale@example.com',
+      name: 'Stale User',
     },
+  }
+
+  return {
+    mockAuthState,
     mockSetUser: vi.fn(),
     mockFetchCurrentUser: vi.fn(),
     mockMutate: vi.fn(),
@@ -75,6 +87,7 @@ describe('NotificationRealtimeSubscriber', () => {
 
     mockAuthState.loading = false
     mockAuthState.isAuthenticated = true
+    mockAuthState.token = 'test-token'
     mockAuthState.user = {
       id: 1,
       email: 'stale@example.com',
@@ -121,6 +134,17 @@ describe('NotificationRealtimeSubscriber', () => {
 
   it('waits for auth initialization before attempting subscription', async () => {
     mockAuthState.loading = true
+
+    render(<NotificationRealtimeSubscriber />)
+
+    await waitFor(() => {
+      expect(mockFetchCurrentUser).not.toHaveBeenCalled()
+      expect(mockEcho.private).not.toHaveBeenCalled()
+    })
+  })
+
+  it('skips subscription when token is missing', async () => {
+    mockAuthState.token = null
 
     render(<NotificationRealtimeSubscriber />)
 

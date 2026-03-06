@@ -1,4 +1,4 @@
-import { createEchoInstance, destroyEchoInstance } from './echo'
+import { createEchoInstance, destroyEchoInstance, getEchoInstance } from './echo'
 
 export interface AuthTokenManager {
   getToken: () => string | null
@@ -33,12 +33,18 @@ class WebSocketAuthManager {
   }
 
   private reconnectWithNewToken(token: string | null) {
+    const hasExistingEcho = Boolean(getEchoInstance())
+
     if (token) {
-      // 销毁当前连接，并用新 token 创建新连接
-      destroyEchoInstance()
-      createEchoInstance()
-    } else {
-      // token 被移除，断开连接
+      // 仅在已有连接时重建，避免初始化时无条件触发认证请求。
+      if (hasExistingEcho) {
+        destroyEchoInstance()
+        createEchoInstance()
+      }
+      return
+    }
+
+    if (hasExistingEcho) {
       destroyEchoInstance()
     }
   }
@@ -76,7 +82,7 @@ class WebSocketAuthManager {
       console.warn('更新 auth storage 失败:', error)
     }
 
-    // 用新 token 重新连接
+    // 仅在已有连接时重建，避免无意义的初始化认证请求
     this.reconnectWithNewToken(token)
   }
 
