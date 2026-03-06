@@ -48,3 +48,6 @@ next-env.d.ts
 
 # PM2
 logs/
+
+# AI
+.claude
