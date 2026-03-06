@@ -4,14 +4,23 @@ import * as React from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { cn } from '@/lib/helpers'
 
-interface ModalProps {
+/**
+ * Modal 对话框组件的 Props 接口
+ */
+export interface ModalProps {
+  /** 对话框是否打开 */
   open: boolean
+  /** 打开/关闭状态改变回调 */
   onOpenChange: (open: boolean) => void
+  /** 对话框标题 */
   title?: React.ReactNode
+  /** 对话框内容 */
   children?: React.ReactNode
+  /** 传递给内容容器的样式类名 */
   className?: string
+  /** 传递给 DialogContent 的样式类名 */
   contentClassName?: string
-  // quick size preset
+  /** 预设大小 */
   size?: 'sm' | 'md' | 'lg' | 'full'
 }
 
@@ -52,7 +61,7 @@ export function Modal({
   )
 }
 
-// Re-export header/title for explicit usage when needed
+// ✅ 重导出及类型
 export const ModalHeader = DialogHeader
 export const ModalTitle = DialogTitle
 

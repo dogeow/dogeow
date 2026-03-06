@@ -9,14 +9,25 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-interface ConfirmDialogProps {
+/**
+ * 确认对话框的 Props 接口
+ */
+export interface ConfirmDialogProps {
+  /** 对话框是否打开 */
   open: boolean
+  /** 打开/关闭状态改变回调 */
   onOpenChange: (open: boolean) => void
+  /** 对话框标题 */
   title: string
+  /** 对话框描述文本 */
   description: string
-  onConfirm: () => void
-  onCancel?: () => void
+  /** 点击确认按钮的回调 */
+  onConfirm: () => void | Promise<void>
+  /** 点击取消按钮的回调 */
+  onCancel?: () => void | Promise<void>
+  /** 确认按钮的文本 */
   confirmText?: string
+  /** 取消按钮的文本 */
   cancelText?: string
 }
 

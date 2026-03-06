@@ -15,13 +15,48 @@ interface HomeLayoutResponse {
   updated_at: string
 }
 
+const IS_DEVELOPMENT = process.env.NODE_ENV === 'development'
+
+const VALID_TILE_SIZES: TileSize[] = ['1x1', '1x2', '2x1', '3x1']
+const DEFAULT_TILE_SIZES: Record<string, TileSize> = {
+  thing: '3x1',
+  chat: '1x2',
+  file: '2x1',
+  tool: '1x1',
+  lab: '1x1',
+  nav: '1x1',
+  note: '1x1',
+  game: '1x1',
+}
+
+const debugLog = (...args: unknown[]) => {
+  if (IS_DEVELOPMENT) {
+    console.log(...args)
+  }
+}
+
+const debugWarn = (...args: unknown[]) => {
+  if (IS_DEVELOPMENT) {
+    console.warn(...args)
+  }
+}
+
+function normalizeTileSizes(tiles: TileConfig[], context: string): TileConfig[] {
+  return tiles.map(tile => {
+    if (!VALID_TILE_SIZES.includes(tile.size)) {
+      const fixedSize = DEFAULT_TILE_SIZES[tile.name] || '1x1'
+      console.warn(`⚠️ Fixing invalid size ${context}: ${tile.name} ${tile.size} -> ${fixedSize}`)
+      return { ...tile, size: fixedSize }
+    }
+
+    return tile
+  })
+}
+
 const fetcher = async (url: string): Promise<HomeLayoutResponse> => {
   try {
     const response = await get<HomeLayoutResponse>(url)
-    // 调试：打印返回的数据
-    if (process.env.NODE_ENV === 'development') {
-      console.log('📥 Home layout fetched:', response)
-    }
+    debugLog('📥 Home layout fetched:', response)
     return response
   } catch (error) {
     console.error('Home layout API 请求失败:', error)
@@ -56,9 +91,7 @@ export function useHomeLayout() {
     if (tiles && Array.isArray(tiles) && tiles.length > 0) {
       // 如果正在保存，不覆盖本地数据
       if (!isSavingRef.current) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('📥 Syncing data to store (no save):', tiles)
-        }
+        debugLog('📥 Syncing data to store (no save):', tiles)
         // 设置同步标志，防止其他 useEffect 触发保存
         isSyncingRef.current = true
         // 直接更新 store，不触发保存（避免循环保存）
@@ -66,17 +99,13 @@ export function useHomeLayout() {
         // 延迟重置同步标志，确保其他 useEffect 不会触发
         setTimeout(() => {
           isSyncingRef.current = false
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ Sync completed, isSyncingRef reset')
-          }
+          debugLog('✅ Sync completed, isSyncingRef reset')
         }, 100)
       } else {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('⏸️ Skipping sync (saving in progress)')
-        }
+        debugLog('⏸️ Skipping sync (saving in progress)')
       }
-    } else if (data && process.env.NODE_ENV === 'development') {
-      console.warn('⚠️ No tiles in data:', data)
+    } else if (data) {
+      debugWarn('⚠️ No tiles in data:', data)
     }
   }, [data, setStoreTiles])
 
@@ -87,32 +116,11 @@ export function useHomeLayout() {
         return // 未登录用户不保存
       }
 
-      // 验证并修复无效的 size
-      const validSizes: TileSize[] = ['1x1', '1x2', '2x1', '3x1']
-      const defaultSizes: Record<string, TileSize> = {
-        thing: '3x1',
-        chat: '1x2',
-        file: '2x1',
-        tool: '1x1',
-        lab: '1x1',
-        nav: '1x1',
-        note: '1x1',
-        game: '1x1',
-      }
-
-      const fixedTiles = tilesToSave.map(t => {
-        if (!validSizes.includes(t.size)) {
-          const fixedSize = defaultSizes[t.name] || '1x1'
-          console.warn(`⚠️ Fixing invalid size before save: ${t.name} ${t.size} -> ${fixedSize}`)
-          return { ...t, size: fixedSize }
-        }
-        return t
-      })
+      const fixedTiles = normalizeTileSizes(tilesToSave, 'before save')
 
       isSavingRef.current = true
       try {
-        // 调试：打印保存的数据
-        console.log('💾 Saving layout:', fixedTiles)
+        debugLog('💾 Saving layout:', fixedTiles)
 
         const response = await put<{ message: string; layout: HomeLayoutResponse }>(
           '/home/layout',
@@ -123,8 +131,7 @@ export function useHomeLayout() {
           }
         )
 
-        // 调试：打印返回的数据
-        console.log('✅ Layout saved, response:', JSON.stringify(response, null, 2))
+        debugLog('✅ Layout saved, response:', JSON.stringify(response, null, 2))
 
         // 使用返回的数据更新 store
         // API 返回格式: { message: "...", layout: HomeLayoutResponse }
@@ -132,8 +139,8 @@ export function useHomeLayout() {
         // 所以正确的路径是: response.layout.layout.tiles
         const savedTiles = response?.layout?.layout?.tiles
 
-        console.log('🔍 Extracted tiles:', savedTiles)
-        console.log('🔍 Response structure:', {
+        debugLog('🔍 Extracted tiles:', savedTiles)
+        debugLog('🔍 Response structure:', {
           hasLayout: !!response?.layout,
           hasLayoutLayout: !!response?.layout?.layout,
           hasTiles: !!response?.layout?.layout?.tiles,
@@ -143,7 +150,7 @@ export function useHomeLayout() {
         if (savedTiles && Array.isArray(savedTiles) && savedTiles.length > 0) {
           // 直接更新 store，不触发保存
           useHomeLayoutStore.getState().setTiles(savedTiles)
-          console.log('🔄 Store updated with saved tiles:', savedTiles)
+          debugLog('🔄 Store updated with saved tiles:', savedTiles)
 
           // 更新 SWR 缓存，使用返回的完整数据结构
           if (response.layout) {
@@ -151,7 +158,7 @@ export function useHomeLayout() {
           }
         } else {
           // 如果返回格式不对，尝试其他路径
-          console.warn('⚠️ Unexpected response format, trying alternative paths:', response)
+          debugWarn('⚠️ Unexpected response format, trying alternative paths:', response)
 
           type AltLayoutResponse = {
             layout?: { tiles?: TileConfig[] }
@@ -165,13 +172,13 @@ export function useHomeLayout() {
 
           let foundTiles: TileConfig[] | null = null
           if (altTiles1 && Array.isArray(altTiles1)) {
-            console.log('✅ Found tiles at response.layout.tiles')
+            debugLog('✅ Found tiles at response.layout.tiles')
             foundTiles = altTiles1
           } else if (altTiles2 && Array.isArray(altTiles2)) {
-            console.log('✅ Found tiles at response.tiles')
+            debugLog('✅ Found tiles at response.tiles')
             foundTiles = altTiles2
           } else if (altTiles3 && Array.isArray(altTiles3)) {
-            console.log('✅ Found tiles at response.data.layout.tiles')
+            debugLog('✅ Found tiles at response.data.layout.tiles')
             foundTiles = altTiles3
           } else {
             console.error('❌ Could not find tiles in response:', response)
@@ -201,7 +208,7 @@ export function useHomeLayout() {
         // 这样 useEffect 中的同步逻辑不会覆盖刚保存的数据
         setTimeout(() => {
           isSavingRef.current = false
-          console.log('✅ Save completed, isSavingRef reset')
+          debugLog('✅ Save completed, isSavingRef reset')
         }, 300)
       }
     },
@@ -246,33 +253,11 @@ export function useHomeLayout() {
     setTiles: (newTiles: TileConfig[]) => {
       // 如果正在同步数据，不触发保存
       if (isSyncingRef.current) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('⏸️ Skipping save (syncing in progress)')
-        }
+        debugLog('⏸️ Skipping save (syncing in progress)')
         return
       }
 
-      // 验证并修复无效的 size
-      const validSizes: TileSize[] = ['1x1', '1x2', '2x1', '3x1']
-      const defaultSizes: Record<string, TileSize> = {
-        thing: '3x1',
-        chat: '1x2',
-        file: '2x1',
-        tool: '1x1',
-        lab: '1x1',
-        nav: '1x1',
-        note: '1x1',
-        game: '1x1',
-      }
-
-      const fixedTiles = newTiles.map(t => {
-        if (!validSizes.includes(t.size)) {
-          const fixedSize = defaultSizes[t.name] || '1x1'
-          console.warn(`⚠️ Fixing invalid size for ${t.name}: ${t.size} -> ${fixedSize}`)
-          return { ...t, size: fixedSize }
-        }
-        return t
-      })
+      const fixedTiles = normalizeTileSizes(newTiles, 'for setTiles')
 
       // 先更新 store（不触发保存）
       setStoreTiles(fixedTiles)

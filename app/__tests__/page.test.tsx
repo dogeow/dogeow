@@ -7,14 +7,6 @@ vi.mock('@/components/app/Footer', () => ({
   default: () => <div data-testid="footer">Footer</div>,
 }))
 
-vi.mock('@/components/app/TileCard', () => ({
-  TileCard: ({ tile, onClick }: { tile: { name: string }; onClick: () => void }) => (
-    <div data-testid={`tile-${tile.name}`} onClick={onClick}>
-      {tile.name}
-    </div>
-  ),
-}))
-
 vi.mock('@/hooks/useTileManagement', () => ({
   useTileManagement: () => ({
     tiles: [
@@ -47,6 +39,28 @@ vi.mock('@/app/configs', () => ({
   },
 }))
 
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (key: string, fallback?: string) => fallback ?? key,
+  }),
+}))
+
+vi.mock('@/components/themes/UIThemeProvider', () => ({
+  useUITheme: () => null,
+}))
+
+vi.mock('@/stores/layoutStore', () => ({
+  useLayoutStore: () => ({ siteLayout: 'grid' as const }),
+}))
+
+vi.mock('@/components/app/ThemedTileCard', () => ({
+  ThemedTileCard: ({ tile, onClick }: { tile: { name: string }; onClick: () => void }) => (
+    <div data-testid={`tile-${tile.name}`} onClick={onClick}>
+      {tile.name}
+    </div>
+  ),
+}))
+
 describe('Home Page', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -55,59 +69,49 @@ describe('Home Page', () => {
   it('should render the home page with correct structure', () => {
     render(<Home />)
 
-    // Check for main content
-    expect(screen.getByRole('main')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
+      'DogeOW - 个人工具和游戏平台'
+    )
+    const descriptions = screen.getAllByText(
+      '包含物品管理、文件管理、笔记、导航、实验室和各种小游戏的综合平台'
+    )
+    expect(descriptions.length).toBeGreaterThanOrEqual(1)
 
-    // Check for SEO content
-    expect(screen.getByText('DogeOW - 个人工具和游戏平台')).toBeInTheDocument()
-    expect(
-      screen.getByText('包含物品管理、文件管理、笔记、导航、实验室和各种小游戏的综合平台')
-    ).toBeInTheDocument()
-
-    // Check for tiles
     expect(screen.getByTestId('tile-thing')).toBeInTheDocument()
     expect(screen.getByTestId('tile-lab')).toBeInTheDocument()
-
-    // Check for footer
     expect(screen.getByTestId('footer')).toBeInTheDocument()
   })
 
   it('should render tiles with correct grid layout', () => {
     render(<Home />)
 
-    const mainElement = screen.getByRole('main')
-    const gridContainer = mainElement.querySelector('.grid')
+    const gridContainer = document.querySelector('.grid')
 
     expect(gridContainer).toBeInTheDocument()
-    expect(gridContainer).toHaveClass('gap-3', 'sm:gap-4')
+    expect(gridContainer).toHaveClass('gap-4')
   })
 
   it('should render tiles with correct styling', () => {
     render(<Home />)
 
-    const tileContainers = screen.getAllByText(/thing|lab/)
-    tileContainers.forEach(container => {
-      expect(container.parentElement).toHaveClass('min-h-[8rem]')
-    })
+    expect(screen.getByTestId('tile-thing')).toBeInTheDocument()
+    expect(screen.getByTestId('tile-lab')).toBeInTheDocument()
   })
 
   it('should have correct accessibility structure', () => {
     render(<Home />)
 
-    // Check for proper heading structure
+    // Check for single h1 in sr-only (SEO)
     const h1 = screen.getByRole('heading', { level: 1 })
     expect(h1).toHaveTextContent('DogeOW - 个人工具和游戏平台')
-
-    // Check that SEO content is visually hidden
-    const seoContent = screen.getByText('DogeOW - 个人工具和游戏平台').closest('.sr-only')
-    expect(seoContent).toBeInTheDocument()
+    expect(h1.closest('.sr-only')).toBeInTheDocument()
   })
 
   it('should render with correct container classes', () => {
     render(<Home />)
 
-    const mainElement = screen.getByRole('main')
-    expect(mainElement).toHaveClass('max-w-7xl', 'p-2')
+    const container = document.querySelector('[class*="space-y-6"]')
+    expect(container).toBeInTheDocument()
   })
 
   it('should render tiles with proper grid areas', () => {

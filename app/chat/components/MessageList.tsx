@@ -41,11 +41,9 @@ const MessageItem = React.memo(function MessageItem({
   onReact,
 }: MessageItemProps) {
   const mentionInfo = useMentionDetection(message.message)
-  const messageText = useMemo(() => message.message.trim(), [message.message])
-  const isImageUrl = useMemo(
-    () => /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(messageText),
-    [messageText]
-  )
+  // ✅ 性能优化: 简化不必要的 useMemo，直接使用计算值
+  const messageText = message.message.trim()
+  const isImageUrl = /^https?:\/\/\S+\.(png|jpe?g|gif|webp)(\?.*)?$/i.test(messageText)
 
   return (
     <div
@@ -68,10 +66,11 @@ const MessageItem = React.memo(function MessageItem({
             className="max-h-72 w-auto max-w-full rounded-lg object-contain"
             loading="lazy"
             decoding="async"
+            priority={false}
             unoptimized
           />
         ) : (
-          <MentionHighlight text={message.message} className="break-words whitespace-pre-wrap" />
+          <MentionHighlight text={messageText} className="break-words whitespace-pre-wrap" />
         )}
       </div>
       <MessageInteractions message={message} onReply={onReply} onReact={onReact} />
@@ -149,8 +148,10 @@ function MessageListContent({
   const roomKey = useMemo(() => roomId.toString(), [roomId])
   const isLoading = useChatStore(state => state.isLoading)
   const loadMessages = useChatStore(state => state.loadMessages)
-  const messages = useChatStore(state => state.messages)
-  const messagesForRoom = useMemo(() => messages[roomKey] || [], [messages, roomKey])
+  // ✅ 性能优化: 精细化选择器，只在当前房间的消息改变时重新渲染
+  const messagesForRoom = useChatStore(
+    useCallback(state => state.messages[roomKey] || [], [roomKey])
+  )
   const hasSearchQuery = useMemo(() => !!searchQuery?.trim(), [searchQuery])
 
   const filteredMessages = useMemo(() => {

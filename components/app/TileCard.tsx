@@ -6,26 +6,27 @@ import { useTranslation } from '@/hooks/useTranslation'
 import { PERFORMANCE } from '@/lib/constants'
 import { imageAsset } from '@/lib/helpers/assets'
 
-// 常量定义
+// 常量定义：与 MagazineLayout 列表卡统一圆角与焦点样式
 const TILE_CLASSES = {
   BASE: [
     'tile-card',
     'w-full h-full min-h-[8rem]',
     'relative flex flex-col items-start justify-end',
-    'p-3 sm:p-4 rounded-lg overflow-hidden',
-    'transition-[transform,box-shadow,filter] duration-200 ease-in-out',
-    'hover:scale-95 active:scale-90 cursor-pointer',
-    'shadow-sm hover:shadow-md',
+    'p-3 sm:p-4 rounded-xl overflow-hidden',
+    'border border-white/15 shadow-sm',
+    'transition-[transform,box-shadow,border-color] duration-200 ease-in-out',
+    'hover:scale-[0.98] hover:shadow-md hover:border-white/25 cursor-pointer',
+    'active:scale-[0.97]',
     'will-change-transform',
-    'border-0 text-left outline-none',
-    'focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-black/30',
+    'text-left outline-none',
+    'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     'motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100',
   ].join(' '),
   GRADIENT_OVERLAY: 'absolute inset-0 z-[2]',
   LOCK_ICON:
-    'bg-opacity-60 absolute top-1.5 right-1.5 z-[3] flex h-5 w-5 items-center justify-center rounded-full bg-black backdrop-blur-sm sm:top-2 sm:right-2 sm:h-6 sm:w-6',
-  CONTENT: 'relative z-[2] flex items-center gap-2',
-  TITLE: 'text-lg leading-tight font-medium text-white sm:text-xl',
+    'absolute top-2 right-2 z-[3] flex h-6 w-6 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm',
+  CONTENT: 'relative z-[2] flex items-center gap-2.5',
+  TITLE: 'text-base font-medium leading-tight text-white sm:text-lg',
 } as const
 
 const IMAGE_SIZES = {
@@ -76,7 +77,7 @@ const TileIcon = memo(
 
     return (
       <div
-        className="h-5 w-5 text-white sm:h-6 sm:w-6"
+        className="h-5 w-5 shrink-0 text-white sm:h-6 sm:w-6"
         style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))' }}
       >
         {tile.icon}
@@ -165,7 +166,7 @@ export const TileCard = memo(
         {/* 登录锁定图标 */}
         {needsLogin && (
           <div className={TILE_CLASSES.LOCK_ICON}>
-            <Lock className="h-2.5 w-2.5 text-white sm:h-3 sm:w-3" />
+            <Lock className="h-3 w-3 text-white" />
           </div>
         )}
 

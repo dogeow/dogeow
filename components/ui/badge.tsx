@@ -23,12 +23,18 @@ const badgeVariants = cva(
   }
 )
 
+// ✅ 显式定义和导出 Props 类型
+export interface BadgeProps
+  extends React.ComponentProps<'span'>, VariantProps<typeof badgeVariants> {
+  asChild?: boolean
+}
+
 const Badge = React.memo(function Badge({
   className,
   variant,
   asChild = false,
   ...props
-}: React.ComponentProps<'span'> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+}: BadgeProps) {
   const Comp = asChild ? Slot : 'span'
 
   return <Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />

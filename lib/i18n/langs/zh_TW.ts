@@ -2,6 +2,11 @@ export const zh_TW = {
   // App
   'app.title': 'Doge先鋒',
 
+  // Home
+  'home.title': 'DogeOW - 個人工具與遊戲平台',
+  'home.description': '包含物品管理、檔案管理、筆記、導航、實驗室與各種小遊戲的綜合平台',
+  'home.section_tiles': '應用入口',
+
   // Navigation
   'nav.thing': '物品管理',
   'nav.lab': '實驗室',

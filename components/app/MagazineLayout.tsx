@@ -20,7 +20,7 @@ interface MagazineTileCardProps {
 const BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k='
 
-/** 杂志布局 - Hero 卡片（第一个磁贴，大尺寸展示） */
+/** 杂志布局 - Hero 卡片（首卡大图，稳重简洁） */
 const HeroCard = memo(
   ({ tile, showCover, needsLogin, onClick }: Omit<MagazineTileCardProps, 'variant' | 'index'>) => {
     const { t } = useTranslation()
@@ -43,8 +43,8 @@ const HeroCard = memo(
       <button
         type="button"
         onClick={onClick}
-        className="group relative flex w-full overflow-hidden rounded-2xl border-0 text-left transition-all duration-300 outline-none hover:scale-[0.98] hover:shadow-xl focus-visible:ring-2 focus-visible:ring-white/80 active:scale-[0.96]"
-        style={{ backgroundColor: tile.color, minHeight: '220px' }}
+        className="group relative flex w-full overflow-hidden rounded-xl border border-white/15 text-left shadow-sm outline-none transition-all duration-200 hover:scale-[0.99] hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]"
+        style={{ backgroundColor: tile.color, minHeight: '200px' }}
         aria-label={needsLogin ? `打开 ${tileName}（需登录）` : `打开 ${tileName}`}
       >
         {/* 背景图 */}
@@ -53,9 +53,9 @@ const HeroCard = memo(
             src={imageAsset(`/images/projects/${coverImage}`)}
             alt={`${tileName} background`}
             fill
-            className={`object-cover transition-all duration-500 group-hover:scale-105 ${
-              imageLoaded ? 'opacity-60' : 'opacity-0'
-            }`}
+            className={`object-cover transition-opacity duration-300 ${
+              imageLoaded ? 'opacity-50' : 'opacity-0'
+            } group-hover:opacity-55`}
             sizes="(max-width: 768px) 100vw, 80vw"
             priority
             onError={handleImageError}
@@ -70,38 +70,33 @@ const HeroCard = memo(
         <div
           className="absolute inset-0 z-[1]"
           style={{
-            background: `linear-gradient(135deg, ${tile.color}cc 0%, ${tile.color}60 100%)`,
+            background: `linear-gradient(135deg, ${tile.color}cc 0%, ${tile.color}55 100%)`,
           }}
         />
 
         {/* 内容 */}
-        <div className="relative z-[2] flex flex-1 flex-col justify-end p-6 sm:p-8">
+        <div className="relative z-[2] flex flex-1 flex-col justify-end p-5 sm:p-6">
           {needsLogin && (
-            <div className="absolute top-4 right-4 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
-              <Lock className="h-3.5 w-3.5 text-white" />
+            <div className="absolute top-3 right-3 flex h-6 w-6 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm">
+              <Lock className="h-3 w-3 text-white" />
             </div>
           )}
 
-          <div className="flex items-end justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                {tile.icon && (
-                  <div
-                    className="h-8 w-8 text-white sm:h-10 sm:w-10"
-                    style={{ filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))' }}
-                  >
-                    {tile.icon}
-                  </div>
-                )}
-                <h2
-                  className="text-2xl font-bold text-white sm:text-3xl"
-                  style={{ textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)' }}
+          <div className="flex items-end justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              {tile.icon && (
+                <div
+                  className="h-8 w-8 shrink-0 text-white sm:h-9 sm:w-9"
+                  style={{ filter: 'drop-shadow(0 1px 3px rgba(0, 0, 0, 0.4))' }}
                 >
-                  {tileName}
-                </h2>
-              </div>
+                  {tile.icon}
+                </div>
+              )}
+              <h2 className="text-xl font-semibold leading-tight text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)] sm:text-2xl">
+                {tileName}
+              </h2>
             </div>
-            <ArrowRight className="h-6 w-6 text-white/70 transition-transform duration-300 group-hover:translate-x-1 group-hover:text-white" />
+            <ArrowRight className="h-5 w-5 shrink-0 text-white/80 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white" />
           </div>
         </div>
       </button>
@@ -125,30 +120,34 @@ const ListCard = memo(
       <button
         type="button"
         onClick={onClick}
-        className="bg-card/70 hover:bg-accent/80 group focus-visible:ring-primary flex w-full items-center gap-4 rounded-xl border p-4 text-left backdrop-blur-[1px] transition-all duration-200 outline-none hover:shadow-md focus-visible:ring-2 active:scale-[0.98]"
+        className="bg-card/70 hover:bg-accent/80 group flex w-full items-center gap-4 rounded-xl border border-border p-4 text-left backdrop-blur-[1px] transition-all duration-200 outline-none hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]"
         aria-label={needsLogin ? `打开 ${tileName}（需登录）` : `打开 ${tileName}`}
       >
         {/* 图标 */}
         <div
-          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-white"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white sm:h-11 sm:w-11 sm:rounded-xl"
           style={{ backgroundColor: tile.color }}
         >
-          {tile.icon && <div className="flex h-5 w-5 items-center justify-center">{tile.icon}</div>}
+          {tile.icon && (
+            <div className="flex h-5 w-5 items-center justify-center sm:h-6 sm:w-6">
+              {tile.icon}
+            </div>
+          )}
         </div>
 
         {/* 标题 */}
-        <div className="flex-1">
-          <span className="text-foreground text-base font-medium">{tileName}</span>
+        <div className="min-w-0 flex-1">
+          <span className="text-foreground text-base font-medium leading-tight">{tileName}</span>
         </div>
 
         {/* 右侧 */}
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {needsLogin && (
-            <div className="bg-muted flex h-5 w-5 items-center justify-center rounded-full">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
               <Lock className="text-muted-foreground h-3 w-3" />
             </div>
           )}
-          <ArrowRight className="text-muted-foreground h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+          <ArrowRight className="text-muted-foreground h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
         </div>
       </button>
     )
@@ -157,7 +156,7 @@ const ListCard = memo(
 
 ListCard.displayName = 'ListCard'
 
-/** 杂志风格布局 */
+/** 杂志风格布局：首卡 Hero，其余列表卡，与首页节奏统一 */
 export const MagazineLayout = memo(
   ({
     tiles,
@@ -172,9 +171,20 @@ export const MagazineLayout = memo(
   }) => {
     if (tiles.length === 0) return null
 
+    const [first, ...rest] = tiles
+    const firstStatus = getTileStatus(first)
+
     return (
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {tiles.map(tile => {
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <HeroCard
+            tile={first}
+            showCover={showProjectCovers}
+            needsLogin={firstStatus.needsLogin}
+            onClick={() => handleTileClick(first)}
+          />
+        </div>
+        {rest.map(tile => {
           const tileStatus = getTileStatus(tile)
           return (
             <ListCard

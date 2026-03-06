@@ -7,7 +7,6 @@ import {
   getConnectionMonitor,
   getAuthManager,
 } from '@/lib/websocket'
-import useChatStore from '@/app/chat/chatStore'
 import OfflineManager, { type OfflineState } from '@/lib/websocket/offline-manager'
 import type { UseChatWebSocketReturn, UseChatWebSocketOptions } from './chat-websocket/types'
 import {

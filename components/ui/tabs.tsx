@@ -5,7 +5,13 @@ import * as TabsPrimitive from '@radix-ui/react-tabs'
 
 import { cn } from '@/lib/helpers'
 
-function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Root>) {
+// ✅ 显式导出 Props 类型
+export type TabsProps = React.ComponentProps<typeof TabsPrimitive.Root>
+export type TabsListProps = React.ComponentProps<typeof TabsPrimitive.List>
+export type TabsTriggerProps = React.ComponentProps<typeof TabsPrimitive.Trigger>
+export type TabsContentProps = React.ComponentProps<typeof TabsPrimitive.Content>
+
+function Tabs({ className, ...props }: TabsProps) {
   return (
     <TabsPrimitive.Root
       data-slot="tabs"
@@ -15,7 +21,7 @@ function Tabs({ className, ...props }: React.ComponentProps<typeof TabsPrimitive
   )
 }
 
-function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
+function TabsList({ className, ...props }: TabsListProps) {
   return (
     <TabsPrimitive.List
       data-slot="tabs-list"
@@ -28,7 +34,7 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
   )
 }
 
-function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
@@ -41,7 +47,7 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
   )
 }
 
-function TabsContent({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Content>) {
+function TabsContent({ className, ...props }: TabsContentProps) {
   return (
     <TabsPrimitive.Content
       data-slot="tabs-content"

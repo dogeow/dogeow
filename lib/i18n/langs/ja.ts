@@ -2,6 +2,11 @@ export const ja = {
   // App
   'app.title': 'DogeOw',
 
+  // Home
+  'home.title': 'DogeOW - 個人ツール・ゲーム',
+  'home.description': 'アイテム、ファイル、ノート、ナビ、ラボ、ミニゲームをひとつに',
+  'home.section_tiles': 'アプリ',
+
   // Navigation
   'nav.thing': 'アイテム',
   'nav.lab': 'ラボ',

@@ -16,7 +16,7 @@ export interface UseChatRoomReturn {
   rooms: ChatRoom[]
   currentRoom: ChatRoom | null
   joinRoom: (roomId: string) => Promise<boolean>
-  leaveRoom: () => void
+  leaveRoom: () => Promise<void>
   createRoom: (roomData: CreateRoomData) => Promise<ChatRoom | null>
   loadRooms: () => Promise<void>
 
@@ -47,6 +47,64 @@ export interface UseChatRoomOptions {
   onError?: (error: string) => void
 }
 
+type ChatRoomsResponse = ChatRoom[] | { rooms?: ChatRoom[] }
+type CreateRoomResponse = ChatRoom | { room?: ChatRoom }
+type RoomUsersResponse = OnlineUser[] | { users?: OnlineUser[] }
+type ApiErrorResponse = { message?: string }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null
+
+const isOnlineUser = (value: unknown): value is OnlineUser =>
+  isRecord(value) && typeof value.id === 'number' && typeof value.name === 'string'
+
+const isChatMessage = (value: unknown): value is ChatMessage =>
+  isRecord(value) && typeof value.id === 'number' && typeof value.message === 'string'
+
+const isChatRoom = (value: unknown): value is ChatRoom =>
+  isRecord(value) && typeof value.id === 'number' && typeof value.name === 'string'
+
+const resolveRoomsResponse = (data: ChatRoomsResponse): ChatRoom[] => {
+  if (Array.isArray(data)) {
+    return data
+  }
+
+  return Array.isArray(data.rooms) ? data.rooms : []
+}
+
+const resolveUsersResponse = (data: RoomUsersResponse): OnlineUser[] => {
+  if (Array.isArray(data)) {
+    return data
+  }
+
+  return Array.isArray(data.users) ? data.users : []
+}
+
+const resolveCreateRoomResponse = (data: CreateRoomResponse): ChatRoom => {
+  if (isRecord(data) && 'room' in data && isChatRoom((data as { room?: unknown }).room)) {
+    return (data as { room: ChatRoom }).room
+  }
+
+  if (isChatRoom(data)) {
+    return data
+  }
+
+  throw new Error('Invalid create room response payload')
+}
+
+const createFallbackRoom = (roomId: string): ChatRoom => {
+  const now = new Date().toISOString()
+
+  return {
+    id: Number(roomId),
+    name: `Room ${roomId}`,
+    created_by: 0,
+    is_active: true,
+    created_at: now,
+    updated_at: now,
+  }
+}
+
 export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn => {
   const {
     autoLoadRooms = true,
@@ -69,7 +127,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
   const [hasMoreMessages, setHasMoreMessages] = useState(true)
 
   // pagination helper for message pages
-  const { currentPage, setPage: setCurrentPage, reset: resetPage, goNext } = usePagination(1)
+  const { currentPage, setPage: setCurrentPage, reset: resetPage } = usePagination(1)
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -96,14 +154,15 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
 
   // Handle WebSocket messages
   function handleWebSocketMessage(data: unknown) {
-    const typedData = data as {
-      type?: string
-      user?: OnlineUser
-      message?: ChatMessage
+    if (!isRecord(data)) {
+      return
     }
 
-    if (typedData.type === 'user_joined') {
-      const user = typedData.user
+    const type = typeof data.type === 'string' ? data.type : undefined
+    const user = isOnlineUser(data.user) ? data.user : undefined
+    const message = isChatMessage(data.message) ? data.message : undefined
+
+    if (type === 'user_joined') {
       if (user) {
         setOnlineUsers(prev => {
           const exists = prev.find(u => u.id === user.id)
@@ -115,8 +174,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
           return prev
         })
       }
-    } else if (typedData.type === 'user_left') {
-      const user = typedData.user
+    } else if (type === 'user_left') {
       if (user) {
         setOnlineUsers(prev => {
           const updated = prev.filter(u => u.id !== user.id)
@@ -124,9 +182,8 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
           return updated
         })
       }
-    } else if (typedData.message) {
+    } else if (message) {
       // New message received
-      const message = typedData.message
       setMessages(prev => {
         const exists = prev.find(m => m.id === message.id)
         if (!exists) {
@@ -146,30 +203,33 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
   }
 
   // API helper function
-  const apiCall = useCallback(async (endpoint: string, options: RequestInit = {}) => {
-    const authManager = getAuthManager()
-    const token = authManager.getToken()
+  const apiCall = useCallback(
+    async <T>(endpoint: string, options: RequestInit = {}): Promise<T> => {
+      const authManager = getAuthManager()
+      const token = authManager.getToken()
 
-    if (!token) {
-      throw new Error('No authentication token available')
-    }
+      if (!token) {
+        throw new Error('No authentication token available')
+      }
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...options.headers,
-      },
-    })
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          ...options.headers,
+        },
+      })
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}))
-      throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
-    }
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as ApiErrorResponse
+        throw new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`)
+      }
 
-    return response.json()
-  }, [])
+      return (await response.json()) as T
+    },
+    []
+  )
 
   // Load available rooms
   const loadRooms = useCallback(async () => {
@@ -177,8 +237,8 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
       setIsLoading(true)
       setError(null)
 
-      const data = await apiCall('/chat/rooms')
-      setRooms(data.rooms || data)
+      const data = await apiCall<ChatRoomsResponse>('/chat/rooms')
+      setRooms(resolveRoomsResponse(data))
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load rooms'
       setError(errorMessage)
@@ -195,12 +255,12 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         setIsLoading(true)
         setError(null)
 
-        const data = await apiCall('/chat/rooms', {
+        const data = await apiCall<CreateRoomResponse>('/chat/rooms', {
           method: 'POST',
           body: JSON.stringify(roomData),
         })
 
-        const newRoom: ChatRoom = data.room || data
+        const newRoom = resolveCreateRoomResponse(data)
         setRooms(prev => [...prev, newRoom])
 
         return newRoom
@@ -229,7 +289,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
     setCurrentRoom(null)
     setMessages([])
     setOnlineUsers([])
-    disconnect()
+    void disconnect()
   }, [currentRoom, apiCall, disconnect])
 
   // Load messages for current room
@@ -283,8 +343,8 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
     if (!currentRoom) return
 
     try {
-      const data = await apiCall(`/chat/rooms/${currentRoom.id}/users`)
-      setOnlineUsers(data.users || data)
+      const data = await apiCall<RoomUsersResponse>(`/chat/rooms/${currentRoom.id}/users`)
+      setOnlineUsers(resolveUsersResponse(data))
     } catch (err) {
       console.error('Error loading online users:', err)
     }
@@ -312,10 +372,20 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
         // Join new room via API
         await apiCall(`/chat/rooms/${roomId}/join`, { method: 'POST' })
 
-        // Find room in list
-        const room = rooms.find(r => r.id.toString() === roomId)
+        // Find room in list; refresh once if local rooms are stale
+        let room = rooms.find(r => r.id.toString() === roomId)
         if (!room) {
-          throw new Error('Room not found')
+          const refreshedRoomsResponse = await apiCall<ChatRoomsResponse>('/chat/rooms')
+          const refreshedRooms = resolveRoomsResponse(refreshedRoomsResponse)
+          if (refreshedRooms.length > 0) {
+            setRooms(refreshedRooms)
+            room = refreshedRooms.find(r => r.id.toString() === roomId)
+          }
+        }
+
+        // Some backends allow join by id but don't include the room in list immediately.
+        if (!room) {
+          room = createFallbackRoom(roomId)
         }
 
         setCurrentRoom(room)
@@ -369,15 +439,23 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
     async (roomId: string, message: string): Promise<SendMessageResult> => {
       if (!message.trim()) return { success: false }
 
-      return await wsSendMessage(roomId, message.trim())
+      return wsSendMessage(roomId, message.trim())
     },
     [wsSendMessage]
   )
 
   // Auto-load rooms on mount
   useEffect(() => {
-    if (autoLoadRooms) {
-      loadRooms()
+    if (!autoLoadRooms) {
+      return
+    }
+
+    const timer = setTimeout(() => {
+      void loadRooms()
+    }, 0)
+
+    return () => {
+      clearTimeout(timer)
     }
   }, [autoLoadRooms, loadRooms]) // Include loadRooms in dependencies
 
@@ -385,7 +463,7 @@ export const useChatRoom = (options: UseChatRoomOptions = {}): UseChatRoomReturn
   useEffect(() => {
     return () => {
       // Only call disconnect, avoid state updates during cleanup
-      disconnect()
+      void disconnect()
     }
   }, [disconnect])
 

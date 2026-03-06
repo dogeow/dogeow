@@ -38,13 +38,17 @@ export function MessageInput({
   onTypingStop,
 }: MessageInputProps) {
   const { t } = useTranslation()
-  const chatStore = useChatStore()
-  const onlineUsers = chatStore.onlineUsers ?? {}
-  const muteUntil = chatStore.muteUntil ?? null
-  const muteReason = chatStore.muteReason ?? null
-  const checkMuteStatus = chatStore.checkMuteStatus ?? (() => false)
-  const refreshMuteStatus = chatStore.refreshMuteStatus ?? (() => {})
-  const messages = chatStore.messages ?? {}
+  // ✅ 性能优化: 使用精细化选择器避免不必要的重新渲染
+  const muteUntil = useChatStore(state => state.muteUntil)
+  const muteReason = useChatStore(state => state.muteReason)
+  const checkMuteStatus = useChatStore(state => state.checkMuteStatus)
+  const refreshMuteStatus = useChatStore(state => state.refreshMuteStatus)
+  const roomMessages = useChatStore(
+    useCallback(state => state.messages[roomId.toString()] || [], [roomId])
+  )
+  const roomUsers = useChatStore(
+    useCallback(state => state.onlineUsers[roomId.toString()] || [], [roomId])
+  )
   const inputContainerRef = useRef<HTMLDivElement>(null)
 
   // 使用自定义hooks管理状态和逻辑
@@ -70,11 +74,6 @@ export function MessageInput({
     onTypingStop,
   })
 
-  // 获取在线用户用于@提及
-  const roomUsers = useMemo(() => {
-    return onlineUsers[roomId.toString()] || []
-  }, [onlineUsers, roomId])
-
   // 使用提及功能hook
   const {
     showMentions,
@@ -89,7 +88,6 @@ export function MessageInput({
   const { uploadedFiles, handleFileUpload, removeFile } = useFileUpload()
 
   // 未读消息逻辑
-  const roomMessages = messages[roomId.toString()] || []
   const { isAtBottom } = useScrollPosition(scrollContainerRef || { current: null })
   const unreadCount = useUnreadMessages(roomMessages, isAtBottom)
 

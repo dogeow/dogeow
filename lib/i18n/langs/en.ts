@@ -2,6 +2,11 @@ export const en = {
   // App
   'app.title': 'DogeOw',
 
+  // Home
+  'home.title': 'DogeOW - Personal Tools & Games',
+  'home.description': 'Items, files, notes, navigation, lab and mini-games in one place',
+  'home.section_tiles': 'Apps',
+
   // Navigation
   'nav.thing': 'Things',
   'nav.lab': 'Lab',

@@ -2,7 +2,7 @@
 
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Users } from 'lucide-react'
 import useChatStore from '@/app/chat/chatStore'
@@ -37,14 +37,13 @@ export default function OnlineUsers({
   onReportUser,
 }: OnlineUsersProps) {
   const { t } = useTranslation()
-  const { onlineUsers } = useChatStore()
+  // ✅ 性能优化: 精细化选择器，只在当前房间的在线用户改变时重新渲染
+  const roomUsers = useChatStore(
+    useCallback(state => state.onlineUsers[roomId.toString()] || [], [roomId])
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<SortOption>('name')
   const [filterBy, setFilterBy] = useState<FilterOption>('all')
-
-  const roomUsers = useMemo(() => {
-    return onlineUsers[roomId.toString()] || []
-  }, [onlineUsers, roomId])
 
   // 过滤和排序用户 - 重构为更清晰的处理链
   const filteredAndSortedUsers = useMemo(() => {
