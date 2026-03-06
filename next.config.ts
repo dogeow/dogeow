@@ -1,15 +1,38 @@
 import path from 'node:path'
 import type { NextConfig } from 'next'
 
+const modernNextPolyfillModule = path.resolve(
+  __dirname,
+  'lib/polyfills/next-polyfill-module-modern.js'
+)
+const modernNextPolyfillModuleForTurbopack = './lib/polyfills/next-polyfill-module-modern.js'
+const nextPolyfillModuleRequests = [
+  '../build/polyfills/polyfill-module',
+  '../build/polyfills/polyfill-module.js',
+  'next/dist/build/polyfills/polyfill-module',
+  'next/dist/build/polyfills/polyfill-module.js',
+]
+const nextPolyfillModuleAliasesForTurbopack = Object.fromEntries(
+  nextPolyfillModuleRequests.map(request => [request, modernNextPolyfillModuleForTurbopack])
+)
+
 /** @type {import('next').NextConfig} */
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Next.js 16 默认使用 Turbopack；保留 webpack 以兼容 --webpack 或构建
-  turbopack: {},
-  webpack: (config, { isServer }) => {
+  // 将 Next 默认的 module polyfills 缩减到仅保留当前目标浏览器仍缺失的 URL.canParse。
+  turbopack: {
+    resolveAlias: nextPolyfillModuleAliasesForTurbopack,
+  },
+  webpack: config => {
     config.resolve ??= {}
     config.resolve.alias ??= {}
     config.resolve.alias['@'] = path.join(__dirname)
+    Object.assign(
+      config.resolve.alias,
+      Object.fromEntries(
+        nextPolyfillModuleRequests.map(request => [`${request}$`, modernNextPolyfillModule])
+      )
+    )
     return config
   },
   images: {
