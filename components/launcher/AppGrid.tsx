@@ -60,8 +60,8 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
 
   return (
     <div className="flex items-center gap-3">
-      {buttons.map((button, index) => (
-        <div key={index} className="transition-transform hover:scale-105 active:scale-95">
+      {buttons.map(button => (
+        <div key={button.label} className="transition-transform hover:scale-105 active:scale-95">
           <Button
             variant="ghost"
             size="icon"

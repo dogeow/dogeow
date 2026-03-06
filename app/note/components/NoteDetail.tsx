@@ -3,7 +3,10 @@
 import useSWR from 'swr'
 import { get } from '@/lib/api'
 import { useParams } from 'next/navigation'
+import { AlertCircle } from 'lucide-react'
 import { PageContainer } from '@/components/layout'
+import { LoadingSpinner } from '@/components/ui/loading-spinner'
+import { EmptyState } from '@/components/ui/empty-state'
 import { normalizeNote } from '../utils/api'
 import { renderNoteContent } from '../utils/noteContentRenderer'
 import { formatNoteDate } from '../utils/noteDateFormat'
@@ -30,8 +33,28 @@ export default function NoteDetail() {
   const note = normalizeNote<Note>(noteResponse)
   const { handleDelete } = useNoteDelete(id)
 
-  if (error) return <div>加载失败</div>
-  if (!note) return <div>加载中...</div>
+  if (error) {
+    return (
+      <PageContainer maxWidth="4xl">
+        <EmptyState
+          icon={<AlertCircle className="h-10 w-10 text-red-500" />}
+          title="加载失败"
+          description="无法加载笔记内容，请稍后重试。"
+          action={{ label: '返回列表', onClick: () => window.history.back() }}
+        />
+      </PageContainer>
+    )
+  }
+
+  if (!note) {
+    return (
+      <PageContainer maxWidth="4xl">
+        <div className="flex items-center justify-center py-20">
+          <LoadingSpinner size="lg" />
+        </div>
+      </PageContainer>
+    )
+  }
 
   // 临时修复：移除标题末尾的"0"（如果存在的话）
   const cleanTitle = note.title?.replace(/0$/, '') || '(无标题)'

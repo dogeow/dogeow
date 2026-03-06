@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState, useMemo, useRef } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { formatDistanceToNow } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
+import useSWR from 'swr'
 import { MessageSquarePlus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAiChat } from '@/app/ai/features/chat/hooks/useAiChat'
@@ -17,10 +18,34 @@ interface AiDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
+const docsFetcher = async (url: string) => {
+  const res = await fetch(url)
+  return res.json()
+}
+
 export function AiDialog({ open, onOpenChange }: AiDialogProps) {
   const [chatMode, setChatMode] = useState<'ai' | 'knowledge'>('ai')
-  const [knowledgeInitialMessages, setKnowledgeInitialMessages] = useState<ChatMessage[]>([])
-  const [isLoadingKnowledgeInitial, setIsLoadingKnowledgeInitial] = useState(false)
+
+  const shouldFetchDocs = open && chatMode === 'knowledge'
+  const { data: docsData } = useSWR(
+    shouldFetchDocs ? '/api/knowledge/documents' : null,
+    docsFetcher,
+    { revalidateOnFocus: false }
+  )
+
+  const knowledgeInitialMessages = useMemo<ChatMessage[]>(() => {
+    if (!shouldFetchDocs) return []
+    if (!docsData) return []
+    const hasDocs = docsData.success && docsData.documents?.length > 0
+    return [
+      {
+        role: 'assistant' as const,
+        content: hasDocs
+          ? `你好！欢迎了解我的知识库。\n\n我会基于知识库内容为你解答。\n\n有什么想了解的吗？`
+          : `你好！欢迎了解我的知识库。\n\n目前知识库中还没有文档。\n\n有什么想了解的吗？`,
+      },
+    ]
+  }, [shouldFetchDocs, docsData])
 
   const aiChat = useAiChat({ open })
   const knowledgeChat = useKnowledgeChat({ open, initialMessages: knowledgeInitialMessages })
@@ -37,63 +62,14 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     }
   }, [knowledgeUpdatedAt])
 
-  const lastKnowledgeSubtitleRef = useRef<string | undefined>(undefined)
-  if (knowledgeSubtitle !== undefined) lastKnowledgeSubtitleRef.current = knowledgeSubtitle
-  const headerSubtitle = knowledgeSubtitle ?? lastKnowledgeSubtitleRef.current
+  const [lastKnowledgeSubtitle, setLastKnowledgeSubtitle] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    if (knowledgeSubtitle !== undefined) {
+      queueMicrotask(() => setLastKnowledgeSubtitle(knowledgeSubtitle))
+    }
+  }, [knowledgeSubtitle])
+  const headerSubtitle = knowledgeSubtitle ?? lastKnowledgeSubtitle
   const headerTitle = chatMode === 'knowledge' ? '知识库问答' : 'AI 助理'
-
-  useEffect(() => {
-    if (
-      !open ||
-      chatMode !== 'knowledge' ||
-      isLoadingKnowledgeInitial ||
-      knowledgeInitialMessages.length > 0
-    ) {
-      return
-    }
-
-    const loadInitialMessage = async () => {
-      setIsLoadingKnowledgeInitial(true)
-      try {
-        const response = await fetch('/api/knowledge/documents')
-        const data = await response.json()
-
-        if (data.success && data.documents && data.documents.length > 0) {
-          const welcomeMessage: ChatMessage = {
-            role: 'assistant',
-            content: `你好！欢迎了解我的知识库。\n\n我会基于知识库内容为你解答。\n\n有什么想了解的吗？`,
-          }
-          setKnowledgeInitialMessages([welcomeMessage])
-        } else {
-          setKnowledgeInitialMessages([
-            {
-              role: 'assistant',
-              content: `你好！欢迎了解我的知识库。\n\n目前知识库中还没有文档。\n\n有什么想了解的吗？`,
-            },
-          ])
-        }
-      } catch (error) {
-        console.error('加载初始消息失败:', error)
-        setKnowledgeInitialMessages([
-          {
-            role: 'assistant',
-            content: `你好！欢迎了解我的知识库。有什么想了解的吗？`,
-          },
-        ])
-      } finally {
-        setIsLoadingKnowledgeInitial(false)
-      }
-    }
-
-    loadInitialMessage()
-  }, [open, chatMode, isLoadingKnowledgeInitial, knowledgeInitialMessages.length])
-
-  useEffect(() => {
-    if (chatMode !== 'knowledge') {
-      setIsLoadingKnowledgeInitial(false)
-      setKnowledgeInitialMessages([])
-    }
-  }, [chatMode])
 
   const activeChat = chatMode === 'knowledge' ? knowledgeChat : aiChat
   const {

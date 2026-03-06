@@ -1,3 +1,5 @@
+'use client'
+
 import React, { memo, useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { User, LayoutDashboard, LogOut, Check, X } from 'lucide-react'

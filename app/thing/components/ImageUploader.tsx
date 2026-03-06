@@ -106,7 +106,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {images.map((image, index) => (
-          <div key={index} className="group relative aspect-square">
+          <div key={image.id ?? image.path} className="group relative aspect-square">
             <Image
               src={image.thumbnail_url || image.url}
               alt={`上传图片 ${index + 1}`}

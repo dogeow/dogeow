@@ -5,7 +5,7 @@
 
 interface BatchUpdate {
   type: string
-  data: any
+  data: Record<string, unknown>
   timestamp: number
 }
 
@@ -23,7 +23,7 @@ export class MessageBatchProcessor {
   /**
    * 添加更新到批处理队列
    */
-  addUpdate(type: string, data: any): void {
+  addUpdate(type: string, data: Record<string, unknown>): void {
     this.updates.push({
       type,
       data,
@@ -84,17 +84,11 @@ export function mergeUpdates(updates: BatchUpdate[]): BatchUpdate[] {
   const merged = new Map<string, BatchUpdate>()
 
   for (const update of updates) {
-    const key = `${update.type}-${JSON.stringify(update.data.roomId || '')}`
+    const roomId = 'roomId' in update.data ? String(update.data.roomId) : ''
+    const key = `${update.type}-${roomId}`
 
-    // 如果是相同房间的相同类型更新，使用最新的
     if (merged.has(key)) {
-      const existing = merged.get(key)!
-      // 对于某些类型，可以合并数据而不是替换
-      if (update.type === 'message' && Array.isArray(update.data)) {
-        existing.data = [...existing.data, ...update.data]
-      } else {
-        merged.set(key, update)
-      }
+      merged.set(key, update)
     } else {
       merged.set(key, update)
     }

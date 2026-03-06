@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import { Suspense } from 'react'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { ThemeProvider } from '@/components/app/ThemeProvider'
 import { UIThemeProvider } from '@/components/themes/UIThemeProvider'
@@ -8,6 +9,7 @@ import './globals.css'
 import { SWRProvider } from '@/components/provider/SWRProvider'
 import { LanguageProvider } from '@/components/provider/LanguageProvider'
 import { DeferredRuntimeClients } from '@/components/app/DeferredRuntimeClients'
+import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import '@/lib/themes/registry' // 初始化主题注册表
 import '@/lib/i18n/log-control'
 
@@ -99,7 +101,11 @@ export default function RootLayout({
             <UIThemeProvider>
               <LanguageProvider>
                 <LayoutRenderer>
-                  <BackgroundWrapper>{children}</BackgroundWrapper>
+                  <ErrorBoundary>
+                    <Suspense>
+                      <BackgroundWrapper>{children}</BackgroundWrapper>
+                    </Suspense>
+                  </ErrorBoundary>
                 </LayoutRenderer>
                 <DeferredRuntimeClients />
               </LanguageProvider>

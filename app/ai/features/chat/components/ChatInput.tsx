@@ -1,65 +1,23 @@
 import React from 'react'
-import NextImage from 'next/image'
-import {
-  ChevronDown,
-  ChevronUp,
-  Send,
-  Square,
-  Bot,
-  BookOpen,
-  ImagePlus,
-  Loader2,
-  X,
-} from 'lucide-react'
+import { Send, Square, Bot, BookOpen, ImagePlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/helpers'
-
-// AI 提供商类型
-type AIProvider = 'github' | 'minimax' | 'ollama' | 'zhipuai'
-
-interface OllamaModelListItem {
-  name: string
-  size?: number
-  parameterSize?: string
-  supportsVision?: boolean
-}
-
-const PROVIDER_LABELS: Record<AIProvider, string> = {
-  ollama: 'Ollama',
-  github: 'GitHub',
-  minimax: 'MiniMax',
-  zhipuai: '智谱AI',
-}
-
-function getModelLabel(provider: AIProvider | undefined, model: string | undefined): string {
-  if (!provider || !model) return ''
-  if (provider === 'ollama') {
-    // Ollama 显示具体模型名
-    return model
-  }
-  if (provider === 'zhipuai') {
-    const labels: Record<string, string> = {
-      'glm-4.7': 'GLM-4.7',
-      'glm-4.6v-flash': 'GLM-4.6V Flash',
-      'glm-4.6v': 'GLM-4.6V',
-      'glm-4.5-air': 'GLM-4.5-Air',
-    }
-    return labels[model] ?? model
-  }
-  if (provider === 'github') return 'GPT-5 Mini'
-  if (provider === 'minimax') return 'M2.5'
-  return model
-}
+import { ChatInputImagePreview } from './ChatInputImagePreview'
+import {
+  type AIProvider,
+  type OllamaModelListItem,
+  ProviderSelector,
+  OllamaModelSelector,
+  ZhipuaiModelSelector,
+} from './ChatInputModelSelector'
 
 interface ChatInputProps {
   prompt: string
@@ -84,42 +42,79 @@ interface ChatInputProps {
   placeholder?: string
 }
 
-const FALLBACK_OLLAMA_MODELS: OllamaModelListItem[] = [
-  { name: 'qwen2.5:0.5b', parameterSize: '0.5B', supportsVision: false },
-  { name: 'qwen3:0.6b', parameterSize: '0.6B', supportsVision: false },
-  { name: 'qwen3:8b', parameterSize: '8B', supportsVision: false },
-  { name: 'qwen3:14b', parameterSize: '14B', supportsVision: false },
-]
+const ModelSelectorRow = React.memo<{
+  chatMode: 'ai' | 'knowledge'
+  provider?: AIProvider
+  onProviderChange?: (value: AIProvider) => void
+  model?: string
+  onModelChange?: (value: string) => void
+  ollamaModels: OllamaModelListItem[]
+  isLoading: boolean
+  isLoadingOllamaModels: boolean
+}>(
+  ({
+    chatMode,
+    provider,
+    onProviderChange,
+    model,
+    onModelChange,
+    ollamaModels,
+    isLoading,
+    isLoadingOllamaModels,
+  }) => {
+    if (chatMode === 'ai' && provider && onProviderChange) {
+      return (
+        <div className="mb-2 flex items-center gap-1.5 text-sm">
+          <ProviderSelector
+            provider={provider}
+            onProviderChange={onProviderChange}
+            isLoading={isLoading}
+          />
+          {model && onModelChange && (provider === 'ollama' || provider === 'zhipuai') && (
+            <>
+              <span className="text-muted-foreground">·</span>
+              {provider === 'ollama' && (
+                <OllamaModelSelector
+                  model={model}
+                  onModelChange={onModelChange}
+                  ollamaModels={ollamaModels}
+                  isLoading={isLoading}
+                  isLoadingOllamaModels={isLoadingOllamaModels}
+                />
+              )}
+              {provider === 'zhipuai' && (
+                <ZhipuaiModelSelector
+                  model={model}
+                  onModelChange={onModelChange}
+                  isLoading={isLoading}
+                />
+              )}
+            </>
+          )}
+        </div>
+      )
+    }
 
-function formatOllamaModelMeta(model: OllamaModelListItem): string | undefined {
-  if (model.parameterSize) return model.parameterSize
-  if (typeof model.size === 'number' && model.size > 0) {
-    const gb = model.size / (1024 * 1024 * 1024)
-    return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(model.size / (1024 * 1024)).toFixed(0)} MB`
+    if (chatMode === 'knowledge' && model && onModelChange) {
+      return (
+        <div className="mb-2 flex items-center gap-1.5 text-sm">
+          <span className="px-0 py-1 text-muted-foreground">Ollama</span>
+          <span className="text-muted-foreground">·</span>
+          <OllamaModelSelector
+            model={model}
+            onModelChange={onModelChange}
+            ollamaModels={ollamaModels}
+            isLoading={isLoading}
+            isLoadingOllamaModels={isLoadingOllamaModels}
+          />
+        </div>
+      )
+    }
+
+    return null
   }
-  return undefined
-}
-
-function renderOllamaModelItem(model: string | undefined, item: OllamaModelListItem) {
-  return (
-    <DropdownMenuRadioItem
-      key={item.name}
-      value={item.name}
-      className={cn(
-        'cursor-pointer',
-        model === item.name &&
-          'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-      )}
-    >
-      <div className="flex flex-col">
-        <span>{item.name}</span>
-        {formatOllamaModelMeta(item) && (
-          <span className="text-muted-foreground text-xs">{formatOllamaModelMeta(item)}</span>
-        )}
-      </div>
-    </DropdownMenuRadioItem>
-  )
-}
+)
+ModelSelectorRow.displayName = 'ModelSelectorRow'
 
 export const ChatInput = React.memo<ChatInputProps>(
   ({
@@ -145,13 +140,8 @@ export const ChatInput = React.memo<ChatInputProps>(
     placeholder,
   }) => {
     const fileInputRef = React.useRef<HTMLInputElement>(null)
-    const [providerMenuOpen, setProviderMenuOpen] = React.useState(false)
-    const [modelMenuOpen, setModelMenuOpen] = React.useState(false)
     const canSend = prompt.trim().length > 0 || images.length > 0
     const canUploadImages = chatMode !== 'knowledge' && !!onImageSelect && supportsImages
-    const availableOllamaModels = ollamaModels.length > 0 ? ollamaModels : FALLBACK_OLLAMA_MODELS
-    const textOnlyOllamaModels = availableOllamaModels.filter(item => !item.supportsVision)
-    const visionOllamaModels = availableOllamaModels.filter(item => item.supportsVision)
 
     const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       onImageSelect?.(event.target.files)
@@ -167,282 +157,72 @@ export const ChatInput = React.memo<ChatInputProps>(
       }
     }
 
+    const imagePreview = canUploadImages && (
+      <ChatInputImagePreview
+        images={images}
+        onRemoveImage={onRemoveImage}
+        className={variant === 'dialog' ? 'mb-2' : 'mb-3'}
+      />
+    )
+
+    const fileInput = canUploadImages && (
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+    )
+
+    const modelSelector = chatMode && (
+      <ModelSelectorRow
+        chatMode={chatMode}
+        provider={provider}
+        onProviderChange={onProviderChange}
+        model={model}
+        onModelChange={onModelChange}
+        ollamaModels={ollamaModels}
+        isLoading={isLoading}
+        isLoadingOllamaModels={isLoadingOllamaModels}
+      />
+    )
+
+    const uploadButton = canUploadImages && (
+      <Button
+        variant="outline"
+        size="icon"
+        className="h-12 w-12 border-2"
+        disabled={isLoading || images.length >= 5}
+        onClick={() => fileInputRef.current?.click()}
+        aria-label="上传图片"
+      >
+        <ImagePlus className={cn('h-5 w-5', images.length > 0 && 'text-cyan-500')} />
+      </Button>
+    )
+
+    const sendButton = (
+      <Button
+        onClick={isLoading && onStop ? onStop : onSend}
+        disabled={isLoading ? false : !canSend}
+        size="icon"
+        className="h-12 w-12"
+      >
+        {isLoading ? <Square className="h-5 w-5" /> : <Send className="h-5 w-5" />}
+      </Button>
+    )
+
+    const uploadStatus = canUploadImages && isUploadingImages && (
+      <div className="text-muted-foreground mt-2 text-xs">图片上传中...</div>
+    )
+
     if (variant === 'dialog') {
       return (
         <div className="flex-none border-t p-2">
-          {canUploadImages && images.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-2">
-              {images.map((item, index) => (
-                <div key={item.id} className="group relative">
-                  <NextImage
-                    src={item.preview}
-                    alt={`上传图片 ${index + 1}`}
-                    width={56}
-                    height={56}
-                    unoptimized
-                    className="h-14 w-14 rounded-md border object-cover"
-                  />
-                  {item.uploading && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40">
-                      <Loader2 className="h-4 w-4 animate-spin text-white" />
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => onRemoveImage?.(index)}
-                    className="absolute -top-1.5 -right-1.5 rounded-full bg-black/70 p-1 opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-label="移除图片"
-                  >
-                    <X className="h-3 w-3 text-white" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {canUploadImages && (
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleFileInputChange}
-            />
-          )}
-
-          {/* 输入框上方：提供商与模型（文字展示，点击弹窗选择） */}
-          {chatMode === 'ai' && provider && onProviderChange && (
-            <div className="mb-2 flex items-center gap-1.5 text-sm">
-              <DropdownMenu open={providerMenuOpen} onOpenChange={setProviderMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={isLoading}
-                    className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
-                  >
-                    {PROVIDER_LABELS[provider]}
-                    {providerMenuOpen ? (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-40">
-                  <DropdownMenuRadioGroup
-                    value={provider}
-                    onValueChange={v => onProviderChange(v as AIProvider)}
-                  >
-                    <DropdownMenuRadioItem
-                      value="ollama"
-                      className={cn(
-                        'cursor-pointer',
-                        provider === 'ollama' &&
-                          'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span>Ollama</span>
-                        <span className="text-muted-foreground text-xs">本地模型</span>
-                      </div>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem
-                      value="github"
-                      className={cn(
-                        'cursor-pointer',
-                        provider === 'github' &&
-                          'relative z-10 bg-green-500/10 font-medium ring-2 ring-green-500 ring-offset-1'
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span>GitHub</span>
-                        <span className="text-muted-foreground text-xs">GPT-5 Mini</span>
-                      </div>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem
-                      value="minimax"
-                      className={cn(
-                        'cursor-pointer',
-                        provider === 'minimax' &&
-                          'relative z-10 bg-orange-500/10 font-medium ring-2 ring-orange-500 ring-offset-1'
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span>MiniMax</span>
-                        <span className="text-muted-foreground text-xs">M2.5</span>
-                      </div>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem
-                      value="zhipuai"
-                      className={cn(
-                        'cursor-pointer',
-                        provider === 'zhipuai' &&
-                          'relative z-10 bg-cyan-500/10 font-medium ring-2 ring-cyan-500 ring-offset-1'
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span>智谱AI</span>
-                        <span className="text-muted-foreground text-xs">GLM 系列</span>
-                      </div>
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {model && onModelChange && (provider === 'ollama' || provider === 'zhipuai') && (
-                <>
-                  <span className="text-muted-foreground">·</span>
-                  {provider === 'ollama' && (
-                    <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isLoading}
-                          className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
-                        >
-                          {getModelLabel(provider, model)}
-                          {modelMenuOpen ? (
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronUp className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56">
-                        <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                          {textOnlyOllamaModels.length > 0 && (
-                            <>
-                              <DropdownMenuLabel className="text-muted-foreground text-xs">
-                                文本
-                              </DropdownMenuLabel>
-                              {textOnlyOllamaModels.map(item => renderOllamaModelItem(model, item))}
-                            </>
-                          )}
-                          {textOnlyOllamaModels.length > 0 && visionOllamaModels.length > 0 && (
-                            <DropdownMenuSeparator />
-                          )}
-                          {visionOllamaModels.length > 0 && (
-                            <>
-                              <DropdownMenuLabel className="text-muted-foreground text-xs">
-                                图像
-                              </DropdownMenuLabel>
-                              {visionOllamaModels.map(item => renderOllamaModelItem(model, item))}
-                            </>
-                          )}
-                        </DropdownMenuRadioGroup>
-                        {isLoadingOllamaModels && (
-                          <div className="text-muted-foreground px-2 py-1 text-xs">
-                            正在读取本地 Ollama 模型...
-                          </div>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                  {provider === 'zhipuai' && (
-                    <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isLoading}
-                          className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
-                        >
-                          {getModelLabel(provider, model)}
-                          {modelMenuOpen ? (
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronUp className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56">
-                        <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                          <DropdownMenuRadioItem value="glm-4.7" className="cursor-pointer">
-                            <div className="flex flex-col">
-                              <span>GLM-4.7</span>
-                              <span className="text-muted-foreground text-xs">最新旗舰</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="glm-4.6v-flash" className="cursor-pointer">
-                            <div className="flex flex-col">
-                              <span>GLM-4.6V Flash</span>
-                              <span className="text-muted-foreground text-xs">视觉理解</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="glm-4.6v" className="cursor-pointer">
-                            <div className="flex flex-col">
-                              <span>GLM-4.6V</span>
-                              <span className="text-muted-foreground text-xs">视觉理解(标准)</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="glm-4.5-air" className="cursor-pointer">
-                            <div className="flex flex-col">
-                              <span>GLM-4.5-Air</span>
-                              <span className="text-muted-foreground text-xs">轻量快速</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-          {chatMode === 'knowledge' && model && onModelChange && (
-            <div className="mb-2 flex items-center gap-1.5 text-sm">
-              <span className="px-0 py-1 text-muted-foreground">Ollama</span>
-              <span className="text-muted-foreground">·</span>
-              <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={isLoading}
-                    className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
-                  >
-                    {model}
-                    {modelMenuOpen ? (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                    {textOnlyOllamaModels.length > 0 && (
-                      <>
-                        <DropdownMenuLabel className="text-muted-foreground text-xs">
-                          文本
-                        </DropdownMenuLabel>
-                        {textOnlyOllamaModels.map(item => renderOllamaModelItem(model, item))}
-                      </>
-                    )}
-                    {textOnlyOllamaModels.length > 0 && visionOllamaModels.length > 0 && (
-                      <DropdownMenuSeparator />
-                    )}
-                    {visionOllamaModels.length > 0 && (
-                      <>
-                        <DropdownMenuLabel className="text-muted-foreground text-xs">
-                          图像
-                        </DropdownMenuLabel>
-                        {visionOllamaModels.map(item => renderOllamaModelItem(model, item))}
-                      </>
-                    )}
-                  </DropdownMenuRadioGroup>
-                  {isLoadingOllamaModels && (
-                    <div className="text-muted-foreground px-2 py-1 text-xs">
-                      正在读取本地 Ollama 模型...
-                    </div>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-
+          {imagePreview}
+          {fileInput}
+          {modelSelector}
           <div className="flex items-end gap-2">
             <Textarea
               value={prompt}
@@ -456,312 +236,21 @@ export const ChatInput = React.memo<ChatInputProps>(
               rows={1}
             />
             <div className="flex gap-2">
-              {canUploadImages && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 border-2"
-                  disabled={isLoading || images.length >= 5}
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="上传图片"
-                >
-                  <ImagePlus className={cn('h-5 w-5', images.length > 0 && 'text-cyan-500')} />
-                </Button>
-              )}
-              <Button
-                onClick={isLoading && onStop ? onStop : onSend}
-                disabled={isLoading ? false : !canSend}
-                size="icon"
-                className="h-12 w-12"
-              >
-                {isLoading ? <Square className="h-5 w-5" /> : <Send className="h-5 w-5" />}
-              </Button>
+              {uploadButton}
+              {sendButton}
             </div>
           </div>
-          {canUploadImages && isUploadingImages && (
-            <div className="text-muted-foreground mt-2 text-xs">图片上传中...</div>
-          )}
+          {uploadStatus}
         </div>
       )
     }
 
-    // page variant
     return (
       <div className="bg-background border-t p-4">
         <div className="mx-auto max-w-4xl">
-          {canUploadImages && images.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {images.map((item, index) => (
-                <div key={item.id} className="group relative">
-                  <NextImage
-                    src={item.preview}
-                    alt={`上传图片 ${index + 1}`}
-                    width={56}
-                    height={56}
-                    unoptimized
-                    className="h-14 w-14 rounded-md border object-cover"
-                  />
-                  {item.uploading && (
-                    <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/40">
-                      <Loader2 className="h-4 w-4 animate-spin text-white" />
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => onRemoveImage?.(index)}
-                    className="absolute -top-1.5 -right-1.5 rounded-full bg-black/70 p-1 opacity-0 transition-opacity group-hover:opacity-100"
-                    aria-label="移除图片"
-                  >
-                    <X className="h-3 w-3 text-white" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {canUploadImages && (
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleFileInputChange}
-            />
-          )}
-
-          {/* 输入框上方：提供商与模型（文字展示，点击弹窗选择） */}
-          {chatMode === 'ai' && provider && onProviderChange && (
-            <div className="mb-2 flex items-center gap-1.5 text-sm">
-              <DropdownMenu open={providerMenuOpen} onOpenChange={setProviderMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={isLoading}
-                    className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
-                  >
-                    {PROVIDER_LABELS[provider]}
-                    {providerMenuOpen ? (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-40">
-                  <DropdownMenuRadioGroup
-                    value={provider}
-                    onValueChange={v => onProviderChange(v as AIProvider)}
-                  >
-                    <DropdownMenuRadioItem
-                      value="ollama"
-                      className={cn(
-                        'cursor-pointer',
-                        provider === 'ollama' &&
-                          'bg-primary/10 ring-primary relative z-10 font-medium ring-2 ring-offset-1'
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span>Ollama</span>
-                        <span className="text-muted-foreground text-xs">本地模型</span>
-                      </div>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem
-                      value="github"
-                      className={cn(
-                        'cursor-pointer',
-                        provider === 'github' &&
-                          'relative z-10 bg-green-500/10 font-medium ring-2 ring-green-500 ring-offset-1'
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span>GitHub</span>
-                        <span className="text-muted-foreground text-xs">GPT-5 Mini</span>
-                      </div>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem
-                      value="minimax"
-                      className={cn(
-                        'cursor-pointer',
-                        provider === 'minimax' &&
-                          'relative z-10 bg-orange-500/10 font-medium ring-2 ring-orange-500 ring-offset-1'
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span>MiniMax</span>
-                        <span className="text-muted-foreground text-xs">M2.5</span>
-                      </div>
-                    </DropdownMenuRadioItem>
-                    <DropdownMenuRadioItem
-                      value="zhipuai"
-                      className={cn(
-                        'cursor-pointer',
-                        provider === 'zhipuai' &&
-                          'relative z-10 bg-cyan-500/10 font-medium ring-2 ring-cyan-500 ring-offset-1'
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <span>智谱AI</span>
-                        <span className="text-muted-foreground text-xs">GLM 系列</span>
-                      </div>
-                    </DropdownMenuRadioItem>
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              {model && onModelChange && (provider === 'ollama' || provider === 'zhipuai') && (
-                <>
-                  <span className="text-muted-foreground">·</span>
-                  {provider === 'ollama' && (
-                    <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isLoading}
-                          className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
-                        >
-                          {getModelLabel(provider, model)}
-                          {modelMenuOpen ? (
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronUp className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56">
-                        <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                          {textOnlyOllamaModels.length > 0 && (
-                            <>
-                              <DropdownMenuLabel className="text-muted-foreground text-xs">
-                                文本
-                              </DropdownMenuLabel>
-                              {textOnlyOllamaModels.map(item => renderOllamaModelItem(model, item))}
-                            </>
-                          )}
-                          {textOnlyOllamaModels.length > 0 && visionOllamaModels.length > 0 && (
-                            <DropdownMenuSeparator />
-                          )}
-                          {visionOllamaModels.length > 0 && (
-                            <>
-                              <DropdownMenuLabel className="text-muted-foreground text-xs">
-                                图像
-                              </DropdownMenuLabel>
-                              {visionOllamaModels.map(item => renderOllamaModelItem(model, item))}
-                            </>
-                          )}
-                        </DropdownMenuRadioGroup>
-                        {isLoadingOllamaModels && (
-                          <div className="text-muted-foreground px-2 py-1 text-xs">
-                            正在读取本地 Ollama 模型...
-                          </div>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                  {provider === 'zhipuai' && (
-                    <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isLoading}
-                          className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
-                        >
-                          {getModelLabel(provider, model)}
-                          {modelMenuOpen ? (
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronUp className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-56">
-                        <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                          <DropdownMenuRadioItem value="glm-4.7" className="cursor-pointer">
-                            <div className="flex flex-col">
-                              <span>GLM-4.7</span>
-                              <span className="text-muted-foreground text-xs">最新旗舰</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="glm-4.6v-flash" className="cursor-pointer">
-                            <div className="flex flex-col">
-                              <span>GLM-4.6V Flash</span>
-                              <span className="text-muted-foreground text-xs">视觉理解</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="glm-4.6v" className="cursor-pointer">
-                            <div className="flex flex-col">
-                              <span>GLM-4.6V</span>
-                              <span className="text-muted-foreground text-xs">视觉理解(标准)</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="glm-4.5-air" className="cursor-pointer">
-                            <div className="flex flex-col">
-                              <span>GLM-4.5-Air</span>
-                              <span className="text-muted-foreground text-xs">轻量快速</span>
-                            </div>
-                          </DropdownMenuRadioItem>
-                        </DropdownMenuRadioGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-          {chatMode === 'knowledge' && model && onModelChange && (
-            <div className="mb-2 flex items-center gap-1.5 text-sm">
-              <span className="px-0 py-1 text-muted-foreground">Ollama</span>
-              <span className="text-muted-foreground">·</span>
-              <DropdownMenu open={modelMenuOpen} onOpenChange={setModelMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    disabled={isLoading}
-                    className="h-auto gap-1 px-0 py-1 font-normal text-muted-foreground hover:text-foreground"
-                  >
-                    {model}
-                    {modelMenuOpen ? (
-                      <ChevronDown className="h-3.5 w-3.5" />
-                    ) : (
-                      <ChevronUp className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuRadioGroup value={model} onValueChange={onModelChange}>
-                    {textOnlyOllamaModels.length > 0 && (
-                      <>
-                        <DropdownMenuLabel className="text-muted-foreground text-xs">
-                          文本
-                        </DropdownMenuLabel>
-                        {textOnlyOllamaModels.map(item => renderOllamaModelItem(model, item))}
-                      </>
-                    )}
-                    {textOnlyOllamaModels.length > 0 && visionOllamaModels.length > 0 && (
-                      <DropdownMenuSeparator />
-                    )}
-                    {visionOllamaModels.length > 0 && (
-                      <>
-                        <DropdownMenuLabel className="text-muted-foreground text-xs">
-                          图像
-                        </DropdownMenuLabel>
-                        {visionOllamaModels.map(item => renderOllamaModelItem(model, item))}
-                      </>
-                    )}
-                  </DropdownMenuRadioGroup>
-                  {isLoadingOllamaModels && (
-                    <div className="text-muted-foreground px-2 py-1 text-xs">
-                      正在读取本地 Ollama 模型...
-                    </div>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
-
+          {imagePreview}
+          {fileInput}
+          {modelSelector}
           <div className="flex gap-2">
             <Textarea
               value={prompt}
@@ -775,18 +264,7 @@ export const ChatInput = React.memo<ChatInputProps>(
               rows={1}
             />
             <div className="flex gap-2">
-              {canUploadImages && (
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-12 w-12 border-2"
-                  disabled={isLoading || images.length >= 5}
-                  onClick={() => fileInputRef.current?.click()}
-                  aria-label="上传图片"
-                >
-                  <ImagePlus className={cn('h-5 w-5', images.length > 0 && 'text-cyan-500')} />
-                </Button>
-              )}
+              {uploadButton}
               {chatMode && onChatModeChange && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -839,19 +317,10 @@ export const ChatInput = React.memo<ChatInputProps>(
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-              <Button
-                onClick={isLoading && onStop ? onStop : onSend}
-                disabled={isLoading ? false : !canSend}
-                size="icon"
-                className="h-12 w-12"
-              >
-                {isLoading ? <Square className="h-5 w-5" /> : <Send className="h-5 w-5" />}
-              </Button>
+              {sendButton}
             </div>
           </div>
-          {canUploadImages && isUploadingImages && (
-            <div className="text-muted-foreground mt-2 text-xs">图片上传中...</div>
-          )}
+          {uploadStatus}
         </div>
       </div>
     )

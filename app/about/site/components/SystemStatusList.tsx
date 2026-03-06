@@ -9,8 +9,8 @@ interface SystemStatusListProps {
 export const SystemStatusList: React.FC<SystemStatusListProps> = ({ statuses }) => {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {statuses.map((status, index) => (
-        <SystemStatusItem key={index} status={status} />
+      {statuses.map(status => (
+        <SystemStatusItem key={status.name} status={status} />
       ))}
     </div>
   )

@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     // 通过后端API获取天气新闻数据
-    const backendResponse = await fetch('http://localhost:8000/api/news/weather-news', {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+    const backendResponse = await fetch(`${apiUrl}/api/news/weather-news`, {
       headers: {
         'Content-Type': 'application/json',
         Host: 'next-api.dogeow.com',

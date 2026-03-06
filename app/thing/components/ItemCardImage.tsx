@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, memo } from 'react'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { Globe } from 'lucide-react'
@@ -35,7 +35,7 @@ const getStatusBorderColor = (status: string): string => {
   return STATUS_BORDER_COLORS[status as keyof typeof STATUS_BORDER_COLORS] || 'border-transparent'
 }
 
-export default function ItemCardImage({
+function ItemCardImage({
   initialPrimaryImage,
   images,
   itemName,
@@ -120,3 +120,5 @@ export default function ItemCardImage({
     </div>
   )
 }
+
+export default memo(ItemCardImage)

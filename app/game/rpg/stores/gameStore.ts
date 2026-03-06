@@ -225,17 +225,18 @@ type InventoryEquipmentResponse = Record<
   { slot?: string; item?: GameItem | null } | GameItem | null
 >
 
-const COMBAT_DEBUG_ENDPOINT = 'http://127.0.0.1:7242/ingest/ac3282d5-f86a-44d0-8cac-a78210bb3b66'
+const COMBAT_DEBUG_ENDPOINT = process.env.NEXT_PUBLIC_COMBAT_DEBUG_ENDPOINT
 const COMBAT_DEBUG_HEADERS = {
   'Content-Type': 'application/json',
-  'X-Debug-Session-Id': '7eb03a',
+  'X-Debug-Session-Id': process.env.NEXT_PUBLIC_COMBAT_DEBUG_SESSION_ID || '',
 }
 const COMBAT_DEBUG_BASE = {
-  sessionId: '7eb03a',
+  sessionId: process.env.NEXT_PUBLIC_COMBAT_DEBUG_SESSION_ID || '',
   hypothesisId: 'H1',
 }
 
 const reportCombatDebug = (location: string, message: string, data: Record<string, unknown>) => {
+  if (!COMBAT_DEBUG_ENDPOINT) return
   fetch(COMBAT_DEBUG_ENDPOINT, {
     method: 'POST',
     headers: COMBAT_DEBUG_HEADERS,
