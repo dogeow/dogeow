@@ -373,9 +373,7 @@ function ColorModeView({
       )}
       <div className="border-t pt-3">
         <div className="flex w-full items-center justify-between gap-2 rounded-lg p-2">
-          <label htmlFor="custom-cursor" className="text-sm font-medium">
-            自定义光标
-          </label>
+          <span className="text-sm font-medium">自定义光标</span>
           <Switch
             id="custom-cursor"
             checked={customCursorEnabled}
@@ -386,9 +384,7 @@ function ColorModeView({
       </div>
       <div className="border-t pt-3">
         <div className="flex w-full items-center justify-between gap-2 rounded-lg p-2">
-          <label htmlFor="theme-transition" className="text-sm font-medium">
-            主题切换渐变
-          </label>
+          <span className="text-sm font-medium">主题切换渐变</span>
           <Switch
             id="theme-transition"
             checked={themeTransitionEnabled}

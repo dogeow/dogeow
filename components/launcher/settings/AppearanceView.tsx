@@ -121,9 +121,7 @@ export function AppearanceView({
 
       <SettingsDivider />
       <div className="flex items-center justify-between gap-2">
-        <Label htmlFor="custom-cursor-panel" className="text-sm font-medium">
-          {t('settings.custom_cursor', '自定义光标')}
-        </Label>
+        <span className="text-sm font-medium">{t('settings.custom_cursor', '自定义光标')}</span>
         <Switch
           id="custom-cursor-panel"
           checked={customCursorEnabled}
@@ -133,9 +131,9 @@ export function AppearanceView({
       </div>
       <SettingsDivider />
       <div className="flex items-center justify-between gap-2">
-        <Label htmlFor="theme-transition-panel" className="text-sm font-medium">
+        <span className="text-sm font-medium">
           {t('settings.theme_transition', '主题切换渐变')}
-        </Label>
+        </span>
         <Switch
           id="theme-transition-panel"
           checked={themeTransitionEnabled}
