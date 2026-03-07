@@ -156,7 +156,7 @@ const ListCard = memo(
 
 ListCard.displayName = 'ListCard'
 
-/** 杂志风格布局：首卡 Hero，其余列表卡，与首页节奏统一 */
+/** 杂志风格布局：所有卡片统一列表样式 */
 export const MagazineLayout = memo(
   ({
     tiles,
@@ -171,20 +171,9 @@ export const MagazineLayout = memo(
   }) => {
     if (tiles.length === 0) return null
 
-    const [first, ...rest] = tiles
-    const firstStatus = getTileStatus(first)
-
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="sm:col-span-2">
-          <HeroCard
-            tile={first}
-            showCover={showProjectCovers}
-            needsLogin={firstStatus.needsLogin}
-            onClick={() => handleTileClick(first)}
-          />
-        </div>
-        {rest.map(tile => {
+      <div className="grid grid-cols-1 gap-4">
+        {tiles.map(tile => {
           const tileStatus = getTileStatus(tile)
           return (
             <ListCard

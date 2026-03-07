@@ -119,8 +119,8 @@ export function AppearanceView({
         </>
       )}
 
-      <SettingsDivider />
-      <div className="flex items-center justify-between gap-2">
+      <SettingsDivider className="hidden md:block" />
+      <div className="hidden md:flex items-center justify-between gap-2">
         <span className="text-sm font-medium">{t('settings.custom_cursor', '自定义光标')}</span>
         <Switch
           id="custom-cursor-panel"

@@ -371,7 +371,7 @@ function ColorModeView({
           </div>
         </>
       )}
-      <div className="border-t pt-3">
+      <div className="border-t pt-3 hidden md:block">
         <div className="flex w-full items-center justify-between gap-2 rounded-lg p-2">
           <span className="text-sm font-medium">自定义光标</span>
           <Switch
@@ -404,7 +404,7 @@ interface FullscreenViewProps {
 
 function FullscreenView({ fullscreenOn, onToggle }: FullscreenViewProps) {
   return (
-    <div className="flex flex-col space-y-3">
+    <div className="hidden md:flex flex-col space-y-3">
       <div className="flex w-full items-center justify-between gap-2 rounded-lg p-2">
         <span className="text-sm font-medium">全屏显示</span>
         <Switch checked={fullscreenOn} onCheckedChange={onToggle} aria-label="切换全屏" />
