@@ -2,12 +2,15 @@
 
 import React, { useState, memo } from 'react'
 import { Play, Pause, Volume2, VolumeX, SkipBack, SkipForward, List } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { BackButton } from '@/components/ui/back-button'
 import type { MusicPlayerProps } from './types'
 import { PlaylistDialog } from './PlaylistDialog'
 import { PlayerControlButton } from './music/PlayerControlButton'
 import { TrackInfo } from './music/TrackInfo'
 import { ProgressBar } from './music/ProgressBar'
+import { LogoButton } from './common/LogoButton'
+import { useFilterPersistenceStore } from '@/app/thing/stores/filterPersistenceStore'
 
 // 图标尺寸常量
 const ICON_SIZE = 'h-4 w-4'
@@ -37,8 +40,16 @@ export const MusicPlayer = memo(
     onTogglePlayMode,
     onOpenFullscreen,
   }: MusicPlayerProps) => {
+    const router = useRouter()
+    const { clearFilters } = useFilterPersistenceStore()
     const [playlistOpen, setPlaylistOpen] = useState(false)
     const isEmptyState = !currentTrack || availableTracks.length === 0
+    const handleBackToApps = () => toggleDisplayMode('apps')
+
+    const handleLogoClick = () => {
+      clearFilters()
+      router.push('/')
+    }
 
     React.useEffect(() => {
       const handleOpenPlaylist = () => {
@@ -51,10 +62,11 @@ export const MusicPlayer = memo(
 
     return (
       <>
-        <div className="relative flex w-full min-w-0 items-center gap-2 overflow-hidden px-2">
+        <div className="relative flex w-full min-w-0 items-center gap-2 overflow-hidden">
           {/* 内容层 - 控制按钮和文本 */}
-          <div className="relative z-10 flex shrink-0 items-center">
-            <BackButton onClick={() => toggleDisplayMode('apps')} title="返回启动台" />
+          <div className="relative z-10 flex shrink-0 items-center gap-2">
+            <LogoButton onClick={handleLogoClick} className="h-10 w-10" />
+            <BackButton onClick={handleBackToApps} title="返回启动台" className="mr-0" />
           </div>
 
           <div className="relative z-10 min-w-0 flex-1 overflow-hidden">

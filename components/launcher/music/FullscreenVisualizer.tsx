@@ -72,7 +72,7 @@ export function FullscreenVisualizer({
 }: FullscreenVisualizerProps) {
   const [vizType, setVizType] = useState<VisualizerType>('spectrum')
   const [showControls, setShowControls] = useState(true)
-  const [hideTimer, setHideTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [playlistOpen, setPlaylistOpen] = useState(false)
 
   const handleMinimizeToPlaylist = useCallback(() => {
@@ -83,21 +83,17 @@ export function FullscreenVisualizer({
   // 自动隐藏控件
   const resetHideTimer = useCallback(() => {
     setShowControls(true)
-    if (hideTimer) clearTimeout(hideTimer)
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
     const timer = setTimeout(() => setShowControls(false), 3000)
-    setHideTimer(timer)
-  }, [hideTimer])
-
-  // 使用 ref 存储 resetHideTimer 以避免循环依赖
-  const resetHideTimerRef = useRef(resetHideTimer)
-  resetHideTimerRef.current = resetHideTimer
+    hideTimerRef.current = timer
+  }, [])
 
   useEffect(() => {
-    resetHideTimerRef.current()
+    resetHideTimer()
     return () => {
-      if (hideTimer) clearTimeout(hideTimer)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
     }
-  }, [hideTimer])
+  }, [resetHideTimer])
 
   // ESC 退出
   useEffect(() => {
