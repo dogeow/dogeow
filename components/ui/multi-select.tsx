@@ -121,10 +121,10 @@ export function MultiSelect({
                     ) : null
                   })
                 ) : (
-                  <span className="text-sm">已选择 {selectedValues.length} 项</span>
+                  <span className="text-base">已选择 {selectedValues.length} 项</span>
                 )
               ) : (
-                <span className="text-muted-foreground text-sm">{placeholder}</span>
+                <span className="text-muted-foreground text-base">{placeholder}</span>
               )}
             </div>
             <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -189,7 +189,7 @@ export function MultiSelectTrigger({
   return (
     <PopoverTrigger
       className={cn(
-        'border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        'border-input bg-background ring-offset-background placeholder:text-muted-foreground focus:ring-ring flex h-10 w-full items-center justify-between rounded-md border px-3 py-2 text-base focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
       {...props}
@@ -210,9 +210,9 @@ export function MultiSelectValue({
   return (
     <div className={cn('flex flex-wrap gap-1', className)} {...props}>
       {value.length > 0 ? (
-        children || <span className="text-sm">已选择 {value.length} 项</span>
+        children || <span className="text-base">已选择 {value.length} 项</span>
       ) : (
-        <span className="text-muted-foreground text-sm">{placeholder}</span>
+        <span className="text-muted-foreground text-base">{placeholder}</span>
       )}
     </div>
   )
@@ -262,7 +262,7 @@ export function MultiSelectItem({
   return (
     <div
       className={cn(
-        'hover:bg-accent hover:text-accent-foreground relative flex cursor-default items-center rounded-sm py-1.5 pr-2 pl-8 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'hover:bg-accent hover:text-accent-foreground relative flex cursor-default items-center rounded-sm py-1.5 pr-2 pl-8 text-base outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className
       )}
       {...props}
@@ -296,7 +296,7 @@ export function MultiSelectLabel({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn('px-2 py-1.5 text-sm font-semibold', className)} {...props}>
+    <div className={cn('px-2 py-1.5 text-base font-semibold', className)} {...props}>
       {children}
     </div>
   )

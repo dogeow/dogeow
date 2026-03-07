@@ -164,7 +164,7 @@ export function MessageInput({
                 : t('chat.type_message', 'Type a message...')
             }
             disabled={isSending || !isConnected}
-            className="max-h-[120px] min-h-[40px] resize-none text-sm"
+            className="scrollbar-none max-h-[120px] min-h-[40px] resize-none"
             rows={1}
             aria-label={t('chat.message_input', 'Message input')}
             aria-describedby="message-help-text"

@@ -133,7 +133,7 @@ export function Combobox({
               {/* 创建新选项 */}
               {showCreateOption && (
                 <div
-                  className="hover:bg-accent hover:text-accent-foreground text-primary mb-1 flex cursor-pointer items-center rounded-sm border-b px-2 py-1.5 text-sm"
+                  className="hover:bg-accent hover:text-accent-foreground text-primary mb-1 flex cursor-pointer items-center rounded-sm border-b px-2 py-1.5 text-base"
                   onClick={handleCreateOption}
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
@@ -145,7 +145,7 @@ export function Combobox({
 
               {/* 选项列表 */}
               {filteredOptions.length === 0 && !showCreateOption ? (
-                <div className="text-muted-foreground px-2 py-2 text-center text-sm">
+                <div className="text-muted-foreground px-2 py-2 text-center text-base">
                   {emptyText}
                 </div>
               ) : (
@@ -153,7 +153,7 @@ export function Combobox({
                   <div
                     key={option.value}
                     className={cn(
-                      'hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm',
+                      'hover:bg-accent hover:text-accent-foreground flex cursor-pointer items-center rounded-sm px-2 py-1.5 text-base',
                       option.disabled && 'cursor-not-allowed opacity-50'
                     )}
                     onClick={() => {

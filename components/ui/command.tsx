@@ -49,7 +49,7 @@ const CommandInput = React.forwardRef<
     <CommandPrimitive.Input
       ref={ref}
       className={cn(
-        'placeholder:text-muted-foreground flex h-11 w-full rounded-md bg-transparent py-3 text-sm outline-none disabled:cursor-not-allowed disabled:opacity-50',
+        'placeholder:text-muted-foreground flex h-11 w-full rounded-md bg-transparent py-3 text-base outline-none disabled:cursor-not-allowed disabled:opacity-50',
         className
       )}
       {...props}
@@ -76,7 +76,7 @@ const CommandEmpty = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.Empty>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Empty>
 >((props, ref) => (
-  <CommandPrimitive.Empty ref={ref} className="py-4 text-center text-sm" {...props} />
+  <CommandPrimitive.Empty ref={ref} className="py-4 text-center text-base" {...props} />
 ))
 
 CommandEmpty.displayName = CommandPrimitive.Empty.displayName
@@ -125,7 +125,7 @@ const CommandItem = React.forwardRef<
       ref={ref}
       onSelect={handleSelect}
       className={cn(
-        'aria-selected:bg-accent aria-selected:text-accent-foreground relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        'aria-selected:bg-accent aria-selected:text-accent-foreground relative flex cursor-default items-center rounded-sm px-2 py-1.5 text-base outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
         className
       )}
       {...props}
