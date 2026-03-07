@@ -74,13 +74,8 @@ export function searchLocalData(
     const matchedItems = data.filter(item => {
       const name = String(item.name ?? '').toLowerCase()
       const description = String(item.description ?? '').toLowerCase()
-      const id = String(item.id ?? '').toLowerCase()
 
-      return (
-        name.includes(lowerSearchTerm) ||
-        description.includes(lowerSearchTerm) ||
-        id.includes(lowerSearchTerm)
-      )
+      return name.includes(lowerSearchTerm) || description.includes(lowerSearchTerm)
     })
 
     const mappedResults: SearchResult[] = matchedItems
