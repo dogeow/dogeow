@@ -29,7 +29,7 @@ describe('moonDiceRules', () => {
 
   it('二举/一秀：两个 4 / 一个 4', () => {
     expect(getMoonDiceRank([4, 4, 1, 2, 3, 5])).toBe('eq')
-    expect(getMoonDiceRank([4, 1, 2, 3, 5, 6])).toBe('yx')
+    expect(getMoonDiceRank([4, 1, 1, 2, 3, 5])).toBe('yx')
   })
 
   it('没有：不符合任何规则', () => {
