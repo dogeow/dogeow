@@ -466,7 +466,14 @@ function ImageWithFallback({ src, fallback }: { src: string; fallback: string })
   return (
     <>
       {useImg && (
-        <Image src={src} alt="" fill className="object-contain" onError={() => setUseImg(false)} />
+        <Image
+          src={src}
+          alt=""
+          fill
+          sizes="200px"
+          className="object-contain"
+          onError={() => setUseImg(false)}
+        />
       )}
       {!useImg && (
         <span className="absolute inset-0 flex items-center justify-center text-6xl">

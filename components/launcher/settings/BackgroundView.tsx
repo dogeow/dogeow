@@ -49,6 +49,7 @@ export function BackgroundView({
                   src={imageAsset(`/images/backgrounds/${bg.url}`)}
                   alt={bg.name!}
                   fill
+                  sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 250px"
                   className="object-cover"
                 />
               ) : (
@@ -79,7 +80,13 @@ export function BackgroundView({
             }`}
           >
             {bg.url ? (
-              <Image src={bg.url} alt={bg.name} fill className="object-cover" />
+              <Image
+                src={bg.url}
+                alt={bg.name}
+                fill
+                sizes="(max-width: 640px) 40vw, (max-width: 1024px) 25vw, 250px"
+                className="object-cover"
+              />
             ) : (
               <div className="bg-muted flex h-full w-full items-center justify-center">
                 <span className="text-xs">None</span>
