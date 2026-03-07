@@ -50,6 +50,17 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
   const [activeSection, setActiveSection] = useState<SettingsSection>('color')
   const [fullscreenOn, setFullscreenOn] = useState(false)
+  const [isMdScreen, setIsMdScreen] = useState(false)
+
+  // 检测屏幕尺寸（md 断点：768px）
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMdScreen(window.innerWidth >= 768)
+    }
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [])
 
   // 同步实际全屏状态（用户按 ESC 或浏览器行为）
   useEffect(() => {
@@ -162,7 +173,10 @@ export function SettingsDialog({
     { id: 'theme', icon: <Palette className="h-4 w-4" />, label: '主题' },
     { id: 'background', icon: <ImageIcon className="h-4 w-4" />, label: '背景' },
     { id: 'apps', icon: <LayoutGrid className="h-4 w-4" />, label: 'APP列表' },
-    { id: 'fullscreen', icon: <Maximize2 className="h-4 w-4" />, label: '全屏' },
+    // 只在中等及以上屏幕显示全屏选项（与 FullscreenView 的显示逻辑一致）
+    ...(isMdScreen
+      ? [{ id: 'fullscreen' as const, icon: <Maximize2 className="h-4 w-4" />, label: '全屏' }]
+      : []),
   ]
 
   const renderContent = () => {
