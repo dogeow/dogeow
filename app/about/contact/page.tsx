@@ -24,21 +24,17 @@ export default function ContactPage() {
         <section className="mb-8">
           <h2 className="mb-4 text-2xl font-semibold">联系方式 QQ</h2>
           <div className="bg-muted rounded-lg p-6">
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <p className="mb-2 text-lg font-medium">QQ号码</p>
-                <div className="flex items-center gap-3">
-                  <code className="bg-background rounded border px-4 py-2 text-xl font-mono">
-                    5968251
-                  </code>
-                  <button
-                    onClick={handleCopy}
-                    className="bg-primary hover:bg-primary/90 text-primary-foreground rounded px-4 py-2 text-sm font-medium transition-colors"
-                  >
-                    {copied ? '已复制 ✓' : '复制号码'}
-                  </button>
-                </div>
-              </div>
+            <p className="mb-2 text-lg font-medium">QQ号码</p>
+            <div className="flex items-center gap-3">
+              <code className="bg-background rounded border px-4 py-2 text-xl font-mono">
+                5968251
+              </code>
+              <button
+                onClick={handleCopy}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground rounded px-4 py-2 text-sm font-medium transition-colors"
+              >
+                {copied ? '已复制 ✓' : '复制号码'}
+              </button>
             </div>
           </div>
         </section>

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { useTranslation } from '@/hooks/useTranslation'
 
-export default function LegalLinks() {
+export default function FooterLinks() {
   const { t } = useTranslation()
 
   return (

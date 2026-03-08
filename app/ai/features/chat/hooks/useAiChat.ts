@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { AI_SYSTEM_PROMPT, type ChatMessage } from '../types'
 import { getRequestModel, type AIProvider } from '../request-model'
+import { readAiChatStream } from './chatStream'
+import { useAiChatImages, type ImageItem } from './useAiChatImages'
 import { API_URL } from '@/lib/api'
 import useAuthStore from '@/stores/authStore'
 import { toast } from 'sonner'
@@ -70,22 +72,12 @@ interface UseAiChatReturn {
   messagesEndRef: React.RefObject<HTMLDivElement | null>
 }
 
-/** 单张图片：本地预览 + 上传后的 URL */
-interface ImageItem {
-  id: string
-  preview: string
-  url?: string
-  uploading?: boolean
-}
-
 interface OllamaModelListItem {
   name: string
   size?: number
   parameterSize?: string
   supportsVision?: boolean
 }
-
-const MAX_IMAGE_COUNT = 5
 
 const ZHIPUAI_VISION_MODELS = new Set(['glm-4.6v-flash', 'glm-4.6v'])
 
@@ -110,7 +102,6 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
 
   const [prompt, setPrompt] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [images, setImages] = useState<ImageItem[]>([])
   const [completion, setCompletion] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
   const [ollamaModels, setOllamaModels] = useState<OllamaModelListItem[]>([])
@@ -126,15 +117,12 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
 
   const abortControllerRef = useRef<AbortController | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const imagesRef = useRef<ImageItem[]>([])
   const hasLoadedOllamaModelsRef = useRef(false)
   const isOllamaModelsRequestInFlightRef = useRef(false)
 
   // 过滤掉 system 消息用于显示
   const displayMessages = messages.filter(m => m.role !== 'system')
   const hasMessages = displayMessages.length > 0
-  const hasImages = images.length > 0
-  const isUploadingImages = images.some(item => item.uploading)
   const supportsImages = supportsImagesForSelection(provider, model, ollamaModels)
 
   // 自动滚动到底部
@@ -143,10 +131,6 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
   }, [messages, completion, isLoading])
-
-  useEffect(() => {
-    imagesRef.current = images
-  }, [images])
 
   useEffect(() => {
     if (!open || provider !== 'ollama') {
@@ -196,39 +180,6 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     }
   }, [open, provider])
 
-  const revokePreview = useCallback((preview: string) => {
-    if (preview.startsWith('blob:')) {
-      URL.revokeObjectURL(preview)
-    }
-  }, [])
-
-  const clearImages = useCallback(() => {
-    setImages(prev => {
-      prev.forEach(item => revokePreview(item.preview))
-      return []
-    })
-  }, [revokePreview])
-
-  // 关闭弹窗时清理附件，避免旧图片残留与 blob 泄漏
-  useEffect(() => {
-    if (!open) {
-      clearImages()
-    }
-  }, [open, clearImages])
-
-  useEffect(() => {
-    if (!supportsImages && images.length > 0) {
-      clearImages()
-    }
-  }, [supportsImages, images.length, clearImages])
-
-  // 卸载时释放所有 blob URL
-  useEffect(() => {
-    return () => {
-      imagesRef.current.forEach(item => revokePreview(item.preview))
-    }
-  }, [revokePreview])
-
   // 上传单张图片到后端（又拍云）
   const uploadImageToServer = useCallback(async (file: File): Promise<string> => {
     const token = useAuthStore.getState().token
@@ -257,53 +208,17 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
     return data.url
   }, [])
 
-  // 处理图片选择：先本地预览，再异步上传
-  const handleImageSelect = useCallback(
-    (files: FileList | null) => {
-      if (!files) return
+  const { images, hasImages, isUploadingImages, handleImageSelect, removeImage, clearImages } =
+    useAiChatImages({
+      enabled: Boolean(open) && supportsImages,
+      uploadImage: uploadImageToServer,
+    })
 
-      const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'))
-      const remainingSlots = Math.max(0, MAX_IMAGE_COUNT - images.length)
-
-      if (imageFiles.length > remainingSlots) {
-        toast.warning(`最多只能上传 ${remainingSlots} 张图片`)
-      }
-
-      const filesToProcess = imageFiles.slice(0, remainingSlots)
-      filesToProcess.forEach(file => {
-        const id = `img-${Date.now()}-${Math.random().toString(36).slice(2)}`
-        const preview = URL.createObjectURL(file)
-
-        setImages(prev => [...prev, { id, preview, uploading: true }])
-
-        uploadImageToServer(file)
-          .then(url => {
-            setImages(prev =>
-              prev.map(item => (item.id === id ? { ...item, url, uploading: false } : item))
-            )
-          })
-          .catch(err => {
-            revokePreview(preview)
-            toast.error(err instanceof Error ? err.message : '图片上传失败')
-            setImages(prev => prev.filter(item => item.id !== id))
-          })
-      })
-    },
-    [images.length, uploadImageToServer, revokePreview]
-  )
-
-  const removeImage = useCallback(
-    (index: number) => {
-      setImages(prev => {
-        const item = prev[index]
-        if (item) {
-          revokePreview(item.preview)
-        }
-        return prev.filter((_, i) => i !== index)
-      })
-    },
-    [revokePreview]
-  )
+  useEffect(() => {
+    if ((!open || !supportsImages) && hasImages) {
+      clearImages()
+    }
+  }, [open, supportsImages, hasImages, clearImages])
 
   // 停止生成
   const stop = useCallback(() => {
@@ -389,75 +304,7 @@ export function useAiChat(options: UseAiChatOptions = {}): UseAiChatReturn {
         throw new Error(`API error: ${response.status}`)
       }
 
-      if (!response.body) {
-        throw new Error('Response body is null')
-      }
-
-      // 读取流式响应
-      const reader = response.body.getReader()
-      const decoder = new TextDecoder()
-      let buffer = ''
-      let accumulatedContent = ''
-
-      while (true) {
-        const { done, value } = await reader.read()
-
-        if (done) break
-
-        buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
-
-        for (const line of lines) {
-          if (!line.trim()) continue
-
-          // 处理内容块: 0:"content"
-          if (line.startsWith('0:')) {
-            try {
-              const content = JSON.parse(line.slice(2))
-              accumulatedContent += content
-              setCompletion(accumulatedContent)
-            } catch (e) {
-              console.warn('Failed to parse content chunk:', line)
-            }
-          }
-
-          // 处理完成标记: d:{metadata}
-          if (line.startsWith('d:')) {
-            try {
-              const metadata = JSON.parse(line.slice(2))
-              // 流完成，将 accumulatedContent 添加到消息中
-              if (accumulatedContent) {
-                setMessages(prev => [
-                  ...prev,
-                  {
-                    role: 'assistant',
-                    content: accumulatedContent,
-                  },
-                ])
-              }
-              setCompletion('')
-              setIsLoading(false)
-              return
-            } catch (e) {
-              console.warn('Failed to parse metadata:', line)
-            }
-          }
-        }
-      }
-
-      // 处理剩余缓冲区
-      if (buffer.trim()) {
-        if (buffer.startsWith('0:')) {
-          try {
-            const content = JSON.parse(buffer.slice(2))
-            accumulatedContent += content
-            setCompletion(accumulatedContent)
-          } catch (e) {
-            console.warn('Failed to parse remaining buffer:', buffer)
-          }
-        }
-      }
+      const accumulatedContent = await readAiChatStream(response, setCompletion)
 
       // 流结束，添加 assistant 消息
       if (accumulatedContent) {

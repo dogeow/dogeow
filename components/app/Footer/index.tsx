@@ -5,7 +5,7 @@ import { useTheme } from 'next-themes'
 import BuiltBy from './BuiltBy'
 import PoweredBy from './PoweredBy'
 import ICP from './ICP'
-import LegalLinks from './LegalLinks'
+import FooterLinks from './FooterLinks'
 import { UPYUN_CDN_URL, FOOTER_BG_IMAGES_LIGHT } from '@/lib/constants'
 
 const FOOTER_BG_PARAMS = '!/compress/true/fw/400'
@@ -37,7 +37,7 @@ export default function Footer() {
           backgroundSize: 200,
         }}
       >
-        <LegalLinks />
+        <FooterLinks />
         <BuiltBy />
         <PoweredBy />
         <ICP />
