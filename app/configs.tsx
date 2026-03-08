@@ -198,7 +198,7 @@ const SYSTEM_BACKGROUNDS = [
   { id: 'none', nameKey: 'background.none', url: '' },
   { id: 'bg1', nameKey: 'background.bg1', url: '君の名は.webp' },
   { id: 'bg2', nameKey: 'background.bg12', url: '钢铁侠.jpg' },
-  { id: 'bg3', nameKey: 'background.bg3', url: '速度生活.jpeg' },
+  { id: 'bg3', nameKey: 'background.bg3', url: '速度生活.jpg' },
   { id: 'bg4', nameKey: 'background.bg4', url: '中世纪-骑士.jpeg' },
   { id: 'bg5', nameKey: 'background.bg5', url: '冰与火之歌.png' },
   { id: 'bg6', nameKey: 'background.bg6', url: '塞尔达荒野之息.jpg' },
