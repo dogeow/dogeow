@@ -49,6 +49,8 @@ export const en = {
   'footer.privacy_policy': 'Privacy Policy',
   'footer.terms_of_service': 'Terms of Service',
   'footer.site_info': 'Site Info',
+  'footer.contact_us': 'Contact Us',
+  'footer.qq_copied': 'Copied ✓',
 
   // Development Log
   'devlog.title': 'Development Log',

@@ -17,6 +17,10 @@ export default function LegalLinks() {
       <Link href="/about/site" className="hover:text-foreground transition-colors">
         {t('footer.site_info', '网站信息')}
       </Link>
+      <span className="text-muted-foreground/50">|</span>
+      <Link href="/about/contact" className="hover:text-foreground transition-colors">
+        {t('footer.contact_us', '联系我们')}
+      </Link>
     </div>
   )
 }

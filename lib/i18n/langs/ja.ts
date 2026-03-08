@@ -49,6 +49,8 @@ export const ja = {
   'footer.privacy_policy': 'プライバシーポリシー',
   'footer.terms_of_service': '利用規約',
   'footer.site_info': 'サイト情報',
+  'footer.contact_us': 'お問い合わせ',
+  'footer.qq_copied': 'コピーしました ✓',
 
   // Development Log
   'devlog.title': '開発日誌',
