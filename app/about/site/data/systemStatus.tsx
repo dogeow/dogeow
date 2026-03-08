@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Server, Activity, ListTodo } from 'lucide-react'
+import { Server, Activity, ListTodo, Database, Layers, Wifi, Clock } from 'lucide-react'
 import useSWR from 'swr'
 import { apiRequest } from '@/lib/api'
 import type { SystemStatus } from '../types'
@@ -31,6 +31,30 @@ function mapApiToSystemStatus(data: SystemStatusApiResponse, lastCheck: Date): S
       details: data.openclaw.details || undefined,
     },
     {
+      name: '数据库',
+      status: normalizeStatus(data.database.status),
+      lastCheck,
+      icon: <Database className={iconClass} />,
+      description: 'MySQL 数据库',
+      details: data.database.details || undefined,
+    },
+    {
+      name: 'Redis',
+      status: normalizeStatus(data.redis.status),
+      lastCheck,
+      icon: <Layers className={iconClass} />,
+      description: 'Redis 缓存服务',
+      details: data.redis.details || undefined,
+    },
+    {
+      name: 'CDN',
+      status: normalizeStatus(data.cdn.status),
+      lastCheck,
+      icon: <Wifi className={iconClass} />,
+      description: '又拍云 CDN',
+      details: data.cdn.details || undefined,
+    },
+    {
       name: 'Reverb',
       status: normalizeStatus(data.reverb.status),
       lastCheck,
@@ -45,6 +69,14 @@ function mapApiToSystemStatus(data: SystemStatusApiResponse, lastCheck: Date): S
       icon: <ListTodo className={iconClass} />,
       description: 'Laravel 队列 Worker',
       details: data.queue.details || undefined,
+    },
+    {
+      name: '调度器',
+      status: normalizeStatus(data.scheduler.status),
+      lastCheck,
+      icon: <Clock className={iconClass} />,
+      description: 'Laravel 任务调度',
+      details: data.scheduler.details || undefined,
     },
   ]
 }
@@ -62,7 +94,31 @@ function fallbackStatuses(
       status,
       lastCheck,
       icon: <Server className={iconClass} />,
-      description: 'OpenClaw 应用服务器（CPU / 内存 / 磁盘）',
+      description: 'OpenClaw 应用服务器',
+      details: message,
+    },
+    {
+      name: '数据库',
+      status,
+      lastCheck,
+      icon: <Database className={iconClass} />,
+      description: 'MySQL 数据库',
+      details: message,
+    },
+    {
+      name: 'Redis',
+      status,
+      lastCheck,
+      icon: <Layers className={iconClass} />,
+      description: 'Redis 缓存服务',
+      details: message,
+    },
+    {
+      name: 'CDN',
+      status,
+      lastCheck,
+      icon: <Wifi className={iconClass} />,
+      description: '又拍云 CDN',
       details: message,
     },
     {
@@ -70,7 +126,7 @@ function fallbackStatuses(
       status,
       lastCheck,
       icon: <Activity className={iconClass} />,
-      description: 'Laravel Reverb WebSocket 服务',
+      description: 'Laravel Reverb WebSocket',
       details: message,
     },
     {
@@ -78,7 +134,15 @@ function fallbackStatuses(
       status,
       lastCheck,
       icon: <ListTodo className={iconClass} />,
-      description: 'Laravel 队列 Worker（Supervisor）',
+      description: 'Laravel 队列 Worker',
+      details: message,
+    },
+    {
+      name: '调度器',
+      status,
+      lastCheck,
+      icon: <Clock className={iconClass} />,
+      description: 'Laravel 任务调度',
       details: message,
     },
   ]

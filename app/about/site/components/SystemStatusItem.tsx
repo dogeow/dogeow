@@ -27,11 +27,12 @@ export const SystemStatusItem: React.FC<SystemStatusItemProps> = ({ status }) =>
 
         <div className="flex flex-col items-end gap-2">
           <Badge variant="outline" className={`text-xs font-medium ${config.badgeColor}`}>
-            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-              <Clock className="h-3 w-3" />
-              <span>{status.lastCheck.toLocaleTimeString()}</span>
-            </div>
+            {config.label}
           </Badge>
+          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+            <Clock className="h-3 w-3" />
+            <span>{status.lastCheck.toLocaleTimeString()}</span>
+          </div>
         </div>
       </div>
     </div>

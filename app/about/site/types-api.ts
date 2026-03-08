@@ -18,4 +18,24 @@ export interface SystemStatusApiResponse {
     raw_state: string
     details: string
   }
+  database: {
+    status: string
+    details: string
+    response_time?: number
+  }
+  redis: {
+    status: string
+    details: string
+    response_time?: number
+  }
+  cdn: {
+    status: string
+    details: string
+    response_time?: number
+  }
+  scheduler: {
+    status: string
+    details: string
+    last_run?: string
+  }
 }
