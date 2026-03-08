@@ -32,5 +32,5 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ], // 包含的文件
-  "exclude": ["node_modules"] // 排除 node_modules 目录
+  "exclude": ["node_modules", "releases", "current", ".build-staging.*"] // 排除依赖与部署产物目录
 }

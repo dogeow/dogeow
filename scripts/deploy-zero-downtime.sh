@@ -24,28 +24,34 @@ RUN_ANALYZE="${ANALYZE:-}"
 
 cd "$APP_ROOT"
 
+if ! git -C "$APP_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "错误：APP_ROOT 不是有效的 Git 工作树：$APP_ROOT"
+  exit 1
+fi
+
+copy_deploy_snapshot() {
+  local destination="$1"
+
+  mkdir -p "$destination"
+  git -C "$APP_ROOT" archive --format=tar HEAD | tar -xf - -C "$destination"
+
+  while IFS= read -r -d '' local_file; do
+    cp "$local_file" "$destination/"
+  done < <(find "$APP_ROOT" -maxdepth 1 -type f \( -name '.env*' -o -name '.npmrc' \) -print0)
+}
+
 # ---------- 模式一：发布目录 + 符号链接（推荐，零停机 + 可回滚）----------
 if [ -L "$CURRENT_LINK" ] || [ -d "$CURRENT_LINK" ]; then
   echo "[deploy] 使用发布目录模式（零停机）"
 
   [ -d "$RELEASES_DIR" ] || mkdir -p "$RELEASES_DIR"
   STAGING="${RELEASES_DIR}/.staging.$$"
-  CURRENT_RELEASE=""
-  if [ -L "$CURRENT_LINK" ]; then
-    CURRENT_RELEASE="$(readlink "$CURRENT_LINK")"
-    [ "${CURRENT_RELEASE#/}" = "$CURRENT_RELEASE" ] && CURRENT_RELEASE="$APP_ROOT/$CURRENT_RELEASE"
-  elif [ -d "$CURRENT_LINK" ]; then
-    CURRENT_RELEASE="$CURRENT_LINK"
-  fi
 
-  # 在临时目录构建，完成后再用时间戳重命名，使目录名对应实际上线时间
+  # 基于当前工作树生成新的发布快照，避免把旧 release 的陈旧源码带入新构建。
   echo "[deploy] 构建到临时目录: $STAGING"
-  mkdir -p "$STAGING"
-  rsync -a --exclude='node_modules' --exclude='.next' --exclude='releases' --exclude='current' \
-    "${CURRENT_RELEASE:-.}/" "$STAGING/" 2>/dev/null || rsync -a --exclude='node_modules' --exclude='.next' --exclude='releases' --exclude='current' ./ "$STAGING/"
+  copy_deploy_snapshot "$STAGING"
 
   cd "$STAGING"
-  git pull
   npm ci
   if [ -n "$RUN_ANALYZE" ]; then
     echo "[deploy] 构建并执行 bundle 分析"
@@ -81,11 +87,8 @@ echo "[deploy] 使用临时目录构建 + 原子替换 .next（避免构建期�
 BUILD_STAGING="${APP_ROOT}/.build-staging.$$"
 trap "rm -rf '$BUILD_STAGING'" EXIT
 
-mkdir -p "$BUILD_STAGING"
-rsync -a --exclude='node_modules' --exclude='.next' --exclude='.build-staging.*' \
-  ./ "$BUILD_STAGING/"
+copy_deploy_snapshot "$BUILD_STAGING"
 cd "$BUILD_STAGING"
-git pull
 npm ci
 if [ -n "$RUN_ANALYZE" ]; then
   npx next build && npm run analyze
