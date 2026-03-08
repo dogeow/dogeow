@@ -1,56 +1,10 @@
-import fs from 'node:fs'
-import path from 'node:path'
-import { getWikiContentDir, readArticleSourceBySlug, getArticleSlugs } from '../wiki/mdx'
 import { extractTextFromJSON } from '../helpers/wordCount'
 
 export interface Document {
   title: string
   slug: string
   content: string
-  source: 'file' | 'database'
-}
-
-/**
- * 从本地文件系统读取所有文档
- */
-export async function loadDocumentsFromFiles(): Promise<Document[]> {
-  const documents: Document[] = []
-  const slugs = getArticleSlugs()
-
-  console.log(`[文档加载] 找到 ${slugs.length} 个文档文件:`, slugs)
-
-  for (const slug of slugs) {
-    try {
-      const content = await readArticleSourceBySlug(slug)
-
-      // 提取 frontmatter 中的 title，如果没有 frontmatter，使用第一行作为标题
-      let title = slug
-      const frontmatterMatch = content.match(/^---\s*\n(?:.*\n)*?title:\s*(.+?)\n/)
-      if (frontmatterMatch) {
-        title = frontmatterMatch[1].trim().replace(/^["']|["']$/g, '')
-      } else {
-        // 如果没有 frontmatter，使用第一行非空内容作为标题
-        const firstLine = content.split('\n').find(line => line.trim().length > 0)
-        if (firstLine) {
-          title = firstLine.trim().replace(/^#+\s*/, '') // 移除 markdown 标题标记
-        }
-      }
-
-      documents.push({
-        title,
-        slug,
-        content,
-        source: 'file',
-      })
-
-      console.log(`[文档加载] 已加载: ${slug} -> ${title}`)
-    } catch (error) {
-      console.warn(`Failed to load document ${slug}:`, error)
-    }
-  }
-
-  console.log(`[文档加载] 总共加载了 ${documents.length} 个文档`)
-  return documents
+  source: 'database'
 }
 
 /**

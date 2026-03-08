@@ -140,6 +140,7 @@ export const useAudioManager = () => {
     availableTracks,
     readyToPlay,
     setReadyToPlay,
+    setIsPlaying,
     // 方法
     getCurrentTrackName,
     formatTime,

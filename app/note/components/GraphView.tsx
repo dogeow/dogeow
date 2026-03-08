@@ -33,10 +33,14 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   ssr: false,
 })
 
+type RefLike<T> = {
+  current: T
+}
+
 interface GraphViewProps {
   query?: string
-  onNewNodeRef?: React.MutableRefObject<(() => void) | null>
-  onCreateLinkRef?: React.MutableRefObject<(() => void) | null>
+  onNewNodeRef?: RefLike<(() => void) | null>
+  onCreateLinkRef?: RefLike<(() => void) | null>
 }
 
 export default function GraphView({ query = '', onNewNodeRef, onCreateLinkRef }: GraphViewProps) {

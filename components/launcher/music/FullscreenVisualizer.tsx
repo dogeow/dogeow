@@ -13,7 +13,7 @@ import {
   VolumeX,
   List,
 } from 'lucide-react'
-import { AudioVisualizer, type VisualizerType } from './AudioVisualizer'
+import { AudioVisualizer, type VisualizerType } from './visualizer'
 import { cn } from '@/lib/helpers'
 import { PlaylistDialog } from '../PlaylistDialog'
 import type { MusicTrack, PlayMode } from '@/stores/musicStore'

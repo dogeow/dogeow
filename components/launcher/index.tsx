@@ -17,7 +17,7 @@ import { ViewWrapper } from './views/ViewWrapper'
 import { useMusicStore } from '@/stores/musicStore'
 import { useMediaKeys } from './hooks/useMediaKeys'
 import { useMediaSession } from './hooks/useMediaSession'
-import { AudioVisualizer } from './music/AudioVisualizer'
+import { AudioVisualizer } from './music/visualizer'
 import { FullscreenVisualizer } from './music/FullscreenVisualizer'
 import { SettingsDialog } from './settings/SettingsDialog'
 
@@ -80,6 +80,7 @@ export function AppLauncher({
     readyToPlay,
     setReadyToPlay,
     fetchAvailableTracks,
+    setIsPlaying,
     setCurrentTrack,
     setupMediaSource,
     resetCurrentTime,
@@ -113,6 +114,8 @@ export function AppLauncher({
 
       // 当切换到音乐模式时，加载音频列表并初始化音频源
       if (mode === 'music') {
+        // 进入音乐面板时只恢复曲目和列表，不自动续播上次状态。
+        setIsPlaying(false)
         fetchAvailableTracks()
 
         // 检查播放列表状态 - 添加安全检查
@@ -126,7 +129,7 @@ export function AppLauncher({
         }
       }
     },
-    [fetchAvailableTracks, availableTracks, currentTrack, audioRef, setupMediaSource]
+    [fetchAvailableTracks, availableTracks, currentTrack, audioRef, setupMediaSource, setIsPlaying]
   )
 
   const switchToNextTrack = useCallback(() => {
@@ -324,7 +327,7 @@ export function AppLauncher({
               analyserNode={audioManager.analyserNode}
               isPlaying={isPlaying}
               type="spectrum"
-              barCount={32}
+              barCount={20}
               showGradient={true}
               className="h-full w-full"
             />
