@@ -1,4 +1,4 @@
-import { CheckCircle, AlertCircle, XCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 
 export interface StatusConfig {
   color: string
@@ -22,7 +22,7 @@ export const getStatusConfig = (status: string): StatusConfig => {
     case 'online':
       return {
         ...neutralStatusConfig,
-        icon: <CheckCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
+        icon: <div className="h-3 w-3 rounded-full bg-green-500" />,
         label: '在线',
       }
     case 'warning':
@@ -34,13 +34,13 @@ export const getStatusConfig = (status: string): StatusConfig => {
     case 'error':
       return {
         ...neutralStatusConfig,
-        icon: <XCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
+        icon: <div className="h-3 w-3 rounded-full bg-red-500" />,
         label: '错误',
       }
     default:
       return {
         ...neutralStatusConfig,
-        icon: <XCircle className="h-4 w-4 text-gray-600 dark:text-gray-400" />,
+        icon: <div className="h-3 w-3 rounded-full bg-red-500" />,
         label: '离线',
       }
   }

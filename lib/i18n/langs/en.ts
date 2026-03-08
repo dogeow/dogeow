@@ -48,7 +48,7 @@ export const en = {
   // Footer
   'footer.privacy_policy': 'Privacy Policy',
   'footer.terms_of_service': 'Terms of Service',
-  'footer.site_info': 'Site Info',
+  'footer.site_info': 'Site Status',
   'footer.contact_us': 'Contact Us',
   'footer.qq_copied': 'Copied ✓',
 

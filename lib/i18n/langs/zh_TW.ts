@@ -48,7 +48,7 @@ export const zh_TW = {
   // Footer
   'footer.privacy_policy': '隱私政策',
   'footer.terms_of_service': '用戶協議',
-  'footer.site_info': '網站信息',
+  'footer.site_info': '網站狀態',
   'footer.contact_us': '聯繫我們',
   'footer.qq_copied': '已複製 ✓',
   // Development Log

@@ -48,7 +48,7 @@ export const zh_CN = {
   // Footer
   'footer.privacy_policy': '隐私政策',
   'footer.terms_of_service': '用户协议',
-  'footer.site_info': '网站信息',
+  'footer.site_info': '网站状态',
   'footer.contact_us': '联系我们',
   'footer.qq_copied': '已复制 ✓',
 

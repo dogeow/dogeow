@@ -23,11 +23,11 @@ function mapApiToSystemStatus(data: SystemStatusApiResponse, lastCheck: Date): S
   const iconClass = 'h-5 w-5 text-gray-600 dark:text-gray-400'
   return [
     {
-      name: 'OpenClaw 服务器',
+      name: '小龙虾🦞',
       status: normalizeStatus(data.openclaw.status),
       lastCheck,
       icon: <Server className={iconClass} />,
-      description: 'OpenClaw 应用服务器（CPU / 内存 / 磁盘）',
+      description: 'OpenClaw 应用服务器',
       details: data.openclaw.details || undefined,
     },
     {
@@ -35,7 +35,7 @@ function mapApiToSystemStatus(data: SystemStatusApiResponse, lastCheck: Date): S
       status: normalizeStatus(data.reverb.status),
       lastCheck,
       icon: <Activity className={iconClass} />,
-      description: 'Laravel Reverb WebSocket 服务',
+      description: 'Laravel Reverb WebSocket',
       details: data.reverb.details || undefined,
     },
     {
@@ -43,7 +43,7 @@ function mapApiToSystemStatus(data: SystemStatusApiResponse, lastCheck: Date): S
       status: normalizeStatus(data.queue.status),
       lastCheck,
       icon: <ListTodo className={iconClass} />,
-      description: 'Laravel 队列 Worker（Supervisor）',
+      description: 'Laravel 队列 Worker',
       details: data.queue.details || undefined,
     },
   ]

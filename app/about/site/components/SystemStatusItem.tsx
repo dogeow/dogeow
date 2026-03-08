@@ -14,8 +14,8 @@ export const SystemStatusItem: React.FC<SystemStatusItemProps> = ({ status }) =>
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          {status.icon}
+        <div className="flex items-start gap-3">
+          <div className="pt-1">{config.icon}</div>
           <div>
             <h3 className="font-medium text-gray-900 dark:text-gray-100">{status.name}</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">{status.description}</p>
@@ -27,12 +27,11 @@ export const SystemStatusItem: React.FC<SystemStatusItemProps> = ({ status }) =>
 
         <div className="flex flex-col items-end gap-2">
           <Badge variant="outline" className={`text-xs font-medium ${config.badgeColor}`}>
-            {config.label}
+            <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+              <Clock className="h-3 w-3" />
+              <span>{status.lastCheck.toLocaleTimeString()}</span>
+            </div>
           </Badge>
-          <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
-            <Clock className="h-3 w-3" />
-            <span>{status.lastCheck.toLocaleTimeString()}</span>
-          </div>
         </div>
       </div>
     </div>
