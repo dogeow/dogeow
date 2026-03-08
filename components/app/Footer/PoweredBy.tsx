@@ -9,6 +9,8 @@ const techIcons = {
   react: `${assetBaseUrl}/images/tech/react.svg`,
   nextJs: `${assetBaseUrl}/images/tech/next-js.svg`,
   shadcn: `${assetBaseUrl}/images/tech/shadcn.svg`,
+  typescript: `${assetBaseUrl}/images/tech/typescript.svg`,
+  tailwind: `${assetBaseUrl}/images/tech/tailwind.svg`,
 }
 
 interface TechLinkProps {
@@ -46,6 +48,18 @@ const PoweredBy: React.FC = () => (
     />
     <TechLink href="https://react.dev" src={techIcons.react} alt="React" needsInvert={false} />
     <TechLink href="https://nextjs.org" src={techIcons.nextJs} alt="Next.js" needsInvert={true} />
+    <TechLink
+      href="https://www.typescriptlang.org"
+      src={techIcons.typescript}
+      alt="TypeScript"
+      needsInvert={false}
+    />
+    <TechLink
+      href="https://tailwindcss.com"
+      src={techIcons.tailwind}
+      alt="Tailwind CSS"
+      needsInvert={false}
+    />
     <TechLink
       href="https://ui.shadcn.com"
       src={techIcons.shadcn}
