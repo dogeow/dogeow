@@ -104,8 +104,17 @@ export const zh_CN = {
 
   // Backgrounds
   'background.none': '无背景',
-  'background.bg1': '你的名字？·untitled',
-  'background.bg3': '2·untitled',
+  'background.bg1': '你的名字',
+  'background.bg2': '钢铁侠',
+  'background.bg3': '速度生活',
+  'background.bg4': '中世纪-骑士',
+  'background.bg5': '冰与火之歌',
+  'background.bg6': '塞尔达荒野之息',
+  'background.bg7': '守望先锋',
+  'background.bg8': '守望先锋',
+  'background.bg9': '星球大战',
+  'background.bg10': '疯狂动物城',
+  'background.bg11': '福特野马',
 
   // App Grid buttons
   'appgrid.music': '打开音乐',
