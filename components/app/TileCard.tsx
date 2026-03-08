@@ -13,16 +13,16 @@ const TILE_CLASSES = {
     'w-full h-full min-h-[8rem]',
     'relative flex flex-col items-start justify-end',
     'p-3 sm:p-4 rounded-xl overflow-hidden',
-    'border border-white/15 shadow-sm',
+    'shadow-sm',
     'transition-[transform,box-shadow,border-color] duration-200 ease-in-out',
-    'hover:scale-[0.98] hover:shadow-md hover:border-white/25 cursor-pointer',
+    'hover:scale-[0.98] hover:shadow-md cursor-pointer',
     'active:scale-[0.97]',
     'will-change-transform',
     'text-left outline-none',
     'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     'motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100',
   ].join(' '),
-  GRADIENT_OVERLAY: 'absolute inset-0 z-[2]',
+  BORDERED: 'border border-white/15 hover:border-white/25',
   LOCK_ICON:
     'absolute top-2 right-2 z-[3] flex h-6 w-6 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm',
   CONTENT: 'relative z-[2] flex items-center gap-2.5',
@@ -112,7 +112,13 @@ export const TileCard = memo(
     const handleImageLoad = useCallback(() => setImageLoaded(true), [])
 
     // 样式计算
-    const className = useMemo(() => `${TILE_CLASSES.BASE} ${customStyles}`, [customStyles])
+    const className = useMemo(
+      () =>
+        [TILE_CLASSES.BASE, hasBackground ? '' : TILE_CLASSES.BORDERED, customStyles]
+          .filter(Boolean)
+          .join(' '),
+      [customStyles, hasBackground]
+    )
     const dynamicStyles = useMemo(
       () => ({
         backgroundColor: `${tile.color}b3`,
@@ -122,12 +128,6 @@ export const TileCard = memo(
       [tile.color, needsLogin]
     )
 
-    const gradientStyle = useMemo(
-      () => ({
-        background: `linear-gradient(135deg, ${tile.color}80, ${tile.color}40)`,
-      }),
-      [tile.color]
-    )
     const showSkeleton = hasBackground && !imageLoaded
     const ariaLabel = useMemo(
       () => (needsLogin ? `打开 ${tileName}（需登录）` : `打开 ${tileName}`),
@@ -160,8 +160,6 @@ export const TileCard = memo(
               placeholder="blur"
               blurDataURL={BLUR_DATA_URL}
             />
-            {/* 渐变遮罩 */}
-            <div className={TILE_CLASSES.GRADIENT_OVERLAY} style={gradientStyle} />
           </>
         )}
 
