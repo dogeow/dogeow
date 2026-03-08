@@ -25,7 +25,7 @@ interface PlaylistDialogProps {
   isMuted?: boolean
   onTrackSelect: (trackPath: string) => void
   onTogglePlay: () => void
-  onTogglePlayMode: () => void
+  onSetPlayMode: (mode: PlayMode) => void
   onToggleMute?: () => void
   onPrevTrack?: () => void
   onNextTrack?: () => void
@@ -49,7 +49,7 @@ export function PlaylistDialog({
   isMuted,
   onTrackSelect,
   onTogglePlay,
-  onTogglePlayMode,
+  onSetPlayMode,
   onToggleMute,
   onPrevTrack,
   onNextTrack,
@@ -128,7 +128,7 @@ export function PlaylistDialog({
 
         <div className="mt-4 flex flex-shrink-0 flex-col gap-4 border-t pt-4">
           <div className="flex items-center justify-start">
-            <RepeatModeButton playMode={playMode} onTogglePlayMode={onTogglePlayMode} />
+            <RepeatModeButton playMode={playMode} onSetPlayMode={onSetPlayMode} />
           </div>
 
           <div className="grid grid-cols-5 items-center">

@@ -32,7 +32,7 @@ export interface MusicPlayerProps {
   formatTime: (time: number) => string
   toggleDisplayMode: (mode: DisplayMode) => void
   onTrackSelect: (trackPath: string) => void
-  onTogglePlayMode: () => void
+  onSetPlayMode: (mode: PlayMode) => void
   onOpenFullscreen?: () => void
 }
 

@@ -21,7 +21,6 @@ interface MusicState {
   setAvailableTracks: (tracks: MusicTrack[]) => void
   setIsPlaying: (isPlaying: boolean) => void
   setPlayMode: (mode: PlayMode) => void
-  togglePlayMode: () => void
 }
 
 export const useMusicStore = create<MusicState>()(
@@ -37,22 +36,6 @@ export const useMusicStore = create<MusicState>()(
       setAvailableTracks: (tracks: MusicTrack[]) => set({ availableTracks: tracks }),
       setIsPlaying: (isPlaying: boolean) => set({ isPlaying }),
       setPlayMode: (mode: PlayMode) => set({ playMode: mode }),
-      togglePlayMode: () =>
-        set(state => {
-          // 切换播放模式：none -> all -> one -> shuffle -> none
-          switch (state.playMode) {
-            case 'none':
-              return { playMode: 'all' }
-            case 'all':
-              return { playMode: 'one' }
-            case 'one':
-              return { playMode: 'shuffle' }
-            case 'shuffle':
-              return { playMode: 'none' }
-            default:
-              return { playMode: 'none' }
-          }
-        }),
     }),
     {
       name: 'music-storage',

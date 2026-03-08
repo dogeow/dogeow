@@ -14,7 +14,7 @@ import { useBackgroundManager } from '@/hooks/useBackgroundManager'
 import { AppsView } from './views/AppsView'
 import { SearchResultView } from './views/SearchResultView'
 import { ViewWrapper } from './views/ViewWrapper'
-import { useMusicStore } from '@/stores/musicStore'
+import { useMusicStore, type PlayMode } from '@/stores/musicStore'
 import { useMediaKeys } from './hooks/useMediaKeys'
 import { useMediaSession } from './hooks/useMediaSession'
 import { AudioVisualizer } from './music/visualizer'
@@ -59,7 +59,7 @@ export function AppLauncher({
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
   const [isFullscreenViz, setIsFullscreenViz] = useState(false)
   // 使用音乐存储中的播放模式状态
-  const { playMode, togglePlayMode } = useMusicStore()
+  const { playMode, setPlayMode } = useMusicStore()
 
   // 使用自定义 hooks
   const audioManager = useAudioManager()
@@ -192,10 +192,7 @@ export function AppLauncher({
           formatTime,
           toggleDisplayMode,
           onTrackSelect: (trackPath: string) => setCurrentTrack?.(trackPath),
-          onTogglePlayMode: () => {
-            // 切换播放模式 - 只改变状态，下次生效
-            togglePlayMode()
-          },
+          onSetPlayMode: (mode: PlayMode) => setPlayMode(mode),
           onOpenFullscreen: () => setIsFullscreenViz(true),
         },
       },
@@ -229,7 +226,7 @@ export function AppLauncher({
       formatTime,
       setCurrentTrack,
       toggleDisplayMode,
-      togglePlayMode,
+      setPlayMode,
       backgroundImage,
       setBackgroundImage,
       customBackgrounds,
@@ -308,7 +305,7 @@ export function AppLauncher({
           currentTrack={currentTrack || ''}
           onTrackSelect={(trackPath: string) => setCurrentTrack?.(trackPath)}
           playMode={playMode}
-          onTogglePlayMode={togglePlayMode}
+          onSetPlayMode={setPlayMode}
           currentTime={currentTime}
           duration={duration}
           handleProgressChange={handleProgressChange}

@@ -37,7 +37,7 @@ export const MusicPlayer = memo(
     formatTime,
     toggleDisplayMode,
     onTrackSelect,
-    onTogglePlayMode,
+    onSetPlayMode,
     onOpenFullscreen,
   }: MusicPlayerProps) => {
     const router = useRouter()
@@ -128,7 +128,7 @@ export const MusicPlayer = memo(
           isMuted={isMuted}
           onTrackSelect={onTrackSelect}
           onTogglePlay={togglePlay}
-          onTogglePlayMode={onTogglePlayMode}
+          onSetPlayMode={onSetPlayMode}
           onToggleMute={toggleMute}
           onPrevTrack={switchToPrevTrack}
           onNextTrack={switchToNextTrack}

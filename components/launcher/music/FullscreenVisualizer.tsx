@@ -32,7 +32,7 @@ interface FullscreenVisualizerProps {
   currentTrack?: string
   onTrackSelect?: (trackPath: string) => void
   playMode?: PlayMode
-  onTogglePlayMode?: () => void
+  onSetPlayMode?: (mode: PlayMode) => void
   currentTime?: number
   duration?: number
   handleProgressChange?: (e: React.ChangeEvent<HTMLInputElement>) => void
@@ -60,7 +60,7 @@ export function FullscreenVisualizer({
   currentTrack = '',
   onTrackSelect,
   playMode = 'none',
-  onTogglePlayMode,
+  onSetPlayMode,
   currentTime = 0,
   duration = 0,
   handleProgressChange,
@@ -256,7 +256,7 @@ export function FullscreenVisualizer({
       </div>
 
       {/* 播放列表弹窗 */}
-      {onTrackSelect && onTogglePlayMode && (
+      {onTrackSelect && onSetPlayMode && (
         <PlaylistDialog
           open={playlistOpen}
           onOpenChange={setPlaylistOpen}
@@ -266,7 +266,7 @@ export function FullscreenVisualizer({
           isMuted={isMuted}
           onTrackSelect={onTrackSelect}
           onTogglePlay={onTogglePlay}
-          onTogglePlayMode={onTogglePlayMode}
+          onSetPlayMode={onSetPlayMode}
           onToggleMute={onToggleMute}
           onPrevTrack={onPrevTrack}
           onNextTrack={onNextTrack}

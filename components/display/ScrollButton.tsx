@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { asset } from '@/lib/helpers/assets'
 
 const SCROLL_HEIGHT = 500
@@ -62,7 +63,7 @@ export function ScrollButton() {
       onClick={scrollToTop}
       onKeyDown={e => e.key === 'Enter' && scrollToTop()}
     >
-      <img src={asset('/bfr.png')} width={24} height={24} alt="回到顶部" />
+      <Image src={asset('/bfr.png')} width={24} height={24} alt="回到顶部" />
     </div>
   )
 }
