@@ -168,9 +168,9 @@ export const TileCard = memo(
         {showSkeleton && (
           <>
             <div className={TILE_CLASSES.SKELETON_OVERLAY} />
-            <div className="relative z-[5] mt-auto flex items-center gap-2.5 p-3 sm:p-4">
+            <div className="relative z-[5] mt-auto flex items-center gap-2.5 p-3 pr-6 sm:p-4 sm:pr-8">
               <div className="h-5 w-5 rounded-md bg-white/30 sm:h-6 sm:w-6" />
-              <div className="h-5 w-20 rounded bg-white/30 sm:h-6 sm:w-24" />
+              <div className="h-5 w-16 rounded bg-white/30 sm:h-6 sm:w-20" />
             </div>
           </>
         )}
