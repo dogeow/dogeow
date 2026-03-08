@@ -184,7 +184,7 @@ function DefaultLayout({ children }: { children: React.ReactNode }) {
 function DefaultHeaderFallback() {
   return (
     <div className="mx-auto flex h-full w-full max-w-7xl items-center px-2 sm:px-4">
-      <div className="bg-muted h-8 w-8 animate-pulse rounded" />
+      <LazyAppLauncher />
     </div>
   )
 }

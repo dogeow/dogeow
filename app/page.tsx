@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
 import dynamic from 'next/dynamic'
 import { configs } from '@/app/configs'
 import { ThemedTileCard } from '@/components/app/ThemedTileCard'
+import { HomeTilesSkeleton } from '@/components/app/HomeTilesSkeleton'
 import { useTileManagement } from '@/hooks/useTileManagement'
 import { PageContainer } from '@/components/layout'
 import { useUITheme } from '@/components/themes/UIThemeProvider'
@@ -20,12 +21,24 @@ const Footer = dynamic(() => import('@/components/app/Footer'), {
   ssr: true,
 })
 
-/** 首页四种布局统一的间距：栅格/杂志用 gap */
+/** 首页四种布局统一的间距:栅格/杂志用 gap */
 const HOME_TILES_GAP = 'gap-4'
 /** 首页列表布局的垂直间距 */
 const HOME_LIST_GAP = 'space-y-4'
 /** 首页头部与卡片区之间的垂直间距 */
 const HOME_SECTION_SPACING = 'space-y-6'
+
+/**
+ * 使用 useSyncExternalStore 检测客户端 hydration 状态
+ * 服务端返回 false，客户端返回 true
+ */
+function useHydrated() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
+}
 
 function TileList({
   tiles,
@@ -62,6 +75,7 @@ export default function Home() {
   const theme = useUITheme()
   const { siteLayout } = useLayoutStore()
   const { t } = useTranslation()
+  const isHydrated = useHydrated()
 
   const layoutType = useMemo(() => {
     if (siteLayout === 'magazine') return 'magazine'
@@ -96,7 +110,9 @@ export default function Home() {
         </header>
 
         <section aria-label={t('home.section_tiles', '应用入口')}>
-          {layoutType === 'magazine' ? (
+          {!isHydrated && layoutType === 'grid' ? (
+            <HomeTilesSkeleton />
+          ) : layoutType === 'magazine' ? (
             <MagazineLayout
               tiles={tiles}
               showProjectCovers={showProjectCovers}

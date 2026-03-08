@@ -27,6 +27,7 @@ const TILE_CLASSES = {
     'absolute top-2 right-2 z-[3] flex h-6 w-6 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm',
   CONTENT: 'relative z-[2] flex items-center gap-2.5',
   TITLE: 'text-base font-medium leading-tight text-white sm:text-lg',
+  SKELETON_OVERLAY: 'absolute inset-0 z-[4] animate-pulse bg-muted/80',
 } as const
 
 const IMAGE_SIZES = {
@@ -127,6 +128,7 @@ export const TileCard = memo(
       }),
       [tile.color]
     )
+    const showSkeleton = hasBackground && !imageLoaded
     const ariaLabel = useMemo(
       () => (needsLogin ? `打开 ${tileName}（需登录）` : `打开 ${tileName}`),
       [needsLogin, tileName]
@@ -163,15 +165,25 @@ export const TileCard = memo(
           </>
         )}
 
+        {showSkeleton && (
+          <>
+            <div className={TILE_CLASSES.SKELETON_OVERLAY} />
+            <div className="relative z-[5] mt-auto flex items-center gap-2.5 p-3 sm:p-4">
+              <div className="h-5 w-5 rounded-md bg-white/30 sm:h-6 sm:w-6" />
+              <div className="h-5 w-20 rounded bg-white/30 sm:h-6 sm:w-24" />
+            </div>
+          </>
+        )}
+
         {/* 登录锁定图标 */}
-        {needsLogin && (
+        {needsLogin && !showSkeleton && (
           <div className={TILE_CLASSES.LOCK_ICON}>
             <Lock className="h-3 w-3 text-white" />
           </div>
         )}
 
         {/* 标题和图标 */}
-        <div className={TILE_CLASSES.CONTENT}>
+        <div className={`${TILE_CLASSES.CONTENT} ${showSkeleton ? 'opacity-0' : 'opacity-100'}`}>
           {tile.icon && (
             <div className="flex items-center justify-center">
               <TileIcon tile={tile} tileName={tileName} index={index} />
