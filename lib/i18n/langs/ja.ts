@@ -105,8 +105,17 @@ export const ja = {
 
   // Backgrounds
   'background.none': '背景なし',
-  'background.bg1': '君の名は？・untitled',
-  'background.bg3': '2・untitled',
+  'background.bg1': '君の名は',
+  'background.bg2': '鋼鉄人間28号',
+  'background.bg3': '速い人生',
+  'background.bg4': '中世紀-騎士',
+  'background.bg5': '氷と炎の歌',
+  'background.bg6': 'ゼルダの伝説 ブレス オブ ザ ワイルド',
+  'background.bg7': 'オーバーウォッチ',
+  'background.bg8': 'オーバーウォッチ',
+  'background.bg9': 'スターウォーズ',
+  'background.bg10': 'ズートピア',
+  'background.bg11': 'フォード・マスタング',
 
   // App Grid buttons
   'appgrid.music': '音楽を開く',

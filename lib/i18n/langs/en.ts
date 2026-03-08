@@ -105,9 +105,18 @@ export const en = {
   'theme.zelda': 'The Legend of Zelda',
 
   // Backgrounds
-  'background.none': 'No Background',
-  'background.bg1': 'Your Name? · untitled',
-  'background.bg3': '2 · untitled',
+  'background.none': 'None',
+  'background.bg1': 'Your Name',
+  'background.bg2': 'Iron Man',
+  'background.bg3': 'Speed Life',
+  'background.bg4': 'Medieval - Knight',
+  'background.bg5': 'A Song of Ice and Fire',
+  'background.bg6': 'The Legend of Zelda: Breath of the Wild',
+  'background.bg7': 'Overwatch',
+  'background.bg8': 'Overwatch',
+  'background.bg9': 'Star Wars',
+  'background.bg10': 'Zootopia',
+  'background.bg11': 'Ford Mustang',
 
   // App Grid buttons
   'appgrid.music': 'Open Music',

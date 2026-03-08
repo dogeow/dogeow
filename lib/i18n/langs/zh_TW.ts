@@ -102,8 +102,17 @@ export const zh_TW = {
 
   // Backgrounds
   'background.none': '無背景',
-  'background.bg1': '你的名字？·untitled',
-  'background.bg3': '2·untitled',
+  'background.bg1': '你的名字',
+  'background.bg2': '鋼鐵人',
+  'background.bg3': '速度生活',
+  'background.bg4': '中世紀-騎士',
+  'background.bg5': '冰與火之歌',
+  'background.bg6': '塞爾達荒野之息',
+  'background.bg7': '守望先鋒',
+  'background.bg8': '守望先鋒',
+  'background.bg9': '星球大戰',
+  'background.bg10': '瘋狂動物城',
+  'background.bg11': '福特野馬',
 
   // App Grid buttons
   'appgrid.music': '開啟音樂',
