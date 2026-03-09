@@ -252,7 +252,7 @@ export function BattleArena({
             </div>
           ) : isFighting && isLoading ? (
             <div className="text-muted-foreground flex h-20 w-20 items-center justify-center text-xs sm:h-24 sm:w-24 sm:text-sm">
-              加载中
+              进入战斗中
             </div>
           ) : (
             <div className="h-20 w-20 sm:h-24 sm:w-24" />

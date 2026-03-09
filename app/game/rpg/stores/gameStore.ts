@@ -1119,7 +1119,6 @@ const store: StateCreator<GameState> = (set, get) => ({
   },
 
   startCombat: async () => {
-    startRequest(set, { combatResult: null })
     try {
       const selectedId = getSelectedCharacterIdOrAbort(get, set, {
         context: 'startCombat',
@@ -1127,6 +1126,10 @@ const store: StateCreator<GameState> = (set, get) => ({
       })
       const enabledIds = get().enabledSkillIds
       if (!selectedId) return
+      startRequest(set, {
+        combatResult: null,
+        ...withCombatFlag(get(), true),
+      })
       const body: { character_id: number; skill_ids?: number[] } = { character_id: selectedId }
       if (enabledIds.length > 0) body.skill_ids = enabledIds
       reportCombatDebug('gameStore.ts:startCombat:before', 'calling combat/start', {
@@ -1149,7 +1152,12 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
-      setRequestError(set, error)
+      set(state => ({
+        ...state,
+        ...withCombatFlag(state, false),
+        error: (error as Error).message,
+        isLoading: false,
+      }))
     }
   },
 
