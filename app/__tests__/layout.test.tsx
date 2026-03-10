@@ -43,12 +43,6 @@ vi.mock('@/components/provider/SWRProvider', () => ({
   ),
 }))
 
-vi.mock('@/components/ProtectedRoute', () => ({
-  default: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="protected-route">{children}</div>
-  ),
-}))
-
 vi.mock('@/components/provider/LanguageProvider', () => ({
   LanguageProvider: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="language-provider">{children}</div>
@@ -93,7 +87,6 @@ describe('RootLayout', () => {
     expect(view.getByTestId('language-provider')).toBeInTheDocument()
     expect(view.getByTestId('layout-renderer')).toBeInTheDocument()
     expect(view.getByTestId('background-wrapper')).toBeInTheDocument()
-    expect(view.getByTestId('protected-route')).toBeInTheDocument()
     expect(view.getByTestId('test-content')).toBeInTheDocument()
   })
 

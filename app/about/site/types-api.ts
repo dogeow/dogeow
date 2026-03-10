@@ -38,4 +38,15 @@ export interface SystemStatusApiResponse {
     details: string
     last_run?: string
   }
+  github?: {
+    status: string
+    details: string
+    core_remaining?: number | null
+    core_limit?: number | null
+    core_used?: number | null
+    graphql_remaining?: number | null
+    graphql_limit?: number | null
+    graphql_used?: number | null
+    reset_at?: string | null
+  }
 }

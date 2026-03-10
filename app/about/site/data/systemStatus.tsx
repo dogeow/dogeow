@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { Server, Activity, ListTodo, Database, Layers, Wifi, Clock } from 'lucide-react'
+import { Server, Activity, ListTodo, Database, Layers, Wifi, Clock, Github } from 'lucide-react'
 import useSWR from 'swr'
 import { apiRequest } from '@/lib/api'
 import type { SystemStatus } from '../types'
@@ -11,6 +11,7 @@ const STATUS_KEY = 'system/status'
 const REFRESH_INTERVAL_MS = 12_000
 
 type StatusKind = 'online' | 'offline' | 'warning' | 'error'
+const LEGACY_GITHUB_STATUS_MESSAGE = '当前后端尚未返回 GitHub API 状态'
 
 function normalizeStatus(s: string): StatusKind {
   if (s === 'online') return 'online'
@@ -19,8 +20,29 @@ function normalizeStatus(s: string): StatusKind {
   return 'error'
 }
 
-function mapApiToSystemStatus(data: SystemStatusApiResponse, lastCheck: Date): SystemStatus[] {
+export function mapApiToSystemStatus(
+  data: SystemStatusApiResponse,
+  lastCheck: Date
+): SystemStatus[] {
   const iconClass = 'h-5 w-5 text-gray-600 dark:text-gray-400'
+  const githubStatus: SystemStatus = data.github
+    ? {
+        name: 'GitHub API',
+        status: normalizeStatus(data.github.status),
+        lastCheck,
+        icon: <Github className={iconClass} />,
+        description: 'REST / GraphQL 配额',
+        details: data.github.details || undefined,
+      }
+    : {
+        name: 'GitHub API',
+        status: 'warning',
+        lastCheck,
+        icon: <Github className={iconClass} />,
+        description: 'REST / GraphQL 配额',
+        details: LEGACY_GITHUB_STATUS_MESSAGE,
+      }
+
   return [
     {
       name: '小龙虾🦞',
@@ -78,10 +100,11 @@ function mapApiToSystemStatus(data: SystemStatusApiResponse, lastCheck: Date): S
       description: 'Laravel 任务调度',
       details: data.scheduler.details || undefined,
     },
+    githubStatus,
   ]
 }
 
-function fallbackStatuses(
+export function fallbackStatuses(
   message: string,
   lastCheck: Date,
   isError: boolean = true
@@ -143,6 +166,14 @@ function fallbackStatuses(
       lastCheck,
       icon: <Clock className={iconClass} />,
       description: 'Laravel 任务调度',
+      details: message,
+    },
+    {
+      name: 'GitHub API',
+      status,
+      lastCheck,
+      icon: <Github className={iconClass} />,
+      description: 'REST / GraphQL 配额',
       details: message,
     },
   ]

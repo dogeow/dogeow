@@ -3,6 +3,7 @@
 import { useUITheme } from './UIThemeProvider'
 import { LazyAppLauncher } from '@/components/launcher/LazyAppLauncher'
 import dynamic from 'next/dynamic'
+import { usePathname } from 'next/navigation'
 import { useMemo } from 'react'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { cn } from '@/lib/helpers'
@@ -13,8 +14,10 @@ import { ScrollButton } from '@/components/display/ScrollButton'
  * 根据当前选择的 UI 主题动态加载和渲染对应的布局组件
  */
 export function LayoutRenderer({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
   const theme = useUITheme()
   const { backgroundImage } = useBackgroundStore()
+  const isStandaloneRpgRoute = pathname.startsWith('/rpg-host')
 
   // 动态加载 Header 组件
   const HeaderComponent = useMemo(() => {
@@ -69,6 +72,10 @@ export function LayoutRenderer({ children }: { children: React.ReactNode }) {
       return null
     }
   }, [theme])
+
+  if (isStandaloneRpgRoute) {
+    return <div className="flex h-full flex-col">{children}</div>
+  }
 
   if (!theme) {
     return <DefaultLayout>{children}</DefaultLayout>
