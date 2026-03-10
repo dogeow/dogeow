@@ -4,6 +4,7 @@ import Base64Image from './components/Base64Image'
 import TextDiff from './components/TextDiff'
 import ToolPlaceholder from './components/ToolPlaceholder'
 import MoonDiceGame from './components/MoonDiceGame'
+import RepoWatchTool from './components/RepoWatchTool'
 
 // 工具类别定义
 export type ToolCategory =
@@ -158,6 +159,14 @@ export const tools: Tool[] = [
     component: ToolPlaceholder,
     category: '网络工具',
     tags: ['UA', '浏览器', '解析'],
+  },
+  {
+    id: 'repo-watch',
+    title: '依赖更新追踪',
+    description: '',
+    component: RepoWatchTool,
+    category: '开发辅助',
+    tags: ['GitHub', 'composer', 'package.json', '依赖更新', 'npm', 'packagist'],
   },
   {
     id: 'regex-tester',

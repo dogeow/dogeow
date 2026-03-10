@@ -15,11 +15,20 @@ interface LoginFormProps {
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
   onSubmit: (e: React.FormEvent) => void
+  initialMode?: 'login' | 'register'
 }
 
 export const LoginForm = memo<LoginFormProps>(
-  ({ email, password, loading, onEmailChange, onPasswordChange, onSubmit }) => {
-    const [isRegister, setIsRegister] = useState(false)
+  ({
+    email,
+    password,
+    loading,
+    onEmailChange,
+    onPasswordChange,
+    onSubmit,
+    initialMode = 'login',
+  }) => {
+    const [isRegister, setIsRegister] = useState(initialMode === 'register')
     const [name, setName] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [localLoading, setLocalLoading] = useState(false)

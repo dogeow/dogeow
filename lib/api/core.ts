@@ -419,10 +419,11 @@ export const post = <T>(endpoint: string, data: unknown): Promise<T> =>
 export const put = <T>(endpoint: string, data: unknown): Promise<T> =>
   apiRequest<T>(endpoint, 'PUT', data)
 
+export const del = <T>(endpoint: string, data?: unknown): Promise<T> =>
+  apiRequest<T>(endpoint, 'DELETE', data)
+
 export const patch = <T>(endpoint: string, data: unknown): Promise<T> =>
   apiRequest<T>(endpoint, 'PATCH', data)
-
-export const del = <T>(endpoint: string): Promise<T> => apiRequest<T>(endpoint, 'DELETE')
 
 /** DELETE 请求并携带 body（用于 endpoint 等较长参数） */
 export const delWithBody = <T>(endpoint: string, data: unknown): Promise<T> =>
