@@ -15,7 +15,7 @@ export function LazyAppLauncher(props: AppLauncherProps) {
 function AppLauncherSkeleton() {
   return (
     <div className="flex h-full w-full items-center justify-between">
-      <div className="mr-6 flex shrink-0 items-center">
+      <div className="mr-3 flex shrink-0 items-center">
         <div className="bg-muted size-10 animate-pulse rounded-md" />
       </div>
 

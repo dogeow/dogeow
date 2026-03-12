@@ -12,9 +12,13 @@ import {
   Maximize2,
 } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MusicTrack, PlayMode } from '@/stores/musicStore'
 import { RepeatModeButton } from './music/RepeatModeButton'
 import { PlaylistTrackItem } from './music/PlaylistTrackItem'
+import { LyricsDisplayPanel } from './music/LyricsDisplayPanel'
+import type { LyricLine } from './music/lyrics'
+import type { LyricsState } from './music/useTrackLyrics'
 
 interface PlaylistDialogProps {
   open: boolean
@@ -31,6 +35,10 @@ interface PlaylistDialogProps {
   onNextTrack?: () => void
   playMode: PlayMode
   onOpenFullscreen?: () => void
+  trackName?: string
+  lyrics?: LyricLine[]
+  activeLyricIndex?: number
+  lyricsStatus?: LyricsState
 }
 
 // 歌曲时间格式化
@@ -55,8 +63,15 @@ export function PlaylistDialog({
   onNextTrack,
   playMode,
   onOpenFullscreen,
+  trackName,
+  lyrics = [],
+  activeLyricIndex = -1,
+  lyricsStatus = 'idle',
 }: PlaylistDialogProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [activeTab, setActiveTab] = useState<'playlist' | 'lyrics'>('playlist')
+  const currentTrackName =
+    trackName || availableTracks.find(track => track.path === currentTrack)?.name || '未选择歌曲'
 
   const filteredTracks = useMemo(() => {
     return availableTracks.filter(track =>
@@ -67,7 +82,7 @@ export function PlaylistDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="flex max-h-[80vh] w-[calc(100vw-1.5rem)] flex-col overflow-hidden sm:w-full sm:max-w-md"
+        className="flex max-h-[85vh] w-[calc(100vw-1.5rem)] flex-col overflow-hidden sm:w-full md:max-w-3xl"
         onOpenAutoFocus={event => event.preventDefault()}
       >
         <DialogHeader className="flex-shrink-0 space-y-0 pb-1">
@@ -80,7 +95,7 @@ export function PlaylistDialog({
               <button
                 onClick={() => {
                   onOpenChange(false)
-                  onOpenFullscreen()
+                  window.setTimeout(() => onOpenFullscreen(), 120)
                 }}
                 className="text-foreground/70 hover:text-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors"
                 aria-label="全屏可视化"
@@ -92,39 +107,68 @@ export function PlaylistDialog({
           </div>
         </DialogHeader>
 
-        {/* 搜索框 */}
-        <div className="mb-3 flex-shrink-0">
-          <input
-            type="text"
-            placeholder="搜索歌曲..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="border-input bg-background focus:ring-ring w-full rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
-          />
-        </div>
+        <Tabs
+          value={activeTab}
+          onValueChange={value => setActiveTab(value as 'playlist' | 'lyrics')}
+          className="min-h-0 flex-1 overflow-hidden"
+        >
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="playlist" className="flex-1 sm:min-w-28">
+              歌曲列表
+            </TabsTrigger>
+            <TabsTrigger value="lyrics" className="flex-1 sm:min-w-28">
+              歌词
+            </TabsTrigger>
+          </TabsList>
 
-        {/* 播放列表 */}
-        <div className="flex-1 overflow-y-auto pr-2" style={{ scrollbarGutter: 'stable' }}>
-          {filteredTracks.length === 0 ? (
-            <div className="text-muted-foreground flex h-full min-h-48 items-center justify-center text-center">
-              {searchTerm ? '没有找到匹配的歌曲' : '播放列表为空'}
+          <TabsContent
+            value="playlist"
+            className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden"
+          >
+            <div className="mb-3 flex-shrink-0">
+              <input
+                type="text"
+                placeholder="搜索歌曲..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="border-input bg-background focus:ring-ring w-full rounded-md border px-3 py-1.5 text-sm focus:ring-2 focus:ring-offset-2 focus:outline-none"
+              />
             </div>
-          ) : (
-            <div className="space-y-0.5">
-              {filteredTracks.map((track, index) => (
-                <PlaylistTrackItem
-                  key={track.path}
-                  track={track}
-                  index={index}
-                  isCurrentTrack={track.path === currentTrack}
-                  isPlaying={isPlaying}
-                  onTrackSelect={onTrackSelect}
-                  formatTime={formatTime}
-                />
-              ))}
+
+            <div className="flex-1 overflow-y-auto pr-2" style={{ scrollbarGutter: 'stable' }}>
+              {filteredTracks.length === 0 ? (
+                <div className="text-muted-foreground flex h-full min-h-48 items-center justify-center text-center">
+                  {searchTerm ? '没有找到匹配的歌曲' : '播放列表为空'}
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {filteredTracks.map((track, index) => (
+                    <PlaylistTrackItem
+                      key={track.path}
+                      track={track}
+                      index={index}
+                      isCurrentTrack={track.path === currentTrack}
+                      isPlaying={isPlaying}
+                      onTrackSelect={onTrackSelect}
+                      formatTime={formatTime}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="lyrics" className="mt-3 min-h-0 flex-1 overflow-hidden">
+            <LyricsDisplayPanel
+              lyrics={lyrics}
+              activeLyricIndex={activeLyricIndex}
+              status={lyricsStatus}
+              title={currentTrackName}
+              className="h-full overflow-hidden border-border/60 bg-background shadow-none"
+              syncKey={`${activeTab}-${currentTrack}-${activeLyricIndex}`}
+            />
+          </TabsContent>
+        </Tabs>
 
         <div className="mt-4 flex flex-shrink-0 flex-col gap-4 border-t pt-4">
           <div className="flex items-center justify-start">

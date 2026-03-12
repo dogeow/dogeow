@@ -20,6 +20,7 @@ import { useMediaSession } from './hooks/useMediaSession'
 import { AudioVisualizer } from './music/visualizer'
 import { FullscreenVisualizer } from './music/FullscreenVisualizer'
 import { SettingsDialog } from './settings/SettingsDialog'
+import { useTrackLyrics } from './music/useTrackLyrics'
 
 const AiDialog = dynamic(
   () => import('@/components/app/AiDialog').then(m => ({ default: m.AiDialog })),
@@ -87,6 +88,7 @@ export function AppLauncher({
     switchTrack,
     togglePlay,
     toggleMute,
+    markUserInteracted,
     handleProgressChange,
     handleLoadedMetadata,
     handleTimeUpdate,
@@ -112,24 +114,12 @@ export function AppLauncher({
 
       setDisplayMode(mode)
 
-      // 当切换到音乐模式时，加载音频列表并初始化音频源
+      // 当切换到音乐模式时，只加载音频列表，不改当前播放状态
       if (mode === 'music') {
-        // 进入音乐面板时只恢复曲目和列表，不自动续播上次状态。
-        setIsPlaying(false)
         fetchAvailableTracks()
-
-        // 检查播放列表状态 - 添加安全检查
-        if (!availableTracks || availableTracks.length === 0) {
-          // 播放列表为空，不需要设置音频源
-          return
-        }
-
-        if (currentTrack && !audioRef.current?.src) {
-          setupMediaSource()
-        }
       }
     },
-    [fetchAvailableTracks, availableTracks, currentTrack, audioRef, setupMediaSource, setIsPlaying]
+    [fetchAvailableTracks]
   )
 
   const switchToNextTrack = useCallback(() => {
@@ -147,7 +137,40 @@ export function AppLauncher({
     }
   }, [playMode, resetCurrentTime, audioRef, switchTrack])
   const switchToPrevTrack = useCallback(() => switchTrack('prev'), [switchTrack])
+  const handleFullscreenTrackPlay = useCallback(
+    (trackPath: string) => {
+      markUserInteracted()
 
+      if (trackPath === currentTrack) {
+        if (!audioRef.current?.src) {
+          setupMediaSource()
+          setIsPlaying(true)
+          return
+        }
+
+        togglePlay()
+        return
+      }
+
+      setCurrentTrack?.(trackPath)
+      setIsPlaying(true)
+    },
+    [
+      markUserInteracted,
+      currentTrack,
+      audioRef,
+      setupMediaSource,
+      setCurrentTrack,
+      setIsPlaying,
+      togglePlay,
+    ]
+  )
+  const {
+    currentLyric,
+    lyrics,
+    activeLyricIndex,
+    status: lyricsStatus,
+  } = useTrackLyrics(currentTrack || '', currentTime)
   // 媒体键盘事件处理
   useMediaKeys({ togglePlay, switchToPrevTrack, switchToNextTrack })
 
@@ -186,9 +209,16 @@ export function AppLauncher({
           toggleMute,
           switchToPrevTrack,
           switchToNextTrack,
-          togglePlay,
+          togglePlay: () => {
+            markUserInteracted()
+            togglePlay()
+          },
           handleProgressChange,
           getCurrentTrackName,
+          currentLyric,
+          lyrics,
+          activeLyricIndex,
+          lyricsStatus,
           formatTime,
           toggleDisplayMode,
           onTrackSelect: (trackPath: string) => setCurrentTrack?.(trackPath),
@@ -223,10 +253,15 @@ export function AppLauncher({
       togglePlay,
       handleProgressChange,
       getCurrentTrackName,
+      currentLyric,
+      lyrics,
+      activeLyricIndex,
+      lyricsStatus,
       formatTime,
       setCurrentTrack,
       toggleDisplayMode,
       setPlayMode,
+      markUserInteracted,
       backgroundImage,
       setBackgroundImage,
       customBackgrounds,
@@ -303,13 +338,25 @@ export function AppLauncher({
           onNextTrack={switchToNextTrack}
           availableTracks={availableTracks || []}
           currentTrack={currentTrack || ''}
-          onTrackSelect={(trackPath: string) => setCurrentTrack?.(trackPath)}
+          onTrackPlay={handleFullscreenTrackPlay}
+          onTrackSelect={(trackPath: string) => {
+            if (trackPath === currentTrack) {
+              togglePlay()
+              return
+            }
+
+            setCurrentTrack?.(trackPath)
+            setIsPlaying(true)
+          }}
           playMode={playMode}
           onSetPlayMode={setPlayMode}
           currentTime={currentTime}
           duration={duration}
           handleProgressChange={handleProgressChange}
           formatTime={formatTime}
+          lyrics={lyrics}
+          activeLyricIndex={activeLyricIndex}
+          lyricsStatus={lyricsStatus}
         />
       )}
 
@@ -319,13 +366,16 @@ export function AppLauncher({
       >
         {/* 音频可视化 - 作为背景层，覆盖整个 app-launcher-bar，包括 padding */}
         {displayMode === 'music' && audioManager.analyserNode && (
-          <div className="absolute inset-0 -right-2 -left-2 overflow-hidden">
+          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
             <AudioVisualizer
               analyserNode={audioManager.analyserNode}
               isPlaying={isPlaying}
-              type="spectrum"
-              barCount={20}
-              showGradient={true}
+              type="bars"
+              barCount={40}
+              barGap={2}
+              barColor="rainbow"
+              showGradient={false}
+              fitWidth={true}
               className="h-full w-full"
             />
           </div>

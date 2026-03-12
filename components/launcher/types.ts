@@ -1,4 +1,6 @@
 import { MusicTrack, PlayMode } from '@/stores/musicStore'
+import type { LyricLine } from './music/lyrics'
+import type { LyricsState } from './music/useTrackLyrics'
 
 export type DisplayMode = 'music' | 'apps' | 'settings'
 
@@ -29,6 +31,10 @@ export interface MusicPlayerProps {
   togglePlay: () => void
   handleProgressChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   getCurrentTrackName: () => string | undefined
+  currentLyric?: string
+  lyrics?: LyricLine[]
+  activeLyricIndex?: number
+  lyricsStatus?: LyricsState
   formatTime: (time: number) => string
   toggleDisplayMode: (mode: DisplayMode) => void
   onTrackSelect: (trackPath: string) => void
@@ -43,4 +49,5 @@ export interface SearchBarProps {
   onSearch: (e: React.FormEvent, keepSearchOpen: boolean) => void
   onToggleSearch: () => void
   currentApp?: string
+  showTrigger?: boolean
 }

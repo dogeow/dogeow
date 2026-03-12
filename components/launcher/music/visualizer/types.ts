@@ -19,4 +19,6 @@ export interface AudioVisualizerProps {
   barGap?: number
   barColor?: string
   showGradient?: boolean
+  fitWidth?: boolean
+  barFillRatio?: number
 }

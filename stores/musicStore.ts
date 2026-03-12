@@ -30,7 +30,7 @@ export const useMusicStore = create<MusicState>()(
       volume: 0.5,
       availableTracks: [],
       isPlaying: false,
-      playMode: 'none',
+      playMode: 'all',
       setCurrentTrack: (track: string) => set({ currentTrack: track }),
       setVolume: (volume: number) => set({ volume }),
       setAvailableTracks: (tracks: MusicTrack[]) => set({ availableTracks: tracks }),

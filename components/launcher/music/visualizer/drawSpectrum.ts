@@ -2,6 +2,36 @@ type RefLike<T> = {
   current: T
 }
 
+const RAINBOW_STOPS = [
+  [255, 0, 0],
+  [255, 127, 0],
+  [255, 255, 0],
+  [0, 255, 0],
+  [0, 0, 255],
+  [75, 0, 130],
+  [148, 0, 211],
+] as const
+
+function getSpectrumRainbowColor(index: number, total: number) {
+  if (total <= 1) {
+    const [r, g, b] = RAINBOW_STOPS[0]
+    return { r, g, b }
+  }
+
+  const scaled = (index / (total - 1)) * (RAINBOW_STOPS.length - 1)
+  const baseIndex = Math.floor(scaled)
+  const nextIndex = Math.min(RAINBOW_STOPS.length - 1, baseIndex + 1)
+  const ratio = scaled - baseIndex
+  const [r1, g1, b1] = RAINBOW_STOPS[baseIndex]
+  const [r2, g2, b2] = RAINBOW_STOPS[nextIndex]
+
+  return {
+    r: Math.round(r1 + (r2 - r1) * ratio),
+    g: Math.round(g1 + (g2 - g1) * ratio),
+    b: Math.round(b1 + (b2 - b1) * ratio),
+  }
+}
+
 export function drawSpectrum(
   ctx: CanvasRenderingContext2D,
   dataArray: Uint8Array,
@@ -41,12 +71,18 @@ export function drawSpectrum(
     const h = Math.max(1, Math.round(value * height * 0.92))
     const y = height - h
     const radius = Math.min(3, w / 2)
-    const hue = (i / barCountSpectrum) * 120 + 200
+    const { r, g, b } = getSpectrumRainbowColor(i, barCountSpectrum)
 
     const gradient = ctx.createLinearGradient(x, y, x, height)
-    gradient.addColorStop(0, `hsla(${hue}, 80%, 65%, ${0.7 + value * 0.3})`)
-    gradient.addColorStop(0.5, `hsla(${hue + 20}, 70%, 50%, ${0.6 + value * 0.4})`)
-    gradient.addColorStop(1, `hsla(${hue + 40}, 60%, 35%, ${0.5 + value * 0.3})`)
+    gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.7 + value * 0.3})`)
+    gradient.addColorStop(
+      0.5,
+      `rgba(${Math.round(r * 0.88)}, ${Math.round(g * 0.88)}, ${Math.round(b * 0.88)}, ${0.6 + value * 0.4})`
+    )
+    gradient.addColorStop(
+      1,
+      `rgba(${Math.round(r * 0.62)}, ${Math.round(g * 0.62)}, ${Math.round(b * 0.62)}, ${0.5 + value * 0.3})`
+    )
     ctx.fillStyle = gradient
 
     ctx.beginPath()
@@ -64,15 +100,15 @@ export function drawSpectrum(
     ctx.fill()
 
     if (h > 4) {
-      ctx.fillStyle = `hsla(${hue}, 90%, 80%, ${0.3 + value * 0.4})`
+      ctx.fillStyle = `rgba(255, 255, 255, ${0.12 + value * 0.18})`
       ctx.fillRect(x + 1, y, w - 2, Math.min(3, h * 0.15))
     }
 
     const reflectH = Math.min(h * 0.25, 30)
     if (reflectH > 2) {
       const reflectGrad = ctx.createLinearGradient(x, height, x, height + reflectH)
-      reflectGrad.addColorStop(0, `hsla(${hue}, 60%, 50%, ${0.15 * value})`)
-      reflectGrad.addColorStop(1, `hsla(${hue}, 60%, 50%, 0)`)
+      reflectGrad.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.15 * value})`)
+      reflectGrad.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0)`)
       ctx.fillStyle = reflectGrad
       ctx.fillRect(x, height, w, reflectH)
     }

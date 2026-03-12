@@ -14,6 +14,7 @@ export function SearchBar({
   onSearch,
   onToggleSearch,
   currentApp,
+  showTrigger = true,
 }: SearchBarProps) {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const searchDebounceTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -103,6 +104,10 @@ export function SearchBar({
   )
 
   if (!isVisible) {
+    if (!showTrigger) {
+      return null
+    }
+
     return (
       <Button
         variant="ghost"

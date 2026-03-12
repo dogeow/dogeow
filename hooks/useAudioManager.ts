@@ -128,6 +128,10 @@ export const useAudioManager = () => {
     }
   }, [userInteracted])
 
+  const markUserInteracted = useCallback(() => {
+    setUserInteracted(true)
+  }, [])
+
   return {
     // 状态
     isPlaying,
@@ -146,6 +150,7 @@ export const useAudioManager = () => {
     formatTime,
     fetchAvailableTracks,
     setCurrentTrack,
+    markUserInteracted,
     // 音频控制器（包含toggleMute）
     ...audioController,
   }

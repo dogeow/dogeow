@@ -3,11 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useMusicStore } from '@/stores/musicStore'
 import { toast } from 'sonner'
-import {
-  buildAudioUrl as buildAudioUrlHelper,
-  isMobileDevice as isMobileDeviceHelper,
-} from './audio/utils'
-import { toggleMuteWithMobileSupport } from './audio/muteUtils'
+import { buildAudioUrl as buildAudioUrlHelper } from './audio/utils'
 
 interface AudioControllerProps {
   volume: number
@@ -87,10 +83,11 @@ export function AudioController({
       const currentVolume = isMuted ? 0 : volume
       gainNode.gain.value = currentVolume
 
-      // 连接音频节点：source -> gain -> analyser -> destination
-      source.connect(gainNode)
-      gainNode.connect(analyser)
-      analyser.connect(audioContext.destination)
+      // 连接音频节点：source -> analyser -> gain -> destination
+      // 这样静音只影响最终输出，不影响频谱分析和可视化
+      source.connect(analyser)
+      analyser.connect(gainNode)
+      gainNode.connect(audioContext.destination)
 
       audioContextRef.current = audioContext
       analyserRef.current = analyser
@@ -146,7 +143,7 @@ export function AudioController({
         // 忽略 dataset 写入失败
       }
 
-      // 设置初始音量状态
+      // 在 Web Audio 初始化前先按元素静音兜底，初始化后会切到 gain 控制
       audioRef.current.volume = isMuted ? 0 : volume
       audioRef.current.muted = isMuted
 
@@ -426,20 +423,19 @@ export function AudioController({
   useEffect(() => {
     const targetVolume = isMuted ? 0 : volume
 
-    // 使用 GainNode 控制音量（如果已初始化 Web Audio API）
     if (gainNodeRef.current) {
       gainNodeRef.current.gain.value = targetVolume
     }
 
-    // 同时设置 audioElement 的音量（作为备用）
     if (audioRef.current) {
-      audioRef.current.volume = targetVolume
-
-      // 手机端额外处理：确保静音状态立即生效
-      if (isMuted) {
-        audioRef.current.muted = true
-      } else {
+      if (gainNodeRef.current) {
+        // Web Audio 已接管输出时，不再把元素本身静音，否则会让分析节点也拿到静音数据
+        audioRef.current.volume = volume
         audioRef.current.muted = false
+      } else {
+        // 兜底：未初始化 Web Audio 时仍使用元素静音
+        audioRef.current.volume = targetVolume
+        audioRef.current.muted = isMuted
       }
     }
   }, [volume, isMuted])
@@ -457,32 +453,25 @@ export function AudioController({
     return () => audio?.removeEventListener('ended', handleAudioEnded)
   }, [setCurrentTime, switchTrack])
 
-  // 检测是否为移动设备
-  const isMobileDevice = useCallback(() => {
-    return isMobileDeviceHelper()
-  }, [])
-
-  // 专门的静音切换函数 - 确保手机端兼容性
+  // 静音只影响最终输出，不应暂停播放或中断可视化
   const toggleMute = useCallback(() => {
-    if (audioRef.current) {
-      // 更新状态
-      // 同时设置volume和muted属性，确保在所有设备上都能正常工作
-      // 手机端额外处理：暂停播放以确保静音效果
-      // 记录暂停状态，稍后恢复
-      // 手机端额外处理：如果之前是播放状态，恢复播放
-      // 保存当前播放时间，避免进度重置
-      // 恢复播放，但保持当前进度
-      // 确保进度没有被重置
-      // 静音切换完成
-      toggleMuteWithMobileSupport({
-        audio: audioRef.current,
-        isMuted,
-        volume,
-        isMobile: isMobileDevice(),
-        setIsMuted,
-      })
+    const nextMuted = !isMuted
+    setIsMuted(nextMuted)
+
+    if (!audioRef.current) {
+      return
     }
-  }, [isMuted, volume, isMobileDevice, setIsMuted])
+
+    if (gainNodeRef.current) {
+      gainNodeRef.current.gain.value = nextMuted ? 0 : volume
+      audioRef.current.volume = volume
+      audioRef.current.muted = false
+      return
+    }
+
+    audioRef.current.volume = nextMuted ? 0 : volume
+    audioRef.current.muted = nextMuted
+  }, [isMuted, volume, setIsMuted])
 
   // 重置当前播放时间
   const resetCurrentTime = useCallback(() => {

@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { Settings, Music, Bot } from 'lucide-react'
+import { Search, Music, Bot } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useMusicStore } from '@/stores/musicStore'
 import { useTranslation } from '@/hooks/useTranslation'
@@ -13,19 +13,15 @@ type DisplayMode = 'music' | 'apps' | 'settings'
 export interface AppGridProps {
   toggleDisplayMode: (mode: DisplayMode) => void
   onOpenAi?: () => void
+  onToggleSearch?: () => void
 }
 
-export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
+export function AppGrid({ toggleDisplayMode, onOpenAi, onToggleSearch }: AppGridProps) {
   const { t } = useTranslation()
   const { isPlaying } = useMusicStore()
 
   // 定义按钮配置
   const buttons = [
-    {
-      icon: <Bot className="h-5 w-5" />,
-      label: 'AI 助理',
-      onClick: () => onOpenAi?.(),
-    },
     {
       icon: (
         <div
@@ -37,7 +33,7 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
           )}
         >
           <Music
-            className={cn('h-5 w-5 transition-colors', isPlaying && 'opacity-0')}
+            className={cn('h-6 w-6 transition-colors', isPlaying && 'opacity-0')}
             style={
               isPlaying
                 ? undefined
@@ -50,11 +46,17 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
       ),
       label: t('appgrid.music'),
       onClick: () => toggleDisplayMode('music'),
+      buttonClassName: 'size-11',
     },
     {
-      icon: <Settings className="h-5 w-5" />,
-      label: t('appgrid.settings'),
-      onClick: () => toggleDisplayMode('settings'),
+      icon: <Bot className="h-5 w-5" />,
+      label: 'AI 助理',
+      onClick: () => onOpenAi?.(),
+    },
+    {
+      icon: <Search className="h-5 w-5" />,
+      label: '搜索',
+      onClick: () => onToggleSearch?.(),
     },
   ]
 
@@ -65,7 +67,10 @@ export function AppGrid({ toggleDisplayMode, onOpenAi }: AppGridProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="size-10 rounded-xl hover:bg-transparent hover:opacity-80"
+            className={cn(
+              'size-10 rounded-xl hover:bg-transparent hover:opacity-80',
+              button.buttonClassName
+            )}
             onClick={button.onClick}
           >
             {button.icon}

@@ -20,6 +20,8 @@ export const AudioVisualizerCanvas: React.FC<AudioVisualizerProps> = ({
   barGap = 2,
   barColor = '#3b82f6',
   showGradient = true,
+  fitWidth = false,
+  barFillRatio = 1,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationFrameRef = useRef<number | null>(null)
@@ -88,6 +90,8 @@ export const AudioVisualizerCanvas: React.FC<AudioVisualizerProps> = ({
             barGap,
             barColor,
             showGradient,
+            fitWidth,
+            barFillRatio,
           })
           break
         case 'bars6':
@@ -130,7 +134,18 @@ export const AudioVisualizerCanvas: React.FC<AudioVisualizerProps> = ({
         cancelAnimationFrame(animationFrameRef.current)
       }
     }
-  }, [analyserNode, barColor, barCount, barGap, barWidth, isPlaying, showGradient, type])
+  }, [
+    analyserNode,
+    barColor,
+    barCount,
+    barFillRatio,
+    barGap,
+    barWidth,
+    fitWidth,
+    isPlaying,
+    showGradient,
+    type,
+  ])
 
   return (
     <canvas

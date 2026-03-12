@@ -11,7 +11,7 @@ export const ProgressBar = memo(
     const progressPercentage = ((currentTime / (duration || 1)) * 100).toFixed(2)
     return (
       <>
-        <div className="bg-primary/30 absolute bottom-0 left-0 h-1 w-full">
+        <div className="bg-primary/30 absolute bottom-0 left-0 h-[2px] w-full">
           <div
             className="bg-primary h-full transition-all duration-100"
             style={{ width: `${progressPercentage}%` }}
@@ -24,7 +24,7 @@ export const ProgressBar = memo(
           step={0.1}
           value={currentTime}
           onChange={handleProgressChange}
-          className="absolute bottom-0 left-0 h-1 w-full cursor-pointer opacity-0"
+          className="absolute bottom-0 left-0 h-[2px] w-full cursor-pointer opacity-0"
         />
       </>
     )
