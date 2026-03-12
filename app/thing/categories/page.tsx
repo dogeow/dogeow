@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
-import { ChevronDown, ChevronRight, Edit2 } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, Edit2 } from 'lucide-react'
 import { useUncategorizedCount } from '@/app/thing/hooks/useUncategorizedCount'
 import { useCategories } from './hooks/useCategories'
 import { useInlineEdit } from './hooks/useInlineEdit'
@@ -222,7 +222,7 @@ export default function Categories() {
                 variant="ghost"
                 size="sm"
                 onClick={toggleEditMode}
-                className="h-7 px-2 text-xs"
+                className="h-7 min-w-[4.75rem] justify-center px-2 text-xs"
               >
                 <Edit2 className="mr-1 h-3 w-3" />
                 编辑
@@ -232,8 +232,9 @@ export default function Categories() {
                 variant="ghost"
                 size="sm"
                 onClick={toggleEditMode}
-                className="h-7 px-2 text-xs"
+                className="h-7 min-w-[4.75rem] justify-center px-2 text-xs"
               >
+                <Check className="mr-1 h-3 w-3" />
                 完成
               </Button>
             )}
@@ -278,7 +279,10 @@ export default function Categories() {
         itemName={categoryToDeleteName}
       />
 
-      <CategorySpeedDial onCategoryAdded={refreshCategories} />
+      <CategorySpeedDial
+        onCategoryAdded={refreshCategories}
+        canCreateChild={categories.some(category => !category.parent_id)}
+      />
     </PageContainer>
   )
 }

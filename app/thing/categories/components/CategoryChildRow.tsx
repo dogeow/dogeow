@@ -87,19 +87,23 @@ export const CategoryChildRow = memo<CategoryChildRowProps>(
           </div>
         </TableCell>
         {isEditMode ? (
-          <TableCell className="text-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onDelete}
-              disabled={loading}
-              className="h-8 w-8"
-            >
-              <Trash2 className="text-destructive h-4 w-4" />
-            </Button>
+          <TableCell className="w-20 text-center">
+            <div className="flex h-8 items-center justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onDelete}
+                disabled={loading}
+                className="h-8 w-8"
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
           </TableCell>
         ) : (
-          <TableCell className="text-center">{category.items_count ?? 0}</TableCell>
+          <TableCell className="w-20 text-center">
+            <div className="flex h-8 items-center justify-center">{category.items_count ?? 0}</div>
+          </TableCell>
         )}
       </TableRow>
     )

@@ -19,9 +19,13 @@ const UncategorizedRow = memo(({ count, isEditMode }: UncategorizedRowProps) => 
         </div>
       </TableCell>
       {isEditMode ? (
-        <TableCell className="text-center">{/* 未分类项无法删除 */}</TableCell>
+        <TableCell className="w-20 text-center">
+          <div className="flex h-8 items-center justify-center">{/* 未分类项无法删除 */}</div>
+        </TableCell>
       ) : (
-        <TableCell className="text-center">{count}</TableCell>
+        <TableCell className="w-20 text-center">
+          <div className="flex h-8 items-center justify-center">{count}</div>
+        </TableCell>
       )}
     </TableRow>
   )

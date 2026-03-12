@@ -1,6 +1,4 @@
 import Image from 'next/image'
-import { Badge } from '@/components/ui/badge'
-import { Globe } from 'lucide-react'
 import { Item } from '@/app/thing/types'
 import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
 
@@ -45,14 +43,6 @@ export function GalleryItem({ item, imageSize, onClick }: GalleryItemProps) {
         <h3 className="truncate text-sm font-semibold text-white">{item.name}</h3>
         <p className="truncate text-xs text-gray-200">{item.category?.name || 'Uncategorized'}</p>
       </div>
-      {item.is_public ? (
-        <Badge
-          variant="outline"
-          className="bg-background/70 absolute top-1.5 right-1.5 p-1 backdrop-blur-sm"
-        >
-          <Globe className="h-3 w-3" />
-        </Badge>
-      ) : null}
     </div>
   )
 }

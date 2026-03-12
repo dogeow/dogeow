@@ -47,7 +47,6 @@ function ItemCard({ item, onView, isLoading = false }: ItemCardProps) {
           images={item.images}
           itemName={item.name}
           status={item.status}
-          isPublic={item.is_public}
           size={64}
         />
       </div>

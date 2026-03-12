@@ -2,11 +2,16 @@
 
 import React, { useState } from 'react'
 import { Plus } from 'lucide-react'
+import { mutate } from 'swr'
 import { Button } from '@/components/ui/button'
-import AddTagDialog from './AddTagDialog'
+import CreateTagDialog from '@/app/thing/components/CreateTagDialog'
 
 export default function TagSpeedDial() {
   const [dialogOpen, setDialogOpen] = useState(false)
+
+  const handleTagCreated = () => {
+    mutate('/things/tags')
+  }
 
   return (
     <>
@@ -20,7 +25,11 @@ export default function TagSpeedDial() {
         </Button>
       </div>
 
-      <AddTagDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <CreateTagDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onTagCreated={handleTagCreated}
+      />
     </>
   )
 }

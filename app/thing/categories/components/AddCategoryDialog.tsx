@@ -27,15 +27,19 @@ interface AddCategoryDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onCategoryAdded: () => void
+  presetCategoryType?: 'parent' | 'child'
 }
 
 export default function AddCategoryDialog({
   open,
   onOpenChange,
   onCategoryAdded,
+  presetCategoryType,
 }: AddCategoryDialogProps) {
   const [categoryName, setCategoryName] = useState('')
-  const [categoryType, setCategoryType] = useState<'parent' | 'child'>('parent')
+  const [categoryType, setCategoryType] = useState<'parent' | 'child'>(
+    presetCategoryType ?? 'parent'
+  )
   const [selectedParentId, setSelectedParentId] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
@@ -56,13 +60,23 @@ export default function AddCategoryDialog({
 
   // 获取主分类列表
   const parentCategories = categories.filter(cat => !cat.parent_id)
+  const isCategoryTypePreset = presetCategoryType !== undefined
 
   // 重置表单
   const resetForm = useCallback(() => {
     setCategoryName('')
-    setCategoryType('parent')
+    setCategoryType(presetCategoryType ?? 'parent')
     setSelectedParentId('')
-  }, [])
+  }, [presetCategoryType])
+
+  useEffect(() => {
+    if (open) {
+      setCategoryType(presetCategoryType ?? 'parent')
+      if (presetCategoryType !== 'child') {
+        setSelectedParentId('')
+      }
+    }
+  }, [open, presetCategoryType])
 
   // 处理对话框关闭
   const handleOpenChange = useCallback(
@@ -149,31 +163,37 @@ export default function AddCategoryDialog({
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[425px]" onKeyDown={handleKeyDown}>
         <DialogHeader>
-          <DialogTitle>添加分类</DialogTitle>
-          <DialogDescription>创建一个新的物品分类，以便更好地组织您的物品。</DialogDescription>
+          <DialogTitle>{categoryType === 'parent' ? '添加主分类' : '添加子分类'}</DialogTitle>
+          <DialogDescription>
+            {categoryType === 'parent'
+              ? '创建一个新的主分类，以便更好地组织您的物品。'
+              : '创建一个新的子分类，并归属到已有主分类下。'}
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="categoryType">分类类型</Label>
-              <Select
-                value={categoryType}
-                onValueChange={(value: 'parent' | 'child') => {
-                  setCategoryType(value)
-                  if (value === 'parent') {
-                    setSelectedParentId('')
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="选择分类类型" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="parent">主分类</SelectItem>
-                  <SelectItem value="child">子分类</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {!isCategoryTypePreset ? (
+              <div className="grid gap-2">
+                <Label htmlFor="categoryType">分类类型</Label>
+                <Select
+                  value={categoryType}
+                  onValueChange={(value: 'parent' | 'child') => {
+                    setCategoryType(value)
+                    if (value === 'parent') {
+                      setSelectedParentId('')
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="选择分类类型" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="parent">主分类</SelectItem>
+                    <SelectItem value="child">子分类</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
 
             {categoryType === 'child' && (
               <div className="grid gap-2">

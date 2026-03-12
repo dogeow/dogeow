@@ -641,16 +641,23 @@ export function ItemDetailModal({
                       placeholder="请输入"
                       style={{ width: nameInputWidth }}
                     />
-                    <span
-                      className="text-muted-foreground shrink-0"
-                      aria-label={isPublicItem ? '公开物品' : '私有物品'}
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground shrink-0 transition-colors"
+                      aria-label={isPublicItem ? '切换为私有物品' : '切换为公开物品'}
+                      onClick={() =>
+                        setFormData(prev => ({
+                          ...prev,
+                          is_public: !prev.is_public,
+                        }))
+                      }
                     >
                       {isPublicItem ? (
                         <LockOpen className="h-4 w-4" />
                       ) : (
                         <Lock className="h-4 w-4" />
                       )}
-                    </span>
+                    </button>
                   </div>
                   <Button
                     type="button"

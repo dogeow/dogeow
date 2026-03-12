@@ -2,8 +2,6 @@
 
 import { useState, useMemo, memo } from 'react'
 import Image from 'next/image'
-import { Badge } from '@/components/ui/badge'
-import { Globe } from 'lucide-react'
 import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
 
 export interface ImageData {
@@ -20,7 +18,6 @@ export interface ItemCardImageProps {
   images: ImageData[] | undefined
   itemName: string
   status: string
-  isPublic: boolean
   size?: number // 新增 size 属性，单位 px
 }
 
@@ -40,7 +37,6 @@ function ItemCardImage({
   images,
   itemName,
   status,
-  isPublic,
   size,
 }: ItemCardImageProps) {
   const [imageError, setImageError] = useState(false)
@@ -111,12 +107,6 @@ function ItemCardImage({
           <ImagePlaceholder className="text-gray-400 opacity-40" size={placeholderSize} />
         </div>
       )}
-      {isPublic ? (
-        <Badge variant="secondary" className="absolute top-2 right-2">
-          <Globe className="mr-1 h-3 w-3" />
-          公开
-        </Badge>
-      ) : null}
     </div>
   )
 }

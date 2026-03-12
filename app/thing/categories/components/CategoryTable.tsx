@@ -72,9 +72,13 @@ export const CategoryTable = memo<CategoryTableProps>(
           <TableRow className="border-border/50 border-b-2">
             <TableHead className="text-foreground w-full font-semibold">分类名称</TableHead>
             {isEditMode ? (
-              <TableHead className="text-foreground text-center font-semibold">操作</TableHead>
+              <TableHead className="text-foreground w-20 text-center font-semibold">
+                分类操作
+              </TableHead>
             ) : (
-              <TableHead className="text-foreground text-center font-semibold">物品数量</TableHead>
+              <TableHead className="text-foreground w-20 text-center font-semibold">
+                物品数量
+              </TableHead>
             )}
           </TableRow>
         </TableHeader>

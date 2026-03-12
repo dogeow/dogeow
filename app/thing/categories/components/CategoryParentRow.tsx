@@ -95,13 +95,13 @@ export const CategoryParentRow = memo<CategoryParentRowProps>(
                   </Button>
                 </div>
               ) : (
-                <div className="flex flex-1 items-center justify-between">
+                <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
                   <div
                     className={`font-semibold transition-colors ${
                       isEditMode
                         ? 'text-foreground hover:text-primary cursor-pointer hover:underline'
                         : 'text-foreground'
-                    }`}
+                    } min-w-0 truncate`}
                     onClick={isEditMode ? onEdit : undefined}
                   >
                     {category.name}
@@ -110,10 +110,10 @@ export const CategoryParentRow = memo<CategoryParentRowProps>(
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="hover:bg-primary/10 hover:text-primary hover:border-primary/20 h-7 border border-transparent px-3 transition-all duration-200"
+                      className="hover:bg-primary/10 hover:text-primary hover:border-primary/20 h-7 shrink-0 border border-transparent transition-all duration-200"
                       onClick={onCreateChild}
                     >
-                      <Plus className="mr-1 h-3 w-3" />
+                      <Plus className="h-3 w-3" />
                       <span className="text-xs">子分类</span>
                     </Button>
                   )}
@@ -123,19 +123,23 @@ export const CategoryParentRow = memo<CategoryParentRowProps>(
           </div>
         </TableCell>
         {isEditMode ? (
-          <TableCell className="text-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onDelete}
-              disabled={loading}
-              className="h-8 w-8"
-            >
-              <Trash2 className="text-destructive h-4 w-4" />
-            </Button>
+          <TableCell className="w-20 text-center">
+            <div className="flex h-8 items-center justify-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onDelete}
+                disabled={loading}
+                className="h-8 w-8"
+              >
+                <Trash2 className="text-destructive h-4 w-4" />
+              </Button>
+            </div>
           </TableCell>
         ) : (
-          <TableCell className="text-center">{category.items_count ?? 0}</TableCell>
+          <TableCell className="w-20 text-center">
+            <div className="flex h-8 items-center justify-center">{category.items_count ?? 0}</div>
+          </TableCell>
         )}
       </TableRow>
     )
