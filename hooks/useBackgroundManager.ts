@@ -2,25 +2,42 @@ import { useEffect } from 'react'
 import { useBackgroundStore } from '@/stores/backgroundStore'
 import { imageAsset } from '@/lib/helpers/assets'
 
+export function resolveBackgroundImageUrl(backgroundImage: string | null | undefined): string {
+  if (!backgroundImage) return ''
+
+  if (
+    backgroundImage.startsWith('data:') ||
+    backgroundImage.startsWith('blob:') ||
+    backgroundImage.startsWith('http://') ||
+    backgroundImage.startsWith('https://') ||
+    backgroundImage.startsWith('//')
+  ) {
+    return backgroundImage
+  }
+
+  if (backgroundImage.startsWith('/')) {
+    return backgroundImage
+  }
+
+  return imageAsset(`/images/backgrounds/${backgroundImage}`)
+}
+
 export const useBackgroundManager = () => {
   const { backgroundImage, setBackgroundImage } = useBackgroundStore()
 
   useEffect(() => {
     if (!backgroundImage) {
-      document.body.style.backgroundImage = ''
+      Object.assign(document.body.style, {
+        backgroundImage: '',
+        backgroundSize: '',
+        backgroundPosition: '',
+        backgroundRepeat: '',
+        backgroundAttachment: '',
+      })
       return
     }
 
-    let imageUrl = ''
-
-    // 系统背景图片
-    if (backgroundImage.startsWith('wallhaven') || backgroundImage.startsWith('F_RIhiObMAA')) {
-      imageUrl = imageAsset(`/images/backgrounds/${backgroundImage}`)
-    }
-    // 自定义上传的背景图片（base64格式）
-    else if (backgroundImage.startsWith('data:')) {
-      imageUrl = backgroundImage
-    }
+    const imageUrl = resolveBackgroundImageUrl(backgroundImage)
 
     if (imageUrl) {
       Object.assign(document.body.style, {

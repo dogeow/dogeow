@@ -72,6 +72,7 @@ export function AppLauncher({
     audioRef,
     isPlaying,
     audioError,
+    isLoadingTracks,
     currentTime,
     duration,
     volume,
@@ -198,6 +199,7 @@ export function AppLauncher({
         props: {
           isPlaying,
           audioError,
+          isLoadingTracks,
           currentTime,
           duration,
           volume,
@@ -240,6 +242,7 @@ export function AppLauncher({
     [
       isPlaying,
       audioError,
+      isLoadingTracks,
       currentTime,
       duration,
       volume,

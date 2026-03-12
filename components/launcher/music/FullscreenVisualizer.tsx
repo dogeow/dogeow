@@ -2,7 +2,16 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, SkipBack, SkipForward, Play, Pause, Volume2, VolumeX } from 'lucide-react'
+import {
+  X,
+  SkipBack,
+  SkipForward,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  SlidersHorizontal,
+} from 'lucide-react'
 import { AudioVisualizer, type VisualizerType } from './visualizer'
 import { cn } from '@/lib/helpers'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -11,6 +20,12 @@ import type { LyricLine } from './lyrics'
 import type { LyricsState } from './useTrackLyrics'
 import { LyricsDisplayPanel } from './LyricsDisplayPanel'
 import { RepeatModeButton } from './RepeatModeButton'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface FullscreenVisualizerProps {
   analyserNode: AnalyserNode | null
@@ -76,7 +91,9 @@ export function FullscreenVisualizer({
   const [showControls, setShowControls] = useState(true)
   const [activePanel, setActivePanel] = useState<'lyrics' | 'playlist'>('playlist')
   const [isPlayModeMenuOpen, setIsPlayModeMenuOpen] = useState(false)
+  const [isVisualizerMenuOpen, setIsVisualizerMenuOpen] = useState(false)
   const [showRemainingTime, setShowRemainingTime] = useState(false)
+  const [isLandscape, setIsLandscape] = useState(false)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const canShowPlaylist = Boolean((onTrackPlay || onTrackSelect) && availableTracks.length > 0)
   const resolvedPanel = canShowPlaylist ? activePanel : 'lyrics'
@@ -85,12 +102,12 @@ export function FullscreenVisualizer({
   const resetHideTimer = useCallback(() => {
     setShowControls(true)
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    if (resolvedPanel === 'playlist' || isPlayModeMenuOpen) {
+    if (resolvedPanel === 'playlist' || isPlayModeMenuOpen || isVisualizerMenuOpen) {
       return
     }
     const timer = setTimeout(() => setShowControls(false), 3000)
     hideTimerRef.current = timer
-  }, [isPlayModeMenuOpen, resolvedPanel])
+  }, [isPlayModeMenuOpen, isVisualizerMenuOpen, resolvedPanel])
 
   useEffect(() => {
     resetHideTimer()
@@ -98,6 +115,18 @@ export function FullscreenVisualizer({
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
     }
   }, [resetHideTimer])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const mediaQuery = window.matchMedia('(orientation: landscape)')
+    const syncOrientation = () => setIsLandscape(mediaQuery.matches)
+
+    syncOrientation()
+    mediaQuery.addEventListener('change', syncOrientation)
+
+    return () => mediaQuery.removeEventListener('change', syncOrientation)
+  }, [])
 
   // ESC 退出
   useEffect(() => {
@@ -116,7 +145,7 @@ export function FullscreenVisualizer({
     <Tabs
       value={resolvedPanel}
       onValueChange={value => setActivePanel(value as 'lyrics' | 'playlist')}
-      className="bg-background fixed inset-0 z-[100] flex flex-col gap-0"
+      className="bg-background safe-area-top safe-area-right safe-area-bottom safe-area-left fixed inset-0 z-[100] flex flex-col gap-0"
       onMouseMove={resetHideTimer}
       onTouchStart={resetHideTimer}
     >
@@ -134,11 +163,21 @@ export function FullscreenVisualizer({
         )}
       </div>
 
-      <div className="absolute inset-x-0 top-1/2 z-10 flex -translate-y-1/2 justify-center px-4 sm:px-8 lg:px-16">
+      <div
+        className={cn(
+          'absolute inset-x-0 z-10 flex justify-center px-4 sm:px-8 lg:px-16',
+          isLandscape ? 'top-16 bottom-24 items-stretch' : 'top-1/2 -translate-y-1/2'
+        )}
+      >
         {canShowPlaylist && (
           <TabsContent value="playlist" className="m-0 w-full max-w-3xl">
-            <div className="max-h-[52vh] overflow-y-auto px-2 py-6 sm:px-6">
-              <div className="space-y-2">
+            <div
+              className={cn(
+                'overflow-y-auto px-2 sm:px-6',
+                isLandscape ? 'max-h-full py-2 sm:px-4' : 'max-h-[52vh] py-6'
+              )}
+            >
+              <div className="space-y-1.5">
                 {availableTracks.map(track => {
                   const isCurrentTrack = track.path === currentTrack
                   const resolvedTrackDuration =
@@ -159,7 +198,7 @@ export function FullscreenVisualizer({
                     <div
                       key={track.path}
                       className={cn(
-                        'flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors',
+                        'flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2 text-left transition-colors',
                         isCurrentTrack
                           ? 'bg-white/14 text-white'
                           : 'text-white/75 hover:bg-white/8 hover:text-white'
@@ -170,7 +209,7 @@ export function FullscreenVisualizer({
                         onClick={handleTrackAction}
                         title={isCurrentTrack && isPlaying ? '暂停' : '播放'}
                         aria-label={`${isCurrentTrack && isPlaying ? '暂停' : '播放'} ${track.name}`}
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-transparent text-white/80 transition-colors hover:bg-transparent hover:text-white"
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-transparent text-white/80 transition-colors hover:bg-transparent hover:text-white"
                       >
                         {iconNode}
                       </button>
@@ -180,7 +219,7 @@ export function FullscreenVisualizer({
                         className="min-w-0 flex-1 text-left"
                         aria-label={`${isCurrentTrack && isPlaying ? '暂停' : '播放'} ${track.name}`}
                       >
-                        <div className="truncate text-sm font-medium">{track.name}</div>
+                        <div className="truncate text-[13px] font-medium">{track.name}</div>
                       </button>
                       {resolvedTrackDuration > 0 &&
                         (isCurrentTrack ? (
@@ -212,10 +251,19 @@ export function FullscreenVisualizer({
               lyrics={lyrics}
               activeLyricIndex={activeLyricIndex}
               status={lyricsStatus}
-              className="h-[min(52vh,480px)] w-full border-0 bg-transparent p-0 shadow-none"
-              bodyClassName="px-2 py-8 sm:px-6"
-              lineClassName="text-lg leading-9 text-white/40"
-              activeLineClassName="text-2xl font-semibold text-white"
+              className={cn(
+                'w-full border-0 bg-transparent p-0 shadow-none',
+                isLandscape ? 'h-full' : 'h-[min(52vh,480px)]'
+              )}
+              bodyClassName={cn('px-2 sm:px-6', isLandscape ? 'py-2' : 'py-8')}
+              lineClassName={cn(
+                'text-white/40',
+                isLandscape ? 'text-sm leading-7' : 'text-lg leading-9'
+              )}
+              activeLineClassName={cn(
+                'font-semibold text-white',
+                isLandscape ? 'text-lg' : 'text-2xl'
+              )}
               emptyClassName="text-white/65"
             />
           </div>
@@ -230,21 +278,90 @@ export function FullscreenVisualizer({
         )}
       >
         {/* 顶部：关闭 + 曲名 */}
-        <div className="pointer-events-auto flex flex-col gap-2 bg-gradient-to-b from-black/60 to-transparent p-4 pb-12">
-          <div className="flex items-center justify-between gap-4">
+        <div
+          className={cn(
+            'pointer-events-auto flex flex-col gap-2 bg-gradient-to-b from-black/60 to-transparent',
+            isLandscape ? 'px-3 pt-3 pb-4' : 'p-4 pb-12'
+          )}
+        >
+          <div className="relative flex items-center gap-4">
             <h2 className="min-w-0 flex-1 truncate text-left text-lg font-medium text-white drop-shadow-lg">
               {trackName}
             </h2>
-            <button
-              onClick={onClose}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-colors hover:bg-white/20"
-              aria-label="关闭全屏"
-              title="关闭全屏"
-            >
-              <X className="h-5 w-5 text-white" />
-            </button>
+            {canShowPlaylist && isLandscape && (
+              <div className="absolute left-1/2 flex -translate-x-1/2 justify-center">
+                <TabsList className="h-8 bg-white/10 text-white/55 backdrop-blur-sm">
+                  <TabsTrigger
+                    value="playlist"
+                    className="min-w-24 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white dark:data-[state=active]:bg-white/20 dark:data-[state=active]:text-white"
+                  >
+                    歌曲列表
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="lyrics"
+                    className="min-w-20 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white dark:data-[state=active]:bg-white/20 dark:data-[state=active]:text-white"
+                  >
+                    歌词
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+            )}
+            <div className="ml-auto flex shrink-0 items-center gap-2">
+              {isLandscape && (
+                <DropdownMenu
+                  onOpenChange={open => {
+                    setIsVisualizerMenuOpen(open)
+                    if (open) {
+                      setShowControls(true)
+                      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+                    } else {
+                      resetHideTimer()
+                    }
+                  }}
+                >
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-9 items-center gap-2 rounded-full bg-white/12 px-3 text-[11px] font-medium text-white/80 backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-white"
+                      aria-label="切换音乐效果"
+                      title="切换音乐效果"
+                    >
+                      <SlidersHorizontal className="h-3.5 w-3.5" />
+                      <span>
+                        {VISUALIZER_TYPES.find(item => item.type === vizType)?.label ?? '频谱'}
+                      </span>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="min-w-28 bg-black/85 text-white backdrop-blur-md"
+                  >
+                    {VISUALIZER_TYPES.map(({ type, label }) => (
+                      <DropdownMenuItem
+                        key={type}
+                        onClick={() => setVizType(type)}
+                        className={cn(
+                          'cursor-pointer text-sm text-white/80 focus:bg-white/15 focus:text-white',
+                          vizType === type && 'bg-white/12 text-white'
+                        )}
+                      >
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              <button
+                onClick={onClose}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-colors hover:bg-white/20"
+                aria-label="关闭全屏"
+                title="关闭全屏"
+              >
+                <X className="h-5 w-5 text-white" />
+              </button>
+            </div>
           </div>
-          {canShowPlaylist && (
+          {canShowPlaylist && !isLandscape && (
             <div className="flex justify-center">
               <TabsList className="h-8 bg-white/10 text-white/55 backdrop-blur-sm">
                 <TabsTrigger
@@ -265,61 +382,89 @@ export function FullscreenVisualizer({
         </div>
 
         {/* 底部：可视化类型切换 + 播放控件 */}
-        <div className="pointer-events-auto space-y-6 bg-gradient-to-t from-black/60 to-transparent pb-12">
+        <div
+          className={cn(
+            'pointer-events-auto bg-gradient-to-t from-black/60 to-transparent',
+            isLandscape ? 'space-y-2 px-3 pb-4' : 'space-y-6 pb-12'
+          )}
+        >
           {/* 可视化类型切换 */}
-          <div className="flex justify-center gap-2">
-            {VISUALIZER_TYPES.map(({ type, label }) => (
-              <button
-                key={type}
-                onClick={() => setVizType(type)}
-                className={cn(
-                  'rounded-full px-4 py-1.5 text-xs font-medium transition-all',
-                  vizType === type
-                    ? 'bg-white/25 text-white backdrop-blur-sm'
-                    : 'text-white/60 hover:text-white/90'
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
+          {!isLandscape && (
+            <div className="flex justify-center gap-2">
+              {VISUALIZER_TYPES.map(({ type, label }) => (
+                <button
+                  key={type}
+                  onClick={() => setVizType(type)}
+                  className={cn(
+                    'rounded-full font-medium transition-all',
+                    'px-4 py-1.5 text-xs',
+                    vizType === type
+                      ? 'bg-white/25 text-white backdrop-blur-sm'
+                      : 'text-white/60 hover:text-white/90'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* 播放控件 */}
           <div className="mx-auto grid w-full max-w-4xl grid-cols-5 items-center">
             <div className="flex justify-center">
               <button
                 onClick={onToggleMute}
-                className="flex h-10 w-10 items-center justify-center text-white/70 transition-colors hover:text-white"
+                className={cn(
+                  'flex items-center justify-center text-white/70 transition-colors hover:text-white',
+                  isLandscape ? 'h-9 w-9' : 'h-10 w-10'
+                )}
                 aria-label={isMuted ? '取消静音' : '静音'}
               >
-                {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                {isMuted ? (
+                  <VolumeX className={cn(isLandscape ? 'h-[18px] w-[18px]' : 'h-5 w-5')} />
+                ) : (
+                  <Volume2 className={cn(isLandscape ? 'h-[18px] w-[18px]' : 'h-5 w-5')} />
+                )}
               </button>
             </div>
             <div className="flex justify-center">
               <button
                 onClick={onPrevTrack}
-                className="flex h-12 w-12 items-center justify-center text-white/80 transition-colors hover:text-white"
+                className={cn(
+                  'flex items-center justify-center text-white/80 transition-colors hover:text-white',
+                  isLandscape ? 'h-10 w-10' : 'h-12 w-12'
+                )}
                 aria-label="上一首"
               >
-                <SkipBack className="h-6 w-6" />
+                <SkipBack className={cn(isLandscape ? 'h-5 w-5' : 'h-6 w-6')} />
               </button>
             </div>
             <div className="flex justify-center">
               <button
                 onClick={onTogglePlay}
-                className="flex h-16 w-16 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/30"
+                className={cn(
+                  'flex items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/30',
+                  isLandscape ? 'h-12 w-12' : 'h-16 w-16'
+                )}
                 aria-label={isPlaying ? '暂停' : '播放'}
               >
-                {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="ml-1 h-8 w-8" />}
+                {isPlaying ? (
+                  <Pause className={cn(isLandscape ? 'h-6 w-6' : 'h-8 w-8')} />
+                ) : (
+                  <Play className={cn('ml-1', isLandscape ? 'h-6 w-6' : 'h-8 w-8')} />
+                )}
               </button>
             </div>
             <div className="flex justify-center">
               <button
                 onClick={onNextTrack}
-                className="flex h-12 w-12 items-center justify-center text-white/80 transition-colors hover:text-white"
+                className={cn(
+                  'flex items-center justify-center text-white/80 transition-colors hover:text-white',
+                  isLandscape ? 'h-10 w-10' : 'h-12 w-12'
+                )}
                 aria-label="下一首"
               >
-                <SkipForward className="h-6 w-6" />
+                <SkipForward className={cn(isLandscape ? 'h-5 w-5' : 'h-6 w-6')} />
               </button>
             </div>
             <div className="flex justify-center">
@@ -339,7 +484,10 @@ export function FullscreenVisualizer({
                   align="end"
                   iconOnly={true}
                   hideChevron={true}
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-transparent p-0 text-white/80 hover:bg-transparent hover:text-white"
+                  className={cn(
+                    'flex items-center justify-center rounded-full bg-transparent p-0 text-white/80 hover:bg-transparent hover:text-white',
+                    isLandscape ? 'h-9 w-9' : 'h-10 w-10'
+                  )}
                   itemClassName="text-sm"
                 />
               )}
@@ -348,8 +496,18 @@ export function FullscreenVisualizer({
 
           {/* 进度条和时间显示 */}
           {handleProgressChange && duration > 0 && (
-            <div className="flex items-center justify-center gap-2 px-2 sm:px-4 md:px-6 lg:px-8">
-              <span className="min-w-[2.5rem] text-right text-sm font-medium text-white/80 tabular-nums">
+            <div
+              className={cn(
+                'flex items-center justify-center gap-2 px-2 sm:px-4 md:px-6 lg:px-8',
+                isLandscape && 'gap-1.5'
+              )}
+            >
+              <span
+                className={cn(
+                  'min-w-[2.5rem] text-right font-medium text-white/80 tabular-nums',
+                  isLandscape ? 'text-xs' : 'text-sm'
+                )}
+              >
                 {formatTime(currentTime)}
               </span>
               <div className="group relative h-1.5 max-w-6xl flex-1 cursor-pointer">
@@ -377,7 +535,12 @@ export function FullscreenVisualizer({
                   style={{ left: `calc(${((currentTime / duration) * 100).toFixed(2)}% - 8px)` }}
                 />
               </div>
-              <span className="min-w-[2.5rem] text-sm font-medium text-white/80 tabular-nums">
+              <span
+                className={cn(
+                  'min-w-[2.5rem] font-medium text-white/80 tabular-nums',
+                  isLandscape ? 'text-xs' : 'text-sm'
+                )}
+              >
                 {formatTime(duration)}
               </span>
             </div>

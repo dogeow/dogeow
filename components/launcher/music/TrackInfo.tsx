@@ -7,9 +7,14 @@ export const TrackInfo = memo(
     isPlaying,
     getCurrentTrackName,
     currentLyric,
-  }: Pick<MusicPlayerProps, 'isPlaying' | 'getCurrentTrackName' | 'currentLyric'>) => {
+    isLoadingTracks,
+  }: Pick<
+    MusicPlayerProps,
+    'isPlaying' | 'getCurrentTrackName' | 'currentLyric' | 'isLoadingTracks'
+  >) => {
     const trackName = getCurrentTrackName() ?? '没有选择音乐'
-    const isEmptyState = trackName === '没有选择音乐' || trackName === '播放列表为空'
+    const isEmptyState =
+      !isLoadingTracks && (trackName === '没有选择音乐' || trackName === '播放列表为空')
     const normalizedTrackName = trackName?.trim()
     const normalizedLyric = currentLyric?.trim()
     const displayLyric =
@@ -30,11 +35,13 @@ export const TrackInfo = memo(
     const startScrollLeft = useRef(0)
     const showLyric = viewState.trackName === trackName && viewState.showLyric && canToggleText
 
-    const visibleText = isEmptyState
-      ? '暂无音乐'
-      : showLyric && canToggleText
-        ? displayLyric
-        : trackName
+    const visibleText = isLoadingTracks
+      ? '加载中...'
+      : isEmptyState
+        ? '暂无音乐'
+        : showLyric && canToggleText
+          ? displayLyric
+          : trackName
     const primaryText = visibleText
     const activeScrollLeft = scrollKey === primaryText ? scrollLeft : 0
 

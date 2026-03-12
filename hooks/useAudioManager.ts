@@ -24,6 +24,7 @@ export const useAudioManager = () => {
   const [userInteracted, setUserInteracted] = useState(false)
   const [isTrackChanging, setIsTrackChanging] = useState(false)
   const [readyToPlay, setReadyToPlay] = useState(false)
+  const [isLoadingTracks, setIsLoadingTracks] = useState(false)
 
   // 初始化音频控制器
   const audioController = AudioController({
@@ -45,6 +46,9 @@ export const useAudioManager = () => {
 
   // 加载音频列表
   const fetchAvailableTracks = useCallback(async () => {
+    setIsLoadingTracks(true)
+    setAudioError(null)
+
     try {
       const musicData = await apiRequest<MusicTrack[]>('/musics')
       setAvailableTracks(musicData)
@@ -73,11 +77,17 @@ export const useAudioManager = () => {
     } catch (error) {
       console.error('加载音频列表失败:', error)
       setAudioError('加载音频列表失败')
+    } finally {
+      setIsLoadingTracks(false)
     }
   }, [setAvailableTracks, setCurrentTrack, setAudioError, setIsPlaying])
 
   // 获取当前音频文件名称
   const getCurrentTrackName = useCallback(() => {
+    if (isLoadingTracks && !currentTrack && (!availableTracks || availableTracks.length === 0)) {
+      return '加载中...'
+    }
+
     if (!currentTrack) return '没有选择音乐'
 
     // 检查播放列表是否为空 - 添加安全检查
@@ -98,7 +108,7 @@ export const useAudioManager = () => {
     const fileName = parts[parts.length - 1]
 
     return fileName.replace(/\.(mp3|wav|m4a|aac|ogg|flac)$/i, '').replace(/[_\-]/g, ' ')
-  }, [currentTrack, availableTracks])
+  }, [currentTrack, availableTracks, isLoadingTracks])
 
   // 格式化时间显示
   const formatTime = useCallback((time: number) => {
@@ -140,6 +150,7 @@ export const useAudioManager = () => {
     duration,
     currentTime,
     audioError,
+    isLoadingTracks,
     currentTrack,
     availableTracks,
     readyToPlay,

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { memo } from 'react'
+import React, { memo, useMemo, useState } from 'react'
 import { Maximize2, Pause, Play } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { BackButton } from '@/components/ui/back-button'
@@ -19,6 +19,7 @@ export const MusicPlayer = memo(
   ({
     isPlaying,
     audioError,
+    isLoadingTracks,
     currentTime,
     duration,
     availableTracks,
@@ -33,13 +34,25 @@ export const MusicPlayer = memo(
   }: MusicPlayerProps) => {
     const router = useRouter()
     const { clearFilters } = useFilterPersistenceStore()
-    const isEmptyState = !currentTrack || availableTracks.length === 0
+    const isLoadingState = Boolean(
+      isLoadingTracks && !currentTrack && (!availableTracks || availableTracks.length === 0)
+    )
+    const isEmptyState = !isLoadingState && (!currentTrack || availableTracks.length === 0)
     const handleBackToApps = () => toggleDisplayMode('apps')
+    const [showRemainingTime, setShowRemainingTime] = useState(false)
 
     const handleLogoClick = () => {
       clearFilters()
       router.push('/')
     }
+
+    const timeLabel = useMemo(() => {
+      if (showRemainingTime) {
+        return `-${formatTime(Math.max(0, duration - currentTime))}`
+      }
+
+      return formatTime(currentTime)
+    }, [currentTime, duration, formatTime, showRemainingTime])
 
     return (
       <div className="relative flex h-full w-full min-w-0 flex-col justify-center overflow-hidden">
@@ -61,10 +74,11 @@ export const MusicPlayer = memo(
               isPlaying={isPlaying}
               getCurrentTrackName={getCurrentTrackName}
               currentLyric={currentLyric}
+              isLoadingTracks={isLoadingState}
             />
           </div>
 
-          {audioError && !isEmptyState && (
+          {audioError && !isEmptyState && !isLoadingState && (
             <div className="relative z-10 shrink-0 truncate rounded bg-amber-50 px-2 py-1 text-xs text-amber-600">
               {audioError.includes('播放列表为空') ? '🎵 暂无音乐' : audioError}
             </div>
@@ -72,9 +86,15 @@ export const MusicPlayer = memo(
 
           <div className="relative z-10 ml-auto flex shrink-0 items-center gap-2 overflow-hidden">
             {!isEmptyState && (
-              <div className="shrink-0 text-xs font-medium text-foreground/80 tabular-nums">
-                {formatTime(currentTime)} / {formatTime(duration)}
-              </div>
+              <button
+                type="button"
+                className="shrink-0 text-xs font-medium text-foreground/80 tabular-nums transition-opacity hover:opacity-80"
+                onClick={() => setShowRemainingTime(prev => !prev)}
+                title={showRemainingTime ? '点击切换为已播放时间' : '点击切换为倒计时'}
+                aria-label={showRemainingTime ? '显示已播放时间' : '显示倒计时'}
+              >
+                {timeLabel}
+              </button>
             )}
             {onOpenFullscreen && (
               <PlayerControlButton

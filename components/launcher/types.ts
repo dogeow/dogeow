@@ -21,6 +21,7 @@ export interface MusicPlayerProps {
   duration: number
   volume: number
   isMuted: boolean
+  isLoadingTracks?: boolean
   availableTracks: MusicTrack[]
   currentTrack: string
   playMode: PlayMode

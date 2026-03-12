@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react'
 import { vi } from 'vitest'
-import { useBackgroundManager } from '../useBackgroundManager'
+import { resolveBackgroundImageUrl, useBackgroundManager } from '../useBackgroundManager'
 
 // Mock functions
 const mockSetBackgroundImage = vi.fn()
@@ -37,6 +37,7 @@ describe('useBackgroundManager', () => {
     renderHook(() => useBackgroundManager())
 
     expect(document.body.style.backgroundImage).toBe('')
+    expect(document.body.style.backgroundSize).toBe('')
   })
 
   it('should clear background when backgroundImage is null', () => {
@@ -46,30 +47,22 @@ describe('useBackgroundManager', () => {
     expect(document.body.style.backgroundImage).toBe('')
   })
 
-  it('should set system background image with wallhaven prefix', () => {
-    mockBackgroundStore.backgroundImage = 'wallhaven-123456.jpg'
+  it('should set system background image for configured filename', () => {
+    mockBackgroundStore.backgroundImage = '君の名は.webp'
     renderHook(() => useBackgroundManager())
 
-    expect(document.body.style.backgroundImage).toBe(
-      'url("/images/backgrounds/wallhaven-123456.jpg")'
-    )
+    expect(document.body.style.backgroundImage).toBe('url("/images/backgrounds/君の名は.webp")')
     expect(document.body.style.backgroundSize).toBe('cover')
-    expect(document.body.style.backgroundPosition).toBe('center')
+    expect(document.body.style.backgroundPosition).toBe('center center')
     expect(document.body.style.backgroundRepeat).toBe('no-repeat')
     expect(document.body.style.backgroundAttachment).toBe('fixed')
   })
 
-  it('should set system background image with F_RIhiObMAA prefix', () => {
-    mockBackgroundStore.backgroundImage = 'F_RIhiObMAA_test.jpg'
+  it('should set system background image for another configured filename', () => {
+    mockBackgroundStore.backgroundImage = '钢铁侠.jpg'
     renderHook(() => useBackgroundManager())
 
-    expect(document.body.style.backgroundImage).toBe(
-      'url("/images/backgrounds/F_RIhiObMAA_test.jpg")'
-    )
-    expect(document.body.style.backgroundSize).toBe('cover')
-    expect(document.body.style.backgroundPosition).toBe('center')
-    expect(document.body.style.backgroundRepeat).toBe('no-repeat')
-    expect(document.body.style.backgroundAttachment).toBe('fixed')
+    expect(document.body.style.backgroundImage).toBe('url("/images/backgrounds/钢铁侠.jpg")')
   })
 
   it('should set custom base64 background image', () => {
@@ -79,16 +72,16 @@ describe('useBackgroundManager', () => {
 
     expect(document.body.style.backgroundImage).toBe(`url("${base64Image}")`)
     expect(document.body.style.backgroundSize).toBe('cover')
-    expect(document.body.style.backgroundPosition).toBe('center')
+    expect(document.body.style.backgroundPosition).toBe('center center')
     expect(document.body.style.backgroundRepeat).toBe('no-repeat')
     expect(document.body.style.backgroundAttachment).toBe('fixed')
   })
 
-  it('should not set background for unknown image types', () => {
+  it('should set background for arbitrary local filenames', () => {
     mockBackgroundStore.backgroundImage = 'unknown-image.jpg'
     renderHook(() => useBackgroundManager())
 
-    expect(document.body.style.backgroundImage).toBe('')
+    expect(document.body.style.backgroundImage).toBe('url("/images/backgrounds/unknown-image.jpg")')
   })
 
   it('should update background when backgroundImage changes', () => {
@@ -97,13 +90,11 @@ describe('useBackgroundManager', () => {
     // Initially no background
     expect(document.body.style.backgroundImage).toBe('')
 
-    // Set wallhaven background
-    mockBackgroundStore.backgroundImage = 'wallhaven-test.jpg'
+    // Set system background
+    mockBackgroundStore.backgroundImage = '守望先锋.png'
     rerender()
 
-    expect(document.body.style.backgroundImage).toBe(
-      'url("/images/backgrounds/wallhaven-test.jpg")'
-    )
+    expect(document.body.style.backgroundImage).toBe('url("/images/backgrounds/守望先锋.png")')
 
     // Change to base64 background
     const base64Image =
@@ -120,8 +111,8 @@ describe('useBackgroundManager', () => {
     expect(document.body.style.backgroundImage).toBe('')
   })
 
-  it('should handle wallhaven images with different extensions', () => {
-    const testCases = ['wallhaven-123.jpg', 'wallhaven-456.png', 'wallhaven-789.webp']
+  it('should handle local image filenames with different extensions', () => {
+    const testCases = ['bg-123.jpg', 'bg-456.png', 'bg-789.webp']
 
     testCases.forEach(imageName => {
       mockBackgroundStore.backgroundImage = imageName
@@ -132,15 +123,19 @@ describe('useBackgroundManager', () => {
     })
   })
 
-  it('should handle F_RIhiObMAA images with different suffixes', () => {
-    const testCases = ['F_RIhiObMAA_1.jpg', 'F_RIhiObMAA_sunset.png', 'F_RIhiObMAA_nature.webp']
+  it('should handle external and blob image urls', () => {
+    const testCases = [
+      'https://example.com/background.jpg',
+      'blob:https://example.com/12345678-1234-1234-1234-123456789012',
+      '//cdn.example.com/background.webp',
+    ]
 
-    testCases.forEach(imageName => {
-      mockBackgroundStore.backgroundImage = imageName
+    testCases.forEach(imageUrl => {
+      mockBackgroundStore.backgroundImage = imageUrl
       const { rerender } = renderHook(() => useBackgroundManager())
       rerender()
 
-      expect(document.body.style.backgroundImage).toBe(`url("/images/backgrounds/${imageName}")`)
+      expect(document.body.style.backgroundImage).toBe(`url("${imageUrl}")`)
     })
   })
 
@@ -168,7 +163,7 @@ describe('useBackgroundManager', () => {
     const bodyStyle = document.body.style
     expect(bodyStyle.backgroundImage).toBe('url("/images/backgrounds/wallhaven-test.jpg")')
     expect(bodyStyle.backgroundSize).toBe('cover')
-    expect(bodyStyle.backgroundPosition).toBe('center')
+    expect(bodyStyle.backgroundPosition).toBe('center center')
     expect(bodyStyle.backgroundRepeat).toBe('no-repeat')
     expect(bodyStyle.backgroundAttachment).toBe('fixed')
   })
@@ -180,20 +175,11 @@ describe('useBackgroundManager', () => {
     expect(document.body.style.backgroundImage).toBe('url("data:")')
   })
 
-  it('should handle partial wallhaven match', () => {
-    // Should not match if wallhaven is not at the start
-    mockBackgroundStore.backgroundImage = 'not-wallhaven-test.jpg'
+  it('should handle absolute local paths', () => {
+    mockBackgroundStore.backgroundImage = '/images/backgrounds/custom.jpg'
     renderHook(() => useBackgroundManager())
 
-    expect(document.body.style.backgroundImage).toBe('')
-  })
-
-  it('should handle partial F_RIhiObMAA match', () => {
-    // Should not match if F_RIhiObMAA is not at the start
-    mockBackgroundStore.backgroundImage = 'not-F_RIhiObMAA_test.jpg'
-    renderHook(() => useBackgroundManager())
-
-    expect(document.body.style.backgroundImage).toBe('')
+    expect(document.body.style.backgroundImage).toBe('url("/images/backgrounds/custom.jpg")')
   })
 
   it('should handle cleanup on unmount', () => {
@@ -210,5 +196,17 @@ describe('useBackgroundManager', () => {
     expect(document.body.style.backgroundImage).toBe(
       'url("/images/backgrounds/wallhaven-test.jpg")'
     )
+  })
+
+  it('should resolve background image urls consistently', () => {
+    expect(resolveBackgroundImageUrl('君の名は.webp')).toBe('/images/backgrounds/君の名は.webp')
+    expect(resolveBackgroundImageUrl('https://example.com/bg.jpg')).toBe(
+      'https://example.com/bg.jpg'
+    )
+    expect(resolveBackgroundImageUrl('data:image/png;base64,abc')).toBe('data:image/png;base64,abc')
+    expect(resolveBackgroundImageUrl('/images/backgrounds/bg.jpg')).toBe(
+      '/images/backgrounds/bg.jpg'
+    )
+    expect(resolveBackgroundImageUrl('')).toBe('')
   })
 })

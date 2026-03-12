@@ -38,7 +38,7 @@ const TechLink: React.FC<TechLinkProps> = ({ href, src, alt, needsInvert }) => (
 )
 
 const PoweredBy: React.FC = () => (
-  <div className="flex items-center gap-2 text-sm opacity-80">
+  <div className="text-muted-foreground flex items-center gap-2 text-sm">
     <span>🫴 Powered By</span>
     <TechLink
       href="https://laravel.com"
