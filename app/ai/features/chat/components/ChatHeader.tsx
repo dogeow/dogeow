@@ -34,7 +34,7 @@ function DialogLikeHeader({
   const TitleTag = useNativeTitle ? 'span' : DialogTitle
 
   return (
-    <div className="relative !flex h-14 flex-none !flex-row items-center justify-between border-b px-4 py-0">
+    <div className="relative !flex h-14 flex-none !flex-row items-center justify-between px-4 py-0">
       <div className="m-0 flex min-w-0 flex-1 items-center gap-3">
         {useTabs ? (
           <TitleTag className="sr-only">
