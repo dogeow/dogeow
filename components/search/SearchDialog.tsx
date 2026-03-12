@@ -145,16 +145,16 @@ export function SearchDialog({
     [results, activeCategory]
   )
 
+  const dialogSizeClass = keyboardOpen
+    ? 'fixed top-2 right-2 left-2 h-[60svh] max-h-[60svh] translate-x-0 translate-y-0'
+    : 'h-[min(88svh,34rem)] max-h-[calc(100svh-1rem)] sm:h-[min(85vh,36rem)] sm:max-h-[85vh]'
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className={`w-full max-w-[95vw] sm:max-w-[550px] ${
-          keyboardOpen
-            ? 'fixed top-2 right-2 left-2 h-[60svh] max-h-[60svh] translate-x-0 translate-y-0'
-            : 'min-h-[400px] max-h-[85svh] sm:min-h-[500px] sm:max-h-[85vh]'
-        } gap-0 overflow-hidden p-0`}
+        className={`w-[calc(100vw-1rem)] max-w-[95vw] gap-0 overflow-hidden p-0 sm:max-w-[550px] ${dialogSizeClass}`}
       >
-        <div className="flex max-h-[85svh] flex-col p-4 sm:max-h-[85vh] sm:p-6">
+        <div className="flex h-full min-h-0 flex-col p-3 sm:p-6">
           {/* 标题栏 */}
           <DialogHeader className="mb-4 flex-shrink-0">
             <div className="flex items-center justify-between">

@@ -245,8 +245,8 @@ export function FullscreenVisualizer({
           </TabsContent>
         )}
 
-        <TabsContent value="lyrics" className="m-0 w-full max-w-4xl">
-          <div className="pointer-events-none">
+        <TabsContent value="lyrics" className="m-0 min-h-0 h-full w-full max-w-4xl self-stretch">
+          <div className="pointer-events-none h-full min-h-0">
             <LyricsDisplayPanel
               lyrics={lyrics}
               activeLyricIndex={activeLyricIndex}
@@ -255,7 +255,7 @@ export function FullscreenVisualizer({
                 'w-full border-0 bg-transparent p-0 shadow-none',
                 isLandscape ? 'h-full' : 'h-[min(52vh,480px)]'
               )}
-              bodyClassName={cn('px-2 sm:px-6', isLandscape ? 'py-2' : 'py-8')}
+              bodyClassName={cn('px-2 sm:px-6', isLandscape ? 'py-0' : 'py-2')}
               lineClassName={cn(
                 'text-white/40',
                 isLandscape ? 'text-sm leading-7' : 'text-lg leading-9'
@@ -265,6 +265,7 @@ export function FullscreenVisualizer({
                 isLandscape ? 'text-lg' : 'text-2xl'
               )}
               emptyClassName="text-white/65"
+              syncKey={`${resolvedPanel}-${currentTrack}-${activeLyricIndex}-${isLandscape}`}
             />
           </div>
         </TabsContent>

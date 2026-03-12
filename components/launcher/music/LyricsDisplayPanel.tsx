@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useLayoutEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/helpers'
 import type { LyricLine } from './lyrics'
 import type { LyricsState } from './useTrackLyrics'
@@ -50,13 +50,38 @@ export function LyricsDisplayPanel({
 }: LyricsDisplayPanelProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const lineRefs = useRef<Array<HTMLParagraphElement | null>>([])
+  const [containerHeight, setContainerHeight] = useState(0)
+  const [activeLineHeight, setActiveLineHeight] = useState(28)
 
-  useLayoutEffect(() => {
-    if (activeLyricIndex < 0) {
+  const measureLayout = useCallback(() => {
+    const container = scrollContainerRef.current
+    if (!container) {
       return
     }
 
-    const frameId = window.requestAnimationFrame(() => {
+    const sampleLine =
+      lineRefs.current[activeLyricIndex] ??
+      lineRefs.current.find((line): line is HTMLParagraphElement => Boolean(line)) ??
+      null
+
+    const nextContainerHeight = container.clientHeight
+    const nextLineHeight = sampleLine?.clientHeight ?? 28
+
+    setContainerHeight(prev => (prev === nextContainerHeight ? prev : nextContainerHeight))
+    setActiveLineHeight(prev => (prev === nextLineHeight ? prev : nextLineHeight))
+  }, [activeLyricIndex])
+
+  const edgeSpacerHeight = useMemo(
+    () => Math.max(24, containerHeight / 2 - activeLineHeight / 2),
+    [activeLineHeight, containerHeight]
+  )
+
+  const syncToActiveLine = useCallback(
+    (behavior: ScrollBehavior = 'smooth') => {
+      if (activeLyricIndex < 0) {
+        return
+      }
+
       const activeLine = lineRefs.current[activeLyricIndex]
       const container = scrollContainerRef.current
 
@@ -68,12 +93,67 @@ export function LyricsDisplayPanel({
         activeLine.offsetTop - container.clientHeight / 2 + activeLine.clientHeight / 2
       container.scrollTo({
         top: Math.max(0, nextTop),
-        behavior: 'smooth',
+        behavior,
       })
+    },
+    [activeLyricIndex]
+  )
+
+  useLayoutEffect(() => {
+    if (activeLyricIndex < 0) {
+      return
+    }
+
+    measureLayout()
+
+    const frameId = window.requestAnimationFrame(() => {
+      measureLayout()
+      syncToActiveLine('smooth')
     })
 
     return () => window.cancelAnimationFrame(frameId)
-  }, [activeLyricIndex, lyrics, syncKey])
+  }, [activeLyricIndex, edgeSpacerHeight, lyrics, measureLayout, syncKey, syncToActiveLine])
+
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) {
+      return
+    }
+
+    let frameId: number | null = null
+    const syncOnResize = () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId)
+      }
+      frameId = window.requestAnimationFrame(() => {
+        measureLayout()
+        syncToActiveLine('auto')
+      })
+    }
+
+    syncOnResize()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(syncOnResize)
+      observer.observe(container)
+
+      return () => {
+        if (frameId) {
+          window.cancelAnimationFrame(frameId)
+        }
+        observer.disconnect()
+      }
+    }
+
+    window.addEventListener('resize', syncOnResize)
+
+    return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId)
+      }
+      window.removeEventListener('resize', syncOnResize)
+    }
+  }, [measureLayout, syncToActiveLine])
 
   return (
     <div
@@ -103,11 +183,14 @@ export function LyricsDisplayPanel({
           {getEmptyText(status)}
         </div>
       ) : (
-        <div
-          ref={scrollContainerRef}
-          className={cn('flex-1 overflow-y-auto px-2 py-6', bodyClassName)}
-        >
-          <div className="flex min-h-full flex-col items-center justify-center gap-3">
+        <div ref={scrollContainerRef} className={cn('flex-1 overflow-y-auto px-2', bodyClassName)}>
+          <div
+            className="flex flex-col items-center gap-3"
+            style={{
+              paddingTop: edgeSpacerHeight,
+              paddingBottom: edgeSpacerHeight,
+            }}
+          >
             {lyrics.map((line, index) => (
               <p
                 key={`${line.time}-${index}`}

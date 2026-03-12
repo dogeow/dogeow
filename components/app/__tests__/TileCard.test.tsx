@@ -103,11 +103,11 @@ describe('TileCard', () => {
     expect(screen.getByRole('button')).not.toHaveClass('border-white/15')
   })
 
-  it('renders bordered neutral card in none mode', () => {
+  it('renders blurred glass card in none mode', () => {
     render(<TileCard {...defaultProps} projectCoverMode="none" />)
 
     expect(screen.queryByTestId('image')).not.toBeInTheDocument()
-    expect(screen.getByRole('button')).toHaveClass('border', 'border-white/15')
+    expect(screen.getByRole('button')).toHaveClass('border', 'backdrop-blur-md')
   })
 
   it('renders lock icon for protected tiles without image skeleton interference', () => {
