@@ -7,11 +7,12 @@ import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
 import { PERFORMANCE } from '@/lib/constants'
 import { imageAsset } from '@/lib/helpers/assets'
+import type { ProjectCoverMode } from '@/stores/projectCoverStore'
 
 interface MagazineTileCardProps {
   tile: Tile
   index: number
-  showCover: boolean
+  projectCoverMode: ProjectCoverMode
   needsLogin: boolean
   onClick: () => void
   variant: 'hero' | 'card'
@@ -22,7 +23,12 @@ const BLUR_DATA_URL =
 
 /** 杂志布局 - Hero 卡片（首卡大图，稳重简洁） */
 const HeroCard = memo(
-  ({ tile, showCover, needsLogin, onClick }: Omit<MagazineTileCardProps, 'variant' | 'index'>) => {
+  ({
+    tile,
+    projectCoverMode,
+    needsLogin,
+    onClick,
+  }: Omit<MagazineTileCardProps, 'variant' | 'index'>) => {
     const { t } = useTranslation()
     const [imageError, setImageError] = useState(false)
     const [imageLoaded, setImageLoaded] = useState(false)
@@ -31,9 +37,10 @@ const HeroCard = memo(
       () => t(tile.nameKey, tile.nameCn || tile.nameKey),
       [t, tile.nameKey, tile.nameCn]
     )
+    const usesDecoratedCover = useMemo(() => projectCoverMode !== 'none', [projectCoverMode])
     const coverImage = useMemo(
-      () => (showCover ? tile.cover || `${tile.name}.png` : null),
-      [showCover, tile.cover, tile.name]
+      () => (projectCoverMode === 'image' ? tile.cover || `${tile.name}.png` : null),
+      [projectCoverMode, tile.cover, tile.name]
     )
     const hasBackground = useMemo(() => !!coverImage && !imageError, [coverImage, imageError])
     const handleImageError = useCallback(() => setImageError(true), [])
@@ -44,7 +51,10 @@ const HeroCard = memo(
         type="button"
         onClick={onClick}
         className="group relative flex w-full overflow-hidden rounded-xl border border-white/15 text-left shadow-sm outline-none transition-all duration-200 hover:scale-[0.99] hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.98]"
-        style={{ backgroundColor: tile.color, minHeight: '200px' }}
+        style={{
+          backgroundColor: usesDecoratedCover ? tile.color : 'hsl(var(--card))',
+          minHeight: '200px',
+        }}
         aria-label={needsLogin ? `打开 ${tileName}（需登录）` : `打开 ${tileName}`}
       >
         {/* 背景图 */}
@@ -67,12 +77,14 @@ const HeroCard = memo(
         )}
 
         {/* 渐变遮罩 */}
-        <div
-          className="absolute inset-0 z-[1]"
-          style={{
-            background: `linear-gradient(135deg, ${tile.color}cc 0%, ${tile.color}55 100%)`,
-          }}
-        />
+        {usesDecoratedCover && (
+          <div
+            className="absolute inset-0 z-[1]"
+            style={{
+              background: `linear-gradient(135deg, ${tile.color}cc 0%, ${tile.color}55 100%)`,
+            }}
+          />
+        )}
 
         {/* 内容 */}
         <div className="relative z-[2] flex flex-1 flex-col justify-end p-5 sm:p-6">
@@ -108,13 +120,26 @@ HeroCard.displayName = 'HeroCard'
 
 /** 杂志布局 - 普通卡片（列表样式，带图标和箭头） */
 const ListCard = memo(
-  ({ tile, showCover, needsLogin, onClick }: Omit<MagazineTileCardProps, 'variant' | 'index'>) => {
+  ({
+    tile,
+    projectCoverMode,
+    needsLogin,
+    onClick,
+  }: Omit<MagazineTileCardProps, 'variant' | 'index'>) => {
     const { t } = useTranslation()
+    const [imageError, setImageError] = useState(false)
 
     const tileName = useMemo(
       () => t(tile.nameKey, tile.nameCn || tile.nameKey),
       [t, tile.nameKey, tile.nameCn]
     )
+    const coverImage = useMemo(
+      () => (projectCoverMode === 'image' ? tile.cover || `${tile.name}.png` : null),
+      [projectCoverMode, tile.cover, tile.name]
+    )
+    const handleImageError = useCallback(() => setImageError(true), [])
+    const showPreview = projectCoverMode !== 'none'
+    const showImagePreview = !!coverImage && !imageError
 
     return (
       <button
@@ -140,6 +165,32 @@ const ListCard = memo(
           <span className="text-foreground text-base font-medium leading-tight">{tileName}</span>
         </div>
 
+        {showPreview && (
+          <div
+            className="relative hidden h-12 w-18 shrink-0 overflow-hidden rounded-lg sm:block"
+            style={!showImagePreview ? { backgroundColor: tile.color } : undefined}
+          >
+            {showImagePreview ? (
+              <Image
+                src={imageAsset(`/images/projects/${coverImage}`)}
+                alt={tileName}
+                fill
+                className="object-cover"
+                sizes="72px"
+                onError={handleImageError}
+                quality={PERFORMANCE.IMAGE_QUALITY}
+              />
+            ) : (
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `linear-gradient(135deg, ${tile.color} 0%, ${tile.color}99 100%)`,
+                }}
+              />
+            )}
+          </div>
+        )}
+
         {/* 右侧 */}
         <div className="flex shrink-0 items-center gap-2">
           {needsLogin && (
@@ -160,12 +211,12 @@ ListCard.displayName = 'ListCard'
 export const MagazineLayout = memo(
   ({
     tiles,
-    showProjectCovers,
+    projectCoverMode,
     getTileStatus,
     handleTileClick,
   }: {
     tiles: Tile[]
-    showProjectCovers: boolean
+    projectCoverMode: ProjectCoverMode
     getTileStatus: (tile: Tile) => { needsLogin: boolean }
     handleTileClick: (tile: Tile) => void
   }) => {
@@ -179,7 +230,7 @@ export const MagazineLayout = memo(
             <ListCard
               key={tile.name}
               tile={tile}
-              showCover={showProjectCovers}
+              projectCoverMode={projectCoverMode}
               needsLogin={tileStatus.needsLogin}
               onClick={() => handleTileClick(tile)}
             />

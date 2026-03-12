@@ -1,141 +1,60 @@
-import { renderHook, act } from '@testing-library/react'
-import { useProjectCoverStore } from '../projectCoverStore'
+import { act, renderHook } from '@testing-library/react'
+import { useProjectCoverStore, type ProjectCoverMode } from '../projectCoverStore'
 
 describe('projectCoverStore', () => {
   beforeEach(() => {
-    // Clear localStorage
     localStorage.clear()
-
-    // Reset store state
-    useProjectCoverStore.setState({
-      showProjectCovers: true,
-    })
+    useProjectCoverStore.setState({ projectCoverMode: 'image' })
   })
 
-  it('should initialize with default state', () => {
+  it('initializes with image mode by default', () => {
     const { result } = renderHook(() => useProjectCoverStore())
 
-    expect(result.current.showProjectCovers).toBe(true)
+    expect(result.current.projectCoverMode).toBe('image')
   })
 
-  it('should set showProjectCovers to false', () => {
+  it('switches between all supported cover modes', () => {
     const { result } = renderHook(() => useProjectCoverStore())
+    const modes: ProjectCoverMode[] = ['color', 'none', 'image']
 
-    act(() => {
-      result.current.setShowProjectCovers(false)
-    })
-
-    expect(result.current.showProjectCovers).toBe(false)
-  })
-
-  it('should set showProjectCovers to true', () => {
-    const { result } = renderHook(() => useProjectCoverStore())
-
-    // First set to false
-    act(() => {
-      result.current.setShowProjectCovers(false)
-    })
-    expect(result.current.showProjectCovers).toBe(false)
-
-    // Then set back to true
-    act(() => {
-      result.current.setShowProjectCovers(true)
-    })
-    expect(result.current.showProjectCovers).toBe(true)
-  })
-
-  it('should toggle showProjectCovers state', () => {
-    const { result } = renderHook(() => useProjectCoverStore())
-
-    // Initial state is true
-    expect(result.current.showProjectCovers).toBe(true)
-
-    // Toggle to false
-    act(() => {
-      result.current.setShowProjectCovers(!result.current.showProjectCovers)
-    })
-    expect(result.current.showProjectCovers).toBe(false)
-
-    // Toggle back to true
-    act(() => {
-      result.current.setShowProjectCovers(!result.current.showProjectCovers)
-    })
-    expect(result.current.showProjectCovers).toBe(true)
-  })
-
-  it('should persist showProjectCovers state', () => {
-    // Set state to false
-    useProjectCoverStore.setState({ showProjectCovers: false })
-
-    // Create new hook instance to simulate rehydration
-    const { result } = renderHook(() => useProjectCoverStore())
-
-    expect(result.current.showProjectCovers).toBe(false)
-  })
-
-  it('should handle multiple state changes', () => {
-    const { result } = renderHook(() => useProjectCoverStore())
-
-    const testSequence = [false, true, false, true, false]
-
-    testSequence.forEach(value => {
+    modes.forEach(mode => {
       act(() => {
-        result.current.setShowProjectCovers(value)
+        result.current.setProjectCoverMode(mode)
       })
-      expect(result.current.showProjectCovers).toBe(value)
+
+      expect(result.current.projectCoverMode).toBe(mode)
     })
   })
 
-  it('should maintain state consistency', () => {
-    const { result } = renderHook(() => useProjectCoverStore())
+  it('rehydrates legacy boolean state as none when covers were disabled', async () => {
+    localStorage.setItem(
+      'project-cover-storage',
+      JSON.stringify({
+        state: { showProjectCovers: false },
+        version: 0,
+      })
+    )
 
-    // Set to false multiple times
-    act(() => {
-      result.current.setShowProjectCovers(false)
-      result.current.setShowProjectCovers(false)
-      result.current.setShowProjectCovers(false)
+    await act(async () => {
+      await useProjectCoverStore.persist.rehydrate()
     })
-    expect(result.current.showProjectCovers).toBe(false)
 
-    // Set to true multiple times
-    act(() => {
-      result.current.setShowProjectCovers(true)
-      result.current.setShowProjectCovers(true)
-      result.current.setShowProjectCovers(true)
-    })
-    expect(result.current.showProjectCovers).toBe(true)
+    expect(useProjectCoverStore.getState().projectCoverMode).toBe('none')
   })
 
-  it('should handle rapid state changes', () => {
-    const { result } = renderHook(() => useProjectCoverStore())
+  it('rehydrates legacy boolean state as image when covers were enabled', async () => {
+    localStorage.setItem(
+      'project-cover-storage',
+      JSON.stringify({
+        state: { showProjectCovers: true },
+        version: 0,
+      })
+    )
 
-    // Rapid toggle sequence
-    act(() => {
-      for (let i = 0; i < 10; i++) {
-        result.current.setShowProjectCovers(i % 2 === 0)
-      }
+    await act(async () => {
+      await useProjectCoverStore.persist.rehydrate()
     })
 
-    // Should end with false (since 9 % 2 === 1, so the last call was with false)
-    expect(result.current.showProjectCovers).toBe(false)
-  })
-
-  it('should work with conditional logic', () => {
-    const { result } = renderHook(() => useProjectCoverStore())
-
-    // Simulate conditional setting based on some external state
-    const userPreference: string = 'hide'
-
-    act(() => {
-      result.current.setShowProjectCovers(userPreference === 'show')
-    })
-    expect(result.current.showProjectCovers).toBe(false)
-
-    const anotherUserPreference: string = 'show'
-
-    act(() => {
-      result.current.setShowProjectCovers(anotherUserPreference === 'show')
-    })
-    expect(result.current.showProjectCovers).toBe(true)
+    expect(useProjectCoverStore.getState().projectCoverMode).toBe('image')
   })
 })

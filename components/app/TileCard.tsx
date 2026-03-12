@@ -5,6 +5,7 @@ import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
 import { PERFORMANCE } from '@/lib/constants'
 import { imageAsset } from '@/lib/helpers/assets'
+import type { ProjectCoverMode } from '@/stores/projectCoverStore'
 
 // 常量定义：与 MagazineLayout 列表卡统一圆角与焦点样式
 const TILE_CLASSES = {
@@ -44,7 +45,7 @@ interface TileCardProps {
   tile: Tile
   index: number
   customStyles?: string
-  showCover: boolean
+  projectCoverMode: ProjectCoverMode
   needsLogin: boolean
   onClick: () => void
 }
@@ -58,7 +59,17 @@ const getImageSizes = (gridArea: string): string => {
 
 // 提取图标组件
 const TileIcon = memo(
-  ({ tile, tileName, index }: { tile: Tile; tileName: string; index: number }) => {
+  ({
+    tile,
+    tileName,
+    index,
+    decorated,
+  }: {
+    tile: Tile
+    tileName: string
+    index: number
+    decorated: boolean
+  }) => {
     if (!tile.icon) return null
 
     if (typeof tile.icon === 'string' && tile.icon.length > 0) {
@@ -78,8 +89,8 @@ const TileIcon = memo(
 
     return (
       <div
-        className="h-5 w-5 shrink-0 text-white sm:h-6 sm:w-6"
-        style={{ filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))' }}
+        className={`h-5 w-5 shrink-0 sm:h-6 sm:w-6 ${decorated ? 'text-white' : 'text-foreground'}`}
+        style={decorated ? { filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))' } : undefined}
       >
         {tile.icon}
       </div>
@@ -90,7 +101,7 @@ const TileIcon = memo(
 TileIcon.displayName = 'TileIcon'
 
 export const TileCard = memo(
-  ({ tile, index, customStyles = '', showCover, needsLogin, onClick }: TileCardProps) => {
+  ({ tile, index, customStyles = '', projectCoverMode, needsLogin, onClick }: TileCardProps) => {
     const { t } = useTranslation()
     const [imageError, setImageError] = useState(false)
     const [imageLoaded, setImageLoaded] = useState(false)
@@ -100,11 +111,12 @@ export const TileCard = memo(
       () => t(tile.nameKey, tile.nameCn || tile.nameKey),
       [t, tile.nameKey, tile.nameCn]
     )
+    const usesDecoratedCover = useMemo(() => projectCoverMode !== 'none', [projectCoverMode])
     const coverImage = useMemo(
-      () => (showCover ? tile.cover || `${tile.name}.png` : null),
-      [showCover, tile.cover, tile.name]
+      () => (projectCoverMode === 'image' ? tile.cover || `${tile.name}.png` : null),
+      [projectCoverMode, tile.cover, tile.name]
     )
-    const hasBackground = useMemo(() => !!coverImage && !imageError, [coverImage, imageError])
+    const hasBackgroundImage = useMemo(() => !!coverImage && !imageError, [coverImage, imageError])
     const gridArea = useMemo(() => tile.gridArea || tile.name, [tile.gridArea, tile.name])
 
     // 事件处理器
@@ -114,21 +126,31 @@ export const TileCard = memo(
     // 样式计算
     const className = useMemo(
       () =>
-        [TILE_CLASSES.BASE, hasBackground ? '' : TILE_CLASSES.BORDERED, customStyles]
+        [TILE_CLASSES.BASE, usesDecoratedCover ? '' : TILE_CLASSES.BORDERED, customStyles]
           .filter(Boolean)
           .join(' '),
-      [customStyles, hasBackground]
+      [customStyles, usesDecoratedCover]
     )
-    const dynamicStyles = useMemo(
-      () => ({
-        backgroundColor: `${tile.color}b3`,
+    const dynamicStyles = useMemo(() => {
+      const baseStyle = {
         opacity: needsLogin ? 0.7 : 1,
-        backdropFilter: 'blur(1px)',
-      }),
-      [tile.color, needsLogin]
-    )
+      }
 
-    const showSkeleton = hasBackground && !imageLoaded
+      if (!usesDecoratedCover) {
+        return {
+          ...baseStyle,
+          backgroundColor: 'hsl(var(--card))',
+        }
+      }
+
+      return {
+        ...baseStyle,
+        backgroundColor: `${tile.color}b3`,
+        backdropFilter: 'blur(1px)',
+      }
+    }, [needsLogin, tile.color, usesDecoratedCover])
+
+    const showSkeleton = hasBackgroundImage && !imageLoaded
     const ariaLabel = useMemo(
       () => (needsLogin ? `打开 ${tileName}（需登录）` : `打开 ${tileName}`),
       [needsLogin, tileName]
@@ -143,7 +165,7 @@ export const TileCard = memo(
         aria-label={ariaLabel}
       >
         {/* 背景图片 */}
-        {hasBackground && (
+        {hasBackgroundImage && (
           <>
             <Image
               src={imageAsset(`/images/projects/${coverImage}`)}
@@ -184,13 +206,18 @@ export const TileCard = memo(
         <div className={`${TILE_CLASSES.CONTENT} ${showSkeleton ? 'opacity-0' : 'opacity-100'}`}>
           {tile.icon && (
             <div className="flex items-center justify-center">
-              <TileIcon tile={tile} tileName={tileName} index={index} />
+              <TileIcon
+                tile={tile}
+                tileName={tileName}
+                index={index}
+                decorated={usesDecoratedCover}
+              />
             </div>
           )}
 
           <span
-            className={TILE_CLASSES.TITLE}
-            style={{ textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' }}
+            className={`${TILE_CLASSES.TITLE} ${usesDecoratedCover ? 'text-white' : 'text-foreground'}`}
+            style={usesDecoratedCover ? { textShadow: '0 1px 3px rgba(0, 0, 0, 0.5)' } : undefined}
           >
             {tileName}
           </span>

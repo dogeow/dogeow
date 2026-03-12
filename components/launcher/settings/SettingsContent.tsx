@@ -10,6 +10,7 @@ import { SettingsDivider } from './SettingsDivider'
 import type { CustomBackground } from '../SettingsPanel'
 import type { CustomTheme } from '@/app/types'
 import type { ThemeMode, RestPeriod } from '@/stores/themeStore'
+import type { ProjectCoverMode } from '@/stores/projectCoverStore'
 
 type SettingsView = 'main' | 'background' | 'theme' | 'language' | 'sonner' | 'appearance'
 type DisplayMode = 'music' | 'apps' | 'settings'
@@ -24,7 +25,7 @@ interface SettingsContentProps {
   customThemes: CustomTheme[]
   themeMode: ThemeMode
   restPeriod: RestPeriod
-  showProjectCovers: boolean
+  projectCoverMode: ProjectCoverMode
   handleSetBackground: (url: string) => void
   handleUploadBackground: (e: React.ChangeEvent<HTMLInputElement>) => void
   setCurrentTheme: (theme: string) => void
@@ -32,7 +33,7 @@ interface SettingsContentProps {
   setRestPeriod: (startHour: number, endHour: number) => void
   handleAddCustomTheme: (name: string, color: string) => void
   handleRemoveCustomTheme: (id: string) => void
-  handleToggleProjectCovers: (checked: boolean) => void
+  handleProjectCoverModeChange: (mode: ProjectCoverMode) => void
   customCursorEnabled: boolean
   onCustomCursorChange: (enabled: boolean) => void
   themeTransitionEnabled: boolean
@@ -51,14 +52,14 @@ export function SettingsContent({
   themeMode,
   restPeriod,
   setRestPeriod,
-  showProjectCovers,
+  projectCoverMode,
   handleSetBackground,
   handleUploadBackground,
   setCurrentTheme,
   setThemeMode,
   handleAddCustomTheme,
   handleRemoveCustomTheme,
-  handleToggleProjectCovers,
+  handleProjectCoverModeChange,
   customCursorEnabled,
   onCustomCursorChange,
   themeTransitionEnabled,
@@ -133,8 +134,8 @@ export function SettingsContent({
             onNavigateToAppearance={() => setCurrentView('appearance')}
             onNavigateToLanguage={() => setCurrentView('language')}
             onNavigateToSonner={() => setCurrentView('sonner')}
-            showProjectCovers={showProjectCovers}
-            onToggleProjectCovers={handleToggleProjectCovers}
+            projectCoverMode={projectCoverMode}
+            onProjectCoverModeChange={handleProjectCoverModeChange}
           />
         </>
       )

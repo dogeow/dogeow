@@ -1,18 +1,19 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import Image from 'next/image'
 import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
 import { Lock, ExternalLink } from 'lucide-react'
 import { cn } from '@/lib/helpers'
 import { imageAsset } from '@/lib/helpers/assets'
+import type { ProjectCoverMode } from '@/stores/projectCoverStore'
 
 interface TileCardProps {
   tile: Tile
   index: number
   customStyles?: string
-  showCover: boolean
+  projectCoverMode: ProjectCoverMode
   needsLogin: boolean
   onClick: () => void
 }
@@ -22,9 +23,17 @@ interface TileCardProps {
  * 玻璃态效果卡片，网格布局，带图标和描述
  */
 export const TileCard = memo(
-  ({ tile, index, customStyles = '', showCover, needsLogin, onClick }: TileCardProps) => {
+  ({ tile, index, customStyles = '', projectCoverMode, needsLogin, onClick }: TileCardProps) => {
     const { t } = useTranslation()
+    const [imageError, setImageError] = useState(false)
     const tileName = t(tile.nameKey, tile.nameCn || tile.nameKey)
+    const wantsImageCover = projectCoverMode === 'image'
+    const showCoverBlock = projectCoverMode !== 'none'
+    const coverImage = useMemo(
+      () => (wantsImageCover ? tile.cover || `${tile.name}.png` : null),
+      [tile.cover, tile.name, wantsImageCover]
+    )
+    const handleImageError = useCallback(() => setImageError(true), [])
 
     return (
       <button
@@ -87,15 +96,28 @@ export const TileCard = memo(
           </div>
 
           {/* 封面图片（如果启用） */}
-          {showCover && tile.cover && (
-            <div className="relative h-32 w-full overflow-hidden rounded-lg">
-              <Image
-                src={imageAsset(`/images/projects/${tile.cover}`)}
-                alt={tileName}
-                fill
-                className="object-cover opacity-60 transition-opacity group-hover:opacity-100"
-                sizes="(max-width: 768px) 100vw, 300px"
-              />
+          {showCoverBlock && (
+            <div
+              className="relative h-32 w-full overflow-hidden rounded-lg"
+              style={!coverImage || imageError ? { backgroundColor: tile.color } : undefined}
+            >
+              {coverImage && !imageError ? (
+                <Image
+                  src={imageAsset(`/images/projects/${coverImage}`)}
+                  alt={tileName}
+                  fill
+                  className="object-cover opacity-60 transition-opacity group-hover:opacity-100"
+                  sizes="(max-width: 768px) 100vw, 300px"
+                  onError={handleImageError}
+                />
+              ) : (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(135deg, ${tile.color} 0%, ${tile.color}99 100%)`,
+                  }}
+                />
+              )}
             </div>
           )}
 

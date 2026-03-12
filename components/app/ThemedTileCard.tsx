@@ -5,12 +5,13 @@ import dynamic from 'next/dynamic'
 import { useMemo } from 'react'
 import { TileCard as DefaultTileCard } from './TileCard'
 import type { Tile } from '@/app/types'
+import type { ProjectCoverMode } from '@/stores/projectCoverStore'
 
 interface ThemedTileCardProps {
   tile: Tile
   index: number
   customStyles?: string
-  showCover: boolean
+  projectCoverMode: ProjectCoverMode
   needsLogin: boolean
   onClick: () => void
 }

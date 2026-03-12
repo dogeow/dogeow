@@ -17,7 +17,11 @@ import {
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
-import { useProjectCoverStore } from '@/stores/projectCoverStore'
+import {
+  PROJECT_COVER_MODE_OPTIONS,
+  useProjectCoverStore,
+  type ProjectCoverMode,
+} from '@/stores/projectCoverStore'
 import { useLayoutStore } from '@/stores/layoutStore'
 import { hexToHSL, fullscreen, exitFullscreen, isFullscreen } from '@/lib/helpers'
 import { BackgroundView } from './BackgroundView'
@@ -95,7 +99,7 @@ export function SettingsDialog({
     themeTransitionEnabled,
     setThemeTransitionEnabled,
   } = useThemeStore()
-  const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
+  const { projectCoverMode, setProjectCoverMode } = useProjectCoverStore()
   const { siteLayout, setSiteLayout } = useLayoutStore()
 
   // Handle background
@@ -226,8 +230,8 @@ export function SettingsDialog({
             onBack={() => setActiveSection('color')}
             siteLayout={siteLayout}
             setSiteLayout={setSiteLayout}
-            showProjectCovers={showProjectCovers}
-            setShowProjectCovers={setShowProjectCovers}
+            projectCoverMode={projectCoverMode}
+            setProjectCoverMode={setProjectCoverMode}
           />
         )
       case 'fullscreen':
@@ -433,16 +437,16 @@ interface AppsListViewProps {
   onBack: () => void
   siteLayout: 'grid' | 'magazine'
   setSiteLayout: (layout: 'grid' | 'magazine') => void
-  showProjectCovers: boolean
-  setShowProjectCovers: (show: boolean) => void
+  projectCoverMode: ProjectCoverMode
+  setProjectCoverMode: (mode: ProjectCoverMode) => void
 }
 
 function AppsListView({
   onBack,
   siteLayout,
   setSiteLayout,
-  showProjectCovers,
-  setShowProjectCovers,
+  projectCoverMode,
+  setProjectCoverMode,
 }: AppsListViewProps) {
   return (
     <div className="flex flex-col space-y-2">
@@ -469,24 +473,26 @@ function AppsListView({
         </div>
       </div>
 
-      <button
-        onClick={() => setShowProjectCovers(!showProjectCovers)}
-        className="hover:bg-muted flex w-full items-center gap-2 rounded-lg p-2 transition-colors"
-      >
+      <div className="flex w-full items-center gap-2 rounded-lg p-2">
         <BookOpen className="h-4 w-4" />
-        <span className="flex-1 text-left text-xs">显示封面</span>
-        <div
-          className={`flex h-5 w-9 items-center rounded-full p-0.5 transition-colors ${
-            showProjectCovers ? 'bg-primary' : 'bg-muted'
-          }`}
-        >
-          <div
-            className={`bg-background h-3.5 w-3.5 rounded-full shadow-md transition-transform ${
-              showProjectCovers ? 'translate-x-4' : 'translate-x-0'
-            }`}
-          />
+        <span className="text-xs">封面</span>
+        <div className="flex flex-1 gap-1">
+          {PROJECT_COVER_MODE_OPTIONS.map(option => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setProjectCoverMode(option.value)}
+              className={`flex-1 rounded px-2 py-1 text-xs transition-colors ${
+                projectCoverMode === option.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'hover:bg-muted'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
-      </button>
+      </div>
     </div>
   )
 }

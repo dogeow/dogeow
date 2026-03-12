@@ -3,12 +3,13 @@
 import { memo } from 'react'
 import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
+import type { ProjectCoverMode } from '@/stores/projectCoverStore'
 
 interface TileCardProps {
   tile: Tile
   index: number
   customStyles?: string
-  showCover: boolean
+  projectCoverMode: ProjectCoverMode
   needsLogin: boolean
   onClick: () => void
 }
@@ -18,7 +19,7 @@ interface TileCardProps {
  * 完全不同的卡片样式：无背景、无边框、纯文字、大间距
  */
 export const TileCard = memo(
-  ({ tile, index, customStyles = '', showCover, needsLogin, onClick }: TileCardProps) => {
+  ({ tile, index, customStyles = '', projectCoverMode, needsLogin, onClick }: TileCardProps) => {
     const { t } = useTranslation()
     const tileName = t(tile.nameKey, tile.nameCn || tile.nameKey)
 

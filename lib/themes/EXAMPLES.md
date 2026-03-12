@@ -141,7 +141,7 @@ interface TileCardProps {
   tile: Tile
   index: number
   customStyles?: string
-  showCover: boolean
+  projectCoverMode: 'image' | 'color' | 'none'
   needsLogin: boolean
   onClick: () => void
 }

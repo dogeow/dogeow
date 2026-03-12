@@ -11,6 +11,7 @@ import { useUITheme } from '@/components/themes/UIThemeProvider'
 import { useLayoutStore } from '@/stores/layoutStore'
 import { useTranslation } from '@/hooks/useTranslation'
 import type { Tile } from '@/app/types'
+import type { ProjectCoverMode } from '@/stores/projectCoverStore'
 
 const MagazineLayout = dynamic(
   () => import('@/components/app/MagazineLayout').then(mod => mod.MagazineLayout),
@@ -42,12 +43,12 @@ function useHydrated() {
 
 function TileList({
   tiles,
-  showCover,
+  projectCoverMode,
   getTileStatus,
   onTileClick,
 }: {
   tiles: Tile[]
-  showCover: boolean
+  projectCoverMode: ProjectCoverMode
   getTileStatus: (tile: Tile) => { needsLogin: boolean }
   onTileClick: (tile: Tile) => void
 }) {
@@ -60,7 +61,7 @@ function TileList({
             key={tile.name}
             tile={tile}
             index={index}
-            showCover={showCover}
+            projectCoverMode={projectCoverMode}
             needsLogin={tileStatus.needsLogin}
             onClick={() => onTileClick(tile)}
           />
@@ -71,7 +72,7 @@ function TileList({
 }
 
 export default function Home() {
-  const { tiles, showProjectCovers, handleTileClick, getTileStatus } = useTileManagement()
+  const { tiles, projectCoverMode, handleTileClick, getTileStatus } = useTileManagement()
   const theme = useUITheme()
   const { siteLayout } = useLayoutStore()
   const { t } = useTranslation()
@@ -89,10 +90,7 @@ export default function Home() {
       <div className="sr-only">
         <h1>{t('home.title', 'DogeOW - 个人工具和游戏平台')}</h1>
         <p>
-          {t(
-            'home.description',
-            '包含物品管理、文件管理、笔记、导航、实验室和各种小游戏的综合平台'
-          )}
+          {t('home.description', '一个以自用和测试为主的个人工具平台，欢迎来到我的数字后花园！')}
         </p>
       </div>
 
@@ -102,10 +100,7 @@ export default function Home() {
             {t('home.title', 'DogeOW - 个人工具和游戏平台')}
           </h2>
           <p className="text-muted-foreground text-sm sm:text-base">
-            {t(
-              'home.description',
-              '包含物品管理、文件管理、笔记、导航、实验室和各种小游戏的综合平台'
-            )}
+            {t('home.description', '一个以自用和测试为主的个人工具平台，欢迎来到我的数字后花园！')}
           </p>
         </header>
 
@@ -115,7 +110,7 @@ export default function Home() {
           ) : layoutType === 'magazine' ? (
             <MagazineLayout
               tiles={tiles}
-              showProjectCovers={showProjectCovers}
+              projectCoverMode={projectCoverMode}
               getTileStatus={getTileStatus}
               handleTileClick={handleTileClick}
             />
@@ -136,7 +131,7 @@ export default function Home() {
                     <ThemedTileCard
                       tile={tile}
                       index={index}
-                      showCover={showProjectCovers}
+                      projectCoverMode={projectCoverMode}
                       needsLogin={tileStatus.needsLogin}
                       onClick={() => handleTileClick(tile)}
                     />
@@ -148,7 +143,7 @@ export default function Home() {
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${HOME_TILES_GAP}`}>
               <TileList
                 tiles={tiles}
-                showCover={showProjectCovers}
+                projectCoverMode={projectCoverMode}
                 getTileStatus={getTileStatus}
                 onTileClick={handleTileClick}
               />
@@ -157,7 +152,7 @@ export default function Home() {
             <div className={HOME_LIST_GAP}>
               <TileList
                 tiles={tiles}
-                showCover={showProjectCovers}
+                projectCoverMode={projectCoverMode}
                 getTileStatus={getTileStatus}
                 onTileClick={handleTileClick}
               />

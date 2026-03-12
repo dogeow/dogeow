@@ -4,7 +4,8 @@ export const en = {
 
   // Home
   'home.title': 'DogeOW - Personal Tools & Games',
-  'home.description': 'Items, files, notes, navigation, lab and mini-games in one place',
+  'home.description':
+    'A personal playground for self-use and testing across items, files, notes, navigation, labs, and mini-games',
   'home.section_tiles': 'Apps',
 
   // Navigation

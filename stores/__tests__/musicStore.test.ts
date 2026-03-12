@@ -30,6 +30,7 @@ describe('musicStore', () => {
       volume: 0.5,
       availableTracks: [],
       isPlaying: false,
+      playMode: 'all',
     })
   })
 
@@ -197,6 +198,7 @@ describe('musicStore', () => {
       volume: 0.7,
       availableTracks: mockTracks,
       isPlaying: true,
+      playMode: 'shuffle' as const,
     }
 
     // Set state to simulate persistence
@@ -207,8 +209,35 @@ describe('musicStore', () => {
 
     expect(result.current.currentTrack).toBe('/musics/persisted-track.mp3')
     expect(result.current.volume).toBe(0.7)
-    expect(result.current.availableTracks).toEqual(mockTracks)
-    expect(result.current.isPlaying).toBe(true)
+    expect(result.current.playMode).toBe('shuffle')
+  })
+
+  it('should not persist transient playback state across refresh', async () => {
+    localStorage.setItem(
+      'music-storage',
+      JSON.stringify({
+        state: {
+          currentTrack: '/musics/persisted-track.mp3',
+          volume: 0.7,
+          availableTracks: mockTracks,
+          isPlaying: true,
+          playMode: 'one',
+        },
+        version: 0,
+      })
+    )
+
+    await act(async () => {
+      await useMusicStore.persist.rehydrate()
+    })
+
+    const state = useMusicStore.getState()
+
+    expect(state.currentTrack).toBe('/musics/persisted-track.mp3')
+    expect(state.volume).toBe(0.7)
+    expect(state.playMode).toBe('one')
+    expect(state.availableTracks).toEqual([])
+    expect(state.isPlaying).toBe(false)
   })
 
   it('should handle track updates while playing', () => {

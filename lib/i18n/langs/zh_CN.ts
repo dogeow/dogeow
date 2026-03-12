@@ -3,8 +3,8 @@ export const zh_CN = {
   'app.title': 'Doge先锋',
 
   // Home
-  'home.title': 'DogeOW - 个人工具和游戏平台',
-  'home.description': '包含物品管理、文件管理、笔记、导航、实验室和各种小游戏的综合平台',
+  'home.title': 'DogeOW',
+  'home.description': '一个以自用和测试为主的个人工具平台，欢迎来到我的数字后花园！',
   'home.section_tiles': '应用入口',
 
   // Navigation

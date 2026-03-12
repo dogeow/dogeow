@@ -4,7 +4,8 @@ export const ja = {
 
   // Home
   'home.title': 'DogeOW - 個人ツール・ゲーム',
-  'home.description': 'アイテム、ファイル、ノート、ナビ、ラボ、ミニゲームをひとつに',
+  'home.description':
+    '自用とテストを中心にした、アイテム、ファイル、ノート、ナビ、ラボ、ミニゲームの個人向けプレイグラウンド',
   'home.section_tiles': 'アプリ',
 
   // Navigation

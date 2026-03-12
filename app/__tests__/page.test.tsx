@@ -25,7 +25,7 @@ vi.mock('@/hooks/useTileManagement', () => ({
         needLogin: false,
       },
     ],
-    showProjectCovers: false,
+    projectCoverMode: 'color' as const,
     handleTileClick: vi.fn(),
     getTileStatus: vi.fn(() => ({ needsLogin: false })),
   }),
@@ -69,11 +69,9 @@ describe('Home Page', () => {
   it('should render the home page with correct structure', async () => {
     render(<Home />)
 
-    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent(
-      'DogeOW - 个人工具和游戏平台'
-    )
+    expect(screen.getByRole('heading', { level: 2 })).toHaveTextContent('DogeOW')
     const descriptions = screen.getAllByText(
-      '包含物品管理、文件管理、笔记、导航、实验室和各种小游戏的综合平台'
+      '一个以自用和测试为主的个人工具平台，欢迎来到我的数字后花园！'
     )
     expect(descriptions.length).toBeGreaterThanOrEqual(1)
 
@@ -107,7 +105,7 @@ describe('Home Page', () => {
 
     // Check for single h1 in sr-only (SEO)
     const h1 = screen.getByRole('heading', { level: 1 })
-    expect(h1).toHaveTextContent('DogeOW - 个人工具和游戏平台')
+    expect(h1).toHaveTextContent('DogeOW')
     expect(h1.closest('.sr-only')).toBeInTheDocument()
   })
 

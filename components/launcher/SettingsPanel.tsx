@@ -36,7 +36,7 @@ export function SettingsPanel({
     themeMode,
     restPeriod,
     setRestPeriod,
-    showProjectCovers,
+    projectCoverMode,
     setCurrentView,
     handleSetBackground,
     handleUploadBackground,
@@ -44,7 +44,7 @@ export function SettingsPanel({
     setThemeMode,
     handleAddCustomTheme,
     handleRemoveCustomTheme,
-    handleToggleProjectCovers,
+    handleProjectCoverModeChange,
     customCursorEnabled,
     setCustomCursorEnabled,
     themeTransitionEnabled,
@@ -69,14 +69,14 @@ export function SettingsPanel({
         themeMode={themeMode}
         restPeriod={restPeriod}
         setRestPeriod={setRestPeriod}
-        showProjectCovers={showProjectCovers}
+        projectCoverMode={projectCoverMode}
         handleSetBackground={handleSetBackground}
         handleUploadBackground={handleUploadBackground}
         setCurrentTheme={setCurrentTheme}
         setThemeMode={setThemeMode}
         handleAddCustomTheme={handleAddCustomTheme}
         handleRemoveCustomTheme={handleRemoveCustomTheme}
-        handleToggleProjectCovers={handleToggleProjectCovers}
+        handleProjectCoverModeChange={handleProjectCoverModeChange}
         customCursorEnabled={customCursorEnabled}
         onCustomCursorChange={setCustomCursorEnabled}
         themeTransitionEnabled={themeTransitionEnabled}

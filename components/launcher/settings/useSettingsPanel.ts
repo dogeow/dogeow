@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { useThemeStore } from '@/stores/themeStore'
-import { useProjectCoverStore } from '@/stores/projectCoverStore'
+import { useProjectCoverStore, type ProjectCoverMode } from '@/stores/projectCoverStore'
 import { hexToHSL } from '@/lib/helpers'
 import type { CustomTheme } from '@/app/types'
 import type { CustomBackground } from '../SettingsPanel'
@@ -39,7 +39,7 @@ export function useSettingsPanel({
     setThemeTransitionEnabled,
   } = useThemeStore()
 
-  const { showProjectCovers, setShowProjectCovers } = useProjectCoverStore()
+  const { projectCoverMode, setProjectCoverMode } = useProjectCoverStore()
 
   const [currentView, setCurrentView] = useState<SettingsView>('main')
 
@@ -80,9 +80,10 @@ export function useSettingsPanel({
   }
 
   // 处理功能封面图选项切换
-  const handleToggleProjectCovers = (checked: boolean) => {
-    setShowProjectCovers(checked)
-    toast.success(checked ? 'Project covers enabled' : 'Project covers disabled')
+  const handleProjectCoverModeChange = (mode: ProjectCoverMode) => {
+    setProjectCoverMode(mode)
+    const label = mode === 'image' ? '图片' : mode === 'color' ? '纯色' : '无'
+    toast.success(`封面显示：${label}`)
   }
 
   // 处理添加自定义主题
@@ -115,7 +116,7 @@ export function useSettingsPanel({
     themeMode,
     restPeriod,
     setRestPeriod,
-    showProjectCovers,
+    projectCoverMode,
 
     // 导航方法
     setCurrentView,
@@ -132,7 +133,7 @@ export function useSettingsPanel({
 
     // 系统设置方法
     handleToggleFollowSystem,
-    handleToggleProjectCovers,
+    handleProjectCoverModeChange,
 
     // 自定义光标
     customCursorEnabled,

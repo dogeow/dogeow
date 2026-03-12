@@ -1,13 +1,21 @@
 'use client'
 
 import React from 'react'
-import { Palette, Image, Grid, Languages, Sun, LayoutGrid, List, Bell } from 'lucide-react'
+import {
+  Palette,
+  Image as ImageIcon,
+  Languages,
+  Sun,
+  LayoutGrid,
+  List,
+  Bell,
+  BookOpen,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import { SettingsDivider } from './SettingsDivider'
 import { useLayoutStore } from '@/stores/layoutStore'
 import { useTranslation } from '@/hooks/useTranslation'
+import { PROJECT_COVER_MODE_OPTIONS, type ProjectCoverMode } from '@/stores/projectCoverStore'
 
 interface MainViewProps {
   onNavigateToBackground: () => void
@@ -15,8 +23,8 @@ interface MainViewProps {
   onNavigateToAppearance: () => void
   onNavigateToLanguage: () => void
   onNavigateToSonner: () => void
-  showProjectCovers: boolean
-  onToggleProjectCovers: (checked: boolean) => void
+  projectCoverMode: ProjectCoverMode
+  onProjectCoverModeChange: (mode: ProjectCoverMode) => void
 }
 
 export function MainView({
@@ -25,8 +33,8 @@ export function MainView({
   onNavigateToAppearance,
   onNavigateToLanguage,
   onNavigateToSonner,
-  showProjectCovers,
-  onToggleProjectCovers,
+  projectCoverMode,
+  onProjectCoverModeChange,
 }: MainViewProps) {
   const { t } = useTranslation()
   const { siteLayout, setSiteLayout } = useLayoutStore()
@@ -66,7 +74,7 @@ export function MainView({
         onClick={onNavigateToBackground}
         aria-label={t('settings.background', '背景')}
       >
-        <Image className="h-4 w-4" aria-hidden />
+        <ImageIcon className="h-4 w-4" aria-hidden />
       </Button>
 
       <Button
@@ -90,17 +98,23 @@ export function MainView({
       <SettingsDivider />
 
       {/* 功能封面图选项 */}
-      <div className="flex h-9 shrink-0 items-center gap-2 px-3">
-        <Grid className="h-4 w-4" role="img" aria-label="Grid Icon" />
-        <Image className="h-4 w-4" role="img" aria-label="Image Icon" />
-        <Label htmlFor="project-covers" className="cursor-pointer text-sm font-medium">
-          Cover
-        </Label>
-        <Switch
-          id="project-covers"
-          checked={showProjectCovers}
-          onCheckedChange={onToggleProjectCovers}
-        />
+      <div className="flex min-h-9 shrink-0 items-center gap-2 px-3">
+        <BookOpen className="h-4 w-4" aria-hidden />
+        <span className="text-sm font-medium">封面</span>
+        <div className="flex flex-1 gap-1">
+          {PROJECT_COVER_MODE_OPTIONS.map(option => (
+            <Button
+              key={option.value}
+              type="button"
+              variant={projectCoverMode === option.value ? 'default' : 'ghost'}
+              size="sm"
+              className="h-8 flex-1 px-2 text-xs"
+              onClick={() => onProjectCoverModeChange(option.value)}
+            >
+              {option.label}
+            </Button>
+          ))}
+        </div>
       </div>
     </>
   )

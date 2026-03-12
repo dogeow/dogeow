@@ -453,6 +453,27 @@ export function AudioController({
     return () => audio?.removeEventListener('ended', handleAudioEnded)
   }, [setCurrentTime, switchTrack])
 
+  // 用真实媒体事件回写播放状态，避免 UI 与实际音频状态脱节
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    const handlePlay = () => setIsPlaying(true)
+    const handlePause = () => {
+      if (!audio.ended) {
+        setIsPlaying(false)
+      }
+    }
+
+    audio.addEventListener('play', handlePlay)
+    audio.addEventListener('pause', handlePause)
+
+    return () => {
+      audio.removeEventListener('play', handlePlay)
+      audio.removeEventListener('pause', handlePause)
+    }
+  }, [setIsPlaying])
+
   // 静音只影响最终输出，不应暂停播放或中断可视化
   const toggleMute = useCallback(() => {
     const nextMuted = !isMuted

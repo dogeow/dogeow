@@ -14,7 +14,7 @@ interface TileStatus {
 
 export function useTileManagement() {
   const router = useRouter()
-  const { showProjectCovers } = useProjectCoverStore()
+  const { projectCoverMode } = useProjectCoverStore()
   const { requireLogin, isAuthenticated } = useLoginTrigger()
 
   // 缓存 tiles 数据
@@ -56,7 +56,7 @@ export function useTileManagement() {
 
   return {
     tiles,
-    showProjectCovers,
+    projectCoverMode,
     handleTileClick,
     getTileStatus,
     isAuthenticated,

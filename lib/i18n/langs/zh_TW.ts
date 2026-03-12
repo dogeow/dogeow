@@ -4,7 +4,7 @@ export const zh_TW = {
 
   // Home
   'home.title': 'DogeOW - 個人工具與遊戲平台',
-  'home.description': '包含物品管理、檔案管理、筆記、導航、實驗室與各種小遊戲的綜合平台',
+  'home.description': '一個以自用與測試為主的物品、檔案、筆記、導航、實驗室與小遊戲集合',
   'home.section_tiles': '應用入口',
 
   // Navigation
