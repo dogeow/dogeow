@@ -201,6 +201,9 @@ export const ja = {
   'page.room_info': 'ルーム情報',
   'page.notifications': '通知設定',
 
+  // Thing
+  'thing.no_items': '表示できるアイテムがありません。',
+
   // Chat UI
   'chat.go_back': '戻る',
   'chat.rooms': 'ルーム',

@@ -1,21 +1,18 @@
 'use client'
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { Label } from '@/components/ui/label'
 import { Combobox } from '@/components/ui/combobox'
 import { cn } from '@/lib/helpers'
 import { useItemStore } from '../stores/itemStore'
 import { toast } from 'sonner'
 
-// 分类选择类型
 export type CategorySelection =
   | {
       type: 'parent' | 'child'
-      id: number // 未分类时不使用CategorySelection，而是undefined
+      id: number
     }
   | undefined
 
-// 扩展的分类类型
 export interface CategoryWithChildren {
   id: number
   name: string
@@ -27,34 +24,50 @@ export interface CategoryWithChildren {
 interface CategoryTreeSelectProps {
   onSelect: (
     type: 'parent' | 'child',
-    id: number | null, // 支持null（未分类）
+    id: number | null,
     fullPath?: string,
     shouldClosePopup?: boolean
   ) => void
   selectedCategory?: CategorySelection
   className?: string
+  comboboxClassName?: string
+  placeholder?: string
+  helperText?: string | null
+  noneOptionLabel?: string
 }
+
+interface FlatCategoryOption {
+  value: string
+  label: string
+  type: 'parent' | 'child' | 'none'
+  id: number | null
+  parentId?: number | null
+  parentName?: string
+}
+
+const CATEGORY_PATH_SEPARATOR = /\s*[\/／]\s*/
 
 const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
   onSelect,
   selectedCategory,
   className,
+  comboboxClassName,
+  placeholder = '选择或创建分类',
+  helperText = '可直接搜索完整分类路径，例如：电子产品 / 手机',
+  noneOptionLabel = '未分类',
 }) => {
   const { categories, createCategory, fetchCategories } = useItemStore()
 
-  // 初始化分类数据
   useEffect(() => {
     if (categories.length === 0) {
       fetchCategories()
     }
   }, [categories.length, fetchCategories])
 
-  // 将扁平的分类数据转换为树形结构
   const categoryTree = useMemo(() => {
     const parentCategories: CategoryWithChildren[] = []
     const childCategories: CategoryWithChildren[] = []
 
-    // 分离父分类和子分类
     categories.forEach(category => {
       if (category.parent_id) {
         childCategories.push(category)
@@ -66,7 +79,6 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
       }
     })
 
-    // 将子分类添加到对应的父分类下
     childCategories.forEach(child => {
       const parent = parentCategories.find(p => p.id === child.parent_id)
       if (parent) {
@@ -77,199 +89,172 @@ const CategoryTreeSelect: React.FC<CategoryTreeSelectProps> = ({
     return parentCategories
   }, [categories])
 
-  // 从 selectedCategory 派生当前应该选择的值
-  const derivedParentId = useMemo(() => {
-    if (selectedCategory) {
-      if (selectedCategory.type === 'parent') {
-        return selectedCategory.id.toString()
-      } else if (selectedCategory.type === 'child') {
-        const child = categoryTree
-          .flatMap(p => p.children || [])
-          .find(c => c.id === selectedCategory.id)
-        return child?.parent_id?.toString() || 'none'
-      }
-    }
-    return 'none'
-  }, [selectedCategory, categoryTree])
+  const noneOption = useMemo<FlatCategoryOption>(
+    () => ({
+      value: 'none',
+      label: noneOptionLabel,
+      type: 'none',
+      id: null,
+    }),
+    [noneOptionLabel]
+  )
 
-  const derivedChildId = useMemo(() => {
-    if (selectedCategory && selectedCategory.type === 'child') {
-      return selectedCategory.id.toString()
-    }
-    return ''
-  }, [selectedCategory])
-
-  // 本地状态用于用户交互 - 使用派生值初始化
-  // 注意：初始值从 selectedCategory 派生，之后由用户交互控制
-  // 如果父组件需要更新选择，需要通过改变 key 来重新初始化组件
-  const [localParentId, setLocalParentId] = useState<string>(derivedParentId)
-  const [localChildId, setLocalChildId] = useState<string>(derivedChildId)
-
-  // 主分类选项
-  const parentOptions = useMemo(
+  const flatOptions = useMemo<FlatCategoryOption[]>(
     () => [
-      { value: 'none', label: '未分类' },
-      ...categoryTree.map(parent => ({
-        value: parent.id.toString(),
-        label: parent.name,
-      })),
+      noneOption,
+      ...categoryTree.flatMap(parent => {
+        const parentOption: FlatCategoryOption = {
+          value: `parent:${parent.id}`,
+          label: parent.name,
+          type: 'parent',
+          id: parent.id,
+        }
+
+        const childOptions =
+          parent.children?.map(child => ({
+            value: `child:${child.id}`,
+            label: `${parent.name} / ${child.name}`,
+            type: 'child' as const,
+            id: child.id,
+            parentId: parent.id,
+            parentName: parent.name,
+          })) ?? []
+
+        return [parentOption, ...childOptions]
+      }),
     ],
-    [categoryTree]
+    [categoryTree, noneOption]
   )
 
-  // 根据选择的主分类获取子分类选项
-  const childOptions = useMemo(() => {
-    if (!localParentId || localParentId === 'none') return []
+  const derivedValue = useMemo(() => {
+    if (!selectedCategory) {
+      return noneOption.value
+    }
 
-    const parent = categoryTree.find(p => p.id.toString() === localParentId)
-    return (
-      parent?.children?.map(child => ({
-        value: child.id.toString(),
-        label: child.name,
-      })) || []
-    )
-  }, [localParentId, categoryTree])
+    const candidateValue = `${selectedCategory.type}:${selectedCategory.id}`
+    return flatOptions.some(option => option.value === candidateValue)
+      ? candidateValue
+      : noneOption.value
+  }, [flatOptions, noneOption.value, selectedCategory])
 
-  // 处理主分类选择
-  const handleParentSelect = useCallback(
-    (parentId: string) => {
-      setLocalParentId(parentId)
-      setLocalChildId('')
+  const [localValue, setLocalValue] = useState(derivedValue)
 
-      if (parentId === 'none') {
-        onSelect('parent', null, '未分类', true)
-      } else if (parentId) {
-        const parent = categoryTree.find(p => p.id.toString() === parentId)
-        if (parent) {
-          onSelect('parent', parent.id, parent.name, false)
-        }
-      }
-    },
-    [categoryTree, onSelect]
-  )
+  useEffect(() => {
+    setLocalValue(derivedValue)
+  }, [derivedValue])
 
-  // 处理子分类选择
-  const handleChildSelect = useCallback(
-    (childId: string) => {
-      setLocalChildId(childId)
+  const handleSelect = useCallback(
+    (value: string) => {
+      setLocalValue(value)
 
-      if (childId) {
-        const parent = categoryTree.find(p => p.id.toString() === localParentId)
-        const child = parent?.children?.find(c => c.id.toString() === childId)
-        if (child && parent) {
-          onSelect('child', child.id, `${parent.name} / ${child.name}`, true)
-        }
-      }
-    },
-    [categoryTree, localParentId, onSelect]
-  )
-
-  // 处理创建主分类
-  const handleCreateParent = useCallback(
-    async (categoryName: string) => {
-      try {
-        const newCategory = await createCategory({
-          name: categoryName,
-          parent_id: null,
-        })
-
-        toast.success(`已创建主分类 "${categoryName}"`)
-        setLocalParentId(newCategory.id.toString())
-        onSelect('parent', newCategory.id, newCategory.name, false) // 创建主分类后不关闭弹窗
-      } catch (error) {
-        console.error('创建主分类失败:', error)
-        toast.error('创建主分类失败：' + (error instanceof Error ? error.message : '未知错误'))
-      }
-    },
-    [createCategory, onSelect]
-  )
-
-  // 处理创建子分类
-  const handleCreateChild = useCallback(
-    async (categoryName: string) => {
-      if (!localParentId || localParentId === 'none') {
-        toast.error('请先选择主分类')
+      const option = flatOptions.find(item => item.value === value) ?? noneOption
+      if (option.type === 'none') {
+        onSelect('parent', null, noneOption.label, true)
         return
       }
 
-      try {
-        const newCategory = await createCategory({
-          name: categoryName,
-          parent_id: Number(localParentId),
-        })
-
-        const parent = categoryTree.find(p => p.id.toString() === localParentId)
-        toast.success(`已创建子分类 "${categoryName}"`)
-        setLocalChildId(newCategory.id.toString())
-
-        if (parent) {
-          onSelect('child', newCategory.id, `${parent.name} / ${newCategory.name}`, true) // 创建子分类后关闭弹窗
-        }
-      } catch (error) {
-        console.error('创建子分类失败:', error)
-        toast.error('创建子分类失败：' + (error instanceof Error ? error.message : '未知错误'))
-      }
+      onSelect(option.type, option.id, option.label, true)
     },
-    [createCategory, localParentId, categoryTree, onSelect]
+    [flatOptions, noneOption, onSelect]
   )
 
-  // 根据当前选择更新下拉框状态（在微任务中执行，避免在 effect 中同步 setState 导致级联渲染）
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (selectedCategory) {
-        if (selectedCategory.type === 'parent') {
-          setLocalParentId(selectedCategory.id.toString())
-          setLocalChildId('')
-        } else if (selectedCategory.type === 'child') {
-          const child = categoryTree
-            .flatMap(p => p.children || [])
-            .find(c => c.id === selectedCategory.id)
-          if (child?.parent_id) {
-            setLocalParentId(child.parent_id.toString())
-            setLocalChildId(selectedCategory.id.toString())
+  const handleCreateCategory = useCallback(
+    async (inputName: string) => {
+      const normalizedInput = inputName.trim()
+      if (!normalizedInput) {
+        return
+      }
+
+      const parts = normalizedInput
+        .split(CATEGORY_PATH_SEPARATOR)
+        .map(part => part.trim())
+        .filter(Boolean)
+
+      const currentOption = flatOptions.find(option => option.value === localValue)
+
+      const createParentCategory = async (name: string) => {
+        const newParent = await createCategory({
+          name,
+          parent_id: null,
+        })
+
+        toast.success(`已创建主分类 "${newParent.name}"`)
+        const nextValue = `parent:${newParent.id}`
+        setLocalValue(nextValue)
+        onSelect('parent', newParent.id, newParent.name, true)
+      }
+
+      const createChildCategory = async (parentName: string, childName: string) => {
+        let parent =
+          categoryTree.find(
+            category => category.parent_id == null && category.name.trim() === parentName.trim()
+          ) ?? null
+
+        if (!parent) {
+          const newParent = await createCategory({
+            name: parentName,
+            parent_id: null,
+          })
+          parent = {
+            ...newParent,
+            children: [],
           }
         }
-      } else {
-        setLocalParentId('none')
-        setLocalChildId('')
+
+        const newChild = await createCategory({
+          name: childName,
+          parent_id: parent.id,
+        })
+
+        toast.success(`已创建分类 "${parent.name} / ${newChild.name}"`)
+        const nextValue = `child:${newChild.id}`
+        setLocalValue(nextValue)
+        onSelect('child', newChild.id, `${parent.name} / ${newChild.name}`, true)
       }
-    }, 0)
-    return () => clearTimeout(timer)
-  }, [selectedCategory, categoryTree])
+
+      try {
+        if (parts.length >= 2) {
+          const [parentName, ...childNameParts] = parts
+          await createChildCategory(parentName, childNameParts.join(' / '))
+          return
+        }
+
+        if (currentOption?.type === 'parent' && currentOption.id !== null) {
+          const newChild = await createCategory({
+            name: normalizedInput,
+            parent_id: currentOption.id,
+          })
+
+          toast.success(`已创建分类 "${currentOption.label} / ${newChild.name}"`)
+          const nextValue = `child:${newChild.id}`
+          setLocalValue(nextValue)
+          onSelect('child', newChild.id, `${currentOption.label} / ${newChild.name}`, true)
+          return
+        }
+
+        await createParentCategory(normalizedInput)
+      } catch (error) {
+        console.error('创建分类失败:', error)
+        toast.error('创建分类失败：' + (error instanceof Error ? error.message : '未知错误'))
+      }
+    },
+    [categoryTree, createCategory, flatOptions, localValue, onSelect]
+  )
 
   return (
-    <div className={cn('space-y-3', className)}>
-      {/* 主分类选择 */}
-      <div className="space-y-2">
-        <Label className="text-muted-foreground text-xs font-normal">主分类</Label>
-        <Combobox
-          options={parentOptions}
-          value={localParentId}
-          onChange={handleParentSelect}
-          onCreateOption={handleCreateParent}
-          placeholder="选择或创建主分类"
-          emptyText="没有找到主分类"
-          createText="创建主分类"
-          searchText="搜索主分类..."
-        />
-      </div>
-
-      {/* 子分类选择 */}
-      {localParentId && localParentId !== 'none' && (
-        <div className="space-y-2">
-          <Label className="text-muted-foreground text-xs font-normal">子分类（可选）</Label>
-          <Combobox
-            options={childOptions}
-            value={localChildId}
-            onChange={handleChildSelect}
-            onCreateOption={handleCreateChild}
-            placeholder="选择或创建子分类"
-            emptyText="没有找到子分类"
-            createText="创建子分类"
-            searchText="搜索子分类..."
-          />
-        </div>
-      )}
+    <div className={cn('space-y-2', className)}>
+      <Combobox
+        options={flatOptions}
+        value={localValue}
+        onChange={handleSelect}
+        onCreateOption={handleCreateCategory}
+        placeholder={placeholder}
+        emptyText="没有找到分类"
+        createText="创建分类"
+        searchText="搜索"
+        className={comboboxClassName}
+      />
+      {helperText ? <p className="text-muted-foreground text-xs">{helperText}</p> : null}
     </div>
   )
 }

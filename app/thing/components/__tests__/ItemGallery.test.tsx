@@ -4,6 +4,12 @@ import userEvent from '@testing-library/user-event'
 import ItemGallery from '../ItemGallery'
 import { Item } from '@/app/thing/types'
 
+vi.mock('@/hooks/useTranslation', () => ({
+  useTranslation: () => ({
+    t: (_key: string, fallback?: string) => fallback || '暂无可显示的物品。',
+  }),
+}))
+
 // Mock child components
 vi.mock('../ImageSizeControl', () => ({
   ImageSizeControl: ({ onSizeChange, maxSize }: any) => (
@@ -50,7 +56,7 @@ describe('ItemGallery', () => {
     it('should render empty state when no items', () => {
       render(<ItemGallery items={[]} />)
 
-      expect(screen.getByText('No items to display.')).toBeInTheDocument()
+      expect(screen.getByText('暂无可显示的物品。')).toBeInTheDocument()
     })
   })
 

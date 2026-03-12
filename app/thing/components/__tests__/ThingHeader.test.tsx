@@ -10,8 +10,15 @@ vi.mock('../ItemFilters', () => ({
 }))
 
 vi.mock('../CategoryTreeSelect', () => ({
-  default: ({ onSelect }: any) => (
+  default: ({ onSelect, selectedCategory, placeholder }: any) => (
     <div data-testid="category-tree-select">
+      <span>
+        {selectedCategory?.id === 1
+          ? '电子产品'
+          : selectedCategory?.id === 2
+            ? '手机'
+            : (placeholder ?? '全部分类')}
+      </span>
       <button onClick={() => onSelect('parent', 1, '电子产品', true)}>选择分类</button>
     </div>
   ),
@@ -63,7 +70,7 @@ describe('ThingHeader', () => {
         />
       )
 
-      expect(screen.getByText('所有分类')).toBeInTheDocument()
+      expect(screen.getByText('全部分类')).toBeInTheDocument()
     })
 
     it('应该渲染标签下拉菜单', () => {
@@ -147,7 +154,7 @@ describe('ThingHeader', () => {
       expect(screen.getByText('电子产品')).toBeInTheDocument()
     })
 
-    it('应该在分类 id 无效时回退显示所有分类', () => {
+    it('应该在分类 id 无效时回退显示全部分类', () => {
       const filtersWithInvalidCategory = { ...mockFilters, category_id: 99999 }
       render(
         <ThingHeader
@@ -164,7 +171,7 @@ describe('ThingHeader', () => {
         />
       )
 
-      expect(screen.getByText('所有分类')).toBeInTheDocument()
+      expect(screen.getByText('全部分类')).toBeInTheDocument()
     })
 
     it('应该在选中子分类时显示子分类名称', () => {
@@ -229,8 +236,7 @@ describe('ThingHeader', () => {
   })
 
   describe('分类筛选', () => {
-    it('应该支持打开分类下拉菜单', async () => {
-      const user = userEvent.setup()
+    it('应该直接渲染分类选择器，不再额外包一层菜单', () => {
       render(
         <ThingHeader
           categories={mockCategories}
@@ -246,12 +252,8 @@ describe('ThingHeader', () => {
         />
       )
 
-      const categoryButton = screen.getByText('所有分类')
-      await user.click(categoryButton)
-
-      await waitFor(() => {
-        expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
-      })
+      expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
+      expect(screen.getByText('全部分类')).toBeInTheDocument()
     })
 
     it('应该在选择分类时调用 onApplyFilters', async () => {
@@ -270,13 +272,6 @@ describe('ThingHeader', () => {
           onViewModeChange={mockOnViewModeChange}
         />
       )
-
-      const categoryButton = screen.getByText('所有分类')
-      await user.click(categoryButton)
-
-      await waitFor(() => {
-        expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
-      })
 
       const selectButton = screen.getByText('选择分类')
       await user.click(selectButton)
@@ -308,14 +303,7 @@ describe('ThingHeader', () => {
         />
       )
 
-      const categoryButton = screen.getByText('电子产品')
-      await user.click(categoryButton)
-
-      await waitFor(() => {
-        expect(screen.getByText('清空分类筛选')).toBeInTheDocument()
-      })
-
-      const clearButton = screen.getByText('清空分类筛选')
+      const clearButton = screen.getByRole('button', { name: '清空分类筛选' })
       await user.click(clearButton)
 
       expect(mockOnApplyFilters).toHaveBeenCalledWith({
@@ -323,66 +311,6 @@ describe('ThingHeader', () => {
         category_id: undefined,
         page: 1,
       })
-    })
-
-    it('应该在点击分类菜单外部时关闭分类菜单', async () => {
-      const user = userEvent.setup()
-      render(
-        <ThingHeader
-          categories={mockCategories}
-          tags={mockTags}
-          areas={mockAreas}
-          rooms={mockRooms}
-          spots={mockSpots}
-          filters={mockFilters}
-          hasActiveFilters={false}
-          viewMode="list"
-          onApplyFilters={mockOnApplyFilters}
-          onViewModeChange={mockOnViewModeChange}
-        />
-      )
-
-      await user.click(screen.getByText('所有分类'))
-      await waitFor(() => {
-        expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
-      })
-
-      fireEvent.mouseDown(document.body)
-      await waitFor(() => {
-        expect(screen.queryByTestId('category-tree-select')).not.toBeInTheDocument()
-      })
-    })
-
-    it('应该在点击 combobox 元素时保持分类菜单打开', async () => {
-      const user = userEvent.setup()
-      render(
-        <ThingHeader
-          categories={mockCategories}
-          tags={mockTags}
-          areas={mockAreas}
-          rooms={mockRooms}
-          spots={mockSpots}
-          filters={mockFilters}
-          hasActiveFilters={false}
-          viewMode="list"
-          onApplyFilters={mockOnApplyFilters}
-          onViewModeChange={mockOnViewModeChange}
-        />
-      )
-
-      await user.click(screen.getByText('所有分类'))
-      await waitFor(() => {
-        expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
-      })
-
-      const comboboxTarget = document.createElement('div')
-      comboboxTarget.setAttribute('role', 'combobox')
-      document.body.appendChild(comboboxTarget)
-      fireEvent.mouseDown(comboboxTarget)
-
-      expect(screen.getByTestId('category-tree-select')).toBeInTheDocument()
-
-      comboboxTarget.remove()
     })
   })
 

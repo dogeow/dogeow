@@ -60,7 +60,12 @@ export const BasicFiltersTabContent = memo<BasicFiltersTabContentProps>(
         {/* 分类筛选：父子级联，可清空 */}
         <div className="space-y-3">
           <Label className="text-base font-medium">分类</Label>
-          <CategoryTreeSelect onSelect={onCategorySelect} selectedCategory={selectedCategory} />
+          <CategoryTreeSelect
+            onSelect={onCategorySelect}
+            selectedCategory={selectedCategory}
+            placeholder="全部分类"
+            noneOptionLabel="全部分类"
+          />
           <Button
             type="button"
             variant="ghost"

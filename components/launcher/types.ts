@@ -33,6 +33,7 @@ export interface MusicPlayerProps {
   handleProgressChange: (e: React.ChangeEvent<HTMLInputElement>) => void
   getCurrentTrackName: () => string | undefined
   currentLyric?: string
+  hasLyrics?: boolean
   lyrics?: LyricLine[]
   activeLyricIndex?: number
   lyricsStatus?: LyricsState

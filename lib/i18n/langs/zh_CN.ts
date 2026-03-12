@@ -197,6 +197,9 @@ export const zh_CN = {
   'page.room_info': '房间信息',
   'page.notifications': '通知设置',
 
+  // Thing
+  'thing.no_items': '暂无可显示的物品。',
+
   // Chat UI
   'chat.go_back': '返回',
   'chat.rooms': '房间',

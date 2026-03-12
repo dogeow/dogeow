@@ -63,13 +63,11 @@ export function useItemEdit() {
         .map(img => img.id!)
         .filter((id): id is number => id !== undefined),
       image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
-      tags: selectedTags
-        .map(id => tags.find(tag => tag.id.toString() === id))
-        .filter((tag): tag is Tag => tag !== undefined),
+      tags: selectedTags.map(id => Number(id)).filter(id => Number.isFinite(id)),
     }
 
     await updateItem(Number(params.id), updateData)
-  }, [formData, uploadedImages, selectedTags, tags, updateItem, params.id])
+  }, [formData, uploadedImages, selectedTags, updateItem, params.id])
 
   const { autoSaving, lastSaved, triggerAutoSave, setInitialData } = useAutoSave<AutoSaveData>({
     onSave: handleAutoSave,

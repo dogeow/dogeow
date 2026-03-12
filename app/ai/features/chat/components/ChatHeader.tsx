@@ -2,7 +2,8 @@ import React from 'react'
 import { Bot, Trash2, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DialogTitle } from '@/components/ui/dialog'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs } from '@/components/ui/tabs'
+import { PillTabsList, PillTabsTrigger } from '@/components/ui/pill-tabs'
 import Link from 'next/link'
 
 interface ChatHeaderProps {
@@ -57,16 +58,16 @@ function DialogLikeHeader({
             onValueChange={v => onChatModeChange!(v as 'ai' | 'knowledge')}
             className="w-auto"
           >
-            <TabsList className="bg-muted/50 h-11">
-              <TabsTrigger value="ai" className="gap-2 px-5 text-base">
+            <PillTabsList>
+              <PillTabsTrigger value="ai">
                 <Bot className="h-5 w-5" />
                 通用 AI
-              </TabsTrigger>
-              <TabsTrigger value="knowledge" className="gap-2 px-5 text-base">
+              </PillTabsTrigger>
+              <PillTabsTrigger value="knowledge">
                 <BookOpen className="h-5 w-5" />
                 {subtitle ? `知识库 AI (${subtitle})` : '知识库 AI'}
-              </TabsTrigger>
-            </TabsList>
+              </PillTabsTrigger>
+            </PillTabsList>
           </Tabs>
         </div>
       )}

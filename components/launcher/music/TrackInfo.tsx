@@ -7,10 +7,11 @@ export const TrackInfo = memo(
     isPlaying,
     getCurrentTrackName,
     currentLyric,
+    hasLyrics,
     isLoadingTracks,
   }: Pick<
     MusicPlayerProps,
-    'isPlaying' | 'getCurrentTrackName' | 'currentLyric' | 'isLoadingTracks'
+    'isPlaying' | 'getCurrentTrackName' | 'currentLyric' | 'hasLyrics' | 'isLoadingTracks'
   >) => {
     const trackName = getCurrentTrackName() ?? '没有选择音乐'
     const isEmptyState =
@@ -21,8 +22,12 @@ export const TrackInfo = memo(
       normalizedTrackName && normalizedLyric && normalizedTrackName !== normalizedLyric
         ? normalizedLyric
         : ''
-    const canToggleText = isPlaying && !isEmptyState && Boolean(displayLyric)
-    const [viewState, setViewState] = useState({ trackName: '', showLyric: false })
+    const hasLyricView = Boolean(hasLyrics) && !isEmptyState
+    const canToggleText = isPlaying && hasLyricView && Boolean(displayLyric)
+    const viewToken = `${trackName}:${isPlaying ? 'playing' : 'paused'}:${hasLyricView ? 'lyrics' : 'plain'}`
+    const [viewOverride, setViewOverride] = useState<{ token: string; showLyric: boolean } | null>(
+      null
+    )
     const [textWidth, setTextWidth] = useState(0)
     const [containerWidth, setContainerWidth] = useState(0)
     const [scrollLeft, setScrollLeft] = useState(0)
@@ -33,13 +38,14 @@ export const TrackInfo = memo(
     const didDrag = useRef(false)
     const startX = useRef(0)
     const startScrollLeft = useRef(0)
-    const showLyric = viewState.trackName === trackName && viewState.showLyric && canToggleText
+    const showLyric =
+      viewOverride?.token === viewToken ? viewOverride.showLyric : isPlaying && hasLyricView
 
     const visibleText = isLoadingTracks
       ? '加载中...'
       : isEmptyState
         ? '暂无音乐'
-        : showLyric && canToggleText
+        : showLyric && displayLyric
           ? displayLyric
           : trackName
     const primaryText = visibleText
@@ -121,8 +127,8 @@ export const TrackInfo = memo(
       if (!canToggleText) return
       setScrollLeft(0)
       setScrollKey('')
-      setViewState({ trackName, showLyric: !showLyric })
-    }, [canToggleText, showLyric, trackName])
+      setViewOverride({ token: viewToken, showLyric: !showLyric })
+    }, [canToggleText, showLyric, viewToken])
 
     const handleKeyDown = useCallback(
       (event: React.KeyboardEvent<HTMLDivElement>) => {

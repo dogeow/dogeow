@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Item } from '@/app/thing/types'
 import { ImageSizeControl } from './ImageSizeControl'
 import { GalleryItem } from './GalleryItem'
+import { useTranslation } from '@/hooks/useTranslation'
 
 interface ItemGalleryProps {
   items: Item[]
@@ -11,6 +12,7 @@ interface ItemGalleryProps {
 }
 
 export default function ItemGallery({ items, onItemView }: ItemGalleryProps) {
+  const { t } = useTranslation()
   const [imageSize, setImageSize] = useState(120)
   const [galleryContainerWidth, setGalleryContainerWidth] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -59,7 +61,9 @@ export default function ItemGallery({ items, onItemView }: ItemGalleryProps) {
       />
 
       {items.length === 0 ? (
-        <div className="text-muted-foreground py-10 text-center">No items to display.</div>
+        <div className="text-muted-foreground py-10 text-center">
+          {t('thing.no_items', '暂无可显示的物品。')}
+        </div>
       ) : (
         <div
           className="grid gap-2"

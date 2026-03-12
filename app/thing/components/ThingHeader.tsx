@@ -63,7 +63,6 @@ function ThingHeader({
   const [selectedTags, setSelectedTags] = useState<string[]>(derivedTags)
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [tagMenuOpen, setTagMenuOpen] = useState(false)
-  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false)
 
   // 当派生值变化时更新状态
   useEffect(() => {
@@ -82,34 +81,15 @@ function ThingHeader({
       if (tagMenuOpen && !target.closest('.tag-dropdown-container')) {
         setTagMenuOpen(false)
       }
-
-      // 重新启用分类弹窗的自动关闭逻辑
-      if (categoryMenuOpen && !target.closest('.category-dropdown-container')) {
-        // 检查是否点击的是 Combobox 相关元素
-        const isComboboxClick =
-          target.closest('[role="combobox"]') ||
-          target.closest('[data-radix-popover-content]') ||
-          target.closest('.combobox-option') ||
-          target.closest('[data-radix-popper-content-wrapper]')
-
-        if (!isComboboxClick) {
-          setCategoryMenuOpen(false)
-        }
-      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [tagMenuOpen, categoryMenuOpen])
+  }, [tagMenuOpen])
 
   // 分类筛选变化时，更新 filters 并立即应用
   const handleCategorySelect = useCallback(
-    (
-      type: 'parent' | 'child',
-      id: number | null,
-      fullPath?: string,
-      shouldClosePopup?: boolean
-    ) => {
+    (type: 'parent' | 'child', id: number | null) => {
       if (id === null) {
         // 未分类
         setSelectedCategory(undefined)
@@ -125,11 +105,6 @@ function ThingHeader({
           category_id: id,
           page: 1,
         })
-      }
-
-      // 只有当 shouldClosePopup 为 true 时才关闭弹窗
-      if (shouldClosePopup) {
-        setCategoryMenuOpen(false)
       }
     },
     [filters, onApplyFilters]
@@ -164,39 +139,29 @@ function ThingHeader({
 
   // 渲染分类下拉菜单
   const renderCategoryDropdown = () => (
-    <div className="category-dropdown-container relative">
-      <Button
-        variant="outline"
-        onClick={() => setCategoryMenuOpen(!categoryMenuOpen)}
-        className="border-primary/20 flex w-[100px] items-center justify-between rounded-lg bg-white/90 shadow"
-      >
-        {selectedCategory
-          ? (() => {
-              const id = selectedCategory.id
-              const category = categories.find(c => c.id === id)
-              return category ? category.name : '所有分类'
-            })()
-          : '所有分类'}
-        <ChevronDownIcon className="h-4 w-4" />
-      </Button>
-      {categoryMenuOpen && (
-        <div
-          className="border-border bg-popover absolute top-full left-0 z-[100] mt-1 w-72 rounded-md border p-4 shadow-lg"
-          onClick={e => e.stopPropagation()}
+    <div className="flex items-center gap-1">
+      <CategoryTreeSelect
+        onSelect={handleCategorySelect}
+        selectedCategory={selectedCategory}
+        className="w-[120px]"
+        comboboxClassName="border-primary/20 bg-white/90 shadow"
+        placeholder="全部分类"
+        helperText={null}
+        noneOptionLabel="全部分类"
+      />
+      {selectedCategory ? (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="text-muted-foreground h-8 w-8 shrink-0"
+          onClick={() => handleCategorySelect('parent', null)}
+          aria-label="清空分类筛选"
+          title="清空分类筛选"
         >
-          <CategoryTreeSelect onSelect={handleCategorySelect} selectedCategory={selectedCategory} />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-muted-foreground mt-2 text-xs"
-            onClick={() => handleCategorySelect('parent', null)}
-            disabled={!selectedCategory}
-          >
-            清空分类筛选
-          </Button>
-        </div>
-      )}
+          <X className="h-4 w-4" />
+        </Button>
+      ) : null}
     </div>
   )
 

@@ -33,6 +33,7 @@ describe('ItemFormLayout', () => {
 
       expect(screen.getByText('基本信息')).toBeInTheDocument()
       expect(screen.getByText('详细信息')).toBeInTheDocument()
+      expect(screen.getByRole('tablist')).toHaveClass('gap-1')
     })
 
     it('应该默认显示基本信息内容', () => {

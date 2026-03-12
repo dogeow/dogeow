@@ -194,6 +194,9 @@ export const zh_TW = {
   'page.room_info': '房間資訊',
   'page.notifications': '通知設定',
 
+  // Thing
+  'thing.no_items': '暫無可顯示的物品。',
+
   // Chat UI
   'chat.go_back': '返回',
   'chat.rooms': '房間',

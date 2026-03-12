@@ -218,6 +218,7 @@ export function AppLauncher({
           handleProgressChange,
           getCurrentTrackName,
           currentLyric,
+          hasLyrics: lyrics.length > 0,
           lyrics,
           activeLyricIndex,
           lyricsStatus,

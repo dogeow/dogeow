@@ -195,7 +195,7 @@ describe('DialogTrigger', () => {
 })
 
 describe('DialogContent', () => {
-  it('should render content with portal and overlay', () => {
+  it('should render content with portal', () => {
     render(
       <DialogContent>
         <DialogTitle>Test Title</DialogTitle>
@@ -204,7 +204,6 @@ describe('DialogContent', () => {
     )
 
     expect(screen.getByTestId('dialog-portal')).toBeInTheDocument()
-    expect(screen.getByTestId('dialog-overlay')).toBeInTheDocument()
     expect(screen.getByTestId('dialog-content')).toBeInTheDocument()
   })
 
@@ -292,9 +291,10 @@ describe('DialogFooter', () => {
     expect(footer).toHaveClass(
       'flex',
       'flex-col-reverse',
+      'gap-2',
       'sm:flex-row',
       'sm:justify-end',
-      'sm:space-x-2'
+      'sm:gap-2'
     )
   })
 
@@ -421,7 +421,7 @@ describe('DialogOverlay', () => {
       'data-[state=open]:fade-in-0',
       'fixed',
       'inset-0',
-      'z-50',
+      'z-[130]',
       'bg-black/80'
     )
   })

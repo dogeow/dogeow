@@ -18,8 +18,8 @@ interface ItemCardProps {
 function ItemCard({ item, onView, isLoading = false }: ItemCardProps) {
   if (isLoading) {
     return (
-      <Card className="flex flex-row items-start gap-2 p-1">
-        <Skeleton className="h-12 w-12 flex-shrink-0 rounded" />
+      <Card className="flex flex-row items-start gap-2 p-0">
+        <Skeleton className="h-16 w-16 flex-shrink-0 rounded" />
         <div className="flex min-w-0 flex-grow flex-col space-y-2">
           <div className="flex items-center justify-between gap-2">
             <Skeleton className="h-4 w-24" />
@@ -37,23 +37,23 @@ function ItemCard({ item, onView, isLoading = false }: ItemCardProps) {
 
   return (
     <Card
-      className="group hover:bg-accent/30 border-border/50 hover:border-border flex cursor-pointer flex-row items-start gap-2 p-1 transition-all duration-200 hover:shadow-md"
+      className="group hover:bg-accent/30 border-border/50 hover:border-border flex cursor-pointer flex-row items-start gap-2 p-0 transition-all duration-200 hover:shadow-md"
       onClick={onView}
     >
       {/* 缩略图，优化尺寸和圆角 */}
-      <div className="bg-muted/50 h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg border transition-shadow group-hover:shadow-sm">
+      <div className="bg-muted/50 h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border transition-shadow group-hover:shadow-sm">
         <ItemCardImage
           initialPrimaryImage={item.primary_image}
           images={item.images}
           itemName={item.name}
           status={item.status}
           isPublic={item.is_public}
-          size={48}
+          size={64}
         />
       </div>
 
       {/* 右侧信息区，优化布局和响应式 */}
-      <div className="flex min-w-0 flex-grow flex-col space-y-1">
+      <div className="flex min-w-0 flex-grow flex-col space-y-1 h-full justify-between p-2">
         {/* 标题和分类行 */}
         <div className="flex items-center justify-between gap-2">
           <h3 className="group-hover:text-foreground max-w-[120px] truncate text-sm font-medium transition-colors sm:max-w-[200px] sm:text-base md:max-w-[300px]">

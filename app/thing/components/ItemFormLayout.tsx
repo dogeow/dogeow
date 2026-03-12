@@ -1,7 +1,8 @@
 'use client'
 
 import { ReactNode } from 'react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
+import { PillTabsList, PillTabsTrigger } from '@/components/ui/pill-tabs'
 import { PageContainer } from '@/components/layout'
 import AutoSaveStatus from './AutoSaveStatus'
 
@@ -40,10 +41,10 @@ export default function ItemFormLayout({
 
       <div className="pb-20">
         <Tabs defaultValue="basic" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="basic">基本信息</TabsTrigger>
-            <TabsTrigger value="details">详细信息</TabsTrigger>
-          </TabsList>
+          <PillTabsList className="mx-auto mb-2 grid w-full max-w-md grid-cols-2">
+            <PillTabsTrigger value="basic">基本信息</PillTabsTrigger>
+            <PillTabsTrigger value="details">详细信息</PillTabsTrigger>
+          </PillTabsList>
 
           <TabsContent value="basic" className="space-y-6">
             {children.basicInfo}

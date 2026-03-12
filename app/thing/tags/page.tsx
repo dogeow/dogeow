@@ -161,7 +161,6 @@ export default function ThingTags() {
         {tags?.length === 0 && (
           <div className="py-12 text-center">
             <div className="mb-4 text-gray-500">暂无标签</div>
-            <p className="text-sm text-gray-400">您还没有创建任何标签，请先添加一些标签</p>
           </div>
         )}
 

@@ -12,7 +12,6 @@ export const TagsDisplay = memo<TagsDisplayProps>(({ tags }) => {
 
   return (
     <div className="mt-3 flex flex-wrap gap-2">
-      <h3 className="text-muted-foreground mt-1 text-xs font-medium">标签:</h3>
       {tags.map((tag: Tag) => (
         <Badge
           key={tag.id}

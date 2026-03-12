@@ -14,6 +14,7 @@ interface ImageUploaderProps {
   existingImages?: UploadedImage[]
   maxImages?: number
   maxSize?: number // 单位：MB
+  compactAddButton?: boolean
 }
 
 const ImageUploader: React.FC<ImageUploaderProps> = ({
@@ -21,6 +22,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   existingImages = [],
   maxImages = 10,
   maxSize = 20,
+  compactAddButton = false,
 }) => {
   const [uploading, setUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -103,49 +105,50 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-        {images.map((image, index) => (
-          <div key={image.id ?? image.path} className="group relative aspect-square">
-            <Image
-              src={image.thumbnail_url || image.url}
-              alt={`上传图片 ${index + 1}`}
-              fill
-              className={`rounded-md border object-cover ${image.is_primary ? 'ring-primary ring-2' : ''}`}
-              onClick={() => setPrimaryImage(index)}
-              style={{ objectFit: 'cover' }}
-              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-            />
-            {image.is_primary && (
-              <div className="bg-primary absolute top-2 left-2 rounded-md px-2 py-1 text-xs text-white">
-                主图
-              </div>
-            )}
-            <button
-              onClick={() => removeImage(index)}
-              className="absolute top-2 right-2 z-10 rounded-full bg-black/70 p-1 text-white opacity-100 transition-colors hover:bg-red-600 hover:text-white"
-              type="button"
-              aria-label="删除图片"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ))}
+    <div>
+      {images.length > 0 ? (
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+          {images.map((image, index) => (
+            <div key={image.id ?? image.path} className="group relative aspect-square">
+              <Image
+                src={image.thumbnail_url || image.url}
+                alt={`上传图片 ${index + 1}`}
+                fill
+                className={`rounded-md border object-cover ${image.is_primary ? 'ring-primary ring-2' : ''}`}
+                onClick={() => setPrimaryImage(index)}
+                style={{ objectFit: 'cover' }}
+                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+              />
+              {image.is_primary && (
+                <div className="bg-primary absolute top-2 left-2 rounded-md px-2 py-1 text-xs text-white">
+                  主图
+                </div>
+              )}
+              <button
+                onClick={() => removeImage(index)}
+                className="absolute top-2 right-2 z-10 rounded-full bg-black/70 p-1 text-white opacity-100 transition-colors hover:bg-red-600 hover:text-white"
+                type="button"
+                aria-label="删除图片"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
-        {images.length < maxImages && (
+      {images.length < maxImages ? (
+        compactAddButton ? (
           <Button
             type="button"
             variant="outline"
-            className="flex aspect-square h-full w-full flex-col items-center justify-center border-dashed"
+            className="inline-flex h-9 gap-2 border-dashed px-3"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
             {uploading ? (
-              <div className="flex flex-col items-center">
-                <svg
-                  className="text-muted-foreground mb-2 h-6 w-6 animate-spin"
-                  viewBox="0 0 24 24"
-                >
+              <>
+                <svg className="text-muted-foreground h-4 w-4 animate-spin" viewBox="0 0 24 24">
                   <circle
                     className="opacity-25"
                     cx="12"
@@ -161,16 +164,55 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({
                   ></path>
                 </svg>
                 <span className="text-xs">上传中...</span>
-              </div>
+              </>
             ) : (
               <>
-                <Upload className="text-muted-foreground mb-2 h-8 w-8" />
+                <Upload className="text-muted-foreground h-4 w-4" />
                 <span className="text-muted-foreground text-xs">上传图片</span>
               </>
             )}
           </Button>
-        )}
-      </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex aspect-square h-full w-full flex-col items-center justify-center border-dashed"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? (
+                <div className="flex flex-col items-center">
+                  <svg
+                    className="text-muted-foreground mb-2 h-6 w-6 animate-spin"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span className="text-xs">上传中...</span>
+                </div>
+              ) : (
+                <>
+                  <Upload className="text-muted-foreground mb-2 h-8 w-8" />
+                  <span className="text-muted-foreground text-xs">上传图片</span>
+                </>
+              )}
+            </Button>
+          </div>
+        )
+      ) : null}
 
       <input
         type="file"

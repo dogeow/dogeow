@@ -38,6 +38,7 @@ interface UnifiedBasicInfoFormProps {
   locationPath?: string
   selectedLocation?: LocationSelection
   onLocationSelect?: (type: LocationType, id: number) => void
+  embedded?: boolean
 }
 
 export default function UnifiedBasicInfoForm({
@@ -57,6 +58,7 @@ export default function UnifiedBasicInfoForm({
   locationPath,
   selectedLocation,
   onLocationSelect,
+  embedded = false,
 }: UnifiedBasicInfoFormProps) {
   const isCreateMode = !!formMethods
   const isEditMode = !!formData && !!setFormData
@@ -217,88 +219,93 @@ export default function UnifiedBasicInfoForm({
   const currentLocationPath = isCreateMode ? internalLocationPath : locationPath
   const currentSelectedLocation = isCreateMode ? internalSelectedLocation : selectedLocation
 
-  return (
-    <Card>
-      <CardContent className="space-y-6 pt-6">
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="name">名称</Label>
-            <div className="flex items-center gap-2">
-              <NameInput
-                isCreateMode={isCreateMode}
-                isEditMode={isEditMode}
-                formMethods={formMethods}
-                formData={formData}
-                setFormData={setFormData}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-10 px-3 text-sm font-medium"
-                onClick={handleQuantityClick}
-              >
-                X{(getCurrentValue('quantity') as number) || 1}
-              </Button>
-            </div>
-            {isCreateMode && formMethods?.formState.errors.name && (
-              <p className="text-sm text-red-500">{formMethods.formState.errors.name.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="category_id">分类</Label>
-            <CategoryTreeSelect
-              onSelect={handleCategorySelect}
-              selectedCategory={selectedCategory}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor="images">物品图片</Label>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      type="button"
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                      aria-label="查看上传说明"
-                    >
-                      <AlertCircle className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p className="text-xs">
-                      支持JPG、PNG、GIF格式，每张图片不超过20MB，最多上传10 张。点击图片可设为主图。
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <ImageUploader
-              onImagesChange={setUploadedImages}
-              existingImages={uploadedImages}
-              maxImages={10}
-            />
-          </div>
-
-          <TagsSection
-            tags={tags}
-            selectedTags={selectedTags}
-            onToggleTag={toggleTag}
-            onCreateTag={() => setCreateTagDialogOpen(true)}
-          />
-
-          <LocationSection
-            locationPath={currentLocationPath}
-            selectedLocation={currentSelectedLocation}
-            onLocationSelect={handleLocationSelect}
-            getCurrentValue={getCurrentValue}
+  const formFields = (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="name">名称</Label>
+        <div className="flex items-center gap-2">
+          <NameInput
             isCreateMode={isCreateMode}
+            isEditMode={isEditMode}
+            formMethods={formMethods}
+            formData={formData}
+            setFormData={setFormData}
           />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-10 px-3 text-sm font-medium"
+            onClick={handleQuantityClick}
+          >
+            X{(getCurrentValue('quantity') as number) || 1}
+          </Button>
         </div>
-      </CardContent>
+        {isCreateMode && formMethods?.formState.errors.name && (
+          <p className="text-sm text-red-500">{formMethods.formState.errors.name.message}</p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="category_id">分类</Label>
+        <CategoryTreeSelect onSelect={handleCategorySelect} selectedCategory={selectedCategory} />
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center gap-2">
+          <Label htmlFor="images">物品图片</Label>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label="查看上传说明"
+                >
+                  <AlertCircle className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p className="text-xs">
+                  支持JPG、PNG、GIF格式，每张图片不超过20MB，最多上传10 张。点击图片可设为主图。
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+        <ImageUploader
+          onImagesChange={setUploadedImages}
+          existingImages={uploadedImages}
+          maxImages={10}
+        />
+      </div>
+
+      <TagsSection
+        tags={tags}
+        selectedTags={selectedTags}
+        onToggleTag={toggleTag}
+        onCreateTag={() => setCreateTagDialogOpen(true)}
+      />
+
+      <LocationSection
+        locationPath={currentLocationPath}
+        selectedLocation={currentSelectedLocation}
+        onLocationSelect={handleLocationSelect}
+        getCurrentValue={getCurrentValue}
+        isCreateMode={isCreateMode}
+      />
+    </div>
+  )
+
+  return (
+    <>
+      {embedded ? (
+        formFields
+      ) : (
+        <Card>
+          <CardContent className="space-y-6 pt-6">{formFields}</CardContent>
+        </Card>
+      )}
 
       <QuantityDialog
         open={quantityDialogOpen}
@@ -307,6 +314,6 @@ export default function UnifiedBasicInfoForm({
         onQuantityChange={setTempQuantity}
         onConfirm={handleQuantityConfirm}
       />
-    </Card>
+    </>
   )
 }

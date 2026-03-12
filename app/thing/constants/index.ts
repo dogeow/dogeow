@@ -28,7 +28,7 @@ export const ERROR_MESSAGES = {
 
 // 表单字段的占位符文本
 export const FORM_PLACEHOLDERS = {
-  name: '请输入物品名称',
+  name: '请输入',
   description: '请输入物品描述（可选）',
   purchase_price: '请输入购买价格',
   purchase_date: '选择购买日期',

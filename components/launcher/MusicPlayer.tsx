@@ -27,6 +27,7 @@ export const MusicPlayer = memo(
     handleProgressChange,
     getCurrentTrackName,
     currentLyric,
+    hasLyrics,
     formatTime,
     togglePlay,
     toggleDisplayMode,
@@ -74,6 +75,7 @@ export const MusicPlayer = memo(
               isPlaying={isPlaying}
               getCurrentTrackName={getCurrentTrackName}
               currentLyric={currentLyric}
+              hasLyrics={hasLyrics}
               isLoadingTracks={isLoadingState}
             />
           </div>

@@ -2,14 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Input } from '@/components/ui/input'
 import Modal from '@/components/ui/modal'
-import { Edit, Trash2, Lock, Unlock, X } from 'lucide-react'
-import { format } from 'date-fns'
-import Image from 'next/image'
-import ImagePlaceholder from '@/components/ui/icons/image-placeholder'
+import { Edit, Trash2, Lock, LockOpen, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { useItemStore } from '@/app/thing/stores/itemStore'
 import { useItem } from '../services/api'
@@ -17,25 +14,19 @@ import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDial
 import { TagsDisplay } from './item-detail/components/TagsDisplay'
 import { ImageGallery } from './item-detail/components/ImageGallery'
 import { InfoCard } from './item-detail/components/InfoCard'
-import { StatusBadges } from './item-detail/components/StatusBadges'
 import { LocationInfo } from './item-detail/components/LocationInfo'
+import { StatusIndicator } from './item-detail/components/StatusIndicator'
 import { TimeInfo } from './item-detail/components/TimeInfo'
-import { formatDate, formatDateTime } from './item-detail/utils/dateUtils'
-import {
-  Item,
-  Tag,
-  ItemFormData,
-  UploadedImage,
-  LocationSelection,
-  Room,
-  Spot,
-} from '@/app/thing/types'
-import { ItemRelationsDisplay } from './ItemRelationsDisplay'
+import { formatDate } from './item-detail/utils/dateUtils'
+import ImageUploader from './ImageUploader'
+import CategoryTreeSelect from './CategoryTreeSelect'
+import { TagsSection } from './forms/components/TagsSection'
+import { LocationSection } from './forms/components/LocationSection'
+import { QuantityDialog } from './forms/components/QuantityDialog'
+import { Tag, ItemFormData, UploadedImage, LocationSelection, Room, Spot } from '@/app/thing/types'
 import { useAuth } from '@/hooks/useAuth'
 import LoadingState from './item-detail/LoadingState'
 import AutoSaveStatus from './item-detail/AutoSaveStatus'
-import UnifiedBasicInfoForm from './item-detail/forms/UnifiedBasicInfoForm'
-import UnifiedDetailInfoForm from './item-detail/forms/UnifiedDetailInfoForm'
 import CreateTagDialog from './item-detail/CreateTagDialog'
 import {
   convertImagesToUploadedFormat,
@@ -68,7 +59,8 @@ export function ItemDetailModal({
   const [internalMode, setInternalMode] = useState<'view' | 'edit'>('view')
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [activeImageIndex, setActiveImageIndex] = useState(0)
-  const [activeTab, setActiveTab] = useState<'basic' | 'details'>('basic')
+  const [quantityDialogOpen, setQuantityDialogOpen] = useState(false)
+  const [tempQuantity, setTempQuantity] = useState(1)
 
   const mode = externalMode ?? internalMode
   const setMode = onModeChange ?? setInternalMode
@@ -81,6 +73,11 @@ export function ItemDetailModal({
   const canEdit = useMemo(() => {
     return user && item && item.user?.id === user.id
   }, [user, item])
+  const trimmedDescription = item?.description?.trim()
+  const hasDescription =
+    Boolean(trimmedDescription) &&
+    trimmedDescription !== '无描述' &&
+    trimmedDescription !== '暂无描述'
 
   // 编辑模式状态
   const [editLoading, setEditLoading] = useState(false)
@@ -92,7 +89,7 @@ export function ItemDetailModal({
   const [createTagDialogOpen, setCreateTagDialogOpen] = useState(false)
   const editInitializedRef = useRef<number | null>(null) // 记录已初始化的itemId
 
-  const { categories, tags, fetchCategories, fetchTags, getItem, updateItem } = useItemStore()
+  const { categories, tags, fetchCategories, fetchTags, updateItem } = useItemStore()
   const { mutate: refreshAreas } = useAreas()
   const { data: rooms = [], mutate: refreshRooms } = useRooms<Room[]>()
   const { data: spots = [], mutate: refreshSpots } = useSpots<Spot[]>()
@@ -136,12 +133,12 @@ export function ItemDetailModal({
         .map(img => img.id!)
         .filter((id): id is number => id !== undefined),
       image_paths: uploadedImages.filter(img => !img.id).map(img => img.path),
-      tags: selectedTags
-        .map(id => tags.find(tag => tag.id.toString() === id))
-        .filter((tag): tag is Tag => tag !== undefined),
+      tags: selectedTags.map(id => Number(id)).filter(id => Number.isFinite(id)),
     }
-    await updateItem(itemId, updateData)
-  }, [formData, uploadedImages, selectedTags, tags, updateItem, itemId, item, mode, open])
+    const updatedItem = await updateItem(itemId, updateData)
+    const { mutate } = await import('swr')
+    await mutate(`/things/items/${itemId}`, updatedItem, false)
+  }, [formData, uploadedImages, selectedTags, updateItem, itemId, item, mode, open])
 
   const { autoSaving, lastSaved, triggerAutoSave, setInitialData, cancelAutoSave } =
     useAutoSave<AutoSaveData>({
@@ -395,16 +392,10 @@ export function ItemDetailModal({
       itemId &&
       editInitializedRef.current !== itemId
     ) {
-      // 重置Tab到基本信息
-      setActiveTab('basic')
       initializeEditData()
       refreshAreasRef.current()
     }
   }, [mode, item, editLoading, itemId, initializeEditData])
-
-  const watchAreaId = formData.area_id
-  const watchRoomId = formData.room_id
-  const watchSpotId = formData.spot_id
 
   // 当itemId变化时，重置初始化标记
   useEffect(() => {
@@ -421,9 +412,8 @@ export function ItemDetailModal({
     if (!open) {
       // 清除自动保存定时器
       cancelAutoSave()
-      setInternalMode('view')
+      setMode('view')
       setActiveImageIndex(0)
-      setActiveTab('basic')
       setDeleteDialogOpen(false)
       editInitializedRef.current = null // 重置初始化标记
       setEditLoading(false)
@@ -439,7 +429,7 @@ export function ItemDetailModal({
         uploadedImages: [],
       })
     }
-  }, [open, cancelAutoSave, setInitialData])
+  }, [open, cancelAutoSave, setInitialData, setMode])
 
   // 当itemId变化时，如果是编辑模式，需要重新初始化编辑数据
   useEffect(() => {
@@ -481,102 +471,60 @@ export function ItemDetailModal({
     onOpenChange(false)
   }, [onOpenChange])
 
-  // 编辑模式：显示编辑表单
-  if (mode === 'edit' && itemId) {
-    // 如果数据还在加载或者item还没有加载完成，显示加载状态
-    if (editLoading || !item || loading) {
-      return (
-        <Modal
-          open={open}
-          onOpenChange={onOpenChange}
-          title="编辑物品"
-          contentClassName="flex h-[85vh] w-[calc(100vw-1rem)] max-w-4xl flex-col sm:w-[calc(100vw-2rem)]"
-        >
-          <div className="flex-1 overflow-y-auto">
-            <LoadingState onBack={handleClose} />
-          </div>
-        </Modal>
-      )
+  const handleCategorySelect = useCallback((_type: 'parent' | 'child', id: number | null) => {
+    setFormData(prev => ({
+      ...prev,
+      category_id: id ? String(id) : '',
+    }))
+  }, [])
+
+  const selectedCategory = useMemo(() => {
+    if (!formData.category_id) {
+      return undefined
     }
 
+    const category = categories.find(item => item.id.toString() === formData.category_id)
+    if (!category) {
+      return undefined
+    }
+
+    return {
+      type: category.parent_id ? 'child' : 'parent',
+      id: category.id,
+    } as const
+  }, [categories, formData.category_id])
+
+  const getCurrentFormValue = useCallback(
+    (field: string) => formData[field as keyof ItemFormData],
+    [formData]
+  )
+
+  const handleQuantityClick = useCallback(() => {
+    setTempQuantity(formData.quantity || 1)
+    setQuantityDialogOpen(true)
+  }, [formData.quantity])
+
+  const handleQuantityConfirm = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      quantity: tempQuantity || 1,
+    }))
+    setQuantityDialogOpen(false)
+  }, [tempQuantity])
+
+  // 编辑模式初始化期间显示加载态
+  if (mode === 'edit' && itemId && (editLoading || !item || loading)) {
     return (
-      <>
-        <Modal
-          open={open}
-          onOpenChange={onOpenChange}
-          title={`编辑物品${item?.name ? ` - ${item.name}` : ''}`}
-          contentClassName="flex h-[85vh] w-[calc(100vw-1rem)] max-w-4xl flex-col p-0 sm:w-[calc(100vw-2rem)]"
-        >
-          {/* 顶部Tab和X按钮 */}
-          <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
-            <Tabs
-              value={activeTab}
-              onValueChange={v => setActiveTab(v as 'basic' | 'details')}
-              className="flex-1"
-            >
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="basic">基本信息</TabsTrigger>
-                <TabsTrigger value="details">详细信息</TabsTrigger>
-              </TabsList>
-            </Tabs>
-            <div className="flex items-center gap-2">
-              {autoSaving !== undefined && lastSaved !== undefined && (
-                <AutoSaveStatus autoSaving={autoSaving} lastSaved={lastSaved} />
-              )}
-              <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* 编辑表单内容 - 可滚动区域 */}
-          <div className="flex-1 overflow-y-auto px-6 pb-6">
-            <Tabs
-              value={activeTab}
-              onValueChange={v => setActiveTab(v as 'basic' | 'details')}
-              className="w-full"
-            >
-              <TabsContent value="basic" className="mt-6 space-y-6">
-                <UnifiedBasicInfoForm
-                  formData={formData}
-                  setFormData={setFormData}
-                  tags={tags}
-                  selectedTags={selectedTags}
-                  setSelectedTags={setSelectedTags}
-                  setCreateTagDialogOpen={setCreateTagDialogOpen}
-                  categories={categories}
-                  uploadedImages={uploadedImages}
-                  setUploadedImages={setUploadedImages}
-                  locationPath={locationPath}
-                  selectedLocation={selectedLocation}
-                  onLocationSelect={handleLocationSelect}
-                  watchAreaId={watchAreaId}
-                  watchRoomId={watchRoomId}
-                  watchSpotId={watchSpotId}
-                />
-              </TabsContent>
-              <TabsContent value="details" className="mt-6 space-y-6">
-                <UnifiedDetailInfoForm formData={formData} setFormData={setFormData} />
-              </TabsContent>
-            </Tabs>
-          </div>
-        </Modal>
-
-        {/* 创建标签对话框 */}
-        <CreateTagDialog
-          open={createTagDialogOpen}
-          onOpenChange={setCreateTagDialogOpen}
-          onTagCreated={handleTagCreated}
-        />
-
-        {/* 删除确认对话框 */}
-        <DeleteConfirmationDialog
-          open={deleteDialogOpen}
-          onOpenChange={setDeleteDialogOpen}
-          onConfirm={handleDelete}
-          itemName={item?.name || ''}
-        />
-      </>
+      <Modal
+        open={open}
+        onOpenChange={onOpenChange}
+        title="编辑物品"
+        contentClassName="flex h-[85vh] w-[calc(100vw-1rem)] max-w-4xl flex-col sm:w-[calc(100vw-2rem)]"
+      >
+        <div className="flex-1 overflow-y-auto">
+          <LoadingState onBack={handleClose} />
+        </div>
+      </Modal>
     )
   }
 
@@ -616,6 +564,16 @@ export function ItemDetailModal({
 
   if (!item) return null
 
+  const displayCategoryName =
+    mode === 'edit'
+      ? categories.find(category => category.id.toString() === formData.category_id)?.name ||
+        '未分类'
+      : item.category?.name || '未分类'
+  const displayName = mode === 'edit' ? formData.name || item.name : item.name
+  const isInlineEditMode = mode === 'edit'
+  const isPublicItem = isInlineEditMode ? formData.is_public : item.is_public
+  const nameInputWidth = `calc(${Math.min(Math.max(formData.name.trim().length || 4, 4), 18)}ch + 0.75rem)`
+
   return (
     <>
       <Modal
@@ -624,112 +582,229 @@ export function ItemDetailModal({
         title={`物品详情${item.name ? ` - ${item.name}` : ''}`}
         contentClassName="flex h-[85vh] w-[calc(100vw-2rem)] max-w-4xl flex-col p-0"
       >
-        {/* 顶部Tab和X按钮 */}
-        <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 items-center justify-between border-b px-6 py-4">
-          <Tabs
-            value={activeTab}
-            onValueChange={v => setActiveTab(v as 'basic' | 'details')}
-            className="flex-1"
-          >
-            <TabsList className="grid w-full max-w-md grid-cols-2">
-              <TabsTrigger value="basic">基本信息</TabsTrigger>
-              <TabsTrigger value="details">详细信息</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <div className="flex items-center gap-2">
-            {canEdit && (
-              <>
-                <Button variant="ghost" size="icon" onClick={handleEdit} className="h-8 w-8">
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
-                  onClick={() => setDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </>
+        <div className="bg-background sticky top-0 z-10 flex flex-shrink-0 flex-col gap-3 border-b px-6 py-4">
+          <div className="flex items-center justify-between gap-3">
+            {isInlineEditMode ? (
+              <div className="max-w-full shrink-0">
+                <CategoryTreeSelect
+                  onSelect={handleCategorySelect}
+                  selectedCategory={selectedCategory}
+                  helperText={null}
+                  placeholder="选择分类"
+                  comboboxClassName="!w-auto max-w-[14rem] rounded-full px-3 text-sm"
+                />
+              </div>
+            ) : (
+              <Badge variant="outline" className="max-w-[60%] truncate px-3 py-1 text-sm">
+                {displayCategoryName}
+              </Badge>
             )}
-            <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
-              <X className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              {isInlineEditMode ? (
+                <AutoSaveStatus autoSaving={autoSaving} lastSaved={lastSaved} />
+              ) : canEdit ? (
+                <>
+                  <Button variant="ghost" size="icon" onClick={handleEdit} className="h-8 w-8">
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 h-8 w-8"
+                    onClick={() => setDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </>
+              ) : null}
+              <Button variant="ghost" size="icon" onClick={handleClose} className="h-8 w-8">
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              <StatusIndicator status={item.status} />
+              {isInlineEditMode ? (
+                <>
+                  <div className="flex min-w-0 shrink-0 items-center gap-2">
+                    <Input
+                      value={formData.name}
+                      onChange={event =>
+                        setFormData(prev => ({
+                          ...prev,
+                          name: event.target.value,
+                        }))
+                      }
+                      className="h-10 w-auto min-w-[4ch] max-w-[18rem] flex-none border-0 bg-transparent px-0 text-xl font-semibold shadow-none focus-visible:ring-0"
+                      placeholder="请输入"
+                      style={{ width: nameInputWidth }}
+                    />
+                    <span
+                      className="text-muted-foreground shrink-0"
+                      aria-label={isPublicItem ? '公开物品' : '私有物品'}
+                    >
+                      {isPublicItem ? (
+                        <LockOpen className="h-4 w-4" />
+                      ) : (
+                        <Lock className="h-4 w-4" />
+                      )}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-8 shrink-0 rounded-full px-3 text-xs font-medium"
+                    onClick={handleQuantityClick}
+                  >
+                    x{formData.quantity || 1}
+                  </Button>
+                </>
+              ) : (
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <h2 className="truncate text-xl font-semibold">{displayName}</h2>
+                  <span
+                    className="text-muted-foreground shrink-0"
+                    aria-label={isPublicItem ? '公开物品' : '私有物品'}
+                  >
+                    {isPublicItem ? <LockOpen className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* 内容区域 - 可滚动区域 */}
         <div className="flex-1 overflow-y-auto px-6 pb-6">
-          <Tabs
-            value={activeTab}
-            onValueChange={v => setActiveTab(v as 'basic' | 'details')}
-            className="w-full"
-          >
-            {/* 基本信息标签页 */}
-            <TabsContent value="basic" className="mt-6">
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <StatusBadges item={item} />
-                  <TagsDisplay tags={item.tags || []} />
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* 图片展示 */}
-                  <ImageGallery
-                    images={item.images}
-                    itemName={item.name}
-                    activeIndex={activeImageIndex}
-                    onIndexChange={setActiveImageIndex}
+          {isInlineEditMode ? (
+            <Card className="mt-6 overflow-hidden">
+              <CardContent className="space-y-6 pt-6">
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold">图片</h3>
+                  <ImageUploader
+                    onImagesChange={setUploadedImages}
+                    existingImages={uploadedImages}
+                    maxImages={10}
+                    compactAddButton
                   />
+                </div>
 
-                  {/* 描述 */}
+                <TagsSection
+                  tags={tags}
+                  selectedTags={selectedTags}
+                  onToggleTag={tagId =>
+                    setSelectedTags(prev =>
+                      prev.includes(tagId)
+                        ? prev.filter(currentTagId => currentTagId !== tagId)
+                        : [...prev, tagId]
+                    )
+                  }
+                  onCreateTag={() => setCreateTagDialogOpen(true)}
+                />
+
+                {hasDescription ? (
                   <div className="bg-muted/30 rounded-lg p-3">
                     <h3 className="text-muted-foreground mb-1 text-sm font-medium">描述</h3>
-                    <p className="text-xs">{item.description || '无描述'}</p>
+                    <p className="text-xs">{trimmedDescription}</p>
                   </div>
+                ) : null}
 
-                  {/* 基本信息卡片 */}
-                  {(item.quantity > 1 || item.purchase_price || item.purchase_date) && (
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {item.quantity > 1 && <InfoCard label="数量" value={item.quantity} />}
-                      {item.purchase_price && (
-                        <InfoCard label="价格" value={`¥${item.purchase_price}`} />
-                      )}
-                      {item.purchase_date && (
-                        <InfoCard label="购买日期" value={formatDate(item.purchase_date)} />
-                      )}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+                {(item.purchase_price || item.purchase_date) && (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {item.purchase_price && (
+                      <InfoCard label="价格" value={`¥${item.purchase_price}`} />
+                    )}
+                    {item.purchase_date && (
+                      <InfoCard label="购买日期" value={formatDate(item.purchase_date)} />
+                    )}
+                  </div>
+                )}
 
-            {/* 详细信息标签页 */}
-            <TabsContent value="details" className="mt-6">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* 时间信息 */}
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <CardTitle>时间信息</CardTitle>
-                  </CardHeader>
-                  <CardContent>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                  <div className="space-y-3">
+                    <h3 className="text-base font-semibold">时间信息</h3>
                     <TimeInfo item={item} />
-                  </CardContent>
-                </Card>
+                  </div>
+                  <div className="space-y-3">
+                    <LocationSection
+                      locationPath={locationPath}
+                      selectedLocation={selectedLocation}
+                      onLocationSelect={handleLocationSelect}
+                      getCurrentValue={getCurrentFormValue}
+                      isCreateMode={false}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="mt-6 space-y-6">
+              {item.images && item.images.length > 0 ? (
+                <ImageGallery
+                  images={item.images}
+                  itemName={item.name}
+                  activeIndex={activeImageIndex}
+                  onIndexChange={setActiveImageIndex}
+                />
+              ) : null}
 
-                {/* 存放位置 */}
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <CardTitle>存放位置</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <LocationInfo item={item} />
-                  </CardContent>
-                </Card>
+              {item.tags && item.tags.length > 0 ? (
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold">标签</h3>
+                  <TagsDisplay tags={item.tags} />
+                </div>
+              ) : null}
+
+              {hasDescription ? (
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">描述</h3>
+                  <p className="text-xs">{trimmedDescription}</p>
+                </div>
+              ) : null}
+
+              {(item.quantity > 1 || item.purchase_price || item.purchase_date) && (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {item.quantity > 1 && <InfoCard label="数量" value={item.quantity} />}
+                  {item.purchase_price && (
+                    <InfoCard label="价格" value={`¥${item.purchase_price}`} />
+                  )}
+                  {item.purchase_date && (
+                    <InfoCard label="购买日期" value={formatDate(item.purchase_date)} />
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold">时间信息</h3>
+                  <TimeInfo item={item} />
+                </div>
+                <div className="space-y-3">
+                  <h3 className="text-base font-semibold">存放位置</h3>
+                  <LocationInfo item={item} />
+                </div>
               </div>
-            </TabsContent>
-          </Tabs>
+            </div>
+          )}
         </div>
       </Modal>
+
+      <CreateTagDialog
+        open={createTagDialogOpen}
+        onOpenChange={setCreateTagDialogOpen}
+        onTagCreated={handleTagCreated}
+      />
+
+      <QuantityDialog
+        open={quantityDialogOpen}
+        onOpenChange={setQuantityDialogOpen}
+        quantity={tempQuantity}
+        onQuantityChange={setTempQuantity}
+        onConfirm={handleQuantityConfirm}
+      />
 
       {/* 删除确认对话框 */}
       <DeleteConfirmationDialog

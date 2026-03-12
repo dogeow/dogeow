@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, Edit, Trash2, Lock, Unlock } from 'lucide-react'
+import { ArrowLeft, Edit, Trash2, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import { PageContainer } from '@/components/layout'
 import Image from 'next/image'
@@ -16,9 +16,9 @@ import { useItemStore } from '@/app/thing/stores/itemStore'
 import { useItem } from '../services/api'
 import { DeleteConfirmationDialog } from '@/components/ui/DeleteConfirmationDialog'
 import { isLightColor } from '@/lib/helpers'
-import { statusMap } from '../config/status'
 import { Item, Tag } from '@/app/thing/types'
 import { ItemRelationsDisplay } from '../components/ItemRelationsDisplay'
+import { StatusIndicator } from '../components/item-detail/components/StatusIndicator'
 import { useAuth } from '@/hooks/useAuth'
 
 // 日期格式化工具函数
@@ -159,29 +159,10 @@ const InfoCard = ({
 
 // 基本信息标签组件
 const StatusBadges = ({ item }: { item: Item }) => {
-  const status = statusMap[item.status as keyof typeof statusMap] || {
-    label: item.status,
-    variant: 'secondary',
-  }
-
   return (
     <div className="flex items-center gap-2">
       <Badge variant="outline" className="px-3 py-1 text-sm">
         {item.category?.name || '未分类'}
-      </Badge>
-      <Badge
-        className={status.variant === 'bg-green-500' ? status.variant : ''}
-        variant={
-          status.variant !== 'bg-green-500'
-            ? (status.variant as 'outline' | 'destructive' | 'secondary' | 'default')
-            : undefined
-        }
-      >
-        {status.label}
-      </Badge>
-      <Badge variant={item.is_public ? 'default' : 'outline'} className="flex items-center gap-1">
-        {item.is_public ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
-        {item.is_public ? '公开' : '私有'}
       </Badge>
     </div>
   )
@@ -320,15 +301,29 @@ export default function ItemDetail() {
   if (error || (!loading && !item)) return <ErrorState error={error} onBack={handleBack} />
   if (!item) return null
 
+  const trimmedDescription = item.description?.trim()
+  const hasDescription =
+    Boolean(trimmedDescription) &&
+    trimmedDescription !== '无描述' &&
+    trimmedDescription !== '暂无描述'
+
   return (
     <PageContainer>
       {/* 页面头部 */}
       <div className="mb-4 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
-        <div className="flex w-full items-center">
+        <div className="flex w-full items-center gap-2">
           <Button variant="ghost" size="icon" onClick={handleBack} className="mr-2 p-1">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="truncate text-2xl font-bold tracking-tight">{item.name}</h1>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <StatusIndicator status={item.status} />
+            <h1 className="truncate text-2xl font-bold tracking-tight">{item.name}</h1>
+            {!item.is_public ? (
+              <span className="text-muted-foreground shrink-0" aria-label="私有物品">
+                <Lock className="h-4 w-4" />
+              </span>
+            ) : null}
+          </div>
           <div className="ml-auto flex justify-end gap-1">
             <Button variant="ghost" onClick={handleEdit} className="flex-1 p-1 sm:flex-auto">
               <Edit className="h-4 w-4" />
@@ -369,10 +364,12 @@ export default function ItemDetail() {
               />
 
               {/* 描述 */}
-              <div className="bg-muted/30 rounded-lg p-3">
-                <h3 className="text-muted-foreground mb-1 text-sm font-medium">描述</h3>
-                <p className="text-xs">{item.description || '无描述'}</p>
-              </div>
+              {hasDescription ? (
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <h3 className="text-muted-foreground mb-1 text-sm font-medium">描述</h3>
+                  <p className="text-xs">{trimmedDescription}</p>
+                </div>
+              ) : null}
 
               {/* 基本信息卡片 */}
               {(item.quantity > 1 || item.purchase_price || item.purchase_date) && (

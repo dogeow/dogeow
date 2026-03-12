@@ -202,6 +202,9 @@ export const en = {
   'page.room_info': 'Room Info',
   'page.notifications': 'Notifications',
 
+  // Thing
+  'thing.no_items': 'No items to display.',
+
   // Chat UI
   'chat.go_back': 'Go Back',
   'chat.rooms': 'Rooms',
