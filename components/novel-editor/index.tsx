@@ -1,17 +1,6 @@
 'use client'
 
 import './novel-editor.css'
-
-// 空的编辑器内容
-const emptyEditorContent = {
-  type: 'doc',
-  content: [
-    {
-      type: 'paragraph',
-      content: [],
-    },
-  ],
-}
 import {
   EditorCommand,
   EditorCommandEmpty,
@@ -26,7 +15,7 @@ import {
   handleImageDrop,
   handleImagePaste,
 } from 'novel'
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useDebouncedCallback } from 'use-debounce'
 import { usePathname } from 'next/navigation'
 import { defaultExtensions } from './extensions'
@@ -95,25 +84,35 @@ hljs.registerLanguage('md', markdown)
 
 const extensions = [...defaultExtensions, slashCommand]
 
+const createEmptyEditorContent = (): JSONContent => ({
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+      content: [],
+    },
+  ],
+})
+
 const TailwindAdvancedEditor = () => {
   const pathname = usePathname()
-  const getInitialContentSnapshot = () => {
-    if (typeof window === 'undefined') return null
-    if (pathname === '/note/new') return emptyEditorContent
+
+  const readInitialContent = useCallback((): JSONContent => {
+    if (typeof window === 'undefined') return createEmptyEditorContent()
+    if (pathname === '/note/new') return createEmptyEditorContent()
     const stored = window.localStorage.getItem('novel-content')
     if (stored) {
       try {
         return JSON.parse(stored) as JSONContent
       } catch {
-        return emptyEditorContent
+        return createEmptyEditorContent()
       }
     }
-    return emptyEditorContent
-  }
-  const initialContent = useSyncExternalStore(
-    () => () => {},
-    getInitialContentSnapshot,
-    () => null
+    return createEmptyEditorContent()
+  }, [pathname])
+
+  const [initialContent, setInitialContent] = useState<JSONContent | null>(() =>
+    readInitialContent()
   )
   const [saveStatus, setSaveStatus] = useState('Saved')
   const [charsCount, setCharsCount] = useState<number | undefined>(undefined)
@@ -124,6 +123,10 @@ const TailwindAdvancedEditor = () => {
   const [openAI, setOpenAI] = useState(false)
 
   const [isTyping, setIsTyping] = useState(false)
+
+  useEffect(() => {
+    setInitialContent(readInitialContent())
+  }, [readInitialContent])
 
   //Apply Codeblock Highlighting on the HTML from editor.getHTML()
   const highlightCodeblocks = (content: string) => {
@@ -198,7 +201,7 @@ const TailwindAdvancedEditor = () => {
 
   useEffect(() => {
     if (pathname === '/note/new') {
-      // 新建笔记页面：清空 localStorage（内容由 useSyncExternalStore 的 getSnapshot 提供）
+      // 新建笔记页面：清空 localStorage，并重新初始化空白内容
       window.localStorage.removeItem('novel-content')
       window.localStorage.removeItem('html-content')
       window.localStorage.removeItem('markdown')

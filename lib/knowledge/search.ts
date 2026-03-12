@@ -7,25 +7,28 @@ export interface Document {
   source: 'database'
 }
 
+function resolveKnowledgeApiBaseUrl(): string {
+  let apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
+
+  if (apiBaseUrl && !apiBaseUrl.endsWith('/api') && !apiBaseUrl.endsWith('/api/')) {
+    apiBaseUrl = apiBaseUrl.endsWith('/') ? `${apiBaseUrl}api` : `${apiBaseUrl}/api`
+  }
+
+  return apiBaseUrl
+}
+
 /**
  * 从数据库加载文档（通过 API）
  * 注意：在服务端运行时，需要确保 API URL 可访问
  */
 export async function loadDocumentsFromDatabase(): Promise<Document[]> {
   try {
-    // 在服务端，优先使用内部 URL，避免网络问题
-    let apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api'
-
-    // 确保 URL 以 /api 结尾（如果环境变量是基础 URL）
-    if (apiBaseUrl && !apiBaseUrl.endsWith('/api') && !apiBaseUrl.endsWith('/api/')) {
-      apiBaseUrl = apiBaseUrl.endsWith('/') ? `${apiBaseUrl}api` : `${apiBaseUrl}/api`
-    }
+    const apiBaseUrl = resolveKnowledgeApiBaseUrl()
+    const apiUrl = `${apiBaseUrl}/notes/wiki/articles`
 
     console.log(`[文档加载] API URL: ${apiBaseUrl}`)
-    const apiUrl = `${apiBaseUrl}/notes/wiki/articles`
     console.log(`[文档加载] 请求 URL: ${apiUrl}`)
 
-    // 使用批量接口一次性获取所有文章内容，提高性能
     const response = await fetch(apiUrl, {
       cache: 'no-store',
       headers: {
@@ -37,7 +40,7 @@ export async function loadDocumentsFromDatabase(): Promise<Document[]> {
       const errorText = await response.text()
       console.error(`[文档加载] 请求失败: ${response.status} ${response.statusText}`)
       console.error(`[文档加载] 错误内容: ${errorText}`)
-      return []
+      throw new Error(`知识库文档接口请求失败: ${response.status} ${response.statusText}`)
     }
 
     const data = await response.json()
@@ -106,8 +109,8 @@ export async function loadDocumentsFromDatabase(): Promise<Document[]> {
     console.log(`[文档加载] 总共加载了 ${documents.length} 个文档`)
     return documents
   } catch (error) {
-    console.warn('Failed to load documents from database:', error)
-    return []
+    console.error('Failed to load documents from database:', error)
+    throw error instanceof Error ? error : new Error(`知识库文档加载失败: ${String(error)}`)
   }
 }
 

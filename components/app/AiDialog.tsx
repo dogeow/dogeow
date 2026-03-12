@@ -18,16 +18,29 @@ interface AiDialogProps {
   onOpenChange: (open: boolean) => void
 }
 
-const docsFetcher = async (url: string) => {
+interface KnowledgeDocumentsResponse {
+  success: boolean
+  documents?: Array<{ title: string; slug: string }>
+  message?: string
+  error?: string
+}
+
+const docsFetcher = async (url: string): Promise<KnowledgeDocumentsResponse> => {
   const res = await fetch(url)
-  return res.json()
+  const data = (await res.json()) as KnowledgeDocumentsResponse
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || data.message || '知识库文档暂时不可用')
+  }
+
+  return data
 }
 
 export function AiDialog({ open, onOpenChange }: AiDialogProps) {
   const [chatMode, setChatMode] = useState<'ai' | 'knowledge'>('ai')
 
   const shouldFetchDocs = open && chatMode === 'knowledge'
-  const { data: docsData } = useSWR(
+  const { data: docsData, error: docsError } = useSWR(
     shouldFetchDocs ? '/api/knowledge/documents' : null,
     docsFetcher,
     { revalidateOnFocus: false }
@@ -35,8 +48,16 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
 
   const knowledgeInitialMessages = useMemo<ChatMessage[]>(() => {
     if (!shouldFetchDocs) return []
+    if (docsError) {
+      return [
+        {
+          role: 'assistant',
+          content: '你好！欢迎了解我的知识库。\n\n当前知识库文档暂时不可用，请稍后重试。',
+        },
+      ]
+    }
     if (!docsData) return []
-    const hasDocs = docsData.success && docsData.documents?.length > 0
+    const hasDocs = docsData.success && (docsData.documents?.length ?? 0) > 0
     return [
       {
         role: 'assistant' as const,
@@ -45,7 +66,7 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
           : `你好！欢迎了解我的知识库。\n\n目前知识库中还没有文档。\n\n有什么想了解的吗？`,
       },
     ]
-  }, [shouldFetchDocs, docsData])
+  }, [shouldFetchDocs, docsData, docsError])
 
   const aiChat = useAiChat({ open })
   const knowledgeChat = useKnowledgeChat({ open, initialMessages: knowledgeInitialMessages })
@@ -56,7 +77,8 @@ export function AiDialog({ open, onOpenChange }: AiDialogProps) {
     try {
       const date = new Date(knowledgeUpdatedAt)
       const text = formatDistanceToNow(date, { addSuffix: true, locale: zhCN })
-      return text.replace(/^大约\s*/, '')
+      // 去掉「不到」和「大约」等模糊词，保持简洁
+      return `${text.replace(/^(大约|不到)\s*/, '')}`
     } catch {
       return undefined
     }
