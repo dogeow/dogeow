@@ -2,13 +2,14 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { cn } from '@/lib/helpers'
-import type { LyricLine } from './lyrics'
+import { getLyricGlyphProgress, type LyricLine } from './lyrics'
 import type { LyricsState } from './useTrackLyrics'
 
 interface LyricsDisplayPanelProps {
   lyrics: LyricLine[]
   activeLyricIndex: number
   status: LyricsState
+  currentTime?: number
   title?: string
   className?: string
   titleClassName?: string
@@ -35,10 +36,23 @@ function getEmptyText(status: LyricsState) {
   return ''
 }
 
+function renderGlyphChar(char: string) {
+  if (char === ' ') {
+    return '\u00A0'
+  }
+
+  if (char === '\t') {
+    return '\u00A0\u00A0'
+  }
+
+  return char
+}
+
 export function LyricsDisplayPanel({
   lyrics,
   activeLyricIndex,
   status,
+  currentTime = 0,
   title,
   className,
   titleClassName,
@@ -197,6 +211,7 @@ export function LyricsDisplayPanel({
                 ref={node => {
                   lineRefs.current[index] = node
                 }}
+                aria-label={line.text}
                 className={cn(
                   'min-h-7 w-full max-w-2xl text-center text-sm leading-7 text-foreground/55 transition-all duration-200',
                   lineClassName,
@@ -204,7 +219,34 @@ export function LyricsDisplayPanel({
                     cn('text-base font-semibold text-foreground', activeLineClassName)
                 )}
               >
-                {line.text}
+                {index === activeLyricIndex && line.glyphs?.length ? (
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex max-w-full flex-wrap justify-center [text-wrap:balance]"
+                  >
+                    {line.glyphs.map((glyph, glyphIndex) => {
+                      const progress = getLyricGlyphProgress(glyph, currentTime)
+                      const displayChar = renderGlyphChar(glyph.char)
+
+                      return (
+                        <span
+                          key={`${glyph.startTime}-${glyphIndex}-${glyph.char}`}
+                          className="relative inline-block"
+                        >
+                          <span className="select-none opacity-35">{displayChar}</span>
+                          <span
+                            className="absolute inset-y-0 left-0 overflow-hidden text-current"
+                            style={{ width: `${(progress * 100).toFixed(2)}%` }}
+                          >
+                            <span className="select-none">{displayChar}</span>
+                          </span>
+                        </span>
+                      )
+                    })}
+                  </span>
+                ) : (
+                  line.text
+                )}
               </p>
             ))}
           </div>

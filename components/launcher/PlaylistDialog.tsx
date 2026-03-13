@@ -39,6 +39,7 @@ interface PlaylistDialogProps {
   lyrics?: LyricLine[]
   activeLyricIndex?: number
   lyricsStatus?: LyricsState
+  currentTime?: number
 }
 
 // 歌曲时间格式化
@@ -67,6 +68,7 @@ export function PlaylistDialog({
   lyrics = [],
   activeLyricIndex = -1,
   lyricsStatus = 'idle',
+  currentTime = 0,
 }: PlaylistDialogProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeTab, setActiveTab] = useState<'playlist' | 'lyrics'>('playlist')
@@ -163,6 +165,7 @@ export function PlaylistDialog({
               lyrics={lyrics}
               activeLyricIndex={activeLyricIndex}
               status={lyricsStatus}
+              currentTime={currentTime}
               title={currentTrackName}
               className="h-full overflow-hidden border-border/60 bg-background shadow-none"
               syncKey={`${activeTab}-${currentTrack}-${activeLyricIndex}`}

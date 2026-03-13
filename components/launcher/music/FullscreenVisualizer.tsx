@@ -251,6 +251,7 @@ export function FullscreenVisualizer({
               lyrics={lyrics}
               activeLyricIndex={activeLyricIndex}
               status={lyricsStatus}
+              currentTime={currentTime}
               className={cn(
                 'w-full border-0 bg-transparent p-0 shadow-none',
                 isLandscape ? 'h-full' : 'h-[min(52vh,480px)]'
