@@ -5,10 +5,10 @@ import { ItemImage, UploadedImage, Tag } from '@/app/thing/types'
  */
 export function convertImagesToUploadedFormat(images: ItemImage[]): UploadedImage[] {
   return images.map((img: ItemImage) => ({
-    path: img.path || '',
-    thumbnail_path: img.thumbnail_path || '',
-    url: img.url || '',
-    thumbnail_url: img.thumbnail_url || '',
+    path: img.path ?? '',
+    thumbnail_path: img.thumbnail_path ?? '',
+    url: img.url ?? '',
+    thumbnail_url: img.thumbnail_url ?? '',
     id: img.id,
   }))
 }

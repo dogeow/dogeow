@@ -107,7 +107,7 @@ export function useItemEdit() {
   const handleLocationSelect = useCallback(
     (type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => {
       setSelectedLocation({ type, id })
-      setLocationPath(fullPath || '')
+      setLocationPath(fullPath ?? '')
 
       const updates: Partial<ItemFormData> = {}
 
@@ -159,16 +159,16 @@ export function useItemEdit() {
 
       const itemFormData = {
         name: item.name,
-        description: item.description || '',
+        description: item.description ?? '',
         quantity: item.quantity,
         status: item.status,
         purchase_date: item.purchase_date ? new Date(item.purchase_date) : null,
         expiry_date: item.expiry_date ? new Date(item.expiry_date) : null,
-        purchase_price: item.purchase_price || null,
-        category_id: item.category_id?.toString() || '',
-        area_id: item.spot?.room?.area?.id?.toString() || '',
-        room_id: item.spot?.room?.id?.toString() || '',
-        spot_id: item.spot_id?.toString() || '',
+        purchase_price: item.purchase_price ?? null,
+        category_id: item.category_id?.toString() ?? '',
+        area_id: item.spot?.room?.area?.id?.toString() ?? '',
+        room_id: item.spot?.room?.id?.toString() ?? '',
+        spot_id: item.spot_id?.toString() ?? '',
         is_public: item.is_public,
       }
 

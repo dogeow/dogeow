@@ -55,7 +55,7 @@ export function useGraphFilter(
     // 找出所有匹配的节点
     for (const n of nodes) {
       const text =
-        `${n.title} ${n.slug} ${(n.tags || []).join(' ')} ${n.summary || ''}`.toLowerCase()
+        `${n.title} ${n.slug} ${(n.tags ?? []).join(' ')} ${n.summary ?? ''}`.toLowerCase()
       if (text.includes(q)) matchedIds.add(String(n.id))
     }
 

@@ -41,8 +41,8 @@ export function useGraphData() {
         id: node.id,
         title: node.title,
         slug: node.slug,
-        tags: node.tags || [],
-        summary: node.summary || '',
+        tags: node.tags ?? [],
+        summary: node.summary ?? '',
       }))
 
       // 转换链接数据

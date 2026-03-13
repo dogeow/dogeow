@@ -31,7 +31,7 @@ export interface MusicPlayerProps {
   switchToNextTrack: () => void
   togglePlay: () => void
   handleProgressChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-  getCurrentTrackName: () => string | undefined
+  getCurrentTrackName: () => string
   currentLyric?: string
   hasLyrics?: boolean
   lyrics?: LyricLine[]

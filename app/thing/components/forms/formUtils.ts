@@ -63,17 +63,17 @@ export function transformFormDataForSubmit(
  */
 export function transformApiDataToFormData(item: ApiItemData): ItemFormSchemaType {
   return {
-    name: item.name || '',
-    description: item.description || '',
+    name: item.name ?? '',
+    description: item.description ?? '',
     quantity: item.quantity || 1,
     status: item.status || 'active',
     purchase_date: item.purchase_date ? new Date(item.purchase_date) : null,
     expiry_date: item.expiry_date ? new Date(item.expiry_date) : null,
-    purchase_price: item.purchase_price || null,
+    purchase_price: item.purchase_price ?? null,
     category_id: item.category_id ? item.category_id.toString() : '', // null或undefined转为空字符串
-    area_id: item.spot?.room?.area?.id?.toString() || '',
-    room_id: item.spot?.room?.id?.toString() || '',
-    spot_id: item.spot_id?.toString() || '',
-    is_public: item.is_public || false,
+    area_id: item.spot?.room?.area?.id?.toString() ?? '',
+    room_id: item.spot?.room?.id?.toString() ?? '',
+    spot_id: item.spot_id?.toString() ?? '',
+    is_public: item.is_public ?? false,
   }
 }

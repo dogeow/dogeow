@@ -25,7 +25,7 @@ export const ImageGallery = memo<ImageGalleryProps>(
         <div className="bg-muted relative aspect-square overflow-hidden rounded-lg shadow-sm">
           {(() => {
             const safeIndex = Math.min(Math.max(activeIndex, 0), images.length - 1)
-            const url = images[safeIndex]?.url || ''
+            const url = images[safeIndex]?.url ?? ''
             return (
               <Image
                 src={url}
@@ -51,7 +51,7 @@ export const ImageGallery = memo<ImageGalleryProps>(
                 onClick={() => onIndexChange(index)}
               >
                 <Image
-                  src={image.thumbnail_url || ''}
+                  src={image.thumbnail_url ?? ''}
                   alt={`${itemName} 图片 ${index + 1}`}
                   fill
                   className="object-cover"

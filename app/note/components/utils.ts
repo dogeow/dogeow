@@ -9,7 +9,7 @@ export const normalizeTokens = (tokens: unknown[]): { types: string[]; content: 
       lines.forEach((line, i) => {
         if (i !== 0) {
           currentLine++
-          normalizedTokens[currentLine] = normalizedTokens[currentLine] || []
+          normalizedTokens[currentLine] = normalizedTokens[currentLine] ?? []
         }
         if (line !== '') {
           normalizedTokens[currentLine].push({

@@ -81,17 +81,17 @@ export const filterSearchResults = (
 
   // 为包含匹配子项的父项添加可见性
   areas.forEach((area: Area) => {
-    const areaRooms = areaRoomsMap.get(area.id) || []
+    const areaRooms = areaRoomsMap.get(area.id) ?? []
     const hasMatchingChild = areaRooms.some((room: Room) => {
       if (matchesSearch(room.name, searchTerm)) return true
-      const roomSpots = roomSpotsMap.get(room.id) || []
+      const roomSpots = roomSpotsMap.get(room.id) ?? []
       return roomSpots.some((spot: Spot) => matchesSearch(spot.name, searchTerm))
     })
 
     if (hasMatchingChild) {
       visibleAreaIds.add(area.id)
       areaRooms.forEach((room: Room) => {
-        const roomSpots = roomSpotsMap.get(room.id) || []
+        const roomSpots = roomSpotsMap.get(room.id) ?? []
         if (
           matchesSearch(room.name, searchTerm) ||
           roomSpots.some((spot: Spot) => matchesSearch(spot.name, searchTerm))

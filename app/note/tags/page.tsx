@@ -66,7 +66,7 @@ export default function NoteTags() {
       <div>
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-foreground text-xl font-semibold">标签列表</h2>
-          <div className="text-muted-foreground text-sm">共 {tags?.length || 0} 个标签</div>
+          <div className="text-muted-foreground text-sm">共 {tags?.length ?? 0} 个标签</div>
         </div>
 
         {error && <p className="text-red-500">加载标签失败</p>}
@@ -106,7 +106,7 @@ export default function NoteTags() {
         open={alertOpen}
         onOpenChange={setAlertOpen}
         onConfirm={deleteTag}
-        itemName={tagToDelete ? tags?.find(t => t.id === tagToDelete)?.name || '' : ''}
+        itemName={tagToDelete ? (tags?.find(t => t.id === tagToDelete)?.name ?? '') : ''}
       />
 
       <TagSpeedDial />

@@ -14,7 +14,7 @@ export const buildLocationPath = (
 ): string => {
   if (type === 'area') {
     const area = areas.find(a => a.id === id)
-    return area?.name || ''
+    return area?.name ?? ''
   }
 
   if (type === 'room') {

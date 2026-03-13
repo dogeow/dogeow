@@ -7,7 +7,7 @@ export function useOnlineCount(
   isConnected: boolean
 ) {
   const roomOnlineUsers = useMemo(
-    () => onlineUsers[room.id.toString()] || [],
+    () => onlineUsers[room.id.toString()] ?? [],
     [onlineUsers, room.id]
   )
 

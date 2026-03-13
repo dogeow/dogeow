@@ -206,7 +206,7 @@ export default function SearchWordPage() {
             // 未找到单词 - 直接显示创建表单
             <div className="space-y-4">
               <WordDataEditor
-                wordContent={searchResult.keyword || ''}
+                wordContent={searchResult.keyword ?? ''}
                 onSave={handleCreateWord}
                 saveButtonText="创建并保存"
               />

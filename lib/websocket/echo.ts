@@ -103,7 +103,7 @@ export function createEchoInstance(): Echo<'reverb'> | null {
     const authStorage = localStorage.getItem('auth-storage')
     if (authStorage) {
       const authData = JSON.parse(authStorage)
-      authToken = authData.state?.token || ''
+      authToken = authData.state?.token ?? ''
     }
   } catch (error) {
     console.warn('Echo: 获取认证token失败:', error)

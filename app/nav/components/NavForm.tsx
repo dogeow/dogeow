@@ -68,14 +68,14 @@ export function NavForm({ item }: NavFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(navItemSchema),
     defaultValues: {
-      nav_category_id: item?.nav_category_id.toString() || '',
-      name: item?.name || '',
-      url: item?.url || '',
-      description: item?.description || '',
-      icon: item?.icon || '',
+      nav_category_id: item?.nav_category_id.toString() ?? '',
+      name: item?.name ?? '',
+      url: item?.url ?? '',
+      description: item?.description ?? '',
+      icon: item?.icon ?? '',
       is_visible: item?.is_visible ?? true,
       is_new_window: item?.is_new_window ?? true,
-      sort_order: item?.sort_order || 0,
+      sort_order: item?.sort_order ?? 0,
     },
   })
 
@@ -129,12 +129,12 @@ export function NavForm({ item }: NavFormProps) {
 
   // 将分类数据转换为Combobox选项格式
   const categoryOptions =
-    (allCategories || [])
+    (allCategories ?? [])
       .filter(category => category && typeof category === 'object' && category.id !== undefined)
       .map(category => ({
         value: category.id.toString(),
         label: category.name || '未命名分类',
-      })) || []
+      })) ?? []
 
   return (
     <Form {...form}>

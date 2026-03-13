@@ -39,7 +39,7 @@ export const useUserStore = create<UserStore>(set => ({
   addOnlineUser: (roomId, user) => {
     set(state => {
       const roomKey = roomId.toString()
-      const currentUsers = state.onlineUsers[roomKey] || []
+      const currentUsers = state.onlineUsers[roomKey] ?? []
 
       const userExists = currentUsers.some(u => u.id === user.id)
       if (userExists) return state
@@ -56,7 +56,7 @@ export const useUserStore = create<UserStore>(set => ({
   removeOnlineUser: (roomId, userId) => {
     set(state => {
       const roomKey = roomId.toString()
-      const currentUsers = state.onlineUsers[roomKey] || []
+      const currentUsers = state.onlineUsers[roomKey] ?? []
 
       return {
         onlineUsers: {
@@ -75,7 +75,7 @@ export const useUserStore = create<UserStore>(set => ({
       set(state => ({
         onlineUsers: {
           ...state.onlineUsers,
-          [roomId.toString()]: response.online_users || [],
+          [roomId.toString()]: response.online_users ?? [],
         },
       }))
     } catch (error) {

@@ -72,7 +72,7 @@ export function useMessageInputHandlers({
   // 处理文件输入变化
   const handleFileInputChange = useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = Array.from(e.target.files || [])
+      const files = Array.from(e.target.files ?? [])
       if (files.length === 0) return
 
       const imageFiles = files.filter(file => isImageFile(file))

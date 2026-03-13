@@ -101,7 +101,7 @@ const ImageGallery = ({
       <div className="bg-muted relative aspect-square overflow-hidden rounded-lg shadow-sm">
         {(() => {
           const safeIndex = Math.min(Math.max(activeIndex, 0), images.length - 1)
-          const url = images[safeIndex]?.url || ''
+          const url = images[safeIndex]?.url ?? ''
           return (
             <Image
               src={url}
@@ -127,7 +127,7 @@ const ImageGallery = ({
               onClick={() => onIndexChange(index)}
             >
               <Image
-                src={image.thumbnail_url || ''}
+                src={image.thumbnail_url ?? ''}
                 alt={`${itemName} 图片 ${index + 1}`}
                 fill
                 className="object-cover"
@@ -162,7 +162,7 @@ const StatusBadges = ({ item }: { item: Item }) => {
   return (
     <div className="flex items-center gap-2">
       <Badge variant="outline" className="px-3 py-1 text-sm">
-        {item.category?.name || '未分类'}
+        {item.category?.name ?? '未分类'}
       </Badge>
     </div>
   )
@@ -207,7 +207,7 @@ const TimeInfo = ({ item }: { item: Item }) => {
         <div className="absolute right-4" style={{ top: '23%' }}>
           <div className="bg-background rounded-full border px-3 py-2 shadow-md">
             <span className="text-foreground text-xs font-medium whitespace-nowrap">
-              {calculateDaysDifference(item.created_at, item.expiry_date) || 0}天
+              {calculateDaysDifference(item.created_at, item.expiry_date) ?? 0}天
             </span>
           </div>
         </div>
@@ -216,7 +216,7 @@ const TimeInfo = ({ item }: { item: Item }) => {
       <div className="absolute right-4" style={{ top: item.expiry_date ? '59%' : '36%' }}>
         <div className="bg-background rounded-full border px-3 py-2 shadow-md">
           <span className="text-foreground text-xs font-medium whitespace-nowrap">
-            {calculateDaysDifference(item.created_at, item.updated_at) || 0}天
+            {calculateDaysDifference(item.created_at, item.updated_at) ?? 0}天
           </span>
         </div>
       </div>
@@ -237,7 +237,7 @@ const LoadingState = () => (
 const ErrorState = ({ error, onBack }: { error?: Error; onBack: () => void }) => (
   <PageContainer>
     <div className="flex h-64 flex-col items-center justify-center">
-      <p className="mb-4 text-red-500">{error?.message || '物品不存在'}</p>
+      <p className="mb-4 text-red-500">{error?.message ?? '物品不存在'}</p>
       <Button onClick={onBack}>
         <ArrowLeft className="mr-2 h-4 w-4" /> 返回物品列表
       </Button>
@@ -352,7 +352,7 @@ export default function ItemDetail() {
           <Card className="overflow-hidden">
             <CardHeader className="pb-3">
               <StatusBadges item={item} />
-              <TagsDisplay tags={item.tags || []} />
+              <TagsDisplay tags={item.tags ?? []} />
             </CardHeader>
             <CardContent className="space-y-6">
               {/* 图片展示 */}

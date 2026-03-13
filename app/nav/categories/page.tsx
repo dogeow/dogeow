@@ -186,7 +186,7 @@ export default function CategoryManager() {
                           </div>
                         )}
                       </TableCell>
-                      <TableCell className="text-center">{category.items_count || 0}</TableCell>
+                      <TableCell className="text-center">{category.items_count ?? 0}</TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button
@@ -216,7 +216,7 @@ export default function CategoryManager() {
           onOpenChange={setDeleteDialogOpen}
           onConfirm={handleDeleteCategory}
           itemName={
-            categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''
+            categoryToDelete ? (categories.find(c => c.id === categoryToDelete)?.name ?? '') : ''
           }
         />
       </div>

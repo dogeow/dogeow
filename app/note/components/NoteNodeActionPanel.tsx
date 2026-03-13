@@ -75,7 +75,7 @@ export default function NoteNodeActionPanel({
   // 取消编辑名称
   const handleCancelEditName = useCallback(() => {
     setIsEditingName(false)
-    setEditingName(activeNode?.title || '')
+    setEditingName(activeNode?.title ?? '')
   }, [activeNode])
 
   // 保存名称

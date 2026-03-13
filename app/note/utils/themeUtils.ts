@@ -64,7 +64,7 @@ export const nodeDataToWikiNode = (node: {
 } => ({
   id: Number(node.id),
   title: node.title,
-  slug: node.slug || '',
+  slug: node.slug ?? '',
   tags: node.tags,
   summary: node.summary,
 })

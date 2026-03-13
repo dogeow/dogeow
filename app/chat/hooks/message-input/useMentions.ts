@@ -33,7 +33,7 @@ export function useMentions(roomUsers: OnlineUser[]) {
 
     if (mentionMatch) {
       setMentionQuery(mentionMatch[1])
-      setMentionPosition(mentionMatch.index || 0)
+      setMentionPosition(mentionMatch.index ?? 0)
       setShowMentions(true)
       setSelectedMentionIndex(0)
     } else {

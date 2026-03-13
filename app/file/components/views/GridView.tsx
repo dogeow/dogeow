@@ -67,7 +67,7 @@ export default function GridView({ files }: GridViewProps) {
       </div>
 
       <EditFileDialog
-        file={editingId != null ? files.find(f => f.id === editingId) || null : null}
+        file={editingId != null ? (files.find(f => f.id === editingId) ?? null) : null}
         fileName={fileName}
         fileDescription={fileDescription}
         onFileNameChange={setFileName}

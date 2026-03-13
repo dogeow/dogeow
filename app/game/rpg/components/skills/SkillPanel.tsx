@@ -322,7 +322,7 @@ export function SkillPanel() {
 
   const getPrerequisiteSkill = useCallback(
     (skillId: number): SkillWithLearnedState | null => {
-      return skills.find(s => s.id === skillId) || null
+      return skills.find(s => s.id === skillId) ?? null
     },
     [skills]
   )
@@ -364,7 +364,7 @@ export function SkillPanel() {
             </button>
             {availableBranches.map(branch => {
               const config = BRANCH_CONFIG[branch]
-              const count = skillsByBranch[branch]?.length || 0
+              const count = skillsByBranch[branch]?.length ?? 0
               return (
                 <button
                   key={branch}

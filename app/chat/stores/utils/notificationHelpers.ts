@@ -21,7 +21,7 @@ export const createOrUpdateRoomNotification = (
   updates: Partial<RoomNotification>
 ): Record<string, RoomNotification> => {
   const roomKey = roomId.toString()
-  const currentNotification = notifications[roomKey] || {
+  const currentNotification = notifications[roomKey] ?? {
     roomId,
     unreadCount: 0,
     lastMessageAt: new Date().toISOString(),
@@ -45,7 +45,7 @@ export const incrementRoomUnreadCount = (
   roomId: number
 ): Record<string, RoomNotification> => {
   return createOrUpdateRoomNotification(notifications, roomId, {
-    unreadCount: (notifications[roomId.toString()]?.unreadCount || 0) + 1,
+    unreadCount: (notifications[roomId.toString()]?.unreadCount ?? 0) + 1,
     lastMessageAt: new Date().toISOString(),
   })
 }
@@ -74,5 +74,5 @@ export const markMentionAsRead = (mentions: MentionInfo[], messageId: number): M
  */
 export const extractMentions = (message: string): string[] => {
   const mentionRegex = /@\w+/g
-  return message.match(mentionRegex) || []
+  return message.match(mentionRegex) ?? []
 }

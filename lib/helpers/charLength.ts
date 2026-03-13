@@ -9,7 +9,7 @@
  * @returns 字符长度（整数）
  */
 export function calculateCharLength(text: string): number {
-  if (!text || typeof text !== 'string') {
+  if (!text) {
     return 0
   }
 

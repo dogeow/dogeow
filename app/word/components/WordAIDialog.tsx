@@ -29,9 +29,9 @@ export function WordAIDialog({ word, open, onOpenChange }: WordAIDialogProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
-  const [editedExplanation, setEditedExplanation] = useState(word.explanation || '')
+  const [editedExplanation, setEditedExplanation] = useState(word.explanation ?? '')
   const [editedExamples, setEditedExamples] = useState(
-    word.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') || ''
+    word.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') ?? ''
   )
   const [autoQueryDone, setAutoQueryDone] = useState(false)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -43,8 +43,8 @@ export function WordAIDialog({ word, open, onOpenChange }: WordAIDialogProps) {
       setErrorMessage(null)
       setCopiedIdx(null)
       setAutoQueryDone(false)
-      setEditedExplanation(word.explanation || '')
-      setEditedExamples(word.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') || '')
+      setEditedExplanation(word.explanation ?? '')
+      setEditedExamples(word.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') ?? '')
     }
   }, [open, word])
 

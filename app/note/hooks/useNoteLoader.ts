@@ -32,7 +32,7 @@ export function useNoteLoader(noteId: string | string[]) {
               content: [
                 {
                   type: 'text',
-                  text: normalizedNote.content || '',
+                  text: normalizedNote.content ?? '',
                 },
               ],
             },

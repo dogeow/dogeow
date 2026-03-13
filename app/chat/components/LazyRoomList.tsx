@@ -74,7 +74,7 @@ const RoomItem = ({ room, isSelected, onClick, isVisible }: RoomItemProps) => {
         </div>
         <div className="text-muted-foreground flex items-center space-x-2 text-xs">
           <MessageSquare className="h-3 w-3" />
-          <span>{room.message_count || 0}</span>
+          <span>{room.message_count ?? 0}</span>
           {room.last_activity && (
             <>
               <Clock className="h-3 w-3" />
@@ -216,7 +216,7 @@ export function LazyRoomList({ onRoomSelect, selectedRoomId, className }: LazyRo
         return a.name.localeCompare(b.name)
       }
       if (sortBy === 'members') {
-        return (b.online_count || 0) - (a.online_count || 0)
+        return (b.online_count ?? 0) - (a.online_count ?? 0)
       }
       // 默认按 activity
       const toTime = (r: ChatRoom) => (r.last_activity ? new Date(r.last_activity).getTime() : 0)

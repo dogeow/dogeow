@@ -79,7 +79,7 @@ export function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
   // 渲染个人信息视图
   const renderProfileView = () => (
     <ProfileView
-      userName={user?.name || ''}
+      userName={user?.name ?? ''}
       confirmingLogout={confirmingLogout}
       onGoToDashboard={handleGoToDashboard}
       onLogoutStart={handleLogoutStart}

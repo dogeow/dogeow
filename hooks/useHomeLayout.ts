@@ -44,7 +44,7 @@ const debugWarn = (...args: unknown[]) => {
 function normalizeTileSizes(tiles: TileConfig[], context: string): TileConfig[] {
   return tiles.map(tile => {
     if (!VALID_TILE_SIZES.includes(tile.size)) {
-      const fixedSize = DEFAULT_TILE_SIZES[tile.name] || '1x1'
+      const fixedSize = DEFAULT_TILE_SIZES[tile.name] ?? '1x1'
       console.warn(`⚠️ Fixing invalid size ${context}: ${tile.name} ${tile.size} -> ${fixedSize}`)
       return { ...tile, size: fixedSize }
     }
@@ -81,7 +81,7 @@ export function useHomeLayout() {
   )
 
   // 从 API 数据中提取 tiles
-  const layoutTiles = data?.layout?.tiles || []
+  const layoutTiles = data?.layout?.tiles ?? []
 
   // 同步服务端数据到 store（仅在初始加载或非保存状态时）
   useEffect(() => {

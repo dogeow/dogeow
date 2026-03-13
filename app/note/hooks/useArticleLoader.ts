@@ -44,7 +44,7 @@ export function useArticleLoader() {
     }
 
     setArticleJson(parsedJson)
-    setArticleRaw(markdownOrRaw || '')
+    setArticleRaw(markdownOrRaw ?? '')
 
     if (!html && !parsedJson && !markdownOrRaw) {
       setArticleError('文章暂无内容')

@@ -282,7 +282,7 @@ export default function ThingTags() {
           open={alertOpen}
           onOpenChange={setAlertOpen}
           onConfirm={deleteTag}
-          itemName={tagToDelete ? tags?.find(t => t.id === tagToDelete)?.name || '' : ''}
+          itemName={tagToDelete ? (tags?.find(t => t.id === tagToDelete)?.name ?? '') : ''}
         />
 
         {/* 添加标签Speed Dial */}

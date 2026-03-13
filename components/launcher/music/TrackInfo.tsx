@@ -8,21 +8,15 @@ export const TrackInfo = memo(
     getCurrentTrackName,
     currentLyric,
     hasLyrics,
-    isLoadingTracks,
   }: Pick<
     MusicPlayerProps,
     'isPlaying' | 'getCurrentTrackName' | 'currentLyric' | 'hasLyrics' | 'isLoadingTracks'
   >) => {
-    const trackName = getCurrentTrackName() ?? '没有选择音乐'
-    const isEmptyState =
-      !isLoadingTracks && (trackName === '没有选择音乐' || trackName === '播放列表为空')
-    const normalizedTrackName = trackName?.trim()
-    const normalizedLyric = currentLyric?.trim()
-    const displayLyric =
-      normalizedTrackName && normalizedLyric && normalizedTrackName !== normalizedLyric
-        ? normalizedLyric
-        : ''
-    const hasLyricView = Boolean(hasLyrics) && !isEmptyState
+    const trackName = getCurrentTrackName()
+    const normalizedTrackName = trackName.trim()
+    const normalizedLyric = currentLyric?.trim() ?? ''
+    const displayLyric = normalizedTrackName !== normalizedLyric ? normalizedLyric : ''
+    const hasLyricView = Boolean(hasLyrics)
     const canToggleText = isPlaying && hasLyricView && Boolean(displayLyric)
     const viewToken = `${trackName}:${isPlaying ? 'playing' : 'paused'}:${hasLyricView ? 'lyrics' : 'plain'}`
     const [viewOverride, setViewOverride] = useState<{ token: string; showLyric: boolean } | null>(
@@ -41,13 +35,7 @@ export const TrackInfo = memo(
     const showLyric =
       viewOverride?.token === viewToken ? viewOverride.showLyric : isPlaying && hasLyricView
 
-    const visibleText = isLoadingTracks
-      ? '加载中...'
-      : isEmptyState
-        ? '暂无音乐'
-        : showLyric && displayLyric
-          ? displayLyric
-          : trackName
+    const visibleText = showLyric && displayLyric ? displayLyric : trackName
     const primaryText = visibleText
     const activeScrollLeft = scrollKey === primaryText ? scrollLeft : 0
 

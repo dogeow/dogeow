@@ -31,10 +31,10 @@ export function WordDataEditor({
   onSave,
   saveButtonText = '保存',
 }: WordDataEditorProps) {
-  const [phonetic, setPhonetic] = useState(initialData?.phonetic_us || '')
-  const [explanation, setExplanation] = useState(initialData?.explanation || '')
+  const [phonetic, setPhonetic] = useState(initialData?.phonetic_us ?? '')
+  const [explanation, setExplanation] = useState(initialData?.explanation ?? '')
   const [examples, setExamples] = useState(
-    initialData?.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') || ''
+    initialData?.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') ?? ''
   )
   const [educationLevelCodes, setEducationLevelCodes] = useState<string[]>([])
   const [isGenerating, setIsGenerating] = useState(false)

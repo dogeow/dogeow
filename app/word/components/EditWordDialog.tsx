@@ -15,17 +15,17 @@ interface EditWordDialogProps {
 }
 
 export function EditWordDialog({ word, open, onOpenChange }: EditWordDialogProps) {
-  const [editedExplanation, setEditedExplanation] = useState(word.explanation || '')
+  const [editedExplanation, setEditedExplanation] = useState(word.explanation ?? '')
   const [editedExamples, setEditedExamples] = useState(
-    word.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') || ''
+    word.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') ?? ''
   )
   const [isSaving, setIsSaving] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
 
   useEffect(() => {
     if (open) {
-      setEditedExplanation(word.explanation || '')
-      setEditedExamples(word.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') || '')
+      setEditedExplanation(word.explanation ?? '')
+      setEditedExamples(word.example_sentences?.map(e => `${e.en}\n${e.zh}`).join('\n\n') ?? '')
     }
   }, [open, word])
 

@@ -39,7 +39,7 @@ type JsonApiPaginatedResponse<T> = {
 }
 
 const toPagination = (response: JsonApiPaginatedResponse<ChatMessage>): MessagePagination => {
-  const meta = response.meta || {}
+  const meta = response.meta ?? {}
   const currentPage = meta.current_page ?? 1
   const lastPage = meta.last_page ?? currentPage
 
@@ -196,7 +196,7 @@ const useChatStore = create<ChatState>()(
 
             // 清理其他房间的在线用户数据
             const cleanedOnlineUsers: Record<string, OnlineUser[]> = {}
-            cleanedOnlineUsers[room.id.toString()] = state.onlineUsers[room.id.toString()] || []
+            cleanedOnlineUsers[room.id.toString()] = state.onlineUsers[room.id.toString()] ?? []
             newState.onlineUsers = cleanedOnlineUsers
           } else {
             // 如果没有当前房间，清空所有在线用户数据
@@ -242,7 +242,7 @@ const useChatStore = create<ChatState>()(
           const authState = useAuthStore.getState()
 
           const response = await apiGet<{ rooms: ChatRoom[] }>('/chat/rooms')
-          const rooms = response.rooms || []
+          const rooms = response.rooms ?? []
 
           const safeRooms = Array.isArray(rooms) ? rooms : []
 
@@ -348,7 +348,7 @@ const useChatStore = create<ChatState>()(
       addMessage: (roomId, message) => {
         const state = get()
         const roomKey = roomId.toString()
-        const currentMessages = state.messages[roomKey] || []
+        const currentMessages = state.messages[roomKey] ?? []
 
         // 避免重复消息
         const messageExists = currentMessages.some(m => m.id === message.id)
@@ -363,7 +363,7 @@ const useChatStore = create<ChatState>()(
         set(prevState => {
           const newMessages = {
             ...prevState.messages,
-            [roomKey]: [...(prevState.messages[roomKey] || []), message],
+            [roomKey]: [...(prevState.messages[roomKey] ?? []), message],
           }
 
           return {
@@ -495,7 +495,7 @@ const useChatStore = create<ChatState>()(
           const paginationData = toPagination(response)
 
           set(state => {
-            const currentMessages = state.messages[roomKey] || []
+            const currentMessages = state.messages[roomKey] ?? []
 
             return {
               messages: {
@@ -547,7 +547,7 @@ const useChatStore = create<ChatState>()(
       addOnlineUser: (roomId, user) => {
         set(state => {
           const roomKey = roomId.toString()
-          const currentUsers = state.onlineUsers[roomKey] || []
+          const currentUsers = state.onlineUsers[roomKey] ?? []
 
           const updatedUsers = addOnlineUserToList(currentUsers, user)
           if (updatedUsers === currentUsers) return state // 用户已存在
@@ -564,7 +564,7 @@ const useChatStore = create<ChatState>()(
       removeOnlineUser: (roomId, userId) => {
         set(state => {
           const roomKey = roomId.toString()
-          const currentUsers = state.onlineUsers[roomKey] || []
+          const currentUsers = state.onlineUsers[roomKey] ?? []
           const updatedUsers = removeOnlineUserFromList(currentUsers, userId)
 
           return {
@@ -585,7 +585,7 @@ const useChatStore = create<ChatState>()(
           set(state => ({
             onlineUsers: {
               ...state.onlineUsers,
-              [roomId.toString()]: response.online_users || [],
+              [roomId.toString()]: response.online_users ?? [],
             },
           }))
         } catch (error) {
@@ -693,7 +693,7 @@ const useChatStore = create<ChatState>()(
       incrementUnreadCount: roomId => {
         set(state => {
           const roomKey = roomId.toString()
-          const currentNotification = state.notifications[roomKey] || {
+          const currentNotification = state.notifications[roomKey] ?? {
             roomId,
             unreadCount: 0,
             lastMessageAt: new Date().toISOString(),
@@ -748,7 +748,7 @@ const useChatStore = create<ChatState>()(
           if (mentionExists) return state
 
           const roomKey = mention.roomId.toString()
-          const currentNotification = state.notifications[roomKey] || {
+          const currentNotification = state.notifications[roomKey] ?? {
             roomId: mention.roomId,
             unreadCount: 0,
             lastMessageAt: mention.mentionedAt,
@@ -791,7 +791,7 @@ const useChatStore = create<ChatState>()(
 
       getRoomUnreadCount: roomId => {
         const roomKey = roomId.toString()
-        return get().notifications[roomKey]?.unreadCount || 0
+        return get().notifications[roomKey]?.unreadCount ?? 0
       },
 
       hasUnreadMentions: roomId => {

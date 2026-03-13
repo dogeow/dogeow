@@ -9,7 +9,7 @@ export function useNoteContent() {
       content:
         content ||
         '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}',
-      markdown: markdown || '',
+      markdown: markdown ?? '',
     }
   }, [])
 

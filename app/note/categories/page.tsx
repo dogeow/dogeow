@@ -115,7 +115,7 @@ export default function NoteCategories() {
       <div>
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-foreground text-xl font-semibold">分类列表</h2>
-          <div className="text-muted-foreground text-sm">共 {categories?.length || 0} 个分类</div>
+          <div className="text-muted-foreground text-sm">共 {categories?.length ?? 0} 个分类</div>
         </div>
 
         {error && <p className="text-red-500">加载分类失败</p>}
@@ -198,7 +198,7 @@ export default function NoteCategories() {
         onOpenChange={setAlertOpen}
         onConfirm={deleteCategory}
         itemName={
-          categoryToDelete ? categories?.find(c => c.id === categoryToDelete)?.name || '' : ''
+          categoryToDelete ? (categories?.find(c => c.id === categoryToDelete)?.name ?? '') : ''
         }
       />
 

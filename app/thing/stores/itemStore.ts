@@ -199,9 +199,9 @@ export const useItemStore = create<ItemState>((set, get) => ({
       const data = await apiRequest<{ data: Item[]; meta: PaginationMeta }>(url)
 
       set({
-        items: data.data || [],
+        items: data.data ?? [],
         loading: false,
-        meta: data.meta || null,
+        meta: data.meta ?? null,
       })
 
       return data

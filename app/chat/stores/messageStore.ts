@@ -21,7 +21,7 @@ type JsonApiPaginatedResponse<T> = {
 }
 
 const toPagination = (response: JsonApiPaginatedResponse<ChatMessage>): MessagePagination => {
-  const meta = response.meta || {}
+  const meta = response.meta ?? {}
   const currentPage = meta.current_page ?? 1
   const lastPage = meta.last_page ?? currentPage
 
@@ -59,7 +59,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
 
   addMessage: (roomId, message) => {
     const roomKey = roomId.toString()
-    const currentMessages = get().messages[roomKey] || []
+    const currentMessages = get().messages[roomKey] ?? []
 
     const messageExists = currentMessages.some(m => m.id === message.id)
     if (messageExists) {
@@ -72,7 +72,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
     set(prevState => ({
       messages: {
         ...prevState.messages,
-        [roomKey]: [...(prevState.messages[roomKey] || []), message],
+        [roomKey]: [...(prevState.messages[roomKey] ?? []), message],
       },
     }))
   },
@@ -151,7 +151,7 @@ export const useMessageStore = create<MessageStore>((set, get) => ({
       const paginationData = toPagination(response)
 
       set(state => {
-        const currentMessages = state.messages[roomKey] || []
+        const currentMessages = state.messages[roomKey] ?? []
 
         return {
           messages: {

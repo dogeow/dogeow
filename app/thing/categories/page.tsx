@@ -189,7 +189,7 @@ export default function Categories() {
 
   // 获取要删除的分类名称
   const categoryToDeleteName = useMemo(() => {
-    return categoryToDelete ? categories.find(c => c.id === categoryToDelete)?.name || '' : ''
+    return categoryToDelete ? (categories.find(c => c.id === categoryToDelete)?.name ?? '') : ''
   }, [categoryToDelete, categories])
 
   return (

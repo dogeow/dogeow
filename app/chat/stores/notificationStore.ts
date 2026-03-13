@@ -102,7 +102,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
   incrementUnreadCount: roomId => {
     set(state => {
       const roomKey = roomId.toString()
-      const currentNotification = state.notifications[roomKey] || {
+      const currentNotification = state.notifications[roomKey] ?? {
         roomId,
         unreadCount: 0,
         lastMessageAt: new Date().toISOString(),
@@ -159,7 +159,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       if (mentionExists) return state
 
       const roomKey = mention.roomId.toString()
-      const currentNotification = state.notifications[roomKey] || {
+      const currentNotification = state.notifications[roomKey] ?? {
         roomId: mention.roomId,
         unreadCount: 0,
         lastMessageAt: mention.mentionedAt,
@@ -204,7 +204,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
 
   getRoomUnreadCount: roomId => {
     const roomKey = roomId.toString()
-    return get().notifications[roomKey]?.unreadCount || 0
+    return get().notifications[roomKey]?.unreadCount ?? 0
   },
 
   hasUnreadMentions: roomId => {

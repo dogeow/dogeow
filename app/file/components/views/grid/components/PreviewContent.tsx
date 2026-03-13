@@ -28,7 +28,7 @@ export const PreviewContent = memo<PreviewContentProps>(
       return (
         <Image
           src={previewUrl}
-          alt={previewFile?.name || ''}
+          alt={previewFile?.name ?? ''}
           width={800}
           height={600}
           className="max-h-[60vh] max-w-full object-contain"

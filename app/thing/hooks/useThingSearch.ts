@@ -43,8 +43,8 @@ export function useThingSearch(): UseThingSearchReturn {
     const handleCustomSearch = (event: CustomEvent) => {
       const { searchTerm: newSearchTerm } = event.detail
 
-      const normalizedCurrent = String(searchTerm || '').trim()
-      const normalizedNew = String(newSearchTerm || '').trim()
+      const normalizedCurrent = String(searchTerm ?? '').trim()
+      const normalizedNew = String(newSearchTerm ?? '').trim()
 
       if (normalizedCurrent !== normalizedNew) {
         setSearchTerm(newSearchTerm)

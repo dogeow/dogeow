@@ -77,7 +77,7 @@ export const RoomListItem = memo<RoomListItemProps>(
             {/* 人数 - 始终靠右 */}
             <div className="text-muted-foreground flex items-center gap-1 text-xs">
               <Users className="h-3 w-3" />
-              <span>{room.online_count || 0}</span>
+              <span>{room.online_count ?? 0}</span>
             </div>
           </div>
         </div>

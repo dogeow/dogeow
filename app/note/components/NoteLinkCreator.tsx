@@ -35,7 +35,7 @@ const NoteLinkCreator = forwardRef<NoteLinkCreatorRef, LinkCreatorProps>(
     },
     ref
   ) => {
-    const [sourceId, setSourceId] = useState<number | ''>(sourceNodeId || '')
+    const [sourceId, setSourceId] = useState<number | ''>(sourceNodeId ?? '')
     const [targetId, setTargetId] = useState<number | ''>('')
     const [type, setType] = useState('')
     const [isCreating, setIsCreating] = useState(false)
@@ -56,7 +56,7 @@ const NoteLinkCreator = forwardRef<NoteLinkCreatorRef, LinkCreatorProps>(
 
     useEffect(() => {
       if (open) {
-        setSourceId(sourceNodeId || '')
+        setSourceId(sourceNodeId ?? '')
         // 对话框打开时，清除选择状态（因为已经完成选择或取消）
         setIsSelectingFromGraph(false)
         // 如果目标节点未选择，重置类型

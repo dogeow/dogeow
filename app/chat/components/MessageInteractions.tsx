@@ -72,7 +72,7 @@ export function MessageInteractions({
     useMessageInteractions()
 
   // Get reactions from message data - if no reactions exist, show empty array
-  const reactions: EmojiReaction[] = message.reactions || []
+  const reactions: EmojiReaction[] = message.reactions ?? []
 
   const handleCopyMessage = async () => {
     try {

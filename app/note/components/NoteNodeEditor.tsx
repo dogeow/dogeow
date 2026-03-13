@@ -61,7 +61,7 @@ export default function NoteNodeEditor({
                   content: [
                     {
                       type: 'text',
-                      text: article.content || '',
+                      text: article.content ?? '',
                     },
                   ],
                 },
@@ -94,15 +94,15 @@ export default function NoteNodeEditor({
       setIsLoaded(false)
 
       if (node) {
-        setTitle(node.title || '')
-        setTags(node.tags || [])
-        setSummary(node.summary || '')
+        setTitle(node.title ?? '')
+        setTags(node.tags ?? [])
+        setSummary(node.summary ?? '')
         await hydrateEditorStorage(node.slug)
       } else if (templateNode) {
         // 创建子节点：简易模式只填标题，不加载父节点内容
         setTitle('')
-        setTags(templateNode.tags || [])
-        setSummary(templateNode.summary || '')
+        setTags(templateNode.tags ?? [])
+        setSummary(templateNode.summary ?? '')
         resetEditorStorage()
       } else {
         setTitle('')
@@ -130,7 +130,7 @@ export default function NoteNodeEditor({
       content:
         content ||
         '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}',
-      markdown: markdown || '',
+      markdown: markdown ?? '',
     }
   }
 
@@ -165,8 +165,8 @@ export default function NoteNodeEditor({
       const data = isSimpleCreateChild
         ? {
             title: title.trim(),
-            tags: templateNode?.tags || [],
-            summary: templateNode?.summary || '',
+            tags: templateNode?.tags ?? [],
+            summary: templateNode?.summary ?? '',
             content:
               '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":""}]}]}',
             content_markdown: '',

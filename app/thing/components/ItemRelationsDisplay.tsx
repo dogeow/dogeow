@@ -70,8 +70,8 @@ export function ItemRelationsDisplay({ itemId, canEdit = false }: ItemRelationsD
         relating_items: ItemRelation[]
       }>(`/things/items/${itemId}/relations`)
 
-      setRelatedItems(response.related_items || [])
-      setRelatingItems(response.relating_items || [])
+      setRelatedItems(response.related_items ?? [])
+      setRelatingItems(response.relating_items ?? [])
     } catch (error) {
       console.error('加载关联失败:', error)
     } finally {
@@ -107,9 +107,9 @@ export function ItemRelationsDisplay({ itemId, canEdit = false }: ItemRelationsD
 
   // 渲染关联物品卡片
   const renderRelationCard = (item: ItemRelation, isOutgoing: boolean) => {
-    const relationType = item.pivot?.relation_type || 'related'
+    const relationType = item.pivot?.relation_type ?? 'related'
     const config = RELATION_TYPE_CONFIG[relationType as keyof typeof RELATION_TYPE_CONFIG]
-    const Icon = config?.icon || Link2Icon
+    const Icon = config?.icon ?? Link2Icon
 
     return (
       <Card key={item.id} className="overflow-hidden">
@@ -135,7 +135,7 @@ export function ItemRelationsDisplay({ itemId, canEdit = false }: ItemRelationsD
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h4 className="font-medium">{item.name}</h4>
-                  <p className="text-muted-foreground text-sm">{item.category?.name || '未分类'}</p>
+                  <p className="text-muted-foreground text-sm">{item.category?.name ?? '未分类'}</p>
                 </div>
 
                 {/* 关联类型标签 */}

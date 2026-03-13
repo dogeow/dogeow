@@ -62,7 +62,7 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
     resolver: zodResolver(editRoomSchema),
     defaultValues: {
       name: room.name,
-      description: room.description || '',
+      description: room.description ?? '',
       is_private: room.is_private ?? false,
     },
   })
@@ -71,7 +71,7 @@ export function EditRoomDialog({ room, open, onOpenChange }: EditRoomDialogProps
   useEffect(() => {
     form.reset({
       name: room.name,
-      description: room.description || '',
+      description: room.description ?? '',
       is_private: room.is_private ?? false,
     })
   }, [room, form])

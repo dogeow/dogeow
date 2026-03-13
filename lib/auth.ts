@@ -23,7 +23,7 @@ export const isAdmin = async (): Promise<boolean> => {
     const currentUser = await fetchCurrentUser()
     // 更新 store 中的用户信息
     useAuthStore.getState().setUser(currentUser)
-    return currentUser.is_admin ?? false
+    return Boolean(currentUser.is_admin)
   } catch {
     return false
   }
@@ -34,7 +34,7 @@ export const isAdmin = async (): Promise<boolean> => {
  */
 export const isAdminSync = (): boolean => {
   const user = useAuthStore.getState().user
-  return user?.is_admin ?? false
+  return Boolean(user?.is_admin)
 }
 
 /**

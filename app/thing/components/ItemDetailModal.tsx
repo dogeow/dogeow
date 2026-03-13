@@ -176,7 +176,7 @@ export function ItemDetailModal({
   const handleLocationSelect = useCallback(
     (type: 'area' | 'room' | 'spot', id: number, fullPath?: string) => {
       setSelectedLocation({ type, id })
-      setLocationPath(fullPath || '')
+      setLocationPath(fullPath ?? '')
 
       const updates: Partial<ItemFormData> = {}
 
@@ -234,16 +234,16 @@ export function ItemDetailModal({
     try {
       const itemFormData: ItemFormData = {
         name: currentItem.name,
-        description: currentItem.description || '',
+        description: currentItem.description ?? '',
         quantity: currentItem.quantity,
         status: currentItem.status,
         purchase_date: currentItem.purchase_date ? new Date(currentItem.purchase_date) : null,
         expiry_date: currentItem.expiry_date ? new Date(currentItem.expiry_date) : null,
-        purchase_price: currentItem.purchase_price || null,
-        category_id: currentItem.category_id?.toString() || '',
-        area_id: currentItem.spot?.room?.area?.id?.toString() || '',
-        room_id: currentItem.spot?.room?.id?.toString() || '',
-        spot_id: currentItem.spot_id?.toString() || '',
+        purchase_price: currentItem.purchase_price ?? null,
+        category_id: currentItem.category_id?.toString() ?? '',
+        area_id: currentItem.spot?.room?.area?.id?.toString() ?? '',
+        room_id: currentItem.spot?.room?.id?.toString() ?? '',
+        spot_id: currentItem.spot_id?.toString() ?? '',
         is_public: currentItem.is_public,
       }
 
@@ -553,7 +553,7 @@ export function ItemDetailModal({
         contentClassName="w-[calc(100vw-1rem)] max-w-4xl sm:w-[calc(100vw-2rem)]"
       >
         <div className="flex flex-col items-center justify-center py-12">
-          <p className="mb-4 text-red-500">{error?.message || '物品不存在'}</p>
+          <p className="mb-4 text-red-500">{error?.message ?? '物品不存在'}</p>
           <Button onClick={handleClose} variant="outline">
             关闭
           </Button>
@@ -566,9 +566,9 @@ export function ItemDetailModal({
 
   const displayCategoryName =
     mode === 'edit'
-      ? categories.find(category => category.id.toString() === formData.category_id)?.name ||
-        '未分类'
-      : item.category?.name || '未分类'
+      ? (categories.find(category => category.id.toString() === formData.category_id)?.name ??
+        '未分类')
+      : (item.category?.name ?? '未分类')
   const displayName = mode === 'edit' ? formData.name || item.name : item.name
   const isInlineEditMode = mode === 'edit'
   const isPublicItem = isInlineEditMode ? formData.is_public : item.is_public

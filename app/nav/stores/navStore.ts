@@ -77,7 +77,7 @@ export const useNavStore = create<NavStore>((set, get) => ({
         return categories
       }
       set({ loading: true, error: null })
-      const categories = (await navApi.getCategories(filterName)) || []
+      const categories = (await navApi.getCategories(filterName)) ?? []
       set({ categories, loading: false })
       return categories
     } catch (error) {
@@ -96,7 +96,7 @@ export const useNavStore = create<NavStore>((set, get) => ({
         return allCategories
       }
       set({ loading: true, error: null })
-      const allCategories = (await navApi.getAllCategories()) || []
+      const allCategories = (await navApi.getAllCategories()) ?? []
       set({ allCategories, loading: false })
       return allCategories
     } catch (error) {

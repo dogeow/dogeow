@@ -19,7 +19,6 @@ export const MusicPlayer = memo(
   ({
     isPlaying,
     audioError,
-    isLoadingTracks,
     currentTime,
     duration,
     availableTracks,
@@ -35,10 +34,7 @@ export const MusicPlayer = memo(
   }: MusicPlayerProps) => {
     const router = useRouter()
     const { clearFilters } = useFilterPersistenceStore()
-    const isLoadingState = Boolean(
-      isLoadingTracks && !currentTrack && (!availableTracks || availableTracks.length === 0)
-    )
-    const isEmptyState = !isLoadingState && (!currentTrack || availableTracks.length === 0)
+    const isEmptyState = !currentTrack || availableTracks.length === 0
     const handleBackToApps = () => toggleDisplayMode('apps')
     const [showRemainingTime, setShowRemainingTime] = useState(false)
 
@@ -76,11 +72,10 @@ export const MusicPlayer = memo(
               getCurrentTrackName={getCurrentTrackName}
               currentLyric={currentLyric}
               hasLyrics={hasLyrics}
-              isLoadingTracks={isLoadingState}
             />
           </div>
 
-          {audioError && !isEmptyState && !isLoadingState && (
+          {audioError && !isEmptyState && (
             <div className="relative z-10 shrink-0 truncate rounded bg-amber-50 px-2 py-1 text-xs text-amber-600">
               {audioError.includes('播放列表为空') ? '🎵 暂无音乐' : audioError}
             </div>

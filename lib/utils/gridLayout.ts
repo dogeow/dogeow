@@ -46,7 +46,7 @@ export function generateDefaultLayout(tileNames: string[]): TileConfig[] {
 
   return tileNames.map(name => ({
     name,
-    size: defaultLayout[name] || '1x1',
+    size: defaultLayout[name] ?? '1x1',
     order: layoutOrder[name] ?? 999, // 未定义的排在最后
   }))
 }
@@ -113,7 +113,7 @@ export function generateGridAreas(tiles: TileConfig[]): string {
       console.error(`❌ Could not place tile: ${tile.name} (${tile.size})`)
       console.error('Current grid state:')
       for (let r = 0; r <= currentRow + 2; r++) {
-        console.error(`  Row ${r}:`, grid[r]?.map(c => c || '.').join(' ') || 'empty')
+        console.error(`  Row ${r}:`, grid[r]?.map(c => c ?? '.').join(' ') ?? 'empty')
       }
     }
   }
@@ -138,7 +138,7 @@ export function generateGridAreas(tiles: TileConfig[]): string {
     for (let col = 0; col < GRID_COLUMNS; col++) {
       const cell = grid[row]?.[col]
       // 如果单元格为空，使用 '.' 作为占位符（CSS Grid 会自动处理）
-      rowCells.push(cell || '.')
+      rowCells.push(cell ?? '.')
     }
     areas.push(`"${rowCells.join(' ')}"`)
   }
@@ -148,7 +148,7 @@ export function generateGridAreas(tiles: TileConfig[]): string {
   console.log('Tiles:', sortedTiles.map(t => `${t.name}(${t.size})`).join(', '))
   console.log('Grid layout:')
   for (let row = 0; row <= maxUsedRow; row++) {
-    const rowStr = grid[row]?.map(cell => cell || '.').join(' ') || ''
+    const rowStr = grid[row]?.map(cell => cell ?? '.').join(' ') ?? ''
     console.log(`  Row ${row}: [${rowStr}]`)
   }
   areas.forEach((area, idx) => {

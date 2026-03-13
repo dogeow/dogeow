@@ -102,16 +102,16 @@ export default function LocationsSpeedDial({
     try {
       switch (dialogType) {
         case 'area':
-          success = (await onAddArea(newName.trim())) || false
+          success = (await onAddArea(newName.trim())) ?? false
           break
         case 'room':
           if (selectedAreaId) {
-            success = (await onAddRoom(newName.trim(), selectedAreaId)) || false
+            success = (await onAddRoom(newName.trim(), selectedAreaId)) ?? false
           }
           break
         case 'spot':
           if (selectedRoomId) {
-            success = (await onAddSpot(newName.trim(), selectedRoomId)) || false
+            success = (await onAddSpot(newName.trim(), selectedRoomId)) ?? false
           }
           break
       }
@@ -244,7 +244,7 @@ export default function LocationsSpeedDial({
               <div className="space-y-2">
                 <Label htmlFor="area">{t('location.belongs_to_area')}</Label>
                 <Select
-                  value={selectedAreaId?.toString() || ''}
+                  value={selectedAreaId?.toString() ?? ''}
                   onValueChange={value => setSelectedAreaId(Number(value))}
                 >
                   <SelectTrigger>
@@ -266,7 +266,7 @@ export default function LocationsSpeedDial({
               <div className="space-y-2">
                 <Label htmlFor="room">{t('location.belongs_to_room')}</Label>
                 <Select
-                  value={selectedRoomId?.toString() || ''}
+                  value={selectedRoomId?.toString() ?? ''}
                   onValueChange={value => setSelectedRoomId(Number(value))}
                 >
                   <SelectTrigger>

@@ -96,7 +96,7 @@ function CategorySidebar({
 function NavContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const initialFilter = searchParams.get('filter[name]') || ''
+  const initialFilter = searchParams.get('filter[name]') ?? ''
 
   const {
     categories,

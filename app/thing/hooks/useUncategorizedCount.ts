@@ -15,7 +15,7 @@ export const useUncategorizedCount = () => {
   )
 
   return {
-    count: data?.meta?.total || 0,
+    count: data?.meta?.total ?? 0,
     loading: !error && !data,
     error,
     refresh: mutate,

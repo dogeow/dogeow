@@ -40,9 +40,9 @@ export const useLocationManagement = () => {
   const { data: locationData, mutate: refreshLocations } = useLocations()
 
   // 从统一接口中提取各类位置数据
-  const areas = (locationData as LocationTreeResponse)?.areas || []
-  const rooms = (locationData as LocationTreeResponse)?.rooms || []
-  const spots = (locationData as LocationTreeResponse)?.spots || []
+  const areas = (locationData as LocationTreeResponse)?.areas ?? []
+  const rooms = (locationData as LocationTreeResponse)?.rooms ?? []
+  const spots = (locationData as LocationTreeResponse)?.spots ?? []
 
   // 统一的刷新函数
   const refreshAreas = refreshLocations

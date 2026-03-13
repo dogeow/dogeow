@@ -41,9 +41,9 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
     if (!data) return { areas: [], rooms: [], spots: [] }
 
     return {
-      areas: data.areas || [],
-      rooms: data.rooms || [],
-      spots: data.spots || [],
+      areas: data.areas ?? [],
+      rooms: data.rooms ?? [],
+      spots: data.spots ?? [],
     }
   }, [locationData])
 
@@ -111,7 +111,7 @@ const LocationTreeSelect: React.FC<LocationTreeSelectProps> = ({
   const getRoomAreaName = useCallback(
     (room: Room): string => {
       const area = areas.find(a => a.id === room.area_id)
-      return area?.name || t('location.unknown_area')
+      return area?.name ?? t('location.unknown_area')
     },
     [areas, t]
   )

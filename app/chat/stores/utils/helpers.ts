@@ -6,7 +6,7 @@ import type { ChatState } from '../../chatStore'
  * 获取当前用户ID
  */
 export const getCurrentUserId = (): number | null => {
-  return useAuthStore.getState().user?.id || null
+  return useAuthStore.getState().user?.id ?? null
 }
 
 /**

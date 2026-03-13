@@ -940,11 +940,11 @@ const store: StateCreator<GameState> = (set, get) => ({
         current_map_id: number | null
       }
       const currentMap = response.current_map_id
-        ? response.maps.find(m => m.id === response.current_map_id) || null
+        ? (response.maps.find(m => m.id === response.current_map_id) ?? null)
         : null
       set(state => ({
         ...state,
-        maps: response.maps || [],
+        maps: response.maps ?? [],
         currentMap,
         isLoading: false,
       }))
@@ -966,7 +966,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       })
       soundManager.play('teleport') // 使用传送音效
       const maps = get().maps
-      const currentMap = maps.find(m => m.id === mapId) || null
+      const currentMap = maps.find(m => m.id === mapId) ?? null
       set(state => ({
         ...state,
         currentMap,
@@ -995,7 +995,7 @@ const store: StateCreator<GameState> = (set, get) => ({
       }
       soundManager.play('skill_use')
       const maps = get().maps
-      const currentMap = maps.find(m => m.id === mapId) || null
+      const currentMap = maps.find(m => m.id === mapId) ?? null
       const char = response.character
       set(state => ({
         ...state,

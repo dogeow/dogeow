@@ -15,7 +15,7 @@ interface LocationSectionProps {
 export const LocationSection = memo<LocationSectionProps>(
   ({ locationPath, selectedLocation, onLocationSelect, getCurrentValue, isCreateMode }) => {
     const renderLocationInfo = () => {
-      const currentLocationPath = locationPath || ''
+      const currentLocationPath = locationPath ?? ''
       const currentAreaId = getCurrentValue('area_id')
       const currentRoomId = getCurrentValue('room_id')
       const currentSpotId = getCurrentValue('spot_id')

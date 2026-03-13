@@ -15,7 +15,7 @@ export const useLocationData = () => {
       try {
         setLoading(true)
         const response = await apiRequest<{ areas: Area[] }>('/areas')
-        const areas = Array.isArray(response) ? response : response?.areas || []
+        const areas = Array.isArray(response) ? response : (response?.areas ?? [])
         setAreas(Array.isArray(areas) ? areas : [])
       } catch (error) {
         console.error('加载区域失败:', error)
@@ -38,7 +38,7 @@ export const useLocationData = () => {
 
     try {
       const response = await apiRequest<{ rooms: Room[] }>(`/areas/${areaId}/rooms`)
-      const rooms = Array.isArray(response) ? response : response?.rooms || []
+      const rooms = Array.isArray(response) ? response : (response?.rooms ?? [])
       setRooms(Array.isArray(rooms) ? rooms : [])
     } catch (error) {
       console.error('加载房间失败:', error)
@@ -56,7 +56,7 @@ export const useLocationData = () => {
 
     try {
       const response = await apiRequest<{ spots: Spot[] }>(`/rooms/${roomId}/spots`)
-      const spots = Array.isArray(response) ? response : response?.spots || []
+      const spots = Array.isArray(response) ? response : (response?.spots ?? [])
       setSpots(Array.isArray(spots) ? spots : [])
     } catch (error) {
       console.error('加载位置失败:', error)

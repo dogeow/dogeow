@@ -30,7 +30,7 @@ export function DeleteRoomDialog({ room, open, onOpenChange }: DeleteRoomDialogP
   const [error, setError] = useState<string | null>(null)
 
   const isConfirmed = confirmationText === room.name
-  const hasOnlineUsers = (room.online_count || 0) > 0
+  const hasOnlineUsers = (room.online_count ?? 0) > 0
 
   const handleDelete = async () => {
     if (!isConfirmed) return
@@ -121,7 +121,7 @@ export function DeleteRoomDialog({ room, open, onOpenChange }: DeleteRoomDialogP
               <p>Name: {room.name}</p>
               {room.description && <p>Description: {room.description}</p>}
               <p>Created: {new Date(room.created_at).toLocaleDateString()}</p>
-              <p>Online Users: {room.online_count || 0}</p>
+              <p>Online Users: {room.online_count ?? 0}</p>
             </div>
           </div>
         </div>

@@ -141,7 +141,7 @@ export default function UnifiedBasicInfoForm({
           setInternalLocationPath('')
         } else {
           setInternalSelectedLocation({ type, id })
-          setInternalLocationPath(fullPath || '')
+          setInternalLocationPath(fullPath ?? '')
         }
       } else if (isEditMode && onLocationSelect) {
         if (id === 0) {

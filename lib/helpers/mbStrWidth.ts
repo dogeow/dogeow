@@ -12,7 +12,6 @@
  * @returns 列宽（整数）
  */
 export function mbStrWidth(str: string): number {
-  if (typeof str !== 'string') return 0
   const strLength = str.length
   let totalWidth = 0
   for (let i = 0; i < strLength; i++) {
@@ -51,7 +50,7 @@ function charWidth(char: string): number {
  * @see http://www.php.net/manual/ja/function.mb-strimwidth.php
  */
 export function mbStrImWidth(str: string, start: number, width: number, trimMarker = ''): string {
-  if (typeof str !== 'string' || width < 0) return ''
+  if (width < 0) return ''
   const trimMarkerWidth = mbStrWidth(trimMarker)
   const maxContentWidth = width - trimMarkerWidth
   if (maxContentWidth <= 0) return trimMarker

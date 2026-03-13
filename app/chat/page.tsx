@@ -117,7 +117,7 @@ function ChatPageContent() {
   const loadOnlineUsersThrottled = useCallback((roomId: number) => {
     const now = Date.now()
     const lastLoadKey = `room_${roomId}_last_load`
-    const lastLoadTime = loadThrottleTimersRef.current[lastLoadKey] || 0
+    const lastLoadTime = loadThrottleTimersRef.current[lastLoadKey] ?? 0
 
     if (now - lastLoadTime < LOAD_THROTTLE_TIME) {
       return Promise.resolve()

@@ -50,7 +50,7 @@ export function CheckInCalendar() {
     function colorFor(dayObj?: (typeof days)[0]) {
       if (!dayObj) return '#ebedf0'
       const activity =
-        (dayObj.new_words_count || 0) + (dayObj.review_words_count || 0) + (dayObj.checked ? 1 : 0)
+        (dayObj.new_words_count ?? 0) + (dayObj.review_words_count ?? 0) + (dayObj.checked ? 1 : 0)
       if (activity === 0) return '#ebedf0'
       if (activity === 1) return '#c6e48b'
       if (activity <= 3) return '#7bc96f'
@@ -87,7 +87,7 @@ export function CheckInCalendar() {
               return (
                 <div
                   key={dateStr}
-                  title={`${dateStr}${dayObj ? ` — ${(dayObj.new_words_count || 0) + (dayObj.review_words_count || 0)}` : ''}`}
+                  title={`${dateStr}${dayObj ? ` — ${(dayObj.new_words_count ?? 0) + (dayObj.review_words_count ?? 0)}` : ''}`}
                   style={isEmpty ? undefined : cellStyle(bg)}
                   className={`h-full min-h-0 w-full min-w-0 rounded-[3px] ${isEmpty ? 'bg-muted' : ''}`}
                 />
@@ -133,7 +133,7 @@ export function CheckInCalendar() {
                 return (
                   <div
                     key={dateStr}
-                    title={`${dateStr}${dayObj ? ` — ${(dayObj.new_words_count || 0) + (dayObj.review_words_count || 0)}` : ''}`}
+                    title={`${dateStr}${dayObj ? ` — ${(dayObj.new_words_count ?? 0) + (dayObj.review_words_count ?? 0)}` : ''}`}
                     style={{ width: 12, height: 12, ...cellStyle(bg) }}
                   />
                 )

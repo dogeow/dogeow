@@ -130,10 +130,10 @@ export default function Thing() {
       <div className="flex flex-col space-y-4">
         <ThingHeader
           categories={categories}
-          tags={tags || []}
-          areas={locationData?.areas || []}
-          rooms={locationData?.rooms || []}
-          spots={locationData?.spots || []}
+          tags={tags ?? []}
+          areas={locationData?.areas ?? []}
+          rooms={locationData?.rooms ?? []}
+          spots={locationData?.spots ?? []}
           filters={filters}
           hasActiveFilters={hasActiveFilters()}
           viewMode={viewMode}

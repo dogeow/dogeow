@@ -45,7 +45,7 @@ export const useRoomStore = create<RoomStore>(set => ({
 
     try {
       const response = await apiGet<{ rooms: ChatRoom[] }>('/chat/rooms')
-      const rooms = response.rooms || []
+      const rooms = response.rooms ?? []
       const safeRooms = Array.isArray(rooms) ? rooms : []
 
       set({ rooms: safeRooms, isLoading: false })

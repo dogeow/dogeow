@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         if (testResponse.ok) {
           const testData = await testResponse.json()
           debugInfo.testDataHasArticles = !!testData.articles
-          debugInfo.testArticlesCount = testData.articles?.length || 0
+          debugInfo.testArticlesCount = testData.articles?.length ?? 0
         } else {
           debugInfo.testResponseText = await testResponse.text()
         }
