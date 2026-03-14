@@ -12,15 +12,15 @@ import {
 import { useMemo, useState, useEffect } from 'react'
 import Image from 'next/image'
 import { CopperDisplay } from '../shared/CopperDisplay'
+import { getRpgItemImageUrl } from '../../utils/assetUrls'
 import { getItemDisplayName } from '../../utils/itemUtils'
 import { ItemDetailModal } from '@/components/game'
 import { useGameStore } from '../../stores/gameStore'
 import { X, Swords, Shield, Zap, Target, Skull, Award, Coins } from 'lucide-react'
-import { gameAsset } from '@/lib/helpers/assets'
 
 function ItemTipIcon({ item, className }: { item: GameItem; className?: string }) {
   const definitionId = item.definition?.id
-  const src = definitionId != null ? gameAsset(`/game/rpg/items/item_${definitionId}.png`) : ''
+  const src = getRpgItemImageUrl(item.definition?.icon, definitionId)
   const [useImg, setUseImg] = useState(definitionId != null)
 
   return (

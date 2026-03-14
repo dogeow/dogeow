@@ -76,6 +76,7 @@ export interface CombatMonster {
   id: number
   /** 怪物实例唯一ID，用于前端检测新怪物 */
   instance_id?: string
+  icon?: string
   name: string
   type: MonsterType
   level: number

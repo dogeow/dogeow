@@ -62,7 +62,14 @@ interface GameState {
   combatResult: CombatResult | null
   /** 刷新页面时由 combat/status 返回的当前怪物，用于在未收到 WebSocket 回合前显示怪物 */
   currentCombatMonsterFromStatus: {
-    monster: { name: string; type: string; level: number; hp?: number; max_hp?: number }
+    monster: {
+      name: string
+      type: string
+      level: number
+      icon?: string
+      hp?: number
+      max_hp?: number
+    }
     monsterId: number
     monsters?: CombatMonster[]
   } | null

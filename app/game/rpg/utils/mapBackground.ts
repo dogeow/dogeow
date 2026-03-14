@@ -20,8 +20,8 @@ function getActGradient(act: number): string {
 }
 
 /**
- * 解析地图背景图 URL。后端可能返回文件名（如 map_1.jpg）或完整 URL。
- * @param useOrigin 为 true 时使用原图文件名（如 map_32.jpg → map_32_origin.jpg），用于战斗等场景
+ * 解析地图背景图 URL。后端可能返回英文文件名（如 safe-training-camp.jpg）或完整 URL。
+ * @param useOrigin 为 true 时使用原图文件名（如 safe-training-camp.jpg → safe-training-camp_origin.jpg），用于战斗等场景
  */
 export function getMapBackgroundUrl(map: MapDefinition | null, useOrigin = false): string | null {
   if (!map?.background) return null
@@ -32,7 +32,7 @@ export function getMapBackgroundUrl(map: MapDefinition | null, useOrigin = false
 }
 
 export type MapBackgroundStyleOptions = {
-  /** 为 true 时使用原图（如 map_32_origin.jpg），用于战斗场景 */
+  /** 为 true 时使用原图（如 safe-training-camp_origin.jpg），用于战斗场景 */
   useOrigin?: boolean
   /** 为 true 时用 cover 填满容器（无左右空隙），保持比例不拉伸；默认 contain 完整显示 */
   fill?: boolean

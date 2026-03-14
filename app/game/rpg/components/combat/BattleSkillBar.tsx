@@ -2,7 +2,6 @@
 
 import type { CharacterSkill, SkillUsedEntry } from '../../types'
 import { SkillIcon } from '../shared/SkillIcon'
-import styles from '../../rpg.module.css'
 
 /** 战斗技能栏：显示主动技能图标、回合冷却、点击启用/关闭 */
 export function BattleSkillBar({
@@ -21,6 +20,7 @@ export function BattleSkillBar({
   disabled?: boolean
 }) {
   if (activeSkills.length === 0) return null
+
   return (
     <div className="flex flex-wrap items-start gap-2">
       {activeSkills.map(cs => {
@@ -49,35 +49,19 @@ export function BattleSkillBar({
             </span>
           </>
         )
-        const btnClass = `hover:bg-muted/80 focus-visible:ring-ring relative flex flex-col items-center gap-0.5 rounded-md transition-[background-color] duration-150 focus:outline-none focus-visible:ring-2 outline-offset-0`
-        return enabled ? (
-          <div
-            key={cs.id}
-            className={`${styles['skill-marquee-wrap']} ${disabled ? 'paused' : ''}`}
-          >
-            <button
-              type="button"
-              className={`${styles['skill-marquee-btn']} bg-muted/50 ${btnClass}`}
-              title={`${def.name} 已启用（再点关闭）`}
-              onClick={() => onSkillToggle(def.id)}
-            >
-              {buttonContent}
-            </button>
-            <svg
-              className={styles['skill-marquee-border']}
-              viewBox="0 0 100 100"
-              preserveAspectRatio="none"
-              aria-hidden
-            >
-              <rect x="1" y="1" width="98" height="98" rx="10" ry="10" />
-            </svg>
-          </div>
-        ) : (
+        const btnClass = [
+          'focus-visible:ring-ring relative flex flex-col items-center gap-0.5 rounded-md border px-1 py-1 transition-[background-color,border-color,filter,opacity] duration-150 focus:outline-none focus-visible:ring-2 outline-offset-0',
+          enabled
+            ? 'border-primary/60 bg-muted/60 hover:bg-muted/80'
+            : 'border-border/50 bg-muted/20 grayscale opacity-80 hover:bg-muted/35',
+          disabled ? 'cursor-not-allowed' : 'cursor-pointer',
+        ].join(' ')
+        return (
           <button
             key={cs.id}
             type="button"
             className={btnClass}
-            title={`${def.name} 点击启用`}
+            title={enabled ? `${def.name} 已启用（再点关闭）` : `${def.name} 点击启用`}
             onClick={() => onSkillToggle(def.id)}
           >
             {buttonContent}

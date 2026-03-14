@@ -60,7 +60,6 @@ export default function RPGGameClient({ requireRegistration = false }: RPGGameCl
   const { isAuthenticated, loading: authLoading } = useAuthStore()
   const [showCreateView, setShowCreateView] = useState(false)
   const [initialFetchDone, setInitialFetchDone] = useState(false)
-
   // 切换 tab 时重置滚动位置
   const handleTabChange = (tabId: typeof activeTab) => {
     window.scrollTo(0, 0)
@@ -85,6 +84,7 @@ export default function RPGGameClient({ requireRegistration = false }: RPGGameCl
   const stopCombatRef = useRef(stopCombat)
   const setShouldAutoCombatRef = useRef(setShouldAutoCombat)
   const autoStartRequestKeyRef = useRef<string | null>(null)
+  const combatStatusReadyRef = useRef(false)
 
   useEffect(() => {
     startCombatRef.current = startCombat
@@ -109,6 +109,10 @@ export default function RPGGameClient({ requireRegistration = false }: RPGGameCl
       return
     }
 
+    if (!combatStatusReadyRef.current) {
+      return
+    }
+
     if (!shouldAutoCombat || !currentMap || !autoStartKey || hpValue <= 0) {
       autoStartRequestKeyRef.current = null
       return
@@ -126,7 +130,15 @@ export default function RPGGameClient({ requireRegistration = false }: RPGGameCl
     }
 
     // 自动战斗由后端 start 接口启动，服务器每 3 秒执行一回合并通过 Reverb WebSocket 推送，无需前端定时器
-  }, [character?.id, isFighting, currentMap?.id, shouldAutoCombat, combatStats, currentHp])
+  }, [
+    character?.id,
+    isFighting,
+    currentMap,
+    currentMap?.id,
+    shouldAutoCombat,
+    combatStats,
+    currentHp,
+  ])
 
   // 认证完成后拉取角色列表；.then 内 setState 为异步，不触发 set-state-in-effect 规则
   useEffect(() => {
@@ -142,16 +154,21 @@ export default function RPGGameClient({ requireRegistration = false }: RPGGameCl
     const characterId = selectedCharacterId || character?.id
     if (characterId && loadedCharacterIdRef.current !== characterId) {
       loadedCharacterIdRef.current = characterId
+      combatStatusReadyRef.current = false
       fetchCharacter()
       fetchInventory()
       fetchSkills()
       fetchMaps()
-      fetchCombatStatus().then(() => {
-        const state = useGameStore.getState()
-        if (state.isFighting && state.currentMap && !state.shouldAutoCombat) {
-          setShouldAutoCombatRef.current(true)
-        }
-      })
+      fetchCombatStatus()
+        .then(() => {
+          const state = useGameStore.getState()
+          if (state.isFighting && state.currentMap && !state.shouldAutoCombat) {
+            setShouldAutoCombatRef.current(true)
+          }
+        })
+        .finally(() => {
+          combatStatusReadyRef.current = true
+        })
       fetchCombatLogs()
     }
   }, [

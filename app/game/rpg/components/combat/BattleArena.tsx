@@ -29,7 +29,14 @@ export function BattleArena({
   combatStats: { max_hp: number; max_mana: number } | null
   currentHp: number | null
   currentMana: number | null
-  monster: { name: string; type: string; level: number; hp?: number; max_hp?: number } | null
+  monster: {
+    name: string
+    type: string
+    level: number
+    icon?: string
+    hp?: number
+    max_hp?: number
+  } | null
   monsterId?: number
   monsterHpBeforeRound?: number
   monsters?: CombatMonster[]
@@ -248,7 +255,13 @@ export function BattleArena({
             />
           ) : !isLoading && isFighting && monster ? (
             <div className={isMonsterDead ? styles['monster-death'] : ''}>
-              <MonsterIcon key={monsterId} monsterId={monsterId} name={monster.name} size="lg" />
+              <MonsterIcon
+                key={monsterId}
+                monsterId={monsterId}
+                icon={monster.icon}
+                name={monster.name}
+                size="lg"
+              />
             </div>
           ) : isFighting && isLoading ? (
             <div className="text-muted-foreground flex h-20 w-20 items-center justify-center text-xs sm:h-24 sm:w-24 sm:text-sm">

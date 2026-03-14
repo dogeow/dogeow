@@ -260,7 +260,12 @@ export function CombatPanel() {
                         {map.monsters?.length ? (
                           <div className="mt-1 flex gap-1">
                             {map.monsters.slice(0, 4).map(m => (
-                              <MapCardMonsterAvatar key={m.id} monsterId={m.id} name={m.name} />
+                              <MapCardMonsterAvatar
+                                key={m.id}
+                                monsterId={m.id}
+                                icon={m.icon}
+                                name={m.name}
+                              />
                             ))}
                           </div>
                         ) : null}

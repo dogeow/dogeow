@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { useMonsterDrops } from '../../hooks/useMonsterDrops'
 import type { CombatMonster } from '../../types'
-import { gameAsset } from '@/lib/helpers/assets'
+import { getRpgMonsterImageUrl } from '../../utils/assetUrls'
 
 type MonsterWithMeta = CombatMonster & { damage_taken?: number }
 
@@ -34,13 +34,11 @@ export function MonsterInfoDialog({ monster, onClose }: MonsterInfoDialogProps) 
                   className="relative h-[200px] w-[200px] shrink-0 cursor-zoom-in"
                   onClick={e => {
                     e.stopPropagation()
-                    setViewingImage(
-                      gameAsset(`/game/rpg/monsters/monster_${monster.id}_origin.png`)
-                    )
+                    setViewingImage(getRpgMonsterImageUrl(monster.icon, monster.id, true))
                   }}
                 >
                   <Image
-                    src={gameAsset(`/game/rpg/monsters/monster_${monster.id}_origin.png`)}
+                    src={getRpgMonsterImageUrl(monster.icon, monster.id, true)}
                     alt=""
                     fill
                     className="object-contain"

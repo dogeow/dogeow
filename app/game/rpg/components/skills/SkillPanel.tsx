@@ -17,18 +17,31 @@ function SkillIcon({
   name: string
 }) {
   const fallback = icon && icon.length <= 4 ? icon : (name?.[0] ?? '?')
-  const [useImg, setUseImg] = useState(true)
-  const src = gameAsset(`/game/rpg/skills/skill_${skillId}.png`)
+  const iconFile = icon && /\.(png|jpe?g|webp|gif|svg)$/i.test(icon) ? icon : null
+  const [preferIconFile, setPreferIconFile] = useState(iconFile != null)
+  const [useIdFallback, setUseIdFallback] = useState(true)
+  const src =
+    preferIconFile && iconFile
+      ? gameAsset(iconFile.startsWith('/') ? iconFile : `/game/rpg/skills/${iconFile}`)
+      : useIdFallback
+        ? gameAsset(`/game/rpg/skills/skill_${skillId}.png`)
+        : ''
   return (
     <span className="bg-muted relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded text-lg">
-      {useImg ? (
+      {src ? (
         <Image
           src={src}
           alt={name}
           fill
           className="object-cover"
           sizes="40px"
-          onError={() => setUseImg(false)}
+          onError={() => {
+            if (preferIconFile) {
+              setPreferIconFile(false)
+              return
+            }
+            setUseIdFallback(false)
+          }}
         />
       ) : (
         fallback

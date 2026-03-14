@@ -1,53 +1,5 @@
 /* RPG 游戏战斗特效动画 */
 
-/* 技能启用时的跑马灯：虚线沿边框跑动（marching ants） */
-@keyframes skill-marquee-run {
-  0% {
-    stroke-dashoffset: 0;
-  }
-  100% {
-    stroke-dashoffset: 30;
-  }
-}
-
-.skill-marquee-wrap {
-  position: relative;
-  display: inline-flex;
-  overflow: visible;
-  vertical-align: top;
-  width: fit-content;
-}
-
-.skill-marquee-wrap .skill-marquee-border {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.skill-marquee-wrap .skill-marquee-border rect {
-  fill: none;
-  stroke: var(--primary);
-  stroke-width: 2;
-  stroke-dasharray: 15 15;
-  animation: skill-marquee-run 1.8s linear infinite;
-  vector-effect: non-scaling-stroke;
-}
-
-/* 死亡时暂停跑马灯动画 */
-.skill-marquee-wrap.paused .skill-marquee-border rect {
-  animation-play-state: paused;
-}
-
-.skill-marquee-wrap .skill-marquee-btn {
-  position: relative;
-  z-index: 1;
-  border-radius: 0.375rem;
-  outline-offset: 0;
-}
-
 /* VS emoji 战斗中动画：轻微缩放 */
 @keyframes vs-emoji-pulse {
   0%,

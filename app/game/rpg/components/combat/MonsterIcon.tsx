@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 import { useState } from 'react'
-import { gameAsset } from '@/lib/helpers/assets'
+import { getRpgMonsterImageUrl } from '../../utils/assetUrls'
 
 import { type MonsterType } from '../../types'
 
@@ -13,20 +13,22 @@ const MONSTER_TYPE_BORDER_COLORS: Record<MonsterType, string> = {
   boss: 'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,1.0)]',
 }
 
-/** 怪物图标：有 monsterId 时优先用 /game/rpg/monsters/monster_{id}.png，失败则回退到首字；父组件用 key={monsterId} 以便切换怪物时重置 */
+/** 怪物图标：优先使用后端返回的 icon 文件名，缺失时再回退旧的 monster_{id}.png。 */
 export function MonsterIcon({
   monsterId,
+  icon,
   name,
   size = 'md',
   monsterType = 'normal',
 }: {
   monsterId?: number
+  icon?: string | null
   name: string
   size?: 'sm' | 'md' | 'lg'
   monsterType?: MonsterType
 }) {
   const fallback = name && name[0] ? name[0] : '?'
-  const src = monsterId != null ? gameAsset(`/game/rpg/monsters/monster_${monsterId}.png`) : ''
+  const src = getRpgMonsterImageUrl(icon, monsterId)
   const [useImg, setUseImg] = useState(true)
   const sizeClass =
     size === 'sm'

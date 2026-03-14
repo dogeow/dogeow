@@ -5,14 +5,14 @@ import Image from 'next/image'
 import type { GameItem, ItemQuality } from '@/app/game/rpg/types'
 import { QUALITY_COLORS } from '@/app/game/rpg/types'
 import { getItemIconFallback } from '@/app/game/rpg/utils/itemUtils'
-import { gameAsset } from '@/lib/helpers/assets'
+import { getRpgItemImageUrl } from '@/app/game/rpg/utils/assetUrls'
 
 /** 物品详情中的大图标 */
 export function ItemTipIcon({ item, className }: { item: GameItem; className?: string }) {
   const definitionId = item.definition?.id
   const fallback = getItemIconFallback(item)
   const [useImg, setUseImg] = useState(definitionId != null)
-  const src = definitionId != null ? gameAsset(`/game/rpg/items/item_${definitionId}.png`) : ''
+  const src = getRpgItemImageUrl(item.definition?.icon, definitionId)
 
   return (
     <span

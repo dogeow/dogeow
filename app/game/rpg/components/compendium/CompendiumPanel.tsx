@@ -2,12 +2,12 @@
 
 import { useState, useMemo } from 'react'
 import Image from 'next/image'
-import { gameAsset } from '@/lib/helpers/assets'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useGameStore } from '../../stores/gameStore'
 import { useMonsterDrops } from '../../hooks/useMonsterDrops'
 import { CompendiumItem, CompendiumMonster, ItemType, STAT_NAMES } from '../../types'
 import { getItemIconFallback } from '../../utils/itemUtils'
+import { getRpgItemImageUrl, getRpgMonsterImageUrl } from '../../utils/assetUrls'
 
 type CompendiumTab = 'items' | 'monsters'
 
@@ -227,14 +227,12 @@ export function CompendiumPanel() {
                     className="border-border bg-muted relative flex h-[200px] w-[200px] shrink-0 cursor-zoom-in items-center justify-center rounded-lg border-2"
                     onClick={e => {
                       e.stopPropagation()
-                      setViewingImage(
-                        gameAsset(`/game/rpg/items/item_${selectedItem.id}_origin.png`)
-                      )
+                      setViewingImage(getRpgItemImageUrl(selectedItem.icon, selectedItem.id, true))
                     }}
                   >
                     <span className="absolute inset-0 rounded-md p-2">
                       <ImageWithFallback
-                        src={gameAsset(`/game/rpg/items/item_${selectedItem.id}_origin.png`)}
+                        src={getRpgItemImageUrl(selectedItem.icon, selectedItem.id, true)}
                         fallback={getItemIconFallback({ definition: selectedItem })}
                       />
                     </span>
@@ -346,7 +344,7 @@ export function CompendiumPanel() {
                   } ${isDiscovered ? '' : 'cursor-not-allowed'}`}
                 >
                   {isDiscovered ? (
-                    <MonsterIcon monsterId={monster.id} className="h-10 w-10" />
+                    <MonsterIcon monsterId={monster.id} icon={monster.icon} className="h-10 w-10" />
                   ) : (
                     <span className="flex h-10 w-10 items-center justify-center text-2xl">❓</span>
                   )}
@@ -380,13 +378,15 @@ export function CompendiumPanel() {
                       onClick={e => {
                         e.stopPropagation()
                         setViewingImage(
-                          gameAsset(`/game/rpg/monsters/monster_${selectedMonster?.id}_origin.png`)
+                          getRpgMonsterImageUrl(selectedMonster?.icon, selectedMonster?.id, true)
                         )
                       }}
                     >
                       <Image
-                        src={gameAsset(
-                          `/game/rpg/monsters/monster_${selectedMonster?.id}_origin.png`
+                        src={getRpgMonsterImageUrl(
+                          selectedMonster?.icon,
+                          selectedMonster?.id,
+                          true
                         )}
                         alt=""
                         fill
@@ -489,7 +489,7 @@ function ItemIcon({ item, className }: { item: CompendiumItem; className?: strin
   const definitionId = item.id
   const fallback = getItemIconFallback({ definition: item })
   const [useImg, setUseImg] = useState(definitionId != null)
-  const src = definitionId != null ? gameAsset(`/game/rpg/items/item_${definitionId}.png`) : ''
+  const src = getRpgItemImageUrl(item.icon, definitionId)
   return (
     <span
       className={`relative inline-flex h-full w-full items-center justify-center ${className ?? ''}`}
@@ -515,7 +515,7 @@ function ItemTipIcon({ item, onClick }: { item: CompendiumItem; onClick?: () => 
   const definitionId = item.id
   const fallback = getItemIconFallback({ definition: item })
   const [useImg, setUseImg] = useState(definitionId != null)
-  const src = definitionId != null ? gameAsset(`/game/rpg/items/item_${definitionId}.png`) : ''
+  const src = getRpgItemImageUrl(item.icon, definitionId)
   return (
     <span
       className={`bg-muted relative inline-flex h-[80px] w-[80px] shrink-0 items-center justify-center rounded-lg border-2 border-gray-400 shadow-sm ${onClick ? 'cursor-zoom-in' : ''}`}
@@ -538,9 +538,17 @@ function ItemTipIcon({ item, onClick }: { item: CompendiumItem; onClick?: () => 
 }
 
 /** 怪物图标 */
-function MonsterIcon({ monsterId, className }: { monsterId: number; className?: string }) {
+function MonsterIcon({
+  monsterId,
+  icon,
+  className,
+}: {
+  monsterId: number
+  icon?: string | null
+  className?: string
+}) {
   const [useImg, setUseImg] = useState(true)
-  const src = gameAsset(`/game/rpg/monsters/monster_${monsterId}.png`)
+  const src = getRpgMonsterImageUrl(icon, monsterId)
   return (
     <span className={`relative inline-flex items-center justify-center ${className ?? ''}`}>
       {useImg ? (
