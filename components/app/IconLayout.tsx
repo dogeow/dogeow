@@ -81,15 +81,17 @@ const IconTile = memo(({ tile, index, projectCoverMode, needsLogin, onClick }: I
           </>
         )}
 
-        <div
-          className={`relative z-[1] flex h-8 w-8 items-center justify-center sm:h-10 sm:w-10 ${
-            projectCoverMode === 'none'
-              ? 'text-foreground dark:text-white'
-              : 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.28)]'
-          }`}
-        >
-          {tile.icon}
-        </div>
+        {projectCoverMode !== 'image' && (
+          <div
+            className={`relative z-[1] flex h-8 w-8 items-center justify-center sm:h-10 sm:w-10 ${
+              projectCoverMode === 'none'
+                ? 'text-foreground dark:text-white'
+                : 'text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.28)]'
+            }`}
+          >
+            {tile.icon}
+          </div>
+        )}
 
         {needsLogin && (
           <div className="absolute top-2 right-2 z-[2] flex h-5 w-5 items-center justify-center rounded-full bg-black/55">

@@ -2,7 +2,7 @@
 
 import { memo, useMemo, useState, useCallback } from 'react'
 import Image from 'next/image'
-import { Lock, ArrowRight } from 'lucide-react'
+import { Lock } from 'lucide-react'
 import type { Tile } from '@/app/types'
 import { useTranslation } from '@/hooks/useTranslation'
 import { PERFORMANCE } from '@/lib/constants'
@@ -108,7 +108,6 @@ const HeroCard = memo(
                 {tileName}
               </h2>
             </div>
-            <ArrowRight className="h-5 w-5 shrink-0 text-white/80 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-white" />
           </div>
         </div>
       </button>
@@ -141,9 +140,6 @@ const ListCard = memo(
     const showPreview = projectCoverMode !== 'none'
     const showImagePreview = !!coverImage && !imageError
     const contentTextClassName = showPreview ? 'text-white' : 'text-foreground'
-    const arrowClassName = showPreview
-      ? 'text-white/80 group-hover:text-white'
-      : 'text-muted-foreground'
 
     return (
       <button
@@ -183,9 +179,10 @@ const ListCard = memo(
         {/* 图标 */}
         <div
           className={`relative z-[2] flex h-10 w-10 shrink-0 items-center justify-center rounded-lg sm:h-11 sm:w-11 sm:rounded-xl ${
-            showPreview ? 'bg-black/20 text-white backdrop-blur-[2px]' : 'text-white'
+            showPreview
+              ? 'bg-black/20 text-white backdrop-blur-[2px]'
+              : 'bg-transparent text-foreground dark:text-white'
           }`}
-          style={!showPreview ? { backgroundColor: tile.color } : undefined}
         >
           {tile.icon && (
             <div className="flex h-5 w-5 items-center justify-center sm:h-6 sm:w-6">
@@ -212,9 +209,6 @@ const ListCard = memo(
               <Lock className={`h-3 w-3 ${showPreview ? 'text-white' : 'text-muted-foreground'}`} />
             </div>
           )}
-          <ArrowRight
-            className={`${arrowClassName} h-4 w-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5`}
-          />
         </div>
       </button>
     )

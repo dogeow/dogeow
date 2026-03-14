@@ -2,15 +2,14 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, SkipBack, SkipForward, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { AudioVisualizer, type VisualizerType } from './visualizer'
 import { cn } from '@/lib/helpers'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs } from '@/components/ui/tabs'
 import type { MusicTrack, PlayMode } from '@/stores/musicStore'
 import type { LyricLine } from './lyrics'
 import type { LyricsState } from './useTrackLyrics'
-import { LyricsDisplayPanel } from './LyricsDisplayPanel'
-import { RepeatModeButton } from './RepeatModeButton'
+import { FullscreenVisualizerControls } from './FullscreenVisualizerControls'
+import { FullscreenVisualizerContent } from './FullscreenVisualizerContent'
 
 interface FullscreenVisualizerProps {
   analyserNode: AnalyserNode | null
@@ -38,13 +37,6 @@ interface FullscreenVisualizerProps {
   activePanel?: 'lyrics' | 'playlist'
   onActivePanelChange?: (panel: 'lyrics' | 'playlist') => void
 }
-
-const VISUALIZER_TYPES: { type: VisualizerType; label: string }[] = [
-  { type: 'spectrum', label: '频谱' },
-  { type: 'bars6', label: '宽柱' },
-  { type: 'particles', label: '星空' },
-  { type: 'silk', label: '雨' },
-]
 
 export function FullscreenVisualizer({
   analyserNode,
@@ -169,377 +161,56 @@ export function FullscreenVisualizer({
           isLandscape ? 'top-28 bottom-24 items-stretch' : 'top-1/2 -translate-y-1/2'
         )}
       >
-        {canShowPlaylist && (
-          <TabsContent value="playlist" className="m-0 w-full max-w-3xl">
-            <div
-              className={cn(
-                'overflow-y-auto px-2 sm:px-6',
-                isLandscape ? 'max-h-full py-2 sm:px-4' : 'max-h-[52vh] py-6'
-              )}
-            >
-              <div className="space-y-1.5">
-                {availableTracks.map(track => {
-                  const isCurrentTrack = track.path === currentTrack
-                  const resolvedTrackDuration =
-                    isCurrentTrack && duration > 0 ? duration : track.duration
-                  const iconNode =
-                    isCurrentTrack && isPlaying ? (
-                      <Pause className="h-4 w-4 text-white" />
-                    ) : (
-                      <Play className="h-4 w-4 text-white" />
-                    )
-                  const handleTrackAction = () => onTrackPlay?.(track.path)
-                  const timeLabel =
-                    isCurrentTrack && showRemainingTime
-                      ? `-${formatTime(Math.max(0, resolvedTrackDuration - currentTime))}`
-                      : formatTime(resolvedTrackDuration)
-
-                  return (
-                    <div
-                      key={track.path}
-                      className={cn(
-                        'flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2 text-left transition-colors',
-                        isCurrentTrack
-                          ? 'bg-white/14 text-white'
-                          : 'text-white/75 hover:bg-white/8 hover:text-white'
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={handleTrackAction}
-                        title={isCurrentTrack && isPlaying ? '暂停' : '播放'}
-                        aria-label={`${isCurrentTrack && isPlaying ? '暂停' : '播放'} ${track.name}`}
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-transparent text-white/80 transition-colors hover:bg-transparent hover:text-white"
-                      >
-                        {iconNode}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleTrackAction}
-                        className="min-w-0 flex-1 text-left"
-                        aria-label={`${isCurrentTrack && isPlaying ? '暂停' : '播放'} ${track.name}`}
-                      >
-                        <div className="truncate text-[13px] font-medium">{track.name}</div>
-                      </button>
-                      {resolvedTrackDuration > 0 &&
-                        (isCurrentTrack ? (
-                          <button
-                            type="button"
-                            onClick={() => setShowRemainingTime(prev => !prev)}
-                            className="shrink-0 text-xs font-medium text-white/45 tabular-nums transition-colors hover:text-white/80"
-                            aria-label={showRemainingTime ? '显示总时长' : '显示剩余时间'}
-                            title={showRemainingTime ? '显示总时长' : '显示剩余时间'}
-                          >
-                            {timeLabel}
-                          </button>
-                        ) : (
-                          <span className="shrink-0 text-xs font-medium text-white/45 tabular-nums">
-                            {timeLabel}
-                          </span>
-                        ))}
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          </TabsContent>
-        )}
-
-        <TabsContent value="lyrics" className="m-0 min-h-0 h-full w-full max-w-4xl self-stretch">
-          <div className="pointer-events-none h-full min-h-0">
-            <LyricsDisplayPanel
-              lyrics={lyrics}
-              activeLyricIndex={activeLyricIndex}
-              status={lyricsStatus}
-              currentTime={currentTime}
-              className={cn(
-                'w-full border-0 bg-transparent p-0 shadow-none',
-                isLandscape ? 'h-full' : 'h-[min(52vh,480px)]'
-              )}
-              bodyClassName={cn('px-2 sm:px-6', isLandscape ? 'py-0' : 'py-2')}
-              lineClassName={cn(
-                'text-white/40',
-                isLandscape ? 'text-sm leading-7' : 'text-lg leading-9'
-              )}
-              activeLineClassName={cn(
-                'font-semibold text-white',
-                isLandscape ? 'text-lg' : 'text-2xl'
-              )}
-              emptyClassName="text-white/65"
-              syncKey={`${resolvedPanel}-${currentTrack}-${activeLyricIndex}-${isLandscape}`}
-            />
-          </div>
-        </TabsContent>
+        <FullscreenVisualizerContent
+          canShowPlaylist={canShowPlaylist}
+          availableTracks={availableTracks}
+          currentTrack={currentTrack}
+          isPlaying={isPlaying}
+          duration={duration}
+          currentTime={currentTime}
+          showRemainingTime={showRemainingTime}
+          setShowRemainingTime={setShowRemainingTime}
+          formatTime={formatTime}
+          onTrackPlay={onTrackPlay}
+          lyrics={lyrics}
+          activeLyricIndex={activeLyricIndex}
+          lyricsStatus={lyricsStatus}
+          resolvedPanel={resolvedPanel}
+          isLandscape={isLandscape}
+        />
       </div>
 
-      {/* 控制层 */}
-      <div
-        className={cn(
-          'pointer-events-none absolute inset-0 z-20',
-          showControls || resolvedPanel === 'playlist' ? 'opacity-100' : 'opacity-0'
-        )}
-      >
-        {/* 顶部：效果切换 + 曲名 + tabs */}
-        <div
-          className={cn(
-            'pointer-events-auto absolute inset-x-0 top-0 flex flex-col gap-2 bg-gradient-to-b from-black/60 to-transparent',
-            isLandscape ? 'px-3 pt-3 pb-4' : 'p-4 pb-12'
-          )}
-        >
-          {isLandscape ? (
-            <div className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4">
-              <div className="flex justify-center">
-                <h2 className="min-w-0 max-w-full truncate text-center text-lg font-medium text-white drop-shadow-lg">
-                  {trackName}
-                </h2>
-              </div>
-              {canShowPlaylist && (
-                <div className="flex justify-center">
-                  <TabsList className="h-8 bg-white/10 text-white/55 backdrop-blur-sm">
-                    <TabsTrigger
-                      value="playlist"
-                      className="min-w-24 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white"
-                    >
-                      歌曲列表
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="lyrics"
-                      className="min-w-20 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white"
-                    >
-                      歌词
-                    </TabsTrigger>
-                  </TabsList>
-                </div>
-              )}
-              <div className="flex items-center justify-center gap-2">
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  {VISUALIZER_TYPES.map(({ type, label }) => (
-                    <button
-                      key={type}
-                      onClick={() => setVizType(type)}
-                      type="button"
-                      className={cn(
-                        'rounded-full px-3 py-1.5 text-[11px] font-medium transition-all',
-                        vizType === type
-                          ? 'bg-white/25 text-white backdrop-blur-sm'
-                          : 'bg-white/8 text-white/65 hover:bg-white/16 hover:text-white'
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="absolute right-0 flex items-center gap-2">
-                <button
-                  onClick={onClose}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-colors hover:bg-white/20"
-                  aria-label="关闭全屏"
-                  title="关闭全屏"
-                >
-                  <X className="h-5 w-5 text-white" />
-                </button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="relative flex items-center justify-center">
-                <div className="flex flex-wrap items-center gap-2">
-                  {VISUALIZER_TYPES.map(({ type, label }) => (
-                    <button
-                      key={type}
-                      onClick={() => setVizType(type)}
-                      className={cn(
-                        'rounded-full px-4 py-1.5 text-xs font-medium transition-all',
-                        vizType === type
-                          ? 'bg-white/25 text-white backdrop-blur-sm'
-                          : 'text-white/60 hover:text-white/90'
-                      )}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  onClick={onClose}
-                  className="absolute right-0 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-colors hover:bg-white/20"
-                  aria-label="关闭全屏"
-                  title="关闭全屏"
-                >
-                  <X className="h-5 w-5 text-white" />
-                </button>
-              </div>
-              <h2 className="min-w-0 text-center text-lg font-medium text-white drop-shadow-lg">
-                {trackName}
-              </h2>
-            </>
-          )}
-        </div>
-
-        {/* 底部：播放控件 */}
-        <div
-          className={cn(
-            'pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent',
-            isLandscape ? 'space-y-2 px-3 pb-4' : 'space-y-6 pb-12'
-          )}
-        >
-          {canShowPlaylist && !isLandscape && (
-            <div className="flex justify-center">
-              <TabsList className="h-8 bg-white/10 text-white/55 backdrop-blur-sm">
-                <TabsTrigger
-                  value="playlist"
-                  className="min-w-24 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white"
-                >
-                  歌曲列表
-                </TabsTrigger>
-                <TabsTrigger
-                  value="lyrics"
-                  className="min-w-20 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white"
-                >
-                  歌词
-                </TabsTrigger>
-              </TabsList>
-            </div>
-          )}
-
-          {/* 播放控件 */}
-          <div className="mx-auto grid w-full max-w-4xl grid-cols-5 items-center">
-            <div className="flex justify-center">
-              <button
-                onClick={onToggleMute}
-                className={cn(
-                  'flex items-center justify-center text-white/70 transition-colors hover:text-white',
-                  isLandscape ? 'h-9 w-9' : 'h-10 w-10'
-                )}
-                aria-label={isMuted ? '取消静音' : '静音'}
-              >
-                {isMuted ? (
-                  <VolumeX className={cn(isLandscape ? 'h-[18px] w-[18px]' : 'h-5 w-5')} />
-                ) : (
-                  <Volume2 className={cn(isLandscape ? 'h-[18px] w-[18px]' : 'h-5 w-5')} />
-                )}
-              </button>
-            </div>
-            <div className="flex justify-center">
-              <button
-                onClick={onPrevTrack}
-                className={cn(
-                  'flex items-center justify-center text-white/80 transition-colors hover:text-white',
-                  isLandscape ? 'h-10 w-10' : 'h-12 w-12'
-                )}
-                aria-label="上一首"
-              >
-                <SkipBack className={cn(isLandscape ? 'h-5 w-5' : 'h-6 w-6')} />
-              </button>
-            </div>
-            <div className="flex justify-center">
-              <button
-                onClick={onTogglePlay}
-                className={cn(
-                  'flex items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm transition-all hover:scale-105 hover:bg-white/30',
-                  isLandscape ? 'h-12 w-12' : 'h-16 w-16'
-                )}
-                aria-label={isPlaying ? '暂停' : '播放'}
-              >
-                {isPlaying ? (
-                  <Pause className={cn(isLandscape ? 'h-6 w-6' : 'h-8 w-8')} />
-                ) : (
-                  <Play className={cn('ml-1', isLandscape ? 'h-6 w-6' : 'h-8 w-8')} />
-                )}
-              </button>
-            </div>
-            <div className="flex justify-center">
-              <button
-                onClick={onNextTrack}
-                className={cn(
-                  'flex items-center justify-center text-white/80 transition-colors hover:text-white',
-                  isLandscape ? 'h-10 w-10' : 'h-12 w-12'
-                )}
-                aria-label="下一首"
-              >
-                <SkipForward className={cn(isLandscape ? 'h-5 w-5' : 'h-6 w-6')} />
-              </button>
-            </div>
-            <div className="flex justify-center">
-              {onSetPlayMode && (
-                <RepeatModeButton
-                  playMode={playMode}
-                  onSetPlayMode={onSetPlayMode}
-                  onOpenChange={open => {
-                    setIsPlayModeMenuOpen(open)
-                    if (open) {
-                      setShowControls(true)
-                      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-                    } else {
-                      resetHideTimer()
-                    }
-                  }}
-                  align="end"
-                  iconOnly={true}
-                  hideChevron={true}
-                  className={cn(
-                    'flex items-center justify-center rounded-full bg-transparent p-0 text-white/80 hover:bg-transparent hover:text-white',
-                    isLandscape ? 'h-9 w-9' : 'h-10 w-10'
-                  )}
-                  itemClassName="text-sm"
-                />
-              )}
-            </div>
-          </div>
-
-          {/* 进度条和时间显示 */}
-          {handleProgressChange && duration > 0 && (
-            <div
-              className={cn(
-                'flex items-center justify-center gap-2 px-2 sm:px-4 md:px-6 lg:px-8',
-                isLandscape && 'gap-1.5'
-              )}
-            >
-              <span
-                className={cn(
-                  'min-w-[2.5rem] text-right font-medium text-white/80 tabular-nums',
-                  isLandscape ? 'text-xs' : 'text-sm'
-                )}
-              >
-                {formatTime(currentTime)}
-              </span>
-              <div className="group relative h-1.5 max-w-6xl flex-1 cursor-pointer">
-                {/* 进度条背景 */}
-                <div className="absolute inset-0 rounded-full bg-white/20" />
-                {/* 已播放进度 */}
-                <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-white/80 transition-all duration-100"
-                  style={{ width: `${((currentTime / duration) * 100).toFixed(2)}%` }}
-                />
-                {/* 可拖动的滑块 */}
-                <input
-                  type="range"
-                  min={0}
-                  max={duration || 100}
-                  step={0.1}
-                  value={currentTime}
-                  onChange={handleProgressChange}
-                  className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                  aria-label="播放进度"
-                />
-                {/* 悬停时显示的滑块圆点 */}
-                <div
-                  className="pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100"
-                  style={{ left: `calc(${((currentTime / duration) * 100).toFixed(2)}% - 8px)` }}
-                />
-              </div>
-              <span
-                className={cn(
-                  'min-w-[2.5rem] font-medium text-white/80 tabular-nums',
-                  isLandscape ? 'text-xs' : 'text-sm'
-                )}
-              >
-                {formatTime(duration)}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
+      <FullscreenVisualizerControls
+        showControls={showControls}
+        resolvedPanel={resolvedPanel}
+        isLandscape={isLandscape}
+        canShowPlaylist={canShowPlaylist}
+        vizType={vizType}
+        setVizType={setVizType}
+        trackName={trackName}
+        onClose={onClose}
+        isMuted={isMuted}
+        onToggleMute={onToggleMute}
+        onPrevTrack={onPrevTrack}
+        onTogglePlay={onTogglePlay}
+        isPlaying={isPlaying}
+        onNextTrack={onNextTrack}
+        onSetPlayMode={onSetPlayMode}
+        playMode={playMode}
+        onPlayModeMenuOpenChange={open => {
+          setIsPlayModeMenuOpen(open)
+          if (open) {
+            setShowControls(true)
+            if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+          } else {
+            resetHideTimer()
+          }
+        }}
+        currentTime={currentTime}
+        duration={duration}
+        handleProgressChange={handleProgressChange}
+        formatTime={formatTime}
+      />
     </Tabs>,
     document.body
   )
