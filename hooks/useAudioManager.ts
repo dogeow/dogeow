@@ -97,8 +97,15 @@ export const useAudioManager = () => {
     // 从路径中提取文件名
     const parts = currentTrack.split('/')
     const fileName = parts[parts.length - 1]
+    let decodedFileName = fileName
 
-    return fileName.replace(/\.(mp3|wav|m4a|aac|ogg|flac)$/i, '').replace(/[_\-]/g, ' ')
+    try {
+      decodedFileName = decodeURIComponent(fileName)
+    } catch {
+      decodedFileName = fileName
+    }
+
+    return decodedFileName.replace(/\.(mp3|wav|m4a|aac|ogg|flac)$/i, '').replace(/[_\-]/g, ' ')
   }, [currentTrack, availableTracks])
 
   // 格式化时间显示

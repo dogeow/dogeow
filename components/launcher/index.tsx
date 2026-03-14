@@ -195,6 +195,18 @@ export function AppLauncher({
     searchManager.setSearchText('')
   }, [searchManager])
 
+  const clearSharedTrackParam = useCallback(() => {
+    if (!searchParams.get('m')) {
+      return
+    }
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete('m')
+
+    const nextQuery = params.toString()
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, { scroll: false })
+  }, [pathname, router, searchParams])
+
   useEffect(() => {
     const sharedTrackValue = searchParams.get('m')
     if (lastAppliedShareTrackRef.current === sharedTrackValue) return
@@ -378,7 +390,10 @@ export function AppLauncher({
           isPlaying={isPlaying}
           isMuted={isMuted}
           trackName={getCurrentTrackName() || '未知曲目'}
-          onClose={() => setIsFullscreenViz(false)}
+          onClose={() => {
+            setIsFullscreenViz(false)
+            clearSharedTrackParam()
+          }}
           onTogglePlay={togglePlay}
           onToggleMute={toggleMute}
           onPrevTrack={switchToPrevTrack}
