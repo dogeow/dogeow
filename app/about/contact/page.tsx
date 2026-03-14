@@ -22,7 +22,7 @@ export default function ContactPage() {
 
       <div className="prose prose-gray max-w-none">
         <section className="mb-8">
-          <h2 className="mb-4 text-2xl font-semibold">联系方式 QQ</h2>
+          <h2 className="mb-4 text-2xl font-semibold">联系方式</h2>
           <div className="bg-muted rounded-lg p-6">
             <p className="mb-2 text-lg font-medium">QQ号码</p>
             <div className="flex items-center gap-3">
