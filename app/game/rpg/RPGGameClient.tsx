@@ -84,6 +84,7 @@ export default function RPGGameClient({ requireRegistration = false }: RPGGameCl
   const startCombatRef = useRef(startCombat)
   const stopCombatRef = useRef(stopCombat)
   const setShouldAutoCombatRef = useRef(setShouldAutoCombat)
+  const autoStartRequestKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     startCombatRef.current = startCombat
@@ -99,20 +100,33 @@ export default function RPGGameClient({ requireRegistration = false }: RPGGameCl
     if (!combatStats) return
 
     const hpValue = currentHp ?? combatStats.max_hp ?? 0
+    const autoStartKey = character?.id && currentMap?.id ? `${character.id}:${currentMap.id}` : null
 
     if (hpValue <= 0 && isFighting) {
       stopCombatRef.current()
       setShouldAutoCombatRef.current(false)
+      autoStartRequestKeyRef.current = null
       return
     }
 
-    // 自动发起战斗
-    if (currentMap && !isFighting && shouldAutoCombat && hpValue > 0) {
-      startCombatRef.current()
+    if (!shouldAutoCombat || !currentMap || !autoStartKey || hpValue <= 0) {
+      autoStartRequestKeyRef.current = null
+      return
+    }
+
+    if (isFighting) {
+      autoStartRequestKeyRef.current = autoStartKey
+      return
+    }
+
+    // 自动发起战斗：同一角色/地图只尝试一次，避免 start 失败时死循环重试
+    if (autoStartRequestKeyRef.current !== autoStartKey) {
+      autoStartRequestKeyRef.current = autoStartKey
+      void startCombatRef.current()
     }
 
     // 自动战斗由后端 start 接口启动，服务器每 3 秒执行一回合并通过 Reverb WebSocket 推送，无需前端定时器
-  }, [isFighting, currentMap, shouldAutoCombat, combatResult, combatStats, currentHp])
+  }, [character?.id, isFighting, currentMap?.id, shouldAutoCombat, combatStats, currentHp])
 
   // 认证完成后拉取角色列表；.then 内 setState 为异步，不触发 set-state-in-effect 规则
   useEffect(() => {

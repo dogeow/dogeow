@@ -26,7 +26,6 @@ export function CombatPanel() {
   const enterMap = useGameStore(state => state.enterMap)
   const fetchMaps = useGameStore(state => state.fetchMaps)
   const teleportToMap = useGameStore(state => state.teleportToMap)
-  const startCombat = useGameStore(state => state.startCombat)
   const revive = useGameStore(state => state.revive)
   const isFighting = useGameStore(state => state.isFighting)
   const setShouldAutoCombat = useGameStore(state => state.setShouldAutoCombat)
@@ -116,6 +115,12 @@ export function CombatPanel() {
     return () => document.removeEventListener('click', onDocClick)
   }, [mapDropdownOpen])
 
+  useEffect(() => {
+    if (!character?.id || !currentMap?.id || isLoading || isFighting || (currentHp ?? 0) <= 0)
+      return
+    setShouldAutoCombat(true)
+  }, [character?.id, currentMap?.id, isLoading, isFighting, currentHp, setShouldAutoCombat])
+
   const handleSelectMap = useCallback(
     async (mapId: number) => {
       await enterMap(mapId)
@@ -159,7 +164,6 @@ export function CombatPanel() {
   }, [combatResult?.skill_cooldowns, currentRound])
 
   const handleStartCombat = async () => {
-    await startCombat()
     setShouldAutoCombat(true)
   }
 

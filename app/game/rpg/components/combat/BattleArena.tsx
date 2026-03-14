@@ -262,16 +262,20 @@ export function BattleArena({
           )}
         </div>
 
-        {/* VS 双剑：点击开始/停止挂机，战斗中播放交击动画 */}
-        <VSSwords
-          isFighting={isFighting}
-          isLoading={isLoading}
-          isDead={isCharacterDead}
-          onToggle={onCombatToggle}
-        />
+        {/* 中轴状态按钮：固定在战场正中央，保证与怪物/玩家等距 */}
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 justify-center">
+          <div className="pointer-events-auto">
+            <VSSwords
+              isFighting={isFighting}
+              isLoading={isLoading}
+              isDead={isCharacterDead}
+              onToggle={onCombatToggle}
+            />
+          </div>
+        </div>
 
         {/* 下侧：用户 */}
-        <div className="flex flex-col items-center gap-2 p-3 sm:p-4">
+        <div className="mt-auto flex flex-col items-center gap-2 p-3 sm:p-4">
           <div className="bg-primary/20 text-primary flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-bold sm:h-16 sm:w-16 sm:text-2xl">
             {character?.name?.charAt(0) ?? '?'}
           </div>

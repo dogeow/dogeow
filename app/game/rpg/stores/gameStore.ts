@@ -1152,10 +1152,22 @@ const store: StateCreator<GameState> = (set, get) => ({
         isLoading: false,
       }))
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      if (message.includes('自动战斗已在运行中')) {
+        await get().fetchCombatStatus()
+        await get().fetchCombatLogs()
+        set(state => ({
+          ...state,
+          error: null,
+          isLoading: false,
+        }))
+        return
+      }
+
       set(state => ({
         ...state,
         ...withCombatFlag(state, false),
-        error: (error as Error).message,
+        error: message,
         isLoading: false,
       }))
     }
@@ -1217,6 +1229,7 @@ const store: StateCreator<GameState> = (set, get) => ({
 
   toggleEnabledSkill: async (skillId: number) => {
     const wasFighting = get().isFighting
+    const shouldSyncCombatSkills = wasFighting || get().shouldAutoCombat
     set(state => {
       const ids = state.enabledSkillIds
       const has = ids.includes(skillId)
@@ -1225,8 +1238,8 @@ const store: StateCreator<GameState> = (set, get) => ({
         enabledSkillIds: has ? ids.filter(id => id !== skillId) : [...ids, skillId],
       }
     })
-    // 战斗进行中时，同步更新后端技能配置
-    if (wasFighting) {
+    // 自动战斗流程进行中（包括启动中的瞬间）时，同步更新后端技能配置
+    if (shouldSyncCombatSkills) {
       const selectedId = get().selectedCharacterId
       const enabledIds = get().enabledSkillIds
       if (selectedId) {

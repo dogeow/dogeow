@@ -24,13 +24,15 @@ export function VSSwords({
       aria-label={isCharacterDead ? '复活继续' : isFighting ? '停止挂机' : '开始挂机'}
     >
       <span
-        className={`text-3xl leading-none sm:text-4xl ${!isCharacterDead && isFighting ? 'vs-emoji-fighting' : ''}`}
+        className={`flex h-8 items-center justify-center text-3xl leading-none sm:h-10 sm:text-4xl ${
+          !isCharacterDead && isFighting ? 'vs-emoji-fighting' : ''
+        }`}
         aria-hidden
       >
         {isCharacterDead ? '💪' : '⚔️'}
       </span>
       <span className="text-primary text-xs font-bold sm:text-sm">
-        {isCharacterDead ? '复活' : 'VS'}
+        {isCharacterDead ? '复活' : isFighting ? '战斗中...' : '已停止战斗'}
       </span>
     </button>
   )
