@@ -2,16 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import {
-  X,
-  SkipBack,
-  SkipForward,
-  Play,
-  Pause,
-  Volume2,
-  VolumeX,
-  SlidersHorizontal,
-} from 'lucide-react'
+import { X, SkipBack, SkipForward, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { AudioVisualizer, type VisualizerType } from './visualizer'
 import { cn } from '@/lib/helpers'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -20,12 +11,6 @@ import type { LyricLine } from './lyrics'
 import type { LyricsState } from './useTrackLyrics'
 import { LyricsDisplayPanel } from './LyricsDisplayPanel'
 import { RepeatModeButton } from './RepeatModeButton'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 
 interface FullscreenVisualizerProps {
   analyserNode: AnalyserNode | null
@@ -50,6 +35,8 @@ interface FullscreenVisualizerProps {
   lyrics?: LyricLine[]
   activeLyricIndex?: number
   lyricsStatus?: LyricsState
+  activePanel?: 'lyrics' | 'playlist'
+  onActivePanelChange?: (panel: 'lyrics' | 'playlist') => void
 }
 
 const VISUALIZER_TYPES: { type: VisualizerType; label: string }[] = [
@@ -86,28 +73,37 @@ export function FullscreenVisualizer({
   lyrics = [],
   activeLyricIndex = -1,
   lyricsStatus = 'idle',
+  activePanel: controlledPanel,
+  onActivePanelChange,
 }: FullscreenVisualizerProps) {
   const [vizType, setVizType] = useState<VisualizerType>('spectrum')
   const [showControls, setShowControls] = useState(true)
-  const [activePanel, setActivePanel] = useState<'lyrics' | 'playlist'>('playlist')
+  const [activePanel, setActivePanel] = useState<'lyrics' | 'playlist'>(
+    controlledPanel ?? 'playlist'
+  )
   const [isPlayModeMenuOpen, setIsPlayModeMenuOpen] = useState(false)
-  const [isVisualizerMenuOpen, setIsVisualizerMenuOpen] = useState(false)
   const [showRemainingTime, setShowRemainingTime] = useState(false)
   const [isLandscape, setIsLandscape] = useState(false)
   const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const canShowPlaylist = Boolean((onTrackPlay || onTrackSelect) && availableTracks.length > 0)
-  const resolvedPanel = canShowPlaylist ? activePanel : 'lyrics'
+  const resolvedPanel = canShowPlaylist ? (controlledPanel ?? activePanel) : 'lyrics'
+
+  useEffect(() => {
+    if (controlledPanel) {
+      setActivePanel(controlledPanel)
+    }
+  }, [controlledPanel])
 
   // 自动隐藏控件
   const resetHideTimer = useCallback(() => {
     setShowControls(true)
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-    if (resolvedPanel === 'playlist' || isPlayModeMenuOpen || isVisualizerMenuOpen) {
+    if (resolvedPanel === 'playlist' || isPlayModeMenuOpen) {
       return
     }
     const timer = setTimeout(() => setShowControls(false), 3000)
     hideTimerRef.current = timer
-  }, [isPlayModeMenuOpen, isVisualizerMenuOpen, resolvedPanel])
+  }, [isPlayModeMenuOpen, resolvedPanel])
 
   useEffect(() => {
     resetHideTimer()
@@ -144,13 +140,17 @@ export function FullscreenVisualizer({
   return createPortal(
     <Tabs
       value={resolvedPanel}
-      onValueChange={value => setActivePanel(value as 'lyrics' | 'playlist')}
-      className="bg-background safe-area-top safe-area-right safe-area-bottom safe-area-left fixed inset-0 z-[100] flex flex-col gap-0"
+      onValueChange={value => {
+        const nextPanel = value as 'lyrics' | 'playlist'
+        setActivePanel(nextPanel)
+        onActivePanelChange?.(nextPanel)
+      }}
+      className="safe-area-top safe-area-right safe-area-bottom safe-area-left fixed inset-0 z-[100] flex flex-col gap-0 bg-black text-white"
       onMouseMove={resetHideTimer}
       onTouchStart={resetHideTimer}
     >
       {/* 可视化背景 - 全屏 */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 bg-black">
         {analyserNode && (
           <AudioVisualizer
             analyserNode={analyserNode}
@@ -158,7 +158,7 @@ export function FullscreenVisualizer({
             type={vizType}
             barCount={64}
             showGradient={true}
-            className="h-full w-full"
+            className="h-full w-full bg-black"
           />
         )}
       </div>
@@ -166,7 +166,7 @@ export function FullscreenVisualizer({
       <div
         className={cn(
           'absolute inset-x-0 z-10 flex justify-center px-4 sm:px-8 lg:px-16',
-          isLandscape ? 'top-16 bottom-24 items-stretch' : 'top-1/2 -translate-y-1/2'
+          isLandscape ? 'top-28 bottom-24 items-stretch' : 'top-1/2 -translate-y-1/2'
         )}
       >
         {canShowPlaylist && (
@@ -275,139 +275,130 @@ export function FullscreenVisualizer({
       {/* 控制层 */}
       <div
         className={cn(
-          'pointer-events-none relative z-20 flex h-full flex-col justify-between transition-opacity duration-500',
+          'pointer-events-none absolute inset-0 z-20',
           showControls || resolvedPanel === 'playlist' ? 'opacity-100' : 'opacity-0'
         )}
       >
-        {/* 顶部：关闭 + 曲名 */}
+        {/* 顶部：效果切换 + 曲名 + tabs */}
         <div
           className={cn(
-            'pointer-events-auto flex flex-col gap-2 bg-gradient-to-b from-black/60 to-transparent',
+            'pointer-events-auto absolute inset-x-0 top-0 flex flex-col gap-2 bg-gradient-to-b from-black/60 to-transparent',
             isLandscape ? 'px-3 pt-3 pb-4' : 'p-4 pb-12'
           )}
         >
-          <div className="relative flex items-center gap-4">
-            <h2 className="min-w-0 flex-1 truncate text-left text-lg font-medium text-white drop-shadow-lg">
-              {trackName}
-            </h2>
-            {canShowPlaylist && isLandscape && (
-              <div className="absolute left-1/2 flex -translate-x-1/2 justify-center">
-                <TabsList className="h-8 bg-white/10 text-white/55 backdrop-blur-sm">
-                  <TabsTrigger
-                    value="playlist"
-                    className="min-w-24 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white dark:data-[state=active]:bg-white/20 dark:data-[state=active]:text-white"
-                  >
-                    歌曲列表
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="lyrics"
-                    className="min-w-20 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white dark:data-[state=active]:bg-white/20 dark:data-[state=active]:text-white"
-                  >
-                    歌词
-                  </TabsTrigger>
-                </TabsList>
+          {isLandscape ? (
+            <div className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-4">
+              <div className="flex justify-center">
+                <h2 className="min-w-0 max-w-full truncate text-center text-lg font-medium text-white drop-shadow-lg">
+                  {trackName}
+                </h2>
               </div>
-            )}
-            <div className="ml-auto flex shrink-0 items-center gap-2">
-              {isLandscape && (
-                <DropdownMenu
-                  onOpenChange={open => {
-                    setIsVisualizerMenuOpen(open)
-                    if (open) {
-                      setShowControls(true)
-                      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-                    } else {
-                      resetHideTimer()
-                    }
-                  }}
-                >
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex h-9 items-center gap-2 rounded-full bg-white/12 px-3 text-[11px] font-medium text-white/80 backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-white"
-                      aria-label="切换音乐效果"
-                      title="切换音乐效果"
+              {canShowPlaylist && (
+                <div className="flex justify-center">
+                  <TabsList className="h-8 bg-white/10 text-white/55 backdrop-blur-sm">
+                    <TabsTrigger
+                      value="playlist"
+                      className="min-w-24 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white"
                     >
-                      <SlidersHorizontal className="h-3.5 w-3.5" />
-                      <span>
-                        {VISUALIZER_TYPES.find(item => item.type === vizType)?.label ?? '频谱'}
-                      </span>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="min-w-28 bg-black/85 text-white backdrop-blur-md"
-                  >
-                    {VISUALIZER_TYPES.map(({ type, label }) => (
-                      <DropdownMenuItem
-                        key={type}
-                        onClick={() => setVizType(type)}
-                        className={cn(
-                          'cursor-pointer text-sm text-white/80 focus:bg-white/15 focus:text-white',
-                          vizType === type && 'bg-white/12 text-white'
-                        )}
-                      >
-                        {label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      歌曲列表
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="lyrics"
+                      className="min-w-20 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white"
+                    >
+                      歌词
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
               )}
-              <button
-                onClick={onClose}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-colors hover:bg-white/20"
-                aria-label="关闭全屏"
-                title="关闭全屏"
-              >
-                <X className="h-5 w-5 text-white" />
-              </button>
+              <div className="flex items-center justify-center gap-2">
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {VISUALIZER_TYPES.map(({ type, label }) => (
+                    <button
+                      key={type}
+                      onClick={() => setVizType(type)}
+                      type="button"
+                      className={cn(
+                        'rounded-full px-3 py-1.5 text-[11px] font-medium transition-all',
+                        vizType === type
+                          ? 'bg-white/25 text-white backdrop-blur-sm'
+                          : 'bg-white/8 text-white/65 hover:bg-white/16 hover:text-white'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="absolute right-0 flex items-center gap-2">
+                <button
+                  onClick={onClose}
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-colors hover:bg-white/20"
+                  aria-label="关闭全屏"
+                  title="关闭全屏"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="relative flex items-center justify-center">
+                <div className="flex flex-wrap items-center gap-2">
+                  {VISUALIZER_TYPES.map(({ type, label }) => (
+                    <button
+                      key={type}
+                      onClick={() => setVizType(type)}
+                      className={cn(
+                        'rounded-full px-4 py-1.5 text-xs font-medium transition-all',
+                        vizType === type
+                          ? 'bg-white/25 text-white backdrop-blur-sm'
+                          : 'text-white/60 hover:text-white/90'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={onClose}
+                  className="absolute right-0 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 backdrop-blur-sm transition-colors hover:bg-white/20"
+                  aria-label="关闭全屏"
+                  title="关闭全屏"
+                >
+                  <X className="h-5 w-5 text-white" />
+                </button>
+              </div>
+              <h2 className="min-w-0 text-center text-lg font-medium text-white drop-shadow-lg">
+                {trackName}
+              </h2>
+            </>
+          )}
+        </div>
+
+        {/* 底部：播放控件 */}
+        <div
+          className={cn(
+            'pointer-events-auto absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent',
+            isLandscape ? 'space-y-2 px-3 pb-4' : 'space-y-6 pb-12'
+          )}
+        >
           {canShowPlaylist && !isLandscape && (
             <div className="flex justify-center">
               <TabsList className="h-8 bg-white/10 text-white/55 backdrop-blur-sm">
                 <TabsTrigger
                   value="playlist"
-                  className="min-w-24 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white dark:data-[state=active]:bg-white/20 dark:data-[state=active]:text-white"
+                  className="min-w-24 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white"
                 >
                   歌曲列表
                 </TabsTrigger>
                 <TabsTrigger
                   value="lyrics"
-                  className="min-w-20 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white dark:data-[state=active]:bg-white/20 dark:data-[state=active]:text-white"
+                  className="min-w-20 border-0 px-3 text-xs text-white/60 data-[state=active]:bg-white/20 data-[state=active]:text-white"
                 >
                   歌词
                 </TabsTrigger>
               </TabsList>
-            </div>
-          )}
-        </div>
-
-        {/* 底部：可视化类型切换 + 播放控件 */}
-        <div
-          className={cn(
-            'pointer-events-auto bg-gradient-to-t from-black/60 to-transparent',
-            isLandscape ? 'space-y-2 px-3 pb-4' : 'space-y-6 pb-12'
-          )}
-        >
-          {/* 可视化类型切换 */}
-          {!isLandscape && (
-            <div className="flex justify-center gap-2">
-              {VISUALIZER_TYPES.map(({ type, label }) => (
-                <button
-                  key={type}
-                  onClick={() => setVizType(type)}
-                  className={cn(
-                    'rounded-full font-medium transition-all',
-                    'px-4 py-1.5 text-xs',
-                    vizType === type
-                      ? 'bg-white/25 text-white backdrop-blur-sm'
-                      : 'text-white/60 hover:text-white/90'
-                  )}
-                >
-                  {label}
-                </button>
-              ))}
             </div>
           )}
 

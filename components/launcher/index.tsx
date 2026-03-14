@@ -1,10 +1,10 @@
 'use client'
 
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect, useRef, startTransition } from 'react'
 import dynamic from 'next/dynamic'
 import { MusicPlayer } from './MusicPlayer'
 import { SettingsPanel, CustomBackground } from './SettingsPanel'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { AuthPanel, AuthDialog } from '@/components/launcher/AuthPanel'
 import useAuthStore from '@/stores/authStore'
 import { SearchDialog } from '@/components/search/SearchDialog'
@@ -54,13 +54,17 @@ export function AppLauncher({
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { isAuthenticated } = useAuthStore()
 
   const [displayMode, setDisplayMode] = useState<DisplayMode>('apps')
   const [customBackgrounds, setCustomBackgrounds] = useState<CustomBackground[]>([])
   const [isFullscreenViz, setIsFullscreenViz] = useState(false)
+  const [fullscreenPanel, setFullscreenPanel] = useState<'lyrics' | 'playlist'>('lyrics')
   // 使用音乐存储中的播放模式状态
   const { playMode, setPlayMode } = useMusicStore()
+  const lastAppliedShareTrackRef = useRef<string | null>(null)
+  const pendingSharedTrackIndexRef = useRef<number | null>(null)
 
   // 使用自定义 hooks
   const audioManager = useAudioManager()
@@ -191,6 +195,44 @@ export function AppLauncher({
     searchManager.setSearchText('')
   }, [searchManager])
 
+  useEffect(() => {
+    const sharedTrackValue = searchParams.get('m')
+    if (lastAppliedShareTrackRef.current === sharedTrackValue) return
+
+    const sharedTrackIndex = Number(sharedTrackValue ?? '')
+
+    if (!Number.isInteger(sharedTrackIndex) || sharedTrackIndex <= 0) {
+      lastAppliedShareTrackRef.current = sharedTrackValue
+      return
+    }
+
+    lastAppliedShareTrackRef.current = sharedTrackValue
+    pendingSharedTrackIndexRef.current = sharedTrackIndex - 1
+    startTransition(() => {
+      setDisplayMode('music')
+      setFullscreenPanel('lyrics')
+      setIsFullscreenViz(true)
+    })
+    void fetchAvailableTracks()
+  }, [fetchAvailableTracks, searchParams])
+
+  useEffect(() => {
+    const pendingIndex = pendingSharedTrackIndexRef.current
+    if (pendingIndex === null || pendingIndex < 0 || pendingIndex >= availableTracks.length) {
+      return
+    }
+
+    const sharedTrack = availableTracks[pendingIndex]
+    if (!sharedTrack) {
+      return
+    }
+
+    pendingSharedTrackIndexRef.current = null
+    startTransition(() => {
+      setCurrentTrack(sharedTrack.path)
+    })
+  }, [availableTracks, setCurrentTrack])
+
   // 渲染内容的配置
   const contentConfig = useMemo(
     () => ({
@@ -292,6 +334,7 @@ export function AppLauncher({
             isAuthenticated={isAuthenticated}
             toggleDisplayMode={toggleDisplayMode}
             onOpenAi={toggleAi}
+            analyserNode={audioManager.analyserNode}
             isAiOpen={isAiOpen}
             onCloseAi={closeAi}
           />
@@ -361,6 +404,8 @@ export function AppLauncher({
           lyrics={lyrics}
           activeLyricIndex={activeLyricIndex}
           lyricsStatus={lyricsStatus}
+          activePanel={fullscreenPanel}
+          onActivePanelChange={setFullscreenPanel}
         />
       )}
 

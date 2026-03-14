@@ -28,6 +28,7 @@ interface AppsViewProps {
   isAuthenticated: boolean
   toggleDisplayMode: (mode: DisplayMode) => void
   onOpenAi?: () => void
+  analyserNode?: AnalyserNode | null
   /** 若 AI 已打开，点击 logo 时先关闭 AI */
   isAiOpen?: boolean
   onCloseAi?: () => void
@@ -39,6 +40,7 @@ export function AppsView({
   isAuthenticated,
   toggleDisplayMode,
   onOpenAi,
+  analyserNode,
   isAiOpen,
   onCloseAi,
 }: AppsViewProps) {
@@ -67,6 +69,7 @@ export function AppsView({
             toggleDisplayMode={toggleDisplayMode}
             onOpenAi={onOpenAi}
             onToggleSearch={searchManager.toggleSearch}
+            analyserNode={analyserNode}
           />
         </div>
       )}

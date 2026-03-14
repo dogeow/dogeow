@@ -64,3 +64,44 @@
 .music-rainbow-pulse {
   animation: music-pulse 2s ease-in-out infinite;
 }
+
+@keyframes music-equalizer-rise {
+  0%,
+  100% {
+    transform: scaleY(0.42);
+    opacity: 0.55;
+  }
+  25% {
+    transform: scaleY(0.9);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  75% {
+    transform: scaleY(0.58);
+    opacity: 0.75;
+  }
+}
+
+.music-equalizer-icon {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  width: 24px;
+  height: 24px;
+  color: currentColor;
+}
+
+.music-equalizer-bar {
+  width: 3px;
+  height: 100%;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center bottom;
+  transition:
+    transform 90ms linear,
+    opacity 90ms linear;
+}
