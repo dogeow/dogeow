@@ -1,7 +1,10 @@
 'use client'
 
 import dynamic from 'next/dynamic'
+import Image from 'next/image'
+import Link from 'next/link'
 import type { AppLauncherProps } from './index'
+import Logo from '@/public/80.png'
 
 const AppLauncher = dynamic(() => import('./index').then(mod => mod.AppLauncher), {
   ssr: false,
@@ -16,7 +19,16 @@ function AppLauncherSkeleton() {
   return (
     <div className="flex h-full w-full items-center justify-between">
       <div className="mr-3 flex shrink-0 items-center">
-        <div className="bg-muted size-10 animate-pulse rounded-md" />
+        <Link href="/" aria-label="返回首页" className="block">
+          <Image
+            src={Logo}
+            alt="apps"
+            width={40}
+            height={40}
+            className="size-10 rounded-md object-cover"
+            priority
+          />
+        </Link>
       </div>
 
       <div className="flex flex-1 items-center justify-start">

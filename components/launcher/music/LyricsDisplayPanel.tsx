@@ -197,7 +197,10 @@ export function LyricsDisplayPanel({
           {getEmptyText(status)}
         </div>
       ) : (
-        <div ref={scrollContainerRef} className={cn('flex-1 overflow-y-auto px-2', bodyClassName)}>
+        <div
+          ref={scrollContainerRef}
+          className={cn('scrollbar-none flex-1 overflow-y-auto px-2', bodyClassName)}
+        >
           <div
             className="flex flex-col items-center gap-3"
             style={{

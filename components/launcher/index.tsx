@@ -430,7 +430,7 @@ export function AppLauncher({
       >
         {/* 音频可视化 - 作为背景层，覆盖整个 app-launcher-bar，包括 padding */}
         {displayMode === 'music' && audioManager.analyserNode && (
-          <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+          <div className="pointer-events-none absolute inset-y-0 left-1/2 z-0 w-screen -translate-x-1/2 overflow-hidden">
             <AudioVisualizer
               analyserNode={audioManager.analyserNode}
               isPlaying={isPlaying}

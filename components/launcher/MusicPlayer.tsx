@@ -52,7 +52,7 @@ export const MusicPlayer = memo(
     }, [currentTime, duration, formatTime, showRemainingTime])
 
     return (
-      <div className="relative flex h-full w-full min-w-0 flex-col justify-center overflow-hidden">
+      <div className="relative flex h-full w-full min-w-0 flex-col justify-center">
         <div className="relative flex w-full min-w-0 items-center gap-2 overflow-hidden">
           <div className="relative z-10 flex shrink-0 items-center gap-3">
             <LogoButton onClick={handleLogoClick} className="h-10 w-10" />
