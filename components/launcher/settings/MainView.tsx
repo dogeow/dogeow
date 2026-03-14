@@ -8,6 +8,7 @@ import {
   Sun,
   LayoutGrid,
   List,
+  Smartphone,
   Bell,
   BookOpen,
 } from 'lucide-react'
@@ -80,10 +81,20 @@ export function MainView({
       <Button
         variant="ghost"
         className="flex h-9 shrink-0 items-center gap-2 px-3"
-        onClick={() => setSiteLayout(siteLayout === 'grid' ? 'magazine' : 'grid')}
+        onClick={() =>
+          setSiteLayout(
+            siteLayout === 'grid' ? 'magazine' : siteLayout === 'magazine' ? 'icon' : 'grid'
+          )
+        }
         aria-label={t('settings.layout', '布局')}
       >
-        {siteLayout === 'grid' ? <LayoutGrid className="h-4 w-4" /> : <List className="h-4 w-4" />}
+        {siteLayout === 'grid' ? (
+          <LayoutGrid className="h-4 w-4" />
+        ) : siteLayout === 'magazine' ? (
+          <List className="h-4 w-4" />
+        ) : (
+          <Smartphone className="h-4 w-4" />
+        )}
       </Button>
 
       <Button
@@ -98,6 +109,40 @@ export function MainView({
       <SettingsDivider />
 
       {/* 功能封面图选项 */}
+      <div className="flex min-h-9 shrink-0 items-center gap-2 px-3">
+        <LayoutGrid className="h-4 w-4" aria-hidden />
+        <span className="text-sm font-medium">布局</span>
+        <div className="flex flex-1 gap-1">
+          <Button
+            type="button"
+            variant={siteLayout === 'grid' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 flex-1 px-2 text-xs"
+            onClick={() => setSiteLayout('grid')}
+          >
+            网格
+          </Button>
+          <Button
+            type="button"
+            variant={siteLayout === 'magazine' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 flex-1 px-2 text-xs"
+            onClick={() => setSiteLayout('magazine')}
+          >
+            杂志
+          </Button>
+          <Button
+            type="button"
+            variant={siteLayout === 'icon' ? 'default' : 'ghost'}
+            size="sm"
+            className="h-8 flex-1 px-2 text-xs"
+            onClick={() => setSiteLayout('icon')}
+          >
+            图标
+          </Button>
+        </div>
+      </div>
+
       <div className="flex min-h-9 shrink-0 items-center gap-2 px-3">
         <BookOpen className="h-4 w-4" aria-hidden />
         <span className="text-sm font-medium">封面</span>

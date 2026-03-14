@@ -24,18 +24,18 @@ const TILE_CLASSES = {
     'motion-reduce:transition-none motion-reduce:hover:scale-100 motion-reduce:active:scale-100',
   ].join(' '),
   BORDERED:
-    'border border-white/30 bg-white/10 backdrop-blur-md hover:border-white/40 dark:border-white/10 dark:bg-white/[0.06] dark:hover:border-white/15',
+    'border border-white/30 bg-white/10 backdrop-blur-md hover:border-white/40 dark:border-white/5 dark:bg-neutral-950 dark:hover:border-white/10',
   LOCK_ICON:
     'absolute top-2 right-2 z-[3] flex h-6 w-6 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm',
   CONTENT: 'relative z-[2] flex items-center gap-2.5',
   TITLE: 'text-base font-medium leading-tight sm:text-lg',
   SKELETON_OVERLAY: 'absolute inset-0 z-[4] animate-pulse bg-muted/80',
   GLASS_AURORA:
-    'pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.42),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.18),transparent_32%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_32%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_30%)]',
+    'pointer-events-none absolute inset-0 z-[1] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.42),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.18),transparent_32%)] dark:hidden',
   GLASS_HIGHLIGHT:
-    'pointer-events-none absolute inset-x-3 top-0 z-[2] h-px bg-white/55 dark:bg-white/20',
+    'pointer-events-none absolute inset-x-3 top-0 z-[2] h-px bg-white/55 dark:hidden',
   GLASS_ICON_SHELL:
-    'rounded-lg bg-white/30 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_6px_18px_rgba(15,23,42,0.08)] backdrop-blur-sm dark:bg-white/10 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_6px_18px_rgba(0,0,0,0.2)]',
+    'rounded-lg bg-white/30 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55),0_6px_18px_rgba(15,23,42,0.08)] backdrop-blur-sm dark:bg-white/5 dark:shadow-none dark:backdrop-blur-none',
 } as const
 
 const IMAGE_SIZES = {
@@ -146,12 +146,7 @@ export const TileCard = memo(
       if (!usesDecoratedCover) {
         return {
           ...baseStyle,
-          background:
-            'linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.06) 100%)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          boxShadow:
-            '0 18px 38px rgba(15, 23, 42, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.40), inset 0 -1px 0 rgba(255, 255, 255, 0.10)',
+          boxShadow: '0 14px 30px rgba(15, 23, 42, 0.10)',
         }
       }
 

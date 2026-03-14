@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo, startTransition } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogOverlay,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import useAuthStore from '@/stores/authStore'
 import { useKeyboardStatus } from './hooks/useKeyboardStatus'
 import { useSearchCategories } from './hooks/useSearchCategories'
@@ -151,6 +157,7 @@ export function SearchDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogOverlay className="bg-black/55 backdrop-blur-[1px]" />
       <DialogContent
         className={`w-[calc(100vw-1rem)] max-w-[95vw] gap-0 overflow-hidden p-0 sm:max-w-[550px] ${dialogSizeClass}`}
       >

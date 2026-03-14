@@ -17,6 +17,12 @@ const MagazineLayout = dynamic(
   () => import('@/components/app/MagazineLayout').then(mod => mod.MagazineLayout),
   { ssr: true }
 )
+const IconLayout = dynamic(
+  () => import('@/components/app/IconLayout').then(mod => mod.IconLayout),
+  {
+    ssr: true,
+  }
+)
 
 const Footer = dynamic(() => import('@/components/app/Footer'), {
   ssr: true,
@@ -72,6 +78,7 @@ export function HomePage() {
   const isHydrated = useHydrated()
 
   const layoutType = useMemo(() => {
+    if (siteLayout === 'icon') return 'icon'
     if (siteLayout === 'magazine') return 'magazine'
     if (!theme || theme.id === 'default') return 'grid'
     if (theme.id === 'dashboard') return 'dashboard'
@@ -102,6 +109,13 @@ export function HomePage() {
             <HomeTilesSkeleton />
           ) : layoutType === 'magazine' ? (
             <MagazineLayout
+              tiles={tiles}
+              projectCoverMode={projectCoverMode}
+              getTileStatus={getTileStatus}
+              handleTileClick={handleTileClick}
+            />
+          ) : layoutType === 'icon' ? (
+            <IconLayout
               tiles={tiles}
               projectCoverMode={projectCoverMode}
               getTileStatus={getTileStatus}

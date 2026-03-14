@@ -14,7 +14,7 @@ import {
   Columns,
   Maximize2,
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogOverlay, DialogTitle } from '@/components/ui/dialog'
 import { useTheme } from 'next-themes'
 import { useThemeStore } from '@/stores/themeStore'
 import {
@@ -262,6 +262,7 @@ export function SettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogOverlay className="bg-black/55 backdrop-blur-[1px]" />
       <DialogContent className="w-[90%] max-w-md overflow-hidden p-0">
         <div className="flex h-[60vh] min-h-[400px] w-full flex-col overflow-hidden">
           {/* 顶部标题栏 */}
@@ -435,8 +436,8 @@ function FullscreenView({ fullscreenOn, onToggle }: FullscreenViewProps) {
 // APP 列表视图组件
 interface AppsListViewProps {
   onBack: () => void
-  siteLayout: 'grid' | 'magazine'
-  setSiteLayout: (layout: 'grid' | 'magazine') => void
+  siteLayout: 'grid' | 'magazine' | 'icon'
+  setSiteLayout: (layout: 'grid' | 'magazine' | 'icon') => void
   projectCoverMode: ProjectCoverMode
   setProjectCoverMode: (mode: ProjectCoverMode) => void
 }
@@ -469,6 +470,14 @@ function AppsListView({
             }`}
           >
             杂志
+          </button>
+          <button
+            onClick={() => setSiteLayout('icon')}
+            className={`flex-1 rounded px-2 py-1 text-xs transition-colors ${
+              siteLayout === 'icon' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            }`}
+          >
+            图标
           </button>
         </div>
       </div>

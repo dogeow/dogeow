@@ -3,7 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type SiteLayout = 'grid' | 'magazine'
+export type SiteLayout = 'grid' | 'magazine' | 'icon'
 
 interface LayoutState {
   siteLayout: SiteLayout
